@@ -1,7 +1,3 @@
-import Image from "next/image";
-import { NextLogo } from "./next-logo";
-import { SupabaseLogo } from "./supabase-logo";
-
 export function Hero() {
   return (
     // <div className="flex gap-16 items-center w-full">
