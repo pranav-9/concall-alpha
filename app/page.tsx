@@ -1,11 +1,8 @@
 import { Hero } from "@/components/hero";
-import { ThemeSwitcher } from "@/components/theme-switcher";
 import Navbar from "./(hero)/navbar";
 import { InputWithButton } from "./(hero)/searchButton";
 import TopStocks from "./(hero)/top-stocks";
-import { CarouselDemo } from "./(hero)/features";
 import FeatureOne from "./(hero)/feature-1";
-import { CarouselSize } from "./(hero)/carousal-2";
 
 export default function Home() {
   return (
