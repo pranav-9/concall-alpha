@@ -46,7 +46,7 @@ const TopStocks = () => {
   ];
 
   return (
-    <div className="grid grid-cols-2 p-4 gap-8 w-[80%]">
+    <div className="grid grid-cols-1 sm:grid-cols-2 sm:p-4 gap-8 sm:w-[80%] w-full">
       {data.map((list, i) => (
         <div key={i} className="flex flex-col rounded-xl border-2">
           <div className=" p-4 font-bold text-white text-2xl bg-black rounded-t-xl border-2">
