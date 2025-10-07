@@ -3,6 +3,9 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import Navbar from "./(hero)/navbar";
 import { InputWithButton } from "./(hero)/searchButton";
 import TopStocks from "./(hero)/top-stocks";
+import { CarouselDemo } from "./(hero)/features";
+import FeatureOne from "./(hero)/feature-1";
+import { CarouselSize } from "./(hero)/carousal-2";
 
 export default function Home() {
   return (
@@ -17,22 +20,27 @@ export default function Home() {
           {/* <h1>top lists</h1> */}
           <TopStocks></TopStocks>
           <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
-          <h1>Our Features</h1>
+          {/* <h1>Our Features</h1> */}
         </div>
+
+        {/* <CarouselSize></CarouselSize> */}
+        <FeatureOne></FeatureOne>
+        {/* <CarouselDemo></CarouselDemo> */}
+        {/* <FeatureOne></FeatureOne> */}
 
         <footer className="sm:w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
           <p>
-            Powered by{" "}
+            An experimental project by{" "}
             <a
-              href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
+              href="https://pranavyadav.dev/"
               target="_blank"
               className="font-bold hover:underline"
               rel="noreferrer"
             >
-              Supabase
+              Pranav Yadav
             </a>
           </p>
-          <ThemeSwitcher />
+          {/* <ThemeSwitcher /> */}
         </footer>
       </div>
     </main>
