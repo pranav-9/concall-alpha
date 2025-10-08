@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 sm:w-full flex flex-col gap-0 justify-items-center items-center">
-        <Navbar></Navbar>
+        {/* <Navbar></Navbar> */}
         <Hero />
         <div className="py-32 flex flex-col gap-20 w-full p-5 items-center">
           {/* <h1>Search</h1> */}
