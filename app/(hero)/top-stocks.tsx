@@ -10,22 +10,30 @@ const TopStocks = async () => {
   // Join company to get the display name
   const { data, error } = await supabase
     .from("concall_analysis")
-    .select("score, company:company(name)")
+    .select("score, company(name)")
     .eq("fy", 2026)
     .eq("qtr", 1)
     .order("score", { ascending: false })
-    .limit(3);
+    .limit(3)
+    .returns<
+      {
+        score: number;
+        company: { name: string } | null; // embedded parent is a single object
+      }[]
+    >(); // <<< key line;
 
   if (error) throw error;
 
   function scoreToLabel(score: number) {
     // Tune thresholds to match your example output (treat 6.5+ as "Extremely Bullish")
     if (score >= 8.5) return "Extremely Bullish";
-    if (score >= 6.5) return "Extremely Bullish"; // adjust if you want a "Bullish" tier
+    if (score >= 6.5) return "Bullish"; // adjust if you want a "Bullish" tier
     if (score >= 5.0) return "Neutral";
     if (score >= 3.5) return "Bearish";
     return "Extremely Bearish";
   }
+
+  console.log(data);
 
   const data1 = (data ?? []).map((row) => {
     const name = row.company?.name ?? "—";
