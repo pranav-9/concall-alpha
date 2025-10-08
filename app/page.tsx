@@ -1,5 +1,4 @@
 import { Hero } from "@/components/hero";
-import Navbar from "./(hero)/navbar";
 import { InputWithButton } from "./(hero)/searchButton";
 import TopStocks from "./(hero)/top-stocks";
 import FeatureOne from "./(hero)/feature-1";
