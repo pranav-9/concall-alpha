@@ -2,6 +2,7 @@ import React from "react";
 import { ChartLineLabel } from "./chart";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
+import ConcallScore, { categoryFor } from "@/components/concall-score";
 
 export default async function Page({
   params,
@@ -11,6 +12,21 @@ export default async function Page({
   const { code } = await params;
   // fetch data with company_code if needed
   // const data = await getCompany(company_code)
+
+  type QuarterData = {
+    id: number;
+    company_code: string;
+    fy: number;
+    qtr: number;
+    quarter_start_date: string;
+    quarter_label: string;
+    score: number;
+    summary: {
+      topic: string;
+      text: string;
+      detail: string;
+    }[];
+  };
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -26,7 +42,7 @@ export default async function Page({
 
   console.log(data);
 
-  const latestQuarterData = data[0];
+  const latestQuarterData: QuarterData = data[0];
 
   console.log(latestQuarterData);
 
@@ -46,19 +62,15 @@ export default async function Page({
             </p>
 
             <div>
-              <Badge className="bg-green-400">s.label</Badge>
+              {/* <Badge className="bg-green-400">s.label</Badge> */}
+              <Badge className={categoryFor(latestQuarterData.score).bg}>
+                {categoryFor(latestQuarterData.score).label}
+              </Badge>
             </div>
           </div>
         </div>
         <div>
-          <Badge
-            className="h-12 rounded-full px-1  bg-green-400"
-            variant="destructive"
-          >
-            <p className="text-lg font-extrabold  text-black">
-              {latestQuarterData.score}
-            </p>
-          </Badge>
+          <ConcallScore score={latestQuarterData.score}></ConcallScore>
         </div>
       </div>
       <div className="flex flex-col gap-4">
@@ -69,14 +81,23 @@ export default async function Page({
           </p>
         </div>
         <div className="grid grid-cols-2 gap-4 p-4">
-          {latestQuarterData.summary.map((s, i) => (
-            <div key={i} className="bg-gray-900 p-2 rounded-2xl">
-              <div className="font-bold text-xl">{s.topic}</div>
-              <div className="text-gray-300">{s.detail}</div>
+          {latestQuarterData.summary.map(
+            (
+              s: {
+                topic: string;
+                text: string;
+                detail: string;
+              },
+              i: number
+            ) => (
+              <div key={i} className="bg-gray-900 p-2 rounded-2xl">
+                <div className="font-bold text-xl">{s.topic}</div>
+                <div className="text-gray-300">{s.detail}</div>
 
-              {/* <div>section 1</div> */}
-            </div>
-          ))}
+                {/* <div>section 1</div> */}
+              </div>
+            )
+          )}
         </div>
       </div>
       <div className="flex flex-col gap-4 w-full">
