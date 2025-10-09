@@ -4,11 +4,12 @@ import ConcallScore from "@/components/concall-score";
 import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
+import Link from "next/link";
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
-export type Payment = {
-  id: string;
+export type ConcallRow = {
+  // id: string;
   company: string;
   q1fy26: number;
   q4fy25: number;
@@ -18,7 +19,7 @@ export type Payment = {
   //   email: string;
 };
 
-export const columns: ColumnDef<Payment>[] = [
+export const columns: ColumnDef<ConcallRow>[] = [
   {
     accessorKey: "company",
     // header: "Company",
@@ -31,6 +32,16 @@ export const columns: ColumnDef<Payment>[] = [
           Company
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const name: string = row.getValue("company");
+      return (
+        <div className="underline">
+          <Link href={"/company/" + name}>
+            <p>{name}</p>
+          </Link>
+        </div>
       );
     },
   },

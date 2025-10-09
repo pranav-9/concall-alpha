@@ -1,38 +1,30 @@
 import { createClient } from "@/lib/supabase/server";
-import { columns, Payment } from "./columns";
+import { columns, ConcallRow } from "./columns";
 import { DataTable } from "./data-table";
 
-async function getData(): Promise<Payment[]> {
-  // Fetch data from your API here.
-  return [
-    {
-      id: "728ed52f",
-      amount: 100,
-      status: "pending",
-      email: "m@example.com",
-    },
-    // ...
-  ];
-}
-
 // 1) Unique VALUES for a given key (flat key)
-const uniqueValues = (arr, key, { excludeNullish = true } = {}) => {
-  const vals = arr.map((o) => o?.[key]);
-  return [...new Set(excludeNullish ? vals.filter((v) => v != null) : vals)];
+const uniqueValues = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  arr: any[] | null,
+  key: string,
+  { excludeNullish = true } = {}
+) => {
+  const vals = arr?.map((o) => o?.[key]);
+  return [...new Set(excludeNullish ? vals?.filter((v) => v != null) : vals)];
 };
 
-async function getConcallData(): Promise<any> {
+const getConcallData = async () => {
   // Fetch data from your API here.
 
   const supabase = await createClient();
-  const { data, error } = await supabase.from("concall_analysis").select();
-  console.log(data);
+  const { data } = await supabase.from("concall_analysis").select();
+  // console.log(data);
 
   const companies = uniqueValues(data, "company_code");
 
   console.log(companies);
 
-  const output = companies.map((n) => {
+  const output: ConcallRow[] = companies.map((n) => {
     return {
       company: n,
       q1fy26: data?.find(
@@ -52,8 +44,8 @@ async function getConcallData(): Promise<any> {
 
   console.log(output);
 
-  return output;
-}
+  return output.sort((a, b) => b.q1fy26 - a.q1fy26);
+};
 
 export default async function DemoPage() {
   // const data = await getData();
