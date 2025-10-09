@@ -8,12 +8,13 @@ export default function Home() {
       <div className="flex-1 sm:w-full flex flex-col gap-0 justify-items-center items-center">
         {/* <Navbar></Navbar> */}
         <Hero />
+        <TopStocks></TopStocks>
         <div className="py-32 flex flex-col gap-20 w-full p-5 items-center">
           {/* <h1>Search</h1> */}
           {/* <InputWithButton></InputWithButton>
           <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" /> */}
           {/* <h1>top lists</h1> */}
-          <TopStocks></TopStocks>
+
           <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
           {/* <h1>Our Features</h1> */}
         </div>

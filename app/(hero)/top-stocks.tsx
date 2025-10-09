@@ -103,9 +103,9 @@ const TopStocks = async () => {
   ];
 
   return (
-    <div className="flex flex-col w-full items-center">
-      <p className="text-5xl lg:text-7xl font-extrabold !leading-tight  ">
-        Q1FY26 Concall Score
+    <div className="flex flex-col w-[90%] gap-4 justify-items-center items-center pt-16">
+      <p className="text-4xl lg:text-6xl font-extrabold !leading-tight text-center">
+        Q1FY26 Concalls
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 sm:p-4 gap-8 sm:w-[80%] w-full">
         {data2.map((list, i) => (
