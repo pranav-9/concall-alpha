@@ -1,5 +1,4 @@
 import { Hero } from "@/components/hero";
-import { InputWithButton } from "./(hero)/searchButton";
 import TopStocks from "./(hero)/top-stocks";
 import FeatureOne from "./(hero)/feature-1";
 
@@ -11,8 +10,8 @@ export default function Home() {
         <Hero />
         <div className="py-32 flex flex-col gap-20 w-full p-5 items-center">
           {/* <h1>Search</h1> */}
-          <InputWithButton></InputWithButton>
-          <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
+          {/* <InputWithButton></InputWithButton>
+          <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" /> */}
           {/* <h1>top lists</h1> */}
           <TopStocks></TopStocks>
           <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
