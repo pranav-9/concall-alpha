@@ -1,13 +1,26 @@
 import { Hero } from "@/components/hero";
 import TopStocks from "./(hero)/top-stocks";
 import FeatureOne from "./(hero)/feature-1";
+import { createClient } from "@/lib/supabase/server";
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.getClaims();
+  let isLoggedIn: boolean = false;
+  if (error || !data?.claims) {
+    // redirect("/auth/login");
+    console.log("not logged in");
+  } else {
+    console.log("logged in ");
+    isLoggedIn = true;
+  }
+
   return (
     <main className="min-h-screen flex flex-col items-center">
-      <div className="flex-1 sm:w-full flex flex-col gap-0 justify-items-center items-center">
+      <div className="flex-1 w-[90%] sm:w-full flex flex-col gap-0 justify-items-center items-center">
         {/* <Navbar></Navbar> */}
-        <Hero />
+        {!isLoggedIn && <Hero />}
         <TopStocks></TopStocks>
         <div className="py-32 flex flex-col gap-20 w-full p-5 items-center">
           {/* <h1>Search</h1> */}
@@ -20,7 +33,8 @@ export default function Home() {
         </div>
 
         {/* <CarouselSize></CarouselSize> */}
-        <FeatureOne></FeatureOne>
+        {!isLoggedIn && <FeatureOne />}
+
         {/* <CarouselDemo></CarouselDemo> */}
         {/* <FeatureOne></FeatureOne> */}
 

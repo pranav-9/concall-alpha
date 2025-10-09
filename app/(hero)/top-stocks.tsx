@@ -36,7 +36,7 @@ const getTopStocks = async (top: boolean, count: number) => {
     return "Extremely Bearish";
   }
 
-  console.log(data);
+  // console.log(data);
 
   const data1 = (data ?? []).map((row) => {
     const name = row.company?.name ?? "—";
@@ -49,7 +49,7 @@ const getTopStocks = async (top: boolean, count: number) => {
     };
   });
 
-  console.log(data1);
+  // console.log(data1);
   return data1;
 };
 
