@@ -40,14 +40,24 @@ export default async function Page({
     throw error;
   }
 
-  console.log(data);
+  // console.log(data);
 
   const latestQuarterData: QuarterData = data[0];
 
   console.log(latestQuarterData);
 
+  const chartData = data
+    .map((x) => {
+      return {
+        qtr: x.quarter_label,
+        score: x.score,
+      };
+    })
+    .reverse();
+  console.log(chartData);
+
   return (
-    <div className="flex flex-col w-[80%] p-8 gap-8 justify-self-center">
+    <div className="flex flex-col  p-8 gap-8 justify-self-center">
       {/* <div className="flex gap-2 ">
         <div className="w-3/4">{code}</div>
         <div>rating</div>
@@ -76,11 +86,11 @@ export default async function Page({
       <div className="flex flex-col gap-4">
         <div>
           {" "}
-          <p className="text-3xl lg:text-5xl font-extrabold !leading-tight  ">
-            Current Quarter Breakdown for {code}
+          <p className="text-xl lg:text-3xl font-bold !leading-tight  ">
+            Current Quarter Breakdown
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-4 p-4">
+        <div className="grid grod-cols-1 sm:grid-cols-2 gap-4 p-4">
           {latestQuarterData.summary.map(
             (
               s: {
@@ -90,9 +100,13 @@ export default async function Page({
               },
               i: number
             ) => (
-              <div key={i} className="bg-gray-900 p-2 rounded-2xl">
+              <div
+                key={i}
+                className="bg-gray-900 flex flex-col p-4 gap-2 rounded-2xl text-md"
+              >
                 <div className="font-bold text-xl">{s.topic}</div>
                 <div className="text-gray-300">{s.detail}</div>
+                <div className="text-gray-300">{s.text}</div>
 
                 {/* <div>section 1</div> */}
               </div>
@@ -103,12 +117,12 @@ export default async function Page({
       <div className="flex flex-col gap-4 w-full">
         <div>
           {" "}
-          <p className="text-3xl lg:text-5xl font-extrabold !leading-tight  ">
+          <p className="text-xl lg:text-3xl font-extrabold !leading-tight  ">
             Historical Trend
           </p>
         </div>
         <div className="flex justify-center">
-          <ChartLineLabel></ChartLineLabel>
+          <ChartLineLabel chartData={chartData}></ChartLineLabel>
         </div>
       </div>
     </div>
