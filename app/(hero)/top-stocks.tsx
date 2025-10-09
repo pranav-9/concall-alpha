@@ -103,7 +103,7 @@ const TopStocks = async () => {
   ];
 
   return (
-    <div className="flex flex-col w-[85%] gap-4 justify-items-center items-center pt-16">
+    <div className="flex flex-col w-[95%] gap-4 justify-items-center items-center pt-16">
       <p className="text-4xl lg:text-6xl font-extrabold !leading-tight text-center">
         Q1FY26 Concalls
       </p>
