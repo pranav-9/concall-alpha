@@ -1,13 +1,11 @@
 "use client";
 
-import { TrendingUp } from "lucide-react";
 import { CartesianGrid, LabelList, Line, LineChart, XAxis } from "recharts";
 
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -31,7 +29,12 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function ChartLineLabel(props) {
+export function ChartLineLabel(props: {
+  chartData: {
+    qtr: string;
+    score: number;
+  }[];
+}) {
   return (
     <Card className="w-[100%] sm:w-[60%]">
       <CardHeader>
