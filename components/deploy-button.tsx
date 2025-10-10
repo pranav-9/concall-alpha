@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 export function DeployButton() {
   return (
     <>
-      <Link href="/company">
+      <Link href="/company" prefetch={false}>
         <Button className="flex items-center gap-2" size="sm">
           <svg
             className="h-3 w-3"
