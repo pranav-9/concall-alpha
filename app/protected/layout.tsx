@@ -1,9 +1,7 @@
 import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
+import Navbar from "../(hero)/navbar";
 
 export default function ProtectedLayout({
   children,
@@ -21,9 +19,10 @@ export default function ProtectedLayout({
                 <DeployButton />
               </div>
             </div>
-            {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
+            {/* {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />} */}
           </div>
         </nav>
+        <Navbar></Navbar>
         <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
           {children}
         </div>

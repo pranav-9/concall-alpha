@@ -8,6 +8,9 @@ export default async function Home() {
 
   const { data, error } = await supabase.auth.getClaims();
   let isLoggedIn: boolean = false;
+
+  console.log("home page login check:");
+
   if (error || !data?.claims) {
     // redirect("/auth/login");
     console.log("not logged in");
