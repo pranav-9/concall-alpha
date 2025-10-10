@@ -116,7 +116,7 @@ const TopStocks = async () => {
             <div className="flex flex-col gap-4 pb-8 p-4">
               {list.stocks.map((s, index) => (
                 <div key={index}>
-                  <Link href={"/company/" + s.code}>
+                  <Link href={"/company/" + s.code} prefetch={false}>
                     <div className="flex gap-4 bg-gray-900 rounded-xl p-4">
                       <div className="flex w-full gap-2 ">
                         <p className="p-1">{index + 1 + "."}</p>
@@ -142,7 +142,7 @@ const TopStocks = async () => {
           </div>
         ))}
       </div>
-      <Link href={"/company"}>
+      <Link href={"/company"} prefetch={false}>
         <p className="text-2xl lg:text-4xl font-bold !leading-tight pt-8 underline">
           See full list {">>"}
         </p>
