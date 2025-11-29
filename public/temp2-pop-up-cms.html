@@ -1,0 +1,155 @@
+<script>
+  /**
+   * Gateways Popup Filler (standalone)
+   * - Attach to any page that has cards with [gateways-popup-link] and [data-gateways-json]
+   * - Renders rows into #gateways-popup after .tab-header-2
+   * - Requires jQuery (Webflow has it by default)
+   * v1.2
+   */
+  (function ($) {
+    if (!$) return;
+
+    // ---------- CONFIG (adjust selectors if needed) ----------
+    var LIST_SCOPE = "#packages-list"; // container holding cards
+    var CLICK_ATTR = "[gateways-popup-link]"; // clickable element
+    var JSON_ATTR = "[data-gateways-json]"; // raw JSON holder (text)
+    var POPUP_SEL = "#gateways-popup"; // popup container
+    var POPUP_HEADER_SEL = ".tab-header-2"; // header element inside popup
+    var ROW_MARKER_ATTR = "[gateways-popup-row]"; // marker to clear previous rows
+    var CURRENCY = "USD"; // currency code
+    var LOCALE = "en-US"; // locale for number formatting
+    var SORT_BY_PRICE_ASC = true; // set false to keep original order
+    //---------------------------------------------------------
+
+    function formatUSD(n) {
+      var num = Number(n);
+      if (!isFinite(num)) num = 0;
+      try {
+        return num.toLocaleString(LOCALE, {
+          style: "currency",
+          currency: CURRENCY,
+        });
+      } catch (_) {
+        return "$" + num;
+      }
+    }
+
+    function safeParseArrays(rawText) {
+      if (!rawText) return [];
+      // Handle concatenated arrays: ][  => ]|||[
+      var cleaned = rawText.replace(/\]\s*\[/g, "]|||[");
+      var segments = cleaned.split("|||");
+      var arrays = [];
+
+      segments.forEach(function (seg) {
+        try {
+          var parsed = JSON.parse(seg);
+          if (Array.isArray(parsed)) arrays.push(parsed);
+        } catch (e) {
+          console.warn("Skipping malformed segment in gateways JSON");
+        }
+      });
+
+      // Flatten
+      var flat = arrays.flat();
+
+      // Object-level de-dupe (prefer gatewayCode; fallback to name+price hash)
+      var seen = new Set();
+      var unique = [];
+      flat.forEach(function (gw) {
+        var code = gw && gw.gatewayCode ? String(gw.gatewayCode).trim() : "";
+        var key =
+          code ||
+          String(gw.gatewayFullName || "").trim() +
+            "|" +
+            String(gw.airFare || "");
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(gw);
+        }
+      });
+
+      // Optional sort by fare ascending
+      if (SORT_BY_PRICE_ASC) {
+        unique.sort(function (a, b) {
+          return (Number(a.airFare) || 0) - (Number(b.airFare) || 0);
+        });
+      }
+
+      return unique;
+    }
+
+    function buildRow(gw, idx) {
+      var rowClass = idx % 2 === 0 ? "row-12" : "row-11";
+      var $rowWrapper = $("<div/>", { class: rowClass }).attr(
+        "gateways-popup-row",
+        ""
+      );
+      var $row = $("<div/>", { class: "tab-header-3" });
+
+      var $col1 = $("<div/>", { class: "_1-2" }).append(
+        $("<div/>", { class: "text-47", "gateways-popup-gateway": "" }).text(
+          gw.gatewayFullName || gw.gatewayCode || ""
+        )
+      );
+
+      var $col2 = $("<div/>", { class: "date-18" }).append(
+        $("<div/>", { class: "text-47", "gateways-popup-code": "" }).text(
+          gw.gatewayCode || ""
+        )
+      );
+
+      var $col3 = $("<div/>", { class: "_2" }).append(
+        $("<div/>", { class: "text-48", "gateways-popup-price": "" }).text(
+          formatUSD(gw.airFare)
+        )
+      );
+
+      $row.append($col1, $col2, $col3);
+      $rowWrapper.append($row);
+      return $rowWrapper;
+    }
+
+    // Delegated click (works for dynamically loaded items too)
+    $(document).on("click", LIST_SCOPE + " " + CLICK_ATTR, function (e) {
+      // Prevent link navigation so the popup can fill first
+      e.preventDefault();
+
+      var $link = $(this);
+      var $card = $link.closest(".collection-item");
+      if (!$card.length) return;
+
+      var $jsonEl = $card.find(JSON_ATTR);
+      if (!$jsonEl.length) return;
+
+      var raw = $jsonEl.text().trim();
+      if (!raw) return;
+
+      var data = safeParseArrays(raw);
+
+      var $popup = $(POPUP_SEL);
+      if (!$popup.length) return;
+
+      // Clear previous rows
+      $popup.find(ROW_MARKER_ATTR).remove();
+
+      // Insert after header (keeps order and structure intact)
+      var $after = $popup.find(POPUP_HEADER_SEL).first();
+      if (!$after.length) {
+        console.warn(
+          "Gateways popup header " + POPUP_HEADER_SEL + " not found"
+        );
+        return;
+      }
+
+      data.forEach(function (gw, idx) {
+        var $row = buildRow(gw, idx);
+        $after.after($row);
+        $after = $row;
+      });
+
+      // Optional: if you’re toggling a modal, trigger open here
+      // $('.your-modal-open-button').trigger('click');
+    });
+  })(window.jQuery);
+</script>

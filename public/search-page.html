@@ -1,0 +1,909 @@
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css"
+/>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+
+<script type="text/javascript">
+  /**
+   * Main Initialization
+   */
+  initializeFilters();
+  setupMonthSelector();
+
+  setUrlParameters();
+
+  renderDepartureDates();
+  renderInclusionsJson();
+
+  initializeGatewaysPopup();
+
+  /**
+   * Departure dates renderer
+   * Author: DR
+   * Version: 1.4.0
+   */
+
+  function renderDepartureDates() {
+    (function ($) {
+      if (!$) return;
+
+      console.debug("Starting dates JSON decode -- 1.4.0");
+
+      var FILTER_CONTAINER_SEL = "#packages-list";
+      var WRAPPER_SEL = ".collection-item";
+      var SOURCE_SEL = ".departure-dates-json";
+      var FILTERING_CLASS = "is-list-filtering";
+
+      var pillCSS = {
+        background: "#e4f0f4",
+        padding: "4px 8px",
+        borderRadius: "1em",
+        textAlign: "center",
+        color: "#2856b0",
+        fontSize: "14px",
+        whiteSpace: "nowrap",
+        display: "inline-block",
+        margin: "0 4px 4px 0",
+      };
+
+      function reprocessAll() {
+        var $wrappers = $(FILTER_CONTAINER_SEL).find(WRAPPER_SEL);
+        if ($wrappers.length)
+          $wrappers.each(function (index, el) {
+            var $wrapper = $(el);
+            var $src = $wrapper.find(SOURCE_SEL);
+            render($src);
+          });
+      }
+
+      function render($data) {
+        if (!$data || !$data.length) return;
+        $.each($data, function (index, item) {
+          const $item_wrapper = $(item)
+            .parents(WRAPPER_SEL)
+            .find(".departure-dates-wrapper");
+          const raw = $(item).text().trim();
+
+          if (!raw) return;
+
+          try {
+            let dates = JSON.parse(raw);
+            if (!dates.length) {
+              $("<div/>", {
+                class: "no-dates",
+                text: "No dates available right now",
+              }).appendTo($item_wrapper);
+              return;
+            }
+            if (Array.isArray(dates)) {
+              dates.forEach((dateObj) => {
+                if (dateObj.cruiseStart) {
+                  $("<span/>", {
+                    text: formatDate(dateObj.cruiseStart),
+                    css: pillCSS,
+                  }).appendTo($item_wrapper);
+                }
+              });
+            }
+          } catch (e) {
+            console.error("Error parsing departure dates JSON:", e);
+          }
+        });
+      }
+
+      function formatDate(s) {
+        var d = new Date(s);
+        return isNaN(d)
+          ? s
+          : d.toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            });
+      }
+
+      function setupFilterObservers() {
+        var $containers = $(FILTER_CONTAINER_SEL);
+        if (!$containers.length || typeof MutationObserver === "undefined")
+          return;
+
+        $containers.each(function (_, el) {
+          var lastHadFiltering = $(el).hasClass(FILTERING_CLASS);
+
+          new MutationObserver(function () {
+            var nowHasFiltering = $(el).hasClass(FILTERING_CLASS);
+
+            // Detect transition from filtering -> not filtering (filtering complete)
+            if (lastHadFiltering && !nowHasFiltering) {
+              //console.debug('Filter complete detected, reprocessing dates...');
+              reprocessAll();
+            }
+            lastHadFiltering = nowHasFiltering;
+          }).observe(el, { attributes: true, attributeFilter: ["class"] });
+        });
+      }
+
+      // Initial run
+      reprocessAll();
+      setupFilterObservers();
+    })(window.jQuery);
+  }
+
+  /**
+   * Inclusions JSON renderer
+   * Observes changes in #packages-list
+   *  * Version: 1.0.0
+   */
+
+  function renderInclusionsJson() {
+    (function ($) {
+      if (!$) return;
+
+      console.debug("Starting inclusions JSON decode - v1.0.0");
+
+      var FILTER_CONTAINER_SEL = "#packages-list";
+      var FILTERING_CLASS = "is-list-filtering";
+      var $packagesList = $(FILTER_CONTAINER_SEL).find(
+        ".collection-list-wrapper"
+      );
+
+      function reprocessAll() {
+        $packagesList.each(function () {
+          var json_raw = $(this).find("[data-inclusions-json]").text().trim();
+          if (!json_raw) return;
+
+          try {
+            var json_data = json_raw.replace(/}][{\s\S]*$/, "}]");
+            json_data = decodeURIComponent(json_data);
+            var json_data = JSON.parse(json_data);
+
+            // Build spans for each description
+            var spans = json_data
+              .map(function (item) {
+                return item.description + " &nbsp; ";
+              })
+              .join("");
+            $(this).find("[data-inclusions-text]").html(spans).show();
+          } catch (e) {
+            console.error("Error parsing inclusions JSON:", e);
+          }
+        });
+      }
+
+      function setupFilterObservers() {
+        var $containers = $(FILTER_CONTAINER_SEL);
+        if (!$containers.length || typeof MutationObserver === "undefined")
+          return;
+
+        $containers.each(function (_, el) {
+          var lastHadFiltering = $(el).hasClass(FILTERING_CLASS);
+
+          new MutationObserver(function () {
+            var nowHasFiltering = $(el).hasClass(FILTERING_CLASS);
+
+            // Detect transition from filtering -> not filtering (filtering complete)
+            if (lastHadFiltering && !nowHasFiltering) {
+              reprocessAll();
+            }
+            lastHadFiltering = nowHasFiltering;
+          }).observe(el, { attributes: true, attributeFilter: ["class"] });
+        });
+      }
+
+      // Initial run
+      reprocessAll();
+      setupFilterObservers();
+    })(window.jQuery);
+  }
+
+  /**
+   * Filters Initialization Script
+   * Helper functions to initialize https://finsweet.com/attributes/
+   * Author: DR
+   * Version: 1.5.5
+   */
+  function initializeFilters() {
+    (function ($) {
+      if (!$) return;
+
+      console.debug("Initializing Finsweet filters -- 1.5.5");
+
+      deduplicateItems("dedup-duration");
+      deduplicateItems("dedup-cruise-line");
+      deduplicateItems("dedup-cruise-ships");
+
+      initCollapsibles("#wf-form-cruise-line");
+      initCollapsibles("#wf-form-ship");
+
+      buildDestinationAccordions("#destination-destinations-list");
+      initDestinationFastSearch(
+        "#destination-search-input",
+        "#destination-destinations-list"
+      );
+      initCheckboxIndicators("#destination-destinations-list");
+
+      //addAllOptionToType();
+      monitorPreload();
+
+      function monitorPreload() {
+        const originalFetch = window.fetch;
+
+        // Override fetch to intercept calls
+        window.fetch = function (input, init) {
+          const path = input.pathname;
+          const href = input.href;
+
+          // Only intercept requests to /search-packages
+          // Only intercept requests if NOT _page=9999
+
+          if (
+            path &&
+            path == "/search-packages" &&
+            !href.includes("page=9999")
+          ) {
+            return originalFetch
+              .call(this, input, init)
+              .then((response) => {
+                // Check if the response is HTML
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("text/html")) {
+                  // Parse the full HTML response
+                  response
+                    .clone()
+                    .text()
+                    .then((html) => {
+                      const parser = new DOMParser();
+                      const doc = parser.parseFromString(html, "text/html"); // Parse as a full document
+                      const hasPrevious =
+                        doc.querySelector(".w-pagination-previous") !== null;
+                      const hasNext =
+                        doc.querySelector(".w-pagination-next") !== null;
+
+                      // Last page: has previous button but no next button
+                      if (hasPrevious && !hasNext) {
+                        $("#loading-icon").fadeOut("slow");
+                        $("#package-list-empty-message")
+                          .show()
+                          .css({ opacity: 1 });
+                        $("#package-list-loading-message").hide();
+                      }
+                    })
+                    .catch((err) => {
+                      console.error("Error reading response text:", err);
+                    });
+                }
+
+                return response; // Return original response unchanged
+              })
+              .catch((error) => {
+                console.error(
+                  "SEARCH PACKAGES:",
+                  path,
+                  "Error:",
+                  error.message
+                );
+                throw error; // Re-throw the error unchanged
+              });
+          }
+
+          // For all other requests, just pass through to original fetch
+          return originalFetch.call(this, input, init);
+        };
+      }
+
+      /**
+       * Remove duplicate elements inside a specified root element based on custom properties.
+       * Target elements should have 'dedup-item' property and their text content should be
+       * inside an element with 'dedup-item-text' property.
+       *
+       * @param {string} rootId - The ID of the root element to search within.
+       * @param {boolean} [showCounter=false] - Whether to show count in parentheses (default: false).
+       */
+      function deduplicateItems(rootId) {
+        const $rootElement = $("#" + rootId);
+        if (!$rootElement.length) return;
+
+        // Make the root element visible
+        $rootElement.show();
+
+        // Find all elements with "dedup-item" property within the root
+        const $items = $rootElement.find("[dedup-item]");
+
+        // Get text elements
+        const textElements = $items
+          .map(function () {
+            const $item = $(this);
+            const $textEl = $item.find("[dedup-item-text]");
+            const text = $textEl.length ? $textEl.text().trim() : "";
+            return {
+              item: $item,
+              textEl: $textEl.length ? $textEl : null,
+              text: text,
+            };
+          })
+          .get();
+
+        // Deduplicate items
+        const seen = new Set();
+
+        for (const { item, text } of textElements) {
+          if (!text) continue;
+
+          if (seen.has(text)) {
+            item.remove();
+          } else {
+            seen.add(text);
+          }
+        }
+      }
+
+      /**
+       * Initialize collapsible sections within a specified container.
+       *
+       * @param {string} containerSelector - The selector for the container element.
+       */
+
+      function initCollapsibles(containerSelector) {
+        const $container = $(containerSelector);
+        if (!$container.length) return;
+
+        // Process each form to create accordion structure
+        $container.each(function () {
+          const $form = $(this);
+          const $header = $form.find("> label").first();
+          const $content = $form.find('[role="list"]').first();
+
+          if (!$header.length || !$content.length) return;
+
+          $header.addClass("accordion-header");
+          $content.addClass("accordion-content");
+
+          const chevron = `<svg class="ss-arrow" viewBox="0 0 100 100"><path d="M10,30 L50,70 L90,30"></path></svg>`;
+          $header.append(chevron);
+
+          const contentHeight = $content.height();
+
+          // Initially collapse the content
+          $content.addClass("collapsed");
+          $header.on("click", function (e) {
+            e.preventDefault();
+            const isActive = $header.hasClass("active");
+            $header.toggleClass("active");
+
+            if (isActive) {
+              $content.addClass("collapsed");
+            } else {
+              $content.css("height", contentHeight).removeClass("collapsed");
+            }
+          });
+        });
+      }
+
+      /**
+       * Build destination accordions within a specified root element.
+       */
+      function buildDestinationAccordions(rootSelector) {
+        const $root = $(rootSelector);
+        if (!$root.length) return;
+
+        const $ul = $root.find("[role=list]").first();
+        if (!$ul.length) return;
+
+        const $items = $ul.children("[role=listitem]");
+        if (!$items.length) return;
+
+        // Aggregate all items by region (non-sequential grouping)
+        const regionMap = new Map();
+
+        $items.each(function () {
+          const $li = $(this);
+          const region = ($li.data("region") || "").toString();
+          const regionSlug =
+            $li.data("regionSlug") || $li.data("region-slug") || null;
+          const regionName =
+            $li.data("regionName") || $li.data("region-name") || null;
+
+          if (!regionMap.has(region)) {
+            regionMap.set(region, {
+              region,
+              regionId: regionSlug,
+              regionName,
+              items: [],
+            });
+          }
+
+          regionMap.get(region).items.push($li);
+        });
+
+        // Convert map to sorted array of groups
+        const groups = Array.from(regionMap.values()).sort((a, b) => {
+          return (a.region || "Other").localeCompare(b.region || "Other");
+        });
+
+        const chevron =
+          '<svg class="ss-arrow" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path d="M10,30 L50,70 L90,30"></path></svg>';
+        const $wrapper = $(
+          '<div class="destination-accordions" role="list"></div>'
+        );
+
+        groups.forEach((group, idx) => {
+          const regionLabel = group.regionName || group.region || "Other";
+          const count =
+            '<div fs-list-element="facet-count" class="text-block-19">' +
+            group.items.length +
+            "</div>";
+          const displayLabel = `${regionLabel} ${count}`;
+          const accId = `dest-acc-${group.regionId || idx}-${Date.now()}`;
+          const contentId = `${accId}-panel`;
+
+          const $acc = $('<div class="accordion" role="listitem"></div>');
+          const $header = $(
+            `<button type="button" class="accordion-header" id="${accId}" aria-expanded="false" aria-controls="${contentId}"><span class="accordion-header-indicator">⬤</span><span class="accordion-title"></span>${chevron}</button>`
+          );
+          $header.find(".accordion-title").html(displayLabel);
+
+          const $content = $(
+            `<div class="accordion-content collapsed" id="${contentId}" role="region" aria-labelledby="${accId}" aria-hidden="true"></div>`
+          );
+          const $list = $('<ul class="destination-list"></ul>');
+
+          // Sort items within each region alphabetically by destination name
+          group.items.sort((a, b) => {
+            const textA = a.find(".w-form-label").text().trim();
+            const textB = b.find(".w-form-label").text().trim();
+            return textA.localeCompare(textB);
+          });
+
+          group.items.forEach(($li) => {
+            $list.append($li); // move node as-is to preserve checkbox/events
+          });
+
+          $content.append($list);
+          $acc.append($header, $content);
+          $wrapper.append($acc);
+        });
+
+        $ul.replaceWith($wrapper);
+
+        $wrapper.on("click", ".accordion-header", function () {
+          const $btn = $(this);
+          const panelId = $btn.attr("aria-controls");
+          const $panel = $("#" + panelId);
+          if (!$panel.length) return;
+
+          const isExpanded = $btn.attr("aria-expanded") === "true";
+          const nextExpanded = !isExpanded;
+
+          $btn.attr("aria-expanded", String(nextExpanded));
+          $btn.toggleClass("active", nextExpanded);
+
+          // Use same approach as initCollapsibles - calculate height once
+          const contentHeight = $panel[0].scrollHeight;
+
+          if (nextExpanded) {
+            $panel.css("height", contentHeight).removeClass("collapsed");
+          } else {
+            $panel.addClass("collapsed");
+            $panel.css("height", "");
+          }
+          $panel.attr("aria-hidden", String(!nextExpanded));
+        });
+      }
+
+      /**
+       * Initialize fast search for destinations.
+       */
+      function initDestinationFastSearch(inputSelector, listSelector) {
+        const $input = $(inputSelector);
+        const $list = $(listSelector);
+        if (!$input.length || !$list.length) return;
+
+        $input.on("input", function () {
+          const query = $(this).val().trim().toLowerCase();
+          if (query) {
+            // Open all accordions and hide headers
+            $list.find(".accordion-content").each(function () {
+              const $panel = $(this);
+              $panel.removeClass("collapsed");
+              const contentHeight = $panel[0].scrollHeight;
+              $panel.css("height", "auto");
+              $panel.attr("aria-hidden", "false");
+            });
+            $list.find(".accordion-header").each(function () {
+              const $btn = $(this);
+              $btn.attr("aria-expanded", "true");
+              $btn.addClass("active");
+            });
+            $list.find(".accordion-header").hide();
+
+            // Filter destination items
+            $list.find(".destination-list > [role=listitem]").each(function () {
+              const $li = $(this);
+              const text = $li.text().toLowerCase();
+              const checked = $li.find(".w--redirected-checked").length;
+              if (text.includes(query) || checked) {
+                $li.show();
+              } else {
+                $li.hide();
+              }
+            });
+          } else {
+            // Close all accordions and show headers
+            $list.find(".accordion-content").each(function () {
+              const $panel = $(this);
+              $panel.addClass("collapsed");
+              $panel.attr("aria-hidden", "true");
+            });
+            $list.find(".accordion-header").each(function () {
+              const $btn = $(this);
+              $btn.attr("aria-expanded", "false");
+              $btn.removeClass("active");
+            });
+            $list.find(".accordion-header").show();
+
+            // Show all destination items
+            $list.find(".destination-list > [role=listitem]").show();
+          }
+        });
+      }
+
+      /**
+       * Init the indicators for checked checkboxes inside a group
+       * */
+      function initCheckboxIndicators(rootSelector) {
+        const $root = $(rootSelector);
+        if (!$root.length) return;
+
+        const $checkboxes = $root.find("label.w-checkbox");
+
+        $checkboxes.on("change", function () {
+          const $checkbox = $(this);
+          const $groupitems = $checkbox.parents(".accordion");
+          if (!$groupitems.length) return;
+
+          setTimeout(() => {
+            // Find all checkboxes in the same listitem group
+            const $selectedCheckboxes = $groupitems.find(
+              ".w--redirected-checked"
+            );
+
+            // Find the accordion header indicator
+            const $indicator = $groupitems.find(".accordion-header-indicator");
+
+            $indicator.css(
+              "opacity",
+              $selectedCheckboxes.length > 0 ? "1" : "0"
+            );
+          }, 100);
+        });
+      }
+
+      /**
+       * Add an "All" option to the type filter.
+       */
+      function addAllOptionToType() {
+        var $selector = $("#select-type-selector [role=list]");
+        $selector.prepend(
+          `<div role="listitem" class="w-dyn-item"><label id="cruise-only" class="w-radio"><input fs-list-value="" class="w-form-formradioinput w-radio-input" fs-list-field="package-type" name="Type" data-name="Type" type="radio" id="radio" value=""><span class="w-form-label" for="radio">All</span></label></div>`
+        );
+      }
+    })(jQuery);
+  }
+
+  /**
+   * Implements a month selector using Flatpickr with monthSelectPlugin.
+   * Author: DR
+   * Version: 1.0.0
+   */
+  function setupMonthSelector() {
+    (function ($) {
+      if (!$) return;
+
+      console.debug("Starting Flatpickr month selector -- 1.0.0");
+
+      flatpickr("#Departure-month", {
+        noCalendar: false,
+        enableTime: false,
+        dateFormat: "F",
+        // altInput: true,
+        // altFormat: "F",
+        plugins: [
+          new monthSelectPlugin({
+            shorthand: true,
+            dateFormat: "F",
+            // altFormat: "F"
+          }),
+        ],
+      });
+    })(window.jQuery);
+  }
+
+  /**
+   * URL-based filter auto-selection for Search.html
+   * Parses URL params and auto-selects filters inside nav.filter
+   * Author: DR
+   * Version: 1.0.0
+   */
+  function setUrlParameters() {
+    (function ($) {
+      if (!$) return;
+
+      console.debug("Checking URL for parameters - 1.0.0");
+      // Example URL /search-packages?celebrity-cruises&destinations=alaska-ns-bound&startdate=February%2026%2C%202026
+
+      // Parse URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const cruiselineSlug = urlParams.get("cruiseline");
+      const destinationSlug = urlParams.get("destinations");
+      const startdateParam = urlParams.get("startdate");
+
+      // Small delay to ensure elements are loaded
+      setTimeout(function () {
+        // Auto-select cruiseline (radio/checkbox in nav.filter)
+        if (cruiselineSlug) {
+          $('nav.filter input[fs-list-value="' + cruiselineSlug + '"]')
+            .prop("checked", true)
+            .trigger("change");
+        }
+
+        // Auto-select destination (if applicable, radio/checkbox in nav.filter)
+        if (destinationSlug) {
+          $('nav.filter input[fs-list-value="' + destinationSlug + '"]')
+            .prop("checked", true)
+            .trigger("change");
+        }
+
+        // Auto-select startdate (set value on #Departure-month input)
+        if (startdateParam) {
+          const date = new Date(decodeURIComponent(startdateParam));
+          const formattedDate = date.toLocaleString("en-US", {
+            month: "long",
+            year: "numeric",
+          });
+          $("#Departure-month").val(formattedDate).trigger("change");
+        }
+      }, 100);
+    })(jQuery);
+  }
+
+  /**
+   * Gateways Popup Initialization
+   * Author: DR
+   * Version: 1.0.0
+   */
+  function initializeGatewaysPopup() {
+    (function ($) {
+      if (!$) return;
+
+      console.debug("Starting Gateways Popup - v1.0.0");
+
+      // Listen for clicks on cruise links
+      $(document).on(
+        "click",
+        "#packages-list [gateways-popup-link]",
+        function (e) {
+          var $link = $(this);
+          var $collectionList = $link.parents(".collection-item");
+
+          if (!$collectionList.length) {
+            return;
+          }
+
+          var $gatewaysElement = $collectionList.find("[data-gateways-json]");
+
+          if (!$gatewaysElement.length) {
+            return;
+          }
+
+          var gatewaysText = $gatewaysElement.text().trim();
+
+          if (!gatewaysText) {
+            console.warn("Empty gateways data");
+            return;
+          }
+
+          try {
+            // Fix for concatenated JSON arrays - split and deduplicate
+            var cleanedText = gatewaysText.replace(/\]\s*\[/g, "]|||[");
+            var allArrays = cleanedText.split("|||");
+
+            // Parse all arrays and deduplicate by content
+            var seen = new Set();
+            var uniqueArrays = [];
+
+            allArrays.forEach(function (arrayText) {
+              try {
+                var parsed = JSON.parse(arrayText);
+                var key = JSON.stringify(parsed);
+
+                if (!seen.has(key)) {
+                  seen.add(key);
+                  uniqueArrays.push(parsed);
+                }
+              } catch (e) {
+                console.warn("Failed to parse gateway array segment");
+              }
+            });
+
+            // Flatten all unique arrays into a single array
+            var gatewaysData = uniqueArrays.flat();
+
+            // Populate gateways popup table (scoped to $popup only)
+            var $popup = $("#gateways-popup");
+
+            if (!$popup.length) return;
+
+            $popup.find("[gateways-popup-row]").remove();
+
+            var formatUSD = function (n) {
+              var num = Number(n) || 0;
+              try {
+                return num.toLocaleString("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                });
+              } catch (_) {
+                return "$" + num;
+              }
+            };
+
+            // Find header to insert rows after
+            var $header = $popup.find(".tab-header-2").first();
+            if (!$header.length) {
+              console.warn("Gateways popup header (.tab-header-2) not found");
+            } else {
+              var $insertAfter = $header;
+
+              gatewaysData.forEach(function (gw, idx) {
+                var rowClass = idx % 2 === 0 ? "row-12" : "row-11";
+                var $rowWrapper = $("<div/>", { class: rowClass }).attr(
+                  "gateways-popup-row",
+                  ""
+                );
+                var $row = $("<div/>", { class: "tab-header-3" });
+
+                var $col1 = $("<div/>", { class: "_1-2" }).append(
+                  $("<div/>", { class: "text-47" })
+                    .attr("gateways-popup-gateway", "")
+                    .text(gw.gatewayFullName || gw.gatewayCode || "")
+                );
+                var $col2 = $("<div/>", { class: "date-18" }).append(
+                  $("<div/>", { class: "text-47" })
+                    .attr("gateways-popup-code", "")
+                    .text(gw.gatewayCode || "")
+                );
+                var $col3 = $("<div/>", { class: "_2" }).append(
+                  $("<div/>", { class: "text-48" })
+                    .attr("gateways-popup-price", "")
+                    .text(formatUSD(gw.airFare))
+                );
+
+                $row.append($col1, $col2, $col3);
+                $rowWrapper.append($row);
+
+                $insertAfter.after($rowWrapper);
+                $insertAfter = $rowWrapper;
+              });
+            }
+          } catch (e) {
+            console.error("Error parsing gateways JSON:", e);
+            console.log("Raw text:", gatewaysText);
+          }
+        }
+      );
+    })(window.jQuery);
+  }
+</script>
+
+<style>
+  /* Filters init */
+  .w-checkbox {
+    margin-left: 2px;
+  }
+
+  .ss-arrow {
+    width: 12px;
+    height: 12px;
+    margin-left: 8px;
+    transition: transform 0.3s ease;
+  }
+
+  .ss-arrow path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 15;
+    stroke-linecap: round;
+  }
+
+  .accordion {
+    position: relative;
+  }
+
+  .accordion-header {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    background: transparent;
+    text-wrap-style: balance;
+    text-align: left;
+  }
+
+  .accordion-header-indicator {
+    position: absolute;
+    opacity: 0;
+    left: -13px;
+    top: 14px;
+    font-size: 8px;
+    color: #2856b0;
+    transition: opacity 0.1s linear;
+  }
+
+  #destination-destinations-list .accordion-header {
+    padding: 8px 0;
+  }
+
+  .accordion-header.active .ss-arrow {
+    transform: rotateX(-180deg);
+  }
+
+  .accordion-content {
+    overflow: hidden;
+    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: top;
+    will-change: height;
+  }
+
+  .accordion-content.collapsed {
+    height: 0 !important;
+  }
+
+  /* Loading indicator */
+  #wf-form-filter-departure-month .is-list-active {
+    background: #2856b0;
+    color: #fff;
+  }
+
+  .is-list-filtering .collection-item {
+    opacity: 0.3;
+    transition: opacity 0.1s linear;
+  }
+
+  /* Add this to your stylesheet */
+  @keyframes loading-spin {
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  #loading-icon {
+    animation: loading-spin 1s linear infinite;
+  }
+
+  /* Collapsible destinations */
+  #destination-destinations-list {
+    width: 100%;
+  }
+
+  .destination-accordions {
+    display: block;
+  }
+
+  .destination-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .destination-list > li {
+    padding: 6px 0;
+  }
+</style>

@@ -1,0 +1,817 @@
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+  (function () {
+    const swiper = new Swiper(".swiper-mpd", {
+      loop: false,
+
+      // Mobile-first
+      slidesPerView: 1.2,
+      spaceBetween: 16,
+      allowTouchMove: true,
+      grabCursor: true,
+
+      // 👇👇 EVITA QUE SWIPER “ROBE” EL CLICK
+      preventClicks: false,
+      preventClicksPropagation: false,
+      slideToClickedSlide: false,
+      touchStartPreventDefault: false, // importante en algunos navegadores
+      noSwipingSelector: "a, button, [data-no-swipe]", // <- lo usamos en el paso 2
+
+      navigation: {
+        prevEl: ".js-mpd-prev",
+        nextEl: ".js-mpd-next",
+      },
+
+      keyboard: { enabled: true, onlyInViewport: true },
+
+      breakpoints: {
+        640: {
+          slidesPerView: 2,
+          spaceBetween: 20,
+          allowTouchMove: true,
+          grabCursor: true,
+        },
+        768: {
+          slidesPerView: 3,
+          spaceBetween: 20,
+          allowTouchMove: true,
+          grabCursor: true,
+        },
+        992: {
+          slidesPerView: 4,
+          spaceBetween: 24,
+          allowTouchMove: false,
+          grabCursor: false,
+        },
+        1280: {
+          slidesPerView: 4,
+          spaceBetween: 24,
+          allowTouchMove: false,
+          grabCursor: false,
+        },
+      },
+    });
+  })();
+</script>
+
+<script>
+  // Ejecutar cuando Webflow terminó de inicializar (para que los Componentes ya estén montados)
+  (window.Webflow ||= []).push(() => {
+    // Un pequeño delay por si el DOM de los componentes tarda un frame en aparecer
+    requestAnimationFrame(() => {
+      // Baraja todos los contenedores marcados con data-shuffle
+      document.querySelectorAll("[data-shuffle]").forEach((container) => {
+        // Tomamos SOLO hijos que sean elementos (ignora textos/comentarios)
+        const items = Array.from(container.children).filter(
+          (el) => el.nodeType === 1
+        );
+        if (items.length < 2) return; // si hay menos de 2, no hace nada
+
+        // Fisher–Yates shuffle estable en DOM
+        for (let i = items.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          container.insertBefore(items[j], items[i]);
+          [items[i], items[j]] = [items[j], items[i]];
+        }
+      });
+    });
+  });
+</script>
+<script src="https://unpkg.com/slim-select@3.0.3/dist/slimselect.js"></script>
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/slim-select@3.0.3/dist/slimselect.css"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+/>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  /**
+   * Selectors, based on SlimSelect and Flatpickr
+   * Version: 1.4.0
+   * Author: DR
+   */
+  (function () {
+    console.debug("Staring Selectors - v1.4.0");
+
+    startCruisesTab_custom();
+    startPackagesTab();
+    startHotelTab();
+
+    function startCruisesTab_custom() {
+      let uniquetid = generateUniqueTid();
+      // Store SlimSelect instances and data
+      window.cruiseSelects = [];
+      $.ajax({
+        //url: "https://nitroapi.odysol.com/nitroapi/v2/cruise/facets?includeFacets=destinationId,cruiselineId,departureportId",
+        url: "https://nitroapi.odysol.com/nitroapi/v2/master/allswift?requestSource=2",
+        method: "GET",
+        headers: {
+          accept: "application/json, text/plain, */*",
+          "content-type": "application/json",
+          languageid: "1",
+          siteitemid: "222056",
+          uniquetid: uniquetid,
+        },
+        success: function (response) {
+          initLists(
+            "#search-cruises-destination",
+            oddyToList(response, "destination")
+          );
+          initLists(
+            "#search-cruises-cruiseline",
+            oddyToList(response, "cruiseline")
+          );
+          initDateList();
+        },
+        error: function (error) {
+          console.error("Error:", error);
+        },
+      });
+
+      // Add click event to the submit button
+      const button = $("#search-cruises-submit a");
+      button.on("click", function (e) {
+        e.preventDefault();
+
+        function formatDate(date) {
+          const month = (date.getMonth() + 1).toString().padStart(2, "0");
+          const year = date.getFullYear();
+          return `01-${month}-${year}`;
+        }
+
+        const selectedDestinations = $("#search-cruises-destination select")
+          .val()
+          .join(",");
+        const selectedCruiselines = $("#search-cruises-cruiseline select")
+          .val()
+          .join(",");
+        const selectedDateTexts = $("#search-cruises-departuredate .ss-value")
+          .map(function () {
+            return $(this).find(".ss-value-text").text();
+          })
+          .get();
+
+        let dates = selectedDateTexts.map((text) => new Date(text));
+        dates.sort((a, b) => a - b);
+
+        let startdate = "";
+        let enddate = "";
+        if (dates.length === 1) {
+          startdate = formatDate(dates[0]);
+        } else if (dates.length > 1) {
+          startdate = formatDate(dates[0]);
+          enddate = formatDate(dates[dates.length - 1]);
+        }
+
+        // Everything is optional
+        // if (!selectedDestinations || !selectedCruiselines || dates.length === 0) {
+        //     $("#search-cruises-error").css("opacity", 1);
+        //     return;
+        // }
+
+        $("#search-cruises-error").css("opacity", 0);
+
+        const url = `https://res.onlinevacationcenter.com/swift/cruise?sidd=222056&searchcruise=1&lang=1&destinationtype=All&cruiseline=${selectedCruiselines}&destinations=${selectedDestinations}&startdate=${encodeURIComponent(
+          startdate
+        )}&enddate=${encodeURIComponent(enddate)}`;
+        window.open(url, "_blank");
+      });
+
+      function initLists(item, list) {
+        const input = $(item).find("select");
+        const json = list;
+
+        const select = new SlimSelect({
+          select: input[0],
+          data: json,
+          settings: {
+            contentPosition: "absolute",
+            openPosition: "down",
+            placeholderText: "Type here",
+            allowDeselect: true,
+            maxSelected: 3,
+            showSearch: true,
+            closeOnSelect: false,
+            hideSelected: true,
+            timeoutDelay: 600,
+          },
+          events: {
+            afterChange: (info) => {
+              if (select.settings.disabled) return;
+              filterOptions(info, item);
+            },
+          },
+        });
+
+        // Store instance and data for filtering (skip departure dates)
+        if (item !== "#search-cruises-departuredate") {
+          window.cruiseSelects.push({ select, data: json });
+        }
+      }
+
+      // Select configuration
+      const selectConfig = {
+        "#search-cruises-destination": {
+          index: 0,
+          filterKey: "destinationId",
+        },
+        "#search-cruises-cruiseline": {
+          index: 1,
+          filterKey: "cruiselineId",
+        },
+      };
+
+      function filterOptions(info, item) {
+        const config = selectConfig[item];
+        if (!config) return;
+
+        const currentSelect = window.cruiseSelects[config.index].select;
+        currentSelect.disable();
+
+        const values = info.map((item) => item.value);
+
+        for (const [key, cfg] of Object.entries(selectConfig)) {
+          if (key === item) continue; // skip self
+
+          const targetIndex = cfg.index;
+          const targetSelect = window.cruiseSelects[targetIndex].select;
+          const targetData = window.cruiseSelects[targetIndex].data;
+
+          targetSelect.disable();
+
+          if (values.length === 0) {
+            // Revert to full data
+            targetSelect.setData(targetData);
+            targetSelect.enable();
+            currentSelect.enable();
+            return;
+          }
+
+          // Date filters: {"filters": [{"ranges": [{"from": "12/01/2025","to": "12/31/2025"}],"key": "departureDateTime"}]}
+          const json = { filters: [{ values: values, key: config.filterKey }] };
+
+          getFacets(json, cfg.filterKey, (ids) => {
+            const filtered = targetData.filter((item) =>
+              ids.includes(item.value)
+            );
+            const currentSelection = targetSelect.getSelected();
+            targetSelect.setData(filtered);
+            targetSelect.setSelected(currentSelection);
+            targetSelect.enable();
+            currentSelect.enable();
+          });
+        }
+      }
+
+      function oddyToList(data, key) {
+        if (!data || !data.data || !Array.isArray(data.data[key])) return [];
+
+        return data.data[key]
+          .filter(
+            (item) => item && item.name !== undefined && item.id !== undefined
+          )
+          .map((item) => ({
+            text: item.name,
+            value: item.id,
+          }));
+      }
+
+      function initDateList() {
+        $.ajax({
+          url: "https://nitroapi.odysol.com/nitroapi/v2/cruise/facets",
+          method: "POST",
+          headers: {
+            accept: "application/json, text/plain, */*",
+            "content-type": "application/json",
+            languageid: "1",
+            siteitemid: "222056",
+            uniquetid: uniquetid,
+          },
+          success: function (response) {
+            const facet = response.data.facets.find(
+              (f) => f.key === "departureDate"
+            );
+            if (!facet || !Array.isArray(facet.values)) return;
+            const list = facet.values.map((item) => {
+              const date = new Date(item.from);
+              const formattedDate = date.toLocaleString("en-US", {
+                month: "long",
+                year: "numeric",
+              });
+              return {
+                text: formattedDate,
+                value: item.count,
+              };
+            });
+            initLists("#search-cruises-departuredate", list);
+            removePreload();
+          },
+          error: function (error) {
+            console.error("Error:", error);
+          },
+        });
+
+        function removePreload() {
+          setTimeout(() => {
+            $(".tabs").removeClass("loading");
+          }, 1000);
+        }
+      }
+
+      function getFacets(json, targetKey, callback) {
+        $.ajax({
+          url: "https://nitroapi.odysol.com/nitroapi/v2/cruise/facets?&includeFacets=hasHqGroupRate,hasAgGroupRate,uniqueItineraryId&requestSource=2",
+          method: "POST",
+          headers: {
+            accept: "application/json, text/plain, */*",
+            "content-type": "application/json",
+            languageid: "1",
+            siteitemid: "222056",
+            uniquetid: uniquetid,
+          },
+          data: JSON.stringify(json),
+          success: function (response) {
+            if (response && response.data && response.data.facets) {
+              const facet = response.data.facets.find(
+                (f) => f.key === targetKey
+              );
+              if (facet && facet.values) {
+                const ids = facet.values.map((v) => parseInt(v.value));
+                if (callback) callback(ids);
+              }
+            }
+          },
+          error: function (error) {
+            console.error("Error in getFacets:", error);
+          },
+        });
+      }
+    }
+
+    // -- -- 8< -- --
+
+    function startPackagesTab() {
+      const packagesTab_elements = $("#search-packages-tab").find(
+        ".search_widget_filter"
+      );
+
+      // Store SlimSelect instances
+      window.packageSelects = [];
+
+      packagesTab_elements.each(function () {
+        initLists($(this));
+      });
+
+      // Add click event to the submit button
+      const button = $("#search-packages-submit a");
+      button.on("click", function (e) {
+        e.preventDefault();
+
+        const selectedDestination = window.packageSelects[0]
+          ? window.packageSelects[0].getSelected()[0]
+          : "";
+        const selectedCruiseline = window.packageSelects[1]
+          ? window.packageSelects[1].getSelected()[0]
+          : "";
+        const startdate = window.packageSelects[2]
+          ? window.packageSelects[2].getSelected()[0]
+          : "";
+
+        if (!selectedDestination || !selectedCruiseline || !startdate) {
+          $("#search-packages-error").css("opacity", 1);
+          return;
+        }
+        $("#search-packages-error").css("opacity", 0);
+
+        const url = `/search-packages?cruiseline=${selectedCruiseline}&destinations=${selectedDestination}&startdate=${encodeURIComponent(
+          startdate
+        )}`;
+        window.open(url, "_blank");
+      });
+
+      function initLists(item) {
+        const input = $(item).find("select");
+        const list = $(item).find('[role="list"]');
+        var json;
+
+        // If we are working with dates, let's sanitize them
+        if ($(item)[0].id == "search-cruises-departuredate") {
+          json = listToJson(list, true);
+        } else {
+          json = listToJson(list);
+        }
+
+        const select = new SlimSelect({
+          select: input[0],
+          data: json,
+          settings: {
+            contentPosition: "absolute",
+            openPosition: "down",
+            placeholderText: "Type here",
+            allowDeselect: true,
+            maxSelected: 1,
+            showSearch: true,
+            closeOnSelect: true,
+            hideSelected: true,
+          },
+          events: {
+            afterChange: (info) => {
+              const values = getValuesFromSelection(info);
+            },
+          },
+        });
+
+        // Clear any default selection
+        select.setSelected([]);
+
+        // Store the instance
+        window.packageSelects.push(select);
+      }
+
+      function listToJson(id, sanitizeDates = false) {
+        var list = $(id);
+        var json = [];
+
+        list.find("[data-od-item]").each(function () {
+          var item = {};
+          item["value"] = $(this).data("od-id");
+          item["text"] = $(this).data("od-name");
+
+          if (sanitizeDates) {
+            const date = new Date(item["text"]);
+            if (!isNaN(date.getTime())) {
+              item["text"] = date.toLocaleString("en-US", {
+                month: "long",
+                year: "numeric",
+              });
+            }
+          }
+
+          // Check if value already exists in json
+          if (!json.some((existing) => existing.value === item.value)) {
+            json.push(item);
+          }
+        });
+        return json;
+      }
+
+      function getValuesFromSelection(info) {
+        return info.map((item) => item.value);
+      }
+
+      function hideUnrelatedItems(elements, item, values) {
+        const input = $(this).find("select");
+        const selectedItems = $(this).find(".ss-values .ss-value");
+        const list = $(this).find('[role="list"]');
+
+        list.find("[data-od-item]").each(function () {
+          const id = $(this).data("od-id");
+          if (values.length === 0 || values.includes(id)) {
+            $(this).show();
+            input.find('option[value="' + id + '"]').prop("disabled", false);
+          } else {
+            $(this).hide();
+            input.find('option[value="' + id + '"]').prop("disabled", true);
+          }
+        });
+      }
+    }
+
+    // -- -- 8< -- --
+
+    function startHotelTab() {
+      const $wrapper = $("#hotels-tab");
+      if (!$wrapper.length) return;
+
+      // Destinations
+      const $destinationInput = $('input[name="hotel-destination-input"]');
+      $destinationInput.addClass("ss-main");
+
+      // Guest selector
+      const $guestsInput = $("#hotel-guests-select");
+      if ($guestsInput.length && typeof SlimSelect !== "undefined") {
+        const guestsSelect = new SlimSelect({
+          select: $guestsInput[0],
+          settings: {
+            contentPosition: "absolute",
+            openPosition: "down",
+            placeholderText: "Type here",
+            allowDeselect: true,
+            maxSelected: 1,
+            showSearch: false,
+            closeOnSelect: true,
+            hideSelected: true,
+          },
+        });
+
+        // Clear any default selection to show placeholder (matches other tabs)
+        guestsSelect.setSelected([]);
+
+        // Range selector for dates: name=hotel-dates-select
+        const $dateInput = $('input[name="hotel-dates-select"]');
+        $dateInput.addClass("ss-main");
+
+        if (typeof window.flatpickr !== "undefined") {
+          const fp = flatpickr($dateInput[0], {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "M j, Y",
+            minDate: "today",
+            disableMobile: true,
+            allowInput: false,
+          });
+
+          $(".home_search_input.form-control").addClass("ss-main");
+        }
+      }
+
+      // Submit button handler
+      const $submitButton = $("#search-hotel-submit > a");
+      $submitButton.on("click", function (e) {
+        e.preventDefault();
+
+        const destination = $destinationInput.val()?.trim();
+        const guestsValue = $("#hotel-guests-select").val();
+        const guests = guestsValue;
+
+        // Read selected date range from Flatpickr (optional)
+        const dateValue = $('input[name="hotel-dates-select"]').val();
+        const parts = dateValue ? dateValue.split(" to ") : [];
+        const selectedDates = parts
+          .map((p) => (p ? new Date(p.trim()) : null))
+          .filter((d) => d instanceof Date && !isNaN(d));
+        const fmt = (d) => {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          return `${y}-${m}-${day}`;
+        };
+        const dtin = selectedDates[0] ? fmt(selectedDates[0]) : "";
+        const dtout = selectedDates[1] ? fmt(selectedDates[1]) : "";
+
+        if (!destination) {
+          $("#hotels-error").css("opacity", 1);
+          return;
+        }
+
+        // Build URL with optional dates
+        const params = new URLSearchParams();
+        if (dtin) params.set("dtin", dtin);
+        if (dtout) params.set("dtout", dtout);
+        params.set("guests", guests);
+        params.set("rooms", "1");
+        params.set("room_1_adults", guests);
+        params.set("room_1_children", "0");
+
+        // Example final form:
+        // https://hotels.onlinevacationcenter.com/5star/hotel-deals/bahamas?dtin=2025-10-24&dtout=2025-11-19&guests=2&rooms=1&room_1_adults=2&room_1_children=0
+        const url = `https://hotels.onlinevacationcenter.com/5star/hotel-deals/${encodeURIComponent(
+          destination
+        )}?${params.toString()}`;
+
+        window.open(url, "_blank");
+      });
+    }
+
+    // Helper functions for generating uniquetid
+    function generateUniqueTid() {
+      let n = 0; // hardcoded timeDiff
+      let ts = getUTCTimeStamp(n);
+      let rand = generateRandomString(5);
+      let processed = setTextContentData(ts);
+      return (
+        rand +
+        processed.charAt(1) +
+        processed +
+        rand.charAt(2) +
+        processed.charAt(4)
+      );
+
+      function getUTCTimeStamp(n) {
+        let offset = 0;
+        if (n) offset = n;
+        let d = new Date();
+        let utc = new Date(
+          Date.UTC(
+            d.getUTCFullYear(),
+            d.getUTCMonth(),
+            d.getUTCDate(),
+            d.getUTCHours(),
+            d.getUTCMinutes(),
+            d.getUTCHours()
+          )
+        );
+        return utc.getTime() + offset * 60000;
+      }
+
+      function generateRandomString(n) {
+        let chars =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        let result = "";
+        for (let i = 0; i < n; i++) {
+          result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+      }
+
+      function setTextContentData(n) {
+        let str = n.toString();
+        let result = "";
+        for (let i = 0; i < str.length; i++) {
+          let digit = parseInt(str[i]);
+          let code;
+          if (i % 2 === 0) {
+            code = digit + 66;
+          } else {
+            code = digit + 67;
+          }
+          result += String.fromCharCode(code);
+        }
+        return result;
+      }
+    }
+  })();
+</script>
+<style>
+  :root {
+    --ss-primary-color: #2962d1;
+    --ss-bg-color: #ffffff;
+    --ss-font-color: #4d4d4d;
+    --ss-font-placeholder-color: #8d8d8d;
+    --ss-disabled-color: #dcdee2;
+    --ss-border-color: #dcdee2;
+    --ss-highlight-color: #fffb8c;
+    --ss-success-color: #00b755;
+    --ss-error-color: #dc3545;
+    --ss-focus-color: #2962d1;
+    --ss-main-height: 30px;
+    --ss-content-height: 300px;
+    --ss-spacing-l: 7px;
+    --ss-spacing-m: 5px;
+    --ss-spacing-s: 3px;
+    --ss-animation-timing: 0.2s;
+    --ss-border-radius: 4px;
+  }
+
+  @keyframes ss-valueIn {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes ss-valueOut {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    100% {
+      transform: scale(0);
+      opacity: 0;
+    }
+  }
+
+  @keyframes waveShimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  /* SlimSelect styles */
+  .ss-hide {
+    display: none !important;
+  }
+  .ss-main {
+    display: flex;
+    flex-direction: row;
+    position: relative;
+    user-select: none;
+    color: var(--ss-font-color);
+    min-height: var(--ss-main-height);
+    padding: var(--ss-spacing-l);
+    border: 1px solid var(--netural--300);
+    border-radius: var(--border-radius--5);
+    cursor: pointer;
+    background-color: var(--ss-bg-color);
+    outline: 0;
+    box-sizing: border-box;
+    transition: background-color var(--ss-animation-timing);
+    overflow: hidden;
+    height: auto;
+    line-height: inherit;
+  }
+  .ss-main:focus {
+    border-color: #000;
+    box-shadow: none;
+    outline: 0;
+  }
+  .ss-content .ss-search {
+    flex: 0 1 auto;
+    display: flex;
+    flex-direction: row;
+    padding: 0;
+    font-size: var(--text-sizes--small-x-14px);
+  }
+
+  .ss-content .ss-search input {
+    display: inline-flex;
+    font-size: 14px;
+    line-height: inherit;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0px;
+    padding: var(--ss-spacing-m) calc(var(--ss-spacing-l) + 1rem);
+    margin-top: -1rem;
+    margin-left: -1rem;
+    margin-right: -1rem;
+    margin-bottom: 0.4rem;
+    border: 0;
+    border-bottom: 1px solid var(--ss-border-color);
+    border-radius: 0;
+    background-color: var(--ss-bg-color);
+    outline: 0;
+    text-align: left;
+    box-sizing: border-box;
+  }
+  .ss-content .ss-search input:focus {
+    box-shadow: none;
+  }
+  .ss-content {
+    position: absolute;
+    display: flex;
+    border-radius: 0;
+    height: auto;
+    flex-direction: column;
+    width: auto;
+    max-height: var(--ss-content-height);
+    box-sizing: border-box;
+    border: solid 1px var(--ss-border-color);
+    background-color: var(--ss-bg-color);
+    transition: transform var(--ss-animation-timing),
+      opacity var(--ss-animation-timing);
+    opacity: 0;
+    transform: scaleY(0);
+    transform-origin: center top;
+    overflow: hidden;
+    z-index: 10000;
+  }
+  .ss-content .ss-list .ss-option:hover {
+    color: #2962d1;
+    background-color: transparent;
+  }
+  .ss-main .ss-values .ss-value .ss-value-text {
+    background-color: #2962d1;
+  }
+  .ss-content .ss-search input::placeholder {
+    color: var(--ss-font-placeholder-color);
+    vertical-align: middle;
+  }
+
+  /* flatpickr styles */
+  .flatpickr-calendar {
+    box-shadow: none;
+    border: 1px solid #cdd5df;
+  }
+  *[tabindex]:focus-visible,
+  input[type="file"]:focus-visible {
+    outline: 0;
+  }
+  .flatpickr-day {
+    background: #f5f5f5;
+  }
+  .flatpickr-day.selected,
+  .flatpickr-day.startRange,
+  .flatpickr-day.endRange,
+  .flatpickr-day.selected.inRange,
+  .flatpickr-day.startRange.inRange,
+  .flatpickr-day.endRange.inRange,
+  .flatpickr-day.selected:focus,
+  .flatpickr-day.startRange:focus,
+  .flatpickr-day.endRange:focus,
+  .flatpickr-day.selected:hover,
+  .flatpickr-day.startRange:hover,
+  .flatpickr-day.endRange:hover,
+  .flatpickr-day.selected.prevMonthDay,
+  .flatpickr-day.startRange.prevMonthDay,
+  .flatpickr-day.endRange.prevMonthDay,
+  .flatpickr-day.selected.nextMonthDay,
+  .flatpickr-day.startRange.nextMonthDay,
+  .flatpickr-day.endRange.nextMonthDay {
+    background: #eef2f6;
+    border-color: #eef2f6;
+    color: #2856b0;
+  }
+</style>

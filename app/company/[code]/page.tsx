@@ -1,9 +1,14 @@
 import React from "react";
 import { ChartLineLabel } from "./chart";
-import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
-import ConcallScore, { categoryFor } from "@/components/concall-score";
-import { ChartRadarLabelCustom } from "./radarchart";
+import { QuarterData, BusinessSegment, SegmentRevenue } from "../types";
+import { SidebarNavigation } from "../components/sidebar-navigation";
+import { OverviewCard } from "../components/overview-card";
+import { SectionCard } from "../components/section-card";
+import { parseSummary, transformToChartData, calculateTrend } from "../utils";
+import { BusinessSegmentsDisplay } from "../components/business-segments-display";
+import { SegmentRevenueDisplay } from "../components/segment-revenue-display";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 export default async function Page({
   params,
@@ -11,25 +16,10 @@ export default async function Page({
   params: Promise<{ code: string }>;
 }) {
   const { code } = await params;
-  // fetch data with company_code if needed
-  // const data = await getCompany(company_code)
-
-  type QuarterData = {
-    id: number;
-    company_code: string;
-    fy: number;
-    qtr: number;
-    quarter_start_date: string;
-    quarter_label: string;
-    score: number;
-    summary: {
-      topic: string;
-      text: string;
-      detail: string;
-    }[];
-  };
 
   const supabase = await createClient();
+
+  // Fetch concall analysis data
   const { data, error } = await supabase
     .from("concall_analysis")
     .select()
@@ -37,127 +27,143 @@ export default async function Page({
     .order("fy", { ascending: false })
     .order("qtr", { ascending: false });
 
+  // Fetch business segments data
+  const { data: segmentsData } = await supabase
+    .from("business_segments")
+    .select()
+    .eq("company", code)
+    .order("created_at", { ascending: false });
+
+  // Fetch segment revenue data
+  const { data: revenueData } = await supabase
+    .from("segment_revenue")
+    .select()
+    .eq("company", code)
+    .order("financial_year", { ascending: false });
+
   if (error) {
     throw error;
   }
 
-  // console.log(data);
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex w-full px-16 p-8 justify-center items-center">
+        <p className="text-gray-400 text-lg">
+          No data available for company {code}
+        </p>
+      </div>
+    );
+  }
 
   const latestQuarterData: QuarterData = data[0];
-
-  console.log(latestQuarterData);
-
-  const chartData = data
-    .map((x) => {
-      return {
-        qtr: x.quarter_label,
-        score: x.score,
-      };
-    })
-    .reverse();
-  console.log(chartData);
+  latestQuarterData.summary = parseSummary(latestQuarterData.summary);
+  const chartData = transformToChartData(data);
+  const trend = calculateTrend(data);
 
   return (
-    <div className="flex px-16 p-8 gap-4 justify-self-center">
-      {/* left side  */}
-      <div id="left-side" className="w-[65%] flex flex-col gap-8">
-        {/* title card */}
-        <div id="card-holder" className="bg-gray-900 rounded-xl p-8">
-          <div className="flex flex-col  gap-2 px-8 w-3/4">
-            <p className="font-bold text-3xl ">
-              {latestQuarterData.company_code}
-            </p>
+    <div className="flex w-full gap-8 px-8 lg:px-16 py-8">
+      <SidebarNavigation />
 
-            <div>
-              {/* <Badge className="bg-green-400">s.label</Badge> */}
-              <Badge className={categoryFor(latestQuarterData.score).bg}>
-                {categoryFor(latestQuarterData.score).label}
-              </Badge>
-            </div>
-          </div>
-        </div>
+      {/* main content - 80% width */}
+      <div id="main-content" className="flex-1 flex flex-col gap-8">
+        <OverviewCard data={latestQuarterData} />
 
-        {/* qtr breakdown card*/}
-        <div id="card-holder" className="bg-gray-900 rounded-xl p-8">
-          <div className="flex flex-col gap-4">
-            <div>
-              {" "}
-              <p className="text-xl lg:text-xl font-bold !leading-tight  ">
-                Concall Highlights
+        <SectionCard id="business-overview" title="Business Overview">
+          <div className="space-y-6">
+            <div className="text-gray-300 leading-relaxed">
+              <p className="text-sm">
+                Get comprehensive insights into {latestQuarterData.company_code}
+                &apos;s business model, operational performance, and market
+                position. This section provides an overview of the
+                company&apos;s core business segments and operational metrics
+                from the latest conference call.
               </p>
             </div>
 
-            <div className="grid grod-cols-1 sm:grid-cols-2 gap-4 p-4">
-              {latestQuarterData.summary.map(
-                (
-                  s: {
-                    topic: string;
-                    text: string;
-                    detail: string;
-                  },
-                  i: number
-                ) => (
-                  <div
-                    key={i}
-                    className="bg-gray-900 flex flex-col p-4 gap-2 rounded-2xl text-md"
-                  >
-                    <div className="font-bold text-md">{s.topic}</div>
-                    <div className="text-gray-300 text-xs">{s.detail}</div>
-                    <div className="text-gray-300 text-sm">{s.text}</div>
+            {/* Business Segments and Revenue on same row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-gray-700">
+              {/* Business Segments Carousel */}
+              {segmentsData && segmentsData.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-gray-100 mb-3 text-sm uppercase tracking-wide">
+                    Business Segments
+                  </h4>
+                  <BusinessSegmentsDisplay
+                    segments={segmentsData as BusinessSegment[]}
+                  />
+                </div>
+              )}
 
-                    {/* <div>section 1</div> */}
-                  </div>
-                )
+              {/* Segment Revenue Chart */}
+              {revenueData && revenueData.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-gray-100 mb-3 text-sm uppercase tracking-wide">
+                    Segment Revenue Breakdown
+                  </h4>
+                  <SegmentRevenueDisplay
+                    revenues={revenueData as SegmentRevenue[]}
+                  />
+                </div>
               )}
             </div>
           </div>
-        </div>
+        </SectionCard>
 
-        {/* historical trend card  */}
-        <div id="card-holder" className="bg-gray-900 rounded-xl p-8">
-          <div className="flex flex-col gap-4 w-full">
-            <div>
-              {" "}
-              <p className="text-xl lg:text-xl font-extrabold !leading-tight  ">
-                Historical Trend
-              </p>
-            </div>
-            <div className="flex justify-center">
-              <ChartLineLabel chartData={chartData}></ChartLineLabel>
-            </div>
+        <SectionCard id="competitive-strategy" title="Competitive Strategy">
+          <div className="text-gray-300 leading-relaxed">
+            <p className="text-sm">
+              Understand {latestQuarterData.company_code}&apos;s strategic
+              positioning, competitive advantages, and market opportunities.
+              This section analyzes the company&apos;s strategy discussed during
+              the latest earnings call.
+            </p>
           </div>
-        </div>
-      </div>
+        </SectionCard>
 
-      {/* right side */}
-      <div id="right-side" className="w-[35%]">
-        {/* title card */}
-        <div
-          id="card-holder"
-          className="bg-gray-900 rounded-3xl p-8 flex flex-col gap-4"
-        >
-          <div className="flex">
-            <div className="flex w-full gap-2 ">
-              {/* <p className="p-1">{1 + "."}</p> */}
-
-              <div className="flex flex-col w-3/4">
-                <p className="font-bold text-xl ">
-                  Concall Score Breakdown
-                  {/* {latestQuarterData.company_code} */}
-                </p>
-
-                <p className="font-bold text-sm text-gray-300">
-                  {latestQuarterData.company_code}
-                </p>
+        <SectionCard id="sentiment-score" title="Concall Sentiment Score">
+          <div className="flex flex-col gap-4">
+            {/* Trend indicator */}
+            <div
+              className={`flex items-center gap-2 p-3 rounded-lg ${
+                trend.direction === "improving"
+                  ? "bg-emerald-500/20 border border-emerald-500/50"
+                  : trend.direction === "declining"
+                  ? "bg-red-500/20 border border-red-500/50"
+                  : "bg-amber-500/20 border border-amber-500/50"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {trend.direction === "improving" ? (
+                  <>
+                    <TrendingUp className="h-5 w-5 text-emerald-400" />
+                    <span className="text-sm font-semibold text-emerald-300">
+                      Trend: Improving
+                    </span>
+                  </>
+                ) : trend.direction === "declining" ? (
+                  <>
+                    <TrendingDown className="h-5 w-5 text-red-400" />
+                    <span className="text-sm font-semibold text-red-300">
+                      Trend: Declining
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-sm font-semibold text-amber-300">
+                    ↔ Trend: Stable
+                  </span>
+                )}
               </div>
+              <span className="text-xs text-gray-300 ml-auto">
+                {trend.description}
+              </span>
             </div>
-            <div>
-              <ConcallScore score={latestQuarterData.score}></ConcallScore>
+
+            {/* Chart */}
+            <div className="flex justify-center">
+              <ChartLineLabel chartData={chartData} />
             </div>
           </div>
-
-          <ChartRadarLabelCustom></ChartRadarLabelCustom>
-        </div>
+        </SectionCard>
       </div>
     </div>
   );

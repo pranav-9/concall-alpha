@@ -1,0 +1,436 @@
+<!-- ===================== TABLE BUILDER (container NOT included; uses existing #dates-holder) ===================== -->
+
+<!-- JSON holder (insert with Webflow's purple Add field button) -->
+<p style="display: none" id="fare-json">
+  {{wf
+  {&quot;path&quot;:&quot;dates&quot;,&quot;type&quot;:&quot;PlainText&quot;\}
+  }}
+</p>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // ---------- helpers ----------
+    const usd = (n) =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0,
+      }).format(Number(n));
+
+    const hasPrice = (v) => v !== null && v !== "" && !isNaN(Number(v));
+
+    const normalizeDate = (str) => {
+      if (!str) return null;
+      const clean = String(str)
+        .trim()
+        .replace(/\.\d+$/, "");
+      const match = clean.match(/^(\d{4}-\d{2}-\d{2})/);
+      const base = match ? match[1] : clean;
+      const d = new Date(base);
+      if (isNaN(d)) return null;
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const da = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${da}`;
+    };
+
+    // Create a DOM node from an HTML string
+    const elFromHTML = (html) => {
+      const t = document.createElement("template");
+      t.innerHTML = html.trim();
+      return t.content.firstElementChild;
+    };
+
+    // ---------- input / guards ----------
+    const holder = document.getElementById("dates-holder");
+    if (!holder) return;
+
+    const raw = document.getElementById("fare-json")?.textContent?.trim();
+    if (!raw) {
+      holder.style.display = "none";
+      return;
+    }
+
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (e) {
+      console.error("Invalid fare-json", e, raw);
+      holder.style.display = "none";
+      return;
+    }
+
+    // Normalize to array of records
+    const records = Array.isArray(data) ? data : [data];
+
+    // ---------- extract all rows from ALL records ----------
+    // Expected record shape: { cruiseStart, classDesc1..8, price1..8, pax?, specialsID?, groupMasterId?, adminFee?, TravInsPP? }
+    const rows = [];
+    const DEFAULT_PAX = 2;
+
+    records.forEach((rec) => {
+      const startRaw =
+        rec?.cruiseStart || rec?.cruise_start || rec?.startDate || "";
+      const startNorm = normalizeDate(startRaw);
+
+      for (let i = 1; i <= 8; i++) {
+        const price = rec[`price${i}`];
+        const desc = rec[`classDesc${i}`] || rec[`class${i}`];
+        if (hasPrice(price)) {
+          rows.push({
+            cabin: "V2", // maps to categoryCode
+            category: desc || `Category ${i}`, // maps to group_category
+            perPerson: Number(price), // for total_pp
+            pax: Number(rec?.pax) || DEFAULT_PAX, // for total_pc
+            startRaw,
+            startNorm,
+            specials_id: rec?.specialsID ?? "", // hidden
+            groupcategory_id: rec?.groupMasterId ?? "", // hidden
+            adminFee: rec?.adminFee ?? "", // hidden (string like "$99.00" if you have it)
+            TravInsPP: rec?.TravInsPP ?? "", // hidden (per-person insurance)
+          });
+        }
+      }
+    });
+
+    // No priced rows? hide block.
+    if (!rows.length) {
+      holder.style.display = "none";
+      return;
+    }
+
+    // Optional: clear any static Designer rows
+    holder.querySelectorAll('[id^="row"]').forEach((n) => n.remove());
+
+    // ---------- row template (now with <form> + hidden inputs) ----------
+    const rowHTML = (id, r) => {
+      const {
+        cabin,
+        category,
+        perPerson,
+        pax,
+        startRaw,
+        startNorm,
+        specials_id,
+        groupcategory_id,
+        adminFee,
+        TravInsPP,
+      } = r;
+
+      const displayPer = `${usd(perPerson)} USD`;
+      const displayTotal = `${usd(perPerson * pax)} USD`;
+
+      // prefer a full timestamp for the hidden input if we have a normalized date
+      const hiddenValue =
+        startRaw && /\d{2}:\d{2}/.test(startRaw)
+          ? startRaw
+          : startNorm
+          ? `${startNorm} 00:00:00.0`
+          : startRaw || "";
+
+      const total_pp = perPerson.toFixed(2);
+      const total_pc = (perPerson * pax).toFixed(2);
+
+      return (idx) => `
+      <div id="row${id}" class="${idx % 2 === 0 ? "row-10" : "row-11"}" ${
+        startNorm ? `data-start-date="${startNorm}"` : ""
+      }>
+        <div class="frame-26086357">
+          <div class="total-price-2"><div class="text-42">${cabin}</div></div>
+          <div class="total-price-3"><div class="text-42">${category}</div></div>
+          <div class="total-price-4"><div class="text-42">${displayPer}</div></div>
+          <div class="total-price-5">
+            <div class="text-43">${displayTotal}</div>
+            <div class="city-5">
+              <div class="result-7">Per reservation / ${pax} people</div>
+            </div>
+          </div>
+          <div class="total-price-6">
+            <div class="text-44">${displayPer}</div>
+            <div class="city-5"><div class="result-7">Per person</div></div>
+          </div>
+
+          <form class="w-form" action="https://www.onlinevacationcenter.com/bookingform.cfm#booking-form-container" method="post" aria-label="Booking Form">
+            <div class="w-embed">
+              <input type="hidden" name="taObRef" value="">
+              <input type="hidden" name="group_category" value="${category}">
+              <input type="hidden" name="categoryCode" value="${cabin}">
+              <input type="hidden" name="groupcategory_id" value="${groupcategory_id}">
+              <input type="hidden" name="adminFee" value="${adminFee}">
+              <input type="hidden" name="specials_id" value="${specials_id}">
+              <input type="hidden" name="saildate" value="${hiddenValue}">
+              <input type="hidden" name="total_pp" value="${total_pp}">
+              <input type="hidden" name="total_pc" value="${total_pc}">
+              <input type="hidden" name="TravInsPP" value="${TravInsPP}">
+            </div>
+            <input type="submit" data-wait="Please wait..." class="button w-button" value="Book now">
+          </form>
+        </div>
+      </div>
+    `;
+    };
+
+    // ---------- render ----------
+    let seq = 0;
+    rows.forEach((row, idx) => {
+      seq += 1;
+      const html = rowHTML(seq, row)(idx);
+      holder.appendChild(elFromHTML(html));
+    });
+
+    // Ensure the holder is visible
+    holder.style.display = "";
+
+    // Signal that rows are ready (for the dropdown script to init filtering reliably)
+    document.dispatchEvent(new CustomEvent("fare-table-ready"));
+  });
+</script>
+
+<!-- ===================== DROPDOWN + FILTER (unchanged; no “All sailings”) ===================== -->
+
+<!-- Current page's cruise start date (bind from CMS) -->
+<p id="current-start-date" style="display: none">
+  {{wf
+  {&quot;path&quot;:&quot;departure-date&quot;,&quot;transformers&quot;:[{&quot;name&quot;:&quot;date&quot;,&quot;arguments&quot;:[&quot;MMM
+  DD, YYYY&quot;]\}],&quot;type&quot;:&quot;Date&quot;\} }}
+</p>
+
+<!-- Dates array from CMS (must include objects with "cruiseStart") -->
+<p id="dates-data-for-table" style="display: none">
+  {{wf
+  {&quot;path&quot;:&quot;dates&quot;,&quot;type&quot;:&quot;PlainText&quot;\}
+  }}
+</p>
+
+<style>
+  .select-wrapper {
+    position: relative;
+    width: 260px;
+    font-family: inherit;
+  }
+  .select-toggle {
+    background: transparent;
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .select-toggle::after {
+    content: "▾";
+    font-size: 12px;
+    color: #666;
+    margin-left: 6px;
+  }
+  .select-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    margin-top: 4px;
+    max-height: 220px;
+    overflow-y: auto;
+    display: none;
+    z-index: 9999;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .select-list.open {
+    display: block;
+  }
+  .select-option {
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border: none;
+  }
+  .select-option:hover {
+    background: #f3f4f6;
+  }
+  .select-option.selected {
+    background: #e5edff;
+    font-weight: 600;
+  }
+</style>
+
+<div id="sailing-select" class="select-wrapper">
+  <div class="label-style-23 select-toggle">Select a sailing date</div>
+  <ul class="select-list"></ul>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const HOLDER_ID = "dates-holder";
+    const WRAPPER_ID = "sailing-select";
+    const CMS_JSON_ID = "dates-data-for-table";
+    const CURRENT_ID = "current-start-date";
+    const ROW_SELECTOR = '[id^="row"]';
+
+    const holder = document.getElementById(HOLDER_ID);
+    const wrapper = document.getElementById(WRAPPER_ID);
+    const cmsEl = document.getElementById(CMS_JSON_ID);
+    if (!holder || !wrapper || !cmsEl) return;
+
+    const toggle = wrapper.querySelector(".select-toggle");
+    const list = wrapper.querySelector(".select-list");
+
+    // ---------- helpers ----------
+    const normalizeDate = (str) => {
+      if (!str) return null;
+      const clean = String(str)
+        .trim()
+        .replace(/\.\d+$/, "");
+      const match = clean.match(/^(\d{4}-\d{2}-\d{2})/);
+      const base = match ? match[1] : clean;
+      const d = new Date(base);
+      if (isNaN(d)) return null;
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const da = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${da}`;
+    };
+    const fmtLong = (iso) => {
+      const d = new Date(iso);
+      return isNaN(d)
+        ? iso
+        : d.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+    };
+
+    const getRowStartDate = (rowEl) => {
+      const fromData = rowEl.getAttribute("data-start-date");
+      const n1 = normalizeDate(fromData);
+      if (n1) return n1;
+      const sail = rowEl.querySelector('input[name="saildate"]');
+      if (sail?.value) {
+        const n2 = normalizeDate(sail.value);
+        if (n2) return n2;
+      }
+      const any = rowEl.querySelector("[data-saildate]");
+      if (any?.getAttribute("data-saildate")) {
+        const n3 = normalizeDate(any.getAttribute("data-saildate"));
+        if (n3) return n3;
+      }
+      return null;
+    };
+
+    const applyZebra = () => {
+      const visibleRows = Array.from(
+        holder.querySelectorAll(ROW_SELECTOR)
+      ).filter((r) => r.style.display !== "none");
+      visibleRows.forEach((row, idx) => {
+        row.classList.remove("row-10", "row-11");
+        row.classList.add(idx % 2 === 0 ? "row-10" : "row-11");
+      });
+    };
+
+    const filterByDate = (wantedIso) => {
+      const target = normalizeDate(wantedIso);
+      if (!target) return; // no "All" mode
+      const rows = holder.querySelectorAll(ROW_SELECTOR);
+      rows.forEach((r) => {
+        const rowDate = getRowStartDate(r);
+        r.style.display = rowDate === target ? "" : "none";
+      });
+      applyZebra();
+    };
+
+    // ---------- read CMS JSON and collect dates ----------
+    const raw = cmsEl.textContent.trim();
+    if (!raw) {
+      applyZebra();
+      return;
+    }
+    let sailings = [];
+    try {
+      sailings = JSON.parse(raw) || [];
+    } catch (e) {
+      console.error("Invalid dates JSON", e);
+      applyZebra();
+      return;
+    }
+
+    const dateSet = new Set();
+    sailings.forEach((s) => {
+      const n = normalizeDate(s?.cruiseStart);
+      if (n) dateSet.add(n);
+    });
+    const dates = Array.from(dateSet).sort((a, b) => new Date(a) - new Date(b));
+
+    // If no dates, hide dropdown and keep current rows as-is
+    if (!dates.length) {
+      wrapper.style.display = "none";
+      applyZebra();
+      return;
+    }
+
+    // ---------- populate dropdown (NO "All sailings") ----------
+    dates.forEach((iso) => {
+      const li = document.createElement("li");
+      li.className = "select-option";
+      li.dataset.iso = iso;
+      li.textContent = fmtLong(iso);
+      list.appendChild(li);
+    });
+
+    // ---------- initialization from CMS current-start-date ----------
+    const currentEl = document.getElementById(CURRENT_ID);
+    const currentRaw = currentEl?.textContent?.trim() || "";
+    const currentNorm = normalizeDate(currentRaw);
+
+    let initIso = dates[0]; // earliest by default
+    if (currentNorm && dates.includes(currentNorm)) initIso = currentNorm;
+
+    // set selection UI
+    const options = Array.from(list.querySelectorAll(".select-option"));
+    const initLi = list.querySelector(`.select-option[data-iso="${initIso}"]`);
+    if (initLi) {
+      options.forEach((o) => o.classList.remove("selected"));
+      initLi.classList.add("selected");
+      toggle.textContent = initLi.textContent;
+    }
+
+    // filter table to initial date
+    const initFilter = () => filterByDate(initIso);
+
+    // If rows are not present yet, wait for the table builder event
+    const rowsExist = () => holder.querySelector(ROW_SELECTOR);
+    if (rowsExist()) {
+      setTimeout(initFilter, 0);
+    } else {
+      const onReady = () => {
+        document.removeEventListener("fare-table-ready", onReady);
+        initFilter();
+      };
+      document.addEventListener("fare-table-ready", onReady);
+    }
+
+    // ---------- interactions ----------
+    toggle.addEventListener("click", () => {
+      list.classList.toggle("open");
+    });
+    document.addEventListener("click", (e) => {
+      if (!wrapper.contains(e.target)) list.classList.remove("open");
+    });
+    list.addEventListener("click", (e) => {
+      const opt = e.target.closest(".select-option");
+      if (!opt) return;
+      options.forEach((o) => o.classList.remove("selected"));
+      opt.classList.add("selected");
+      toggle.textContent = opt.textContent;
+      list.classList.remove("open");
+      filterByDate(opt.dataset.iso);
+    });
+  });
+</script>
