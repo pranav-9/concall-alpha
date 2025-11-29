@@ -48,7 +48,7 @@ function getScoreColor(score: number): string {
 /**
  * Custom label component that shows score and star for high scores
  */
-const CustomLabel = (props: any) => {
+const CustomLabel = (props: { x: number; y: number; value: number }) => {
   const { x, y, value } = props;
   const isTopScore = value >= 8.5; // Highlight scores 8.5 and above
 
@@ -83,7 +83,11 @@ const CustomLabel = (props: any) => {
 /**
  * Custom dot component that colors based on score
  */
-const CustomDot = (props: any) => {
+const CustomDot = (props: {
+  cx: number;
+  cy: number;
+  payload: { score: number };
+}) => {
   const { cx, cy, payload } = props;
   const color = getScoreColor(payload.score);
   return (
@@ -94,7 +98,11 @@ const CustomDot = (props: any) => {
 /**
  * Custom active dot component for hover state
  */
-const CustomActiveDot = (props: any) => {
+const CustomActiveDot = (props: {
+  cx: number;
+  cy: number;
+  payload: { score: number };
+}) => {
   const { cx, cy, payload } = props;
   const color = getScoreColor(payload.score);
   return (

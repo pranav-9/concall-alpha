@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 // import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "./logout-button";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type UserInfo = {
@@ -14,46 +14,33 @@ type UserInfo = {
 } | null;
 
 export function AuthButton({ initialUser }: { initialUser: UserInfo }) {
-  const supabase = createClient();
-
-  // // You can also use getUser() which will be slower.
-  // const { data } = await supabase.auth.getClaims();
-
-  // // const user = data?.claims;
-  // console.log(data?.claims);
-
-  // const router = useRouter();
+  const supabaseRef = useRef(createClient());
   const [user, setUser] = useState<UserInfo>(initialUser);
 
   // Listen for login/logout/token refresh and update UI without full reload
-  useEffect(
-    () => {
-      const { data: sub } = supabase.auth.onAuthStateChange(
-        async (_event, session) => {
-          console.log("auth state change");
+  useEffect(() => {
+    const { data: sub } = supabaseRef.current.auth.onAuthStateChange(
+      async (_event, session) => {
+        console.log("auth state change");
 
-          const u = session?.user
-            ? {
-                // email: uEmail(session),
-                email: "hard codede emial for now",
-                name: session.user.user_metadata?.full_name ?? null,
-                avatar: session.user.user_metadata?.avatar_url ?? null,
-              }
-            : null;
-          setUser(u);
-          // Trigger an RSC refresh so server components (like this navbar's server wrapper) get fresh cookies next navigation
-          // router.refresh();
-        }
-      );
+        const u = session?.user
+          ? {
+              // email: uEmail(session),
+              email: "hard codede emial for now",
+              name: session.user.user_metadata?.full_name ?? null,
+              avatar: session.user.user_metadata?.avatar_url ?? null,
+            }
+          : null;
+        setUser(u);
+        // Trigger an RSC refresh so server components (like this navbar's server wrapper) get fresh cookies next navigation
+        // router.refresh();
+      }
+    );
 
-      return () => {
-        sub.subscription.unsubscribe();
-      };
-    },
-    [
-      // router
-    ]
-  );
+    return () => {
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   // function uEmail(session: Session | null
   //   // {
