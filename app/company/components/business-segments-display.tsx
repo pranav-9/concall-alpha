@@ -51,7 +51,7 @@ export function BusinessSegmentsDisplay({
         {segments.map((segment, index) => (
           <div
             key={segment.id}
-            className="border border-gray-700 rounded-lg overflow-hidden flex flex-col bg-gray-900/50 hover:border-gray-600 transition-colors"
+            className="rounded-2xl overflow-hidden flex flex-col bg-gray-900/60 shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/50 transition-all duration-300"
           >
             {/* Segment Header: Always Visible */}
             <button

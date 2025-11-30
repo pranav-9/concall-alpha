@@ -73,7 +73,7 @@ export default async function Page({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Business Segments */}
             {segmentsData && segmentsData.length > 0 && (
-              <div>
+              <div className="bg-black/40 rounded-2xl p-6 shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/50 transition-all duration-300">
                 <BusinessSegmentsDisplay
                   segments={segmentsData as BusinessSegment[]}
                 />
@@ -82,7 +82,7 @@ export default async function Page({
 
             {/* Segment Revenue Chart */}
             {revenueData && revenueData.length > 0 && (
-              <div>
+              <div className="bg-black/40 rounded-2xl p-6 shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/50 transition-all duration-300">
                 <h4 className="font-semibold text-gray-100 mb-3 text-sm uppercase tracking-wide">
                   Segment Revenue Breakdown
                 </h4>
