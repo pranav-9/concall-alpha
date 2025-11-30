@@ -91,7 +91,16 @@ const CustomDot = (props: {
   const { cx, cy, payload } = props;
   const color = getScoreColor(payload.score);
   return (
-    <circle cx={cx} cy={cy} r={5} fill={color} stroke={color} strokeWidth={1} />
+    <g key={`dot-${cx}-${cy}`}>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={5}
+        fill={color}
+        stroke={color}
+        strokeWidth={1}
+      />
+    </g>
   );
 };
 
@@ -106,15 +115,17 @@ const CustomActiveDot = (props: {
   const { cx, cy, payload } = props;
   const color = getScoreColor(payload.score);
   return (
-    <circle
-      cx={cx}
-      cy={cy}
-      r={7}
-      fill={color}
-      stroke={color}
-      strokeWidth={2}
-      opacity={0.8}
-    />
+    <g key={`active-dot-${cx}-${cy}`}>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={7}
+        fill={color}
+        stroke={color}
+        strokeWidth={2}
+        opacity={0.8}
+      />
+    </g>
   );
 };
 
@@ -162,12 +173,12 @@ export function ChartLineLabel(props: {
               type="natural"
               stroke="#ffffff"
               strokeWidth={3}
-              dot={(<CustomDot />) as unknown as React.ReactElement}
-              activeDot={(<CustomActiveDot />) as unknown as React.ReactElement}
+              dot={CustomDot as any} // eslint-disable-line @typescript-eslint/no-explicit-any
+              activeDot={CustomActiveDot as any} // eslint-disable-line @typescript-eslint/no-explicit-any
             >
               <LabelList
                 dataKey="score"
-                content={(<CustomLabel />) as unknown as React.ReactElement}
+                content={CustomLabel as any} // eslint-disable-line @typescript-eslint/no-explicit-any
               />
             </Line>
           </LineChart>
