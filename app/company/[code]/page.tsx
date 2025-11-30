@@ -68,44 +68,29 @@ export default async function Page({
       <div id="main-content" className="flex-1 flex flex-col gap-8">
         <OverviewCard data={latestQuarterData} />
 
-        <SectionCard id="business-overview" title="Business Overview">
-          <div className="space-y-6">
-            <div className="text-gray-300 leading-relaxed">
-              <p className="text-sm">
-                Get comprehensive insights into {latestQuarterData.company_code}
-                &apos;s business model, operational performance, and market
-                position. This section provides an overview of the
-                company&apos;s core business segments and operational metrics
-                from the latest conference call.
-              </p>
-            </div>
+        <SectionCard id="business-overview" title="Business Segments">
+          {/* Business Segments and Revenue on same row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Business Segments */}
+            {segmentsData && segmentsData.length > 0 && (
+              <div>
+                <BusinessSegmentsDisplay
+                  segments={segmentsData as BusinessSegment[]}
+                />
+              </div>
+            )}
 
-            {/* Business Segments and Revenue on same row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-gray-700">
-              {/* Business Segments Carousel */}
-              {segmentsData && segmentsData.length > 0 && (
-                <div>
-                  <h4 className="font-semibold text-gray-100 mb-3 text-sm uppercase tracking-wide">
-                    Business Segments
-                  </h4>
-                  <BusinessSegmentsDisplay
-                    segments={segmentsData as BusinessSegment[]}
-                  />
-                </div>
-              )}
-
-              {/* Segment Revenue Chart */}
-              {revenueData && revenueData.length > 0 && (
-                <div>
-                  <h4 className="font-semibold text-gray-100 mb-3 text-sm uppercase tracking-wide">
-                    Segment Revenue Breakdown
-                  </h4>
-                  <SegmentRevenueDisplay
-                    revenues={revenueData as SegmentRevenue[]}
-                  />
-                </div>
-              )}
-            </div>
+            {/* Segment Revenue Chart */}
+            {revenueData && revenueData.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-100 mb-3 text-sm uppercase tracking-wide">
+                  Segment Revenue Breakdown
+                </h4>
+                <SegmentRevenueDisplay
+                  revenues={revenueData as SegmentRevenue[]}
+                />
+              </div>
+            )}
           </div>
         </SectionCard>
 

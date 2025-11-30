@@ -70,62 +70,51 @@ export function SegmentRevenueDisplay({
   ];
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h5 className="text-sm text-gray-300 font-semibold">
-          Revenue Trend by Segment
-        </h5>
-        <p className="text-xs text-gray-500 mt-1">
-          Revenue across financial years
-        </p>
-      </div>
-
-      <ResponsiveContainer width="100%" height={350}>
-        <LineChart
-          data={groupedData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-          <XAxis
-            dataKey="fy"
-            tick={{ fill: "#9CA3AF", fontSize: 12 }}
-            label={{
-              value: "Financial Year",
-              position: "insideBottomRight",
-              offset: -10,
-            }}
+    <ResponsiveContainer width="100%" height={350}>
+      <LineChart
+        data={groupedData}
+        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+        <XAxis
+          dataKey="fy"
+          tick={{ fill: "#9CA3AF", fontSize: 12 }}
+          label={{
+            value: "Financial Year",
+            position: "insideBottomRight",
+            offset: -10,
+          }}
+        />
+        <YAxis
+          tick={{ fill: "#9CA3AF", fontSize: 12 }}
+          label={{ value: "Revenue", angle: -90, position: "insideLeft" }}
+        />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: "#1F2937",
+            border: "1px solid #374151",
+            borderRadius: "8px",
+          }}
+          labelStyle={{ color: "#F3F4F6" }}
+          formatter={(value: number | string) =>
+            typeof value === "number" ? value.toFixed(2) : value
+          }
+        />
+        <Legend wrapperStyle={{ paddingTop: "20px" }} iconType="line" />
+        {segmentNames.map((segment, idx) => (
+          <Line
+            key={segment}
+            type="monotone"
+            dataKey={segment}
+            stroke={colors[idx % colors.length]}
+            strokeWidth={2}
+            dot={{ fill: colors[idx % colors.length], r: 4 }}
+            activeDot={{ r: 6 }}
+            isAnimationActive={true}
+            connectNulls
           />
-          <YAxis
-            tick={{ fill: "#9CA3AF", fontSize: 12 }}
-            label={{ value: "Revenue", angle: -90, position: "insideLeft" }}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "#1F2937",
-              border: "1px solid #374151",
-              borderRadius: "8px",
-            }}
-            labelStyle={{ color: "#F3F4F6" }}
-            formatter={(value: number | string) =>
-              typeof value === "number" ? value.toFixed(2) : value
-            }
-          />
-          <Legend wrapperStyle={{ paddingTop: "20px" }} iconType="line" />
-          {segmentNames.map((segment, idx) => (
-            <Line
-              key={segment}
-              type="monotone"
-              dataKey={segment}
-              stroke={colors[idx % colors.length]}
-              strokeWidth={2}
-              dot={{ fill: colors[idx % colors.length], r: 4 }}
-              activeDot={{ r: 6 }}
-              isAnimationActive={true}
-              connectNulls
-            />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
   );
 }

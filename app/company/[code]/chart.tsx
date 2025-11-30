@@ -162,10 +162,13 @@ export function ChartLineLabel(props: {
               type="natural"
               stroke="#ffffff"
               strokeWidth={3}
-              dot={<CustomDot />}
-              activeDot={<CustomActiveDot />}
+              dot={(<CustomDot />) as unknown as React.ReactElement}
+              activeDot={(<CustomActiveDot />) as unknown as React.ReactElement}
             >
-              <LabelList dataKey="score" content={<CustomLabel />} />
+              <LabelList
+                dataKey="score"
+                content={(<CustomLabel />) as unknown as React.ReactElement}
+              />
             </Line>
           </LineChart>
         </ChartContainer>

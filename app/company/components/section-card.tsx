@@ -11,6 +11,7 @@ export function SectionCard({ id, title, children }: SectionCardProps) {
         <p className="text-xl lg:text-xl font-extrabold !leading-tight">
           {title}
         </p>
+        <div className="border-b border-gray-700"></div>
         {children}
       </div>
     </div>
