@@ -52,3 +52,19 @@ export type SegmentRevenue = {
   extracted_at: string | null;
   updated_at: string | null;
 };
+
+export type ConsolidatedStrategy = {
+  id: number;
+  company: string;
+  segment_name: string;
+  strategy_rank: number;
+  strategy_name: string;
+  description: string | null;
+  timeline: Record<string, unknown> | null;
+  overall_strategy_notes: string | null;
+  strategic_evolution: string | null;
+  key_transitions: string[] | null;
+  extracted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};

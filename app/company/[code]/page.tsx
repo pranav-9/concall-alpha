@@ -1,13 +1,19 @@
 import React from "react";
 import { ChartLineLabel } from "./chart";
 import { createClient } from "@/lib/supabase/server";
-import { QuarterData, BusinessSegment, SegmentRevenue } from "../types";
+import {
+  QuarterData,
+  BusinessSegment,
+  SegmentRevenue,
+  ConsolidatedStrategy,
+} from "../types";
 import { SidebarNavigation } from "../components/sidebar-navigation";
 import { OverviewCard } from "../components/overview-card";
 import { SectionCard } from "../components/section-card";
 import { parseSummary, transformToChartData, calculateTrend } from "../utils";
 import { BusinessSegmentsDisplay } from "../components/business-segments-display";
 import { SegmentRevenueDisplay } from "../components/segment-revenue-display";
+import { CompetitiveStrategyDisplay } from "../components/competitive-strategy-display";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 export default async function Page({
@@ -40,6 +46,13 @@ export default async function Page({
     .select()
     .eq("company", code)
     .order("financial_year", { ascending: false });
+
+  // Fetch consolidated strategies data
+  const { data: strategiesData } = await supabase
+    .from("consolidated_strategies")
+    .select()
+    .eq("company", code)
+    .order("strategy_rank", { ascending: true });
 
   if (error) {
     throw error;
@@ -95,14 +108,15 @@ export default async function Page({
         </SectionCard>
 
         <SectionCard id="competitive-strategy" title="Competitive Strategy">
-          <div className="text-gray-300 leading-relaxed">
-            <p className="text-sm">
-              Understand {latestQuarterData.company_code}&apos;s strategic
-              positioning, competitive advantages, and market opportunities.
-              This section analyzes the company&apos;s strategy discussed during
-              the latest earnings call.
-            </p>
-          </div>
+          {strategiesData && strategiesData.length > 0 ? (
+            <CompetitiveStrategyDisplay
+              strategies={strategiesData as ConsolidatedStrategy[]}
+            />
+          ) : (
+            <div className="text-gray-400 text-sm">
+              No competitive strategy data available
+            </div>
+          )}
         </SectionCard>
 
         <SectionCard id="sentiment-score" title="Concall Sentiment Score">
