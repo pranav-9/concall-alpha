@@ -107,7 +107,10 @@ export default async function Page({
           </div>
         </SectionCard>
 
-        <SectionCard id="competitive-strategy" title="Competitive Strategy">
+        <SectionCard
+          id="competitive-strategy"
+          title="Story of the Stock - Competitive Strategy"
+        >
           {strategiesData && strategiesData.length > 0 ? (
             <CompetitiveStrategyDisplay
               strategies={strategiesData as ConsolidatedStrategy[]}
