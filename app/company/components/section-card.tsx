@@ -6,12 +6,12 @@ interface SectionCardProps {
 
 export function SectionCard({ id, title, children }: SectionCardProps) {
   return (
-    <div id={id} className="bg-gray-900 rounded-xl p-8">
-      <div className="flex flex-col gap-4">
-        <p className="text-xl lg:text-xl font-extrabold !leading-tight">
+    <div id={id} className="bg-gray-900 rounded-lg p-6">
+      <div className="flex flex-col gap-3">
+        <p className="text-lg lg:text-lg font-bold !leading-tight">
           {title}
         </p>
-        <div className="border-b border-gray-700"></div>
+        <div className="border-b border-gray-800"></div>
         {children}
       </div>
     </div>

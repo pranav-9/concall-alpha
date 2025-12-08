@@ -70,23 +70,23 @@ export function SegmentRevenueDisplay({
   ];
 
   return (
-    <ResponsiveContainer width="100%" height={350}>
+    <ResponsiveContainer width="100%" height={280}>
       <LineChart
         data={groupedData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+        margin={{ top: 12, right: 16, left: 10, bottom: 12 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
         <XAxis
           dataKey="fy"
-          tick={{ fill: "#9CA3AF", fontSize: 12 }}
+          tick={{ fill: "#9CA3AF", fontSize: 11 }}
           label={{
             value: "Financial Year",
             position: "insideBottomRight",
-            offset: -10,
+            offset: -6,
           }}
         />
         <YAxis
-          tick={{ fill: "#9CA3AF", fontSize: 12 }}
+          tick={{ fill: "#9CA3AF", fontSize: 11 }}
           label={{ value: "Revenue", angle: -90, position: "insideLeft" }}
         />
         <Tooltip
@@ -100,16 +100,19 @@ export function SegmentRevenueDisplay({
             typeof value === "number" ? value.toFixed(2) : value
           }
         />
-        <Legend wrapperStyle={{ paddingTop: "20px" }} iconType="line" />
+        <Legend
+          wrapperStyle={{ paddingTop: "8px", fontSize: "11px" }}
+          iconType="line"
+        />
         {segmentNames.map((segment, idx) => (
           <Line
             key={segment}
             type="monotone"
             dataKey={segment}
             stroke={colors[idx % colors.length]}
-            strokeWidth={2}
-            dot={{ fill: colors[idx % colors.length], r: 4 }}
-            activeDot={{ r: 6 }}
+            strokeWidth={1.75}
+            dot={{ fill: colors[idx % colors.length], r: 3 }}
+            activeDot={{ r: 5 }}
             isAnimationActive={true}
             connectNulls
           />

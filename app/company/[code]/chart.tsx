@@ -56,21 +56,21 @@ const CustomLabel = (props: { x: number; y: number; value: number }) => {
     <g>
       <text
         x={x}
-        y={y - 20}
+        y={y - 16}
         fill="white"
         textAnchor="middle"
-        fontSize="12"
+        fontSize="11"
         fontWeight="bold"
       >
         {value.toFixed(1)}
       </text>
       {isTopScore && (
         <text
-          x={x + 12}
-          y={y - 20}
+          x={x + 10}
+          y={y - 16}
           fill="#fbbf24"
           textAnchor="start"
-          fontSize="14"
+          fontSize="12"
           fontWeight="bold"
         >
           ⭐
@@ -95,7 +95,7 @@ const CustomDot = (props: {
       <circle
         cx={cx}
         cy={cy}
-        r={5}
+        r={4}
         fill={color}
         stroke={color}
         strokeWidth={1}
@@ -119,7 +119,7 @@ const CustomActiveDot = (props: {
       <circle
         cx={cx}
         cy={cy}
-        r={7}
+        r={6}
         fill={color}
         stroke={color}
         strokeWidth={2}
@@ -143,10 +143,10 @@ export function ChartLineLabel(props: {
             accessibilityLayer
             data={props.chartData}
             margin={{
-              top: 40,
-              left: 40,
-              right: 40,
-              bottom: 20,
+              top: 24,
+              left: 28,
+              right: 28,
+              bottom: 16,
             }}
           >
             <CartesianGrid vertical={false} stroke="#374151" />

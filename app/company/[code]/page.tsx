@@ -74,19 +74,19 @@ export default async function Page({
   const trend = calculateTrend(data);
 
   return (
-    <div className="flex w-full gap-8 px-8 lg:px-16 py-8">
+    <div className="flex w-full gap-6 px-6 lg:px-12 py-6">
       <SidebarNavigation />
 
       {/* main content - 80% width */}
-      <div id="main-content" className="flex-1 flex flex-col gap-8">
+      <div id="main-content" className="flex-1 flex flex-col gap-6">
         <OverviewCard data={latestQuarterData} />
 
         <SectionCard id="business-overview" title="Business Segments">
           {/* Business Segments and Revenue on same row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Business Segments */}
             {segmentsData && segmentsData.length > 0 && (
-              <div className="bg-black/40 rounded-2xl p-6 shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/50 transition-all duration-300">
+              <div className="bg-black/40 rounded-xl p-4 shadow-md shadow-black/30 hover:shadow-lg hover:shadow-black/40 transition-all duration-300">
                 <BusinessSegmentsDisplay
                   segments={segmentsData as BusinessSegment[]}
                 />
@@ -95,8 +95,8 @@ export default async function Page({
 
             {/* Segment Revenue Chart */}
             {revenueData && revenueData.length > 0 && (
-              <div className="bg-black/40 rounded-2xl p-6 shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/50 transition-all duration-300">
-                <h4 className="font-semibold text-gray-100 mb-3 text-sm uppercase tracking-wide">
+              <div className="bg-black/40 rounded-xl p-4 shadow-md shadow-black/30 hover:shadow-lg hover:shadow-black/40 transition-all duration-300">
+                <h4 className="font-semibold text-gray-100 mb-2 text-xs uppercase tracking-wide">
                   Segment Revenue Breakdown
                 </h4>
                 <SegmentRevenueDisplay
@@ -126,7 +126,7 @@ export default async function Page({
           <div className="flex flex-col gap-4">
             {/* Trend indicator */}
             <div
-              className={`flex items-center gap-2 p-3 rounded-lg ${
+              className={`flex items-center gap-2 p-2 rounded-lg ${
                 trend.direction === "improving"
                   ? "bg-emerald-500/20 border border-emerald-500/50"
                   : trend.direction === "declining"
@@ -138,24 +138,24 @@ export default async function Page({
                 {trend.direction === "improving" ? (
                   <>
                     <TrendingUp className="h-5 w-5 text-emerald-400" />
-                    <span className="text-sm font-semibold text-emerald-300">
+                    <span className="text-xs font-semibold text-emerald-300">
                       Trend: Improving
                     </span>
                   </>
                 ) : trend.direction === "declining" ? (
                   <>
                     <TrendingDown className="h-5 w-5 text-red-400" />
-                    <span className="text-sm font-semibold text-red-300">
+                    <span className="text-xs font-semibold text-red-300">
                       Trend: Declining
                     </span>
                   </>
                 ) : (
-                  <span className="text-sm font-semibold text-amber-300">
+                  <span className="text-xs font-semibold text-amber-300">
                     ↔ Trend: Stable
                   </span>
                 )}
               </div>
-              <span className="text-xs text-gray-300 ml-auto">
+              <span className="text-[11px] text-gray-300 ml-auto">
                 {trend.description}
               </span>
             </div>

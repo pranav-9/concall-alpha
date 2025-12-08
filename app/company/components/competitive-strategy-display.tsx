@@ -84,44 +84,44 @@ export function CompetitiveStrategyDisplay({
     return (
       <div
         key={period}
-        className={`border rounded-lg p-4 transition-colors flex-shrink-0 w-80 ${
+        className={`border rounded-lg p-3 transition-colors flex-shrink-0 w-72 ${
           keyTransition
             ? "border-amber-600/50 bg-amber-950/20 hover:bg-amber-950/30"
             : "border-gray-700/50 bg-gray-900/30 hover:bg-gray-900/50"
         }`}
       >
         {/* Year Header with Status */}
-        <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-700/30">
+        <div className="flex items-center justify-between mb-2.5 pb-2.5 border-b border-gray-700/30">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-blue-300 uppercase tracking-wide">
+            <span className="text-xs font-bold text-blue-300 uppercase tracking-wide">
               {period}
             </span>
             {keyTransition && (
-              <span className="text-xs font-semibold px-2 py-1 rounded bg-amber-500/30 text-amber-300 border border-amber-500/50">
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-500/30 text-amber-300 border border-amber-500/50">
                 Key Transition
               </span>
             )}
           </div>
           {status && (
-            <span className="text-xs font-semibold px-2 py-1 rounded bg-blue-500/20 text-blue-300 capitalize">
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 capitalize">
               {status}
             </span>
           )}
         </div>
 
         {/* Content Grid */}
-        <div className="space-y-3 text-sm">
+        <div className="space-y-2.5 text-sm">
           {/* Status Tags Row */}
           {(outcome || revenueImpact) && (
             <div className="flex flex-wrap gap-2">
               {outcome && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
                   Outcome: {outcome}
                 </span>
               )}
               {revenueImpact && (
                 <span
-                  className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                  className={`text-[11px] font-semibold px-2 py-0.5 rounded ${
                     revenueImpact.toUpperCase() === "HIGH"
                       ? "bg-amber-500/20 text-amber-300"
                       : "bg-gray-600/20 text-gray-300"
@@ -136,7 +136,7 @@ export function CompetitiveStrategyDisplay({
           {/* Overview */}
           {overview && (
             <div>
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">
+              <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mb-1">
                 Overview
               </p>
               <p className="text-gray-300 leading-relaxed text-xs">
@@ -148,7 +148,7 @@ export function CompetitiveStrategyDisplay({
           {/* Key Events */}
           {keyEvents && keyEvents.length > 0 && (
             <div>
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">
+              <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mb-1.5">
                 Key Events ({keyEvents.length})
               </p>
               <ul className="space-y-1 ml-2">
@@ -173,10 +173,10 @@ export function CompetitiveStrategyDisplay({
           {/* Evolution Notes */}
           {evolutionNotes && (
             <div>
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">
+              <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mb-1">
                 Evolution
               </p>
-              <p className="text-gray-300 leading-relaxed text-xs italic">
+              <p className="text-gray-300 leading-relaxed text-[11px] italic">
                 {evolutionNotes}
               </p>
             </div>
@@ -185,10 +185,10 @@ export function CompetitiveStrategyDisplay({
           {/* Strategic Shift */}
           {strategicShift && (
             <div className="bg-purple-950/30 border border-purple-700/30 rounded p-2">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">
+              <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mb-1">
                 Strategic Shift
               </p>
-              <p className="text-sm text-purple-300 leading-relaxed">
+              <p className="text-xs text-purple-300 leading-relaxed">
                 {strategicShift}
               </p>
             </div>
@@ -199,12 +199,12 @@ export function CompetitiveStrategyDisplay({
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {Object.entries(strategiesBySegment).map(
         ([segment, segmentStrategies]) => (
-          <div key={segment} className="space-y-3">
+          <div key={segment} className="space-y-2.5">
             {/* Segment Title */}
-            <h4 className="text-sm font-semibold text-gray-200 uppercase tracking-wide">
+            <h4 className="text-xs font-semibold text-gray-200 uppercase tracking-wide">
               {segment}
             </h4>
 
@@ -223,7 +223,7 @@ export function CompetitiveStrategyDisplay({
                     {/* Strategy Header */}
                     <button
                       onClick={() => !isFirstCard && toggleStrategy(strategyId)}
-                      className={`w-full text-left p-3 flex items-center justify-between ${
+                      className={`w-full text-left p-2.5 flex items-center justify-between ${
                         !isFirstCard
                           ? "cursor-pointer hover:bg-gray-800/30"
                           : ""
@@ -231,7 +231,7 @@ export function CompetitiveStrategyDisplay({
                       disabled={isFirstCard}
                     >
                       <div className="flex items-start gap-3 flex-1">
-                        <span className="text-xs font-bold text-blue-400 bg-blue-400/10 px-2 py-1 rounded flex-shrink-0">
+                        <span className="text-[11px] font-bold text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded flex-shrink-0">
                           {strategy.strategy_rank}
                         </span>
                         <div className="flex-1 min-w-0">
@@ -258,7 +258,7 @@ export function CompetitiveStrategyDisplay({
                       typeof strategy.timeline === "object" &&
                       Object.keys(strategy.timeline).length > 0 && (
                         <div className="p-3">
-                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
                             Timeline
                           </p>
                           {(() => {
@@ -302,7 +302,7 @@ export function CompetitiveStrategyDisplay({
                                 {!isScrollable && <div className="w-10" />}
 
                                 {/* Cards Container */}
-                                <div className="flex gap-3 flex-1 overflow-hidden">
+                                <div className="flex gap-2.5 flex-1 overflow-hidden">
                                   {visibleEntries.map(([period, event]) =>
                                     renderTimelineCard(period, event)
                                   )}
