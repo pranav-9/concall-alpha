@@ -5,7 +5,7 @@ import {
   QuarterData,
   BusinessSegment,
   SegmentRevenue,
-  ConsolidatedStrategy,
+  TopStrategyLatest,
 } from "../types";
 import { SidebarNavigation } from "../components/sidebar-navigation";
 import { OverviewCard } from "../components/overview-card";
@@ -13,7 +13,7 @@ import { SectionCard } from "../components/section-card";
 import { parseSummary, transformToChartData, calculateTrend } from "../utils";
 import { BusinessSegmentsDisplay } from "../components/business-segments-display";
 import { SegmentRevenueDisplay } from "../components/segment-revenue-display";
-import { CompetitiveStrategyDisplay } from "../components/competitive-strategy-display";
+import { TopStrategiesDisplay } from "../components/top-strategies-display";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 export default async function Page({
@@ -47,11 +47,12 @@ export default async function Page({
     .eq("company", code)
     .order("financial_year", { ascending: false });
 
-  // Fetch consolidated strategies data
-  const { data: strategiesData } = await supabase
-    .from("consolidated_strategies")
+  // Fetch latest top strategies data
+  const { data: topStrategiesData } = await supabase
+    .from("top_strategies_latest")
     .select()
     .eq("company", code)
+    .order("latest_fiscal_year", { ascending: false })
     .order("strategy_rank", { ascending: true });
 
   if (error) {
@@ -107,17 +108,14 @@ export default async function Page({
           </div>
         </SectionCard>
 
-        <SectionCard
-          id="competitive-strategy"
-          title="Story of the Stock - Competitive Strategy"
-        >
-          {strategiesData && strategiesData.length > 0 ? (
-            <CompetitiveStrategyDisplay
-              strategies={strategiesData as ConsolidatedStrategy[]}
+        <SectionCard id="competitive-strategy" title="Story of the Stock - Top Strategies">
+          {topStrategiesData && topStrategiesData.length > 0 ? (
+            <TopStrategiesDisplay
+              strategies={topStrategiesData as TopStrategyLatest[]}
             />
           ) : (
             <div className="text-gray-400 text-sm">
-              No competitive strategy data available
+              No strategy data available
             </div>
           )}
         </SectionCard>

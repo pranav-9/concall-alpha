@@ -59,7 +59,11 @@ export function CompetitiveStrategyDisplay({
         "outcome" in event ||
         "progress" in event ||
         "key_event" in event ||
-        "revenue_impact" in event);
+        "revenue_impact" in event ||
+        "timeline" in event ||
+        "description" in event ||
+        "impact_level" in event ||
+        "evidence_points" in event);
 
     if (!isDetailedTimeline) return null;
 
@@ -70,8 +74,14 @@ export function CompetitiveStrategyDisplay({
       ? String(detail.revenue_impact)
       : null;
     const overview = detail.overview ? String(detail.overview) : null;
+    const timelineText = detail.timeline ? String(detail.timeline) : null;
+    const description = detail.description ? String(detail.description) : null;
+    const impactLevel = detail.impact_level ? String(detail.impact_level) : null;
     const keyEvents = Array.isArray(detail.key_events)
       ? (detail.key_events as string[])
+      : null;
+    const evidencePoints = Array.isArray(detail.evidence_points)
+      ? (detail.evidence_points as string[])
       : null;
     const evolutionNotes = detail.evolution_notes
       ? String(detail.evolution_notes)
@@ -112,7 +122,7 @@ export function CompetitiveStrategyDisplay({
         {/* Content Grid */}
         <div className="space-y-2.5 text-sm">
           {/* Status Tags Row */}
-          {(outcome || revenueImpact) && (
+          {(outcome || revenueImpact || impactLevel) && (
             <div className="flex flex-wrap gap-2">
               {outcome && (
                 <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
@@ -130,45 +140,83 @@ export function CompetitiveStrategyDisplay({
                   Revenue: {revenueImpact}
                 </span>
               )}
+              {impactLevel && (
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-purple-500/20 text-purple-200">
+                  Impact: {impactLevel}
+                </span>
+              )}
+            </div>
+          )}
+
+          {timelineText && (
+            <div>
+              <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mb-1">
+                Timeline
+              </p>
+              <p className="text-gray-200 leading-relaxed text-xs">
+                {timelineText}
+              </p>
             </div>
           )}
 
           {/* Overview */}
-          {overview && (
+          {(overview || description) && (
             <div>
               <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mb-1">
                 Overview
               </p>
-              <p className="text-gray-300 leading-relaxed text-xs">
-                {overview}
-              </p>
+              {overview && (
+                <p className="text-gray-300 leading-relaxed text-xs mb-1.5">
+                  {overview}
+                </p>
+              )}
+              {description && (
+                <p className="text-gray-300 leading-relaxed text-xs">
+                  {description}
+                </p>
+              )}
             </div>
           )}
 
           {/* Key Events */}
-          {keyEvents && keyEvents.length > 0 && (
+          {(keyEvents && keyEvents.length > 0) ||
+            (evidencePoints && evidencePoints.length > 0) ? (
             <div>
               <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mb-1.5">
-                Key Events ({keyEvents.length})
+                Evidence & Key Events
               </p>
               <ul className="space-y-1 ml-2">
-                {keyEvents.slice(0, 3).map((event, idx) => (
+                {(keyEvents || []).slice(0, 3).map((event, idx) => (
                   <li
-                    key={idx}
+                    key={`ke-${idx}`}
                     className="text-gray-300 flex items-start gap-2 text-xs"
                   >
                     <span className="text-blue-400 font-bold mt-0.5">•</span>
                     <span>{event}</span>
                   </li>
                 ))}
-                {keyEvents.length > 3 && (
+                {(evidencePoints || []).slice(0, 3).map((evidence, idx) => (
+                  <li
+                    key={`ep-${idx}`}
+                    className="text-gray-300 flex items-start gap-2 text-xs"
+                  >
+                    <span className="text-emerald-400 font-bold mt-0.5">•</span>
+                    <span>{evidence}</span>
+                  </li>
+                ))}
+                {keyEvents && keyEvents.length > 3 && (
                   <li className="text-gray-400 text-xs italic">
                     +{keyEvents.length - 3} more
                   </li>
                 )}
+                {evidencePoints && evidencePoints.length > 3 && (
+                  <li className="text-gray-400 text-xs italic">
+                    +{evidencePoints.length - 3} more
+                  </li>
+                )}
               </ul>
             </div>
-          )}
+          ) : null}
 
           {/* Evolution Notes */}
           {evolutionNotes && (

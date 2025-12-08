@@ -68,3 +68,20 @@ export type ConsolidatedStrategy = {
   created_at: string;
   updated_at: string;
 };
+
+export type TopStrategyLatest = {
+  id: number;
+  company: string;
+  latest_fiscal_year: string;
+  strategy_rank: number;
+  strategy_name: string;
+  impact_level: "HIGH" | "LOW" | null;
+  impact_summary: string | null;
+  impact_value: number | null;
+  impact_units: string | null;
+  description: string | null;
+  timeline: string | null;
+  evidence_points: string[] | string | null;
+  source_transcripts: string[] | string | null;
+  extraction_date: string;
+};
