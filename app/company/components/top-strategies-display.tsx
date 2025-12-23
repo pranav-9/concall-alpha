@@ -2,7 +2,7 @@
 
 import { TopStrategyLatest } from "../types";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Sparkles, Target } from "lucide-react";
+import { Clock, Sparkles, Target, ChevronDown } from "lucide-react";
 
 interface TopStrategiesDisplayProps {
   strategies: TopStrategyLatest[];
@@ -84,18 +84,13 @@ export function TopStrategiesDisplay({ strategies }: TopStrategiesDisplayProps) 
           return (
             <div
               key={strategy.id}
-              className="rounded-lg border border-gray-800 bg-gray-900/50 p-3.5 space-y-2.5 shadow-sm shadow-black/20"
+              className="rounded-lg border border-gray-800 bg-gray-900/50 p-3.5 shadow-sm shadow-black/20 flex h-full flex-col gap-2.5"
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Badge className="text-[11px] px-2 py-0.5 bg-blue-500/20 text-blue-200 border border-blue-500/30">
-                    #{strategy.strategy_rank}
-                  </Badge>
-                  {getImpactBadge(strategy.impact_level)}
-                </div>
-                <Badge className="text-[10px] px-2 py-0.5 bg-gray-800 text-gray-300">
-                  {strategy.latest_fiscal_year}
+              <div className="flex items-start gap-2">
+                <Badge className="text-[11px] px-2 py-0.5 bg-blue-500/20 text-blue-200 border border-blue-500/30">
+                  #{strategy.strategy_rank}
                 </Badge>
+                {getImpactBadge(strategy.impact_level)}
               </div>
 
               <div className="space-y-1">
@@ -132,28 +127,31 @@ export function TopStrategiesDisplay({ strategies }: TopStrategiesDisplayProps) 
               )}
 
               {evidenceList.length > 0 && (
-                <div className="space-y-1.5">
-                  <div className="space-y-1">
-                    <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">
-                      Evidence
-                    </p>
-                    <ul className="space-y-1">
-                      {evidenceList.slice(0, 3).map((point, idx) => (
-                        <li
+                <div className="mt-auto space-y-2">
+                  <details className="group rounded-lg border border-gray-700/60 bg-gray-900/40 p-3">
+                    <summary className="flex cursor-pointer items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-gray-300 list-none">
+                      <span className="flex items-center gap-2">
+                        <span>Evidence</span>
+                        <span className="text-gray-400 text-[10px] normal-case">
+                          {evidenceList.length} point{evidenceList.length > 1 ? "s" : ""}
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-1 text-gray-400 text-[10px] font-semibold uppercase tracking-wide">
+                        <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200">Show</span>
+                        <ChevronDown className="h-3 w-3 transition-transform group-open:rotate-180" />
+                      </span>
+                    </summary>
+                    <div className="mt-3 space-y-1.5">
+                      {evidenceList.map((point, idx) => (
+                        <div
                           key={idx}
-                          className="text-[11px] text-gray-200 flex items-start gap-1.5"
+                          className="rounded border border-gray-700 bg-gray-800/70 px-3 py-2 text-[11px] text-gray-200 shadow-sm"
                         >
-                          <span className="text-emerald-300 font-bold mt-0.5">•</span>
-                          <span className="line-clamp-2">{point}</span>
-                        </li>
+                          {point}
+                        </div>
                       ))}
-                      {evidenceList.length > 3 && (
-                        <li className="text-[11px] text-gray-400 italic">
-                          +{evidenceList.length - 3} more
-                        </li>
-                      )}
-                    </ul>
-                  </div>
+                    </div>
+                  </details>
                 </div>
               )}
 
