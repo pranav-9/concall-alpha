@@ -86,9 +86,6 @@ export default async function Page({
           <SectionCard
             id="sentiment-score"
             title="Concall Sentiment Score"
-            // Span two columns on desktop so this module gets 2/3 width
-            // while the placeholder sits in the remaining third.
-            // eslint-disable-next-line tailwindcss/no-custom-classname
             className="lg:col-span-2"
           >
             <div className="flex flex-col gap-4">
@@ -143,7 +140,6 @@ export default async function Page({
           <SectionCard
             id="placeholder"
             title="Placeholder"
-            // eslint-disable-next-line tailwindcss/no-custom-classname
             className="lg:col-span-1"
           >
             <div className="flex h-full items-center justify-center rounded-md border border-dashed border-gray-700/70 bg-gray-900/40 text-gray-400 text-sm">
