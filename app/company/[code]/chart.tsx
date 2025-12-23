@@ -137,7 +137,7 @@ export function ChartLineLabel(props: {
 }) {
   return (
     <Card className="w-full bg-transparent border-0 shadow-none">
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 px-0">
         <ChartContainer config={chartConfig}>
           <LineChart
             accessibilityLayer

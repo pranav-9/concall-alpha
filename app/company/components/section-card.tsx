@@ -2,11 +2,17 @@ interface SectionCardProps {
   id: string;
   title: string;
   children: React.ReactNode;
+  className?: string;
 }
 
-export function SectionCard({ id, title, children }: SectionCardProps) {
+export function SectionCard({
+  id,
+  title,
+  children,
+  className = "",
+}: SectionCardProps) {
   return (
-    <div id={id} className="bg-gray-900 rounded-lg p-6">
+    <div id={id} className={`bg-gray-900 rounded-lg p-6 ${className}`}>
       <div className="flex flex-col gap-3">
         <p className="text-lg lg:text-lg font-bold !leading-tight">
           {title}

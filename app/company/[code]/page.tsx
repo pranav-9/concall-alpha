@@ -82,6 +82,88 @@ export default async function Page({
       <div id="main-content" className="flex-1 flex flex-col gap-6">
         <OverviewCard data={latestQuarterData} />
 
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <SectionCard
+            id="sentiment-score"
+            title="Concall Sentiment Score"
+            // Span two columns on desktop so this module gets 2/3 width
+            // while the placeholder sits in the remaining third.
+            // eslint-disable-next-line tailwindcss/no-custom-classname
+            className="lg:col-span-2"
+          >
+            <div className="flex flex-col gap-4">
+              {/* Trend indicator */}
+              <div
+                className={`flex items-center gap-2 p-2 rounded-lg ${
+                  trend.direction === "improving"
+                    ? "bg-emerald-500/20 border border-emerald-500/50"
+                    : trend.direction === "declining"
+                    ? "bg-red-500/20 border border-red-500/50"
+                    : "bg-amber-500/20 border border-amber-500/50"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {trend.direction === "improving" ? (
+                    <>
+                      <TrendingUp className="h-5 w-5 text-emerald-400" />
+                      <span className="text-xs font-semibold text-emerald-300">
+                        Trend: Improving
+                      </span>
+                    </>
+                  ) : trend.direction === "declining" ? (
+                    <>
+                      <TrendingDown className="h-5 w-5 text-red-400" />
+                      <span className="text-xs font-semibold text-red-300">
+                        Trend: Declining
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs font-semibold text-amber-300">
+                      ↔ Trend: Stable
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] text-gray-300 ml-auto">
+                  {trend.description}
+                </span>
+              </div>
+
+              {/* Chart */}
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-center">
+                  <ChartLineLabel chartData={chartData} />
+                </div>
+                <p className="text-[11px] text-gray-400 text-center">
+                  Showing the latest 12 quarterly points (newest to oldest).
+                </p>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            id="placeholder"
+            title="Placeholder"
+            // eslint-disable-next-line tailwindcss/no-custom-classname
+            className="lg:col-span-1"
+          >
+            <div className="flex h-full items-center justify-center rounded-md border border-dashed border-gray-700/70 bg-gray-900/40 text-gray-400 text-sm">
+              Reserved for future module
+            </div>
+          </SectionCard>
+        </div>
+
+        <SectionCard id="competitive-strategy" title="Story of the Stock - Top Strategies">
+          {topStrategiesData && topStrategiesData.length > 0 ? (
+            <TopStrategiesDisplay
+              strategies={topStrategiesData as TopStrategyLatest[]}
+            />
+          ) : (
+            <div className="text-gray-400 text-sm">
+              No strategy data available
+            </div>
+          )}
+        </SectionCard>
+
         <SectionCard id="business-overview" title="Business Segments">
           {/* Business Segments and Revenue on same row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -105,63 +187,6 @@ export default async function Page({
                 />
               </div>
             )}
-          </div>
-        </SectionCard>
-
-        <SectionCard id="competitive-strategy" title="Story of the Stock - Top Strategies">
-          {topStrategiesData && topStrategiesData.length > 0 ? (
-            <TopStrategiesDisplay
-              strategies={topStrategiesData as TopStrategyLatest[]}
-            />
-          ) : (
-            <div className="text-gray-400 text-sm">
-              No strategy data available
-            </div>
-          )}
-        </SectionCard>
-
-        <SectionCard id="sentiment-score" title="Concall Sentiment Score">
-          <div className="flex flex-col gap-4">
-            {/* Trend indicator */}
-            <div
-              className={`flex items-center gap-2 p-2 rounded-lg ${
-                trend.direction === "improving"
-                  ? "bg-emerald-500/20 border border-emerald-500/50"
-                  : trend.direction === "declining"
-                  ? "bg-red-500/20 border border-red-500/50"
-                  : "bg-amber-500/20 border border-amber-500/50"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                {trend.direction === "improving" ? (
-                  <>
-                    <TrendingUp className="h-5 w-5 text-emerald-400" />
-                    <span className="text-xs font-semibold text-emerald-300">
-                      Trend: Improving
-                    </span>
-                  </>
-                ) : trend.direction === "declining" ? (
-                  <>
-                    <TrendingDown className="h-5 w-5 text-red-400" />
-                    <span className="text-xs font-semibold text-red-300">
-                      Trend: Declining
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-xs font-semibold text-amber-300">
-                    ↔ Trend: Stable
-                  </span>
-                )}
-              </div>
-              <span className="text-[11px] text-gray-300 ml-auto">
-                {trend.description}
-              </span>
-            </div>
-
-            {/* Chart */}
-            <div className="flex justify-center">
-              <ChartLineLabel chartData={chartData} />
-            </div>
           </div>
         </SectionCard>
       </div>

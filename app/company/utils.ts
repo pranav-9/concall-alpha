@@ -22,12 +22,15 @@ export function parseSummary(
  * Transform quarterly data into chart-ready format
  */
 export function transformToChartData(data: QuarterData[]): ChartDataPoint[] {
-  return data
+  // Keep only the most recent 12 records (data is newest-first)
+  const limited = data.slice(0, 12);
+
+  return limited
     .map((x) => ({
       qtr: x.quarter_label,
       score: x.score,
     }))
-    .reverse();
+    .reverse(); // reverse to show oldest-to-newest left-to-right
 }
 
 /**
