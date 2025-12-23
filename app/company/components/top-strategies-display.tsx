@@ -2,7 +2,7 @@
 
 import { TopStrategyLatest } from "../types";
 import { Badge } from "@/components/ui/badge";
-import { Clock, FileText, Sparkles, Target } from "lucide-react";
+import { Clock, Sparkles, Target } from "lucide-react";
 
 interface TopStrategiesDisplayProps {
   strategies: TopStrategyLatest[];
@@ -80,7 +80,6 @@ export function TopStrategiesDisplay({ strategies }: TopStrategiesDisplayProps) 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {latestStrategies.map((strategy) => {
           const evidenceList = parseStringArray(strategy.evidence_points);
-          const sourceList = parseStringArray(strategy.source_transcripts);
 
           return (
             <div
