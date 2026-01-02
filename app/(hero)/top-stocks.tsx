@@ -57,7 +57,7 @@ const getTopStocks = async (
 
   if (error) throw error;
 
-  return (data ?? []).map((row) => {
+  const normalized = (data ?? []).map((row) => {
     const name = row.company?.name ?? "—";
     const scoreNum = Number(row.score);
     return {
@@ -67,6 +67,14 @@ const getTopStocks = async (
       label: scoreToLabel(scoreNum),
     };
   });
+
+  // Only keep clearly bullish names in the "Most Bullish" list
+  if (top) {
+    return normalized.filter((n) => n.score >= 7);
+  }
+
+  // For the "Least Bullish" list, exclude anything above 7
+  return normalized.filter((n) => n.score <= 7);
 };
 
 const TopStocks = async () => {
