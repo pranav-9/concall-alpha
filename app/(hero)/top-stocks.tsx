@@ -6,56 +6,83 @@ import React from "react";
 
 export const revalidate = 300;
 
-const getTopStocks = async (top: boolean, count: number) => {
-  const supabase = await createClient();
+type Quarter = { fy: number; qtr: number; label: string };
 
-  // Join company to get the display name
+const scoreToLabel = (score: number) => {
+  if (score >= 8.5) return "Extremely Bullish";
+  if (score >= 6.5) return "Bullish";
+  if (score >= 5.0) return "Neutral";
+  if (score >= 3.5) return "Bearish";
+  return "Extremely Bearish";
+};
+
+const getLatestQuarter = async (supabase: ReturnType<typeof createClient>) => {
+  const { data, error } = await supabase
+    .from("concall_analysis")
+    .select("fy,qtr,quarter_label")
+    .order("fy", { ascending: false })
+    .order("qtr", { ascending: false })
+    .limit(1);
+
+  if (error) throw error;
+  const latest = data?.[0];
+  if (!latest) return null;
+  return {
+    fy: latest.fy,
+    qtr: latest.qtr,
+    label: latest.quarter_label ?? `Q${latest.qtr} FY${latest.fy}`,
+  } as Quarter;
+};
+
+const getTopStocks = async (
+  supabase: ReturnType<typeof createClient>,
+  quarter: Quarter,
+  top: boolean,
+  count: number,
+) => {
   const { data, error } = await supabase
     .from("concall_analysis")
     .select("company_code, score, company(name)")
-    .eq("fy", 2026)
-    .eq("qtr", 1)
+    .eq("fy", quarter.fy)
+    .eq("qtr", quarter.qtr)
     .order("score", { ascending: !top })
     .limit(count)
     .returns<
       {
         company_code: string;
         score: number;
-        company: { name: string } | null; // embedded parent is a single object
+        company: { name: string } | null;
       }[]
-    >(); // <<< key line;
+    >();
 
   if (error) throw error;
 
-  function scoreToLabel(score: number) {
-    // Tune thresholds to match your example output (treat 6.5+ as "Extremely Bullish")
-    if (score >= 8.5) return "Extremely Bullish";
-    if (score >= 6.5) return "Bullish"; // adjust if you want a "Bullish" tier
-    if (score >= 5.0) return "Neutral";
-    if (score >= 3.5) return "Bearish";
-    return "Extremely Bearish";
-  }
-
-  // console.log(data);
-
-  const data1 = (data ?? []).map((row) => {
+  return (data ?? []).map((row) => {
     const name = row.company?.name ?? "—";
     const scoreNum = Number(row.score);
     return {
       code: row.company_code,
       name,
-      score: Math.round(scoreNum * 100) / 100, // e.g., 7.86
+      score: Math.round(scoreNum * 100) / 100,
       label: scoreToLabel(scoreNum),
     };
   });
-
-  // console.log(data1);
-  return data1;
 };
 
 const TopStocks = async () => {
-  const topStocks = await getTopStocks(true, 5);
-  const bottomStocks = await getTopStocks(false, 5);
+  const supabase = await createClient();
+  const latestQuarter = await getLatestQuarter(supabase);
+
+  if (!latestQuarter) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-10 text-muted-foreground">
+        <p>No concall data available yet.</p>
+      </div>
+    );
+  }
+
+  const topStocks = await getTopStocks(supabase, latestQuarter, true, 5);
+  const bottomStocks = await getTopStocks(supabase, latestQuarter, false, 5);
 
   const data2 = [
     {
@@ -105,7 +132,7 @@ const TopStocks = async () => {
   return (
     <div className="flex flex-col w-[95%] gap-4 justify-items-center items-center pt-16">
       <p className="text-4xl lg:text-6xl font-extrabold !leading-tight text-center">
-        Q1FY26 Concalls
+        {latestQuarter.label} Concalls
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 sm:p-4 gap-8 sm:w-[80%] w-full">
         {data2.map((list, i) => (
