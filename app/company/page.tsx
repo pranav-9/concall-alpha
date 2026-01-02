@@ -1,8 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
-import { columns, ConcallRow } from "./columns";
-import { DataTable } from "./data-table";
+import { LeaderboardTable, type CompanyRow } from "./leaderboard-table";
 
-// 1) Unique VALUES for a given key (flat key)
+type QuarterInfo = {
+  fy: number;
+  qtr: number;
+  label: string;
+};
+
 const uniqueValues = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   arr: any[] | null,
@@ -14,46 +18,65 @@ const uniqueValues = (
 };
 
 const getConcallData = async () => {
-  // Fetch data from your API here.
-
   const supabase = await createClient();
   const { data } = await supabase.from("concall_analysis").select();
-  // console.log(data);
 
-  const companies = uniqueValues(data, "company_code");
+  const records = data ?? [];
 
-  console.log(companies);
+  // sort newest -> oldest
+  const sorted = [...records].sort(
+    (a, b) => b.fy - a.fy || b.qtr - a.qtr
+  );
 
-  const output: ConcallRow[] = companies.map((n) => {
-    return {
-      company: n,
-      q1fy26: data?.find(
-        (x) => x.company_code == n && x.fy == 2026 && x.qtr == 1
-      ).score,
-      q4fy25: data?.find(
-        (x) => x.company_code == n && x.fy == 2025 && x.qtr == 4
-      ).score,
-      q3fy25: data?.find(
-        (x) => x.company_code == n && x.fy == 2025 && x.qtr == 3
-      ).score,
-      q2fy25: data?.find(
-        (x) => x.company_code == n && x.fy == 2025 && x.qtr == 2
-      ).score,
-    };
+  // pick latest 4 unique quarters
+  const quarters: QuarterInfo[] = [];
+  sorted.forEach((row) => {
+    const id = `${row.fy}-${row.qtr}`;
+    if (quarters.some((q) => `${q.fy}-${q.qtr}` === id)) return;
+    quarters.push({
+      fy: row.fy,
+      qtr: row.qtr,
+      label: row.quarter_label ?? `Q${row.qtr} FY${row.fy}`,
+    });
+  });
+  const selectedQuarters = quarters.slice(0, 4);
+
+  const companies = uniqueValues(records, "company_code");
+
+  const rows: CompanyRow[] = companies.map((companyCode: string) => {
+    const row: CompanyRow = { company: companyCode };
+    const companyRecords = sorted.filter((x) => x.company_code === companyCode);
+
+    selectedQuarters.forEach((q) => {
+      const match = companyRecords.find(
+        (x) => x.fy === q.fy && x.qtr === q.qtr
+      );
+      row[q.label] = match?.score ?? null;
+    });
+
+    return row;
   });
 
-  console.log(output);
+  const latestLabel = selectedQuarters[0]?.label;
+  const sortedRows = latestLabel
+    ? rows.sort(
+        (a, b) =>
+          (Number(b[latestLabel]) || 0) - (Number(a[latestLabel]) || 0)
+      )
+    : rows;
 
-  return output.sort((a, b) => b.q1fy26 - a.q1fy26);
+  return {
+    rows: sortedRows,
+    quarterLabels: selectedQuarters.map((q) => q.label),
+  };
 };
 
-export default async function DemoPage() {
-  // const data = await getData();
-  const data = await getConcallData();
+export default async function CompanyLeaderboardPage() {
+  const { rows, quarterLabels } = await getConcallData();
 
   return (
     <div className="container mx-auto py-10">
-      <DataTable columns={columns} data={data} />
+      <LeaderboardTable quarterLabels={quarterLabels} data={rows} />
     </div>
   );
 }
