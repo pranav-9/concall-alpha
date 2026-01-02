@@ -72,7 +72,7 @@ export default async function Page({
   const latestQuarterData: QuarterData = data[0];
   latestQuarterData.summary = parseSummary(latestQuarterData.summary);
   const chartData = transformToChartData(data);
-  const trend = calculateTrend(data);
+  const trend = calculateTrend(data.slice(0, 12));
 
   return (
     <div className="flex w-full gap-6 px-6 lg:px-12 py-6">

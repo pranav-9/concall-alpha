@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { LeaderboardTable, type CompanyRow } from "./leaderboard-table";
+import { calculateTrend } from "./utils";
+import type { QuarterData } from "./types";
 
 type QuarterInfo = {
   fy: number;
@@ -46,6 +48,7 @@ const getConcallData = async () => {
   const rows: CompanyRow[] = companies.map((companyCode: string) => {
     const row: CompanyRow = { company: companyCode };
     const companyRecords = sorted.filter((x) => x.company_code === companyCode);
+    const trendSample = companyRecords.slice(0, 12);
 
     selectedQuarters.forEach((q) => {
       const match = companyRecords.find(
@@ -53,6 +56,14 @@ const getConcallData = async () => {
       );
       row[q.label] = match?.score ?? null;
     });
+
+    // Trend calculation reused from company detail page
+    const trend = calculateTrend(trendSample as QuarterData[]);
+    row.trendDirection = trend.direction;
+    row.trendDescription = trend.description;
+    row.trendChange = trend.change;
+    row.trendRecentAvg = trend.recentAvg;
+    row.trendHistoricalAvg = trend.historicalAvg;
 
     return row;
   });
@@ -68,6 +79,8 @@ const getConcallData = async () => {
   return {
     rows: sortedRows,
     quarterLabels: selectedQuarters.map((q) => q.label),
+    latestLabel,
+    previousLabel: selectedQuarters[1]?.label,
   };
 };
 
@@ -76,7 +89,10 @@ export default async function CompanyLeaderboardPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <LeaderboardTable quarterLabels={quarterLabels} data={rows} />
+      <LeaderboardTable
+        quarterLabels={quarterLabels}
+        data={rows}
+      />
     </div>
   );
 }
