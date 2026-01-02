@@ -7,6 +7,7 @@ import React from "react";
 export const revalidate = 300;
 
 type Quarter = { fy: number; qtr: number; label: string };
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 const scoreToLabel = (score: number) => {
   if (score >= 8.5) return "Extremely Bullish";
@@ -16,7 +17,7 @@ const scoreToLabel = (score: number) => {
   return "Extremely Bearish";
 };
 
-const getLatestQuarter = async (supabase: ReturnType<typeof createClient>) => {
+const getLatestQuarter = async (supabase: SupabaseServerClient) => {
   const { data, error } = await supabase
     .from("concall_analysis")
     .select("fy,qtr,quarter_label")
@@ -35,7 +36,7 @@ const getLatestQuarter = async (supabase: ReturnType<typeof createClient>) => {
 };
 
 const getTopStocks = async (
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseServerClient,
   quarter: Quarter,
   top: boolean,
   count: number,
