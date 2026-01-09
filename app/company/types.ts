@@ -6,6 +6,7 @@ export type QuarterData = {
   quarter_start_date: string;
   quarter_label: string;
   score: number;
+  details?: Record<string, unknown> | null;
   summary: {
     topic: string;
     text: string;

@@ -9,7 +9,7 @@ export const SECTIONS = [
   },
   {
     id: "placeholder",
-    label: "Placeholder",
+    label: "Future Growth Prospects",
   },
   {
     id: "competitive-strategy",

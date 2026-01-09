@@ -1,11 +1,9 @@
 import { QuarterData, ChartDataPoint } from "./types";
 
 /**
- * Parse and validate summary data from database
+ * Parse and validate summary data from database (gracefully handles missing field)
  */
-export function parseSummary(
-  summary: QuarterData["summary"]
-): QuarterData["summary"] {
+export function parseSummary(summary: unknown): QuarterData["summary"] {
   if (typeof summary === "string") {
     try {
       const parsed = JSON.parse(summary);
