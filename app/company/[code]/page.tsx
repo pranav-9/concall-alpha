@@ -16,6 +16,17 @@ import { SegmentRevenueDisplay } from "../components/segment-revenue-display";
 import { TopStrategiesDisplay } from "../components/top-strategies-display";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import ConcallScore from "@/components/concall-score";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import {
   Carousel,
   CarouselContent,
@@ -184,7 +195,25 @@ export default async function Page({
                             : [];
                           const guidance =
                             typeof details?.guidance === "string" ? (details?.guidance as string) : null;
-                      const isLatest = idx === detailQuartersOldestFirst.length - 1;
+                          const category =
+                            typeof details?.category === "string" ? (details?.category as string) : null;
+                          const trajectory =
+                            typeof details?.trajectory === "string"
+                              ? (details?.trajectory as string)
+                              : null;
+                          const confidence =
+                            typeof details?.confidence === "number"
+                              ? (details?.confidence as number)
+                              : null;
+                          const keyMetrics =
+                            details && typeof details === "object" && "key_metrics" in details
+                              ? (details as Record<string, unknown>).key_metrics
+                              : null;
+                          const keyMetricEntries =
+                            keyMetrics && typeof keyMetrics === "object"
+                              ? Object.entries(keyMetrics as Record<string, unknown>)
+                              : [];
+                          const isLatest = idx === detailQuartersOldestFirst.length - 1;
 
                           return (
                             <CarouselItem
@@ -206,55 +235,157 @@ export default async function Page({
                               <ConcallScore score={q.score} size="sm" />
                             </div>
                             {/* category intentionally hidden */}
-                                {guidance && (
-                                  <p className="text-[11px] text-gray-200 leading-snug line-clamp-3 mb-2">
-                                    {guidance}
-                                  </p>
-                                )}
-                                {rationale.length > 0 && (
-                                  <div className="mb-2">
-                                    <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
-                                      Rationale
-                                    </p>
-                                    <ul className="mt-1 space-y-1">
-                                      {rationale.map((item, rIdx) => (
-                                        <li
-                                          key={rIdx}
-                                          className="text-[11px] text-gray-200 leading-snug line-clamp-2"
-                                        >
-                                          • {item}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {risks.length > 0 && (
-                                  <div>
-                                    <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
-                                      Risks
-                                    </p>
-                                    <ul className="mt-1 space-y-1">
-                                      {risks.map((item, rIdx) => (
-                                        <li
-                                          key={rIdx}
-                                          className="text-[11px] text-gray-200 leading-snug line-clamp-2"
-                                        >
-                                          • {item}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {!details && (
-                                  <p className="text-[10px] text-gray-500 mt-2">
-                                    No additional context available.
-                                  </p>
-                                )}
+                            {guidance && (
+                              <p className="text-[11px] text-gray-200 leading-snug line-clamp-3 mb-2">
+                                {guidance}
+                              </p>
+                            )}
+                            {rationale.length > 0 && (
+                              <div className="mb-2">
+                                <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+                                  Rationale
+                                </p>
+                                <ul className="mt-1 space-y-1">
+                                  {rationale.map((item, rIdx) => (
+                                    <li
+                                      key={rIdx}
+                                      className="text-[11px] text-gray-200 leading-snug line-clamp-2"
+                                    >
+                                      • {item}
+                                    </li>
+                                  ))}
+                                </ul>
                               </div>
-                            </CarouselItem>
-                          );
-                        })}
-                      </CarouselContent>
+                            )}
+                            {risks.length > 0 && (
+                              <div>
+                                <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+                                  Risks
+                                </p>
+                                <ul className="mt-1 space-y-1">
+                                  {risks.map((item, rIdx) => (
+                                    <li
+                                      key={rIdx}
+                                      className="text-[11px] text-gray-200 leading-snug line-clamp-2"
+                                    >
+                                      • {item}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {!details && (
+                              <p className="text-[10px] text-gray-500 mt-2">
+                                No additional context available.
+                              </p>
+                            )}
+                            {details && (
+                              <Drawer direction="right">
+                                <DrawerTrigger asChild>
+                                  <Button size="sm" variant="outline" className="mt-3 text-xs">
+                                    Open details
+                                  </Button>
+                                </DrawerTrigger>
+                                <DrawerContent>
+                                  <DrawerHeader>
+                                    <DrawerTitle>{q.quarter_label} details</DrawerTitle>
+                                    <DrawerDescription>
+                                      Full guidance, rationale, risks, and key metrics for this quarter.
+                                    </DrawerDescription>
+                                  </DrawerHeader>
+                                  <div className="px-4 pb-4 space-y-4 text-sm text-gray-200 max-h-[75vh] overflow-y-auto">
+                                    <div className="flex items-center gap-2">
+                                      <ConcallScore score={q.score} size="sm" />
+                                      {isLatest && (
+                                        <span className="text-[11px] font-semibold text-blue-300 px-2 py-0.5 rounded-full bg-blue-900/40">
+                                          Latest
+                                        </span>
+                                      )}
+                                      {trajectory && (
+                                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                                          {trajectory}
+                                        </span>
+                                      )}
+                                      {typeof confidence === "number" && (
+                                        <span className="text-[11px] text-gray-400">
+                                          Confidence: {(confidence * 100).toFixed(0)}%
+                                        </span>
+                                      )}
+                                    </div>
+                                    {category && (
+                                      <p className="text-[11px] text-emerald-200 font-semibold">
+                                        {category}
+                                      </p>
+                                    )}
+                                    {guidance && (
+                                      <div>
+                                        <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                                          Guidance
+                                        </p>
+                                        <p className="text-sm text-gray-200 leading-relaxed">
+                                          {guidance}
+                                        </p>
+                                      </div>
+                                    )}
+                                    {rationale.length > 0 && (
+                                      <div>
+                                        <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                                          Rationale
+                                        </p>
+                                        <ul className="mt-1 space-y-1">
+                                          {rationale.map((item, rIdx) => (
+                                            <li key={rIdx} className="leading-snug">
+                                              • {item}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                    {risks.length > 0 && (
+                                      <div>
+                                        <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                                          Risks
+                                        </p>
+                                        <ul className="mt-1 space-y-1">
+                                          {risks.map((item, rIdx) => (
+                                            <li key={rIdx} className="leading-snug">
+                                              • {item}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                    {keyMetricEntries.length > 0 && (
+                                      <div className="space-y-1">
+                                        <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                                          Key metrics
+                                        </p>
+                                        {keyMetricEntries.map(([k, v]) => (
+                                          <div key={k} className="text-[11px] text-gray-200 flex gap-2">
+                                            <span className="font-semibold capitalize">
+                                              {k.replace(/_/g, " ")}:
+                                            </span>
+                                            <span className="text-gray-300">
+                                              {v === null ? "—" : String(v)}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <DrawerFooter>
+                                    <DrawerClose asChild>
+                                      <Button variant="outline">Close</Button>
+                                    </DrawerClose>
+                                  </DrawerFooter>
+                                </DrawerContent>
+                              </Drawer>
+                            )}
+                          </div>
+                        </CarouselItem>
+                      );
+                    })}
+                  </CarouselContent>
                       <div className="flex justify-center gap-2 mt-2">
                         <CarouselPrevious className="static translate-x-0 translate-y-0" />
                         <CarouselNext className="static translate-x-0 translate-y-0" />
