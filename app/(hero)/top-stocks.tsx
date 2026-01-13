@@ -36,6 +36,12 @@ type ListItem = {
   avg4?: number | null;
 };
 
+type ListBlock = {
+  title: string;
+  scoreKey?: "latest" | "avg4";
+  items: ListItem[];
+};
+
 const fetchAll = async (supabase: SupabaseServerClient) => {
   const { data, error } = await supabase
     .from("concall_analysis")
@@ -143,15 +149,15 @@ const buildLists = (records: CompanyRecord[]) => {
     .sort((a, b) => (b.sum4 ?? 0) - (a.sum4 ?? 0))
     .slice(0, 5);
 
-  const strength = [
-    { title: "4Q Strength (cumulative)", items: strong4Q },
-    { title: "Most Bullish (latest qtr)", items: mostBullish },
-    { title: "Biggest Improvers (QoQ)", items: improvers },
+  const strength: ListBlock[] = [
+    { title: "4Q Strength (cumulative)", items: strong4Q, scoreKey: "avg4" },
+    { title: "Most Bullish (latest qtr)", items: mostBullish, scoreKey: "latest" },
+    { title: "Biggest Improvers (QoQ)", items: improvers, scoreKey: "latest" },
   ];
 
-  const weakness = [
-    { title: "Least Bullish", items: leastBullish },
-    { title: "Biggest Decliners (QoQ)", items: decliners },
+  const weakness: ListBlock[] = [
+    { title: "Least Bullish", items: leastBullish, scoreKey: "latest" },
+    { title: "Biggest Decliners (QoQ)", items: decliners, scoreKey: "latest" },
   ];
 
   return { strength, weakness, latestLabel: latest?.label ?? "" };
@@ -214,7 +220,7 @@ const TopStocks = async () => {
 
 export default TopStocks;
 
-function ListCard({ list }: { list: { title: string; items: ListItem[] } }) {
+function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey?: "latest" | "avg4" } }) {
   return (
     <div className="flex flex-col rounded-xl border border-gray-800 bg-gray-950/70">
       <div className="p-3 font-bold text-white text-lg bg-black rounded-t-xl border-b border-gray-800">
@@ -244,24 +250,20 @@ function ListCard({ list }: { list: { title: string; items: ListItem[] } }) {
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-0.5 min-w-[88px]">
+                <div className="flex flex-col items-end gap-0.5 min-w-[72px]">
                   {!Number.isNaN(s.latestScore) && (
-                    <ConcallScore score={s.latestScore}></ConcallScore>
-                  )}
-                  {typeof s.delta === "number" && (
-                    <span
-                      className={`text-xs ${
-                        s.delta > 0 ? "text-emerald-300" : s.delta < 0 ? "text-red-300" : "text-gray-400"
-                      }`}
-                    >
-                      {s.delta > 0 ? "+" : ""}
-                      {s.delta.toFixed(2)}
-                    </span>
-                  )}
-                  {typeof s.avg4 === "number" && (
-                    <span className="text-[10px] text-gray-500">
-                      4Q Avg {s.avg4.toFixed(2)}
-                    </span>
+                    <>
+                      <ConcallScore
+                        score={
+                          list.scoreKey === "avg4" && typeof s.avg4 === "number"
+                            ? s.avg4
+                            : s.latestScore
+                        }
+                      />
+                      <span className="text-[10px] text-gray-400">
+                        {list.scoreKey === "avg4" ? "4Q avg" : "Latest qtr"}
+                      </span>
+                    </>
                   )}
                 </div>
               </div>
