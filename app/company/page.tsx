@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { LeaderboardTable, type CompanyRow } from "./leaderboard-table";
 import { calculateTrend } from "./utils";
 import type { QuarterData } from "./types";
+import type { Metadata } from "next";
 
 type QuarterInfo = {
   fy: number;
@@ -82,6 +83,11 @@ const getConcallData = async () => {
     latestLabel,
     previousLabel: selectedQuarters[1]?.label,
   };
+};
+
+export const metadata: Metadata = {
+  title: "Leaderboard – Concall Alpha",
+  description: "Latest concall sentiment leaderboard across companies.",
 };
 
 export default async function CompanyLeaderboardPage() {

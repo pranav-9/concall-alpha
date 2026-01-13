@@ -12,7 +12,7 @@ export function SectionCard({
   className = "",
 }: SectionCardProps) {
   return (
-    <div id={id} className={`bg-gray-900 rounded-lg p-6 ${className}`}>
+    <div id={id} className={`bg-gray-900 rounded-lg p-4 ${className}`}>
       <div className="flex flex-col gap-3">
         <p className="text-lg lg:text-lg font-bold !leading-tight">
           {title}

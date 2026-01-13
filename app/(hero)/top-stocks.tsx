@@ -1,88 +1,167 @@
+import React from "react";
+import Link from "next/link";
+
 import ConcallScore, { categoryFor } from "@/components/concall-score";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
-import Link from "next/link";
-import React from "react";
 
 export const revalidate = 300;
 
-type Quarter = { fy: number; qtr: number; label: string };
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
-const scoreToLabel = (score: number) => {
-  if (score >= 8.5) return "Extremely Bullish";
-  if (score >= 6.5) return "Bullish";
-  if (score >= 5.0) return "Neutral";
-  if (score >= 3.5) return "Bearish";
-  return "Extremely Bearish";
+type CompanyRecord = {
+  company_code: string;
+  score: number;
+  fy: number;
+  qtr: number;
+  quarter_label: string | null;
+  company: { name: string | null } | null;
 };
 
-const getLatestQuarter = async (supabase: SupabaseServerClient) => {
+type RawConcallRow = {
+  company_code: string;
+  score: number;
+  fy: number;
+  qtr: number;
+  quarter_label?: string | null;
+  company?: { name: string | null }[] | { name: string | null } | null;
+};
+
+type ListItem = {
+  code: string;
+  name: string;
+  latestScore: number;
+  delta?: number | null;
+  sum4?: number | null;
+  avg4?: number | null;
+};
+
+const fetchAll = async (supabase: SupabaseServerClient) => {
   const { data, error } = await supabase
     .from("concall_analysis")
-    .select("fy,qtr,quarter_label")
+    .select("company_code, score, fy, qtr, quarter_label, company(name)")
     .order("fy", { ascending: false })
-    .order("qtr", { ascending: false })
-    .limit(1);
+    .order("qtr", { ascending: false });
 
   if (error) throw error;
-  const latest = data?.[0];
-  if (!latest) return null;
-  return {
-    fy: latest.fy,
-    qtr: latest.qtr,
-    label: latest.quarter_label ?? `Q${latest.qtr} FY${latest.fy}`,
-  } as Quarter;
-};
-
-const getTopStocks = async (
-  supabase: SupabaseServerClient,
-  quarter: Quarter,
-  top: boolean,
-  count: number,
-) => {
-  const { data, error } = await supabase
-    .from("concall_analysis")
-    .select("company_code, score, company(name)")
-    .eq("fy", quarter.fy)
-    .eq("qtr", quarter.qtr)
-    .order("score", { ascending: !top })
-    .limit(count)
-    .returns<
-      {
-        company_code: string;
-        score: number;
-        company: { name: string } | null;
-      }[]
-    >();
-
-  if (error) throw error;
-
-  const normalized = (data ?? []).map((row) => {
-    const name = row.company?.name ?? "—";
-    const scoreNum = Number(row.score);
+  const normalized: CompanyRecord[] = (data ?? []).map((row) => {
+    const r = row as RawConcallRow;
     return {
-      code: row.company_code,
-      name,
-      score: Math.round(scoreNum * 100) / 100,
-      label: scoreToLabel(scoreNum),
+      company_code: r.company_code,
+      score: Number(r.score),
+      fy: r.fy,
+      qtr: r.qtr,
+      quarter_label: r.quarter_label ?? null,
+      company: Array.isArray(r.company)
+        ? r.company[0] ?? { name: null }
+        : r.company ?? { name: null },
     };
   });
+  return normalized;
+};
 
-  // Only keep clearly bullish names in the "Most Bullish" list
-  if (top) {
-    return normalized.filter((n) => n.score >= 7);
-  }
+const uniqueQuarters = (records: CompanyRecord[]) => {
+  const seen = new Set<string>();
+  const quarters: { fy: number; qtr: number; label: string }[] = [];
+  records.forEach((r) => {
+    const key = `${r.fy}-${r.qtr}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      quarters.push({
+        fy: r.fy,
+        qtr: r.qtr,
+        label: r.quarter_label ?? `Q${r.qtr} FY${r.fy}`,
+      });
+    }
+  });
+  return quarters;
+};
 
-  // For the "Least Bullish" list, exclude anything above 7
-  return normalized.filter((n) => n.score <= 7);
+const buildLists = (records: CompanyRecord[]) => {
+  if (!records.length) return { strength: [], weakness: [], latestLabel: "" };
+
+  const quarters = uniqueQuarters(records);
+  const latest = quarters[0];
+  const prev = quarters[1];
+
+  const companyMap = new Map<string, CompanyRecord[]>();
+  records.forEach((r) => {
+    if (!companyMap.has(r.company_code)) companyMap.set(r.company_code, []);
+    companyMap.get(r.company_code)!.push(r);
+  });
+
+  const companies: ListItem[] = [];
+  companyMap.forEach((rows, code) => {
+    const sorted = [...rows].sort((a, b) => b.fy - a.fy || b.qtr - a.qtr);
+    const name = sorted[0]?.company?.name ?? "—";
+    const latestRec =
+      latest &&
+      sorted.find((r) => r.fy === latest.fy && r.qtr === latest.qtr);
+    const prevRec =
+      prev && sorted.find((r) => r.fy === prev.fy && r.qtr === prev.qtr);
+    const delta =
+      latestRec && prevRec ? Number(latestRec.score) - Number(prevRec.score) : null;
+    const last4 = sorted.slice(0, 4);
+    const sum4 =
+      last4.length > 0
+        ? last4.reduce((acc, curr) => acc + Number(curr.score ?? 0), 0)
+        : null;
+    const avg4 = sum4 != null ? sum4 / last4.length : null;
+
+    companies.push({
+      code,
+      name,
+      latestScore: latestRec ? Number(latestRec.score) : NaN,
+      delta,
+      sum4,
+      avg4,
+    });
+  });
+
+  const mostBullish = companies
+    .filter((c) => !Number.isNaN(c.latestScore) && c.latestScore >= 7)
+    .sort((a, b) => b.latestScore - a.latestScore)
+    .slice(0, 5);
+
+  const leastBullish = companies
+    .filter((c) => !Number.isNaN(c.latestScore) && c.latestScore <= 7)
+    .sort((a, b) => a.latestScore - b.latestScore)
+    .slice(0, 5);
+
+  const improvers = companies
+    .filter((c) => c.delta != null && c.delta > 0)
+    .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0))
+    .slice(0, 5);
+
+  const decliners = companies
+    .filter((c) => c.delta != null && c.delta < 0)
+    .sort((a, b) => (a.delta ?? 0) - (b.delta ?? 0))
+    .slice(0, 5);
+
+  const strong4Q = companies
+    .filter((c) => c.sum4 != null)
+    .sort((a, b) => (b.sum4 ?? 0) - (a.sum4 ?? 0))
+    .slice(0, 5);
+
+  const strength = [
+    { title: "4Q Strength (cumulative)", items: strong4Q },
+    { title: "Most Bullish (latest qtr)", items: mostBullish },
+    { title: "Biggest Improvers (QoQ)", items: improvers },
+  ];
+
+  const weakness = [
+    { title: "Least Bullish", items: leastBullish },
+    { title: "Biggest Decliners (QoQ)", items: decliners },
+  ];
+
+  return { strength, weakness, latestLabel: latest?.label ?? "" };
 };
 
 const TopStocks = async () => {
   const supabase = await createClient();
-  const latestQuarter = await getLatestQuarter(supabase);
+  const records = await fetchAll(supabase);
 
-  if (!latestQuarter) {
+  if (!records.length) {
     return (
       <div className="flex flex-col items-center gap-4 py-10 text-muted-foreground">
         <p>No concall data available yet.</p>
@@ -90,93 +169,39 @@ const TopStocks = async () => {
     );
   }
 
-  const topStocks = await getTopStocks(supabase, latestQuarter, true, 5);
-  const bottomStocks = await getTopStocks(supabase, latestQuarter, false, 5);
-
-  const data2 = [
-    {
-      title: "Most Bullish",
-      stocks: topStocks,
-      //   [
-      //   {
-      //     name: "Aarti Pharmalabs",
-      //     score: 7.89,
-      //     label: "Extremely Bullish",
-      //   },
-      //   {
-      //     name: "Aarti ",
-      //     score: 7.86,
-      //     label: "Extremely Bullish",
-      //   },
-      //   {
-      //     name: "Aarti sdas",
-      //     score: 6.83,
-      //     label: "Extremely Bullish",
-      //   },
-      // ],
-    },
-    {
-      title: "Least Bullish",
-      stocks: bottomStocks,
-      //   [
-      //   {
-      //     name: "Aarti Pharmalabs",
-      //     score: 7.89,
-      //     label: "Extremely Bullish",
-      //   },
-      //   {
-      //     name: " Pharmalabs",
-      //     score: 7.89,
-      //     label: "Extremely Bullish",
-      //   },
-      //   {
-      //     name: "ghjghj Pharmalabs",
-      //     score: 7.89,
-      //     label: "Extremely Bullish",
-      //   },
-      // ],
-    },
-  ];
+  const { strength, weakness, latestLabel } = buildLists(records);
 
   return (
-    <div className="flex flex-col w-[95%] gap-4 justify-items-center items-center pt-16">
-      <p className="text-4xl lg:text-6xl font-extrabold !leading-tight text-center">
-        {latestQuarter.label} Concalls
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 sm:p-4 gap-8 sm:w-[80%] w-full">
-        {data2.map((list, i) => (
-          <div key={i} className="flex flex-col rounded-xl border-2">
-            <div className=" p-4 font-bold text-white text-2xl bg-black rounded-t-xl border-2">
-              {list.title}
-            </div>
-            <div className="flex flex-col gap-4 pb-8 p-4">
-              {list.stocks.map((s, index) => (
-                <div key={index}>
-                  <Link href={"/company/" + s.code} prefetch={false}>
-                    <div className="flex gap-4 bg-gray-900 rounded-xl p-4">
-                      <div className="flex w-full gap-2 ">
-                        <p className="p-1">{index + 1 + "."}</p>
-
-                        <div className="flex flex-col w-3/4">
-                          <p className="font-medium text-xl  line-clamp-1 ">
-                            {s.name}
-                          </p>
-
-                          <div>
-                            <Badge className={categoryFor(s.score).bg}>
-                              {categoryFor(s.score).label}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <ConcallScore score={s.score}></ConcallScore>
-                    </div>{" "}
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+    <div className="flex flex-col w-[95%] gap-4 justify-items-center items-center pt-12">
+      <div className="text-center space-y-1">
+        <p className="text-3xl lg:text-5xl font-extrabold !leading-tight">
+          Concall Signals
+        </p>
+        <p className="text-sm text-gray-400">
+          Latest quarter: {latestLabel || "n/a"}
+        </p>
+      </div>
+      <div className="w-full flex flex-col gap-6 sm:w-[90%]">
+        <div className="flex items-center gap-2">
+          <div className="h-[1px] flex-1 bg-gray-800" />
+          <span className="text-sm uppercase tracking-wide text-gray-300">Strength</span>
+          <div className="h-[1px] flex-1 bg-gray-800" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {strength.map((list, i) => (
+            <ListCard key={`strength-${i}`} list={list} />
+          ))}
+        </div>
+        <div className="flex items-center gap-2 pt-2">
+          <div className="h-[1px] flex-1 bg-gray-800" />
+          <span className="text-sm uppercase tracking-wide text-gray-300">Weakness</span>
+          <div className="h-[1px] flex-1 bg-gray-800" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {weakness.map((list, i) => (
+            <ListCard key={`weakness-${i}`} list={list} />
+          ))}
+        </div>
       </div>
       <Link href={"/company"} prefetch={false}>
         <p className="text-2xl lg:text-4xl font-bold !leading-tight pt-8 underline">
@@ -188,3 +213,62 @@ const TopStocks = async () => {
 };
 
 export default TopStocks;
+
+function ListCard({ list }: { list: { title: string; items: ListItem[] } }) {
+  return (
+    <div className="flex flex-col rounded-xl border border-gray-800 bg-gray-950/70">
+      <div className="p-3 font-bold text-white text-lg bg-black rounded-t-xl border-b border-gray-800">
+        {list.title}
+      </div>
+      <div className="flex flex-col gap-3 pb-5 p-3">
+        {list.items.length === 0 && (
+          <p className="text-sm text-muted-foreground">Not enough data.</p>
+        )}
+        {list.items.map((s, index) => (
+          <div key={index}>
+            <Link href={"/company/" + s.code} prefetch={false}>
+              <div className="flex gap-2 bg-gray-900 rounded-lg p-2 items-start">
+                <div className="flex w-full gap-2 items-start">
+                  <p className="p-1 text-[11px] text-gray-400 leading-snug">{index + 1}.</p>
+
+                  <div className="flex flex-col w-3/4 gap-1">
+                    <p className="font-medium text-sm leading-tight line-clamp-1 text-white">
+                      {s.name}
+                    </p>
+                    <div>
+                      {!Number.isNaN(s.latestScore) && (
+                        <Badge className={`text-[11px] px-2 py-0.5 ${categoryFor(s.latestScore).bg}`}>
+                          {categoryFor(s.latestScore).label}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-0.5 min-w-[88px]">
+                  {!Number.isNaN(s.latestScore) && (
+                    <ConcallScore score={s.latestScore}></ConcallScore>
+                  )}
+                  {typeof s.delta === "number" && (
+                    <span
+                      className={`text-xs ${
+                        s.delta > 0 ? "text-emerald-300" : s.delta < 0 ? "text-red-300" : "text-gray-400"
+                      }`}
+                    >
+                      {s.delta > 0 ? "+" : ""}
+                      {s.delta.toFixed(2)}
+                    </span>
+                  )}
+                  {typeof s.avg4 === "number" && (
+                    <span className="text-[10px] text-gray-500">
+                      4Q Avg {s.avg4.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Link>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

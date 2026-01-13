@@ -1,4 +1,5 @@
 import React from "react";
+import type { Metadata } from "next";
 import { ChartLineLabel } from "./chart";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -34,6 +35,18 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ code: string }>;
+}): Promise<Metadata> {
+  const { code } = await params;
+  return {
+    title: `${code} – Concall Alpha`,
+    description: `Company detail for ${code} on Concall Alpha.`,
+  };
+}
 
 export default async function Page({
   params,
@@ -113,7 +126,7 @@ export default async function Page({
       <SidebarNavigation />
 
       {/* main content - 80% width */}
-      <div id="main-content" className="flex-1 flex flex-col gap-6">
+      <div id="main-content" className="flex-1 flex flex-col gap-4">
         <OverviewCard data={latestQuarterData} />
 
         <SectionCard id="sentiment-score" title="Concall Sentiment Score">
@@ -155,8 +168,8 @@ export default async function Page({
             </div>
 
             {/* Chart */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div className="flex flex-col gap-2">
                 <div className="flex justify-center">
                   <ChartLineLabel chartData={chartData} />
                 </div>
