@@ -36,6 +36,28 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
+type GrowthScenario = {
+  confidence?: number;
+  key_drivers?: string[];
+  key_risks?: string[];
+  fcf_direction?: string | null;
+  margin_trend_bps?: string | null;
+  revenue_growth_pct?: string | null;
+};
+
+type GrowthOutlook = {
+  fiscal_year?: string | null;
+  horizon_years?: number | null;
+  horizon_quarters?: number | null;
+  visibility_score?: number | null;
+  summary_bullets?: string[] | null;
+  scenarios?: {
+    base?: GrowthScenario;
+    upside?: GrowthScenario;
+    downside?: GrowthScenario;
+  };
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -56,6 +78,14 @@ export default async function Page({
   const { code } = await params;
 
   const supabase = await createClient();
+
+  const { data: companyRow } = await supabase
+    .from("company")
+    .select("name")
+    .eq("code", code)
+    .limit(1)
+    .maybeSingle();
+  const companyName = companyRow?.name as string | undefined;
 
   // Fetch concall analysis data
   const { data, error } = await supabase
@@ -87,6 +117,17 @@ export default async function Page({
     .order("latest_fiscal_year", { ascending: false })
     .order("strategy_rank", { ascending: true });
 
+  const { data: growthData } = await supabase
+    .from("growth_outlook")
+    .select("details")
+    .or(
+      [code ? `company.eq.${code}` : null, companyName ? `company.eq.${companyName}` : null]
+        .filter(Boolean)
+        .join(",") || `company.eq.${code}`,
+    )
+    .order("run_timestamp", { ascending: false })
+    .limit(1);
+
   if (error) {
     throw error;
   }
@@ -107,6 +148,7 @@ export default async function Page({
   const trend = calculateTrend(data.slice(0, 12));
   const detailQuarters = data.slice(0, 12);
   const detailQuartersOldestFirst = [...detailQuarters].reverse();
+  const growthOutlook = growthData?.[0]?.details as GrowthOutlook | undefined;
 
   const parseDetails = (val: unknown) => {
     if (!val) return null;
@@ -443,10 +485,113 @@ export default async function Page({
         </SectionCard>
 
         <SectionCard id="placeholder" title="Future Growth Prospects">
-          <div className="rounded-lg border border-dashed border-gray-700/70 bg-gray-900/40 p-6 text-sm text-gray-400">
-            This area is reserved for future growth prospects and
-            forward-looking insights.
-          </div>
+          {growthOutlook ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-300">
+                {growthOutlook.fiscal_year && (
+                  <span className="px-2 py-1 rounded-full bg-gray-800 text-gray-100">
+                    Horizon: {growthOutlook.fiscal_year}
+                  </span>
+                )}
+                {typeof growthOutlook.horizon_years === "number" && (
+                  <span className="px-2 py-1 rounded-full bg-gray-800 text-gray-100">
+                    {growthOutlook.horizon_years} yr outlook
+                  </span>
+                )}
+                {typeof growthOutlook.visibility_score === "number" && (
+                  <span className="px-2 py-1 rounded-full bg-gray-800 text-gray-100">
+                    Visibility: {(growthOutlook.visibility_score * 100).toFixed(0)}%
+                  </span>
+                )}
+              </div>
+
+              {Array.isArray(growthOutlook.summary_bullets) &&
+                growthOutlook.summary_bullets.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-gray-100">Summary</p>
+                    <ul className="space-y-1">
+                      {growthOutlook.summary_bullets.map((b, idx) => (
+                        <li key={idx} className="text-sm text-gray-300 leading-snug">
+                          • {b}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {(["base", "upside", "downside"] as const).map((scenarioKey) => {
+                  const scenario = growthOutlook.scenarios?.[scenarioKey] as GrowthScenario | undefined;
+                  if (!scenario) return null;
+                  const drivers = Array.isArray(scenario.key_drivers) ? scenario.key_drivers : [];
+                  const risks = Array.isArray(scenario.key_risks) ? scenario.key_risks : [];
+                  return (
+                    <div
+                      key={scenarioKey}
+                      className="rounded-lg border border-gray-800 bg-gray-900/60 p-3 space-y-2"
+                    >
+                      <div className="flex items-center justify-between text-xs text-gray-200">
+                        <span className="font-semibold capitalize">{scenarioKey} case</span>
+                        {typeof scenario.confidence === "number" && (
+                          <span className="text-[11px] text-gray-400">
+                            {(scenario.confidence * 100).toFixed(0)}% conf
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        {scenario.revenue_growth_pct && (
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-900/40 border border-emerald-700/40 text-[10px] font-semibold uppercase tracking-wide text-emerald-100">
+                              Growth
+                            </span>
+                            <span className="text-sm font-semibold text-emerald-100">
+                              {scenario.revenue_growth_pct}
+                            </span>
+                          </div>
+                        )}
+                        <div className="text-[11px] text-gray-300 space-y-1">
+                          {scenario.margin_trend_bps && <p>Margin trend: {scenario.margin_trend_bps}</p>}
+                          {scenario.fcf_direction && <p>FCF: {scenario.fcf_direction}</p>}
+                        </div>
+                      </div>
+                      {drivers.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+                            Drivers
+                          </p>
+                          <ul className="space-y-1">
+                            {drivers.slice(0, 3).map((d, idx) => (
+                              <li key={idx} className="text-[11px] text-gray-200 leading-snug">
+                                • {d}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {risks.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+                            Risks
+                          </p>
+                          <ul className="space-y-1">
+                            {risks.slice(0, 3).map((r, idx) => (
+                              <li key={idx} className="text-[11px] text-gray-200 leading-snug">
+                                • {r}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-gray-700/70 bg-gray-900/40 p-6 text-sm text-gray-400">
+              Growth outlook data not available yet for this company.
+            </div>
+          )}
         </SectionCard>
 
         <SectionCard
