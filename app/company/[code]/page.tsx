@@ -81,7 +81,7 @@ export default async function Page({
 
   const { data: companyRow } = await supabase
     .from("company")
-    .select("name")
+    .select("name, sector, sub_sector, exchange, country, code")
     .eq("code", code)
     .limit(1)
     .maybeSingle();
@@ -169,7 +169,16 @@ export default async function Page({
 
       {/* main content - 80% width */}
       <div id="main-content" className="flex-1 flex flex-col gap-4">
-        <OverviewCard data={latestQuarterData} />
+        <OverviewCard
+          companyInfo={{
+            code: companyRow?.code ?? code,
+            name: companyRow?.name ?? undefined,
+            sector: companyRow?.sector ?? undefined,
+            subSector: companyRow?.sub_sector ?? undefined,
+            exchange: companyRow?.exchange ?? undefined,
+            country: companyRow?.country ?? undefined,
+          }}
+        />
 
         <SectionCard id="sentiment-score" title="Concall Sentiment Score">
           <div className="flex flex-col gap-4">
