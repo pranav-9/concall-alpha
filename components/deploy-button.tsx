@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 export function DeployButton() {
   return (
     <>
-      <Link href="/company" prefetch={false}>
+      <Link href="/leaderboards" prefetch={false}>
         <Button className="flex items-center gap-2" size="sm">
           <svg
             className="h-3 w-3"
@@ -14,7 +14,7 @@ export function DeployButton() {
           >
             <path d="M37.5274 0L75.0548 65H0L37.5274 0Z" fill="inherit" />
           </svg>
-          <span>Leaderboard</span>
+          <span>Leaderboards</span>
         </Button>
       </Link>
     </>

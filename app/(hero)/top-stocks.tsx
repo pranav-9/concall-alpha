@@ -40,6 +40,25 @@ type ListBlock = {
   title: string;
   scoreKey?: "latest" | "avg4";
   items: ListItem[];
+  signal?: "sentiment" | "growth";
+};
+
+type GrowthRow = {
+  company: string;
+  fiscal_year?: string | null;
+  base_growth_pct?: string | number | null;
+  upside_growth_pct?: string | number | null;
+  downside_growth_pct?: string | number | null;
+};
+
+type GrowthItem = {
+  company: string;
+  fiscalYear?: string | null;
+  base?: number | null;
+  upside?: number | null;
+  downside?: number | null;
+  sum4?: number | null;
+  avg4?: number | null;
 };
 
 const fetchAll = async (supabase: SupabaseServerClient) => {
@@ -134,11 +153,6 @@ const buildLists = (records: CompanyRecord[]) => {
     .sort((a, b) => a.latestScore - b.latestScore)
     .slice(0, 5);
 
-  const improvers = companies
-    .filter((c) => c.delta != null && c.delta > 0)
-    .sort((a, b) => (b.delta ?? 0) - (a.delta ?? 0))
-    .slice(0, 5);
-
   const decliners = companies
     .filter((c) => c.delta != null && c.delta < 0)
     .sort((a, b) => (a.delta ?? 0) - (b.delta ?? 0))
@@ -150,9 +164,8 @@ const buildLists = (records: CompanyRecord[]) => {
     .slice(0, 5);
 
   const strength: ListBlock[] = [
-    { title: "4Q Strength (cumulative)", items: strong4Q, scoreKey: "avg4" },
-    { title: "Most Bullish (latest qtr)", items: mostBullish, scoreKey: "latest" },
-    { title: "Biggest Improvers (QoQ)", items: improvers, scoreKey: "latest" },
+    { title: "4Q Strength (cumulative)", items: strong4Q, scoreKey: "avg4", signal: "sentiment" },
+    { title: "Most Bullish (latest qtr)", items: mostBullish, scoreKey: "latest", signal: "sentiment" },
   ];
 
   const weakness: ListBlock[] = [
@@ -163,9 +176,72 @@ const buildLists = (records: CompanyRecord[]) => {
   return { strength, weakness, latestLabel: latest?.label ?? "" };
 };
 
+const parsePct = (val: string | number | null | undefined): number | null => {
+  if (val == null) return null;
+  if (typeof val === "number") return val;
+  const n = parseFloat(val);
+  return Number.isFinite(n) ? n : null;
+};
+
+const fetchGrowthList = async (supabase: SupabaseServerClient) => {
+  const { data, error } = await supabase
+    .from("growth_outlook")
+    .select("company, fiscal_year, base_growth_pct, upside_growth_pct, downside_growth_pct")
+    .order("run_timestamp", { ascending: false });
+  if (error) throw error;
+
+  const rows = (data ?? []) as GrowthRow[];
+  const latestByCompany = new Map<string, GrowthRow>();
+  rows.forEach((row) => {
+    if (!latestByCompany.has(row.company)) {
+      latestByCompany.set(row.company, row);
+    }
+  });
+
+  const items: GrowthItem[] = Array.from(latestByCompany.values())
+    .map((r) => ({
+      company: r.company,
+      fiscalYear: r.fiscal_year,
+      base: parsePct(r.base_growth_pct),
+      upside: parsePct(r.upside_growth_pct),
+      downside: parsePct(r.downside_growth_pct),
+    }))
+    .filter((i) => i.base != null || i.upside != null || i.downside != null)
+    .sort((a, b) => (b.base ?? b.upside ?? 0) - (a.base ?? a.upside ?? 0))
+    .slice(0, 5);
+
+  return items;
+};
+
+const buildFourQSumMap = (records: CompanyRecord[]) => {
+  const map = new Map<string, { sum: number; count: number }>();
+  const companyMap = new Map<string, CompanyRecord[]>();
+
+  records.forEach((r) => {
+    if (!companyMap.has(r.company_code)) companyMap.set(r.company_code, []);
+    companyMap.get(r.company_code)!.push(r);
+  });
+
+  companyMap.forEach((rows) => {
+    const sorted = [...rows].sort((a, b) => b.fy - a.fy || b.qtr - a.qtr);
+    const last4 = sorted.slice(0, 4);
+    const sum4 = last4.reduce((acc, curr) => acc + Number(curr.score ?? 0), 0);
+    const count4 = last4.length;
+    const codeKey = sorted[0]?.company_code?.toUpperCase();
+    const nameKey = sorted[0]?.company?.name?.toUpperCase();
+    if (codeKey) map.set(codeKey, { sum: sum4, count: count4 });
+    if (nameKey) map.set(nameKey, { sum: sum4, count: count4 });
+  });
+
+  return map;
+};
+
 const TopStocks = async () => {
   const supabase = await createClient();
-  const records = await fetchAll(supabase);
+  const [records, growthLeaders] = await Promise.all([
+    fetchAll(supabase),
+    fetchGrowthList(supabase),
+  ]);
 
   if (!records.length) {
     return (
@@ -175,7 +251,15 @@ const TopStocks = async () => {
     );
   }
 
-  const { strength, weakness, latestLabel } = buildLists(records);
+  const { strength, latestLabel } = buildLists(records);
+  const sumMap = buildFourQSumMap(records);
+  const enrichedGrowth = growthLeaders.map((g) => {
+    const key = g.company?.toUpperCase();
+    const sumEntry = key ? sumMap.get(key) ?? null : null;
+    const sum4 = sumEntry?.sum ?? null;
+    const avg4 = sumEntry ? sumEntry.sum / Math.max(1, sumEntry.count) : null;
+    return { ...g, sum4, avg4 };
+  });
 
   return (
     <div className="flex flex-col w-[95%] gap-4 justify-items-center items-center pt-12">
@@ -184,7 +268,7 @@ const TopStocks = async () => {
           Concall Signals
         </p>
         <p className="text-sm text-gray-400">
-          Latest quarter: {latestLabel || "n/a"}
+          Latest quarter: {latestLabel || "n/a"} · Sentiment uses latest/4Q scores; Growth uses guidance %
         </p>
       </div>
       <div className="w-full flex flex-col gap-6 sm:w-[90%]">
@@ -197,19 +281,10 @@ const TopStocks = async () => {
           {strength.map((list, i) => (
             <ListCard key={`strength-${i}`} list={list} />
           ))}
-        </div>
-        <div className="flex items-center gap-2 pt-2">
-          <div className="h-[1px] flex-1 bg-gray-800" />
-          <span className="text-sm uppercase tracking-wide text-gray-300">Weakness</span>
-          <div className="h-[1px] flex-1 bg-gray-800" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {weakness.map((list, i) => (
-            <ListCard key={`weakness-${i}`} list={list} />
-          ))}
+          <GrowthListCard items={enrichedGrowth} />
         </div>
       </div>
-      <Link href={"/company"} prefetch={false}>
+      <Link href={"/leaderboards"} prefetch={false}>
         <p className="text-2xl lg:text-4xl font-bold !leading-tight pt-8 underline">
           See full list {">>"}
         </p>
@@ -220,11 +295,18 @@ const TopStocks = async () => {
 
 export default TopStocks;
 
-function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey?: "latest" | "avg4" } }) {
+function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey?: "latest" | "avg4"; signal?: "sentiment" | "growth" } }) {
   return (
     <div className="flex flex-col rounded-xl border border-gray-800 bg-gray-950/70">
       <div className="p-3 font-bold text-white text-lg bg-black rounded-t-xl border-b border-gray-800">
-        {list.title}
+        <div className="flex items-center justify-between gap-2">
+          <span>{list.title}</span>
+          {list.signal && (
+            <Badge variant="outline" className="text-[11px] px-2 py-0.5 border-gray-700 uppercase tracking-wide">
+              {list.signal === "sentiment" ? "Sentiment" : "Growth"}
+            </Badge>
+          )}
+        </div>
       </div>
       <div className="flex flex-col gap-3 pb-5 p-3">
         {list.items.length === 0 && (
@@ -269,6 +351,80 @@ function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey
               </div>
             </Link>
           </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GrowthListCard({ items }: { items: GrowthItem[] }) {
+  const formatPct = (value: number | null | undefined) => {
+    if (value == null) return "—";
+    const rounded = Math.round(value * 10) / 10;
+    return `${rounded}%`;
+  };
+
+  const visible = items.slice(0, 3);
+
+  return (
+    <div className="flex flex-col rounded-xl border border-gray-800 bg-gray-950/70">
+      <div className="p-3 font-bold text-white text-lg bg-black rounded-t-xl border-b border-gray-800">
+        <div className="flex items-center justify-between gap-2">
+          <span>Growth Outlook Leaders</span>
+          <Badge variant="outline" className="text-[11px] px-2 py-0.5 border-gray-700 uppercase tracking-wide">
+            Growth
+          </Badge>
+        </div>
+      </div>
+      <div className="flex flex-col gap-3 pb-5 p-3">
+        {visible.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            No growth outlook data yet.
+          </p>
+        )}
+        {visible.map((item, index) => (
+          <Link key={item.company + index} href={"/company/" + item.company} prefetch={false}>
+            <div className="flex flex-col gap-2 rounded-lg bg-gray-900 p-3 border border-gray-800 hover:border-emerald-400/50 transition">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-col gap-1">
+                  <p className="font-semibold text-white leading-tight line-clamp-1">
+                    {item.company}
+                  </p>
+                  {item.fiscalYear && (
+                    <Badge variant="outline" className="text-[11px] px-2 py-0.5 border-gray-700">
+                      FY {item.fiscalYear.toString().replace(/^FY/i, "").toUpperCase()}
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-right flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <p className="text-xs text-gray-400 uppercase tracking-wide">Base</p>
+                      <p className="text-lg font-bold text-emerald-300">{formatPct(item.base)}</p>
+                    </div>
+                    {typeof item.avg4 === "number" && (
+                      <div className="flex flex-col items-center gap-0.5">
+                        <ConcallScore score={item.avg4} />
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wide">
+                          4Q avg
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm text-gray-300">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] uppercase tracking-wide text-gray-400">Upside</span>
+                  <span className="font-medium text-amber-200">{formatPct(item.upside)}</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] uppercase tracking-wide text-gray-400">Downside</span>
+                  <span className="font-medium text-rose-200">{formatPct(item.downside)}</span>
+                </div>
+              </div>
+            </div>
+          </Link>
         ))}
       </div>
     </div>
