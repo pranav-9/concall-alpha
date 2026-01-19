@@ -51,6 +51,9 @@ type GrowthOutlook = {
   horizon_quarters?: number | null;
   visibility_score?: number | null;
   summary_bullets?: string[] | null;
+   growth_score?: number | string | null;
+   growth_score_formula?: string | null;
+   growth_score_steps?: string[] | null;
   scenarios?: {
     base?: GrowthScenario;
     upside?: GrowthScenario;
@@ -119,7 +122,7 @@ export default async function Page({
 
   const { data: growthData } = await supabase
     .from("growth_outlook")
-    .select("details")
+    .select("details, growth_score, growth_score_formula, growth_score_steps")
     .or(
       [code ? `company.eq.${code}` : null, companyName ? `company.eq.${companyName}` : null]
         .filter(Boolean)
@@ -149,6 +152,22 @@ export default async function Page({
   const detailQuarters = data.slice(0, 12);
   const detailQuartersOldestFirst = [...detailQuarters].reverse();
   const growthOutlook = growthData?.[0]?.details as GrowthOutlook | undefined;
+  const growthScoreRaw =
+    growthData?.[0]?.growth_score ?? (growthOutlook as GrowthOutlook | undefined)?.growth_score ?? null;
+  const growthScore =
+    typeof growthScoreRaw === "number"
+      ? growthScoreRaw
+      : typeof growthScoreRaw === "string"
+      ? parseFloat(growthScoreRaw)
+      : null;
+  const growthFormula =
+    growthData?.[0]?.growth_score_formula ??
+    (growthOutlook as GrowthOutlook | undefined)?.growth_score_formula ??
+    null;
+  const growthSteps =
+    (growthData?.[0]?.growth_score_steps as string[] | null | undefined) ??
+    (growthOutlook as GrowthOutlook | undefined)?.growth_score_steps ??
+    null;
 
   const parseDetails = (val: unknown) => {
     if (!val) return null;
@@ -512,6 +531,11 @@ export default async function Page({
                     Visibility: {(growthOutlook.visibility_score * 100).toFixed(0)}%
                   </span>
                 )}
+                {typeof growthScore === "number" && (
+                  <span className="px-2 py-1 rounded-full bg-emerald-900/60 text-emerald-100 border border-emerald-700/50">
+                    Growth score: {growthScore.toFixed(1)}
+                  </span>
+                )}
               </div>
 
               {Array.isArray(growthOutlook.summary_bullets) &&
@@ -527,6 +551,21 @@ export default async function Page({
                     </ul>
                   </div>
                 )}
+              {(growthFormula || (growthSteps && growthSteps.length > 0)) && (
+                <div className="space-y-1 text-xs text-gray-400 bg-gray-900/50 border border-gray-800 rounded-lg p-3">
+                  <p className="font-semibold text-gray-200 text-[11px] uppercase tracking-wide">
+                    How this growth score is computed
+                  </p>
+                  {growthFormula && <p className="text-gray-300">{growthFormula}</p>}
+                  {growthSteps && growthSteps.length > 0 && (
+                    <ul className="list-disc list-inside space-y-1">
+                      {growthSteps.map((step, sIdx) => (
+                        <li key={sIdx}>{step}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {(["base", "upside", "downside"] as const).map((scenarioKey) => {

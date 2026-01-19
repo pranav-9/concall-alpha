@@ -49,6 +49,9 @@ type GrowthRow = {
   base_growth_pct?: string | number | null;
   upside_growth_pct?: string | number | null;
   downside_growth_pct?: string | number | null;
+  growth_score?: string | number | null;
+  growth_score_formula?: string | null;
+  growth_score_steps?: string[] | null;
 };
 
 type GrowthItem = {
@@ -59,6 +62,9 @@ type GrowthItem = {
   downside?: number | null;
   sum4?: number | null;
   avg4?: number | null;
+  growthScore?: number | null;
+  growthFormula?: string | null;
+  growthSteps?: string[] | null;
 };
 
 const fetchAll = async (supabase: SupabaseServerClient) => {
@@ -186,7 +192,7 @@ const parsePct = (val: string | number | null | undefined): number | null => {
 const fetchGrowthList = async (supabase: SupabaseServerClient) => {
   const { data, error } = await supabase
     .from("growth_outlook")
-    .select("company, fiscal_year, base_growth_pct, upside_growth_pct, downside_growth_pct")
+    .select("company, fiscal_year, base_growth_pct, upside_growth_pct, downside_growth_pct, growth_score, growth_score_formula, growth_score_steps")
     .order("run_timestamp", { ascending: false });
   if (error) throw error;
 
@@ -205,6 +211,9 @@ const fetchGrowthList = async (supabase: SupabaseServerClient) => {
       base: parsePct(r.base_growth_pct),
       upside: parsePct(r.upside_growth_pct),
       downside: parsePct(r.downside_growth_pct),
+      growthScore: parsePct(r.growth_score),
+      growthFormula: r.growth_score_formula ?? null,
+      growthSteps: Array.isArray(r.growth_score_steps) ? r.growth_score_steps : null,
     }))
     .filter((i) => i.base != null || i.upside != null || i.downside != null)
     .sort((a, b) => (b.base ?? b.upside ?? 0) - (a.base ?? a.upside ?? 0))
@@ -395,6 +404,11 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
                       FY {item.fiscalYear.toString().replace(/^FY/i, "").toUpperCase()}
                     </Badge>
                   )}
+                  {typeof item.growthScore === "number" && (
+                    <Badge className="text-[11px] px-2 py-0.5 bg-emerald-900/60 text-emerald-100 border border-emerald-700/50 w-fit">
+                      Growth score: {item.growthScore.toFixed(1)}
+                    </Badge>
+                  )}
                 </div>
                 <div className="text-right flex flex-col items-end gap-2">
                   <div className="flex items-center gap-3">
@@ -423,6 +437,11 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
                   <span className="font-medium text-rose-200">{formatPct(item.downside)}</span>
                 </div>
               </div>
+              {item.growthFormula && (
+                <p className="text-[11px] text-gray-500 leading-snug mt-1">
+                  {item.growthFormula}
+                </p>
+              )}
             </div>
           </Link>
         ))}
