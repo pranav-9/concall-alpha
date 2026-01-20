@@ -56,6 +56,7 @@ type GrowthRow = {
 
 type GrowthItem = {
   company: string;
+  displayName?: string;
   fiscalYear?: string | null;
   base?: number | null;
   upside?: number | null;
@@ -65,6 +66,7 @@ type GrowthItem = {
   growthScore?: number | null;
   growthFormula?: string | null;
   growthSteps?: string[] | null;
+  rank?: number;
 };
 
 const fetchAll = async (supabase: SupabaseServerClient) => {
@@ -149,11 +151,6 @@ const buildLists = (records: CompanyRecord[]) => {
     });
   });
 
-  const mostBullish = companies
-    .filter((c) => !Number.isNaN(c.latestScore) && c.latestScore >= 7)
-    .sort((a, b) => b.latestScore - a.latestScore)
-    .slice(0, 5);
-
   const leastBullish = companies
     .filter((c) => !Number.isNaN(c.latestScore) && c.latestScore <= 7)
     .sort((a, b) => a.latestScore - b.latestScore)
@@ -170,8 +167,7 @@ const buildLists = (records: CompanyRecord[]) => {
     .slice(0, 5);
 
   const strength: ListBlock[] = [
-    { title: "4Q Strength (cumulative)", items: strong4Q, scoreKey: "avg4", signal: "sentiment" },
-    { title: "Most Bullish (latest qtr)", items: mostBullish, scoreKey: "latest", signal: "sentiment" },
+    { title: "Top Past Sentiment (4Q avg)", items: strong4Q, scoreKey: "avg4", signal: "sentiment" },
   ];
 
   const weakness: ListBlock[] = [
@@ -225,10 +221,19 @@ const fetchGrowthList = async (supabase: SupabaseServerClient) => {
 const buildFourQSumMap = (records: CompanyRecord[]) => {
   const map = new Map<string, { sum: number; count: number }>();
   const companyMap = new Map<string, CompanyRecord[]>();
+  const nameMap = new Map<string, string>();
 
   records.forEach((r) => {
     if (!companyMap.has(r.company_code)) companyMap.set(r.company_code, []);
     companyMap.get(r.company_code)!.push(r);
+    const codeKey = r.company_code?.toUpperCase();
+    if (codeKey) {
+      const disp = r.company?.name ?? r.company_code;
+      nameMap.set(codeKey, disp);
+    }
+    if (r.company?.name) {
+      nameMap.set(r.company.name.toUpperCase(), r.company.name);
+    }
   });
 
   companyMap.forEach((rows) => {
@@ -242,7 +247,7 @@ const buildFourQSumMap = (records: CompanyRecord[]) => {
     if (nameKey) map.set(nameKey, { sum: sum4, count: count4 });
   });
 
-  return map;
+  return { sumMap: map, nameMap };
 };
 
 const TopStocks = async () => {
@@ -261,14 +266,27 @@ const TopStocks = async () => {
   }
 
   const { strength, latestLabel } = buildLists(records);
-  const sumMap = buildFourQSumMap(records);
+  const { sumMap, nameMap } = buildFourQSumMap(records);
   const enrichedGrowth = growthLeaders.map((g) => {
     const key = g.company?.toUpperCase();
     const sumEntry = key ? sumMap.get(key) ?? null : null;
     const sum4 = sumEntry?.sum ?? null;
     const avg4 = sumEntry ? sumEntry.sum / Math.max(1, sumEntry.count) : null;
-    return { ...g, sum4, avg4 };
+    const displayName = key ? nameMap.get(key) ?? g.company : g.company;
+    return { ...g, sum4, avg4, displayName };
   });
+  const sortedGrowth = [...enrichedGrowth]
+    .sort((a, b) => {
+      const aScore = typeof a.growthScore === "number" ? a.growthScore : null;
+      const bScore = typeof b.growthScore === "number" ? b.growthScore : null;
+      if (aScore != null && bScore != null) return bScore - aScore;
+      if (aScore != null) return -1;
+      if (bScore != null) return 1;
+      const aBase = a.base ?? a.upside ?? 0;
+      const bBase = b.base ?? b.upside ?? 0;
+      return bBase - aBase;
+    })
+    .map((item, idx) => ({ ...item, rank: idx + 1 }));
 
   return (
     <div className="flex flex-col w-[95%] gap-4 justify-items-center items-center pt-12">
@@ -290,7 +308,7 @@ const TopStocks = async () => {
           {strength.map((list, i) => (
             <ListCard key={`strength-${i}`} list={list} />
           ))}
-          <GrowthListCard items={enrichedGrowth} />
+          <GrowthListCard items={sortedGrowth} />
         </div>
       </div>
       <Link href={"/leaderboards"} prefetch={false}>
@@ -367,19 +385,13 @@ function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey
 }
 
 function GrowthListCard({ items }: { items: GrowthItem[] }) {
-  const formatPct = (value: number | null | undefined) => {
-    if (value == null) return "—";
-    const rounded = Math.round(value * 10) / 10;
-    return `${rounded}%`;
-  };
-
-  const visible = items.slice(0, 3);
+  const visible = items.slice(0, 5);
 
   return (
     <div className="flex flex-col rounded-xl border border-gray-800 bg-gray-950/70">
       <div className="p-3 font-bold text-white text-lg bg-black rounded-t-xl border-b border-gray-800">
         <div className="flex items-center justify-between gap-2">
-          <span>Growth Outlook Leaders</span>
+          <span>Top Growth Outlook</span>
           <Badge variant="outline" className="text-[11px] px-2 py-0.5 border-gray-700 uppercase tracking-wide">
             Growth
           </Badge>
@@ -393,55 +405,28 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
         )}
         {visible.map((item, index) => (
           <Link key={item.company + index} href={"/company/" + item.company} prefetch={false}>
-            <div className="flex flex-col gap-2 rounded-lg bg-gray-900 p-3 border border-gray-800 hover:border-emerald-400/50 transition">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex flex-col gap-1">
-                  <p className="font-semibold text-white leading-tight line-clamp-1">
-                    {item.company}
+            <div className="flex gap-2 bg-gray-900 rounded-lg p-2 border border-gray-800 hover:border-emerald-400/50 transition items-start">
+              <p className="p-1 text-[11px] text-gray-400 leading-snug">
+                {typeof item.rank === "number" ? `${item.rank}.` : `${index + 1}.`}
+              </p>
+              <div className="flex w-full gap-2 items-start">
+                <div className="flex flex-col w-3/4 gap-1">
+                  <p className="font-medium text-sm leading-tight line-clamp-1 text-white">
+                    {item.displayName || item.company}
                   </p>
-                  {item.fiscalYear && (
-                    <Badge variant="outline" className="text-[11px] px-2 py-0.5 border-gray-700">
-                      FY {item.fiscalYear.toString().replace(/^FY/i, "").toUpperCase()}
-                    </Badge>
-                  )}
-                  {typeof item.growthScore === "number" && (
-                    <Badge className="text-[11px] px-2 py-0.5 bg-emerald-900/60 text-emerald-100 border border-emerald-700/50 w-fit">
-                      Growth score: {item.growthScore.toFixed(1)}
-                    </Badge>
-                  )}
+                  {/* FY badge removed per request */}
                 </div>
-                <div className="text-right flex flex-col items-end gap-2">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wide">Base</p>
-                      <p className="text-lg font-bold text-emerald-300">{formatPct(item.base)}</p>
+                <div className="flex flex-col items-end gap-0.5 min-w-[72px]">
+                  {typeof item.growthScore === "number" ? (
+                    <ConcallScore score={item.growthScore} />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full border border-gray-700 bg-gray-900 flex items-center justify-center text-sm text-gray-400">
+                      -
                     </div>
-                    {typeof item.avg4 === "number" && (
-                      <div className="flex flex-col items-center gap-0.5">
-                        <ConcallScore score={item.avg4} />
-                        <span className="text-[10px] text-gray-400 uppercase tracking-wide">
-                          4Q avg
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  )}
+                  <span className="text-[10px] text-gray-400">Growth score</span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm text-gray-300">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] uppercase tracking-wide text-gray-400">Upside</span>
-                  <span className="font-medium text-amber-200">{formatPct(item.upside)}</span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] uppercase tracking-wide text-gray-400">Downside</span>
-                  <span className="font-medium text-rose-200">{formatPct(item.downside)}</span>
-                </div>
-              </div>
-              {item.growthFormula && (
-                <p className="text-[11px] text-gray-500 leading-snug mt-1">
-                  {item.growthFormula}
-                </p>
-              )}
             </div>
           </Link>
         ))}
