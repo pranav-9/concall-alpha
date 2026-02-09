@@ -1,10 +1,8 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr/dist/module/createServerClient";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasEnvVars } from "../utils";
 
 export async function updateSession(request: NextRequest) {
-  console.log("supabase update session called");
-
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -56,8 +54,6 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/auth")
   ) {
     // no user, potentially respond by redirecting the user to the login page
-
-    console.log("redirecting to login");
 
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";

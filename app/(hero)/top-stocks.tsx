@@ -360,18 +360,16 @@ function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-0.5 min-w-[72px]">
-                  {!Number.isNaN(s.latestScore) && (
+                  {list.scoreKey === "avg4" && typeof s.avg4 === "number" && (
                     <>
-                      <ConcallScore
-                        score={
-                          list.scoreKey === "avg4" && typeof s.avg4 === "number"
-                            ? s.avg4
-                            : s.latestScore
-                        }
-                      />
-                      <span className="text-[10px] text-gray-400">
-                        {list.scoreKey === "avg4" ? "4Q avg" : "Latest qtr"}
-                      </span>
+                      <ConcallScore score={s.avg4} />
+                      <span className="text-[10px] text-gray-400">4Q avg</span>
+                    </>
+                  )}
+                  {list.scoreKey !== "avg4" && !Number.isNaN(s.latestScore) && (
+                    <>
+                      <ConcallScore score={s.latestScore} />
+                      <span className="text-[10px] text-gray-400">Latest qtr</span>
                     </>
                   )}
                 </div>

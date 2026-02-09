@@ -61,6 +61,19 @@ type GrowthOutlook = {
   };
 };
 
+type ConcallDetails = {
+  score?: number;
+  category?: string;
+  rationale?: string[];
+  quarter_summary?: string[];
+  results_summary?: string[];
+  guidance?: string;
+  risks?: string[];
+  fy?: number;
+  qtr?: number;
+  confidence?: number;
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -266,15 +279,18 @@ export default async function Page({
                     >
                       <CarouselContent>
                         {detailQuartersOldestFirst.map((q, idx) => {
-                          const details = parseDetails(q.details) as Record<
-                            string,
-                            unknown
-                          > | null;
+                          const details = parseDetails(q.details) as ConcallDetails | null;
                           const risks = Array.isArray(details?.risks)
                             ? (details?.risks as string[]).slice(0, 2)
                             : [];
                           const rationale = Array.isArray(details?.rationale)
                             ? (details?.rationale as string[]).slice(0, 2)
+                            : [];
+                          const quarterSummary = Array.isArray(details?.quarter_summary)
+                            ? (details?.quarter_summary as string[]).slice(0, 2)
+                            : [];
+                          const resultsSummary = Array.isArray(details?.results_summary)
+                            ? (details?.results_summary as string[]).slice(0, 2)
                             : [];
                           const guidance =
                             typeof details?.guidance === "string"
@@ -284,26 +300,16 @@ export default async function Page({
                             typeof details?.category === "string"
                               ? (details?.category as string)
                               : null;
-                          const trajectory =
-                            typeof details?.trajectory === "string"
-                              ? (details?.trajectory as string)
-                              : null;
                           const confidence =
                             typeof details?.confidence === "number"
                               ? (details?.confidence as number)
                               : null;
-                          const keyMetrics =
-                            details &&
-                            typeof details === "object" &&
-                            "key_metrics" in details
-                              ? (details as Record<string, unknown>).key_metrics
-                              : null;
-                          const keyMetricEntries =
-                            keyMetrics && typeof keyMetrics === "object"
-                              ? Object.entries(
-                                  keyMetrics as Record<string, unknown>
-                                )
-                              : [];
+                          const detailScore =
+                            typeof details?.score === "number" ? details.score : q.score;
+                          const detailQuarterLabel =
+                            typeof details?.qtr === "number" && typeof details?.fy === "number"
+                              ? `Q${details.qtr} FY${details.fy}`
+                              : q.quarter_label;
                           const isLatest =
                             idx === detailQuartersOldestFirst.length - 1;
 
@@ -316,7 +322,7 @@ export default async function Page({
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="flex items-center gap-2">
                                     <span className="text-[11px] font-semibold text-gray-200">
-                                      {q.quarter_label}
+                                      {detailQuarterLabel}
                                     </span>
                                     {isLatest && (
                                       <span className="text-[10px] font-semibold text-blue-300 px-2 py-0.5 rounded-full bg-blue-900/40">
@@ -324,7 +330,7 @@ export default async function Page({
                                       </span>
                                     )}
                                   </span>
-                                  <ConcallScore score={q.score} size="sm" />
+                                  <ConcallScore score={detailScore} size="sm" />
                                 </div>
                                 {/* category intentionally hidden */}
                                 {guidance && (
@@ -332,18 +338,35 @@ export default async function Page({
                                     {guidance}
                                   </p>
                                 )}
+                                {quarterSummary.length > 0 && (
+                                  <div className="mb-2">
+                                    <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+                                      Quarter summary
+                                    </p>
+                                    <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
+                                      {quarterSummary.map((item, rIdx) => (
+                                        <li
+                                          key={rIdx}
+                                          className="text-[11px] text-gray-200 leading-snug line-clamp-2"
+                                        >
+                                          {item}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
                                 {rationale.length > 0 && (
                                   <div className="mb-2">
                                     <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
                                       Rationale
                                     </p>
-                                    <ul className="mt-1 space-y-1">
+                                    <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
                                       {rationale.map((item, rIdx) => (
                                         <li
                                           key={rIdx}
                                           className="text-[11px] text-gray-200 leading-snug line-clamp-2"
                                         >
-                                          • {item}
+                                          {item}
                                         </li>
                                       ))}
                                     </ul>
@@ -354,13 +377,13 @@ export default async function Page({
                                     <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
                                       Risks
                                     </p>
-                                    <ul className="mt-1 space-y-1">
+                                    <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
                                       {risks.map((item, rIdx) => (
                                         <li
                                           key={rIdx}
                                           className="text-[11px] text-gray-200 leading-snug line-clamp-2"
                                         >
-                                          • {item}
+                                          {item}
                                         </li>
                                       ))}
                                     </ul>
@@ -385,17 +408,17 @@ export default async function Page({
                                     <DrawerContent>
                                       <DrawerHeader>
                                         <DrawerTitle>
-                                          {q.quarter_label} details
+                                          {detailQuarterLabel} details
                                         </DrawerTitle>
                                         <DrawerDescription>
-                                          Full guidance, rationale, risks, and
-                                          key metrics for this quarter.
+                                          Full quarter context from concall
+                                          analysis details.
                                         </DrawerDescription>
                                       </DrawerHeader>
                                       <div className="px-4 pb-4 space-y-4 text-sm text-gray-200 max-h-[75vh] overflow-y-auto">
                                         <div className="flex items-center gap-2">
                                           <ConcallScore
-                                            score={q.score}
+                                            score={detailScore}
                                             size="sm"
                                           />
                                           {isLatest && (
@@ -403,9 +426,9 @@ export default async function Page({
                                               Latest
                                             </span>
                                           )}
-                                          {trajectory && (
+                                          {category && (
                                             <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
-                                              {trajectory}
+                                              {category}
                                             </span>
                                           )}
                                           {typeof confidence === "number" && (
@@ -415,10 +438,39 @@ export default async function Page({
                                             </span>
                                           )}
                                         </div>
-                                        {category && (
-                                          <p className="text-[11px] text-emerald-200 font-semibold">
-                                            {category}
-                                          </p>
+                                        {quarterSummary.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-sm font-semibold text-gray-100 uppercase tracking-wide">
+                                              Quarter summary
+                                            </p>
+                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
+                                              {quarterSummary.map((item, rIdx) => (
+                                                <li
+                                                  key={rIdx}
+                                                  className="text-xs text-gray-300 leading-snug"
+                                                >
+                                                  {item}
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          </div>
+                                        )}
+                                        {resultsSummary.length > 0 && (
+                                          <div className="space-y-1">
+                                            <p className="text-sm font-semibold text-gray-100 uppercase tracking-wide">
+                                              Results summary
+                                            </p>
+                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
+                                              {resultsSummary.map((item, rIdx) => (
+                                                <li
+                                                  key={rIdx}
+                                                  className="text-xs text-gray-300 leading-snug"
+                                                >
+                                                  {item}
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          </div>
                                         )}
                                         {guidance && (
                                           <div className="space-y-1">
@@ -435,13 +487,13 @@ export default async function Page({
                                             <p className="text-sm font-semibold text-gray-100 uppercase tracking-wide">
                                               Rationale
                                             </p>
-                                            <ul className="mt-1 space-y-1">
+                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
                                               {rationale.map((item, rIdx) => (
                                                 <li
                                                   key={rIdx}
                                                   className="text-xs text-gray-300 leading-snug"
                                                 >
-                                                  • {item}
+                                                  {item}
                                                 </li>
                                               ))}
                                             </ul>
@@ -452,36 +504,16 @@ export default async function Page({
                                             <p className="text-sm font-semibold text-gray-100 uppercase tracking-wide">
                                               Risks
                                             </p>
-                                            <ul className="mt-1 space-y-1">
+                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
                                               {risks.map((item, rIdx) => (
                                                 <li
                                                   key={rIdx}
                                                   className="text-xs text-gray-300 leading-snug"
                                                 >
-                                                  • {item}
+                                                  {item}
                                                 </li>
                                               ))}
                                             </ul>
-                                          </div>
-                                        )}
-                                        {keyMetricEntries.length > 0 && (
-                                          <div className="space-y-1">
-                                            <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide">
-                                              Key metrics
-                                            </p>
-                                            {keyMetricEntries.map(([k, v]) => (
-                                              <div
-                                                key={k}
-                                                className="text-[11px] text-gray-200 flex gap-2"
-                                              >
-                                                <span className="font-semibold capitalize">
-                                                  {k.replace(/_/g, " ")}:
-                                                </span>
-                                                <span className="text-gray-300">
-                                                  {v === null ? "—" : String(v)}
-                                                </span>
-                                              </div>
-                                            ))}
                                           </div>
                                         )}
                                       </div>
