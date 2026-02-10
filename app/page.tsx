@@ -9,7 +9,7 @@ export default async function Home() {
         {/* <Navbar></Navbar> */}
         <TopStocks></TopStocks>
         <Hero />
-        <div className="py-32 flex flex-col gap-20 w-full p-5 items-center">
+        <div className="py-12 sm:py-20 lg:py-32 flex flex-col gap-8 sm:gap-12 lg:gap-20 w-full p-5 items-center">
           {/* <h1>Search</h1> */}
           {/* <InputWithButton></InputWithButton>
           <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" /> */}
@@ -25,7 +25,7 @@ export default async function Home() {
         {/* <CarouselDemo></CarouselDemo> */}
         {/* <FeatureOne></FeatureOne> */}
 
-        <footer className="sm:w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
+        <footer className="sm:w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-4 sm:gap-8 py-10 sm:py-16">
           <p>
             An experimental project by{" "}
             <a

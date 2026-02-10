@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   CartesianGrid,
   LabelList,
@@ -48,23 +49,37 @@ function getScoreColor(score: number): string {
 /**
  * Custom label component that shows score and star for high scores
  */
-const CustomLabel = (props: { x: number; y: number; value: number }) => {
-  const { x, y, value } = props;
+const CustomLabel = (props: {
+  x: number;
+  y: number;
+  value: number;
+  index?: number;
+  totalPoints: number;
+  mobile: boolean;
+}) => {
+  const { x, y, value, index = 0, totalPoints, mobile } = props;
   const isTopScore = value >= 8.5; // Highlight scores 8.5 and above
+  const isLatestPoint = index === totalPoints - 1;
+  const isAlternatePoint = index % 2 === 0;
+
+  // Keep mobile chart clean: show labels on alternate points, always include latest.
+  if (mobile && !isAlternatePoint && !isLatestPoint) {
+    return null;
+  }
 
   return (
     <g>
       <text
         x={x}
-        y={y - 16}
+        y={mobile ? y - 12 : y - 16}
         fill="white"
         textAnchor="middle"
-        fontSize="11"
+        fontSize={mobile ? "10" : "11"}
         fontWeight="bold"
       >
         {value.toFixed(1)}
       </text>
-      {isTopScore && (
+      {isTopScore && !mobile && (
         <text
           x={x + 10}
           y={y - 16}
@@ -87,15 +102,16 @@ const CustomDot = (props: {
   cx: number;
   cy: number;
   payload: { score: number };
+  mobile?: boolean;
 }) => {
-  const { cx, cy, payload } = props;
+  const { cx, cy, payload, mobile } = props;
   const color = getScoreColor(payload.score);
   return (
     <g key={`dot-${cx}-${cy}`}>
       <circle
         cx={cx}
         cy={cy}
-        r={4}
+        r={mobile ? 3 : 4}
         fill={color}
         stroke={color}
         strokeWidth={1}
@@ -111,15 +127,16 @@ const CustomActiveDot = (props: {
   cx: number;
   cy: number;
   payload: { score: number };
+  mobile?: boolean;
 }) => {
-  const { cx, cy, payload } = props;
+  const { cx, cy, payload, mobile } = props;
   const color = getScoreColor(payload.score);
   return (
     <g key={`active-dot-${cx}-${cy}`}>
       <circle
         cx={cx}
         cy={cy}
-        r={6}
+        r={mobile ? 5 : 6}
         fill={color}
         stroke={color}
         strokeWidth={2}
@@ -135,6 +152,16 @@ export function ChartLineLabel(props: {
     score: number;
   }[];
 }) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 640px)");
+    const update = () => setIsMobile(mediaQuery.matches);
+    update();
+    mediaQuery.addEventListener("change", update);
+    return () => mediaQuery.removeEventListener("change", update);
+  }, []);
+
   return (
     <Card className="w-full bg-transparent border-0 shadow-none">
       <CardContent className="pt-0 px-0">
@@ -143,9 +170,9 @@ export function ChartLineLabel(props: {
             accessibilityLayer
             data={props.chartData}
             margin={{
-              top: 24,
-              left: 28,
-              right: 28,
+              top: isMobile ? 18 : 24,
+              left: isMobile ? 8 : 28,
+              right: isMobile ? 8 : 28,
               bottom: 16,
             }}
           >
@@ -155,6 +182,8 @@ export function ChartLineLabel(props: {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              minTickGap={isMobile ? 24 : 8}
+              interval={isMobile ? "preserveStartEnd" : 0}
               stroke="#9ca3af"
             />
             <YAxis
@@ -162,7 +191,12 @@ export function ChartLineLabel(props: {
               tickLine={false}
               axisLine={false}
               domain={[0, 10]}
-              label={{ value: "Score", angle: -90, position: "insideLeft" }}
+              width={isMobile ? 28 : 40}
+              label={
+                isMobile
+                  ? undefined
+                  : { value: "Score", angle: -90, position: "insideLeft" }
+              }
             />
             <ChartTooltip
               cursor={false}
@@ -172,13 +206,28 @@ export function ChartLineLabel(props: {
               dataKey="score"
               type="natural"
               stroke="#ffffff"
-              strokeWidth={3}
-              dot={CustomDot as any} // eslint-disable-line @typescript-eslint/no-explicit-any
-              activeDot={CustomActiveDot as any} // eslint-disable-line @typescript-eslint/no-explicit-any
+              strokeWidth={isMobile ? 2.5 : 3}
+              dot={(dotProps: { cx: number; cy: number; payload: { score: number } }) => (
+                <CustomDot {...dotProps} mobile={isMobile} />
+              )}
+              activeDot={(dotProps: { cx: number; cy: number; payload: { score: number } }) => (
+                <CustomActiveDot {...dotProps} mobile={isMobile} />
+              )}
             >
               <LabelList
                 dataKey="score"
-                content={CustomLabel as any} // eslint-disable-line @typescript-eslint/no-explicit-any
+                content={(labelProps: {
+                  x: number;
+                  y: number;
+                  value: number;
+                  index?: number;
+                }) => (
+                  <CustomLabel
+                    {...labelProps}
+                    totalPoints={props.chartData.length}
+                    mobile={isMobile}
+                  />
+                )}
               />
             </Line>
           </LineChart>

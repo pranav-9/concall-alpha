@@ -289,12 +289,12 @@ const TopStocks = async () => {
     .map((item, idx) => ({ ...item, rank: idx + 1 }));
 
   return (
-    <div className="flex flex-col w-[95%] gap-4 justify-items-center items-center pt-12">
+    <div className="flex flex-col w-[95%] gap-4 justify-items-center items-center pt-8 sm:pt-12">
       <div className="text-center space-y-1">
-        <p className="text-3xl lg:text-5xl font-extrabold !leading-tight">
+        <p className="text-2xl sm:text-3xl lg:text-5xl font-extrabold !leading-tight">
           Concall Signals
         </p>
-        <p className="text-sm text-gray-400">
+        <p className="text-xs sm:text-sm text-gray-400 px-2">
           Latest quarter: {latestLabel || "n/a"} · Sentiment uses latest/4Q scores; Growth uses guidance %
         </p>
       </div>
@@ -312,7 +312,7 @@ const TopStocks = async () => {
         </div>
       </div>
       <Link href={"/leaderboards"} prefetch={false}>
-        <p className="text-2xl lg:text-4xl font-bold !leading-tight pt-8 underline">
+        <p className="text-xl sm:text-2xl lg:text-4xl font-bold !leading-tight pt-6 sm:pt-8 underline">
           See full list {">>"}
         </p>
       </Link>
@@ -325,11 +325,11 @@ export default TopStocks;
 function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey?: "latest" | "avg4"; signal?: "sentiment" | "growth" } }) {
   return (
     <div className="flex flex-col rounded-xl border border-gray-800 bg-gray-950/70">
-      <div className="p-3 font-bold text-white text-lg bg-black rounded-t-xl border-b border-gray-800">
+      <div className="p-3 font-bold text-white text-base sm:text-lg bg-black rounded-t-xl border-b border-gray-800">
         <div className="flex items-center justify-between gap-2">
-          <span>{list.title}</span>
+          <span className="leading-tight">{list.title}</span>
           {list.signal && (
-            <Badge variant="outline" className="text-[11px] px-2 py-0.5 border-gray-700 uppercase tracking-wide">
+            <Badge variant="outline" className="text-xs px-2 py-0.5 border-gray-700 uppercase tracking-wide">
               {list.signal === "sentiment" ? "Sentiment" : "Growth"}
             </Badge>
           )}
@@ -342,9 +342,9 @@ function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey
         {list.items.map((s, index) => (
           <div key={index}>
             <Link href={"/company/" + s.code} prefetch={false}>
-              <div className="flex gap-2 bg-gray-900 rounded-lg p-2 items-start">
+              <div className="flex gap-2 bg-gray-900 rounded-lg p-2.5 items-start">
                 <div className="flex w-full gap-2 items-start">
-                  <p className="p-1 text-[11px] text-gray-400 leading-snug">{index + 1}.</p>
+                  <p className="p-1 text-xs text-gray-400 leading-snug">{index + 1}.</p>
 
                   <div className="flex flex-col w-3/4 gap-1">
                     <p className="font-medium text-sm leading-tight line-clamp-1 text-white">
@@ -363,13 +363,13 @@ function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey
                   {list.scoreKey === "avg4" && typeof s.avg4 === "number" && (
                     <>
                       <ConcallScore score={s.avg4} />
-                      <span className="text-[10px] text-gray-400">4Q avg</span>
+                      <span className="text-xs text-gray-400">4Q avg</span>
                     </>
                   )}
                   {list.scoreKey !== "avg4" && !Number.isNaN(s.latestScore) && (
                     <>
                       <ConcallScore score={s.latestScore} />
-                      <span className="text-[10px] text-gray-400">Latest qtr</span>
+                      <span className="text-xs text-gray-400">Latest qtr</span>
                     </>
                   )}
                 </div>
@@ -387,10 +387,10 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
 
   return (
     <div className="flex flex-col rounded-xl border border-gray-800 bg-gray-950/70">
-      <div className="p-3 font-bold text-white text-lg bg-black rounded-t-xl border-b border-gray-800">
+      <div className="p-3 font-bold text-white text-base sm:text-lg bg-black rounded-t-xl border-b border-gray-800">
         <div className="flex items-center justify-between gap-2">
-          <span>Top Growth Outlook</span>
-          <Badge variant="outline" className="text-[11px] px-2 py-0.5 border-gray-700 uppercase tracking-wide">
+          <span className="leading-tight">Top Growth Outlook</span>
+          <Badge variant="outline" className="text-xs px-2 py-0.5 border-gray-700 uppercase tracking-wide">
             Growth
           </Badge>
         </div>
@@ -403,8 +403,8 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
         )}
         {visible.map((item, index) => (
           <Link key={item.company + index} href={"/company/" + item.company} prefetch={false}>
-            <div className="flex gap-2 bg-gray-900 rounded-lg p-2 border border-gray-800 hover:border-emerald-400/50 transition items-start">
-              <p className="p-1 text-[11px] text-gray-400 leading-snug">
+            <div className="flex gap-2 bg-gray-900 rounded-lg p-2.5 border border-gray-800 hover:border-emerald-400/50 transition items-start">
+              <p className="p-1 text-xs text-gray-400 leading-snug">
                 {typeof item.rank === "number" ? `${item.rank}.` : `${index + 1}.`}
               </p>
               <div className="flex w-full gap-2 items-start">
@@ -422,7 +422,7 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
                       -
                     </div>
                   )}
-                  <span className="text-[10px] text-gray-400">Growth score</span>
+                  <span className="text-xs text-gray-400">Growth score</span>
                 </div>
               </div>
             </div>

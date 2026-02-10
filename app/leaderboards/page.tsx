@@ -99,16 +99,16 @@ export default async function LeaderboardsPage({
   ]);
 
   return (
-    <div className="container mx-auto py-10 space-y-6">
+    <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-10 space-y-5 sm:space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold text-white">Leaderboards</h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Leaderboards</h1>
         <p className="text-sm text-gray-400">
           Switch between concall sentiment and growth outlook rankings.
         </p>
       </div>
 
       <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList className="bg-gray-900">
+        <TabsList className="bg-gray-900 w-full sm:w-auto overflow-x-auto">
           <TabsTrigger value="sentiment">Sentiment</TabsTrigger>
           <TabsTrigger value="growth">Growth</TabsTrigger>
         </TabsList>

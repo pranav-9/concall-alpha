@@ -29,6 +29,21 @@ const returnedFields = [
   "confidence",
 ];
 
+const growthScoreInputs = [
+  "Scenario growth rates across Base, Upside, and Downside cases.",
+  "Trajectory/quality context such as execution signals and visibility.",
+  "Risk-adjusted outlook from guidance, drivers, and overhangs.",
+];
+
+const growthReturnedFields = [
+  "base_growth_pct",
+  "upside_growth_pct",
+  "downside_growth_pct",
+  "growth_score",
+  "growth_score_formula",
+  "growth_score_steps",
+];
+
 export default function HowScoresWorkPage() {
   return (
     <main className="min-h-screen flex justify-center px-4 py-10">
@@ -62,6 +77,34 @@ export default function HowScoresWorkPage() {
           </h2>
           <div className="flex flex-wrap gap-2">
             {returnedFields.map((field) => (
+              <span
+                key={field}
+                className="px-2 py-1 rounded-full text-xs bg-gray-900 border border-gray-800 text-gray-200"
+              >
+                {field}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-200">
+            How The Growth Score Is Calculated
+          </h2>
+          <p className="text-sm text-gray-300 leading-relaxed">
+            Growth leaderboard scores are computed from scenario-based outlook data
+            (Base/Upside/Downside) plus quality and visibility context. This is a
+            separate model from the quarterly sentiment score.
+          </p>
+          <ul className="list-disc pl-5 space-y-2 marker:text-gray-500">
+            {growthScoreInputs.map((input) => (
+              <li key={input} className="text-sm text-gray-300 leading-relaxed">
+                {input}
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-wrap gap-2">
+            {growthReturnedFields.map((field) => (
               <span
                 key={field}
                 className="px-2 py-1 rounded-full text-xs bg-gray-900 border border-gray-800 text-gray-200"

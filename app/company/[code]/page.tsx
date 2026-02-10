@@ -135,7 +135,7 @@ export default async function Page({
 
   const { data: growthData } = await supabase
     .from("growth_outlook")
-    .select("details, growth_score, growth_score_formula, growth_score_steps")
+    .select("details, growth_score")
     .or(
       [code ? `company.eq.${code}` : null, companyName ? `company.eq.${companyName}` : null]
         .filter(Boolean)
@@ -150,7 +150,7 @@ export default async function Page({
 
   if (!data || data.length === 0) {
     return (
-      <div className="flex w-full px-16 p-8 justify-center items-center">
+      <div className="flex w-full px-4 sm:px-8 lg:px-16 py-8 justify-center items-center">
         <p className="text-gray-400 text-lg">
           No data available for company {code}
         </p>
@@ -173,14 +173,6 @@ export default async function Page({
       : typeof growthScoreRaw === "string"
       ? parseFloat(growthScoreRaw)
       : null;
-  const growthFormula =
-    growthData?.[0]?.growth_score_formula ??
-    (growthOutlook as GrowthOutlook | undefined)?.growth_score_formula ??
-    null;
-  const growthSteps =
-    (growthData?.[0]?.growth_score_steps as string[] | null | undefined) ??
-    (growthOutlook as GrowthOutlook | undefined)?.growth_score_steps ??
-    null;
 
   const parseDetails = (val: unknown) => {
     if (!val) return null;
@@ -195,12 +187,79 @@ export default async function Page({
     return typeof val === "object" ? val : null;
   };
 
+  const renderScenarioCard = (scenarioKey: "base" | "upside" | "downside") => {
+    const scenario = growthOutlook?.scenarios?.[scenarioKey] as GrowthScenario | undefined;
+    if (!scenario) return null;
+    const drivers = Array.isArray(scenario.key_drivers) ? scenario.key_drivers : [];
+    const risks = Array.isArray(scenario.key_risks) ? scenario.key_risks : [];
+
+    return (
+      <div
+        key={scenarioKey}
+        className="rounded-lg border border-gray-800 bg-gray-900/60 p-3 space-y-2"
+      >
+        <div className="flex items-center justify-between text-xs text-gray-200">
+          <span className="font-semibold capitalize">{scenarioKey} case</span>
+          {typeof scenario.confidence === "number" && (
+            <span className="text-[11px] text-gray-400">
+              {(scenario.confidence * 100).toFixed(0)}% conf
+            </span>
+          )}
+        </div>
+        <div className="space-y-2">
+          {scenario.revenue_growth_pct && (
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-full bg-emerald-900/40 border border-emerald-700/40 text-[10px] font-semibold uppercase tracking-wide text-emerald-100">
+                Growth
+              </span>
+              <span className="text-sm font-semibold text-emerald-100">
+                {scenario.revenue_growth_pct}
+              </span>
+            </div>
+          )}
+          <div className="text-[11px] text-gray-300 space-y-1">
+            {scenario.margin_trend_bps && <p>Margin trend: {scenario.margin_trend_bps}</p>}
+            {scenario.fcf_direction && <p>FCF: {scenario.fcf_direction}</p>}
+          </div>
+        </div>
+        {drivers.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+              Drivers
+            </p>
+            <ul className="space-y-1">
+              {drivers.slice(0, 3).map((d, idx) => (
+                <li key={idx} className="text-[11px] text-gray-200 leading-snug">
+                  • {d}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {risks.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+              Risks
+            </p>
+            <ul className="space-y-1">
+              {risks.slice(0, 3).map((r, idx) => (
+                <li key={idx} className="text-[11px] text-gray-200 leading-snug">
+                  • {r}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div className="flex w-full gap-6 px-6 lg:px-12 py-6">
+    <div className="flex w-full max-w-full overflow-x-hidden gap-4 lg:gap-6 px-3 sm:px-4 lg:px-12 py-4 sm:py-6">
       <SidebarNavigation />
 
       {/* main content - 80% width */}
-      <div id="main-content" className="flex-1 flex flex-col gap-4">
+      <div id="main-content" className="flex-1 min-w-0 flex flex-col gap-4">
         <OverviewCard
           companyInfo={{
             code: companyRow?.code ?? code,
@@ -212,11 +271,11 @@ export default async function Page({
           }}
         />
 
-        <SectionCard id="sentiment-score" title="Concall Sentiment Score">
+        <SectionCard id="sentiment-score" title="Quarterly Score">
           <div className="flex flex-col gap-4">
             {/* Trend indicator */}
             <div
-              className={`flex items-center gap-2 p-2 rounded-lg ${
+              className={`flex flex-col sm:flex-row sm:items-center gap-2 p-2 rounded-lg ${
                 trend.direction === "improving"
                   ? "bg-emerald-500/20 border border-emerald-500/50"
                   : trend.direction === "declining"
@@ -245,14 +304,14 @@ export default async function Page({
                   </span>
                 )}
               </div>
-              <span className="text-[11px] text-gray-300 ml-auto">
+              <span className="text-[11px] text-gray-300 sm:ml-auto break-words">
                 {trend.description}
               </span>
             </div>
 
             {/* Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+          <div className="flex min-w-0 flex-col gap-2">
                 <div className="flex justify-center">
                   <ChartLineLabel chartData={chartData} />
                 </div>
@@ -261,12 +320,12 @@ export default async function Page({
                 </p>
               </div>
 
-              <div className="flex flex-col gap-2 w-full">
+              <div className="flex min-w-0 flex-col gap-2 w-full">
                 <p className="text-xs font-semibold text-gray-200">
                   Score context (latest 12 quarters)
                 </p>
                 <div className="flex justify-center">
-                  <div className="w-full">
+                  <div className="w-full max-w-full overflow-hidden">
                     <Carousel
                       opts={{
                         align: "start",
@@ -372,23 +431,6 @@ export default async function Page({
                                     </ul>
                                   </div>
                                 )}
-                                {risks.length > 0 && (
-                                  <div>
-                                    <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
-                                      Risks
-                                    </p>
-                                    <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
-                                      {risks.map((item, rIdx) => (
-                                        <li
-                                          key={rIdx}
-                                          className="text-[11px] text-gray-200 leading-snug line-clamp-2"
-                                        >
-                                          {item}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
                                 {!details && (
                                   <p className="text-[10px] text-gray-500 mt-2">
                                     No additional context available.
@@ -396,15 +438,16 @@ export default async function Page({
                                 )}
                                 {details && (
                                   <Drawer direction="right">
-                                    <DrawerTrigger asChild>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="mt-3 text-xs"
-                                      >
-                                        Open details
-                                      </Button>
-                                    </DrawerTrigger>
+                                    <div className="mt-3 flex justify-center sm:justify-start">
+                                      <DrawerTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          className="text-xs font-semibold uppercase tracking-wide bg-emerald-500 text-black border border-emerald-300 shadow-[0_0_0_1px_rgba(16,185,129,0.45),0_0_24px_rgba(16,185,129,0.35)] hover:bg-emerald-400 hover:shadow-[0_0_0_1px_rgba(52,211,153,0.65),0_0_28px_rgba(16,185,129,0.5)]"
+                                        >
+                                          Show details
+                                        </Button>
+                                      </DrawerTrigger>
+                                    </div>
                                     <DrawerContent>
                                       <DrawerHeader>
                                         <DrawerTitle>
@@ -583,88 +626,26 @@ export default async function Page({
                     </ul>
                   </div>
                 )}
-              {(growthFormula || (growthSteps && growthSteps.length > 0)) && (
-                <div className="space-y-1 text-xs text-gray-400 bg-gray-900/50 border border-gray-800 rounded-lg p-3">
-                  <p className="font-semibold text-gray-200 text-[11px] uppercase tracking-wide">
-                    How this growth score is computed
-                  </p>
-                  {growthFormula && <p className="text-gray-300">{growthFormula}</p>}
-                  {growthSteps && growthSteps.length > 0 && (
-                    <ul className="list-disc list-inside space-y-1">
-                      {growthSteps.map((step, sIdx) => (
-                        <li key={sIdx}>{step}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
+              <div className="md:hidden min-w-0">
+                <Carousel opts={{ align: "start" }} className="w-full">
+                  <CarouselContent>
+                    {(["base", "upside", "downside"] as const).map((scenarioKey) => (
+                      <CarouselItem key={`mobile-${scenarioKey}`} className="basis-[92%]">
+                        {renderScenarioCard(scenarioKey)}
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <div className="mt-2 flex justify-center gap-2">
+                    <CarouselPrevious className="static translate-x-0 translate-y-0" />
+                    <CarouselNext className="static translate-x-0 translate-y-0" />
+                  </div>
+                </Carousel>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {(["base", "upside", "downside"] as const).map((scenarioKey) => {
-                  const scenario = growthOutlook.scenarios?.[scenarioKey] as GrowthScenario | undefined;
-                  if (!scenario) return null;
-                  const drivers = Array.isArray(scenario.key_drivers) ? scenario.key_drivers : [];
-                  const risks = Array.isArray(scenario.key_risks) ? scenario.key_risks : [];
-                  return (
-                    <div
-                      key={scenarioKey}
-                      className="rounded-lg border border-gray-800 bg-gray-900/60 p-3 space-y-2"
-                    >
-                      <div className="flex items-center justify-between text-xs text-gray-200">
-                        <span className="font-semibold capitalize">{scenarioKey} case</span>
-                        {typeof scenario.confidence === "number" && (
-                          <span className="text-[11px] text-gray-400">
-                            {(scenario.confidence * 100).toFixed(0)}% conf
-                          </span>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        {scenario.revenue_growth_pct && (
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-900/40 border border-emerald-700/40 text-[10px] font-semibold uppercase tracking-wide text-emerald-100">
-                              Growth
-                            </span>
-                            <span className="text-sm font-semibold text-emerald-100">
-                              {scenario.revenue_growth_pct}
-                            </span>
-                          </div>
-                        )}
-                        <div className="text-[11px] text-gray-300 space-y-1">
-                          {scenario.margin_trend_bps && <p>Margin trend: {scenario.margin_trend_bps}</p>}
-                          {scenario.fcf_direction && <p>FCF: {scenario.fcf_direction}</p>}
-                        </div>
-                      </div>
-                      {drivers.length > 0 && (
-                        <div className="space-y-1">
-                          <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
-                            Drivers
-                          </p>
-                          <ul className="space-y-1">
-                            {drivers.slice(0, 3).map((d, idx) => (
-                              <li key={idx} className="text-[11px] text-gray-200 leading-snug">
-                                • {d}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {risks.length > 0 && (
-                        <div className="space-y-1">
-                          <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
-                            Risks
-                          </p>
-                          <ul className="space-y-1">
-                            {risks.slice(0, 3).map((r, idx) => (
-                              <li key={idx} className="text-[11px] text-gray-200 leading-snug">
-                                • {r}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="hidden md:grid md:grid-cols-3 gap-3">
+                {(["base", "upside", "downside"] as const).map((scenarioKey) =>
+                  renderScenarioCard(scenarioKey)
+                )}
               </div>
             </div>
           ) : (
