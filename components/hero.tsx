@@ -1,8 +1,17 @@
+import Image from "next/image";
+
 export function Hero() {
   return (
-    // <div className="flex gap-16 items-center w-full">
-    <div className="bg-[url(/hero-2.jpg)] bg-contain bg-bottom sm:bg-top sm:bg-cover bg-no-repeat min-h-[70vh] sm:min-h-screen w-full justify-items-start px-[8%] py-[14%] sm:py-[2%]">
-      <div className="flex flex-col gap-5 sm:gap-8 sm:w-3/4">
+    <div className="relative min-h-[70vh] sm:min-h-screen w-full justify-items-start px-[8%] py-[14%] sm:py-[2%] overflow-hidden">
+      <Image
+        src="/hero-2.jpg"
+        alt="Concall Alpha hero background"
+        fill
+        priority
+        sizes="100vw"
+        className="object-contain object-bottom sm:object-cover sm:object-top"
+      />
+      <div className="relative z-10 flex flex-col gap-5 sm:gap-8 sm:w-3/4">
         <p className="text-3xl sm:text-5xl lg:text-7xl font-extrabold !leading-tight">
           Insight from Conference Calls
         </p>
@@ -13,8 +22,5 @@ export function Hero() {
         </p>
       </div>
     </div>
-
-    // {/* <Image src="/hero-1.jpg" width={500} height={500} alt="hero"></Image> */}
-    // {/* </div> */}
   );
 }
