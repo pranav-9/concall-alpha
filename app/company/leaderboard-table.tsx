@@ -22,6 +22,15 @@ export type CompanyRow = {
 function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
   const cols: ColumnDef<CompanyRow>[] = [
     {
+      id: "rank",
+      header: "#",
+      cell: ({ table, row }) => {
+        const rank =
+          table.getRowModel().rows.findIndex((r) => r.id === row.id) + 1;
+        return <span className="text-muted-foreground text-xs">{rank}.</span>;
+      },
+    },
+    {
       accessorKey: "company",
       header: ({ column }) => (
         <Button
