@@ -207,27 +207,72 @@ export function ChartLineLabel(props: {
               type="natural"
               stroke="#ffffff"
               strokeWidth={isMobile ? 2.5 : 3}
-              dot={(dotProps: { cx: number; cy: number; payload: { score: number } }) => (
-                <CustomDot {...dotProps} mobile={isMobile} />
-              )}
-              activeDot={(dotProps: { cx: number; cy: number; payload: { score: number } }) => (
-                <CustomActiveDot {...dotProps} mobile={isMobile} />
-              )}
+              dot={(dotProps: unknown) => {
+                const p = dotProps as {
+                  cx?: number;
+                  cy?: number;
+                  payload?: { score?: number };
+                };
+                if (typeof p.cx !== "number" || typeof p.cy !== "number") {
+                  return <g />;
+                }
+                return (
+                  <CustomDot
+                    cx={p.cx}
+                    cy={p.cy}
+                    payload={{ score: Number(p.payload?.score ?? 0) }}
+                    mobile={isMobile}
+                  />
+                );
+              }}
+              activeDot={(dotProps: unknown) => {
+                const p = dotProps as {
+                  cx?: number;
+                  cy?: number;
+                  payload?: { score?: number };
+                };
+                if (typeof p.cx !== "number" || typeof p.cy !== "number") {
+                  return <g />;
+                }
+                return (
+                  <CustomActiveDot
+                    cx={p.cx}
+                    cy={p.cy}
+                    payload={{ score: Number(p.payload?.score ?? 0) }}
+                    mobile={isMobile}
+                  />
+                );
+              }}
             >
               <LabelList
                 dataKey="score"
-                content={(labelProps: {
-                  x: number;
-                  y: number;
-                  value: number;
-                  index?: number;
-                }) => (
-                  <CustomLabel
-                    {...labelProps}
-                    totalPoints={props.chartData.length}
-                    mobile={isMobile}
-                  />
-                )}
+                content={(labelProps) => {
+                  const p = labelProps as {
+                    x?: number | string;
+                    y?: number | string;
+                    value?: number | string;
+                    index?: number;
+                  };
+                  const x = typeof p.x === "number" ? p.x : Number(p.x);
+                  const y = typeof p.y === "number" ? p.y : Number(p.y);
+                  const value =
+                    typeof p.value === "number" ? p.value : Number(p.value);
+
+                  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(value)) {
+                    return <g />;
+                  }
+
+                  return (
+                    <CustomLabel
+                      x={x}
+                      y={y}
+                      value={value}
+                      index={p.index}
+                      totalPoints={props.chartData.length}
+                      mobile={isMobile}
+                    />
+                  );
+                }}
               />
             </Line>
           </LineChart>
