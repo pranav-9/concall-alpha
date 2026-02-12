@@ -4,19 +4,25 @@ import { Badge } from "@/components/ui/badge"; // adjust path if needed
 type Size = "sm" | "md" | "lg";
 
 export const categoryFor = (score: number) => {
-  if (score >= 8)
+  if (score >= 9)
+    return {
+      label: "Very Strongly Bullish",
+      bg: "bg-emerald-300",
+      ring: "ring-emerald-300/55",
+    };
+  if (score >= 8.5)
     return {
       label: "Strongly Bullish",
-      bg: "bg-emerald-500",
-      ring: "ring-emerald-700/30",
+      bg: "bg-emerald-400",
+      ring: "ring-emerald-700/28",
     };
-  if (score >= 7)
+  if (score >= 7.5)
     return {
       label: "Mildly Bullish",
       bg: "bg-green-500",
       ring: "ring-green-700/25",
     };
-  if (score >= 6)
+  if (score > 6.5)
     return { label: "Neutral", bg: "bg-amber-400", ring: "ring-amber-700/25" };
   if (score >= 5)
     return {

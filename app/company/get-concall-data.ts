@@ -49,6 +49,17 @@ export const getConcallData = async () => {
     const row: CompanyRow = { company: companyCode };
     const companyRecords = sorted.filter((x) => x.company_code === companyCode);
     const trendSample = companyRecords.slice(0, 12);
+    const latest4 = companyRecords.slice(0, 4);
+    const latest12 = companyRecords.slice(0, 12);
+
+    row["Latest 4Q Avg"] =
+      latest4.length > 0
+        ? latest4.reduce((acc, curr) => acc + Number(curr.score ?? 0), 0) / latest4.length
+        : null;
+    row["Latest 12Q Avg"] =
+      latest12.length > 0
+        ? latest12.reduce((acc, curr) => acc + Number(curr.score ?? 0), 0) / latest12.length
+        : null;
 
     selectedQuarters.forEach((q) => {
       const match = companyRecords.find(
