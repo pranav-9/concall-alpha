@@ -218,6 +218,7 @@ export function ChartLineLabel(props: {
                 }
                 return (
                   <CustomDot
+                    key={`dot-${p.cx}-${p.cy}-${Number(p.payload?.score ?? 0)}`}
                     cx={p.cx}
                     cy={p.cy}
                     payload={{ score: Number(p.payload?.score ?? 0) }}
@@ -236,6 +237,9 @@ export function ChartLineLabel(props: {
                 }
                 return (
                   <CustomActiveDot
+                    key={`active-dot-${p.cx}-${p.cy}-${Number(
+                      p.payload?.score ?? 0
+                    )}`}
                     cx={p.cx}
                     cy={p.cy}
                     payload={{ score: Number(p.payload?.score ?? 0) }}

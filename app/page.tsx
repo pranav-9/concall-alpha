@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Hero } from "@/components/hero";
 import TopStocks from "./(hero)/top-stocks";
 import FeatureOne from "./(hero)/feature-1";
+import RecentScoreUpdates from "./(hero)/recent-score-updates";
 
 function TopStocksFallback() {
   return (
@@ -31,6 +32,7 @@ export default async function Home() {
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-[90%] sm:w-full flex flex-col gap-0 justify-items-center items-center">
         {/* <Navbar></Navbar> */}
+        <RecentScoreUpdates />
         <Suspense fallback={<TopStocksFallback />}>
           <TopStocks />
         </Suspense>
