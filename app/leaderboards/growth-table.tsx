@@ -23,7 +23,7 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
   {
     id: "rank",
     header: "#",
-    cell: ({ row }) => <span className="text-gray-300 text-sm">{row.index + 1}</span>,
+    cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.index + 1}</span>,
   },
   {
     accessorKey: "company",
@@ -31,7 +31,11 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
     cell: ({ row }) => {
       const name = row.getValue("company") as string;
       return (
-        <Link href={`/company/${name}`} prefetch={false} className="hover:underline font-semibold text-white">
+        <Link
+          href={`/company/${name}`}
+          prefetch={false}
+          className="hover:underline font-semibold text-foreground"
+        >
           {name}
         </Link>
       );
@@ -47,7 +51,7 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
           {typeof score === "number" ? (
             <ConcallScore score={score} />
           ) : (
-            <div className="h-10 w-10 rounded-full border border-gray-700 bg-gray-900 flex items-center justify-center text-sm text-gray-400">
+            <div className="h-10 w-10 rounded-full border border-border bg-muted flex items-center justify-center text-sm text-muted-foreground">
               -
             </div>
           )}
@@ -58,17 +62,23 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
   {
     accessorKey: "base",
     header: "Base %",
-    cell: ({ row }) => <span className="text-gray-200">{formatPct(row.getValue("base") as number | null)}</span>,
+    cell: ({ row }) => (
+      <span className="text-foreground">{formatPct(row.getValue("base") as number | null)}</span>
+    ),
   },
   {
     accessorKey: "upside",
     header: "Upside %",
-    cell: ({ row }) => <span className="text-gray-200">{formatPct(row.getValue("upside") as number | null)}</span>,
+    cell: ({ row }) => (
+      <span className="text-foreground">{formatPct(row.getValue("upside") as number | null)}</span>
+    ),
   },
   {
     accessorKey: "downside",
     header: "Downside %",
-    cell: ({ row }) => <span className="text-gray-200">{formatPct(row.getValue("downside") as number | null)}</span>,
+    cell: ({ row }) => (
+      <span className="text-foreground">{formatPct(row.getValue("downside") as number | null)}</span>
+    ),
   },
 ];
 
