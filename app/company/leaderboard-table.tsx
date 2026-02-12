@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "./data-table";
 
 const AverageScoreChip = ({ value, label }: { value: number; label: string }) => (
-  <div className="inline-flex items-center gap-2 rounded-md border border-sky-700/40 bg-sky-950/40 px-2 py-1">
-    <span className="text-xs font-semibold tabular-nums text-sky-200">{value.toFixed(2)}</span>
-    <span className="text-[10px] uppercase tracking-wide text-sky-300/80">{label}</span>
+  <div className="inline-flex items-center gap-2 rounded-md border border-sky-300 bg-sky-50 px-2 py-1 dark:border-sky-700/40 dark:bg-sky-950/40">
+    <span className="text-xs font-semibold tabular-nums text-sky-800 dark:text-sky-200">{value.toFixed(2)}</span>
+    <span className="text-[10px] uppercase tracking-wide text-sky-700/80 dark:text-sky-300/80">{label}</span>
   </div>
 );
 
@@ -51,21 +51,18 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
       cell: ({ row }) => {
         const name: string = row.getValue("company");
         const direction = row.original.trendDirection;
-        const change = row.original.trendChange ?? null;
-        const recentAvg = row.original.trendRecentAvg;
-        const historicalAvg = row.original.trendHistoricalAvg;
 
         let trendIcon = <Minus className="h-3 w-3 text-muted-foreground" />;
         let trendColor = "text-muted-foreground";
         let trendText = "Stable";
 
         if (direction === "improving") {
-          trendIcon = <TrendingUp className="h-3 w-3 text-emerald-400" />;
-          trendColor = "text-emerald-300";
+          trendIcon = <TrendingUp className="h-3 w-3 text-emerald-700 dark:text-emerald-400" />;
+          trendColor = "text-emerald-700 dark:text-emerald-300";
           trendText = "Improving";
         } else if (direction === "declining") {
-          trendIcon = <TrendingDown className="h-3 w-3 text-red-400" />;
-          trendColor = "text-red-300";
+          trendIcon = <TrendingDown className="h-3 w-3 text-red-700 dark:text-red-400" />;
+          trendColor = "text-red-700 dark:text-red-300";
           trendText = "Declining";
         }
 
@@ -80,17 +77,6 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
               <span className={`flex items-center gap-1 text-[11px] ${trendColor}`}>
                 {trendIcon}
                 <span>{trendText}</span>
-                {recentAvg != null && historicalAvg != null && (
-                  <span className="text-[10px] text-muted-foreground">
-                    {recentAvg.toFixed(2)} vs {historicalAvg.toFixed(2)}
-                  </span>
-                )}
-                {change != null && Math.abs(change) > 0 && (
-                  <span className="text-[10px] text-muted-foreground">
-                    ({change > 0 ? "+" : ""}
-                    {change.toFixed(2)})
-                  </span>
-                )}
               </span>
             )}
           </div>
