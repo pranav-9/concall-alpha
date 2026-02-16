@@ -40,9 +40,65 @@ type GrowthScenario = {
   confidence?: number;
   key_drivers?: string[];
   key_risks?: string[];
+  evidence_refs?: string[];
   fcf_direction?: string | null;
-  margin_trend_bps?: string | null;
-  revenue_growth_pct?: string | null;
+  margin_trend_bps?: string | number | null;
+  revenue_growth_pct?: string | number | null;
+};
+
+type EvidenceItem = {
+  period?: string | null;
+  source?: string | null;
+  quote_or_fact?: string | null;
+};
+
+type GrowthCatalyst = {
+  type?: string | null;
+  timing?: string | null;
+  catalyst?: string | null;
+  expected_impact?: string | null;
+  evidence?: EvidenceItem[] | null;
+  quantified?: {
+    unit?: string | null;
+    value?: string | number | null;
+  } | null;
+};
+
+type SourceFileRef = {
+  fy?: string | null;
+  kind?: string | null;
+  quarter?: string | null;
+  source_url?: string | null;
+};
+
+type IndustrySetup = {
+  signals?: string[] | null;
+  demand_trend?: string | null;
+  supply_trend?: string | null;
+  pricing_power?: string | null;
+  cycle_position?: string | null;
+  evidence?: EvidenceItem[] | null;
+};
+
+type VariantPerception = {
+  consensus_vs_company?: string | null;
+  upside_nonconsensus?: string[] | null;
+  downside_nonconsensus?: string[] | null;
+};
+
+type EarningsDirection = {
+  eps_outlook?: string | null;
+  revision_proxy?: string | null;
+  management_guidance_summary?: string | null;
+  evidence?: EvidenceItem[] | null;
+};
+
+type EarningsLevers = {
+  operating_leverage?: string | null;
+  cost_rawmat_lever?: string | null;
+  mix_premiumization_lever?: string | null;
+  utilization_or_scale_lever?: string | null;
+  evidence?: EvidenceItem[] | null;
 };
 
 type GrowthOutlook = {
@@ -52,8 +108,18 @@ type GrowthOutlook = {
   visibility_score?: number | null;
   summary_bullets?: string[] | null;
    growth_score?: number | string | null;
-   growth_score_formula?: string | null;
-   growth_score_steps?: string[] | null;
+  growth_score_formula?: string | null;
+  growth_score_steps?: string[] | null;
+  visibility_rationale?: string | null;
+  run_timestamp?: string | null;
+  trajectory?: string | { trajectory?: string; short_rationale?: string; value?: string; rationale?: string } | null;
+  trajectory_rationale?: string | null;
+  source_files?: SourceFileRef[] | null;
+  variant_perception?: VariantPerception | null;
+  industry_setup?: IndustrySetup | null;
+  earnings_direction?: EarningsDirection | null;
+  earnings_levers?: EarningsLevers | null;
+  catalysts_next_12_24m?: GrowthCatalyst[] | null;
   scenarios?: {
     base?: GrowthScenario;
     upside?: GrowthScenario;
@@ -73,6 +139,20 @@ type ConcallDetails = {
   qtr?: number;
   confidence?: number;
 };
+
+const parseJsonObject = (val: unknown) => {
+  if (!val) return null;
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return typeof val === "object" ? val : null;
+};
+
 
 export async function generateMetadata({
   params,
@@ -135,7 +215,7 @@ export default async function Page({
 
   const { data: growthData } = await supabase
     .from("growth_outlook")
-    .select("details, growth_score")
+    .select("details, growth_score, run_timestamp")
     .or(
       [code ? `company.eq.${code}` : null, companyName ? `company.eq.${companyName}` : null]
         .filter(Boolean)
@@ -164,7 +244,22 @@ export default async function Page({
   const trend = calculateTrend(data.slice(0, 12));
   const detailQuarters = data.slice(0, 12);
   const detailQuartersOldestFirst = [...detailQuarters].reverse();
-  const growthOutlook = growthData?.[0]?.details as GrowthOutlook | undefined;
+  const growthOutlook = parseJsonObject(growthData?.[0]?.details) as GrowthOutlook | undefined;
+  const growthUpdatedAtRaw =
+    (growthData?.[0]?.run_timestamp as string | null | undefined) ??
+    growthOutlook?.run_timestamp ??
+    null;
+  const growthUpdatedDate = growthUpdatedAtRaw ? new Date(growthUpdatedAtRaw) : null;
+  const growthUpdatedAt =
+    growthUpdatedDate && !Number.isNaN(growthUpdatedDate.getTime())
+      ? new Intl.DateTimeFormat("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(growthUpdatedDate)
+      : null;
   const growthScoreRaw =
     growthData?.[0]?.growth_score ?? (growthOutlook as GrowthOutlook | undefined)?.growth_score ?? null;
   const growthScore =
@@ -173,82 +268,141 @@ export default async function Page({
       : typeof growthScoreRaw === "string"
       ? parseFloat(growthScoreRaw)
       : null;
-
-  const parseDetails = (val: unknown) => {
-    if (!val) return null;
-    if (typeof val === "string") {
-      try {
-        const parsed = JSON.parse(val);
-        return parsed && typeof parsed === "object" ? parsed : null;
-      } catch {
-        return null;
-      }
-    }
-    return typeof val === "object" ? val : null;
-  };
+  const trajectoryLabel =
+    typeof growthOutlook?.trajectory === "string"
+      ? growthOutlook.trajectory
+      : growthOutlook?.trajectory?.trajectory ??
+        growthOutlook?.trajectory?.value ??
+        null;
+  const trajectoryRationale =
+    growthOutlook?.trajectory_rationale ??
+    (typeof growthOutlook?.trajectory === "object"
+      ? growthOutlook.trajectory?.short_rationale ?? growthOutlook.trajectory?.rationale ?? null
+      : null);
 
   const renderScenarioCard = (scenarioKey: "base" | "upside" | "downside") => {
     const scenario = growthOutlook?.scenarios?.[scenarioKey] as GrowthScenario | undefined;
     if (!scenario) return null;
     const drivers = Array.isArray(scenario.key_drivers) ? scenario.key_drivers : [];
     const risks = Array.isArray(scenario.key_risks) ? scenario.key_risks : [];
+    const refs = Array.isArray(scenario.evidence_refs) ? scenario.evidence_refs : [];
+    const accentClass =
+      scenarioKey === "base"
+        ? "border-l-emerald-500/70"
+        : scenarioKey === "upside"
+        ? "border-l-sky-500/70"
+        : "border-l-amber-500/70";
 
     return (
       <div
         key={scenarioKey}
-        className="rounded-lg border border-gray-800 bg-gray-900/60 p-3 space-y-2"
+        className={`rounded-lg border border-gray-800 bg-gray-900/60 p-2.5 space-y-1.5 border-l-2 ${accentClass}`}
       >
-        <div className="flex items-center justify-between text-xs text-gray-200">
-          <span className="font-semibold capitalize">{scenarioKey} case</span>
+        <div className="flex items-center justify-between text-[10px]">
+          <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200 font-semibold uppercase tracking-wide">
+            {scenarioKey} case
+          </span>
           {typeof scenario.confidence === "number" && (
-            <span className="text-[11px] text-gray-400">
+            <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-300">
               {(scenario.confidence * 100).toFixed(0)}% conf
             </span>
           )}
         </div>
-        <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
           {scenario.revenue_growth_pct && (
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full bg-emerald-900/40 border border-emerald-700/40 text-[10px] font-semibold uppercase tracking-wide text-emerald-100">
-                Growth
-              </span>
-              <span className="text-sm font-semibold text-emerald-100">
-                {scenario.revenue_growth_pct}
-              </span>
-            </div>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-900/35 border border-emerald-700/40 text-emerald-100">
+              Growth: {scenario.revenue_growth_pct}
+            </span>
           )}
-          <div className="text-[11px] text-gray-300 space-y-1">
-            {scenario.margin_trend_bps && <p>Margin trend: {scenario.margin_trend_bps}</p>}
-            {scenario.fcf_direction && <p>FCF: {scenario.fcf_direction}</p>}
-          </div>
+          {scenario.margin_trend_bps != null && (
+            <span className="px-2 py-0.5 rounded-full bg-sky-900/35 border border-sky-700/40 text-sky-100">
+              Margin: {String(scenario.margin_trend_bps)}
+            </span>
+          )}
+          {scenario.fcf_direction && (
+            <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+              FCF: {scenario.fcf_direction}
+            </span>
+          )}
         </div>
+        {refs.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {refs.slice(0, 3).map((ref, idx) => (
+              <span
+                key={idx}
+                className="text-[10px] px-2 py-0.5 rounded-full bg-blue-900/35 border border-blue-700/40 text-blue-200"
+              >
+                {ref}
+              </span>
+            ))}
+          </div>
+        )}
         {drivers.length > 0 && (
           <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+            <p className="text-[10px] uppercase tracking-wide text-emerald-300 font-semibold">
               Drivers
             </p>
-            <ul className="space-y-1">
-              {drivers.slice(0, 3).map((d, idx) => (
-                <li key={idx} className="text-[11px] text-gray-200 leading-snug">
-                  • {d}
-                </li>
+            <div className="space-y-1">
+              {drivers.slice(0, 2).map((d, idx) => (
+                <div key={idx} className="rounded-md border border-emerald-900/30 bg-emerald-950/15 px-2 py-1">
+                  <p className="text-[11px] text-gray-200 leading-snug">{d}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
         {risks.length > 0 && (
           <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+            <p className="text-[10px] uppercase tracking-wide text-red-300 font-semibold">
               Risks
             </p>
-            <ul className="space-y-1">
-              {risks.slice(0, 3).map((r, idx) => (
-                <li key={idx} className="text-[11px] text-gray-200 leading-snug">
-                  • {r}
-                </li>
+            <div className="space-y-1">
+              {risks.slice(0, 2).map((r, idx) => (
+                <div key={idx} className="rounded-md border border-red-900/30 bg-red-950/15 px-2 py-1">
+                  <p className="text-[11px] text-gray-200 leading-snug">{r}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderEvidenceDisclosure = (
+    title: string,
+    evidence?: EvidenceItem[] | null,
+    firstCount = 1
+  ) => {
+    if (!Array.isArray(evidence) || evidence.length === 0) return null;
+    const first = evidence.slice(0, firstCount);
+    const rest = evidence.slice(firstCount);
+
+    return (
+      <div className="space-y-1">
+        <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">{title}</p>
+        {first.map((item, idx) => (
+          <p key={idx} className="text-[11px] text-gray-300 leading-snug">
+            • {item.period ? `${item.period} · ` : ""}
+            {item.source ? `${item.source} · ` : ""}
+            {item.quote_or_fact ?? "Evidence item"}
+          </p>
+        ))}
+        {rest.length > 0 && (
+          <details className="text-[10px] text-gray-400">
+            <summary className="cursor-pointer hover:text-gray-300">
+              Show evidence ({evidence.length})
+            </summary>
+            <div className="mt-1 space-y-1">
+              {rest.map((item, idx) => (
+                <p key={idx} className="text-[11px] text-gray-300 leading-snug">
+                  • {item.period ? `${item.period} · ` : ""}
+                  {item.source ? `${item.source} · ` : ""}
+                  {item.quote_or_fact ?? "Evidence item"}
+                </p>
+              ))}
+            </div>
+          </details>
         )}
       </div>
     );
@@ -338,7 +492,7 @@ export default async function Page({
                     >
                       <CarouselContent>
                         {detailQuartersOldestFirst.map((q, idx) => {
-                          const details = parseDetails(q.details) as ConcallDetails | null;
+                          const details = parseJsonObject(q.details) as ConcallDetails | null;
                           const risks = Array.isArray(details?.risks)
                             ? (details?.risks as string[]).slice(0, 2)
                             : [];
@@ -591,14 +745,9 @@ export default async function Page({
           {growthOutlook ? (
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-3 text-xs text-gray-300">
-                {growthOutlook.fiscal_year && (
-                  <span className="px-2 py-1 rounded-full bg-gray-800 text-gray-100">
-                    Horizon: {growthOutlook.fiscal_year}
-                  </span>
-                )}
-                {typeof growthOutlook.horizon_years === "number" && (
-                  <span className="px-2 py-1 rounded-full bg-gray-800 text-gray-100">
-                    {growthOutlook.horizon_years} yr outlook
+                {typeof growthScore === "number" && (
+                  <span className="px-2 py-1 rounded-full bg-emerald-900/60 text-emerald-100 border border-emerald-700/50">
+                    Growth score: {growthScore.toFixed(1)}
                   </span>
                 )}
                 {typeof growthOutlook.visibility_score === "number" && (
@@ -606,9 +755,9 @@ export default async function Page({
                     Visibility: {(growthOutlook.visibility_score * 100).toFixed(0)}%
                   </span>
                 )}
-                {typeof growthScore === "number" && (
-                  <span className="px-2 py-1 rounded-full bg-emerald-900/60 text-emerald-100 border border-emerald-700/50">
-                    Growth score: {growthScore.toFixed(1)}
+                {growthUpdatedAt && (
+                  <span className="px-2 py-1 rounded-full bg-gray-800 text-gray-100 border border-gray-700/60">
+                    Updated: {growthUpdatedAt}
                   </span>
                 )}
               </div>
@@ -626,6 +775,280 @@ export default async function Page({
                     </ul>
                   </div>
                 )}
+              {trajectoryLabel && (
+                <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-3">
+                  <p className="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">
+                    Trajectory
+                  </p>
+                  <p className="mt-1 text-sm text-gray-300 leading-snug">{trajectoryLabel}</p>
+                </div>
+              )}
+              {trajectoryRationale && (
+                <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-3">
+                  <p className="text-[11px] uppercase tracking-wide text-gray-400 font-semibold">
+                    Trajectory rationale
+                  </p>
+                  <p className="mt-1 text-sm text-gray-300 leading-snug">
+                    {trajectoryRationale}
+                  </p>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {growthOutlook.industry_setup && (
+                  <div className="rounded-lg border border-gray-800 bg-gray-900/60 p-2.5 space-y-1.5 border-l-2 border-l-slate-400/70">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-300 font-semibold">
+                      Industry setup
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 text-[10px]">
+                      {growthOutlook.industry_setup.cycle_position && (
+                        <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                          Cycle: {growthOutlook.industry_setup.cycle_position}
+                        </span>
+                      )}
+                      {growthOutlook.industry_setup.demand_trend && (
+                        <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                          Demand: {growthOutlook.industry_setup.demand_trend}
+                        </span>
+                      )}
+                      {growthOutlook.industry_setup.supply_trend && (
+                        <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                          Supply: {growthOutlook.industry_setup.supply_trend}
+                        </span>
+                      )}
+                      {growthOutlook.industry_setup.pricing_power && (
+                        <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                          Pricing: {growthOutlook.industry_setup.pricing_power}
+                        </span>
+                      )}
+                    </div>
+                    {Array.isArray(growthOutlook.industry_setup.signals) &&
+                      growthOutlook.industry_setup.signals.length > 0 && (
+                        <div className="divide-y divide-gray-800">
+                          {growthOutlook.industry_setup.signals.slice(0, 3).map((s, idx) => (
+                            <div key={idx} className="py-1">
+                              <p className="text-[11px] text-gray-300 leading-snug">{s}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    {renderEvidenceDisclosure(
+                      "Industry evidence",
+                      growthOutlook.industry_setup.evidence,
+                      1
+                    )}
+                  </div>
+                )}
+
+                {(growthOutlook.earnings_direction || growthOutlook.earnings_levers) && (
+                  <div className="rounded-lg border border-gray-800 bg-gray-900/60 p-2.5 space-y-1.5 border-l-2 border-l-violet-400/70">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-300 font-semibold">
+                      Earnings direction
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 text-[10px]">
+                      {growthOutlook.earnings_direction?.eps_outlook && (
+                        <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                          EPS: {growthOutlook.earnings_direction.eps_outlook}
+                        </span>
+                      )}
+                      {growthOutlook.earnings_direction?.revision_proxy && (
+                        <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                          Revisions: {growthOutlook.earnings_direction.revision_proxy}
+                        </span>
+                      )}
+                      {growthOutlook.earnings_levers?.operating_leverage && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-900/40 border border-emerald-700/40 text-emerald-100">
+                          Operating leverage: {growthOutlook.earnings_levers.operating_leverage}
+                        </span>
+                      )}
+                    </div>
+                    {growthOutlook.earnings_direction?.management_guidance_summary && (
+                      <p className="text-[11px] text-gray-300 leading-snug">
+                        {growthOutlook.earnings_direction.management_guidance_summary}
+                      </p>
+                    )}
+                    {renderEvidenceDisclosure(
+                      "Earnings evidence",
+                      growthOutlook.earnings_direction?.evidence,
+                      1
+                    )}
+                    {(growthOutlook.earnings_levers?.cost_rawmat_lever ||
+                      growthOutlook.earnings_levers?.mix_premiumization_lever ||
+                      growthOutlook.earnings_levers?.utilization_or_scale_lever) && (
+                      <div className="space-y-1">
+                        <p className="text-[10px] uppercase tracking-wide text-gray-300 font-semibold">
+                          Earnings levers
+                        </p>
+                        <div className="divide-y divide-gray-800 rounded-md border border-gray-800 bg-black/20">
+                          {growthOutlook.earnings_levers?.cost_rawmat_lever && (
+                            <div className="grid grid-cols-[90px_1fr] gap-2 px-2 py-1">
+                              <p className="text-[10px] text-gray-400 uppercase tracking-wide">Cost</p>
+                              <p className="text-[11px] text-gray-300 leading-snug">
+                                {growthOutlook.earnings_levers.cost_rawmat_lever}
+                              </p>
+                            </div>
+                          )}
+                          {growthOutlook.earnings_levers?.mix_premiumization_lever && (
+                            <div className="grid grid-cols-[90px_1fr] gap-2 px-2 py-1">
+                              <p className="text-[10px] text-gray-400 uppercase tracking-wide">Mix</p>
+                              <p className="text-[11px] text-gray-300 leading-snug">
+                                {growthOutlook.earnings_levers.mix_premiumization_lever}
+                              </p>
+                            </div>
+                          )}
+                          {growthOutlook.earnings_levers?.utilization_or_scale_lever && (
+                            <div className="grid grid-cols-[90px_1fr] gap-2 px-2 py-1">
+                              <p className="text-[10px] text-gray-400 uppercase tracking-wide">Scale</p>
+                              <p className="text-[11px] text-gray-300 leading-snug">
+                                {growthOutlook.earnings_levers.utilization_or_scale_lever}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {renderEvidenceDisclosure(
+                      "Levers evidence",
+                      growthOutlook.earnings_levers?.evidence,
+                      1
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {Array.isArray(growthOutlook.catalysts_next_12_24m) &&
+                growthOutlook.catalysts_next_12_24m.length > 0 && (
+                  <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-3 space-y-2">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-300 font-semibold">
+                      Catalysts (next 12-24 months)
+                    </p>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                      {growthOutlook.catalysts_next_12_24m.slice(0, 4).map((c, idx) => (
+                        <div
+                          key={idx}
+                          className={`rounded-md border border-gray-800 bg-black/30 p-2.5 space-y-1.5 ${
+                            c.expected_impact === "revenue"
+                              ? "border-l-2 border-l-emerald-500/70"
+                              : c.expected_impact === "margin"
+                              ? "border-l-2 border-l-sky-500/70"
+                              : "border-l-2 border-l-amber-500/70"
+                          }`}
+                        >
+                          <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                            {c.type && (
+                              <span className="px-2 py-0.5 rounded-full bg-blue-900/35 text-blue-200 border border-blue-700/40">
+                                {c.type}
+                              </span>
+                            )}
+                            {c.timing && (
+                              <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                                {c.timing}
+                              </span>
+                            )}
+                            {c.expected_impact && (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-900/35 text-emerald-100 border border-emerald-700/40">
+                                Impact: {c.expected_impact}
+                              </span>
+                            )}
+                            {c.quantified?.value != null && (
+                              <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                                Qty: {String(c.quantified.value)}
+                                {c.quantified.unit ? ` ${c.quantified.unit}` : ""}
+                              </span>
+                            )}
+                          </div>
+                          {c.catalyst && (
+                            <p className="text-[12px] font-medium text-gray-100 leading-snug">
+                              {c.catalyst}
+                            </p>
+                          )}
+
+                          {Array.isArray(c.evidence) && c.evidence.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-[11px] text-gray-300 leading-snug">
+                                • {c.evidence[0]?.period ? `${c.evidence[0].period} · ` : ""}
+                                {c.evidence[0]?.source ? `${c.evidence[0].source} · ` : ""}
+                                {c.evidence[0]?.quote_or_fact ?? "Evidence available"}
+                              </p>
+                              {c.evidence.length > 1 && (
+                                <details className="text-[10px] text-gray-400">
+                                  <summary className="cursor-pointer hover:text-gray-300">
+                                    Show evidence ({c.evidence.length})
+                                  </summary>
+                                  <div className="mt-1 space-y-1">
+                                    {c.evidence.slice(1, 3).map((ev, evIdx) => (
+                                      <p key={evIdx} className="leading-snug">
+                                        • {ev.period ? `${ev.period} · ` : ""}
+                                        {ev.source ? `${ev.source} · ` : ""}
+                                        {ev.quote_or_fact ?? "Evidence item"}
+                                      </p>
+                                    ))}
+                                  </div>
+                                </details>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              {growthOutlook.variant_perception && (
+                <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-3 space-y-2">
+                  <p className="text-[11px] uppercase tracking-wide text-gray-300 font-semibold">
+                    Variant perception
+                  </p>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+                    <div className="rounded-md border border-gray-800 bg-black/30 p-2 space-y-1 border-l-2 border-l-slate-400/70">
+                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                        Consensus
+                      </span>
+                      {growthOutlook.variant_perception.consensus_vs_company ? (
+                        <p className="text-[11px] text-gray-300 leading-snug">
+                          {growthOutlook.variant_perception.consensus_vs_company}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-gray-500 leading-snug">No consensus note.</p>
+                      )}
+                    </div>
+
+                    <div className="rounded-md border border-gray-800 bg-black/30 p-2 space-y-1 border-l-2 border-l-emerald-500/70">
+                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-900/35 text-emerald-200 border border-emerald-700/40">
+                        Upside
+                      </span>
+                      {Array.isArray(growthOutlook.variant_perception.upside_nonconsensus) &&
+                      growthOutlook.variant_perception.upside_nonconsensus.length > 0 ? (
+                        <div className="space-y-1">
+                          {growthOutlook.variant_perception.upside_nonconsensus.map((x, idx) => (
+                            <div key={idx} className="rounded-md border border-emerald-900/30 bg-emerald-950/20 px-2 py-1">
+                              <p className="text-[11px] text-gray-300 leading-snug">{x}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-gray-500 leading-snug">No upside variants.</p>
+                      )}
+                    </div>
+
+                    <div className="rounded-md border border-gray-800 bg-black/30 p-2 space-y-1 border-l-2 border-l-red-500/70">
+                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-900/30 text-red-200 border border-red-700/40">
+                        Downside
+                      </span>
+                      {Array.isArray(growthOutlook.variant_perception.downside_nonconsensus) &&
+                      growthOutlook.variant_perception.downside_nonconsensus.length > 0 ? (
+                        <div className="space-y-1">
+                          {growthOutlook.variant_perception.downside_nonconsensus.map((x, idx) => (
+                            <div key={idx} className="rounded-md border border-red-900/30 bg-red-950/15 px-2 py-1">
+                              <p className="text-[11px] text-gray-300 leading-snug">{x}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-gray-500 leading-snug">No downside variants.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="md:hidden min-w-0">
                 <Carousel opts={{ align: "start" }} className="w-full">
                   <CarouselContent>
