@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { getConcallData } from "./get-concall-data";
 
 export const metadata: Metadata = {
-  title: "Leaderboard – Concall Alpha",
+  title: "Leaderboard – Story of a Stock",
   description: "Latest concall sentiment leaderboard across companies.",
 };
 

@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Navbar from "./(hero)/navbar";
+import { RequestIntakeFab } from "@/components/request-intake-fab";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -12,7 +13,7 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "[beta] Concall Alpha",
+  title: "[beta] Story of a Stock",
   description: "extracting the best signals from concalls",
 };
 
@@ -38,6 +39,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <RequestIntakeFab />
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />

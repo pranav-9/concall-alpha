@@ -1,17 +1,10 @@
 import Link from "next/link";
 import ConcallScore from "@/components/concall-score";
 import { createClient } from "@/lib/supabase/server";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 
 export const revalidate = 120;
 
-type RawRow = {
+type RawQuarterRow = {
   company_code: string;
   score: number;
   fy: number;
@@ -22,24 +15,37 @@ type RawRow = {
   company?: { name: string | null }[] | { name: string | null } | null;
 };
 
-type UpdateItem = {
-  companyCode: string;
-  companyName: string;
-  score: number;
-  quarterLabel: string;
-  updatedAt: string | null;
+type RawGrowthRow = {
+  company: string;
+  fiscal_year?: string | number | null;
+  growth_score?: string | number | null;
+  run_timestamp?: string | null;
 };
 
-type NewCompanyItem = {
-  code: string;
-  name: string;
-  createdAt: string | null;
+type UpdateType = "quarter" | "growth";
+
+type UnifiedUpdate = {
+  id: string;
+  type: UpdateType;
+  companyName: string;
+  companyCode: string | null;
+  score: number | null;
+  detail: string;
+  atRaw: string | null;
+  atMs: number;
 };
 
 const parseDate = (value: string | null | undefined) => {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const parseScore = (value: string | number | null | undefined) => {
+  if (value == null) return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
 };
 
 const formatDate = (value: string | null) => {
@@ -49,260 +55,190 @@ const formatDate = (value: string | null) => {
     day: "2-digit",
     month: "short",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   }).format(date);
 };
 
-const eventTimeMs = (row: RawRow) =>
-  parseDate(row.updated_at)?.getTime() ??
-  parseDate(row.created_at)?.getTime() ??
-  0;
+const eventTimeMs = (value: string | null | undefined) =>
+  parseDate(value)?.getTime() ?? 0;
 
-async function getRecentUpdates() {
+const typeChipClass = (type: UpdateType) => {
+  if (type === "quarter") {
+    return "bg-sky-900/30 border-sky-700/40 text-sky-200";
+  }
+  return "bg-emerald-900/30 border-emerald-700/40 text-emerald-200";
+};
+
+const typeLabel = (type: UpdateType) => {
+  if (type === "quarter") return "Quarter";
+  return "Growth Update";
+};
+
+async function getUnifiedUpdates(limit: number) {
   const supabase = await createClient();
-  const { data: latestQuarterRow } = await supabase
-    .from("concall_analysis")
-    .select("fy,qtr")
-    .order("fy", { ascending: false })
-    .order("qtr", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [{ data: quarterRows }, { data: growthRows }] =
+    await Promise.all([
+      supabase
+        .from("concall_analysis")
+        .select(
+          "company_code,score,fy,qtr,quarter_label,updated_at,created_at,company(name)"
+        )
+        .order("updated_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(120),
+      supabase
+        .from("growth_outlook")
+        .select("company,fiscal_year,growth_score,run_timestamp")
+        .order("run_timestamp", { ascending: false })
+        .limit(120),
+    ]);
 
-  if (!latestQuarterRow) return [] as UpdateItem[];
+  const updates: UnifiedUpdate[] = [];
+  const allQuarterRows = (quarterRows ?? []) as RawQuarterRow[];
+  const latestQuarter = allQuarterRows.reduce<{ fy: number; qtr: number } | null>(
+    (acc, row) => {
+      if (!acc) return { fy: row.fy, qtr: row.qtr };
+      if (row.fy > acc.fy) return { fy: row.fy, qtr: row.qtr };
+      if (row.fy === acc.fy && row.qtr > acc.qtr) return { fy: row.fy, qtr: row.qtr };
+      return acc;
+    },
+    null
+  );
 
-  const { data, error } = await supabase
-    .from("concall_analysis")
-    .select(
-      "company_code,score,fy,qtr,quarter_label,updated_at,created_at,company(name)"
+  const latestQuarterPerCompanyQuarter = new Map<string, UnifiedUpdate>();
+  allQuarterRows
+    .filter((row) =>
+      latestQuarter ? row.fy === latestQuarter.fy && row.qtr === latestQuarter.qtr : false
     )
-    .eq("fy", latestQuarterRow.fy)
-    .eq("qtr", latestQuarterRow.qtr)
-    .order("updated_at", { ascending: false, nullsFirst: false })
-    .order("created_at", { ascending: false })
-    .limit(200);
-
-  if (error) return [] as UpdateItem[];
-
-  const rows = (data ?? []) as RawRow[];
-  const latestByCompany = new Map<string, RawRow>();
-
-  rows.forEach((row) => {
-    const existing = latestByCompany.get(row.company_code);
-    if (!existing || eventTimeMs(row) > eventTimeMs(existing)) {
-      latestByCompany.set(row.company_code, row);
+    .forEach((row) => {
+    const atRaw = row.updated_at ?? row.created_at ?? null;
+    const atMs = eventTimeMs(atRaw);
+    const companyNameRaw = Array.isArray(row.company)
+      ? row.company[0]?.name
+      : row.company?.name;
+    const companyName = companyNameRaw ?? row.company_code;
+    const quarterLabel = row.quarter_label ?? `Q${row.qtr} FY${row.fy}`;
+    const key = `${row.company_code}-${row.fy}-${row.qtr}`;
+    const candidate: UnifiedUpdate = {
+      id: `quarter-${key}`,
+      type: "quarter",
+      companyName,
+      companyCode: row.company_code ?? null,
+      score: parseScore(row.score),
+      detail: quarterLabel.replace(/\s+/g, ""),
+      atRaw,
+      atMs,
+    };
+    const existing = latestQuarterPerCompanyQuarter.get(key);
+    if (!existing || candidate.atMs > existing.atMs) {
+      latestQuarterPerCompanyQuarter.set(key, candidate);
     }
   });
+  updates.push(...latestQuarterPerCompanyQuarter.values());
 
-  return Array.from(latestByCompany.values())
-    .sort((a, b) => eventTimeMs(b) - eventTimeMs(a))
-    .slice(0, 5)
-    .map((row) => {
-      const companyNameRaw = Array.isArray(row.company)
-        ? row.company[0]?.name
-        : row.company?.name;
+  const latestGrowthPerCompany = new Map<string, UnifiedUpdate>();
+  ((growthRows ?? []) as RawGrowthRow[]).forEach((row) => {
+    const key = row.company?.toUpperCase();
+    if (!key) return;
+    const companyCode = row.company ?? null;
+    const companyName = row.company;
+    const fy = row.fiscal_year != null ? String(row.fiscal_year) : null;
+    const atRaw = row.run_timestamp ?? null;
+    const atMs = eventTimeMs(atRaw);
+    const candidate: UnifiedUpdate = {
+      id: `growth-${key}`,
+      type: "growth",
+      companyName,
+      companyCode,
+      score: parseScore(row.growth_score),
+      detail: fy ? `${fy} outlook refreshed` : "Growth outlook refreshed",
+      atRaw,
+      atMs,
+    };
+    const existing = latestGrowthPerCompany.get(key);
+    if (!existing || candidate.atMs > existing.atMs) {
+      latestGrowthPerCompany.set(key, candidate);
+    }
+  });
+  updates.push(...latestGrowthPerCompany.values());
 
-      return {
-        companyCode: row.company_code,
-        companyName: companyNameRaw ?? row.company_code,
-        score: Number(row.score),
-        quarterLabel: row.quarter_label ?? `Q${row.qtr} FY${row.fy}`,
-        updatedAt: row.updated_at ?? row.created_at ?? null,
-      };
-    });
+  return updates.sort((a, b) => b.atMs - a.atMs).slice(0, limit);
 }
 
-async function getNewestCompanies() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("company")
-    .select("code,name,created_at")
-    .order("created_at", { ascending: false, nullsFirst: false })
-    .limit(5);
-
-  if (error) return [] as NewCompanyItem[];
-
-  return (data ?? []).map((row) => ({
-    code: String(row.code ?? ""),
-    name: String(row.name ?? row.code ?? "—"),
-    createdAt: (row.created_at as string | null | undefined) ?? null,
-  }));
-}
-
-export default async function RecentScoreUpdates() {
-  const [updates, newestCompanies] = await Promise.all([
-    getRecentUpdates(),
-    getNewestCompanies(),
-  ]);
-  if (updates.length === 0 && newestCompanies.length === 0) return null;
+export default async function RecentScoreUpdates({
+  heroPanel = false,
+}: {
+  heroPanel?: boolean;
+} = {}) {
+  const updates = await getUnifiedUpdates(6);
+  if (updates.length === 0) return null;
 
   return (
-    <section className="w-[95%] sm:w-[90%] pt-6 sm:pt-8">
-      <div className="md:hidden mb-2">
-        <h2 className="text-base font-bold text-white">Latest Updates</h2>
-      </div>
+    <section className={heroPanel ? "w-full" : "w-[95%] sm:w-[90%] pt-6 sm:pt-8"}>
+      {!heroPanel && (
+        <div className="mb-2">
+          <h2 className="text-base font-bold text-white">Latest Updates</h2>
+        </div>
+      )}
 
-      <div className="md:hidden">
-        <Carousel opts={{ align: "start" }} className="w-full">
-          <CarouselContent>
-            <CarouselItem className="basis-[94%]">
-              <div className="rounded-xl border border-gray-800 bg-gray-950/70">
-                <div className="p-3 sm:p-4 border-b border-gray-800">
-                  <h2 className="text-base sm:text-lg font-bold text-white">
-                    Recent Score Updates
-                  </h2>
-                  <p className="text-xs text-gray-400">
-                    Latest 5 companies with updated quarterly scores
-                  </p>
-                </div>
-                <div className="divide-y divide-gray-800">
-                  {updates.length === 0 && (
-                    <div className="p-3 sm:p-4 text-sm text-gray-400">
-                      No recent score updates available.
-                    </div>
-                  )}
-                  {updates.map((item) => (
-                    <Link
-                      key={item.companyCode}
-                      href={`/company/${item.companyCode}`}
-                      prefetch={false}
-                      className="flex items-center justify-between gap-2 p-3 sm:p-4 hover:bg-gray-900/60 transition-colors"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-white truncate">
-                          {item.companyName}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {item.quarterLabel} · {formatDate(item.updatedAt)}
-                        </p>
-                      </div>
-                      <ConcallScore score={item.score} size="sm" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </CarouselItem>
+      <div className="rounded-xl border border-gray-800 bg-gray-950/70">
+        <div className="p-3 sm:p-4 border-b border-gray-800">
+          <h2 className="text-base sm:text-lg font-bold text-white">
+            Latest Updates
+          </h2>
+          <p className="text-xs text-gray-400">
+            Time-ordered feed: quarter score, growth score, and new company updates
+          </p>
+        </div>
 
-            <CarouselItem className="basis-[94%]">
-              <div className="rounded-xl border border-gray-800 bg-gray-950/70">
-                <div className="p-3 sm:p-4 border-b border-gray-800">
-                  <h2 className="text-base sm:text-lg font-bold text-white">
-                    New Companies Added
-                  </h2>
-                  <p className="text-xs text-gray-400">
-                    Latest 5 companies added to the portal
-                  </p>
-                </div>
-                <div className="divide-y divide-gray-800">
-                  {newestCompanies.length === 0 && (
-                    <div className="p-3 sm:p-4 text-sm text-gray-400">
-                      No recently added companies found.
-                    </div>
-                  )}
-                  {newestCompanies.map((item) => (
-                    <Link
-                      key={item.code}
-                      href={`/company/${item.code}`}
-                      prefetch={false}
-                      className="flex items-center justify-between gap-2 p-3 sm:p-4 hover:bg-gray-900/60 transition-colors"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-white truncate">
-                          {item.name}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          Added · {formatDate(item.createdAt)}
-                        </p>
-                      </div>
-                      <span className="text-[11px] px-2 py-1 rounded-full bg-gray-900 border border-gray-700 text-gray-300">
-                        New
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </CarouselItem>
-          </CarouselContent>
-          <div className="mt-2 flex justify-center gap-2">
-            <CarouselPrevious className="static translate-x-0 translate-y-0" />
-            <CarouselNext className="static translate-x-0 translate-y-0" />
-          </div>
-        </Carousel>
-      </div>
-
-      <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-xl border border-gray-800 bg-gray-950/70">
-          <div className="p-3 sm:p-4 border-b border-gray-800">
-            <h2 className="text-base sm:text-lg font-bold text-white">
-              Recent Score Updates
-            </h2>
-            <p className="text-xs text-gray-400">
-              Latest 5 companies with updated quarterly scores
-            </p>
-          </div>
-          <div className="divide-y divide-gray-800">
-            {updates.length === 0 && (
-              <div className="p-3 sm:p-4 text-sm text-gray-400">
-                No recent score updates available.
-              </div>
-            )}
-            {updates.map((item) => (
-              <Link
-                key={item.companyCode}
-                href={`/company/${item.companyCode}`}
-                prefetch={false}
-                className="flex items-center justify-between gap-2 p-3 sm:p-4 hover:bg-gray-900/60 transition-colors"
-              >
+        <div className="divide-y divide-gray-800">
+          {updates.map((item) => {
+            const row = (
+              <div className="flex items-center justify-between gap-2 p-3 hover:bg-gray-900/60 transition-colors">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-white truncate">
                     {item.companyName}
                   </p>
-                  <p className="text-xs text-gray-400">
-                    {item.quarterLabel} · {formatDate(item.updatedAt)}
-                  </p>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full border ${typeChipClass(item.type)}`}
+                    >
+                      {item.type === "quarter" ? item.detail : typeLabel(item.type)}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {formatDate(item.atRaw)}
+                    </span>
+                  </div>
                 </div>
-                <ConcallScore score={item.score} size="sm" />
+                {typeof item.score === "number" ? (
+                  <ConcallScore score={item.score} size="sm" />
+                ) : null}
+              </div>
+            );
+
+            if (!item.companyCode) {
+              return <div key={item.id}>{row}</div>;
+            }
+
+            return (
+              <Link
+                key={item.id}
+                href={`/company/${item.companyCode}`}
+                prefetch={false}
+              >
+                {row}
               </Link>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
-        <div className="rounded-xl border border-gray-800 bg-gray-950/70">
-          <div className="p-3 sm:p-4 border-b border-gray-800">
-            <h2 className="text-base sm:text-lg font-bold text-white">
-              New Companies Added
-            </h2>
-            <p className="text-xs text-gray-400">
-              Latest 5 companies added to the portal
-            </p>
-          </div>
-          <div className="divide-y divide-gray-800">
-            {newestCompanies.length === 0 && (
-              <div className="p-3 sm:p-4 text-sm text-gray-400">
-                No recently added companies found.
-              </div>
-            )}
-            {newestCompanies.map((item) => (
-              <Link
-                key={item.code}
-                href={`/company/${item.code}`}
-                prefetch={false}
-                className="flex items-center justify-between gap-2 p-3 sm:p-4 hover:bg-gray-900/60 transition-colors"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {item.name}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    Added · {formatDate(item.createdAt)}
-                  </p>
-                </div>
-                <span className="text-[11px] px-2 py-1 rounded-full bg-gray-900 border border-gray-700 text-gray-300">
-                  New
-                </span>
-              </Link>
-            ))}
-          </div>
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-2 border-t border-gray-800">
+          <Link
+            href="/company"
+            prefetch={false}
+            className="text-xs text-gray-300 hover:text-white underline underline-offset-2"
+          >
+            View all companies
+          </Link>
         </div>
       </div>
     </section>

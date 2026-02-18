@@ -29,7 +29,7 @@ type GrowthEntry = {
 };
 
 export const metadata: Metadata = {
-  title: "Leaderboards – Concall Alpha",
+  title: "Leaderboards – Story of a Stock",
   description: "Concall sentiment and growth outlook leaderboards.",
 };
 

@@ -1,29 +1,112 @@
-import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import { hasEnvVars } from "@/lib/utils";
-import Link from "next/link";
-import React from "react";
+"use client";
 
-const Navbar = async () => {
+import { useState } from "react";
+import { EnvVarWarning } from "@/components/env-var-warning";
+import { RequestIntakeButton } from "@/components/request-intake-button";
+import { cn, hasEnvVars } from "@/lib/utils";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const Navbar = () => {
+  const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navItems = [
+    { href: "/leaderboards", label: "Leaderboards" },
+    { href: "/how-scores-work", label: "How Scores Work" },
+  ];
+
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
   return (
-    <nav className="flex justify-center border-b border-b-foreground/10 h-16">
-      <div className="w-full max-w-5xl flex justify-between items-center p-3 px-3 sm:px-5 text-sm">
-        <div className="flex gap-2 sm:gap-5 items-center font-bold min-w-0">
-          <Link href={"/"} className="truncate">
-            Concall Alpha
-          </Link>
-          <div className="flex items-center gap-2 shrink-0">
-            <DeployButton />
-            <Link
-              href="/how-scores-work"
-              className="inline-flex text-[11px] sm:text-xs font-medium text-gray-300 hover:text-white underline underline-offset-4"
-            >
-              How Scores Work
+    <nav className="sticky top-0 z-50 flex justify-center border-b border-b-foreground/10 bg-black/85 backdrop-blur">
+      <div className="relative w-full max-w-5xl">
+        <div className="h-14 sm:h-16 flex justify-between items-center px-3 sm:px-5 text-sm">
+          <div className="min-w-0">
+            <Link href="/" className="truncate font-bold text-sm sm:text-base text-white">
+              Story of a Stock
             </Link>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-5">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  prefetch={false}
+                  className={cn(
+                    "text-xs font-medium transition-colors whitespace-nowrap",
+                    isActive(item.href)
+                      ? "text-white underline underline-offset-4"
+                      : "text-gray-300 hover:text-white"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <RequestIntakeButton
+                triggerLabel="Submit Request"
+                triggerVariant="ghost"
+                triggerClassName="h-auto p-0 text-xs font-medium text-gray-300 hover:text-white"
+              />
+            </div>
+
+            <button
+              type="button"
+              aria-label="Toggle navigation menu"
+              aria-expanded={isMenuOpen}
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              className="md:hidden inline-flex items-center justify-center h-8 w-8 rounded-md border border-gray-700 text-gray-200 hover:text-white hover:border-gray-500"
+            >
+              {isMenuOpen ? (
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 6h18M3 12h18M3 18h18" />
+                </svg>
+              )}
+            </button>
+
+            {!hasEnvVars ? (
+              <div className="hidden lg:block">
+                <EnvVarWarning />
+              </div>
+            ) : null}
           </div>
         </div>
 
-        {!hasEnvVars ? <EnvVarWarning /> : null}
+        {isMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 border-t border-gray-800 border-b border-gray-800 bg-black/95 backdrop-blur px-3 py-3 space-y-2">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                prefetch={false}
+                onClick={() => setIsMenuOpen(false)}
+                className={cn(
+                  "flex w-full items-center px-1 py-2 text-sm font-medium transition-colors",
+                  isActive(item.href)
+                    ? "text-white underline underline-offset-4"
+                    : "text-gray-300 hover:text-white"
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <RequestIntakeButton
+              triggerLabel="Submit Request"
+              triggerVariant="ghost"
+              triggerClassName="h-auto p-0 text-sm font-medium text-gray-300 hover:text-white"
+            />
+            {!hasEnvVars ? (
+              <div className="pt-1">
+                <EnvVarWarning />
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
     </nav>
   );

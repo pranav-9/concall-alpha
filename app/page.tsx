@@ -32,10 +32,25 @@ export default async function Home() {
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-[90%] sm:w-full flex flex-col gap-0 justify-items-center items-center">
         {/* <Navbar></Navbar> */}
-        <RecentScoreUpdates />
-        <Suspense fallback={<TopStocksFallback />}>
-          <TopStocks />
-        </Suspense>
+        <div className="hidden lg:block w-[95%] sm:w-[90%] pt-6 sm:pt-8">
+          <div className="grid grid-cols-3 gap-6 items-start">
+            <div className="col-span-2">
+              <Suspense fallback={<TopStocksFallback />}>
+                <TopStocks heroPanel />
+              </Suspense>
+            </div>
+            <div className="col-span-1">
+              <RecentScoreUpdates heroPanel />
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:hidden w-full">
+          <RecentScoreUpdates />
+          <Suspense fallback={<TopStocksFallback />}>
+            <TopStocks />
+          </Suspense>
+        </div>
         <Hero />
         <div className="py-12 sm:py-20 lg:py-32 flex flex-col gap-8 sm:gap-12 lg:gap-20 w-full p-5 items-center">
           {/* <h1>Search</h1> */}

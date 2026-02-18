@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "How Scores Are Calculated – Concall Alpha",
+  title: "How Scores Are Calculated – Story of a Stock",
   description: "Scoring methodology behind quarterly concall sentiment scores.",
 };
 

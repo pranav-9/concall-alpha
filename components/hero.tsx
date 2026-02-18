@@ -5,7 +5,7 @@ export function Hero() {
     <div className="relative min-h-[70vh] sm:min-h-screen w-full justify-items-start px-[8%] py-[14%] sm:py-[2%] overflow-hidden">
       <Image
         src="/hero-2.jpg"
-        alt="Concall Alpha hero background"
+        alt="Story of a Stock hero background"
         fill
         priority
         sizes="100vw"

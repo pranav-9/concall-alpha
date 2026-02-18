@@ -1,9 +1,16 @@
 import React from "react";
 import Link from "next/link";
 
-import ConcallScore, { categoryFor } from "@/components/concall-score";
+import ConcallScore from "@/components/concall-score";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 export const revalidate = 300;
 
@@ -111,7 +118,7 @@ const uniqueQuarters = (records: CompanyRecord[]) => {
 };
 
 const buildLists = (records: CompanyRecord[]) => {
-  if (!records.length) return { strength: [], weakness: [], latestLabel: "" };
+  if (!records.length) return { strength: [], weakness: [], latestTop: null, latestLabel: "" };
 
   const quarters = uniqueQuarters(records);
   const latest = quarters[0];
@@ -156,6 +163,15 @@ const buildLists = (records: CompanyRecord[]) => {
     .sort((a, b) => a.latestScore - b.latestScore)
     .slice(0, 5);
 
+  const latestTop: ListBlock = {
+    title: "Top Quarter Score (latest qtr)",
+    items: companies
+      .filter((c) => !Number.isNaN(c.latestScore))
+      .sort((a, b) => b.latestScore - a.latestScore)
+      .slice(0, 5),
+    scoreKey: "latest",
+  };
+
   const decliners = companies
     .filter((c) => c.delta != null && c.delta < 0)
     .sort((a, b) => (a.delta ?? 0) - (b.delta ?? 0))
@@ -175,7 +191,7 @@ const buildLists = (records: CompanyRecord[]) => {
     { title: "Biggest Decliners (QoQ)", items: decliners, scoreKey: "latest" },
   ];
 
-  return { strength, weakness, latestLabel: latest?.label ?? "" };
+  return { strength, weakness, latestTop, latestLabel: latest?.label ?? "" };
 };
 
 const parsePct = (val: string | number | null | undefined): number | null => {
@@ -211,9 +227,7 @@ const fetchGrowthList = async (supabase: SupabaseServerClient) => {
       growthFormula: r.growth_score_formula ?? null,
       growthSteps: Array.isArray(r.growth_score_steps) ? r.growth_score_steps : null,
     }))
-    .filter((i) => i.base != null || i.upside != null || i.downside != null)
-    .sort((a, b) => (b.base ?? b.upside ?? 0) - (a.base ?? a.upside ?? 0))
-    .slice(0, 5);
+    .filter((i) => i.base != null || i.upside != null || i.downside != null);
 
   return items;
 };
@@ -250,7 +264,7 @@ const buildFourQSumMap = (records: CompanyRecord[]) => {
   return { sumMap: map, nameMap };
 };
 
-const TopStocks = async () => {
+const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) => {
   const supabase = await createClient();
   const [records, growthLeaders] = await Promise.all([
     fetchAll(supabase),
@@ -265,7 +279,14 @@ const TopStocks = async () => {
     );
   }
 
-  const { strength, latestLabel } = buildLists(records);
+  const { strength, latestTop, latestLabel } = buildLists(records);
+  const latestTopForHero =
+    latestTop != null
+      ? {
+          ...latestTop,
+          title: `${latestLabel || "Latest qtr"} Top Performers`,
+        }
+      : strength[0];
   const { sumMap, nameMap } = buildFourQSumMap(records);
   const enrichedGrowth = growthLeaders.map((g) => {
     const key = g.company?.toUpperCase();
@@ -288,6 +309,30 @@ const TopStocks = async () => {
     })
     .map((item, idx) => ({ ...item, rank: idx + 1 }));
 
+  if (heroPanel) {
+    return (
+      <section className="w-full">
+        <Carousel opts={{ align: "start" }} className="w-full">
+          <CarouselContent>
+            <CarouselItem className="basis-full">
+              <ListCard list={latestTopForHero} />
+            </CarouselItem>
+            <CarouselItem className="basis-full">
+              <GrowthListCard items={sortedGrowth} />
+            </CarouselItem>
+          </CarouselContent>
+          <div className="mt-2 flex items-center justify-center gap-2">
+            <span className="text-[10px] px-2 py-1 rounded-full border border-gray-700 text-gray-400">
+              2 slides
+            </span>
+            <CarouselPrevious className="static translate-x-0 translate-y-0" />
+            <CarouselNext className="static translate-x-0 translate-y-0" />
+          </div>
+        </Carousel>
+      </section>
+    );
+  }
+
   return (
     <div className="flex flex-col w-[95%] gap-4 justify-items-center items-center pt-8 sm:pt-12">
       <div className="text-center space-y-1">
@@ -295,7 +340,7 @@ const TopStocks = async () => {
           Concall Signals
         </p>
         <p className="text-xs sm:text-sm text-gray-400 px-2">
-          Latest quarter: {latestLabel || "n/a"} · Sentiment uses latest/4Q scores; Growth uses guidance %
+          Latest quarter: {latestLabel || "n/a"} · Quarter score uses latest/4Q values; Growth uses guidance %
         </p>
       </div>
       <div className="w-full flex flex-col gap-6 sm:w-[90%]">
@@ -342,7 +387,7 @@ function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey
         {list.items.map((s, index) => (
           <div key={index}>
             <Link href={"/company/" + s.code} prefetch={false}>
-              <div className="flex gap-2 bg-gray-900 rounded-lg p-2.5 items-start">
+              <div className="flex gap-2 bg-gray-900 rounded-lg p-2 items-start">
                 <div className="flex w-full gap-2 items-start">
                   <p className="p-1 text-xs text-gray-400 leading-snug">{index + 1}.</p>
 
@@ -350,26 +395,17 @@ function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey
                     <p className="font-medium text-sm leading-tight line-clamp-1 text-white">
                       {s.name}
                     </p>
-                    <div>
-                      {!Number.isNaN(s.latestScore) && (
-                        <Badge className={`text-[11px] px-2 py-0.5 ${categoryFor(s.latestScore).bg}`}>
-                          {categoryFor(s.latestScore).label}
-                        </Badge>
-                      )}
-                    </div>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-0.5 min-w-[72px]">
                   {list.scoreKey === "avg4" && typeof s.avg4 === "number" && (
                     <>
                       <ConcallScore score={s.avg4} />
-                      <span className="text-xs text-gray-400">4Q avg</span>
                     </>
                   )}
                   {list.scoreKey !== "avg4" && !Number.isNaN(s.latestScore) && (
                     <>
                       <ConcallScore score={s.latestScore} />
-                      <span className="text-xs text-gray-400">Latest qtr</span>
                     </>
                   )}
                 </div>
@@ -403,7 +439,7 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
         )}
         {visible.map((item, index) => (
           <Link key={item.company + index} href={"/company/" + item.company} prefetch={false}>
-            <div className="flex gap-2 bg-gray-900 rounded-lg p-2.5 border border-gray-800 hover:border-emerald-400/50 transition items-start">
+            <div className="flex gap-2 bg-gray-900 rounded-lg p-2 items-start">
               <p className="p-1 text-xs text-gray-400 leading-snug">
                 {typeof item.rank === "number" ? `${item.rank}.` : `${index + 1}.`}
               </p>
@@ -412,7 +448,6 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
                   <p className="font-medium text-sm leading-tight line-clamp-1 text-white">
                     {item.displayName || item.company}
                   </p>
-                  {/* FY badge removed per request */}
                 </div>
                 <div className="flex flex-col items-end gap-0.5 min-w-[72px]">
                   {typeof item.growthScore === "number" ? (
@@ -422,7 +457,6 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
                       -
                     </div>
                   )}
-                  <span className="text-xs text-gray-400">Growth score</span>
                 </div>
               </div>
             </div>

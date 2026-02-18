@@ -161,8 +161,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { code } = await params;
   return {
-    title: `${code} – Concall Alpha`,
-    description: `Company detail for ${code} on Concall Alpha.`,
+    title: `${code} – Story of a Stock`,
+    description: `Company detail for ${code} on Story of a Stock.`,
   };
 }
 

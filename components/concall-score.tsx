@@ -4,6 +4,12 @@ import { Badge } from "@/components/ui/badge"; // adjust path if needed
 type Size = "sm" | "md" | "lg";
 
 export const categoryFor = (score: number) => {
+  if (score >= 9.5)
+    return {
+      label: "Exceptional Bullish",
+      bg: "bg-emerald-300",
+      ring: "ring-emerald-200/75",
+    };
   if (score >= 9)
     return {
       label: "Very Strongly Bullish",
