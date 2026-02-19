@@ -29,9 +29,6 @@ function validate(payload: Payload) {
   if (subjectTarget.length < 2 || subjectTarget.length > 120) {
     return { ok: false as const, error: "subjectTarget must be 2–120 characters." };
   }
-  if (message.length < 10 || message.length > 2000) {
-    return { ok: false as const, error: "message must be 10–2000 characters." };
-  }
   return {
     ok: true as const,
     requestType,
@@ -54,28 +51,28 @@ export async function POST(request: Request) {
 
     const h = await headers();
     const userAgent = h.get("user-agent");
+    const requestId = crypto.randomUUID();
 
     const supabase = await createClient();
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("user_requests")
       .insert({
+        id: requestId,
         request_type: parsed.requestType,
         subject_target: parsed.subjectTarget,
         message: parsed.message,
         source_path: parsed.sourcePath,
         user_agent: userAgent,
-      })
-      .select("id")
-      .single();
+      });
 
-    if (error || !data?.id) {
+    if (error) {
       return NextResponse.json(
         { ok: false, error: "Unable to store request." },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ ok: true, id: data.id });
+    return NextResponse.json({ ok: true, id: requestId });
   } catch {
     return NextResponse.json(
       { ok: false, error: "Invalid payload." },

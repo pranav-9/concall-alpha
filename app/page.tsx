@@ -27,6 +27,14 @@ function TopStocksFallback() {
   );
 }
 
+function TopStocksHeroFallback() {
+  return (
+    <section className="w-full">
+      <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4 h-80 animate-pulse" />
+    </section>
+  );
+}
+
 export default async function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center">
@@ -35,7 +43,7 @@ export default async function Home() {
         <div className="hidden lg:block w-[95%] sm:w-[90%] pt-6 sm:pt-8">
           <div className="grid grid-cols-3 gap-6 items-start">
             <div className="col-span-2">
-              <Suspense fallback={<TopStocksFallback />}>
+              <Suspense fallback={<TopStocksHeroFallback />}>
                 <TopStocks heroPanel />
               </Suspense>
             </div>

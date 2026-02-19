@@ -51,7 +51,6 @@ export function RequestIntakeButton({
   const [errors, setErrors] = useState<{
     requestType?: string;
     subjectTarget?: string;
-    message?: string;
     submit?: string;
   }>({});
   const [submitting, setSubmitting] = useState(false);
@@ -73,10 +72,6 @@ export function RequestIntakeButton({
     const subject = subjectTarget.trim();
     if (subject.length < 2 || subject.length > 120) {
       next.subjectTarget = "Enter 2–120 characters.";
-    }
-    const details = message.trim();
-    if (details.length < 10 || details.length > 2000) {
-      next.message = "Enter 10–2000 characters.";
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -183,7 +178,7 @@ export function RequestIntakeButton({
 
           <div className="space-y-1.5">
             <Label htmlFor="request-details" className="text-gray-200">
-              Details
+              Details (optional)
             </Label>
             <textarea
               id="request-details"
@@ -191,14 +186,8 @@ export function RequestIntakeButton({
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Tell us what you'd like us to improve or add."
               rows={6}
-              maxLength={2000}
               className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 outline-none focus-visible:ring-2 focus-visible:ring-gray-500"
             />
-            <div className="flex justify-between items-center">
-              <p className="text-xs text-gray-500">10–2000 characters</p>
-              <p className="text-xs text-gray-500">{message.trim().length}/2000</p>
-            </div>
-            {errors.message && <p className="text-xs text-red-400">{errors.message}</p>}
           </div>
 
           {errors.submit && (
