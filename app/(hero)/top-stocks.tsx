@@ -216,7 +216,6 @@ const buildLists = (records: CompanyRecord[]) => {
       .sort((a, b) => Math.abs(b.twistPct ?? 0) - Math.abs(a.twistPct ?? 0))
       .slice(0, 5),
     scoreKey: "latest",
-    signal: "sentiment",
   };
 
   const strength: ListBlock[] = [
