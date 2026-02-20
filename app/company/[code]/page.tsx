@@ -846,20 +846,12 @@ export default async function Page({
                   </div>
                 </div>
               )}
-              <div className="md:hidden min-w-0">
-                <Carousel opts={{ align: "start" }} className="w-full">
-                  <CarouselContent>
-                    {(["base", "upside", "downside"] as const).map((scenarioKey) => (
-                      <CarouselItem key={`mobile-${scenarioKey}`} className="basis-[92%]">
-                        {renderScenarioCard(scenarioKey)}
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <div className="mt-2 flex justify-center gap-2">
-                    <CarouselPrevious className="static translate-x-0 translate-y-0" />
-                    <CarouselNext className="static translate-x-0 translate-y-0" />
-                  </div>
-                </Carousel>
+              <div className="md:hidden min-w-0 space-y-3">
+                {(["base", "upside", "downside"] as const).map((scenarioKey) => (
+                  <React.Fragment key={`mobile-${scenarioKey}`}>
+                    {renderScenarioCard(scenarioKey)}
+                  </React.Fragment>
+                ))}
               </div>
 
               <div className="hidden md:grid md:grid-cols-3 gap-3">

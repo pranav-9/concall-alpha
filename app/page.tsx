@@ -58,36 +58,74 @@ export default async function Home() {
             <TopStocks />
           </Suspense>
         </div>
-        <section className="w-[95%] sm:w-[90%] py-10 sm:py-14">
+        <section className="w-[95%] sm:w-[90%] pt-6 sm:pt-8">
+          <div className="rounded-2xl border border-slate-700/70 bg-gradient-to-r from-slate-900/95 via-slate-900/85 to-slate-800/80 p-4 sm:p-5 lg:p-6">
+            <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-gray-400">
+              Who This Is For
+            </p>
+            <h2 className="mt-2 text-xl sm:text-2xl font-bold text-white leading-tight max-w-3xl">
+              Built for investors who want signal over noise
+            </h2>
+            <p className="mt-2 text-sm text-gray-300 max-w-3xl">
+              If you track Indian equities quarter by quarter, this platform
+              helps you see what changed, why it matters, and where to focus
+              next in minutes.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="px-2.5 py-1 rounded-full text-[11px] border border-gray-700 bg-gray-900/70 text-gray-200">
+                For serious retail investors
+              </span>
+              <span className="px-2.5 py-1 rounded-full text-[11px] border border-gray-700 bg-gray-900/70 text-gray-200">
+                For portfolio trackers
+              </span>
+              <span className="px-2.5 py-1 rounded-full text-[11px] border border-gray-700 bg-gray-900/70 text-gray-200">
+                For faster quarterly review
+              </span>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Link
+                href="/leaderboards"
+                className="inline-flex items-center rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs sm:text-sm font-semibold text-black hover:bg-white transition-colors"
+              >
+                Explore Leaderboards
+              </Link>
+              <Link
+                href="/how-scores-work"
+                className="inline-flex items-center rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs sm:text-sm font-medium text-gray-200 hover:bg-gray-800 transition-colors"
+              >
+                How Scores Work
+              </Link>
+            </div>
+          </div>
+        </section>
+        <section className="w-[95%] sm:w-[90%] py-4 sm:py-6">
           <div className="rounded-2xl border border-gray-800 bg-gray-950/70 p-4 sm:p-6 lg:p-8">
             <div className="max-w-2xl">
               <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-gray-400">
-                What This Website Does
+                How It Works
               </p>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-white leading-tight">
-                Converts textual data into crisp points for decision-making
+              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-white leading-tight max-w-xl">
+                Decision support in 3 steps
               </h2>
               <p className="mt-4 text-sm sm:text-base text-gray-400">
-                Story of a Stock turns dense management commentary into clearer
-                insights and uses a structured scoring framework to show what is
-                strong, weak, or changing so investors can learn nuance over
-                time.
+                We transform raw quarterly commentary into a consistent system
+                you can scan, compare, and track over time.
               </p>
             </div>
 
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {[
                 {
-                  title: "High quality research",
-                  body: "Reads between the lines of concalls and disclosures to surface sharper investment insight.",
+                  title: "1) Parse & structure",
+                  body: "Convert dense concalls and disclosures into crisp, comparable points.",
                 },
                 {
-                  title: "Standardized comparison",
-                  body: "Quarter score and growth score make cross-company ranking easier.",
+                  title: "2) Score what matters",
+                  body: "Apply a structured scoring framework to highlight strength, weakness, and direction.",
                 },
                 {
-                  title: "Tracks trend, not noise",
-                  body: "Shows direction across quarters so changes are visible early.",
+                  title: "3) Track & compare",
+                  body: "Use timelines and leaderboards to monitor change and prioritize research.",
                 },
               ].map((item) => (
                 <div
@@ -104,22 +142,6 @@ export default async function Home() {
                 </div>
               ))}
             </div>
-
-            <div className="mt-6 flex flex-wrap items-center gap-2">
-              <Link
-                href="/leaderboards"
-                className="inline-flex items-center rounded-md border border-white/15 bg-white/95 px-3 py-2 text-xs sm:text-sm font-semibold text-black hover:bg-white transition-colors"
-              >
-                Explore Leaderboards
-              </Link>
-              <Link
-                href="/how-scores-work"
-                className="inline-flex items-center rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs sm:text-sm font-medium text-gray-200 hover:bg-gray-800 transition-colors"
-              >
-                How Scores Work
-              </Link>
-            </div>
-
             <div className="mt-6 border-t border-gray-800 pt-6">
               <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-gray-400">
                 Top Features
