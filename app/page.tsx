@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import TopStocks from "./(hero)/top-stocks";
 import RecentScoreUpdates from "./(hero)/recent-score-updates";
 
@@ -35,6 +36,11 @@ function TopStocksHeroFallback() {
 }
 
 export default async function Home() {
+  const supabase = await createClient();
+  const { count: totalCompanies } = await supabase
+    .from("company")
+    .select("code", { count: "exact", head: true });
+
   return (
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-[90%] sm:w-full flex flex-col gap-0 justify-items-center items-center">
@@ -81,6 +87,11 @@ export default async function Home() {
               <span className="px-2.5 py-1 rounded-full text-[11px] border border-gray-700 bg-gray-900/70 text-gray-200">
                 For faster quarterly review
               </span>
+              {typeof totalCompanies === "number" && (
+                <span className="px-2.5 py-1 rounded-full text-[11px] border border-emerald-700/60 bg-emerald-900/30 text-emerald-200">
+                  {totalCompanies} companies covered
+                </span>
+              )}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <Link

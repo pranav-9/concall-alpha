@@ -41,6 +41,7 @@ type ListItem = {
   delta?: number | null;
   sum4?: number | null;
   avg4?: number | null;
+  twist?: number | null;
 };
 
 type ListBlock = {
@@ -118,7 +119,7 @@ const uniqueQuarters = (records: CompanyRecord[]) => {
 };
 
 const buildLists = (records: CompanyRecord[]) => {
-  if (!records.length) return { strength: [], weakness: [], latestTop: null, latestLabel: "" };
+  if (!records.length) return { strength: [], weakness: [], latestTop: null, latestLabel: "", trendTwist: null };
 
   const quarters = uniqueQuarters(records);
   const latest = quarters[0];
@@ -182,6 +183,41 @@ const buildLists = (records: CompanyRecord[]) => {
     .sort((a, b) => (b.sum4 ?? 0) - (a.sum4 ?? 0))
     .slice(0, 5);
 
+  const trendTwistItems: ListItem[] = [];
+  companyMap.forEach((rows, code) => {
+    const sorted = [...rows].sort((a, b) => b.fy - a.fy || b.qtr - a.qtr);
+    const name = sorted[0]?.company?.name ?? "—";
+    if (!latest) return;
+    const latestRec = sorted.find((r) => r.fy === latest.fy && r.qtr === latest.qtr);
+    if (!latestRec) return;
+
+    const prevFour = sorted
+      .filter((r) => !(r.fy === latest.fy && r.qtr === latest.qtr))
+      .slice(0, 4);
+    if (prevFour.length < 4) return;
+
+    const prevFourAvg =
+      prevFour.reduce((acc, curr) => acc + Number(curr.score ?? 0), 0) / prevFour.length;
+    const twist = Number(latestRec.score) - prevFourAvg;
+
+    trendTwistItems.push({
+      code,
+      name,
+      latestScore: Number(latestRec.score),
+      twist,
+      avg4: prevFourAvg,
+    });
+  });
+
+  const trendTwist: ListBlock = {
+    title: "Quarter Trend Twist",
+    items: trendTwistItems
+      .sort((a, b) => Math.abs(b.twist ?? 0) - Math.abs(a.twist ?? 0))
+      .slice(0, 5),
+    scoreKey: "latest",
+    signal: "sentiment",
+  };
+
   const strength: ListBlock[] = [
     { title: "Top Past Sentiment (4Q avg)", items: strong4Q, scoreKey: "avg4", signal: "sentiment" },
   ];
@@ -191,7 +227,7 @@ const buildLists = (records: CompanyRecord[]) => {
     { title: "Biggest Decliners (QoQ)", items: decliners, scoreKey: "latest" },
   ];
 
-  return { strength, weakness, latestTop, latestLabel: latest?.label ?? "" };
+  return { strength, weakness, latestTop, latestLabel: latest?.label ?? "", trendTwist };
 };
 
 const parsePct = (val: string | number | null | undefined): number | null => {
@@ -279,7 +315,7 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
     );
   }
 
-  const { strength, latestTop, latestLabel } = buildLists(records);
+  const { strength, latestTop, latestLabel, trendTwist } = buildLists(records);
   const latestTopForHero =
     latestTop != null
       ? {
@@ -320,10 +356,15 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
             <CarouselItem className="basis-full">
               <GrowthListCard items={sortedGrowth} />
             </CarouselItem>
+            {trendTwist && (
+              <CarouselItem className="basis-full">
+                <ListCard list={trendTwist} />
+              </CarouselItem>
+            )}
           </CarouselContent>
           <div className="mt-2 flex items-center justify-center gap-2">
             <span className="text-[10px] px-2 py-1 rounded-full border border-gray-700 text-gray-400">
-              2 slides
+              {trendTwist ? "3 slides" : "2 slides"}
             </span>
             <CarouselPrevious className="static translate-x-0 translate-y-0" />
             <CarouselNext className="static translate-x-0 translate-y-0" />
@@ -395,6 +436,11 @@ function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey
                     <p className="font-medium text-sm leading-tight line-clamp-1 text-white">
                       {s.name}
                     </p>
+                    {typeof s.twist === "number" && (
+                      <p className="text-[11px] text-gray-400 leading-tight line-clamp-1">
+                        {`${s.twist >= 0 ? "+" : ""}${s.twist.toFixed(2)} vs prev 4Q avg`}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-0.5 min-w-[72px]">
