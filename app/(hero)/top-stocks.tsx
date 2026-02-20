@@ -41,7 +41,7 @@ type ListItem = {
   delta?: number | null;
   sum4?: number | null;
   avg4?: number | null;
-  twist?: number | null;
+  twistPct?: number | null;
 };
 
 type ListBlock = {
@@ -198,13 +198,14 @@ const buildLists = (records: CompanyRecord[]) => {
 
     const prevFourAvg =
       prevFour.reduce((acc, curr) => acc + Number(curr.score ?? 0), 0) / prevFour.length;
-    const twist = Number(latestRec.score) - prevFourAvg;
+    if (prevFourAvg === 0) return;
+    const twistPct = ((Number(latestRec.score) - prevFourAvg) / prevFourAvg) * 100;
 
     trendTwistItems.push({
       code,
       name,
       latestScore: Number(latestRec.score),
-      twist,
+      twistPct,
       avg4: prevFourAvg,
     });
   });
@@ -212,7 +213,7 @@ const buildLists = (records: CompanyRecord[]) => {
   const trendTwist: ListBlock = {
     title: "Quarter Trend Twist",
     items: trendTwistItems
-      .sort((a, b) => Math.abs(b.twist ?? 0) - Math.abs(a.twist ?? 0))
+      .sort((a, b) => Math.abs(b.twistPct ?? 0) - Math.abs(a.twistPct ?? 0))
       .slice(0, 5),
     scoreKey: "latest",
     signal: "sentiment",
@@ -436,9 +437,9 @@ function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey
                     <p className="font-medium text-sm leading-tight line-clamp-1 text-white">
                       {s.name}
                     </p>
-                    {typeof s.twist === "number" && (
+                    {typeof s.twistPct === "number" && (
                       <p className="text-[11px] text-gray-400 leading-tight line-clamp-1">
-                        {`${s.twist >= 0 ? "+" : ""}${s.twist.toFixed(2)} vs prev 4Q avg`}
+                        {`${s.twistPct >= 0 ? "+" : ""}${s.twistPct.toFixed(1)}% vs prev 4Q avg`}
                       </p>
                     )}
                   </div>
