@@ -562,39 +562,39 @@ export default async function Page({
                                           analysis details.
                                         </DrawerDescription>
                                       </DrawerHeader>
-                                      <div className="px-4 pb-4 space-y-4 text-sm text-gray-200 max-h-[75vh] overflow-y-auto">
+                                      <div className="px-4 pb-4 space-y-4 text-sm text-foreground max-h-[75vh] overflow-y-auto">
                                         <div className="flex items-center gap-2">
                                           <ConcallScore
                                             score={detailScore}
                                             size="sm"
                                           />
                                           {isLatest && (
-                                            <span className="text-[11px] font-semibold text-blue-300 px-2 py-0.5 rounded-full bg-blue-900/40">
+                                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700/50">
                                               Latest
                                             </span>
                                           )}
                                           {category && (
-                                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
                                               {category}
                                             </span>
                                           )}
                                           {typeof confidence === "number" && (
-                                            <span className="text-[11px] text-gray-400">
+                                            <span className="text-[11px] text-muted-foreground">
                                               Confidence:{" "}
                                               {(confidence * 100).toFixed(0)}%
                                             </span>
                                           )}
                                         </div>
                                         {quarterSummary.length > 0 && (
-                                          <div className="space-y-1">
-                                            <p className="text-sm font-semibold text-gray-100 uppercase tracking-wide">
+                                          <div className="space-y-1.5">
+                                            <p className="text-sm font-semibold text-foreground uppercase tracking-wide">
                                               Quarter summary
                                             </p>
-                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
+                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
                                               {quarterSummary.map((item, rIdx) => (
                                                 <li
                                                   key={rIdx}
-                                                  className="text-xs text-gray-300 leading-snug"
+                                                  className="text-xs text-foreground/80 leading-snug"
                                                 >
                                                   {item}
                                                 </li>
@@ -603,15 +603,15 @@ export default async function Page({
                                           </div>
                                         )}
                                         {resultsSummary.length > 0 && (
-                                          <div className="space-y-1">
-                                            <p className="text-sm font-semibold text-gray-100 uppercase tracking-wide">
+                                          <div className="space-y-1.5">
+                                            <p className="text-sm font-semibold text-foreground uppercase tracking-wide">
                                               Results summary
                                             </p>
-                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
+                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
                                               {resultsSummary.map((item, rIdx) => (
                                                 <li
                                                   key={rIdx}
-                                                  className="text-xs text-gray-300 leading-snug"
+                                                  className="text-xs text-foreground/80 leading-snug"
                                                 >
                                                   {item}
                                                 </li>
@@ -620,25 +620,25 @@ export default async function Page({
                                           </div>
                                         )}
                                         {guidance && (
-                                          <div className="space-y-1">
-                                            <p className="text-sm font-semibold text-gray-100 uppercase tracking-wide">
+                                          <div className="space-y-1.5">
+                                            <p className="text-sm font-semibold text-foreground uppercase tracking-wide">
                                               Guidance
                                             </p>
-                                            <p className="text-xs text-gray-300 leading-relaxed">
+                                            <p className="text-xs text-foreground/80 leading-relaxed">
                                               {guidance}
                                             </p>
                                           </div>
                                         )}
                                         {rationale.length > 0 && (
-                                          <div className="space-y-1">
-                                            <p className="text-sm font-semibold text-gray-100 uppercase tracking-wide">
+                                          <div className="space-y-1.5">
+                                            <p className="text-sm font-semibold text-foreground uppercase tracking-wide">
                                               Rationale
                                             </p>
-                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
+                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
                                               {rationale.map((item, rIdx) => (
                                                 <li
                                                   key={rIdx}
-                                                  className="text-xs text-gray-300 leading-snug"
+                                                  className="text-xs text-foreground/80 leading-snug"
                                                 >
                                                   {item}
                                                 </li>
@@ -647,15 +647,15 @@ export default async function Page({
                                           </div>
                                         )}
                                         {risks.length > 0 && (
-                                          <div className="space-y-1">
-                                            <p className="text-sm font-semibold text-gray-100 uppercase tracking-wide">
+                                          <div className="space-y-1.5">
+                                            <p className="text-sm font-semibold text-foreground uppercase tracking-wide">
                                               Risks
                                             </p>
-                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
+                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
                                               {risks.map((item, rIdx) => (
                                                 <li
                                                   key={rIdx}
-                                                  className="text-xs text-gray-300 leading-snug"
+                                                  className="text-xs text-foreground/80 leading-snug"
                                                 >
                                                   {item}
                                                 </li>

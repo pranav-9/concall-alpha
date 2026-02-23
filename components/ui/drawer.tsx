@@ -50,6 +50,9 @@ function DrawerContent({
   children,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+  // Keep shell styling token-based; caller content should prefer semantic classes
+  // (e.g. text-foreground/text-muted-foreground/bg-muted/border-border)
+  // rather than fixed gray shades for light/dark legibility.
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
