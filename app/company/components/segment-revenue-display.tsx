@@ -21,7 +21,7 @@ export function SegmentRevenueDisplay({
 }: SegmentRevenueDisplayProps) {
   if (!revenues || revenues.length === 0) {
     return (
-      <div className="text-gray-400 text-sm">
+      <div className="text-muted-foreground text-sm">
         No segment revenue data available
       </div>
     );

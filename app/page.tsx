@@ -11,7 +11,7 @@ function TopStocksFallback() {
         <p className="text-2xl sm:text-3xl lg:text-5xl font-extrabold !leading-tight">
           Concall Signals
         </p>
-        <p className="text-xs sm:text-sm text-gray-400 px-2">
+        <p className="text-xs sm:text-sm text-muted-foreground px-2">
           Loading latest rankings...
         </p>
       </div>
@@ -19,7 +19,7 @@ function TopStocksFallback() {
         {Array.from({ length: 3 }).map((_, idx) => (
           <div
             key={idx}
-            className="rounded-xl border border-gray-800 bg-gray-950/70 p-3 h-44 animate-pulse"
+            className="rounded-xl border border-border bg-card p-3 h-44 animate-pulse"
           />
         ))}
       </div>
@@ -30,7 +30,7 @@ function TopStocksFallback() {
 function TopStocksHeroFallback() {
   return (
     <section className="w-full">
-      <div className="rounded-xl border border-gray-800 bg-gray-950/70 p-4 h-80 animate-pulse" />
+      <div className="rounded-xl border border-border bg-card p-4 h-80 animate-pulse" />
     </section>
   );
 }
@@ -65,26 +65,26 @@ export default async function Home() {
           </Suspense>
         </div>
         <section className="w-[95%] sm:w-[90%] pt-6 sm:pt-8">
-          <div className="rounded-2xl border border-slate-700/70 bg-gradient-to-r from-slate-900/95 via-slate-900/85 to-slate-800/80 p-4 sm:p-5 lg:p-6">
-            <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-gray-400">
+          <div className="rounded-2xl border border-border bg-gradient-to-r from-card via-card to-muted/40 p-4 sm:p-5 lg:p-6">
+            <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground">
               Who This Is For
             </p>
-            <h2 className="mt-2 text-xl sm:text-2xl font-bold text-white leading-tight max-w-3xl">
+            <h2 className="mt-2 text-xl sm:text-2xl font-bold text-foreground leading-tight max-w-3xl">
               Built for investors who want signal over noise
             </h2>
-            <p className="mt-2 text-sm text-gray-300 max-w-3xl">
+            <p className="mt-2 text-sm text-muted-foreground max-w-3xl">
               If you track Indian equities quarter by quarter, this platform
               helps you see what changed, why it matters, and where to focus
               next in minutes.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className="px-2.5 py-1 rounded-full text-[11px] border border-gray-700 bg-gray-900/70 text-gray-200">
+              <span className="px-2.5 py-1 rounded-full text-[11px] border border-border bg-muted text-foreground">
                 For serious retail investors
               </span>
-              <span className="px-2.5 py-1 rounded-full text-[11px] border border-gray-700 bg-gray-900/70 text-gray-200">
+              <span className="px-2.5 py-1 rounded-full text-[11px] border border-border bg-muted text-foreground">
                 For portfolio trackers
               </span>
-              <span className="px-2.5 py-1 rounded-full text-[11px] border border-gray-700 bg-gray-900/70 text-gray-200">
+              <span className="px-2.5 py-1 rounded-full text-[11px] border border-border bg-muted text-foreground">
                 For faster quarterly review
               </span>
               {typeof totalCompanies === "number" && (
@@ -102,7 +102,7 @@ export default async function Home() {
               </Link>
               <Link
                 href="/how-scores-work"
-                className="inline-flex items-center rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs sm:text-sm font-medium text-gray-200 hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center rounded-md border border-border bg-muted px-3 py-2 text-xs sm:text-sm font-medium text-foreground hover:bg-accent transition-colors"
               >
                 How Scores Work
               </Link>
@@ -110,15 +110,15 @@ export default async function Home() {
           </div>
         </section>
         <section className="w-[95%] sm:w-[90%] py-4 sm:py-6">
-          <div className="rounded-2xl border border-gray-800 bg-gray-950/70 p-4 sm:p-6 lg:p-8">
+          <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 lg:p-8">
             <div className="max-w-2xl">
-              <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-gray-400">
+              <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 How It Works
               </p>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-white leading-tight max-w-xl">
+              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-foreground leading-tight max-w-xl">
                 Decision support in 3 steps
               </h2>
-              <p className="mt-4 text-sm sm:text-base text-gray-400">
+              <p className="mt-4 text-sm sm:text-base text-muted-foreground">
                 We transform raw quarterly commentary into a consistent system
                 you can scan, compare, and track over time.
               </p>
@@ -141,20 +141,20 @@ export default async function Home() {
               ].map((item) => (
                 <div
                   key={item.title}
-                  className="rounded-xl border border-gray-800/80 bg-black/30 p-3 sm:p-4 min-h-32 hover:bg-black/40 hover:border-gray-700 transition-colors"
+                  className="rounded-xl border border-border bg-muted/40 p-3 sm:p-4 min-h-32 hover:bg-accent transition-colors"
                 >
-                  <p className="text-sm font-semibold text-white leading-snug flex items-center gap-2">
+                  <p className="text-sm font-semibold text-foreground leading-snug flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/90" />
                     {item.title}
                   </p>
-                  <p className="mt-2 text-xs sm:text-sm text-gray-400 leading-relaxed">
+                  <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     {item.body}
                   </p>
                 </div>
               ))}
             </div>
-            <div className="mt-6 border-t border-gray-800 pt-6">
-              <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-gray-400">
+            <div className="mt-6 border-t border-border pt-6">
+              <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 Top Features
               </p>
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -178,13 +178,13 @@ export default async function Home() {
                 ].map((feature) => (
                   <div
                     key={feature.title}
-                    className="rounded-lg border border-gray-800/80 bg-black/25 p-3 min-h-28 hover:bg-black/40 hover:border-gray-700 transition-colors"
+                    className="rounded-lg border border-border bg-muted/30 p-3 min-h-28 hover:bg-accent transition-colors"
                   >
-                    <p className="text-sm font-semibold text-white flex items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-sky-400/90" />
                       {feature.title}
                     </p>
-                    <p className="mt-1.5 text-xs sm:text-sm text-gray-400 leading-relaxed">
+                    <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
                       {feature.body}
                     </p>
                   </div>

@@ -18,11 +18,11 @@ const Navbar = () => {
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <nav className="sticky top-0 z-50 flex justify-center border-b border-b-foreground/10 bg-black/85 backdrop-blur">
+    <nav className="sticky top-0 z-50 flex justify-center border-b border-border bg-background/90 backdrop-blur">
       <div className="relative w-full max-w-5xl">
         <div className="h-14 sm:h-16 flex justify-between items-center px-3 sm:px-5 text-sm">
           <div className="min-w-0">
-            <Link href="/" className="truncate font-bold text-sm sm:text-base text-white">
+            <Link href="/" className="truncate font-bold text-sm sm:text-base text-foreground">
               Story of a Stock
             </Link>
           </div>
@@ -37,8 +37,8 @@ const Navbar = () => {
                   className={cn(
                     "text-xs font-medium transition-colors whitespace-nowrap",
                     isActive(item.href)
-                      ? "text-white underline underline-offset-4"
-                      : "text-gray-300 hover:text-white"
+                      ? "text-foreground underline underline-offset-4"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {item.label}
@@ -47,7 +47,7 @@ const Navbar = () => {
               <RequestIntakeButton
                 triggerLabel="Submit Request"
                 triggerVariant="ghost"
-                triggerClassName="h-auto p-0 text-xs font-medium text-gray-300 hover:text-white"
+                triggerClassName="h-auto p-0 text-xs font-medium text-muted-foreground hover:text-foreground"
               />
             </div>
 
@@ -56,7 +56,7 @@ const Navbar = () => {
               aria-label="Toggle navigation menu"
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="md:hidden inline-flex items-center justify-center h-8 w-8 rounded-md border border-gray-700 text-gray-200 hover:text-white hover:border-gray-500"
+              className="md:hidden inline-flex items-center justify-center h-8 w-8 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-ring"
             >
               {isMenuOpen ? (
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
@@ -78,7 +78,7 @@ const Navbar = () => {
         </div>
 
         {isMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 right-0 border-t border-gray-800 border-b border-gray-800 bg-black/95 backdrop-blur px-3 py-3 space-y-2">
+          <div className="md:hidden absolute top-full left-0 right-0 border-t border-border border-b border-border bg-background/95 backdrop-blur px-3 py-3 space-y-2">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -88,8 +88,8 @@ const Navbar = () => {
                 className={cn(
                   "flex w-full items-center px-1 py-2 text-sm font-medium transition-colors",
                   isActive(item.href)
-                    ? "text-white underline underline-offset-4"
-                    : "text-gray-300 hover:text-white"
+                    ? "text-foreground underline underline-offset-4"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {item.label}
@@ -98,7 +98,7 @@ const Navbar = () => {
             <RequestIntakeButton
               triggerLabel="Submit Request"
               triggerVariant="ghost"
-              triggerClassName="h-auto p-0 text-sm font-medium text-gray-300 hover:text-white"
+              triggerClassName="h-auto p-0 text-sm font-medium text-muted-foreground hover:text-foreground"
             />
             {!hasEnvVars ? (
               <div className="pt-1">

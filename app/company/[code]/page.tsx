@@ -231,7 +231,7 @@ export default async function Page({
   if (!data || data.length === 0) {
     return (
       <div className="flex w-full px-4 sm:px-8 lg:px-16 py-8 justify-center items-center">
-        <p className="text-gray-400 text-lg">
+        <p className="text-muted-foreground text-lg">
           No data available for company {code}
         </p>
       </div>
@@ -285,14 +285,14 @@ export default async function Page({
     return (
       <div
         key={scenarioKey}
-        className={`rounded-lg border border-gray-800 bg-gray-900/60 p-2.5 space-y-1.5 border-l-2 ${accentClass}`}
+        className={`rounded-lg border border-border bg-muted/40 p-2.5 space-y-1.5 border-l-2 ${accentClass}`}
       >
         <div className="flex items-center justify-between text-[10px]">
-          <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200 font-semibold uppercase tracking-wide">
+          <span className="px-2 py-0.5 rounded-full bg-muted text-foreground font-semibold uppercase tracking-wide">
             {scenarioKey} case
           </span>
           {typeof scenario.confidence === "number" && (
-            <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-300">
+            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/80">
               {(scenario.confidence * 100).toFixed(0)}% conf
             </span>
           )}
@@ -309,7 +309,7 @@ export default async function Page({
             </span>
           )}
           {scenario.fcf_direction && (
-            <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground">
               FCF: {scenario.fcf_direction}
             </span>
           )}
@@ -334,7 +334,7 @@ export default async function Page({
             <div className="space-y-1">
               {drivers.slice(0, 2).map((d, idx) => (
                 <div key={idx} className="rounded-md border border-emerald-900/30 bg-emerald-950/15 px-2 py-1">
-                  <p className="text-[11px] text-gray-200 leading-snug">{d}</p>
+                  <p className="text-[11px] text-foreground leading-snug">{d}</p>
                 </div>
               ))}
             </div>
@@ -348,7 +348,7 @@ export default async function Page({
             <div className="space-y-1">
               {risks.slice(0, 2).map((r, idx) => (
                 <div key={idx} className="rounded-md border border-red-900/30 bg-red-950/15 px-2 py-1">
-                  <p className="text-[11px] text-gray-200 leading-snug">{r}</p>
+                  <p className="text-[11px] text-foreground leading-snug">{r}</p>
                 </div>
               ))}
             </div>
@@ -408,7 +408,7 @@ export default async function Page({
                   </span>
                 )}
               </div>
-              <span className="text-[11px] text-gray-300 sm:ml-auto break-words">
+              <span className="text-[11px] text-foreground/80 sm:ml-auto break-words">
                 {trend.description}
               </span>
             </div>
@@ -419,13 +419,13 @@ export default async function Page({
                 <div className="flex justify-center">
                   <ChartLineLabel chartData={chartData} />
                 </div>
-                <p className="text-[11px] text-gray-400 text-center">
+                <p className="text-[11px] text-muted-foreground text-center">
                   Showing the latest 12 quarterly points (newest to oldest).
                 </p>
               </div>
 
               <div className="flex min-w-0 flex-col gap-2 w-full">
-                <p className="text-xs font-semibold text-gray-200">
+                <p className="text-xs font-semibold text-foreground">
                   Score context (latest 12 quarters)
                 </p>
                 <div className="flex justify-center">
@@ -481,10 +481,10 @@ export default async function Page({
                               key={`${q.fy}-${q.qtr}-${idx}`}
                               className="basis-full md:basis-1/2 flex justify-center"
                             >
-                              <div className="rounded-lg border border-gray-800 bg-gray-900/60 p-3 shadow-sm h-full w-[90%]">
+                              <div className="rounded-lg border border-border bg-muted/40 p-3 shadow-sm h-full w-[90%]">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="flex items-center gap-2">
-                                    <span className="text-[11px] font-semibold text-gray-200">
+                                    <span className="text-[11px] font-semibold text-foreground">
                                       {detailQuarterLabel}
                                     </span>
                                     {isLatest && (
@@ -497,20 +497,20 @@ export default async function Page({
                                 </div>
                                 {/* category intentionally hidden */}
                                 {guidance && (
-                                  <p className="text-[11px] text-gray-200 leading-snug line-clamp-3 mb-2">
+                                  <p className="text-[11px] text-foreground leading-snug line-clamp-3 mb-2">
                                     {guidance}
                                   </p>
                                 )}
                                 {quarterSummary.length > 0 && (
                                   <div className="mb-2">
-                                    <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
                                       Quarter summary
                                     </p>
-                                    <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
+                                    <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
                                       {quarterSummary.map((item, rIdx) => (
                                         <li
                                           key={rIdx}
-                                          className="text-[11px] text-gray-200 leading-snug line-clamp-2"
+                                          className="text-[11px] text-foreground leading-snug line-clamp-2"
                                         >
                                           {item}
                                         </li>
@@ -520,14 +520,14 @@ export default async function Page({
                                 )}
                                 {rationale.length > 0 && (
                                   <div className="mb-2">
-                                    <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
                                       Rationale
                                     </p>
-                                    <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-gray-500">
+                                    <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
                                       {rationale.map((item, rIdx) => (
                                         <li
                                           key={rIdx}
-                                          className="text-[11px] text-gray-200 leading-snug line-clamp-2"
+                                          className="text-[11px] text-foreground leading-snug line-clamp-2"
                                         >
                                           {item}
                                         </li>
@@ -536,7 +536,7 @@ export default async function Page({
                                   </div>
                                 )}
                                 {!details && (
-                                  <p className="text-[10px] text-gray-500 mt-2">
+                                  <p className="text-[10px] text-muted-foreground mt-2">
                                     No additional context available.
                                   </p>
                                 )}
@@ -694,19 +694,19 @@ export default async function Page({
         <SectionCard id="placeholder" title="Future Growth Prospects">
           {growthOutlook ? (
             <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-300">
+              <div className="flex flex-wrap items-center gap-3 text-xs text-foreground/80">
                 {typeof growthScore === "number" && (
                   <span className="px-2 py-1 rounded-full bg-emerald-900/60 text-emerald-100 border border-emerald-700/50">
                     Growth score: {growthScore.toFixed(1)}
                   </span>
                 )}
                 {typeof growthOutlook.visibility_score === "number" && (
-                  <span className="px-2 py-1 rounded-full bg-gray-800 text-gray-100">
+                  <span className="px-2 py-1 rounded-full bg-muted text-foreground">
                     Visibility: {(growthOutlook.visibility_score * 100).toFixed(0)}%
                   </span>
                 )}
                 {growthUpdatedAt && (
-                  <span className="px-2 py-1 rounded-full bg-gray-800 text-gray-100 border border-gray-700/60">
+                  <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border/60">
                     Updated: {growthUpdatedAt}
                   </span>
                 )}
@@ -714,15 +714,15 @@ export default async function Page({
 
               {Array.isArray(growthOutlook.catalysts_next_12_24m) &&
                 growthOutlook.catalysts_next_12_24m.length > 0 && (
-                  <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-3 space-y-2">
-                    <p className="text-[11px] uppercase tracking-wide text-gray-300 font-semibold">
+                  <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
+                    <p className="text-[11px] uppercase tracking-wide text-foreground/80 font-semibold">
                       Catalysts (next 12-24 months)
                     </p>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                       {growthOutlook.catalysts_next_12_24m.slice(0, 4).map((c, idx) => (
                         <div
                           key={idx}
-                          className={`rounded-md border border-gray-800 bg-black/30 p-2.5 space-y-1.5 ${
+                          className={`rounded-md border border-border bg-muted/30 p-2.5 space-y-1.5 ${
                             c.expected_impact === "revenue"
                               ? "border-l-2 border-l-emerald-500/70"
                               : c.expected_impact === "margin"
@@ -737,7 +737,7 @@ export default async function Page({
                               </span>
                             )}
                             {c.timing && (
-                              <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                              <span className="px-2 py-0.5 rounded-full bg-muted text-foreground">
                                 {c.timing}
                               </span>
                             )}
@@ -747,28 +747,28 @@ export default async function Page({
                               </span>
                             )}
                             {c.quantified?.value != null && (
-                              <span className="px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                              <span className="px-2 py-0.5 rounded-full bg-muted text-foreground">
                                 Qty: {String(c.quantified.value)}
                                 {c.quantified.unit ? ` ${c.quantified.unit}` : ""}
                               </span>
                             )}
                           </div>
                           {c.catalyst && (
-                            <p className="text-[12px] font-medium text-gray-100 leading-snug">
+                            <p className="text-[12px] font-medium text-foreground leading-snug">
                               {c.catalyst}
                             </p>
                           )}
 
                           {Array.isArray(c.evidence) && c.evidence.length > 0 && (
                             <div className="space-y-1">
-                              <p className="text-[11px] text-gray-300 leading-snug">
+                              <p className="text-[11px] text-foreground/80 leading-snug">
                                 • {c.evidence[0]?.period ? `${c.evidence[0].period} · ` : ""}
                                 {c.evidence[0]?.source ? `${c.evidence[0].source} · ` : ""}
                                 {c.evidence[0]?.quote_or_fact ?? "Evidence available"}
                               </p>
                               {c.evidence.length > 1 && (
-                                <details className="text-[10px] text-gray-400">
-                                  <summary className="cursor-pointer hover:text-gray-300">
+                                <details className="text-[10px] text-muted-foreground">
+                                  <summary className="cursor-pointer hover:text-foreground/80">
                                     Show evidence ({c.evidence.length})
                                   </summary>
                                   <div className="mt-1 space-y-1">
@@ -790,25 +790,25 @@ export default async function Page({
                   </div>
                 )}
               {growthOutlook.variant_perception && (
-                <div className="rounded-lg border border-gray-800 bg-gray-900/50 p-3 space-y-2">
-                  <p className="text-[11px] uppercase tracking-wide text-gray-300 font-semibold">
+                <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
+                  <p className="text-[11px] uppercase tracking-wide text-foreground/80 font-semibold">
                     Variant perception
                   </p>
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-                    <div className="rounded-md border border-gray-800 bg-black/30 p-2 space-y-1 border-l-2 border-l-slate-400/70">
-                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-gray-800 text-gray-200">
+                    <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1 border-l-2 border-l-slate-400/70">
+                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-foreground">
                         Consensus
                       </span>
                       {growthOutlook.variant_perception.consensus_vs_company ? (
-                        <p className="text-[11px] text-gray-300 leading-snug">
+                        <p className="text-[11px] text-foreground/80 leading-snug">
                           {growthOutlook.variant_perception.consensus_vs_company}
                         </p>
                       ) : (
-                        <p className="text-[11px] text-gray-500 leading-snug">No consensus note.</p>
+                        <p className="text-[11px] text-muted-foreground leading-snug">No consensus note.</p>
                       )}
                     </div>
 
-                    <div className="rounded-md border border-gray-800 bg-black/30 p-2 space-y-1 border-l-2 border-l-emerald-500/70">
+                    <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1 border-l-2 border-l-emerald-500/70">
                       <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-900/35 text-emerald-200 border border-emerald-700/40">
                         Upside
                       </span>
@@ -817,16 +817,16 @@ export default async function Page({
                         <div className="space-y-1">
                           {growthOutlook.variant_perception.upside_nonconsensus.map((x, idx) => (
                             <div key={idx} className="rounded-md border border-emerald-900/30 bg-emerald-950/20 px-2 py-1">
-                              <p className="text-[11px] text-gray-300 leading-snug">{x}</p>
+                              <p className="text-[11px] text-foreground/80 leading-snug">{x}</p>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-[11px] text-gray-500 leading-snug">No upside variants.</p>
+                        <p className="text-[11px] text-muted-foreground leading-snug">No upside variants.</p>
                       )}
                     </div>
 
-                    <div className="rounded-md border border-gray-800 bg-black/30 p-2 space-y-1 border-l-2 border-l-red-500/70">
+                    <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1 border-l-2 border-l-red-500/70">
                       <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-900/30 text-red-200 border border-red-700/40">
                         Downside
                       </span>
@@ -835,12 +835,12 @@ export default async function Page({
                         <div className="space-y-1">
                           {growthOutlook.variant_perception.downside_nonconsensus.map((x, idx) => (
                             <div key={idx} className="rounded-md border border-red-900/30 bg-red-950/15 px-2 py-1">
-                              <p className="text-[11px] text-gray-300 leading-snug">{x}</p>
+                              <p className="text-[11px] text-foreground/80 leading-snug">{x}</p>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-[11px] text-gray-500 leading-snug">No downside variants.</p>
+                        <p className="text-[11px] text-muted-foreground leading-snug">No downside variants.</p>
                       )}
                     </div>
                   </div>
@@ -861,7 +861,7 @@ export default async function Page({
               </div>
             </div>
           ) : (
-            <div className="rounded-lg border border-dashed border-gray-700/70 bg-gray-900/40 p-6 text-sm text-gray-400">
+            <div className="rounded-lg border border-dashed border-border/70 bg-muted/40 p-6 text-sm text-muted-foreground">
               Growth outlook data not available yet for this company.
             </div>
           )}
@@ -876,7 +876,7 @@ export default async function Page({
               strategies={topStrategiesData as TopStrategyLatest[]}
             />
           ) : (
-            <div className="text-gray-400 text-sm">
+            <div className="text-muted-foreground text-sm">
               No strategy data available
             </div>
           )}
@@ -887,7 +887,7 @@ export default async function Page({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Business Segments */}
             {segmentsData && segmentsData.length > 0 && (
-              <div className="bg-black/40 rounded-xl p-4 shadow-md shadow-black/30 hover:shadow-lg hover:shadow-black/40 transition-all duration-300">
+              <div className="bg-muted/40 rounded-xl p-4 shadow-md shadow-black/30 hover:shadow-lg hover:shadow-black/40 transition-all duration-300">
                 <BusinessSegmentsDisplay
                   segments={segmentsData as BusinessSegment[]}
                 />
@@ -896,8 +896,8 @@ export default async function Page({
 
             {/* Segment Revenue Chart */}
             {revenueData && revenueData.length > 0 && (
-              <div className="bg-black/40 rounded-xl p-4 shadow-md shadow-black/30 hover:shadow-lg hover:shadow-black/40 transition-all duration-300">
-                <h4 className="font-semibold text-gray-100 mb-2 text-xs uppercase tracking-wide">
+              <div className="bg-muted/40 rounded-xl p-4 shadow-md shadow-black/30 hover:shadow-lg hover:shadow-black/40 transition-all duration-300">
+                <h4 className="font-semibold text-foreground mb-2 text-xs uppercase tracking-wide">
                   Segment Revenue Breakdown
                 </h4>
                 <SegmentRevenueDisplay

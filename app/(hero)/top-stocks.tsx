@@ -363,7 +363,7 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
             )}
           </CarouselContent>
           <div className="mt-2 flex items-center justify-center gap-2">
-            <span className="text-[10px] px-2 py-1 rounded-full border border-gray-700 text-gray-400">
+            <span className="text-[10px] px-2 py-1 rounded-full border border-border text-muted-foreground bg-muted/30">
               {trendTwist ? "3 slides" : "2 slides"}
             </span>
             <CarouselPrevious className="static translate-x-0 translate-y-0" />
@@ -380,15 +380,15 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
         <p className="text-2xl sm:text-3xl lg:text-5xl font-extrabold !leading-tight">
           Concall Signals
         </p>
-        <p className="text-xs sm:text-sm text-gray-400 px-2">
+        <p className="text-xs sm:text-sm text-muted-foreground px-2">
           Latest quarter: {latestLabel || "n/a"} · Quarter score uses latest/4Q values; Growth uses guidance %
         </p>
       </div>
       <div className="w-full flex flex-col gap-6 sm:w-[90%]">
         <div className="flex items-center gap-2">
-          <div className="h-[1px] flex-1 bg-gray-800" />
-          <span className="text-sm uppercase tracking-wide text-gray-300">Strength</span>
-          <div className="h-[1px] flex-1 bg-gray-800" />
+          <div className="h-[1px] flex-1 bg-border" />
+          <span className="text-sm uppercase tracking-wide text-muted-foreground">Strength</span>
+          <div className="h-[1px] flex-1 bg-border" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {strength.map((list, i) => (
@@ -410,12 +410,12 @@ export default TopStocks;
 
 function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey?: "latest" | "avg4"; signal?: "sentiment" | "growth" } }) {
   return (
-    <div className="flex flex-col rounded-xl border border-gray-800 bg-gray-950/70">
-      <div className="p-3 font-bold text-white text-base sm:text-lg bg-black rounded-t-xl border-b border-gray-800">
+    <div className="flex flex-col rounded-xl border border-border bg-card">
+      <div className="p-3 font-bold text-foreground text-base sm:text-lg bg-muted/40 rounded-t-xl border-b border-border">
         <div className="flex items-center justify-between gap-2">
           <span className="leading-tight">{list.title}</span>
           {list.signal && (
-            <Badge variant="outline" className="text-xs px-2 py-0.5 border-gray-700 uppercase tracking-wide">
+            <Badge variant="outline" className="text-xs px-2 py-0.5 border-border uppercase tracking-wide text-muted-foreground">
               {list.signal === "sentiment" ? "Sentiment" : "Growth"}
             </Badge>
           )}
@@ -428,16 +428,16 @@ function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey
         {list.items.map((s, index) => (
           <div key={index}>
             <Link href={"/company/" + s.code} prefetch={false}>
-              <div className="flex gap-2 bg-gray-900 rounded-lg p-2 items-start">
+              <div className="flex gap-2 bg-muted/40 rounded-lg p-2 items-start border border-border/60 hover:bg-muted/60 transition-colors">
                 <div className="flex w-full gap-2 items-start">
-                  <p className="p-1 text-xs text-gray-400 leading-snug">{index + 1}.</p>
+                  <p className="p-1 text-xs text-muted-foreground leading-snug">{index + 1}.</p>
 
                   <div className="flex flex-col w-3/4 gap-1">
-                    <p className="font-medium text-sm leading-tight line-clamp-1 text-white">
+                    <p className="font-medium text-sm leading-tight line-clamp-1 text-foreground">
                       {s.name}
                     </p>
                     {typeof s.twistPct === "number" && (
-                      <p className="text-[11px] text-gray-400 leading-tight line-clamp-1">
+                      <p className="text-[11px] text-muted-foreground leading-tight line-clamp-1">
                         {`${s.twistPct >= 0 ? "+" : ""}${s.twistPct.toFixed(1)}% vs prev 4Q avg`}
                       </p>
                     )}
@@ -468,11 +468,11 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
   const visible = items.slice(0, 5);
 
   return (
-    <div className="flex flex-col rounded-xl border border-gray-800 bg-gray-950/70">
-      <div className="p-3 font-bold text-white text-base sm:text-lg bg-black rounded-t-xl border-b border-gray-800">
+    <div className="flex flex-col rounded-xl border border-border bg-card">
+      <div className="p-3 font-bold text-foreground text-base sm:text-lg bg-muted/40 rounded-t-xl border-b border-border">
         <div className="flex items-center justify-between gap-2">
           <span className="leading-tight">Top Growth Outlook</span>
-          <Badge variant="outline" className="text-xs px-2 py-0.5 border-gray-700 uppercase tracking-wide">
+          <Badge variant="outline" className="text-xs px-2 py-0.5 border-border uppercase tracking-wide text-muted-foreground">
             Growth
           </Badge>
         </div>
@@ -485,13 +485,13 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
         )}
         {visible.map((item, index) => (
           <Link key={item.company + index} href={"/company/" + item.company} prefetch={false}>
-            <div className="flex gap-2 bg-gray-900 rounded-lg p-2 items-start">
-              <p className="p-1 text-xs text-gray-400 leading-snug">
+            <div className="flex gap-2 bg-muted/40 rounded-lg p-2 items-start border border-border/60 hover:bg-muted/60 transition-colors">
+              <p className="p-1 text-xs text-muted-foreground leading-snug">
                 {typeof item.rank === "number" ? `${item.rank}.` : `${index + 1}.`}
               </p>
               <div className="flex w-full gap-2 items-start">
                 <div className="flex flex-col w-3/4 gap-1">
-                  <p className="font-medium text-sm leading-tight line-clamp-1 text-white">
+                  <p className="font-medium text-sm leading-tight line-clamp-1 text-foreground">
                     {item.displayName || item.company}
                   </p>
                 </div>
@@ -499,7 +499,7 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
                   {typeof item.growthScore === "number" ? (
                     <ConcallScore score={item.growthScore} />
                   ) : (
-                    <div className="h-10 w-10 rounded-full border border-gray-700 bg-gray-900 flex items-center justify-center text-sm text-gray-400">
+                    <div className="h-10 w-10 rounded-full border border-border bg-muted flex items-center justify-center text-sm text-muted-foreground">
                       -
                     </div>
                   )}

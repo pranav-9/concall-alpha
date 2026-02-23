@@ -176,26 +176,26 @@ export default async function RecentScoreUpdates({
     <section className={heroPanel ? "w-full" : "w-[95%] sm:w-[90%] pt-6 sm:pt-8"}>
       {!heroPanel && (
         <div className="mb-2">
-          <h2 className="text-base font-bold text-white">Latest Updates</h2>
+          <h2 className="text-base font-bold text-foreground">Latest Updates</h2>
         </div>
       )}
 
-      <div className="rounded-xl border border-gray-800 bg-gray-950/70">
-        <div className="p-3 sm:p-4 border-b border-gray-800">
-          <h2 className="text-base sm:text-lg font-bold text-white">
+      <div className="rounded-xl border border-border bg-card">
+        <div className="p-3 sm:p-4 border-b border-border">
+          <h2 className="text-base sm:text-lg font-bold text-foreground">
             Latest Updates
           </h2>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-muted-foreground">
             Time-ordered feed: quarter score, growth score, and new company updates
           </p>
         </div>
 
-        <div className="divide-y divide-gray-800">
+        <div className="divide-y divide-border">
           {updates.map((item) => {
             const row = (
-              <div className="flex items-center justify-between gap-2 p-3 hover:bg-gray-900/60 transition-colors">
+              <div className="flex items-center justify-between gap-2 p-3 hover:bg-accent transition-colors">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
+                  <p className="text-sm font-medium text-foreground truncate">
                     {item.companyName}
                   </p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-2">
@@ -204,7 +204,7 @@ export default async function RecentScoreUpdates({
                     >
                       {item.type === "quarter" ? item.detail : typeLabel(item.type)}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                       {formatDate(item.atRaw)}
                     </span>
                   </div>
@@ -231,11 +231,11 @@ export default async function RecentScoreUpdates({
           })}
         </div>
 
-        <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-2 border-t border-gray-800">
+        <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-2 border-t border-border">
           <Link
             href="/company"
             prefetch={false}
-            className="text-xs text-gray-300 hover:text-white underline underline-offset-2"
+            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
           >
             View all companies
           </Link>
