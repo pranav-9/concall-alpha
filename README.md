@@ -17,6 +17,30 @@
 </p>
 <br/>
 
+## Admin Panel (This Project)
+
+This project includes a passcode-gated admin panel at `/admin` with:
+
+- Unique visitor count (cookie/device based)
+- Top viewed companies
+- Feedback request monitoring (`user_requests`)
+
+### Required environment variables
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY=
+ADMIN_PANEL_PASSCODE=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+### Required SQL setup
+
+Run these SQL files in Supabase SQL editor:
+
+- `lib/supabase/user_requests.sql`
+- `lib/supabase/page_view_events.sql`
+
 ## Features
 
 - Works across the entire [Next.js](https://nextjs.org) stack
