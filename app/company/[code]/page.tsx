@@ -53,12 +53,21 @@ type EvidenceItem = {
   quote_or_fact?: string | null;
 };
 
+type TimelineEvidenceItem = {
+  stage?: string | null;
+  period?: string | null;
+  source?: string | null;
+  delta_vs_prev?: string | null;
+  quote_or_fact?: string | null;
+};
+
 type GrowthCatalyst = {
   type?: string | null;
   timing?: string | null;
   catalyst?: string | null;
   expected_impact?: string | null;
   evidence?: EvidenceItem[] | null;
+  timeline_evidence?: TimelineEvidenceItem[] | null;
   quantified?: {
     unit?: string | null;
     value?: string | number | null;
@@ -153,6 +162,108 @@ const parseJsonObject = (val: unknown) => {
   }
   return typeof val === "object" ? val : null;
 };
+
+const timelineStageConfig: Record<string, { label: string; className: string }> = {
+  announced: {
+    label: "announced",
+    className:
+      "bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/25 dark:text-amber-200 dark:border-amber-700/40",
+  },
+  in_progress: {
+    label: "in progress",
+    className:
+      "bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/25 dark:text-blue-200 dark:border-blue-700/40",
+  },
+  scaled: {
+    label: "scaled",
+    className:
+      "bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/25 dark:text-emerald-200 dark:border-emerald-700/40",
+  },
+  commissioned: {
+    label: "commissioned",
+    className:
+      "bg-sky-100 text-sky-800 border border-sky-200 dark:bg-sky-900/25 dark:text-sky-200 dark:border-sky-700/40",
+  },
+  unknown: {
+    label: "unknown",
+    className: "bg-muted text-foreground border border-border",
+  },
+};
+
+const getTimelineStageDisplay = (stage?: string | null) => {
+  const raw = (stage ?? "").trim().toLowerCase();
+  const key = raw.replace(/\s+/g, "_");
+  const mapped = timelineStageConfig[key];
+  if (mapped) {
+    return mapped;
+  }
+  if (raw) {
+    return {
+      label: raw.replace(/_/g, " "),
+      className: timelineStageConfig.unknown.className,
+    };
+  }
+  return timelineStageConfig.unknown;
+};
+
+const monthMap: Record<string, number> = {
+  jan: 1,
+  feb: 2,
+  mar: 3,
+  apr: 4,
+  may: 5,
+  jun: 6,
+  jul: 7,
+  aug: 8,
+  sep: 9,
+  sept: 9,
+  oct: 10,
+  nov: 11,
+  dec: 12,
+};
+
+const parseTimelinePeriodRank = (period?: string | null) => {
+  const p = (period ?? "").trim();
+  if (!p) return { category: 4, rank: Number.MAX_SAFE_INTEGER };
+
+  const quarterMatch = p.match(/^Q([1-4])\s*\/?\s*FY(\d{2,4})E?$/i);
+  if (quarterMatch) {
+    const quarter = Number(quarterMatch[1]);
+    const fyRaw = quarterMatch[2];
+    const fy = fyRaw.length === 2 ? 2000 + Number(fyRaw) : Number(fyRaw);
+    return { category: 1, rank: fy * 10 + quarter };
+  }
+
+  const monthYearMatch = p.match(/^([A-Za-z]{3,9})[-\s](\d{4})$/);
+  if (monthYearMatch) {
+    const monthKey = monthYearMatch[1].slice(0, 4).toLowerCase();
+    const month =
+      monthMap[monthKey.slice(0, 3)] ??
+      monthMap[monthKey];
+    const year = Number(monthYearMatch[2]);
+    if (month && Number.isFinite(year)) {
+      return { category: 2, rank: year * 100 + month };
+    }
+  }
+
+  const fyOnlyMatch = p.match(/^FY(\d{2,4})E?$/i);
+  if (fyOnlyMatch) {
+    const fyRaw = fyOnlyMatch[1];
+    const fy = fyRaw.length === 2 ? 2000 + Number(fyRaw) : Number(fyRaw);
+    return { category: 3, rank: fy * 10 };
+  }
+
+  return { category: 4, rank: Number.MAX_SAFE_INTEGER };
+};
+
+const sortTimelineEvidence = (items: TimelineEvidenceItem[] = []) =>
+  [...items].sort((a, b) => {
+    const aRank = parseTimelinePeriodRank(a.period);
+    const bRank = parseTimelinePeriodRank(b.period);
+    if (aRank.category !== bRank.category) return aRank.category - bRank.category;
+    if (aRank.rank !== bRank.rank) return aRank.rank - bRank.rank;
+    return 0;
+  });
 
 
 export async function generateMetadata({
@@ -293,24 +404,24 @@ export default async function Page({
             {scenarioKey} case
           </span>
           {typeof scenario.confidence === "number" && (
-            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground/80">
+            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
               {(scenario.confidence * 100).toFixed(0)}% conf
             </span>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
           {scenario.revenue_growth_pct && (
-            <span className="px-2 py-0.5 rounded-full bg-emerald-900/35 border border-emerald-700/40 text-emerald-100">
+            <span className="px-2 py-0.5 rounded-full border bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/35 dark:text-emerald-100 dark:border-emerald-700/40">
               Growth: {scenario.revenue_growth_pct}
             </span>
           )}
           {scenario.margin_trend_bps != null && (
-            <span className="px-2 py-0.5 rounded-full bg-sky-900/35 border border-sky-700/40 text-sky-100">
+            <span className="px-2 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/35 dark:text-sky-100 dark:border-sky-700/40">
               Margin: {String(scenario.margin_trend_bps)}
             </span>
           )}
           {scenario.fcf_direction && (
-            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground">
+            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
               FCF: {scenario.fcf_direction}
             </span>
           )}
@@ -320,7 +431,7 @@ export default async function Page({
             {refs.slice(0, 3).map((ref, idx) => (
               <span
                 key={idx}
-                className="text-[10px] px-2 py-0.5 rounded-full bg-blue-900/35 border border-blue-700/40 text-blue-200"
+                className="text-[10px] px-2 py-0.5 rounded-full border bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/35 dark:text-blue-200 dark:border-blue-700/40"
               >
                 {ref}
               </span>
@@ -329,12 +440,15 @@ export default async function Page({
         )}
         {drivers.length > 0 && (
           <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wide text-emerald-300 font-semibold">
+            <p className="text-[10px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300 font-semibold">
               Drivers
             </p>
             <div className="space-y-1">
               {drivers.slice(0, 2).map((d, idx) => (
-                <div key={idx} className="rounded-md border border-emerald-900/30 bg-emerald-950/15 px-2 py-1">
+                <div
+                  key={idx}
+                  className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 dark:border-emerald-900/30 dark:bg-emerald-950/15"
+                >
                   <p className="text-[11px] text-foreground leading-snug">{d}</p>
                 </div>
               ))}
@@ -343,12 +457,15 @@ export default async function Page({
         )}
         {risks.length > 0 && (
           <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wide text-red-300 font-semibold">
+            <p className="text-[10px] uppercase tracking-wide text-red-700 dark:text-red-300 font-semibold">
               Risks
             </p>
             <div className="space-y-1">
               {risks.slice(0, 2).map((r, idx) => (
-                <div key={idx} className="rounded-md border border-red-900/30 bg-red-950/15 px-2 py-1">
+                <div
+                  key={idx}
+                  className="rounded-md border border-red-200 bg-red-50 px-2 py-1 dark:border-red-900/30 dark:bg-red-950/15"
+                >
                   <p className="text-[11px] text-foreground leading-snug">{r}</p>
                 </div>
               ))}
@@ -701,12 +818,12 @@ export default async function Page({
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-3 text-xs text-foreground/80">
                 {typeof growthScore === "number" && (
-                  <span className="px-2 py-1 rounded-full bg-emerald-900/60 text-emerald-100 border border-emerald-700/50">
+                  <span className="px-2 py-1 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100 dark:border-emerald-700/50">
                     Growth score: {growthScore.toFixed(1)}
                   </span>
                 )}
                 {typeof growthOutlook.visibility_score === "number" && (
-                  <span className="px-2 py-1 rounded-full bg-muted text-foreground">
+                  <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
                     Visibility: {(growthOutlook.visibility_score * 100).toFixed(0)}%
                   </span>
                 )}
@@ -723,75 +840,149 @@ export default async function Page({
                     <p className="text-[11px] uppercase tracking-wide text-foreground/80 font-semibold">
                       Catalysts (next 12-24 months)
                     </p>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                      {growthOutlook.catalysts_next_12_24m.slice(0, 4).map((c, idx) => (
-                        <div
-                          key={idx}
-                          className={`rounded-md border border-border bg-muted/30 p-2.5 space-y-1.5 ${
-                            c.expected_impact === "revenue"
-                              ? "border-l-2 border-l-emerald-500/70"
-                              : c.expected_impact === "margin"
-                              ? "border-l-2 border-l-sky-500/70"
-                              : "border-l-2 border-l-amber-500/70"
-                          }`}
-                        >
-                          <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-                            {c.type && (
-                              <span className="px-2 py-0.5 rounded-full bg-blue-900/35 text-blue-200 border border-blue-700/40">
-                                {c.type}
-                              </span>
-                            )}
-                            {c.timing && (
-                              <span className="px-2 py-0.5 rounded-full bg-muted text-foreground">
-                                {c.timing}
-                              </span>
-                            )}
-                            {c.expected_impact && (
-                              <span className="px-2 py-0.5 rounded-full bg-emerald-900/35 text-emerald-100 border border-emerald-700/40">
-                                Impact: {c.expected_impact}
-                              </span>
-                            )}
-                            {c.quantified?.value != null && (
-                              <span className="px-2 py-0.5 rounded-full bg-muted text-foreground">
-                                Qty: {String(c.quantified.value)}
-                                {c.quantified.unit ? ` ${c.quantified.unit}` : ""}
-                              </span>
-                            )}
-                          </div>
-                          {c.catalyst && (
-                            <p className="text-[12px] font-medium text-foreground leading-snug">
-                              {c.catalyst}
-                            </p>
-                          )}
+                    <Carousel opts={{ align: "start" }} className="w-full">
+                      <CarouselContent>
+                        {growthOutlook.catalysts_next_12_24m.slice(0, 4).map((c, idx) => {
+                          const timelineItems = sortTimelineEvidence(
+                            (c.timeline_evidence ?? []).filter((t) => {
+                              const stage = (t.stage ?? "").trim();
+                              const period = (t.period ?? "").trim();
+                              const source = (t.source ?? "").trim();
+                              const quote = (t.quote_or_fact ?? "").trim();
+                              const delta = (t.delta_vs_prev ?? "").trim();
+                              return Boolean(stage || period || source || quote || delta);
+                            }),
+                          );
 
-                          {Array.isArray(c.evidence) && c.evidence.length > 0 && (
-                            <div className="space-y-1">
-                              <p className="text-[11px] text-foreground/80 leading-snug">
-                                • {c.evidence[0]?.period ? `${c.evidence[0].period} · ` : ""}
-                                {c.evidence[0]?.source ? `${c.evidence[0].source} · ` : ""}
-                                {c.evidence[0]?.quote_or_fact ?? "Evidence available"}
-                              </p>
-                              {c.evidence.length > 1 && (
-                                <details className="text-[10px] text-muted-foreground">
-                                  <summary className="cursor-pointer hover:text-foreground/80">
-                                    Show evidence ({c.evidence.length})
-                                  </summary>
-                                  <div className="mt-1 space-y-1">
-                                    {c.evidence.slice(1, 3).map((ev, evIdx) => (
-                                      <p key={evIdx} className="leading-snug">
-                                        • {ev.period ? `${ev.period} · ` : ""}
-                                        {ev.source ? `${ev.source} · ` : ""}
-                                        {ev.quote_or_fact ?? "Evidence item"}
-                                      </p>
-                                    ))}
+                          return (
+                            <CarouselItem key={idx} className="basis-full lg:basis-1/2">
+                              <div
+                                className={`h-full rounded-md border border-border bg-muted/30 p-2.5 space-y-1.5 ${
+                                  c.expected_impact === "revenue"
+                                    ? "border-l-2 border-l-emerald-500/70"
+                                    : c.expected_impact === "margin"
+                                    ? "border-l-2 border-l-sky-500/70"
+                                    : "border-l-2 border-l-amber-500/70"
+                                }`}
+                              >
+                                <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                                  {c.type && (
+                                    <span className="px-2 py-0.5 rounded-full border border-blue-200 bg-blue-100 text-blue-700 dark:bg-blue-900/35 dark:text-blue-200 dark:border-blue-700/40">
+                                      {c.type}
+                                    </span>
+                                  )}
+                                  {c.timing && (
+                                    <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
+                                      {c.timing}
+                                    </span>
+                                  )}
+                                  {c.expected_impact && (
+                                    <span className="px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-100 dark:border-emerald-700/40">
+                                      Impact: {c.expected_impact}
+                                    </span>
+                                  )}
+                                  {c.quantified?.value != null && (
+                                    <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
+                                      Qty: {String(c.quantified.value)}
+                                      {c.quantified.unit ? ` ${c.quantified.unit}` : ""}
+                                    </span>
+                                  )}
+                                </div>
+                                {c.catalyst && (
+                                  <p className="text-[12px] font-medium text-foreground leading-snug">
+                                    {c.catalyst}
+                                  </p>
+                                )}
+
+                                {timelineItems.length > 0 && (
+                                  <div className="space-y-1.5">
+                                    <p className="text-[10px] uppercase tracking-wide text-foreground/80 font-semibold">
+                                      Timeline
+                                    </p>
+                                    <ul className="space-y-2">
+                                      {timelineItems.map((t, tIdx) => {
+                                        const stageMeta = getTimelineStageDisplay(t.stage);
+                                        const period = (t.period ?? "").trim();
+                                        const source = (t.source ?? "").trim();
+                                        const quote = (t.quote_or_fact ?? "").trim();
+                                        const delta = (t.delta_vs_prev ?? "").trim();
+                                        return (
+                                          <li
+                                            key={`${idx}-timeline-${tIdx}`}
+                                            className="relative pl-4 space-y-1"
+                                          >
+                                            <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+                                            <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                                              <span
+                                                className={`px-2 py-0.5 rounded-full uppercase tracking-wide ${stageMeta.className}`}
+                                              >
+                                                {stageMeta.label}
+                                              </span>
+                                              {(period || source) && (
+                                                <span className="text-muted-foreground">
+                                                  {period}
+                                                  {period && source ? " · " : ""}
+                                                  {source}
+                                                </span>
+                                              )}
+                                            </div>
+                                            {quote && (
+                                              <p className="text-[11px] text-foreground leading-snug">
+                                                {quote}
+                                              </p>
+                                            )}
+                                            {delta && (
+                                              <p className="text-[10px] text-muted-foreground leading-snug">
+                                                {delta}
+                                              </p>
+                                            )}
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
                                   </div>
-                                </details>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                                )}
+
+                                {Array.isArray(c.evidence) && c.evidence.length > 0 && (
+                                  <div className="space-y-1">
+                                    {timelineItems.length > 0 ? (
+                                      <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+                                        Supporting evidence
+                                      </p>
+                                    ) : null}
+                                    <p className="text-[11px] text-foreground leading-snug">
+                                      • {c.evidence[0]?.period ? `${c.evidence[0].period} · ` : ""}
+                                      {c.evidence[0]?.source ? `${c.evidence[0].source} · ` : ""}
+                                      {c.evidence[0]?.quote_or_fact ?? "Evidence available"}
+                                    </p>
+                                    {c.evidence.length > 1 && (
+                                      <details className="text-[10px] text-muted-foreground">
+                                        <summary className="cursor-pointer hover:text-foreground/80">
+                                          Show evidence ({c.evidence.length})
+                                        </summary>
+                                        <div className="mt-1 space-y-1">
+                                          {c.evidence.slice(1, 3).map((ev, evIdx) => (
+                                            <p key={evIdx} className="leading-snug text-foreground">
+                                              • {ev.period ? `${ev.period} · ` : ""}
+                                              {ev.source ? `${ev.source} · ` : ""}
+                                              {ev.quote_or_fact ?? "Evidence item"}
+                                            </p>
+                                          ))}
+                                        </div>
+                                      </details>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </CarouselItem>
+                          );
+                        })}
+                      </CarouselContent>
+                      <div className="flex justify-center gap-2 mt-2">
+                        <CarouselPrevious className="static translate-x-0 translate-y-0 border border-border bg-background text-foreground hover:bg-accent" />
+                        <CarouselNext className="static translate-x-0 translate-y-0 border border-border bg-background text-foreground hover:bg-accent" />
+                      </div>
+                    </Carousel>
                   </div>
                 )}
               {growthOutlook.variant_perception && (
@@ -801,11 +992,11 @@ export default async function Page({
                   </p>
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
                     <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1 border-l-2 border-l-slate-400/70">
-                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-foreground">
+                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
                         Consensus
                       </span>
                       {growthOutlook.variant_perception.consensus_vs_company ? (
-                        <p className="text-[11px] text-foreground/80 leading-snug">
+                        <p className="text-[11px] text-foreground leading-snug">
                           {growthOutlook.variant_perception.consensus_vs_company}
                         </p>
                       ) : (
@@ -814,7 +1005,7 @@ export default async function Page({
                     </div>
 
                     <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1 border-l-2 border-l-emerald-500/70">
-                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-900/35 text-emerald-200 border border-emerald-700/40">
+                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-200 dark:border-emerald-700/40">
                         Upside
                       </span>
                       {Array.isArray(growthOutlook.variant_perception.upside_nonconsensus) &&
@@ -822,7 +1013,7 @@ export default async function Page({
                         <div className="space-y-1">
                           {growthOutlook.variant_perception.upside_nonconsensus.map((x, idx) => (
                             <div key={idx} className="rounded-md border border-emerald-900/30 bg-emerald-950/20 px-2 py-1">
-                              <p className="text-[11px] text-foreground/80 leading-snug">{x}</p>
+                              <p className="text-[11px] text-foreground leading-snug">{x}</p>
                             </div>
                           ))}
                         </div>
@@ -832,7 +1023,7 @@ export default async function Page({
                     </div>
 
                     <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1 border-l-2 border-l-red-500/70">
-                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-900/30 text-red-200 border border-red-700/40">
+                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-red-200 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200 dark:border-red-700/40">
                         Downside
                       </span>
                       {Array.isArray(growthOutlook.variant_perception.downside_nonconsensus) &&
@@ -840,7 +1031,7 @@ export default async function Page({
                         <div className="space-y-1">
                           {growthOutlook.variant_perception.downside_nonconsensus.map((x, idx) => (
                             <div key={idx} className="rounded-md border border-red-900/30 bg-red-950/15 px-2 py-1">
-                              <p className="text-[11px] text-foreground/80 leading-snug">{x}</p>
+                              <p className="text-[11px] text-foreground leading-snug">{x}</p>
                             </div>
                           ))}
                         </div>
