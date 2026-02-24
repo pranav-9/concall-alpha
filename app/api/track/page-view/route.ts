@@ -1,7 +1,7 @@
-import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import { headers, cookies } from "next/headers";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
 
 type Payload = {
   path?: string;
@@ -34,11 +34,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: parsed.error }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    let visitorId = cookieStore.get("visitor_id")?.value;
-    if (!visitorId) {
-      visitorId = randomUUID();
-    }
+    const { visitorId, isNew } = await getOrCreateVisitorId();
 
     const h = await headers();
     const userAgent = h.get("user-agent");
@@ -54,13 +50,9 @@ export async function POST(request: Request) {
     });
 
     const response = NextResponse.json({ ok: true });
-    response.cookies.set("visitor_id", visitorId, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 365,
-      path: "/",
-    });
+    if (isNew) {
+      applyVisitorIdCookie(response, visitorId);
+    }
 
     return response;
   } catch {

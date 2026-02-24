@@ -40,6 +40,7 @@ Run these SQL files in Supabase SQL editor:
 
 - `lib/supabase/user_requests.sql`
 - `lib/supabase/page_view_events.sql`
+- `lib/supabase/company_comments.sql`
 
 ## Features
 

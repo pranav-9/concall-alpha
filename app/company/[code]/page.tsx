@@ -17,6 +17,7 @@ import { SegmentRevenueDisplay } from "../components/segment-revenue-display";
 import { TopStrategiesDisplay } from "../components/top-strategies-display";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import ConcallScore from "@/components/concall-score";
+import { CompanyCommentsSection } from "@/components/company/company-comments-section";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -910,6 +911,10 @@ export default async function Page({
               </div>
             )}
           </div>
+        </SectionCard>
+
+        <SectionCard id="community" title="Community">
+          <CompanyCommentsSection companyCode={code} />
         </SectionCard>
       </div>
     </div>

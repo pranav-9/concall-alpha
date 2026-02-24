@@ -13,6 +13,11 @@ import {
   type FeedbackRequestRow,
 } from "@/components/admin/feedback-requests-table";
 import {
+  CompanyCommentsTable,
+  type AdminCommentRow,
+  type AdminReportedRow,
+} from "@/components/admin/company-comments-table";
+import {
   ADMIN_ACCESS_COOKIE,
   hasAdminAccess,
 } from "@/lib/admin-auth";
@@ -86,13 +91,63 @@ async function getAdminData(range: RangeKey) {
     ? companyViewsCountBase.gte("created_at", startIso)
     : companyViewsCountBase;
 
-  const [uniqueVisitorsResult, topCompaniesResult, feedbackRowsResult, feedbackCountResult, companyViewsCountResult] =
+  const commentsBase = supabase
+    .from("company_comments")
+    .select("id, company_code, comment_text, visitor_id, status, likes_count, reports_count, created_at, updated_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  const commentsRowsPromise = startIso
+    ? commentsBase.gte("created_at", startIso)
+    : commentsBase;
+
+  const commentsCountBase = supabase
+    .from("company_comments")
+    .select("id", { head: true, count: "exact" });
+
+  const commentsCountPromise = startIso
+    ? commentsCountBase.gte("created_at", startIso)
+    : commentsCountBase;
+
+  const reportsBase = supabase
+    .from("company_comment_reports")
+    .select("id, comment_id, reason, created_at, comment:company_comments(id, company_code, comment_text, visitor_id, status, likes_count, reports_count, created_at, updated_at)")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  const reportsRowsPromise = startIso
+    ? reportsBase.gte("created_at", startIso)
+    : reportsBase;
+
+  const reportsCountBase = supabase
+    .from("company_comment_reports")
+    .select("id", { head: true, count: "exact" });
+
+  const reportsCountPromise = startIso
+    ? reportsCountBase.gte("created_at", startIso)
+    : reportsCountBase;
+
+  const [
+    uniqueVisitorsResult,
+    topCompaniesResult,
+    feedbackRowsResult,
+    feedbackCountResult,
+    companyViewsCountResult,
+    commentsRowsResult,
+    commentsCountResult,
+    reportsRowsResult,
+    reportsCountResult,
+  ] =
     await Promise.all([
       uniqueVisitorsPromise,
       topCompaniesPromise,
       feedbackRowsPromise,
       feedbackCountPromise,
       companyViewsCountPromise,
+      commentsRowsPromise,
+      commentsCountPromise,
+      reportsRowsPromise,
+      reportsCountPromise,
     ]);
 
   const uniqueUsers = Number(uniqueVisitorsResult.data ?? 0);
@@ -100,6 +155,10 @@ async function getAdminData(range: RangeKey) {
   const feedbackRows = (feedbackRowsResult.data ?? []) as FeedbackRequestRow[];
   const feedbackCount = Number(feedbackCountResult.count ?? 0);
   const companyViews = Number(companyViewsCountResult.count ?? 0);
+  const commentsRows = (commentsRowsResult.data ?? []) as AdminCommentRow[];
+  const commentsCount = Number(commentsCountResult.count ?? 0);
+  const reportsRows = (reportsRowsResult.data ?? []) as AdminReportedRow[];
+  const reportsCount = Number(reportsCountResult.count ?? 0);
 
   return {
     uniqueUsers,
@@ -107,6 +166,10 @@ async function getAdminData(range: RangeKey) {
     feedbackRows,
     feedbackCount,
     companyViews,
+    commentsRows,
+    commentsCount,
+    reportsRows,
+    reportsCount,
   };
 }
 
@@ -134,6 +197,10 @@ export default async function AdminPage({
     feedbackRows: [] as FeedbackRequestRow[],
     feedbackCount: 0,
     companyViews: 0,
+    commentsRows: [] as AdminCommentRow[],
+    commentsCount: 0,
+    reportsRows: [] as AdminReportedRow[],
+    reportsCount: 0,
   };
   let dataLoadError: string | null = null;
 
@@ -184,6 +251,8 @@ export default async function AdminPage({
         uniqueUsers={data.uniqueUsers}
         companyViews={data.companyViews}
         feedbackCount={data.feedbackCount}
+        commentsCount={data.commentsCount}
+        reportsCount={data.reportsCount}
       />
 
       {dataLoadError ? (
@@ -194,6 +263,7 @@ export default async function AdminPage({
 
       <TopCompaniesTable rows={data.topCompanies} />
       <FeedbackRequestsTable rows={data.feedbackRows} />
+      <CompanyCommentsTable comments={data.commentsRows} reported={data.reportsRows} />
     </main>
   );
 }

@@ -2,6 +2,8 @@ type Props = {
   uniqueUsers: number;
   companyViews: number;
   feedbackCount: number;
+  commentsCount: number;
+  reportsCount: number;
 };
 
 function KpiCard({
@@ -19,12 +21,20 @@ function KpiCard({
   );
 }
 
-export function AdminKpiCards({ uniqueUsers, companyViews, feedbackCount }: Props) {
+export function AdminKpiCards({
+  uniqueUsers,
+  companyViews,
+  feedbackCount,
+  commentsCount,
+  reportsCount,
+}: Props) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
       <KpiCard label="Unique Users" value={uniqueUsers} />
       <KpiCard label="Company Views" value={companyViews} />
       <KpiCard label="Feedback Requests" value={feedbackCount} />
+      <KpiCard label="Total Comments" value={commentsCount} />
+      <KpiCard label="Total Reports" value={reportsCount} />
     </div>
   );
 }
