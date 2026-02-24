@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { RequestIntakeButton } from "@/components/request-intake-button";
+import { CompanySearch } from "@/components/company-search";
 import { cn, hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -29,6 +30,7 @@ const Navbar = () => {
 
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-5">
+              <CompanySearch className="w-56 lg:w-64" />
               {navItems.map((item) => (
                 <Link
                   key={item.href}
@@ -79,6 +81,7 @@ const Navbar = () => {
 
         {isMenuOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 border-t border-border border-b border-border bg-background/95 backdrop-blur px-3 py-3 space-y-2">
+            <CompanySearch className="w-full mb-1" onNavigate={() => setIsMenuOpen(false)} />
             {navItems.map((item) => (
               <Link
                 key={item.href}
