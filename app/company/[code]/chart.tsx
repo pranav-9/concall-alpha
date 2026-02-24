@@ -56,8 +56,9 @@ const CustomLabel = (props: {
   index?: number;
   totalPoints: number;
   mobile: boolean;
+  fill: string;
 }) => {
-  const { x, y, value, index = 0, totalPoints, mobile } = props;
+  const { x, y, value, index = 0, totalPoints, mobile, fill } = props;
   const isTopScore = value >= 8.5; // Highlight scores 8.5 and above
   const isLatestPoint = index === totalPoints - 1;
   const isAlternatePoint = index % 2 === 0;
@@ -72,7 +73,7 @@ const CustomLabel = (props: {
       <text
         x={x}
         y={mobile ? y - 12 : y - 16}
-        fill="white"
+        fill={fill}
         textAnchor="middle"
         fontSize={mobile ? "10" : "11"}
         fontWeight="bold"
@@ -153,14 +154,28 @@ export function ChartLineLabel(props: {
   }[];
 }) {
   const [isMobile, setIsMobile] = useState(false);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 640px)");
-    const update = () => setIsMobile(mediaQuery.matches);
+    const mobileQuery = window.matchMedia("(max-width: 640px)");
+    const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const update = () => {
+      setIsMobile(mobileQuery.matches);
+      setIsDark(darkQuery.matches);
+    };
     update();
-    mediaQuery.addEventListener("change", update);
-    return () => mediaQuery.removeEventListener("change", update);
+    mobileQuery.addEventListener("change", update);
+    darkQuery.addEventListener("change", update);
+    return () => {
+      mobileQuery.removeEventListener("change", update);
+      darkQuery.removeEventListener("change", update);
+    };
   }, []);
+
+  const axisStroke = isDark ? "#94a3b8" : "#475569";
+  const gridStroke = isDark ? "#334155" : "#cbd5e1";
+  const lineStroke = isDark ? "#e2e8f0" : "#0f172a";
+  const labelFill = isDark ? "#e2e8f0" : "#1e293b";
 
   return (
     <Card className="w-full bg-transparent border-0 shadow-none">
@@ -176,7 +191,7 @@ export function ChartLineLabel(props: {
               bottom: 16,
             }}
           >
-            <CartesianGrid vertical={false} stroke="#374151" />
+            <CartesianGrid vertical={false} stroke={gridStroke} />
             <XAxis
               dataKey="qtr"
               tickLine={false}
@@ -184,10 +199,10 @@ export function ChartLineLabel(props: {
               tickMargin={8}
               minTickGap={isMobile ? 24 : 8}
               interval={isMobile ? "preserveStartEnd" : 0}
-              stroke="#9ca3af"
+              stroke={axisStroke}
             />
             <YAxis
-              stroke="#9ca3af"
+              stroke={axisStroke}
               tickLine={false}
               axisLine={false}
               domain={[0, 10]}
@@ -205,7 +220,7 @@ export function ChartLineLabel(props: {
             <Line
               dataKey="score"
               type="natural"
-              stroke="#ffffff"
+              stroke={lineStroke}
               strokeWidth={isMobile ? 2.5 : 3}
               dot={(dotProps: unknown) => {
                 const p = dotProps as {
@@ -274,6 +289,7 @@ export function ChartLineLabel(props: {
                       index={p.index}
                       totalPoints={props.chartData.length}
                       mobile={isMobile}
+                      fill={labelFill}
                     />
                   );
                 }}

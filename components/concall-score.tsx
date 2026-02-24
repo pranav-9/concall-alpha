@@ -8,38 +8,42 @@ export const categoryFor = (score: number) => {
     return {
       label: "Exceptional Bullish",
       bg: "bg-emerald-300",
-      ring: "ring-emerald-200/75",
+      ring: "ring-emerald-300/55 dark:ring-emerald-400/35",
     };
   if (score >= 9)
     return {
       label: "Very Strongly Bullish",
       bg: "bg-emerald-300",
-      ring: "ring-emerald-300/55",
+      ring: "ring-emerald-300/50 dark:ring-emerald-500/35",
     };
   if (score >= 8.5)
     return {
       label: "Strongly Bullish",
       bg: "bg-emerald-400",
-      ring: "ring-emerald-700/28",
+      ring: "ring-emerald-300/45 dark:ring-emerald-600/30",
     };
   if (score >= 7.5)
     return {
       label: "Mildly Bullish",
       bg: "bg-green-500",
-      ring: "ring-green-700/25",
+      ring: "ring-sky-300/45 dark:ring-sky-500/35",
     };
   if (score > 6.5)
-    return { label: "Neutral", bg: "bg-amber-400", ring: "ring-amber-700/25" };
+    return {
+      label: "Neutral",
+      bg: "bg-amber-400",
+      ring: "ring-amber-300/45 dark:ring-amber-600/30",
+    };
   if (score >= 5)
     return {
       label: "Mildly Bearish",
       bg: "bg-orange-500",
-      ring: "ring-orange-700/25",
+      ring: "ring-orange-300/45 dark:ring-orange-600/30",
     };
   return {
     label: "Strongly Bearish",
     bg: "bg-red-500",
-    ring: "ring-red-700/25",
+    ring: "ring-red-300/45 dark:ring-red-600/30",
   };
 };
 
@@ -68,11 +72,11 @@ const ConcallScore: React.FC<ConcallScoreProps> = ({
   return (
     <div className="inline-flex items-center gap-2">
       <Badge
-        aria-label={`Concall sentiment ${n.toFixed(1)} — ${cat.label}`}
+        aria-label={`Score ${n.toFixed(1)} — ${cat.label}`}
         title={cat.label}
         className={[
           "rounded-full aspect-square grid place-items-center font-extrabold text-black",
-          "shadow-sm ring-4",
+          "shadow-sm ring-[3px]",
           sizeMap[size],
           cat.bg,
           cat.ring,

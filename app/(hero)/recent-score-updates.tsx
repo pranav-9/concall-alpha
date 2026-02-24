@@ -63,9 +63,9 @@ const eventTimeMs = (value: string | null | undefined) =>
 
 const typeChipClass = (type: UpdateType) => {
   if (type === "quarter") {
-    return "bg-sky-900/30 border-sky-700/40 text-sky-200";
+    return "bg-sky-100 border-sky-300 text-sky-700 dark:bg-sky-900/30 dark:border-sky-700/40 dark:text-sky-200";
   }
-  return "bg-emerald-900/30 border-emerald-700/40 text-emerald-200";
+  return "bg-emerald-100 border-emerald-300 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700/40 dark:text-emerald-200";
 };
 
 const typeLabel = (type: UpdateType) => {
@@ -185,32 +185,34 @@ export default async function RecentScoreUpdates({
           <h2 className="text-base sm:text-lg font-bold text-foreground">
             Latest Updates
           </h2>
-          <p className="text-xs text-muted-foreground">
-            Time-ordered feed: quarter score, growth score, and new company updates
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Time-ordered feed: quarter score and growth score updates
           </p>
         </div>
 
         <div className="divide-y divide-border">
           {updates.map((item) => {
             const row = (
-              <div className="flex items-center justify-between gap-2 p-3 hover:bg-accent transition-colors">
+              <div className="flex items-center justify-between gap-2.5 px-3 py-2.5 hover:bg-accent/70 transition-colors">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
+                  <p className="text-sm font-semibold text-foreground truncate">
                     {item.companyName}
                   </p>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full border ${typeChipClass(item.type)}`}
+                      className={`text-[11px] px-2.5 py-0.5 rounded-full border font-medium ${typeChipClass(item.type)}`}
                     >
                       {item.type === "quarter" ? item.detail : typeLabel(item.type)}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-[11px] text-muted-foreground">
                       {formatDate(item.atRaw)}
                     </span>
                   </div>
                 </div>
                 {typeof item.score === "number" ? (
-                  <ConcallScore score={item.score} size="sm" />
+                  <div className="shrink-0">
+                    <ConcallScore score={item.score} size="sm" />
+                  </div>
                 ) : null}
               </div>
             );

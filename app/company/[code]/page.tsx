@@ -381,29 +381,29 @@ export default async function Page({
             <div
               className={`flex flex-col sm:flex-row sm:items-center gap-2 p-2 rounded-lg ${
                 trend.direction === "improving"
-                  ? "bg-emerald-500/20 border border-emerald-500/50"
+                  ? "bg-emerald-100 border border-emerald-300 dark:bg-emerald-500/20 dark:border-emerald-500/50"
                   : trend.direction === "declining"
-                  ? "bg-red-500/20 border border-red-500/50"
-                  : "bg-amber-500/20 border border-amber-500/50"
+                  ? "bg-red-100 border border-red-300 dark:bg-red-500/20 dark:border-red-500/50"
+                  : "bg-amber-100 border border-amber-300 dark:bg-amber-500/20 dark:border-amber-500/50"
               }`}
             >
               <div className="flex items-center gap-2">
                 {trend.direction === "improving" ? (
                   <>
-                    <TrendingUp className="h-5 w-5 text-emerald-400" />
-                    <span className="text-xs font-semibold text-emerald-300">
+                    <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                       Trend: Improving
                     </span>
                   </>
                 ) : trend.direction === "declining" ? (
                   <>
-                    <TrendingDown className="h-5 w-5 text-red-400" />
-                    <span className="text-xs font-semibold text-red-300">
+                    <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
+                    <span className="text-xs font-semibold text-red-700 dark:text-red-300">
                       Trend: Declining
                     </span>
                   </>
                 ) : (
-                  <span className="text-xs font-semibold text-amber-300">
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
                     ↔ Trend: Stable
                   </span>
                 )}
@@ -481,14 +481,18 @@ export default async function Page({
                               key={`${q.fy}-${q.qtr}-${idx}`}
                               className="basis-full md:basis-1/2 flex justify-center"
                             >
-                              <div className="rounded-lg border border-border bg-muted/40 p-3 shadow-sm h-full w-[90%]">
+                              <div
+                                className={`rounded-lg border border-border bg-card p-3 shadow-sm h-full w-[90%] ${
+                                  isLatest ? "border-t-2 border-t-sky-300 dark:border-t-sky-600" : ""
+                                }`}
+                              >
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="flex items-center gap-2">
                                     <span className="text-[11px] font-semibold text-foreground">
                                       {detailQuarterLabel}
                                     </span>
                                     {isLatest && (
-                                      <span className="text-[10px] font-semibold text-blue-300 px-2 py-0.5 rounded-full bg-blue-900/40">
+                                      <span className="text-[10px] font-semibold text-blue-700 px-2 py-0.5 rounded-full bg-blue-100 border border-blue-200 dark:text-blue-300 dark:bg-blue-900/40 dark:border-blue-700/40">
                                         Latest
                                       </span>
                                     )}
@@ -497,20 +501,20 @@ export default async function Page({
                                 </div>
                                 {/* category intentionally hidden */}
                                 {guidance && (
-                                  <p className="text-[11px] text-foreground leading-snug line-clamp-3 mb-2">
+                                  <p className="text-[11px] text-foreground/90 leading-relaxed line-clamp-3 mb-2">
                                     {guidance}
                                   </p>
                                 )}
                                 {quarterSummary.length > 0 && (
                                   <div className="mb-2">
-                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                                    <p className="text-[10px] uppercase tracking-wide text-foreground/70 font-semibold">
                                       Quarter summary
                                     </p>
                                     <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
                                       {quarterSummary.map((item, rIdx) => (
                                         <li
                                           key={rIdx}
-                                          className="text-[11px] text-foreground leading-snug line-clamp-2"
+                                          className="text-[11px] text-foreground/90 leading-relaxed line-clamp-2"
                                         >
                                           {item}
                                         </li>
@@ -520,14 +524,14 @@ export default async function Page({
                                 )}
                                 {rationale.length > 0 && (
                                   <div className="mb-2">
-                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                                    <p className="text-[10px] uppercase tracking-wide text-foreground/70 font-semibold">
                                       Rationale
                                     </p>
                                     <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
                                       {rationale.map((item, rIdx) => (
                                         <li
                                           key={rIdx}
-                                          className="text-[11px] text-foreground leading-snug line-clamp-2"
+                                          className="text-[11px] text-foreground/90 leading-relaxed line-clamp-2"
                                         >
                                           {item}
                                         </li>
@@ -546,7 +550,7 @@ export default async function Page({
                                       <DrawerTrigger asChild>
                                         <Button
                                           size="sm"
-                                          className="text-xs font-semibold uppercase tracking-wide bg-emerald-500 text-black border border-emerald-300 shadow-[0_0_0_1px_rgba(16,185,129,0.45),0_0_24px_rgba(16,185,129,0.35)] hover:bg-emerald-400 hover:shadow-[0_0_0_1px_rgba(52,211,153,0.65),0_0_28px_rgba(16,185,129,0.5)]"
+                                          className="text-xs font-semibold uppercase tracking-wide bg-emerald-500 text-black border border-emerald-300 shadow-sm hover:bg-emerald-400"
                                         >
                                           Show details
                                         </Button>
@@ -680,8 +684,8 @@ export default async function Page({
                         })}
                       </CarouselContent>
                       <div className="flex justify-center gap-2 mt-2">
-                        <CarouselPrevious className="static translate-x-0 translate-y-0" />
-                        <CarouselNext className="static translate-x-0 translate-y-0" />
+                        <CarouselPrevious className="static translate-x-0 translate-y-0 border border-border bg-background text-foreground hover:bg-accent" />
+                        <CarouselNext className="static translate-x-0 translate-y-0 border border-border bg-background text-foreground hover:bg-accent" />
                       </div>
                     </Carousel>
                   </div>
