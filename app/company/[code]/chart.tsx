@@ -25,6 +25,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+type ChartPoint = {
+  qtr: string;
+  score: number;
+};
+
 /**
  * Get dot color based on score value - granular 5-10 spectrum
  * More sensitive to changes in the typical range where most scores concentrate
@@ -54,25 +59,25 @@ const CustomLabel = (props: {
   y: number;
   value: number;
   index?: number;
-  totalPoints: number;
+  chartData: ChartPoint[];
   mobile: boolean;
   fill: string;
+  showStar: boolean;
 }) => {
-  const { x, y, value, index = 0, totalPoints, mobile, fill } = props;
+  const { x, y, value, index = 0, chartData, mobile, fill, showStar } = props;
   const isTopScore = value >= 8.5; // Highlight scores 8.5 and above
-  const isLatestPoint = index === totalPoints - 1;
-  const isAlternatePoint = index % 2 === 0;
 
-  // Keep mobile chart clean: show labels on alternate points, always include latest.
-  if (mobile && !isAlternatePoint && !isLatestPoint) {
+  if (!shouldShowLabel(index, chartData, mobile)) {
     return null;
   }
+
+  const labelYOffset = mobile ? 12 : value >= 9.0 ? 20 : 16;
 
   return (
     <g>
       <text
         x={x}
-        y={mobile ? y - 12 : y - 16}
+        y={y - labelYOffset}
         fill={fill}
         textAnchor="middle"
         fontSize={mobile ? "10" : "11"}
@@ -80,10 +85,10 @@ const CustomLabel = (props: {
       >
         {value.toFixed(1)}
       </text>
-      {isTopScore && !mobile && (
+      {isTopScore && showStar && (
         <text
           x={x + 10}
-          y={y - 16}
+          y={y - labelYOffset}
           fill="#fbbf24"
           textAnchor="start"
           fontSize="12"
@@ -95,6 +100,36 @@ const CustomLabel = (props: {
     </g>
   );
 };
+
+function isLocalExtreme(index: number, data: ChartPoint[]) {
+  if (index <= 0 || index >= data.length - 1) return false;
+  const prev = data[index - 1]?.score;
+  const curr = data[index]?.score;
+  const next = data[index + 1]?.score;
+  if (
+    typeof prev !== "number" ||
+    typeof curr !== "number" ||
+    typeof next !== "number"
+  ) {
+    return false;
+  }
+  return (curr > prev && curr > next) || (curr < prev && curr < next);
+}
+
+function shouldShowLabel(index: number, data: ChartPoint[], mobile: boolean) {
+  const lastIndex = data.length - 1;
+  if (index === 0 || index === lastIndex) return true;
+
+  if (mobile) {
+    return index % 2 === 0;
+  }
+
+  if (isLocalExtreme(index, data)) return true;
+
+  const interval = data.length > 12 ? 3 : data.length >= 10 ? 2 : 1;
+  if (interval === 1) return true;
+  return index % interval === 0;
+}
 
 /**
  * Custom dot component that colors based on score
@@ -148,10 +183,7 @@ const CustomActiveDot = (props: {
 };
 
 export function ChartLineLabel(props: {
-  chartData: {
-    qtr: string;
-    score: number;
-  }[];
+  chartData: ChartPoint[];
 }) {
   const [isMobile, setIsMobile] = useState(false);
   const [isDark, setIsDark] = useState(false);
@@ -176,6 +208,8 @@ export function ChartLineLabel(props: {
   const gridStroke = isDark ? "#334155" : "#cbd5e1";
   const lineStroke = isDark ? "#e2e8f0" : "#0f172a";
   const labelFill = isDark ? "#e2e8f0" : "#1e293b";
+  const denseDesktop = !isMobile && props.chartData.length >= 10;
+  const showStar = !isMobile && props.chartData.length <= 10;
 
   return (
     <Card className="w-full bg-transparent border-0 shadow-none">
@@ -197,8 +231,8 @@ export function ChartLineLabel(props: {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              minTickGap={isMobile ? 24 : 8}
-              interval={isMobile ? "preserveStartEnd" : 0}
+              minTickGap={isMobile ? 24 : denseDesktop ? 28 : 8}
+              interval={isMobile || denseDesktop ? "preserveStartEnd" : 0}
               stroke={axisStroke}
             />
             <YAxis
@@ -287,9 +321,10 @@ export function ChartLineLabel(props: {
                       y={y}
                       value={value}
                       index={p.index}
-                      totalPoints={props.chartData.length}
+                      chartData={props.chartData}
                       mobile={isMobile}
                       fill={labelFill}
+                      showStar={showStar}
                     />
                   );
                 }}
