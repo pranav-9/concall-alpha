@@ -150,6 +150,11 @@ type ConcallDetails = {
   confidence?: number;
 };
 
+type RankInfo = {
+  quarter?: { rank: number; total: number; percentile: number } | null;
+  growth?: { rank: number; total: number; percentile: number } | null;
+};
+
 const parseJsonObject = (val: unknown) => {
   if (!val) return null;
   if (typeof val === "string") {
@@ -321,6 +326,101 @@ export default async function Page({
       ? parseFloat(growthScoreRaw)
       : null;
 
+  const toNumeric = (value: unknown): number | null => {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string") {
+      const parsed = parseFloat(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+  };
+
+  let rankInfo: RankInfo = { quarter: null, growth: null };
+
+  // Quarter rank: latest global quarter across concall_analysis
+  const { data: latestQuarterKey } = await supabase
+    .from("concall_analysis")
+    .select("fy, qtr")
+    .order("fy", { ascending: false })
+    .order("qtr", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latestQuarterKey?.fy != null && latestQuarterKey?.qtr != null) {
+    const { data: latestQuarterRows } = await supabase
+      .from("concall_analysis")
+      .select("company_code, score")
+      .eq("fy", latestQuarterKey.fy)
+      .eq("qtr", latestQuarterKey.qtr);
+
+    const quarterRanked = (latestQuarterRows ?? [])
+      .map((row) => ({
+        companyCode: String((row as { company_code?: string }).company_code ?? "").toUpperCase(),
+        score: toNumeric((row as { score?: unknown }).score),
+      }))
+      .filter((row) => row.companyCode && row.score != null)
+      .sort((a, b) => {
+        if ((b.score ?? 0) !== (a.score ?? 0)) return (b.score ?? 0) - (a.score ?? 0);
+        return a.companyCode.localeCompare(b.companyCode);
+      });
+
+    const quarterTotal = quarterRanked.length;
+    const quarterRank =
+      quarterRanked.findIndex((row) => row.companyCode === code.toUpperCase()) + 1;
+    if (quarterTotal > 0 && quarterRank > 0) {
+      rankInfo = {
+        ...rankInfo,
+        quarter: {
+          rank: quarterRank,
+          total: quarterTotal,
+          percentile: ((quarterTotal - quarterRank + 1) / quarterTotal) * 100,
+        },
+      };
+    }
+  }
+
+  // Growth rank: latest row per company from growth_outlook
+  const { data: growthRankRows } = await supabase
+    .from("growth_outlook")
+    .select("company, growth_score, base_growth_pct, run_timestamp")
+    .order("run_timestamp", { ascending: false });
+
+  const latestGrowthByCompany = new Map<string, { company: string; growthScore: number; base: number | null }>();
+  (growthRankRows ?? []).forEach((row) => {
+    const companyKey = String((row as { company?: string }).company ?? "").toUpperCase();
+    if (!companyKey || latestGrowthByCompany.has(companyKey)) return;
+    const growthScoreValue = toNumeric((row as { growth_score?: unknown }).growth_score);
+    if (growthScoreValue == null) return;
+    latestGrowthByCompany.set(companyKey, {
+      company: companyKey,
+      growthScore: growthScoreValue,
+      base: toNumeric((row as { base_growth_pct?: unknown }).base_growth_pct),
+    });
+  });
+
+  const growthRanked = Array.from(latestGrowthByCompany.values()).sort((a, b) => {
+    if (b.growthScore !== a.growthScore) return b.growthScore - a.growthScore;
+    const aBase = a.base ?? Number.NEGATIVE_INFINITY;
+    const bBase = b.base ?? Number.NEGATIVE_INFINITY;
+    if (bBase !== aBase) return bBase - aBase;
+    return a.company.localeCompare(b.company);
+  });
+
+  const growthTotal = growthRanked.length;
+  const growthKeys = [code.toUpperCase(), (companyName ?? "").toUpperCase()].filter(Boolean);
+  const growthRank =
+    growthRanked.findIndex((row) => growthKeys.includes(row.company)) + 1;
+  if (growthTotal > 0 && growthRank > 0) {
+    rankInfo = {
+      ...rankInfo,
+      growth: {
+        rank: growthRank,
+        total: growthTotal,
+        percentile: ((growthTotal - growthRank + 1) / growthTotal) * 100,
+      },
+    };
+  }
+
   const renderScenarioCard = (scenarioKey: "base" | "upside" | "downside") => {
     const scenario = growthOutlook?.scenarios?.[scenarioKey] as GrowthScenario | undefined;
     if (!scenario) return null;
@@ -448,6 +548,7 @@ export default async function Page({
             exchange: companyRow?.exchange ?? undefined,
             country: companyRow?.country ?? undefined,
           }}
+          rankInfo={rankInfo}
         />
 
         <SectionCard id="sentiment-score" title="Quarterly Score">
