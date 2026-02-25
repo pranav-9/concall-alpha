@@ -22,7 +22,7 @@ type CompanyRecord = {
   fy: number;
   qtr: number;
   quarter_label: string | null;
-  company: { name: string | null } | null;
+  company: { name?: string | null; sector?: string | null; sub_sector?: string | null } | null;
 };
 
 type RawConcallRow = {
@@ -31,12 +31,17 @@ type RawConcallRow = {
   fy: number;
   qtr: number;
   quarter_label?: string | null;
-  company?: { name: string | null }[] | { name: string | null } | null;
+  company?:
+    | { name?: string | null; sector?: string | null; sub_sector?: string | null }[]
+    | { name?: string | null; sector?: string | null; sub_sector?: string | null }
+    | null;
 };
 
 type ListItem = {
   code: string;
   name: string;
+  sector?: string | null;
+  subSector?: string | null;
   latestScore: number;
   delta?: number | null;
   sum4?: number | null;
@@ -49,6 +54,7 @@ type ListBlock = {
   scoreKey?: "latest" | "avg4";
   items: ListItem[];
   signal?: "sentiment" | "growth";
+  showSectorPill?: boolean;
 };
 
 type GrowthRow = {
@@ -80,7 +86,7 @@ type GrowthItem = {
 const fetchAll = async (supabase: SupabaseServerClient) => {
   const { data, error } = await supabase
     .from("concall_analysis")
-    .select("company_code, score, fy, qtr, quarter_label, company(name)")
+    .select("company_code, score, fy, qtr, quarter_label, company(name, sector, sub_sector)")
     .order("fy", { ascending: false })
     .order("qtr", { ascending: false });
 
@@ -94,8 +100,8 @@ const fetchAll = async (supabase: SupabaseServerClient) => {
       qtr: r.qtr,
       quarter_label: r.quarter_label ?? null,
       company: Array.isArray(r.company)
-        ? r.company[0] ?? { name: null }
-        : r.company ?? { name: null },
+        ? r.company[0] ?? { name: null, sector: null, sub_sector: null }
+        : r.company ?? { name: null, sector: null, sub_sector: null },
     };
   });
   return normalized;
@@ -135,6 +141,8 @@ const buildLists = (records: CompanyRecord[]) => {
   companyMap.forEach((rows, code) => {
     const sorted = [...rows].sort((a, b) => b.fy - a.fy || b.qtr - a.qtr);
     const name = sorted[0]?.company?.name ?? "—";
+    const sector = sorted[0]?.company?.sector ?? null;
+    const subSector = sorted[0]?.company?.sub_sector ?? null;
     const latestRec =
       latest &&
       sorted.find((r) => r.fy === latest.fy && r.qtr === latest.qtr);
@@ -152,6 +160,8 @@ const buildLists = (records: CompanyRecord[]) => {
     companies.push({
       code,
       name,
+      sector,
+      subSector,
       latestScore: latestRec ? Number(latestRec.score) : NaN,
       delta,
       sum4,
@@ -171,6 +181,7 @@ const buildLists = (records: CompanyRecord[]) => {
       .sort((a, b) => b.latestScore - a.latestScore)
       .slice(0, 5),
     scoreKey: "latest",
+    showSectorPill: true,
   };
 
   const decliners = companies
@@ -187,6 +198,8 @@ const buildLists = (records: CompanyRecord[]) => {
   companyMap.forEach((rows, code) => {
     const sorted = [...rows].sort((a, b) => b.fy - a.fy || b.qtr - a.qtr);
     const name = sorted[0]?.company?.name ?? "—";
+    const sector = sorted[0]?.company?.sector ?? null;
+    const subSector = sorted[0]?.company?.sub_sector ?? null;
     if (!latest) return;
     const latestRec = sorted.find((r) => r.fy === latest.fy && r.qtr === latest.qtr);
     if (!latestRec) return;
@@ -204,6 +217,8 @@ const buildLists = (records: CompanyRecord[]) => {
     trendTwistItems.push({
       code,
       name,
+      sector,
+      subSector,
       latestScore: Number(latestRec.score),
       twistPct,
       avg4: prevFourAvg,
@@ -408,7 +423,19 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
 
 export default TopStocks;
 
-function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey?: "latest" | "avg4"; signal?: "sentiment" | "growth" } }) {
+function ListCard({
+  list,
+}: {
+  list: {
+    title: string;
+    items: ListItem[];
+    scoreKey?: "latest" | "avg4";
+    signal?: "sentiment" | "growth";
+    showSectorPill?: boolean;
+  };
+}) {
+  const formatSector = (sector?: string | null) => sector?.trim() || null;
+
   return (
     <div className="flex flex-col rounded-xl border border-border bg-card">
       <div className="p-3 font-bold text-foreground text-base sm:text-lg bg-muted/40 rounded-t-xl border-b border-border">
@@ -425,40 +452,48 @@ function ListCard({ list }: { list: { title: string; items: ListItem[]; scoreKey
         {list.items.length === 0 && (
           <p className="text-sm text-muted-foreground">Not enough data.</p>
         )}
-        {list.items.map((s, index) => (
-          <div key={index}>
-            <Link href={"/company/" + s.code} prefetch={false}>
-              <div className="flex gap-2 bg-muted/40 rounded-lg p-2 items-start border border-border/60 hover:bg-muted/60 transition-colors">
-                <div className="flex w-full gap-2 items-start">
-                  <p className="p-1 text-xs text-muted-foreground leading-snug">{index + 1}.</p>
+        {list.items.map((s, index) => {
+          const sectorLabel = formatSector(s.sector);
+          return (
+            <div key={index}>
+              <Link href={"/company/" + s.code} prefetch={false}>
+                <div className="flex gap-2 bg-muted/40 rounded-lg p-2 items-start border border-border/60 hover:bg-muted/60 transition-colors">
+                  <div className="flex w-full gap-2 items-start">
+                    <p className="p-1 text-xs text-muted-foreground leading-snug">{index + 1}.</p>
 
-                  <div className="flex flex-col w-3/4 gap-1">
-                    <p className="font-medium text-sm leading-tight line-clamp-1 text-foreground">
-                      {s.name}
-                    </p>
-                    {typeof s.twistPct === "number" && (
-                      <p className="text-[11px] text-muted-foreground leading-tight line-clamp-1">
-                        {`${s.twistPct >= 0 ? "+" : ""}${s.twistPct.toFixed(1)}% vs prev 4Q avg`}
+                    <div className="flex flex-col w-3/4 gap-1">
+                      <p className="font-medium text-sm leading-tight line-clamp-1 text-foreground">
+                        {s.name}
                       </p>
+                      {list.showSectorPill && sectorLabel && (
+                        <span className="w-fit max-w-full truncate text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                          {sectorLabel}
+                        </span>
+                      )}
+                      {typeof s.twistPct === "number" && (
+                        <p className="text-[11px] text-muted-foreground leading-tight line-clamp-1">
+                          {`${s.twistPct >= 0 ? "+" : ""}${s.twistPct.toFixed(1)}% vs prev 4Q avg`}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-0.5 min-w-[72px]">
+                    {list.scoreKey === "avg4" && typeof s.avg4 === "number" && (
+                      <>
+                        <ConcallScore score={s.avg4} />
+                      </>
+                    )}
+                    {list.scoreKey !== "avg4" && !Number.isNaN(s.latestScore) && (
+                      <>
+                        <ConcallScore score={s.latestScore} />
+                      </>
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-0.5 min-w-[72px]">
-                  {list.scoreKey === "avg4" && typeof s.avg4 === "number" && (
-                    <>
-                      <ConcallScore score={s.avg4} />
-                    </>
-                  )}
-                  {list.scoreKey !== "avg4" && !Number.isNaN(s.latestScore) && (
-                    <>
-                      <ConcallScore score={s.latestScore} />
-                    </>
-                  )}
-                </div>
-              </div>
-            </Link>
-          </div>
-        ))}
+              </Link>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
