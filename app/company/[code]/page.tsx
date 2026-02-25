@@ -206,66 +206,6 @@ const getTimelineStageDisplay = (stage?: string | null) => {
   return timelineStageConfig.unknown;
 };
 
-const monthMap: Record<string, number> = {
-  jan: 1,
-  feb: 2,
-  mar: 3,
-  apr: 4,
-  may: 5,
-  jun: 6,
-  jul: 7,
-  aug: 8,
-  sep: 9,
-  sept: 9,
-  oct: 10,
-  nov: 11,
-  dec: 12,
-};
-
-const parseTimelinePeriodRank = (period?: string | null) => {
-  const p = (period ?? "").trim();
-  if (!p) return { category: 4, rank: Number.MAX_SAFE_INTEGER };
-
-  const quarterMatch = p.match(/^Q([1-4])\s*\/?\s*FY(\d{2,4})E?$/i);
-  if (quarterMatch) {
-    const quarter = Number(quarterMatch[1]);
-    const fyRaw = quarterMatch[2];
-    const fy = fyRaw.length === 2 ? 2000 + Number(fyRaw) : Number(fyRaw);
-    return { category: 1, rank: fy * 10 + quarter };
-  }
-
-  const monthYearMatch = p.match(/^([A-Za-z]{3,9})[-\s](\d{4})$/);
-  if (monthYearMatch) {
-    const monthKey = monthYearMatch[1].slice(0, 4).toLowerCase();
-    const month =
-      monthMap[monthKey.slice(0, 3)] ??
-      monthMap[monthKey];
-    const year = Number(monthYearMatch[2]);
-    if (month && Number.isFinite(year)) {
-      return { category: 2, rank: year * 100 + month };
-    }
-  }
-
-  const fyOnlyMatch = p.match(/^FY(\d{2,4})E?$/i);
-  if (fyOnlyMatch) {
-    const fyRaw = fyOnlyMatch[1];
-    const fy = fyRaw.length === 2 ? 2000 + Number(fyRaw) : Number(fyRaw);
-    return { category: 3, rank: fy * 10 };
-  }
-
-  return { category: 4, rank: Number.MAX_SAFE_INTEGER };
-};
-
-const sortTimelineEvidence = (items: TimelineEvidenceItem[] = []) =>
-  [...items].sort((a, b) => {
-    const aRank = parseTimelinePeriodRank(a.period);
-    const bRank = parseTimelinePeriodRank(b.period);
-    if (aRank.category !== bRank.category) return aRank.category - bRank.category;
-    if (aRank.rank !== bRank.rank) return aRank.rank - bRank.rank;
-    return 0;
-  });
-
-
 export async function generateMetadata({
   params,
 }: {
@@ -843,16 +783,14 @@ export default async function Page({
                     <Carousel opts={{ align: "start" }} className="w-full">
                       <CarouselContent>
                         {growthOutlook.catalysts_next_12_24m.slice(0, 4).map((c, idx) => {
-                          const timelineItems = sortTimelineEvidence(
-                            (c.timeline_evidence ?? []).filter((t) => {
-                              const stage = (t.stage ?? "").trim();
-                              const period = (t.period ?? "").trim();
-                              const source = (t.source ?? "").trim();
-                              const quote = (t.quote_or_fact ?? "").trim();
-                              const delta = (t.delta_vs_prev ?? "").trim();
-                              return Boolean(stage || period || source || quote || delta);
-                            }),
-                          );
+                          const timelineItems = (c.timeline_evidence ?? []).filter((t) => {
+                            const stage = (t.stage ?? "").trim();
+                            const period = (t.period ?? "").trim();
+                            const source = (t.source ?? "").trim();
+                            const quote = (t.quote_or_fact ?? "").trim();
+                            const delta = (t.delta_vs_prev ?? "").trim();
+                            return Boolean(stage || period || source || quote || delta);
+                          });
 
                           return (
                             <CarouselItem key={idx} className="basis-full lg:basis-1/2">
