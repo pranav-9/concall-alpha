@@ -326,7 +326,6 @@ export default async function Page({
     if (!scenario) return null;
     const drivers = Array.isArray(scenario.key_drivers) ? scenario.key_drivers : [];
     const risks = Array.isArray(scenario.key_risks) ? scenario.key_risks : [];
-    const refs = Array.isArray(scenario.evidence_refs) ? scenario.evidence_refs : [];
     const accentClass =
       scenarioKey === "base"
         ? "border-l-emerald-500/70"
@@ -355,29 +354,7 @@ export default async function Page({
               Growth: {scenario.revenue_growth_pct}
             </span>
           )}
-          {scenario.margin_trend_bps != null && (
-            <span className="px-2 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/35 dark:text-sky-100 dark:border-sky-700/40">
-              Margin: {String(scenario.margin_trend_bps)}
-            </span>
-          )}
-          {scenario.fcf_direction && (
-            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
-              FCF: {scenario.fcf_direction}
-            </span>
-          )}
         </div>
-        {refs.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {refs.slice(0, 3).map((ref, idx) => (
-              <span
-                key={idx}
-                className="text-[10px] px-2 py-0.5 rounded-full border bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/35 dark:text-blue-200 dark:border-blue-700/40"
-              >
-                {ref}
-              </span>
-            ))}
-          </div>
-        )}
         {drivers.length > 0 && (
           <div className="space-y-1">
             <p className="text-[10px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300 font-semibold">
