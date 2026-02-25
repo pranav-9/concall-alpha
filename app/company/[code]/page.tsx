@@ -326,6 +326,8 @@ export default async function Page({
     if (!scenario) return null;
     const drivers = Array.isArray(scenario.key_drivers) ? scenario.key_drivers : [];
     const risks = Array.isArray(scenario.key_risks) ? scenario.key_risks : [];
+    const primaryDriver = (drivers[0] ?? "").trim();
+    const primaryRisk = (risks[0] ?? "").trim();
     const accentClass =
       scenarioKey === "base"
         ? "border-l-emerald-500/70"
@@ -336,7 +338,7 @@ export default async function Page({
     return (
       <div
         key={scenarioKey}
-        className={`rounded-lg border border-border bg-muted/40 p-2.5 space-y-1.5 border-l-2 ${accentClass}`}
+        className={`rounded-lg border border-border bg-muted/30 p-3 space-y-2 border-l-2 ${accentClass}`}
       >
         <div className="flex items-center justify-between text-[10px]">
           <span className="px-2 py-0.5 rounded-full bg-muted text-foreground font-semibold uppercase tracking-wide">
@@ -355,39 +357,77 @@ export default async function Page({
             </span>
           )}
         </div>
-        {drivers.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+            Quick takeaway
+          </p>
           <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300 font-semibold">
-              Drivers
-            </p>
-            <div className="space-y-1">
-              {drivers.slice(0, 2).map((d, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 dark:border-emerald-900/30 dark:bg-emerald-950/15"
-                >
-                  <p className="text-[11px] text-foreground leading-snug">{d}</p>
-                </div>
-              ))}
-            </div>
+            {primaryDriver ? (
+              <p className="text-[11px] text-foreground leading-snug line-clamp-2">
+                {primaryDriver}
+              </p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                No primary driver provided.
+              </p>
+            )}
+            {primaryRisk ? (
+              <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
+                Risk watch: {primaryRisk}
+              </p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                No primary risk provided.
+              </p>
+            )}
           </div>
-        )}
-        {risks.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wide text-red-700 dark:text-red-300 font-semibold">
-              Risks
-            </p>
-            <div className="space-y-1">
-              {risks.slice(0, 2).map((r, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-md border border-red-200 bg-red-50 px-2 py-1 dark:border-red-900/30 dark:bg-red-950/15"
-                >
-                  <p className="text-[11px] text-foreground leading-snug">{r}</p>
+        </div>
+
+        {(drivers.length > 1 || risks.length > 1) && (
+          <details className="group rounded-md border border-border bg-muted/20 px-2 py-1.5">
+            <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
+              <span className="group-open:hidden">
+                Show details ({Math.min(drivers.length, 2)} drivers, {Math.min(risks.length, 2)} risks)
+              </span>
+              <span className="hidden group-open:inline">Hide details</span>
+            </summary>
+            <div className="mt-2 space-y-2">
+              {drivers.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300 font-semibold">
+                    Drivers
+                  </p>
+                  <ul className="space-y-1">
+                    {drivers.slice(0, 2).map((d, idx) => (
+                      <li
+                        key={idx}
+                        className="text-[11px] text-foreground leading-snug rounded-sm border-l border-emerald-400/60 pl-2"
+                      >
+                        {d}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              ))}
+              )}
+              {risks.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase tracking-wide text-red-700 dark:text-red-300 font-semibold">
+                    Risks
+                  </p>
+                  <ul className="space-y-1">
+                    {risks.slice(0, 2).map((r, idx) => (
+                      <li
+                        key={idx}
+                        className="text-[11px] text-foreground leading-snug rounded-sm border-l border-red-400/60 pl-2"
+                      >
+                        {r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-          </div>
+          </details>
         )}
       </div>
     );
@@ -901,12 +941,17 @@ export default async function Page({
                   </div>
                 )}
               {growthOutlook.variant_perception && (
-                <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
-                  <p className="text-[11px] uppercase tracking-wide text-foreground/80 font-semibold">
-                    Variant perception
-                  </p>
+                <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
+                      Variant perception
+                    </p>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                      Non-consensus view
+                    </span>
+                  </div>
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-                    <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1 border-l-2 border-l-slate-400/70">
+                    <div className="rounded-md border border-border bg-card p-2.5 space-y-1.5 border-l-2 border-l-slate-400/70">
                       <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
                         Consensus
                       </span>
@@ -919,36 +964,84 @@ export default async function Page({
                       )}
                     </div>
 
-                    <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1 border-l-2 border-l-emerald-500/70">
+                    <div className="rounded-md border border-border bg-card p-2.5 space-y-1.5 border-l-2 border-l-emerald-500/70">
                       <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-200 dark:border-emerald-700/40">
                         Upside
                       </span>
                       {Array.isArray(growthOutlook.variant_perception.upside_nonconsensus) &&
                       growthOutlook.variant_perception.upside_nonconsensus.length > 0 ? (
-                        <div className="space-y-1">
-                          {growthOutlook.variant_perception.upside_nonconsensus.map((x, idx) => (
-                            <div key={idx} className="rounded-md border border-emerald-900/30 bg-emerald-950/20 px-2 py-1">
-                              <p className="text-[11px] text-foreground leading-snug">{x}</p>
-                            </div>
-                          ))}
+                        <div className="space-y-1.5">
+                          <ul className="space-y-1.5">
+                            <li className="relative pl-3 text-[11px] text-foreground leading-snug">
+                              <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500/70" />
+                              {growthOutlook.variant_perception.upside_nonconsensus[0]}
+                            </li>
+                          </ul>
+                          {growthOutlook.variant_perception.upside_nonconsensus.length > 1 && (
+                            <details className="group">
+                              <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
+                                <span className="group-open:hidden">
+                                  Show more ({growthOutlook.variant_perception.upside_nonconsensus.length - 1})
+                                </span>
+                                <span className="hidden group-open:inline">Hide extras</span>
+                              </summary>
+                              <ul className="mt-1.5 space-y-1.5">
+                                {growthOutlook.variant_perception.upside_nonconsensus
+                                  .slice(1)
+                                  .map((x, idx) => (
+                                    <li
+                                      key={idx}
+                                      className="relative pl-3 text-[11px] text-foreground leading-snug"
+                                    >
+                                      <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500/60" />
+                                      {x}
+                                    </li>
+                                  ))}
+                              </ul>
+                            </details>
+                          )}
                         </div>
                       ) : (
                         <p className="text-[11px] text-muted-foreground leading-snug">No upside variants.</p>
                       )}
                     </div>
 
-                    <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1 border-l-2 border-l-red-500/70">
+                    <div className="rounded-md border border-border bg-card p-2.5 space-y-1.5 border-l-2 border-l-red-500/70">
                       <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-red-200 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200 dark:border-red-700/40">
                         Downside
                       </span>
                       {Array.isArray(growthOutlook.variant_perception.downside_nonconsensus) &&
                       growthOutlook.variant_perception.downside_nonconsensus.length > 0 ? (
-                        <div className="space-y-1">
-                          {growthOutlook.variant_perception.downside_nonconsensus.map((x, idx) => (
-                            <div key={idx} className="rounded-md border border-red-900/30 bg-red-950/15 px-2 py-1">
-                              <p className="text-[11px] text-foreground leading-snug">{x}</p>
-                            </div>
-                          ))}
+                        <div className="space-y-1.5">
+                          <ul className="space-y-1.5">
+                            <li className="relative pl-3 text-[11px] text-foreground leading-snug">
+                              <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500/70" />
+                              {growthOutlook.variant_perception.downside_nonconsensus[0]}
+                            </li>
+                          </ul>
+                          {growthOutlook.variant_perception.downside_nonconsensus.length > 1 && (
+                            <details className="group">
+                              <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
+                                <span className="group-open:hidden">
+                                  Show more ({growthOutlook.variant_perception.downside_nonconsensus.length - 1})
+                                </span>
+                                <span className="hidden group-open:inline">Hide extras</span>
+                              </summary>
+                              <ul className="mt-1.5 space-y-1.5">
+                                {growthOutlook.variant_perception.downside_nonconsensus
+                                  .slice(1)
+                                  .map((x, idx) => (
+                                    <li
+                                      key={idx}
+                                      className="relative pl-3 text-[11px] text-foreground leading-snug"
+                                    >
+                                      <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500/60" />
+                                      {x}
+                                    </li>
+                                  ))}
+                              </ul>
+                            </details>
+                          )}
                         </div>
                       ) : (
                         <p className="text-[11px] text-muted-foreground leading-snug">No downside variants.</p>
