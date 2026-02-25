@@ -351,7 +351,12 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
     .sort((a, b) => {
       const aScore = typeof a.growthScore === "number" ? a.growthScore : null;
       const bScore = typeof b.growthScore === "number" ? b.growthScore : null;
-      if (aScore != null && bScore != null) return bScore - aScore;
+      if (aScore != null && bScore != null) {
+        if (bScore !== aScore) return bScore - aScore;
+        const aBaseTie = a.base ?? Number.NEGATIVE_INFINITY;
+        const bBaseTie = b.base ?? Number.NEGATIVE_INFINITY;
+        return bBaseTie - aBaseTie;
+      }
       if (aScore != null) return -1;
       if (bScore != null) return 1;
       const aBase = a.base ?? a.upside ?? 0;
