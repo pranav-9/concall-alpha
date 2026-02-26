@@ -34,6 +34,13 @@ type SectorOverviewRow = {
   growthEligibleCount: number;
 };
 
+type SectorSortKey =
+  | "sector"
+  | "companies"
+  | "subsectors"
+  | "latest_qtr"
+  | "growth";
+
 export const metadata: Metadata = {
   title: "Sectors – Story of a Stock",
   description: "Sector overview with company count, latest quarter score and growth score averages.",
@@ -53,7 +60,20 @@ const avg = (values: number[]) => {
   return values.reduce((sum, v) => sum + v, 0) / values.length;
 };
 
-export default async function SectorsPage() {
+export default async function SectorsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ sort?: SectorSortKey; order?: "asc" | "desc" }>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const sortBy: SectorSortKey =
+    resolvedSearchParams?.sort === "sector" ||
+    resolvedSearchParams?.sort === "companies" ||
+    resolvedSearchParams?.sort === "subsectors" ||
+    resolvedSearchParams?.sort === "growth"
+      ? resolvedSearchParams.sort
+      : "latest_qtr";
+  const sortOrder: "asc" | "desc" = resolvedSearchParams?.order === "asc" ? "asc" : "desc";
   const supabase = await createClient();
 
   const [{ data: companiesData }, { data: latestQuarterKey }, { data: growthRowsData }] =
@@ -162,28 +182,71 @@ export default async function SectorsPage() {
       avgGrowthScore: avg(bucket.growthScores),
       growthEligibleCount: bucket.growthScores.length,
     }))
-    .sort((a, b) => {
-      const aQ = a.avgLatestQuarterScore;
-      const bQ = b.avgLatestQuarterScore;
-      if (aQ == null && bQ != null) return 1;
-      if (aQ != null && bQ == null) return -1;
-      if (aQ != null && bQ != null && bQ !== aQ) return bQ - aQ;
+    .filter((row) => row.companyCount > 1);
 
-      const aG = a.avgGrowthScore;
-      const bG = b.avgGrowthScore;
-      if (aG == null && bG != null) return 1;
-      if (aG != null && bG == null) return -1;
-      if (aG != null && bG != null && bG !== aG) return bG - aG;
+  const compareNullLast = (
+    a: number | null,
+    b: number | null,
+    order: "asc" | "desc",
+  ) => {
+    if (a == null && b == null) return 0;
+    if (a == null) return 1;
+    if (b == null) return -1;
+    return order === "asc" ? a - b : b - a;
+  };
 
-      if (b.companyCount !== a.companyCount) return b.companyCount - a.companyCount;
-      return a.sector.localeCompare(b.sector);
-    });
+  const sortedRows = [...rows].sort((a, b) => {
+    if (sortBy === "sector") {
+      const primary = sortOrder === "asc"
+        ? a.sector.localeCompare(b.sector)
+        : b.sector.localeCompare(a.sector);
+      if (primary !== 0) return primary;
+    } else if (sortBy === "companies") {
+      const primary = sortOrder === "asc"
+        ? a.companyCount - b.companyCount
+        : b.companyCount - a.companyCount;
+      if (primary !== 0) return primary;
+    } else if (sortBy === "subsectors") {
+      const primary = sortOrder === "asc"
+        ? a.subSectorCount - b.subSectorCount
+        : b.subSectorCount - a.subSectorCount;
+      if (primary !== 0) return primary;
+    } else if (sortBy === "growth") {
+      const primary = compareNullLast(a.avgGrowthScore, b.avgGrowthScore, sortOrder);
+      if (primary !== 0) return primary;
+    } else {
+      const primary = compareNullLast(a.avgLatestQuarterScore, b.avgLatestQuarterScore, sortOrder);
+      if (primary !== 0) return primary;
+    }
+
+    const tieQ = compareNullLast(a.avgLatestQuarterScore, b.avgLatestQuarterScore, "desc");
+    if (tieQ !== 0) return tieQ;
+    const tieG = compareNullLast(a.avgGrowthScore, b.avgGrowthScore, "desc");
+    if (tieG !== 0) return tieG;
+    if (b.companyCount !== a.companyCount) return b.companyCount - a.companyCount;
+    return a.sector.localeCompare(b.sector);
+  });
 
   const latestQuarterLabel = latestQuarterKey?.quarter_label
     ? String(latestQuarterKey.quarter_label)
     : latestQuarterKey?.fy != null && latestQuarterKey?.qtr != null
       ? `Q${latestQuarterKey.qtr} FY${latestQuarterKey.fy}`
       : null;
+
+  const headerHref = (key: SectorSortKey) => {
+    const nextOrder = sortBy === key && sortOrder === "desc" ? "asc" : "desc";
+    const query = new URLSearchParams();
+    if (key !== "latest_qtr") query.set("sort", key);
+    if (nextOrder !== "desc") query.set("order", nextOrder);
+    const qs = query.toString();
+    return qs ? `/sectors?${qs}` : "/sectors";
+  };
+
+  const headerLabel = (key: SectorSortKey, text: string) => {
+    const active = sortBy === key || (key === "latest_qtr" && !resolvedSearchParams?.sort);
+    const arrow = active ? (sortOrder === "desc" ? "↓" : "↑") : "↕";
+    return `${text} ${arrow}`;
+  };
 
   return (
     <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-10 space-y-5 sm:space-y-6">
@@ -203,15 +266,35 @@ export default async function SectorsPage() {
         <table className="w-full text-sm">
           <thead className="bg-muted/40 border-b border-border">
             <tr className="text-left">
-              <th className="px-3 py-2 font-semibold text-foreground">Sector</th>
-              <th className="px-3 py-2 font-semibold text-foreground">Companies</th>
-              <th className="px-3 py-2 font-semibold text-foreground">Sub-sectors</th>
-              <th className="px-3 py-2 font-semibold text-foreground">Avg latest qtr score</th>
-              <th className="px-3 py-2 font-semibold text-foreground">Avg growth score</th>
+              <th className="px-3 py-2 font-semibold text-foreground">
+                <Link href={headerHref("sector")} className="hover:underline" prefetch={false}>
+                  {headerLabel("sector", "Sector")}
+                </Link>
+              </th>
+              <th className="px-3 py-2 font-semibold text-foreground">
+                <Link href={headerHref("companies")} className="hover:underline" prefetch={false}>
+                  {headerLabel("companies", "Companies")}
+                </Link>
+              </th>
+              <th className="px-3 py-2 font-semibold text-foreground">
+                <Link href={headerHref("subsectors")} className="hover:underline" prefetch={false}>
+                  {headerLabel("subsectors", "Sub-sectors")}
+                </Link>
+              </th>
+              <th className="px-3 py-2 font-semibold text-foreground">
+                <Link href={headerHref("latest_qtr")} className="hover:underline" prefetch={false}>
+                  {headerLabel("latest_qtr", "Avg latest qtr score")}
+                </Link>
+              </th>
+              <th className="px-3 py-2 font-semibold text-foreground">
+                <Link href={headerHref("growth")} className="hover:underline" prefetch={false}>
+                  {headerLabel("growth", "Avg growth score")}
+                </Link>
+              </th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {sortedRows.map((row) => (
               <tr key={row.slug} className="border-b border-border/60 last:border-b-0">
                 <td className="px-3 py-2">
                   <Link href={`/sector/${row.slug}`} className="underline text-foreground" prefetch={false}>
@@ -249,7 +332,11 @@ export default async function SectorsPage() {
           </tbody>
         </table>
       </div>
+      {sortedRows.length === 0 && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+          No sectors with more than 1 company available.
+        </div>
+      )}
     </div>
   );
 }
-
