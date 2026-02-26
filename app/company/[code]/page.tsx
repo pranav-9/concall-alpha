@@ -895,12 +895,34 @@ export default async function Page({
               {Array.isArray(growthOutlook.catalysts_next_12_24m) &&
                 growthOutlook.catalysts_next_12_24m.length > 0 && (
                   <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
-                    <p className="text-[11px] uppercase tracking-wide text-foreground/80 font-semibold">
-                      Catalysts (next 12-24 months)
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
+                        Catalysts (next 12-24 months)
+                      </p>
+                      <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                        <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
+                          Total triggers: {growthOutlook.catalysts_next_12_24m.length}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                          Visible per view: 1 / 2 / 3
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border md:hidden">
+                          Slides: {growthOutlook.catalysts_next_12_24m.length}
+                        </span>
+                        <span className="hidden md:inline-flex xl:hidden px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                          Slides: {Math.ceil(growthOutlook.catalysts_next_12_24m.length / 2)}
+                        </span>
+                        <span className="hidden xl:inline-flex px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                          Slides: {Math.ceil(growthOutlook.catalysts_next_12_24m.length / 3)}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Swipe or use arrows to browse all triggers.
                     </p>
                     <Carousel opts={{ align: "start" }} className="w-full">
                       <CarouselContent>
-                        {growthOutlook.catalysts_next_12_24m.slice(0, 4).map((c, idx) => {
+                        {growthOutlook.catalysts_next_12_24m.map((c, idx) => {
                           const timelineItems = (c.timeline_evidence ?? []).filter((t) => {
                             const stage = (t.stage ?? "").trim();
                             const period = (t.period ?? "").trim();
@@ -911,9 +933,9 @@ export default async function Page({
                           });
 
                           return (
-                            <CarouselItem key={idx} className="basis-full lg:basis-1/2">
+                            <CarouselItem key={idx} className="basis-full md:basis-1/2 xl:basis-1/3">
                               <div
-                                className={`h-full rounded-md border border-border bg-muted/30 p-2.5 space-y-1.5 ${
+                                className={`h-full rounded-md border border-border bg-muted/30 p-3 space-y-2 ${
                                   c.expected_impact === "revenue"
                                     ? "border-l-2 border-l-emerald-500/70"
                                     : c.expected_impact === "margin"
@@ -945,62 +967,114 @@ export default async function Page({
                                   )}
                                 </div>
                                 {c.catalyst && (
-                                  <p className="text-[12px] font-medium text-foreground leading-snug">
+                                  <p className="text-sm font-semibold text-foreground leading-snug">
                                     {c.catalyst}
                                   </p>
                                 )}
 
                                 {timelineItems.length > 0 && (
                                   <div className="space-y-1.5">
-                                    <p className="text-[10px] uppercase tracking-wide text-foreground/80 font-semibold">
+                                    <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
                                       Timeline
                                     </p>
-                                    <ul className="space-y-2">
-                                      {timelineItems.map((t, tIdx) => {
-                                        const stageMeta = getTimelineStageDisplay(t.stage);
-                                        const period = (t.period ?? "").trim();
-                                        const source = (t.source ?? "").trim();
-                                        const quote = (t.quote_or_fact ?? "").trim();
-                                        const delta = (t.delta_vs_prev ?? "").trim();
-                                        return (
-                                          <li
-                                            key={`${idx}-timeline-${tIdx}`}
-                                            className="relative pl-4 space-y-1"
-                                          >
-                                            <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                                            <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-                                              <span
-                                                className={`px-2 py-0.5 rounded-full uppercase tracking-wide ${stageMeta.className}`}
-                                              >
-                                                {stageMeta.label}
-                                              </span>
-                                              {(period || source) && (
-                                                <span className="text-muted-foreground">
-                                                  {period}
-                                                  {period && source ? " · " : ""}
-                                                  {source}
+                                    <div className="relative pl-4 before:content-[''] before:absolute before:left-[3px] before:top-1 before:bottom-1 before:w-px before:bg-border/80">
+                                      <ul className="space-y-2">
+                                        {timelineItems.slice(0, 2).map((t, tIdx) => {
+                                          const stageMeta = getTimelineStageDisplay(t.stage);
+                                          const period = (t.period ?? "").trim();
+                                          const source = (t.source ?? "").trim();
+                                          const quote = (t.quote_or_fact ?? "").trim();
+                                          const delta = (t.delta_vs_prev ?? "").trim();
+                                          return (
+                                            <li
+                                              key={`${idx}-timeline-primary-${tIdx}`}
+                                              className="relative pl-3 space-y-1 border-l border-border/60 ml-1"
+                                            >
+                                              <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-muted-foreground" />
+                                              <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                                                <span
+                                                  className={`px-2 py-0.5 rounded-full uppercase tracking-wide ${stageMeta.className}`}
+                                                >
+                                                  {stageMeta.label}
                                                 </span>
+                                                {(period || source) && (
+                                                  <span className="text-muted-foreground">
+                                                    {period}
+                                                    {period && source ? " · " : ""}
+                                                    {source}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              {quote && (
+                                                <p className="text-[11px] text-foreground leading-snug line-clamp-2">
+                                                  {quote}
+                                                </p>
                                               )}
-                                            </div>
-                                            {quote && (
-                                              <p className="text-[11px] text-foreground leading-snug">
-                                                {quote}
-                                              </p>
-                                            )}
-                                            {delta && (
-                                              <p className="text-[10px] text-muted-foreground leading-snug">
-                                                {delta}
-                                              </p>
-                                            )}
-                                          </li>
-                                        );
-                                      })}
-                                    </ul>
+                                              {delta && (
+                                                <p className="text-[10px] text-muted-foreground leading-snug">
+                                                  {delta}
+                                                </p>
+                                              )}
+                                            </li>
+                                          );
+                                        })}
+                                      </ul>
+                                    </div>
+                                    {timelineItems.length > 2 && (
+                                      <details className="text-[10px] text-muted-foreground">
+                                        <summary className="cursor-pointer hover:text-foreground/80">
+                                          Show full timeline ({timelineItems.length})
+                                        </summary>
+                                        <div className="relative pl-4 mt-1.5 before:content-[''] before:absolute before:left-[3px] before:top-1 before:bottom-1 before:w-px before:bg-border/80">
+                                          <ul className="space-y-2">
+                                            {timelineItems.slice(2).map((t, tIdx) => {
+                                              const stageMeta = getTimelineStageDisplay(t.stage);
+                                              const period = (t.period ?? "").trim();
+                                              const source = (t.source ?? "").trim();
+                                              const quote = (t.quote_or_fact ?? "").trim();
+                                              const delta = (t.delta_vs_prev ?? "").trim();
+                                              return (
+                                                <li
+                                                  key={`${idx}-timeline-extra-${tIdx}`}
+                                                  className="relative pl-3 space-y-1 border-l border-border/60 ml-1"
+                                                >
+                                                  <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-muted-foreground" />
+                                                  <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                                                    <span
+                                                      className={`px-2 py-0.5 rounded-full uppercase tracking-wide ${stageMeta.className}`}
+                                                    >
+                                                      {stageMeta.label}
+                                                    </span>
+                                                    {(period || source) && (
+                                                      <span className="text-muted-foreground">
+                                                        {period}
+                                                        {period && source ? " · " : ""}
+                                                        {source}
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                  {quote && (
+                                                    <p className="text-[11px] text-foreground leading-snug">
+                                                      {quote}
+                                                    </p>
+                                                  )}
+                                                  {delta && (
+                                                    <p className="text-[10px] text-muted-foreground leading-snug">
+                                                      {delta}
+                                                    </p>
+                                                  )}
+                                                </li>
+                                              );
+                                            })}
+                                          </ul>
+                                        </div>
+                                      </details>
+                                    )}
                                   </div>
                                 )}
 
                                 {Array.isArray(c.evidence) && c.evidence.length > 0 && (
-                                  <div className="space-y-1">
+                                  <div className="space-y-1 pt-2 border-t border-border/60">
                                     {timelineItems.length > 0 ? (
                                       <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
                                         Supporting evidence
@@ -1017,7 +1091,7 @@ export default async function Page({
                                           Show evidence ({c.evidence.length})
                                         </summary>
                                         <div className="mt-1 space-y-1">
-                                          {c.evidence.slice(1, 3).map((ev, evIdx) => (
+                                          {c.evidence.slice(1).map((ev, evIdx) => (
                                             <p key={evIdx} className="leading-snug text-foreground">
                                               • {ev.period ? `${ev.period} · ` : ""}
                                               {ev.source ? `${ev.source} · ` : ""}
