@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { categoryFor } from "@/components/concall-score";
+import { slugifySector } from "@/app/sector/utils";
 import { QuarterData } from "../types";
 
 interface OverviewCardProps {
@@ -45,6 +47,15 @@ const rankPillText = (
 export function OverviewCard({ data, companyInfo, rankInfo }: OverviewCardProps) {
   const sentiment = data ? categoryFor(data.score) : null;
   const codeLabel = companyInfo?.code ?? data?.company_code ?? "—";
+  const sectorHref = companyInfo?.sector
+    ? `/sector/${slugifySector(companyInfo.sector)}`
+    : null;
+  const subSectorHref =
+    companyInfo?.sector && companyInfo?.subSector
+      ? `/sector/${slugifySector(companyInfo.sector)}?subSector=${encodeURIComponent(
+          companyInfo.subSector,
+        )}`
+      : null;
   return (
     <div id="overview" className="bg-card border border-border rounded-lg p-6">
       <div className="flex flex-col gap-3">
@@ -77,13 +88,21 @@ export function OverviewCard({ data, companyInfo, rankInfo }: OverviewCardProps)
         {companyInfo?.sector && (
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-              <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
+              <Link
+                href={sectorHref ?? "#"}
+                prefetch={false}
+                className="px-2 py-1 rounded-full bg-muted text-foreground border border-border hover:bg-accent transition-colors"
+              >
                 Sector: {companyInfo.sector}
-              </span>
+              </Link>
               {companyInfo?.subSector && (
-                <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
+                <Link
+                  href={subSectorHref ?? "#"}
+                  prefetch={false}
+                  className="px-2 py-1 rounded-full bg-muted text-foreground border border-border hover:bg-accent transition-colors"
+                >
                   Sub-sector: {companyInfo.subSector}
-                </span>
+                </Link>
               )}
             </div>
           </div>
