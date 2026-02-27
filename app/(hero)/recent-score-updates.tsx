@@ -169,8 +169,37 @@ export default async function RecentScoreUpdates({
 }: {
   heroPanel?: boolean;
 } = {}) {
-  const updates = await getUnifiedUpdates(6);
+  const isCompact = heroPanel;
+  const updates = await getUnifiedUpdates(isCompact ? 8 : 6);
   if (updates.length === 0) return null;
+
+  const headerClass = isCompact
+    ? "p-3 border-b border-border"
+    : "p-3 sm:p-4 border-b border-border";
+  const titleClass = isCompact
+    ? "text-base font-bold text-foreground"
+    : "text-base sm:text-lg font-bold text-foreground";
+  const subtitleClass = isCompact
+    ? "text-xs text-muted-foreground leading-snug"
+    : "text-xs text-muted-foreground leading-relaxed";
+  const rowClass = isCompact
+    ? "flex items-center justify-between gap-2 px-3 py-2 hover:bg-accent/70 transition-colors"
+    : "flex items-center justify-between gap-2.5 px-3 py-2.5 hover:bg-accent/70 transition-colors";
+  const companyNameClass = isCompact
+    ? "text-sm font-semibold leading-tight text-foreground truncate"
+    : "text-sm font-semibold text-foreground truncate";
+  const metaRowClass = isCompact
+    ? "mt-0.5 flex flex-wrap items-center gap-1.5 text-xs"
+    : "mt-0.5 flex flex-wrap items-center gap-2 text-xs";
+  const chipClass = isCompact
+    ? "text-[10px] px-2 py-[2px] rounded-full border font-medium"
+    : "text-[11px] px-2.5 py-0.5 rounded-full border font-medium";
+  const dateClass = isCompact
+    ? "text-[10px] text-muted-foreground"
+    : "text-[11px] text-muted-foreground";
+  const footerClass = isCompact
+    ? "px-3 pb-2.5 pt-1.5 border-t border-border"
+    : "px-3 sm:px-4 pb-3 sm:pb-4 pt-2 border-t border-border";
 
   return (
     <section className={heroPanel ? "w-full" : "w-[95%] sm:w-[90%] pt-6 sm:pt-8"}>
@@ -181,11 +210,11 @@ export default async function RecentScoreUpdates({
       )}
 
       <div className="rounded-xl border border-border bg-card">
-        <div className="p-3 sm:p-4 border-b border-border">
-          <h2 className="text-base sm:text-lg font-bold text-foreground">
+        <div className={headerClass}>
+          <h2 className={titleClass}>
             Latest Updates
           </h2>
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className={subtitleClass}>
             Time-ordered feed: quarter score and growth score updates
           </p>
         </div>
@@ -193,18 +222,18 @@ export default async function RecentScoreUpdates({
         <div className="divide-y divide-border">
           {updates.map((item) => {
             const row = (
-              <div className="flex items-center justify-between gap-2.5 px-3 py-2.5 hover:bg-accent/70 transition-colors">
+              <div className={rowClass}>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">
+                  <p className={companyNameClass}>
                     {item.companyName}
                   </p>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">
+                  <div className={metaRowClass}>
                     <span
-                      className={`text-[11px] px-2.5 py-0.5 rounded-full border font-medium ${typeChipClass(item.type)}`}
+                      className={`${chipClass} ${typeChipClass(item.type)}`}
                     >
                       {item.type === "quarter" ? item.detail : typeLabel(item.type)}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className={dateClass}>
                       {formatDate(item.atRaw)}
                     </span>
                   </div>
@@ -233,7 +262,7 @@ export default async function RecentScoreUpdates({
           })}
         </div>
 
-        <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-2 border-t border-border">
+        <div className={footerClass}>
           <Link
             href="/company"
             prefetch={false}
