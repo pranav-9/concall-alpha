@@ -4,29 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import TopStocks from "./(hero)/top-stocks";
 import RecentScoreUpdates from "./(hero)/recent-score-updates";
 
-function TopStocksFallback() {
-  return (
-    <div className="flex w-[95%] flex-col items-center gap-4 pt-8 sm:pt-12">
-      <div className="text-center space-y-1">
-        <p className="text-2xl sm:text-3xl lg:text-5xl font-extrabold !leading-tight">
-          Concall Signals
-        </p>
-        <p className="text-xs sm:text-sm text-muted-foreground px-2">
-          Loading latest rankings...
-        </p>
-      </div>
-      <div className="w-full sm:w-[90%] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.from({ length: 3 }).map((_, idx) => (
-          <div
-            key={idx}
-            className="rounded-xl border border-border bg-card p-3 h-44 animate-pulse"
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function TopStocksHeroFallback() {
   return (
     <section className="w-full">
@@ -58,11 +35,11 @@ export default async function Home() {
           </div>
         </div>
 
-        <div className="lg:hidden w-full">
-          <RecentScoreUpdates />
-          <Suspense fallback={<TopStocksFallback />}>
-            <TopStocks />
+        <div className="lg:hidden w-[95%] sm:w-[90%] pt-6 sm:pt-8 space-y-6">
+          <Suspense fallback={<TopStocksHeroFallback />}>
+            <TopStocks heroPanel />
           </Suspense>
+          <RecentScoreUpdates heroPanel />
         </div>
         <section className="w-[95%] sm:w-[90%] pt-6 sm:pt-8">
           <div className="rounded-2xl border border-border bg-gradient-to-r from-card via-card to-muted/40 p-4 sm:p-5 lg:p-6">
