@@ -6,7 +6,9 @@ import { DataTable } from "@/app/company/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 
 export type GrowthRowTable = {
-  company: string;
+  companyCode: string;
+  companyName: string;
+  updatedAt?: string | null;
   growthScore?: number | null;
   base?: number | null;
   upside?: number | null;
@@ -19,6 +21,17 @@ const formatPct = (value: number | null | undefined) => {
   return `${rounded}%`;
 };
 
+const formatDate = (value: string | null | undefined) => {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(d);
+};
+
 const growthColumns: ColumnDef<GrowthRowTable>[] = [
   {
     id: "rank",
@@ -26,13 +39,14 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
     cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.index + 1}</span>,
   },
   {
-    accessorKey: "company",
+    accessorKey: "companyName",
     header: "Company",
     cell: ({ row }) => {
-      const name = row.getValue("company") as string;
+      const name = row.original.companyName || row.original.companyCode;
+      const code = row.original.companyCode;
       return (
         <Link
-          href={`/company/${name}`}
+          href={`/company/${code}`}
           prefetch={false}
           className="hover:underline font-semibold text-foreground"
         >
@@ -78,6 +92,13 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
     header: "Downside %",
     cell: ({ row }) => (
       <span className="text-foreground">{formatPct(row.getValue("downside") as number | null)}</span>
+    ),
+  },
+  {
+    accessorKey: "updatedAt",
+    header: "Updated",
+    cell: ({ row }) => (
+      <span className="text-foreground">{formatDate(row.getValue("updatedAt") as string | null)}</span>
     ),
   },
 ];
