@@ -4,13 +4,7 @@ import Link from "next/link";
 import ConcallScore from "@/components/concall-score";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+import TopStocksHeroRail from "@/app/(hero)/top-stocks-hero-rail";
 
 export const revalidate = 300;
 
@@ -51,6 +45,7 @@ type ListItem = {
 
 type ListBlock = {
   title: string;
+  subtitle?: string;
   scoreKey?: "latest" | "avg4";
   items: ListItem[];
   signal?: "sentiment" | "growth";
@@ -125,7 +120,16 @@ const uniqueQuarters = (records: CompanyRecord[]) => {
 };
 
 const buildLists = (records: CompanyRecord[]) => {
-  if (!records.length) return { strength: [], weakness: [], latestTop: null, latestLabel: "", trendTwist: null };
+  if (!records.length) {
+    return {
+      strength: [],
+      weakness: [],
+      latestTop: null,
+      latestLabel: "",
+      positiveTrendTwist: null,
+      negativeTrendTwist: null,
+    };
+  }
 
   const quarters = uniqueQuarters(records);
   const latest = quarters[0];
@@ -225,10 +229,24 @@ const buildLists = (records: CompanyRecord[]) => {
     });
   });
 
-  const trendTwist: ListBlock = {
-    title: "Quarter Trend Twist",
+  const positiveTrendTwist: ListBlock = {
+    title: "Positive Trend Twist",
+    subtitle:
+      "Companies whose latest quarter score is meaningfully above their previous 4-quarter average.",
     items: trendTwistItems
-      .sort((a, b) => Math.abs(b.twistPct ?? 0) - Math.abs(a.twistPct ?? 0))
+      .filter((item) => (item.twistPct ?? 0) > 0)
+      .sort((a, b) => (b.twistPct ?? 0) - (a.twistPct ?? 0))
+      .slice(0, 5),
+    scoreKey: "latest",
+  };
+
+  const negativeTrendTwist: ListBlock = {
+    title: "Negative Trend Twist",
+    subtitle:
+      "Companies whose latest quarter score is meaningfully below their previous 4-quarter average.",
+    items: trendTwistItems
+      .filter((item) => (item.twistPct ?? 0) < 0)
+      .sort((a, b) => (a.twistPct ?? 0) - (b.twistPct ?? 0))
       .slice(0, 5),
     scoreKey: "latest",
   };
@@ -242,7 +260,14 @@ const buildLists = (records: CompanyRecord[]) => {
     { title: "Biggest Decliners (QoQ)", items: decliners, scoreKey: "latest" },
   ];
 
-  return { strength, weakness, latestTop, latestLabel: latest?.label ?? "", trendTwist };
+  return {
+    strength,
+    weakness,
+    latestTop,
+    latestLabel: latest?.label ?? "",
+    positiveTrendTwist,
+    negativeTrendTwist,
+  };
 };
 
 const parsePct = (val: string | number | null | undefined): number | null => {
@@ -330,12 +355,14 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
     );
   }
 
-  const { strength, latestTop, latestLabel, trendTwist } = buildLists(records);
+  const { strength, latestTop, latestLabel, positiveTrendTwist, negativeTrendTwist } = buildLists(records);
   const latestTopForHero =
     latestTop != null
       ? {
           ...latestTop,
           title: `${latestLabel || "Latest qtr"} Top Performers`,
+          subtitle:
+            "Highest quarter sentiment scores in the latest reported quarter across covered companies.",
         }
       : strength[0];
   const { sumMap, nameMap } = buildFourQSumMap(records);
@@ -366,31 +393,45 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
     .map((item, idx) => ({ ...item, rank: idx + 1 }));
 
   if (heroPanel) {
+    const slides = [
+      {
+        key: "quarter" as const,
+        railLabel: "Quarter Leaders" as const,
+        type: "list" as const,
+        list: latestTopForHero,
+      },
+      {
+        key: "growth" as const,
+        railLabel: "Growth Leaders" as const,
+        type: "growth" as const,
+        items: sortedGrowth,
+        subtitle:
+          "Companies with the strongest forward growth outlook based on latest guidance-driven growth scores.",
+      },
+      ...(positiveTrendTwist && positiveTrendTwist.items.length > 0
+        ? [
+            {
+              key: "twist_positive" as const,
+              railLabel: "Positive Twist" as const,
+              type: "list" as const,
+              list: positiveTrendTwist,
+            },
+          ]
+        : []),
+      ...(negativeTrendTwist && negativeTrendTwist.items.length > 0
+        ? [
+            {
+              key: "twist_negative" as const,
+              railLabel: "Negative Twist" as const,
+              type: "list" as const,
+              list: negativeTrendTwist,
+            },
+          ]
+        : []),
+    ];
+
     return (
-      <section className="w-full">
-        <Carousel opts={{ align: "start" }} className="w-full">
-          <CarouselContent>
-            <CarouselItem className="basis-full">
-              <ListCard list={latestTopForHero} />
-            </CarouselItem>
-            <CarouselItem className="basis-full">
-              <GrowthListCard items={sortedGrowth} />
-            </CarouselItem>
-            {trendTwist && (
-              <CarouselItem className="basis-full">
-                <ListCard list={trendTwist} />
-              </CarouselItem>
-            )}
-          </CarouselContent>
-          <div className="mt-2 flex items-center justify-center gap-2">
-            <span className="text-[10px] px-2 py-1 rounded-full border border-border text-muted-foreground bg-muted/30">
-              {trendTwist ? "3 slides" : "2 slides"}
-            </span>
-            <CarouselPrevious className="static translate-x-0 translate-y-0" />
-            <CarouselNext className="static translate-x-0 translate-y-0" />
-          </div>
-        </Carousel>
-      </section>
+      <TopStocksHeroRail slides={slides} />
     );
   }
 
