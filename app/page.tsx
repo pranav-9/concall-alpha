@@ -89,7 +89,11 @@ function buildCoverageUniverse(
   const recentlyAddedCompanies = recentlyAddedCandidates
     .sort((a, b) => b.createdAtSort - a.createdAtSort || a.name.localeCompare(b.name))
     .slice(0, 5)
-    .map(({ createdAtSort: _createdAtSort, ...company }) => company);
+    .map((company) => {
+      const { createdAtSort, ...rest } = company;
+      void createdAtSort;
+      return rest;
+    });
 
   return {
     totalCompanies,
