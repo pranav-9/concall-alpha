@@ -406,85 +406,57 @@ export default async function Home() {
         </section>
         <section className="w-[95%] sm:w-[90%] py-4 sm:py-6">
           <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 lg:p-8">
-            <div className="max-w-2xl">
+            <div className="max-w-3xl">
               <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                How It Works
+                Why It Matters for Investors
               </p>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-foreground leading-tight max-w-xl">
-                Decision support in 3 steps
+              <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-foreground leading-tight max-w-2xl">
+                Top investor advantages for understanding long-term earnings power
               </h2>
-              <p className="mt-4 text-sm sm:text-base text-muted-foreground">
-                We transform raw quarterly commentary into a consistent system
-                you can scan, compare, and track over time.
+              <p className="mt-4 text-sm sm:text-base text-muted-foreground leading-relaxed">
+                This platform is built for investors who care about where earnings
+                are going, not just what got reported. It helps you connect business
+                drivers, management decisions, and execution signals into a clearer
+                view of future earnings potential.
               </p>
             </div>
 
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {[
                 {
-                  title: "1) Parse & structure",
-                  body: "Convert dense concalls and disclosures into crisp, comparable points.",
+                  title: "See Future Earnings Drivers",
+                  body: "Go beyond reported numbers to understand the business levers shaping long-term earnings power, from capacity and product mix to pricing and customer traction.",
                 },
                 {
-                  title: "2) Score what matters",
-                  body: "Apply a structured scoring framework to highlight strength, weakness, and direction.",
+                  title: "Catch Strategy and Execution Shifts Early",
+                  body: "Track changes in management priorities, expansion plans, capital allocation, and operating milestones before they are fully visible in the financial statements.",
                 },
                 {
-                  title: "3) Track & compare",
-                  body: "Use timelines and leaderboards to monitor change and prioritize research.",
+                  title: "Get Context, Not Just Data",
+                  body: "Use scores, timelines, and source-backed commentary together so you can quickly understand what changed, why it matters, and what to watch next.",
                 },
-              ].map((item) => (
+              ].map((feature, index) => (
                 <div
-                  key={item.title}
-                  className="rounded-xl border border-border bg-muted/40 p-3 sm:p-4 min-h-32 hover:bg-accent transition-colors"
+                  key={feature.title}
+                  className="rounded-xl border border-border/50 bg-muted/25 p-3 sm:p-4 min-h-36 hover:bg-accent transition-colors"
                 >
                   <p className="text-sm font-semibold text-foreground leading-snug flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/90" />
-                    {item.title}
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        index === 0
+                          ? "bg-emerald-400/90"
+                          : index === 1
+                          ? "bg-sky-400/90"
+                          : "bg-slate-400/90"
+                      }`}
+                    />
+                    {feature.title}
                   </p>
                   <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                    {item.body}
+                    {feature.body}
                   </p>
                 </div>
               ))}
-            </div>
-            <div className="mt-6 border-t border-border pt-6">
-              <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                Top Features
-              </p>
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {[
-                  {
-                    title: "Quarter Score Timeline",
-                    body: "See how a company’s quarterly score evolves over time, not just one data point.",
-                  },
-                  {
-                    title: "Growth Outlook Scenarios",
-                    body: "Base, upside, and downside growth cases with confidence and key risk/driver context.",
-                  },
-                  {
-                    title: "Concall Detail Drawer",
-                    body: "Open quarter-level rationale, guidance, results summary, and risks in one place.",
-                  },
-                  {
-                    title: "Latest Updates Feed",
-                    body: "Know what changed recently across quarter-score and growth updates.",
-                  },
-                ].map((feature) => (
-                  <div
-                    key={feature.title}
-                    className="rounded-lg border border-border bg-muted/30 p-3 min-h-28 hover:bg-accent transition-colors"
-                  >
-                    <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-sky-400/90" />
-                      {feature.title}
-                    </p>
-                    <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                      {feature.body}
-                    </p>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </section>
