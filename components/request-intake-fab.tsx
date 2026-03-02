@@ -11,7 +11,7 @@ export function RequestIntakeFab() {
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div id="request-intake-fab" className="fixed bottom-4 right-4 z-50">
       <RequestIntakeButton
         triggerLabel="Submit Request"
         triggerVariant="default"
