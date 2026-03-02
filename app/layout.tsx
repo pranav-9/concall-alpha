@@ -8,6 +8,7 @@ import "./globals.css";
 import Navbar from "./(hero)/navbar";
 import { RequestIntakeFab } from "@/components/request-intake-fab";
 import { PageViewTracker } from "@/components/page-view-tracker";
+import { SiteFooter } from "@/components/site-footer";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -32,19 +33,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
-        <Navbar></Navbar>
+      <body className={`${geistSans.className} min-h-screen bg-background text-foreground antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <Suspense fallback={null}>
-            <PageViewTracker />
-          </Suspense>
-          {children}
-          <RequestIntakeFab />
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <Suspense fallback={null}>
+              <PageViewTracker />
+            </Suspense>
+            <div className="flex-1">
+              {children}
+            </div>
+            <SiteFooter />
+            <RequestIntakeFab />
+          </div>
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />

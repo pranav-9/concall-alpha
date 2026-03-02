@@ -491,20 +491,6 @@ export default async function Home() {
         <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
         <div className="py-4 sm:py-8 lg:py-12 flex flex-col gap-8 sm:gap-12 lg:gap-16 w-full p-5 items-center"></div>
 
-        <footer className="sm:w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-4 sm:gap-8 py-10 sm:py-16">
-          <p>
-            An experimental project by{" "}
-            <a
-              href="https://pranavyadav.dev/"
-              target="_blank"
-              className="font-bold hover:underline"
-              rel="noreferrer"
-            >
-              Pranav Yadav
-            </a>
-          </p>
-          {/* <ThemeSwitcher /> */}
-        </footer>
       </div>
     </main>
   );
