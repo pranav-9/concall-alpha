@@ -45,12 +45,22 @@ type GrowthScenario = {
   fcf_direction?: string | null;
   margin_trend_bps?: string | number | null;
   revenue_growth_pct?: string | number | null;
+  description?: string | null;
+  ebitda_margin?: string | number | null;
+  revenue_growth?: string | number | null;
 };
 
 type EvidenceItem = {
   period?: string | null;
   source?: string | null;
   quote_or_fact?: string | null;
+  fact?: string | null;
+  timing?: string | null;
+  snippet?: string | null;
+  doc_type?: string | null;
+  metric_value?: string | number | null;
+  doc_date_or_period?: string | null;
+  section_or_slide_title?: string | null;
 };
 
 type TimelineEvidenceItem = {
@@ -94,6 +104,17 @@ type VariantPerception = {
   consensus_vs_company?: string | null;
   upside_nonconsensus?: string[] | null;
   downside_nonconsensus?: string[] | null;
+  low?: string | null;
+  high?: string | null;
+  catalyst_to_variant_delta?: string | null;
+};
+
+type GrowthScoreStep = {
+  catalyst?: string | null;
+  certainty?: number | null;
+  progression?: number | null;
+  time_relevance?: number | null;
+  weighted_priority_norm?: number | null;
 };
 
 type EarningsDirection = {
@@ -117,15 +138,16 @@ type GrowthOutlook = {
   horizon_quarters?: number | null;
   visibility_score?: number | null;
   summary_bullets?: string[] | null;
-   growth_score?: number | string | null;
+  growth_score?: number | string | null;
   growth_score_formula?: string | null;
-  growth_score_steps?: string[] | null;
+  growth_score_steps?: GrowthScoreStep[] | string[] | null;
   visibility_rationale?: string | null;
   run_timestamp?: string | null;
   trajectory?: string | { trajectory?: string; short_rationale?: string; value?: string; rationale?: string } | null;
   trajectory_rationale?: string | null;
   source_files?: SourceFileRef[] | null;
   variant_perception?: VariantPerception | null;
+  fact_base?: EvidenceItem[] | null;
   industry_setup?: IndustrySetup | null;
   earnings_direction?: EarningsDirection | null;
   earnings_levers?: EarningsLevers | null;
@@ -209,6 +231,34 @@ const getTimelineStageDisplay = (stage?: string | null) => {
     };
   }
   return timelineStageConfig.unknown;
+};
+
+const isUnknownLike = (value?: string | null) => {
+  const normalized = (value ?? "").trim().toLowerCase();
+  return normalized === "" || normalized === "unknown" || normalized === "n/a" || normalized === "na";
+};
+
+const getEvidenceLine = (item?: EvidenceItem | null) => {
+  if (!item) {
+    return { meta: "", text: "Evidence available" };
+  }
+
+  const period = (item.period ?? item.doc_date_or_period ?? "").trim();
+  const source = (item.source ?? item.doc_type ?? "").trim();
+  const text =
+    (item.quote_or_fact ?? item.fact ?? item.snippet ?? "").trim() || "Evidence available";
+
+  return {
+    meta: [period, source].filter(Boolean).join(" · "),
+    text,
+  };
+};
+
+const normalizeVisibilityPercent = (value: number) => {
+  if (!Number.isFinite(value)) return null;
+  if (value <= 1) return Math.round(value * 100);
+  if (value <= 5) return Math.round((value / 5) * 100);
+  return Math.round(value);
 };
 
 export async function generateMetadata({
@@ -428,6 +478,14 @@ export default async function Page({
     const risks = Array.isArray(scenario.key_risks) ? scenario.key_risks : [];
     const primaryDriver = (drivers[0] ?? "").trim();
     const primaryRisk = (risks[0] ?? "").trim();
+    const fallbackDescription = (scenario.description ?? "").trim();
+    const growthValue =
+      scenario.revenue_growth_pct != null
+        ? scenario.revenue_growth_pct
+        : scenario.revenue_growth != null
+        ? scenario.revenue_growth
+        : null;
+    const marginValue = scenario.ebitda_margin != null ? scenario.ebitda_margin : null;
     const accentClass =
       scenarioKey === "base"
         ? "border-l-emerald-500/70"
@@ -451,9 +509,14 @@ export default async function Page({
           )}
         </div>
         <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-          {scenario.revenue_growth_pct && (
+          {growthValue && (
             <span className="px-2 py-0.5 rounded-full border bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/35 dark:text-emerald-100 dark:border-emerald-700/40">
-              Growth: {scenario.revenue_growth_pct}
+              Growth: {String(growthValue)}
+            </span>
+          )}
+          {marginValue && (
+            <span className="px-2 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/35 dark:text-sky-100 dark:border-sky-700/40">
+              EBITDA margin: {String(marginValue)}
             </span>
           )}
         </div>
@@ -466,6 +529,10 @@ export default async function Page({
               <p className="text-[11px] text-foreground leading-snug line-clamp-2">
                 {primaryDriver}
               </p>
+            ) : fallbackDescription ? (
+              <p className="text-[11px] text-foreground leading-snug line-clamp-2">
+                {fallbackDescription}
+              </p>
             ) : (
               <p className="text-[11px] text-muted-foreground leading-snug">
                 No primary driver provided.
@@ -475,10 +542,12 @@ export default async function Page({
               <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
                 Risk watch: {primaryRisk}
               </p>
-            ) : (
+            ) : !primaryDriver && !fallbackDescription ? (
               <p className="text-[11px] text-muted-foreground leading-snug">
                 No primary risk provided.
               </p>
+            ) : (
+              <></>
             )}
           </div>
         </div>
@@ -882,7 +951,7 @@ export default async function Page({
                 )}
                 {typeof growthOutlook.visibility_score === "number" && (
                   <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
-                    Visibility: {(growthOutlook.visibility_score * 100).toFixed(0)}%
+                    Visibility: {normalizeVisibilityPercent(growthOutlook.visibility_score)}%
                   </span>
                 )}
                 {growthUpdatedAt && (
@@ -924,9 +993,9 @@ export default async function Page({
                       <CarouselContent>
                         {growthOutlook.catalysts_next_12_24m.map((c, idx) => {
                           const timelineItems = (c.timeline_evidence ?? []).filter((t) => {
-                            const stage = (t.stage ?? "").trim();
-                            const period = (t.period ?? "").trim();
-                            const source = (t.source ?? "").trim();
+                            const stage = isUnknownLike(t.stage) ? "" : (t.stage ?? "").trim();
+                            const period = isUnknownLike(t.period) ? "" : (t.period ?? "").trim();
+                            const source = isUnknownLike(t.source) ? "" : (t.source ?? "").trim();
                             const quote = (t.quote_or_fact ?? "").trim();
                             const delta = (t.delta_vs_prev ?? "").trim();
                             return Boolean(stage || period || source || quote || delta);
@@ -1080,24 +1149,30 @@ export default async function Page({
                                         Supporting evidence
                                       </p>
                                     ) : null}
-                                    <p className="text-[11px] text-foreground leading-snug">
-                                      • {c.evidence[0]?.period ? `${c.evidence[0].period} · ` : ""}
-                                      {c.evidence[0]?.source ? `${c.evidence[0].source} · ` : ""}
-                                      {c.evidence[0]?.quote_or_fact ?? "Evidence available"}
-                                    </p>
+                                    {(() => {
+                                      const firstEvidence = getEvidenceLine(c.evidence[0]);
+                                      return (
+                                        <p className="text-[11px] text-foreground leading-snug">
+                                          • {firstEvidence.meta ? `${firstEvidence.meta} · ` : ""}
+                                          {firstEvidence.text}
+                                        </p>
+                                      );
+                                    })()}
                                     {c.evidence.length > 1 && (
                                       <details className="text-[10px] text-muted-foreground">
                                         <summary className="cursor-pointer hover:text-foreground/80">
                                           Show evidence ({c.evidence.length})
                                         </summary>
                                         <div className="mt-1 space-y-1">
-                                          {c.evidence.slice(1).map((ev, evIdx) => (
-                                            <p key={evIdx} className="leading-snug text-foreground">
-                                              • {ev.period ? `${ev.period} · ` : ""}
-                                              {ev.source ? `${ev.source} · ` : ""}
-                                              {ev.quote_or_fact ?? "Evidence item"}
-                                            </p>
-                                          ))}
+                                          {c.evidence.slice(1).map((ev, evIdx) => {
+                                            const evidenceLine = getEvidenceLine(ev);
+                                            return (
+                                              <p key={evIdx} className="leading-snug text-foreground">
+                                                • {evidenceLine.meta ? `${evidenceLine.meta} · ` : ""}
+                                                {evidenceLine.text}
+                                              </p>
+                                            );
+                                          })}
                                         </div>
                                       </details>
                                     )}
@@ -1130,9 +1205,13 @@ export default async function Page({
                       <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
                         Consensus
                       </span>
-                      {growthOutlook.variant_perception.consensus_vs_company ? (
+                      {(
+                        growthOutlook.variant_perception.consensus_vs_company ??
+                        growthOutlook.variant_perception.low
+                      ) ? (
                         <p className="text-[11px] text-foreground leading-snug">
-                          {growthOutlook.variant_perception.consensus_vs_company}
+                          {growthOutlook.variant_perception.consensus_vs_company ??
+                            growthOutlook.variant_perception.low}
                         </p>
                       ) : (
                         <p className="text-[11px] text-muted-foreground leading-snug">No consensus note.</p>
@@ -1143,16 +1222,24 @@ export default async function Page({
                       <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-200 dark:border-emerald-700/40">
                         Upside
                       </span>
-                      {Array.isArray(growthOutlook.variant_perception.upside_nonconsensus) &&
-                      growthOutlook.variant_perception.upside_nonconsensus.length > 0 ? (
+                      {(Array.isArray(growthOutlook.variant_perception.upside_nonconsensus) &&
+                        growthOutlook.variant_perception.upside_nonconsensus.length > 0) ||
+                      growthOutlook.variant_perception.high ? (
                         <div className="space-y-1.5">
-                          <ul className="space-y-1.5">
-                            <li className="relative pl-3 text-[11px] text-foreground leading-snug">
-                              <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500/70" />
-                              {growthOutlook.variant_perception.upside_nonconsensus[0]}
-                            </li>
-                          </ul>
-                          {growthOutlook.variant_perception.upside_nonconsensus.length > 1 && (
+                          {growthOutlook.variant_perception.high ? (
+                            <p className="text-[11px] text-foreground leading-snug">
+                              {growthOutlook.variant_perception.high}
+                            </p>
+                          ) : (
+                            <ul className="space-y-1.5">
+                              <li className="relative pl-3 text-[11px] text-foreground leading-snug">
+                                <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500/70" />
+                                {growthOutlook.variant_perception.upside_nonconsensus?.[0]}
+                              </li>
+                            </ul>
+                          )}
+                          {Array.isArray(growthOutlook.variant_perception.upside_nonconsensus) &&
+                            growthOutlook.variant_perception.upside_nonconsensus.length > 1 && (
                             <details className="group">
                               <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
                                 <span className="group-open:hidden">
@@ -1185,16 +1272,24 @@ export default async function Page({
                       <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-red-200 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200 dark:border-red-700/40">
                         Downside
                       </span>
-                      {Array.isArray(growthOutlook.variant_perception.downside_nonconsensus) &&
-                      growthOutlook.variant_perception.downside_nonconsensus.length > 0 ? (
+                      {(Array.isArray(growthOutlook.variant_perception.downside_nonconsensus) &&
+                        growthOutlook.variant_perception.downside_nonconsensus.length > 0) ||
+                      growthOutlook.variant_perception.catalyst_to_variant_delta ? (
                         <div className="space-y-1.5">
-                          <ul className="space-y-1.5">
-                            <li className="relative pl-3 text-[11px] text-foreground leading-snug">
-                              <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500/70" />
-                              {growthOutlook.variant_perception.downside_nonconsensus[0]}
-                            </li>
-                          </ul>
-                          {growthOutlook.variant_perception.downside_nonconsensus.length > 1 && (
+                          {growthOutlook.variant_perception.catalyst_to_variant_delta ? (
+                            <p className="text-[11px] text-foreground leading-snug">
+                              {growthOutlook.variant_perception.catalyst_to_variant_delta}
+                            </p>
+                          ) : (
+                            <ul className="space-y-1.5">
+                              <li className="relative pl-3 text-[11px] text-foreground leading-snug">
+                                <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500/70" />
+                                {growthOutlook.variant_perception.downside_nonconsensus?.[0]}
+                              </li>
+                            </ul>
+                          )}
+                          {Array.isArray(growthOutlook.variant_perception.downside_nonconsensus) &&
+                            growthOutlook.variant_perception.downside_nonconsensus.length > 1 && (
                             <details className="group">
                               <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
                                 <span className="group-open:hidden">
