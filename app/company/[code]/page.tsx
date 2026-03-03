@@ -813,26 +813,6 @@ export default async function Page({
                     Growth score: {growthScore.toFixed(1)}
                   </span>
                 )}
-                {normalizedGrowthOutlook.fiscalYear && (
-                  <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
-                    {normalizedGrowthOutlook.fiscalYear}
-                  </span>
-                )}
-                {typeof normalizedGrowthOutlook.visibilityPercent === "number" && (
-                  <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
-                    Visibility: {normalizedGrowthOutlook.visibilityPercent}%
-                  </span>
-                )}
-                {typeof normalizedGrowthOutlook.horizonQuarters === "number" && (
-                  <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
-                    Horizon: {normalizedGrowthOutlook.horizonQuarters}Q
-                  </span>
-                )}
-                {typeof normalizedGrowthOutlook.horizonYears === "number" && (
-                  <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
-                    {normalizedGrowthOutlook.horizonYears}Y view
-                  </span>
-                )}
                 {growthUpdatedAt && (
                   <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border/60">
                     Updated: {growthUpdatedAt}
@@ -840,36 +820,20 @@ export default async function Page({
                 )}
               </div>
 
-              {(normalizedGrowthOutlook.companyName ||
-                normalizedGrowthOutlook.schemaVersion ||
-                normalizedGrowthOutlook.summaryBullets.length > 0) && (
+              {normalizedGrowthOutlook.summaryBullets.length > 0 && (
                 <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-                    {normalizedGrowthOutlook.companyName && (
-                      <span className="px-2 py-0.5 rounded-full bg-background border border-border">
-                        Company: {normalizedGrowthOutlook.companyName}
-                      </span>
-                    )}
-                    {normalizedGrowthOutlook.schemaVersion && (
-                      <span className="px-2 py-0.5 rounded-full bg-background border border-border">
-                        Schema: {normalizedGrowthOutlook.schemaVersion}
-                      </span>
-                    )}
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+                      Summary
+                    </p>
+                    <ul className="space-y-1">
+                      {normalizedGrowthOutlook.summaryBullets.slice(0, 5).map((bullet, idx) => (
+                        <li key={idx} className="text-[11px] text-foreground leading-snug">
+                          • {bullet}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  {normalizedGrowthOutlook.summaryBullets.length > 0 && (
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                        Summary
-                      </p>
-                      <ul className="space-y-1">
-                        {normalizedGrowthOutlook.summaryBullets.slice(0, 5).map((bullet, idx) => (
-                          <li key={idx} className="text-[11px] text-foreground leading-snug">
-                            • {bullet}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               )}
 
