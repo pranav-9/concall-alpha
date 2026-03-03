@@ -36,128 +36,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-
-type GrowthScenario = {
-  confidence?: number;
-  key_drivers?: string[];
-  key_risks?: string[];
-  evidence_refs?: string[];
-  fcf_direction?: string | null;
-  margin_trend_bps?: string | number | null;
-  revenue_growth_pct?: string | number | null;
-  description?: string | null;
-  ebitda_margin?: string | number | null;
-  revenue_growth?: string | number | null;
-};
-
-type EvidenceItem = {
-  period?: string | null;
-  source?: string | null;
-  quote_or_fact?: string | null;
-  fact?: string | null;
-  timing?: string | null;
-  snippet?: string | null;
-  doc_type?: string | null;
-  metric_value?: string | number | null;
-  doc_date_or_period?: string | null;
-  section_or_slide_title?: string | null;
-};
-
-type TimelineEvidenceItem = {
-  stage?: string | null;
-  period?: string | null;
-  source?: string | null;
-  delta_vs_prev?: string | null;
-  quote_or_fact?: string | null;
-};
-
-type GrowthCatalyst = {
-  type?: string | null;
-  timing?: string | null;
-  catalyst?: string | null;
-  expected_impact?: string | null;
-  evidence?: EvidenceItem[] | null;
-  timeline_evidence?: TimelineEvidenceItem[] | null;
-  quantified?: {
-    unit?: string | null;
-    value?: string | number | null;
-  } | null;
-};
-
-type SourceFileRef = {
-  fy?: string | null;
-  kind?: string | null;
-  quarter?: string | null;
-  source_url?: string | null;
-};
-
-type IndustrySetup = {
-  signals?: string[] | null;
-  demand_trend?: string | null;
-  supply_trend?: string | null;
-  pricing_power?: string | null;
-  cycle_position?: string | null;
-  evidence?: EvidenceItem[] | null;
-};
-
-type VariantPerception = {
-  consensus_vs_company?: string | null;
-  upside_nonconsensus?: string[] | null;
-  downside_nonconsensus?: string[] | null;
-  low?: string | null;
-  high?: string | null;
-  catalyst_to_variant_delta?: string | null;
-};
-
-type GrowthScoreStep = {
-  catalyst?: string | null;
-  certainty?: number | null;
-  progression?: number | null;
-  time_relevance?: number | null;
-  weighted_priority_norm?: number | null;
-};
-
-type EarningsDirection = {
-  eps_outlook?: string | null;
-  revision_proxy?: string | null;
-  management_guidance_summary?: string | null;
-  evidence?: EvidenceItem[] | null;
-};
-
-type EarningsLevers = {
-  operating_leverage?: string | null;
-  cost_rawmat_lever?: string | null;
-  mix_premiumization_lever?: string | null;
-  utilization_or_scale_lever?: string | null;
-  evidence?: EvidenceItem[] | null;
-};
-
-type GrowthOutlook = {
-  fiscal_year?: string | null;
-  horizon_years?: number | null;
-  horizon_quarters?: number | null;
-  visibility_score?: number | null;
-  summary_bullets?: string[] | null;
-  growth_score?: number | string | null;
-  growth_score_formula?: string | null;
-  growth_score_steps?: GrowthScoreStep[] | string[] | null;
-  visibility_rationale?: string | null;
-  run_timestamp?: string | null;
-  trajectory?: string | { trajectory?: string; short_rationale?: string; value?: string; rationale?: string } | null;
-  trajectory_rationale?: string | null;
-  source_files?: SourceFileRef[] | null;
-  variant_perception?: VariantPerception | null;
-  fact_base?: EvidenceItem[] | null;
-  industry_setup?: IndustrySetup | null;
-  earnings_direction?: EarningsDirection | null;
-  earnings_levers?: EarningsLevers | null;
-  catalysts_next_12_24m?: GrowthCatalyst[] | null;
-  scenarios?: {
-    base?: GrowthScenario;
-    upside?: GrowthScenario;
-    downside?: GrowthScenario;
-  };
-};
+import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
+import type { NormalizedGrowthScenario } from "@/lib/growth-outlook/types";
 
 type ConcallDetails = {
   score?: number;
@@ -233,34 +113,6 @@ const getTimelineStageDisplay = (stage?: string | null) => {
   return timelineStageConfig.unknown;
 };
 
-const isUnknownLike = (value?: string | null) => {
-  const normalized = (value ?? "").trim().toLowerCase();
-  return normalized === "" || normalized === "unknown" || normalized === "n/a" || normalized === "na";
-};
-
-const getEvidenceLine = (item?: EvidenceItem | null) => {
-  if (!item) {
-    return { meta: "", text: "Evidence available" };
-  }
-
-  const period = (item.period ?? item.doc_date_or_period ?? "").trim();
-  const source = (item.source ?? item.doc_type ?? "").trim();
-  const text =
-    (item.quote_or_fact ?? item.fact ?? item.snippet ?? "").trim() || "Evidence available";
-
-  return {
-    meta: [period, source].filter(Boolean).join(" · "),
-    text,
-  };
-};
-
-const normalizeVisibilityPercent = (value: number) => {
-  if (!Number.isFinite(value)) return null;
-  if (value <= 1) return Math.round(value * 100);
-  if (value <= 5) return Math.round((value / 5) * 100);
-  return Math.round(value);
-};
-
 export async function generateMetadata({
   params,
 }: {
@@ -322,7 +174,7 @@ export default async function Page({
 
   const { data: growthData } = await supabase
     .from("growth_outlook")
-    .select("details, growth_score, run_timestamp")
+    .select("details, growth_score, run_timestamp, visibility_score, catalysts, scenarios, variant_perception")
     .or(
       [code ? `company.eq.${code}` : null, companyName ? `company.eq.${companyName}` : null]
         .filter(Boolean)
@@ -351,11 +203,16 @@ export default async function Page({
   const trend = calculateTrend(data.slice(0, 12));
   const detailQuarters = data.slice(0, 12);
   const detailQuartersOldestFirst = [...detailQuarters].reverse();
-  const growthOutlook = parseJsonObject(growthData?.[0]?.details) as GrowthOutlook | undefined;
-  const growthUpdatedAtRaw =
-    (growthData?.[0]?.run_timestamp as string | null | undefined) ??
-    growthOutlook?.run_timestamp ??
-    null;
+  const normalizedGrowthOutlook = normalizeGrowthOutlook({
+    details: growthData?.[0]?.details,
+    growthScore: growthData?.[0]?.growth_score,
+    runTimestamp: growthData?.[0]?.run_timestamp,
+    visibilityScore: growthData?.[0]?.visibility_score,
+    catalysts: growthData?.[0]?.catalysts,
+    scenarios: growthData?.[0]?.scenarios,
+    variantPerception: growthData?.[0]?.variant_perception,
+  });
+  const growthUpdatedAtRaw = normalizedGrowthOutlook?.updatedAtRaw ?? null;
   const growthUpdatedDate = growthUpdatedAtRaw ? new Date(growthUpdatedAtRaw) : null;
   const growthUpdatedAt =
     growthUpdatedDate && !Number.isNaN(growthUpdatedDate.getTime())
@@ -367,14 +224,7 @@ export default async function Page({
           minute: "2-digit",
         }).format(growthUpdatedDate)
       : null;
-  const growthScoreRaw =
-    growthData?.[0]?.growth_score ?? (growthOutlook as GrowthOutlook | undefined)?.growth_score ?? null;
-  const growthScore =
-    typeof growthScoreRaw === "number"
-      ? growthScoreRaw
-      : typeof growthScoreRaw === "string"
-      ? parseFloat(growthScoreRaw)
-      : null;
+  const growthScore = normalizedGrowthOutlook?.growthScore ?? null;
 
   const toNumeric = (value: unknown): number | null => {
     if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -472,20 +322,15 @@ export default async function Page({
   }
 
   const renderScenarioCard = (scenarioKey: "base" | "upside" | "downside") => {
-    const scenario = growthOutlook?.scenarios?.[scenarioKey] as GrowthScenario | undefined;
+    const scenario = normalizedGrowthOutlook?.scenarios?.[scenarioKey] as NormalizedGrowthScenario | null | undefined;
     if (!scenario) return null;
-    const drivers = Array.isArray(scenario.key_drivers) ? scenario.key_drivers : [];
-    const risks = Array.isArray(scenario.key_risks) ? scenario.key_risks : [];
+    const drivers = scenario.drivers;
+    const risks = scenario.risks;
     const primaryDriver = (drivers[0] ?? "").trim();
     const primaryRisk = (risks[0] ?? "").trim();
-    const fallbackDescription = (scenario.description ?? "").trim();
-    const growthValue =
-      scenario.revenue_growth_pct != null
-        ? scenario.revenue_growth_pct
-        : scenario.revenue_growth != null
-        ? scenario.revenue_growth
-        : null;
-    const marginValue = scenario.ebitda_margin != null ? scenario.ebitda_margin : null;
+    const fallbackDescription = (scenario.summary ?? "").trim();
+    const growthValue = scenario.growth;
+    const marginValue = scenario.ebitdaMargin;
     const accentClass =
       scenarioKey === "base"
         ? "border-l-emerald-500/70"
@@ -941,7 +786,7 @@ export default async function Page({
         </SectionCard>
 
         <SectionCard id="placeholder" title="Future Growth Prospects">
-          {growthOutlook ? (
+          {normalizedGrowthOutlook ? (
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-3 text-xs text-foreground/80">
                 {typeof growthScore === "number" && (
@@ -949,9 +794,9 @@ export default async function Page({
                     Growth score: {growthScore.toFixed(1)}
                   </span>
                 )}
-                {typeof growthOutlook.visibility_score === "number" && (
+                {typeof normalizedGrowthOutlook.visibilityPercent === "number" && (
                   <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
-                    Visibility: {normalizeVisibilityPercent(growthOutlook.visibility_score)}%
+                    Visibility: {normalizedGrowthOutlook.visibilityPercent}%
                   </span>
                 )}
                 {growthUpdatedAt && (
@@ -961,8 +806,7 @@ export default async function Page({
                 )}
               </div>
 
-              {Array.isArray(growthOutlook.catalysts_next_12_24m) &&
-                growthOutlook.catalysts_next_12_24m.length > 0 && (
+              {normalizedGrowthOutlook.catalysts.length > 0 && (
                   <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
@@ -970,19 +814,19 @@ export default async function Page({
                       </p>
                       <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
                         <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
-                          Total triggers: {growthOutlook.catalysts_next_12_24m.length}
+                          Total triggers: {normalizedGrowthOutlook.catalysts.length}
                         </span>
                         <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
                           Visible per view: 1 / 2 / 3
                         </span>
                         <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border md:hidden">
-                          Slides: {growthOutlook.catalysts_next_12_24m.length}
+                          Slides: {normalizedGrowthOutlook.catalysts.length}
                         </span>
                         <span className="hidden md:inline-flex xl:hidden px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                          Slides: {Math.ceil(growthOutlook.catalysts_next_12_24m.length / 2)}
+                          Slides: {Math.ceil(normalizedGrowthOutlook.catalysts.length / 2)}
                         </span>
                         <span className="hidden xl:inline-flex px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                          Slides: {Math.ceil(growthOutlook.catalysts_next_12_24m.length / 3)}
+                          Slides: {Math.ceil(normalizedGrowthOutlook.catalysts.length / 3)}
                         </span>
                       </div>
                     </div>
@@ -991,23 +835,15 @@ export default async function Page({
                     </p>
                     <Carousel opts={{ align: "start" }} className="w-full">
                       <CarouselContent>
-                        {growthOutlook.catalysts_next_12_24m.map((c, idx) => {
-                          const timelineItems = (c.timeline_evidence ?? []).filter((t) => {
-                            const stage = isUnknownLike(t.stage) ? "" : (t.stage ?? "").trim();
-                            const period = isUnknownLike(t.period) ? "" : (t.period ?? "").trim();
-                            const source = isUnknownLike(t.source) ? "" : (t.source ?? "").trim();
-                            const quote = (t.quote_or_fact ?? "").trim();
-                            const delta = (t.delta_vs_prev ?? "").trim();
-                            return Boolean(stage || period || source || quote || delta);
-                          });
-
+                        {normalizedGrowthOutlook.catalysts.map((c, idx) => {
+                          const timelineItems = c.timelineItems;
                           return (
                             <CarouselItem key={idx} className="basis-full md:basis-1/2 xl:basis-1/3">
                               <div
                                 className={`h-full rounded-md border border-border bg-muted/30 p-3 space-y-2 ${
-                                  c.expected_impact === "revenue"
+                                  c.expectedImpact === "revenue"
                                     ? "border-l-2 border-l-emerald-500/70"
-                                    : c.expected_impact === "margin"
+                                    : c.expectedImpact === "margin"
                                     ? "border-l-2 border-l-sky-500/70"
                                     : "border-l-2 border-l-amber-500/70"
                                 }`}
@@ -1023,9 +859,9 @@ export default async function Page({
                                       {c.timing}
                                     </span>
                                   )}
-                                  {c.expected_impact && (
+                                  {c.expectedImpact && (
                                     <span className="px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-100 dark:border-emerald-700/40">
-                                      Impact: {c.expected_impact}
+                                      Impact: {c.expectedImpact}
                                     </span>
                                   )}
                                   {c.quantified?.value != null && (
@@ -1050,10 +886,10 @@ export default async function Page({
                                       <ul className="space-y-2">
                                         {timelineItems.slice(0, 2).map((t, tIdx) => {
                                           const stageMeta = getTimelineStageDisplay(t.stage);
-                                          const period = (t.period ?? "").trim();
-                                          const source = (t.source ?? "").trim();
-                                          const quote = (t.quote_or_fact ?? "").trim();
-                                          const delta = (t.delta_vs_prev ?? "").trim();
+                                          const period = t.period ?? "";
+                                          const source = t.source ?? "";
+                                          const quote = t.quote ?? "";
+                                          const delta = t.delta ?? "";
                                           return (
                                             <li
                                               key={`${idx}-timeline-primary-${tIdx}`}
@@ -1098,10 +934,10 @@ export default async function Page({
                                           <ul className="space-y-2">
                                             {timelineItems.slice(2).map((t, tIdx) => {
                                               const stageMeta = getTimelineStageDisplay(t.stage);
-                                              const period = (t.period ?? "").trim();
-                                              const source = (t.source ?? "").trim();
-                                              const quote = (t.quote_or_fact ?? "").trim();
-                                              const delta = (t.delta_vs_prev ?? "").trim();
+                                              const period = t.period ?? "";
+                                              const source = t.source ?? "";
+                                              const quote = t.quote ?? "";
+                                              const delta = t.delta ?? "";
                                               return (
                                                 <li
                                                   key={`${idx}-timeline-extra-${tIdx}`}
@@ -1142,37 +978,29 @@ export default async function Page({
                                   </div>
                                 )}
 
-                                {Array.isArray(c.evidence) && c.evidence.length > 0 && (
+                                {c.evidenceLines.length > 0 && (
                                   <div className="space-y-1 pt-2 border-t border-border/60">
                                     {timelineItems.length > 0 ? (
                                       <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
                                         Supporting evidence
                                       </p>
                                     ) : null}
-                                    {(() => {
-                                      const firstEvidence = getEvidenceLine(c.evidence[0]);
-                                      return (
-                                        <p className="text-[11px] text-foreground leading-snug">
-                                          • {firstEvidence.meta ? `${firstEvidence.meta} · ` : ""}
-                                          {firstEvidence.text}
-                                        </p>
-                                      );
-                                    })()}
-                                    {c.evidence.length > 1 && (
+                                    <p className="text-[11px] text-foreground leading-snug">
+                                      • {c.evidenceLines[0]?.meta ? `${c.evidenceLines[0].meta} · ` : ""}
+                                      {c.evidenceLines[0]?.text ?? "Evidence available"}
+                                    </p>
+                                    {c.evidenceLines.length > 1 && (
                                       <details className="text-[10px] text-muted-foreground">
                                         <summary className="cursor-pointer hover:text-foreground/80">
-                                          Show evidence ({c.evidence.length})
+                                          Show evidence ({c.evidenceLines.length})
                                         </summary>
                                         <div className="mt-1 space-y-1">
-                                          {c.evidence.slice(1).map((ev, evIdx) => {
-                                            const evidenceLine = getEvidenceLine(ev);
-                                            return (
-                                              <p key={evIdx} className="leading-snug text-foreground">
-                                                • {evidenceLine.meta ? `${evidenceLine.meta} · ` : ""}
-                                                {evidenceLine.text}
-                                              </p>
-                                            );
-                                          })}
+                                          {c.evidenceLines.slice(1).map((ev, evIdx) => (
+                                            <p key={evIdx} className="leading-snug text-foreground">
+                                              • {ev.meta ? `${ev.meta} · ` : ""}
+                                              {ev.text}
+                                            </p>
+                                          ))}
                                         </div>
                                       </details>
                                     )}
@@ -1190,7 +1018,7 @@ export default async function Page({
                     </Carousel>
                   </div>
                 )}
-              {growthOutlook.variant_perception && (
+              {normalizedGrowthOutlook.variantPerception && (
                 <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
@@ -1205,13 +1033,9 @@ export default async function Page({
                       <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
                         Consensus
                       </span>
-                      {(
-                        growthOutlook.variant_perception.consensus_vs_company ??
-                        growthOutlook.variant_perception.low
-                      ) ? (
+                      {normalizedGrowthOutlook.variantPerception.consensus ? (
                         <p className="text-[11px] text-foreground leading-snug">
-                          {growthOutlook.variant_perception.consensus_vs_company ??
-                            growthOutlook.variant_perception.low}
+                          {normalizedGrowthOutlook.variantPerception.consensus}
                         </p>
                       ) : (
                         <p className="text-[11px] text-muted-foreground leading-snug">No consensus note.</p>
@@ -1222,33 +1046,24 @@ export default async function Page({
                       <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-200 dark:border-emerald-700/40">
                         Upside
                       </span>
-                      {(Array.isArray(growthOutlook.variant_perception.upside_nonconsensus) &&
-                        growthOutlook.variant_perception.upside_nonconsensus.length > 0) ||
-                      growthOutlook.variant_perception.high ? (
+                      {normalizedGrowthOutlook.variantPerception.upside.length > 0 ? (
                         <div className="space-y-1.5">
-                          {growthOutlook.variant_perception.high ? (
-                            <p className="text-[11px] text-foreground leading-snug">
-                              {growthOutlook.variant_perception.high}
-                            </p>
-                          ) : (
-                            <ul className="space-y-1.5">
-                              <li className="relative pl-3 text-[11px] text-foreground leading-snug">
-                                <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500/70" />
-                                {growthOutlook.variant_perception.upside_nonconsensus?.[0]}
-                              </li>
-                            </ul>
-                          )}
-                          {Array.isArray(growthOutlook.variant_perception.upside_nonconsensus) &&
-                            growthOutlook.variant_perception.upside_nonconsensus.length > 1 && (
+                          <ul className="space-y-1.5">
+                            <li className="relative pl-3 text-[11px] text-foreground leading-snug">
+                              <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500/70" />
+                              {normalizedGrowthOutlook.variantPerception.upside[0]}
+                            </li>
+                          </ul>
+                          {normalizedGrowthOutlook.variantPerception.upside.length > 1 && (
                             <details className="group">
                               <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
                                 <span className="group-open:hidden">
-                                  Show more ({growthOutlook.variant_perception.upside_nonconsensus.length - 1})
+                                  Show more ({normalizedGrowthOutlook.variantPerception.upside.length - 1})
                                 </span>
                                 <span className="hidden group-open:inline">Hide extras</span>
                               </summary>
                               <ul className="mt-1.5 space-y-1.5">
-                                {growthOutlook.variant_perception.upside_nonconsensus
+                                {normalizedGrowthOutlook.variantPerception.upside
                                   .slice(1)
                                   .map((x, idx) => (
                                     <li
@@ -1272,33 +1087,24 @@ export default async function Page({
                       <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-red-200 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200 dark:border-red-700/40">
                         Downside
                       </span>
-                      {(Array.isArray(growthOutlook.variant_perception.downside_nonconsensus) &&
-                        growthOutlook.variant_perception.downside_nonconsensus.length > 0) ||
-                      growthOutlook.variant_perception.catalyst_to_variant_delta ? (
+                      {normalizedGrowthOutlook.variantPerception.downside.length > 0 ? (
                         <div className="space-y-1.5">
-                          {growthOutlook.variant_perception.catalyst_to_variant_delta ? (
-                            <p className="text-[11px] text-foreground leading-snug">
-                              {growthOutlook.variant_perception.catalyst_to_variant_delta}
-                            </p>
-                          ) : (
-                            <ul className="space-y-1.5">
-                              <li className="relative pl-3 text-[11px] text-foreground leading-snug">
-                                <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500/70" />
-                                {growthOutlook.variant_perception.downside_nonconsensus?.[0]}
-                              </li>
-                            </ul>
-                          )}
-                          {Array.isArray(growthOutlook.variant_perception.downside_nonconsensus) &&
-                            growthOutlook.variant_perception.downside_nonconsensus.length > 1 && (
+                          <ul className="space-y-1.5">
+                            <li className="relative pl-3 text-[11px] text-foreground leading-snug">
+                              <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500/70" />
+                              {normalizedGrowthOutlook.variantPerception.downside[0]}
+                            </li>
+                          </ul>
+                          {normalizedGrowthOutlook.variantPerception.downside.length > 1 && (
                             <details className="group">
                               <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
                                 <span className="group-open:hidden">
-                                  Show more ({growthOutlook.variant_perception.downside_nonconsensus.length - 1})
+                                  Show more ({normalizedGrowthOutlook.variantPerception.downside.length - 1})
                                 </span>
                                 <span className="hidden group-open:inline">Hide extras</span>
                               </summary>
                               <ul className="mt-1.5 space-y-1.5">
-                                {growthOutlook.variant_perception.downside_nonconsensus
+                                {normalizedGrowthOutlook.variantPerception.downside
                                   .slice(1)
                                   .map((x, idx) => (
                                     <li
