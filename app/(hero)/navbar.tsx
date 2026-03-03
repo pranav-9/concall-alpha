@@ -4,15 +4,17 @@ import { useState } from "react";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { RequestIntakeButton } from "@/components/request-intake-button";
 import { CompanySearch } from "@/components/company-search";
+import { AuthButton, type UserInfo } from "@/components/auth-button";
 import { cn, hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const Navbar = () => {
+const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navItems = [
     { href: "/leaderboards", label: "Leaderboards" },
+    { href: "/watchlists", label: "Watchlists" },
     { href: "/sectors", label: "Sectors" },
     { href: "/how-scores-work", label: "How Scores Work" },
   ];
@@ -52,6 +54,7 @@ const Navbar = () => {
                 triggerVariant="ghost"
                 triggerClassName="h-auto p-0 text-xs font-medium text-muted-foreground hover:text-foreground"
               />
+              <AuthButton initialUser={initialUser} compact />
             </div>
 
             <button
@@ -104,6 +107,9 @@ const Navbar = () => {
               triggerVariant="ghost"
               triggerClassName="h-auto p-0 text-sm font-medium text-muted-foreground hover:text-foreground"
             />
+            <div className="pt-1">
+              <AuthButton initialUser={initialUser} compact />
+            </div>
             {!hasEnvVars ? (
               <div className="pt-1">
                 <EnvVarWarning />

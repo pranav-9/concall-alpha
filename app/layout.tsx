@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Navbar from "./(hero)/navbar";
+import { createClient } from "@/lib/supabase/server";
 import { RequestIntakeFab } from "@/components/request-intake-fab";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { SiteFooter } from "@/components/site-footer";
@@ -26,11 +27,16 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} min-h-screen bg-background text-foreground antialiased`}>
@@ -41,7 +47,17 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <div className="flex min-h-screen flex-col">
-            <Navbar />
+            <Navbar
+              initialUser={
+                user
+                  ? {
+                      email: user.email ?? null,
+                      name: user.user_metadata?.full_name ?? null,
+                      avatar: user.user_metadata?.avatar_url ?? null,
+                    }
+                  : null
+              }
+            />
             <Suspense fallback={null}>
               <PageViewTracker />
             </Suspense>

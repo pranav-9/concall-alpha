@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { categoryFor } from "@/components/concall-score";
@@ -19,6 +20,7 @@ interface OverviewCardProps {
     quarter?: { rank: number; total: number; percentile: number } | null;
     growth?: { rank: number; total: number; percentile: number } | null;
   };
+  action?: ReactNode;
 }
 
 const percentilePillClass = (percentile: number) => {
@@ -45,7 +47,7 @@ const rankPillText = (
   return `${label} ${rankData.rank} / ${rankData.total} (Top ${Math.round(rankData.percentile)} percentile)`;
 };
 
-export function OverviewCard({ data, companyInfo, rankInfo }: OverviewCardProps) {
+export function OverviewCard({ data, companyInfo, rankInfo, action }: OverviewCardProps) {
   const sentiment = data ? categoryFor(data.score) : null;
   const normalizedSector = companyInfo?.sector?.trim() || undefined;
   const normalizedSubSector = companyInfo?.subSector?.trim() || undefined;
@@ -118,6 +120,7 @@ export function OverviewCard({ data, companyInfo, rankInfo }: OverviewCardProps)
           >
             {rankPillText("Growth Score Rank", rankInfo?.growth)}
           </span>
+          {action}
         </div>
       </div>
     </div>

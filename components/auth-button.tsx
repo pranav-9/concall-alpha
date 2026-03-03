@@ -2,61 +2,81 @@
 
 import Link from "next/link";
 import { Button } from "./ui/button";
-// import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "./logout-button";
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
-type UserInfo = {
+export type UserInfo = {
   email: string | null;
   name: string | null;
   avatar: string | null;
 } | null;
 
-export function AuthButton({ initialUser }: { initialUser: UserInfo }) {
+export function AuthButton({
+  initialUser = null,
+  compact = false,
+}: {
+  initialUser?: UserInfo;
+  compact?: boolean;
+}) {
   const supabaseRef = useRef(createClient());
   const [user, setUser] = useState<UserInfo>(initialUser);
+  const router = useRouter();
 
-  // Listen for login/logout/token refresh and update UI without full reload
   useEffect(() => {
+    let isMounted = true;
+
+    void supabaseRef.current.auth.getUser().then(({ data, error }) => {
+      if (!isMounted || error) return;
+      const currentUser = data.user
+        ? {
+            email: data.user.email ?? null,
+            name: data.user.user_metadata?.full_name ?? null,
+            avatar: data.user.user_metadata?.avatar_url ?? null,
+          }
+        : null;
+      setUser(currentUser);
+    });
+
     const { data: sub } = supabaseRef.current.auth.onAuthStateChange(
       async (_event, session) => {
-        console.log("auth state change");
-
         const u = session?.user
           ? {
-              // email: uEmail(session),
-              email: "hard codede emial for now",
+              email: session.user.email ?? null,
               name: session.user.user_metadata?.full_name ?? null,
               avatar: session.user.user_metadata?.avatar_url ?? null,
             }
           : null;
         setUser(u);
-        // Trigger an RSC refresh so server components (like this navbar's server wrapper) get fresh cookies next navigation
-        // router.refresh();
+        router.refresh();
       }
     );
 
     return () => {
+      isMounted = false;
       sub.subscription.unsubscribe();
     };
-  }, []);
-
-  // function uEmail(session: Session | null
-  //   // {
-  //   // user: {
-  //   //   email: string;
-  //   // };
-  //   }
-  // ) {
-  //   return session?.user?.email ?? null;
-  // }
+  }, [router]);
 
   return user ? (
-    <div className="flex items-center gap-4">
-      {/* Hey<p className="line-clamp-0.5">{user.email}</p> */}
-      {/* UHey, {user.email}! */}
-      <LogoutButton />
+    <div className="flex items-center gap-3">
+      <LogoutButton compact={compact} />
+    </div>
+  ) : compact ? (
+    <div className="flex items-center gap-3">
+      <Link
+        href="/auth/login"
+        className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+      >
+        Sign in
+      </Link>
+      <Link
+        href="/auth/sign-up"
+        className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+      >
+        Sign up
+      </Link>
     </div>
   ) : (
     <div className="flex gap-2">

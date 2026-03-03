@@ -18,8 +18,9 @@ import { useState } from "react";
 
 export function SignUpForm({
   className,
+  nextPath,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: React.ComponentPropsWithoutRef<"div"> & { nextPath?: string | null }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
@@ -44,7 +45,9 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(
+            nextPath || "/watchlists",
+          )}`,
         },
       });
       if (error) throw error;
@@ -108,7 +111,10 @@ export function SignUpForm({
             </div>
             <div className="mt-4 text-center text-sm">
               Already have an account?{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
+              <Link
+                href={nextPath ? `/auth/login?next=${encodeURIComponent(nextPath)}` : "/auth/login"}
+                className="underline underline-offset-4"
+              >
                 Login
               </Link>
             </div>

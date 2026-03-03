@@ -21,6 +21,7 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 import ConcallScore from "@/components/concall-score";
 import { CompanyCommentsSection } from "@/components/company/company-comments-section";
 import { Button } from "@/components/ui/button";
+import { WatchlistButton } from "@/components/watchlist-button";
 import {
   Drawer,
   DrawerClose,
@@ -214,6 +215,34 @@ export default async function Page({
   const companyIsNew = isCompanyNew(companyRow?.created_at ?? null);
   const companySector = companyRow?.sector?.trim() || undefined;
   const companySubSector = companyRow?.sub_sector?.trim() || undefined;
+  const { data: authClaimsData } = await supabase.auth.getClaims();
+  const authenticatedUserId =
+    typeof authClaimsData?.claims?.sub === "string" ? authClaimsData.claims.sub : null;
+
+  let firstWatchlist: { id: number; name: string } | null = null;
+  let isInFirstWatchlist = false;
+
+  if (authenticatedUserId) {
+    const { data: watchlistRows } = await supabase
+      .from("watchlists")
+      .select("id, name")
+      .eq("user_id", authenticatedUserId)
+      .order("created_at", { ascending: true })
+      .limit(1);
+
+    firstWatchlist = (watchlistRows?.[0] as { id: number; name: string } | undefined) ?? null;
+
+    if (firstWatchlist) {
+      const { data: watchlistItemRows } = await supabase
+        .from("watchlist_items")
+        .select("id")
+        .eq("watchlist_id", firstWatchlist.id)
+        .eq("company_code", code)
+        .limit(1);
+
+      isInFirstWatchlist = (watchlistItemRows?.length ?? 0) > 0;
+    }
+  }
 
   // Fetch concall analysis data
   const { data, error } = await supabase
@@ -599,6 +628,16 @@ export default async function Page({
             isNew: companyIsNew,
           }}
           rankInfo={rankInfo}
+          action={
+            <WatchlistButton
+              companyCode={code}
+              loginRedirectPath={`/company/${code}`}
+              initialIsAuthenticated={Boolean(authenticatedUserId)}
+              initialHasWatchlist={Boolean(firstWatchlist)}
+              initialIsInWatchlist={isInFirstWatchlist}
+              initialWatchlistName={firstWatchlist?.name ?? null}
+            />
+          }
         />
 
         {companySector && (
