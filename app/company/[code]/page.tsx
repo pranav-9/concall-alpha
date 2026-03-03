@@ -1,6 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
 import { ChartLineLabel } from "./chart";
+import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { createClient } from "@/lib/supabase/server";
 import {
   QuarterData,
@@ -265,7 +266,8 @@ export default async function Page({
       .eq("fy", latestQuarterKey.fy)
       .eq("qtr", latestQuarterKey.qtr);
 
-    const quarterRanked = (latestQuarterRows ?? [])
+    const quarterRanked = assignCompetitionRanks(
+      (latestQuarterRows ?? [])
       .map((row) => ({
         companyCode: String((row as { company_code?: string }).company_code ?? "").toUpperCase(),
         score: toNumeric((row as { score?: unknown }).score),
@@ -274,11 +276,13 @@ export default async function Page({
       .sort((a, b) => {
         if ((b.score ?? 0) !== (a.score ?? 0)) return (b.score ?? 0) - (a.score ?? 0);
         return a.companyCode.localeCompare(b.companyCode);
-      });
+      }),
+      (row) => row.score,
+    );
 
     const quarterTotal = quarterRanked.length;
     const quarterRank =
-      quarterRanked.findIndex((row) => row.companyCode === code.toUpperCase()) + 1;
+      quarterRanked.find((row) => row.companyCode === code.toUpperCase())?.leaderboardRank ?? 0;
     if (quarterTotal > 0 && quarterRank > 0) {
       rankInfo = {
         ...rankInfo,
@@ -310,18 +314,21 @@ export default async function Page({
     });
   });
 
-  const growthRanked = Array.from(latestGrowthByCompany.values()).sort((a, b) => {
-    if (b.growthScore !== a.growthScore) return b.growthScore - a.growthScore;
-    const aBase = a.base ?? Number.NEGATIVE_INFINITY;
-    const bBase = b.base ?? Number.NEGATIVE_INFINITY;
-    if (bBase !== aBase) return bBase - aBase;
-    return a.company.localeCompare(b.company);
-  });
+  const growthRanked = assignCompetitionRanks(
+    Array.from(latestGrowthByCompany.values()).sort((a, b) => {
+      if (b.growthScore !== a.growthScore) return b.growthScore - a.growthScore;
+      const aBase = a.base ?? Number.NEGATIVE_INFINITY;
+      const bBase = b.base ?? Number.NEGATIVE_INFINITY;
+      if (bBase !== aBase) return bBase - aBase;
+      return a.company.localeCompare(b.company);
+    }),
+    (row) => row.growthScore,
+  );
 
   const growthTotal = growthRanked.length;
   const growthKeys = [code.toUpperCase(), (companyName ?? "").toUpperCase()].filter(Boolean);
   const growthRank =
-    growthRanked.findIndex((row) => growthKeys.includes(row.company)) + 1;
+    growthRanked.find((row) => growthKeys.includes(row.company))?.leaderboardRank ?? 0;
   if (growthTotal > 0 && growthRank > 0) {
     rankInfo = {
       ...rankInfo,

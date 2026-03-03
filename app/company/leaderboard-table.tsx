@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { ArrowUpDown, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 
@@ -17,6 +18,7 @@ const AverageScoreChip = ({ value, label }: { value: number; label: string }) =>
 
 export type CompanyRow = {
   company: string;
+  leaderboardRank?: number;
   trendDirection?: "improving" | "declining" | "stable";
   trendDescription?: string;
   trendChange?: number;
@@ -31,11 +33,9 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
     {
       id: "rank",
       header: "#",
-      cell: ({ table, row }) => {
-        const rank =
-          table.getRowModel().rows.findIndex((r) => r.id === row.id) + 1;
-        return <span className="text-muted-foreground text-xs">{rank}.</span>;
-      },
+      cell: ({ row }) => (
+        <span className="text-muted-foreground text-xs">{row.original.leaderboardRank ?? row.index + 1}.</span>
+      ),
     },
     {
       accessorKey: "company",
@@ -146,5 +146,14 @@ export function LeaderboardTable({
   data: CompanyRow[];
 }) {
   const columns = buildColumns(quarterLabels);
-  return <DataTable columns={columns} data={data} />;
+  const latestQuarterLabel = quarterLabels[0];
+  const rankedData = assignCompetitionRanks(data, (item) => {
+    if (!latestQuarterLabel) return null;
+    const raw = item[latestQuarterLabel];
+    if (raw == null || raw === "") return null;
+    const score = Number(raw);
+    return Number.isFinite(score) ? score : null;
+  });
+
+  return <DataTable columns={columns} data={rankedData} />;
 }

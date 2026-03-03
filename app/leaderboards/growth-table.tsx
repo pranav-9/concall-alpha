@@ -6,6 +6,7 @@ import { DataTable } from "@/app/company/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
 
 export type GrowthRowTable = {
+  leaderboardRank: number;
   companyCode: string;
   companyName: string;
   updatedAt?: string | null;
@@ -36,7 +37,9 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
   {
     id: "rank",
     header: "#",
-    cell: ({ row }) => <span className="text-muted-foreground text-sm">{row.index + 1}</span>,
+    cell: ({ row }) => (
+      <span className="text-muted-foreground text-sm">{row.original.leaderboardRank}</span>
+    ),
   },
   {
     accessorKey: "companyName",

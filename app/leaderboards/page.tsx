@@ -1,6 +1,7 @@
 import { LeaderboardTable } from "@/app/company/leaderboard-table";
 import { getConcallData } from "@/app/company/get-concall-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -24,6 +25,7 @@ type CompanyRow = {
 };
 
 type GrowthEntry = {
+  leaderboardRank: number;
   companyCode: string;
   companyName: string;
   fiscalYear?: string | null;
@@ -87,6 +89,7 @@ const fetchGrowthLeaders = async () => {
 
   companies.forEach((company) => {
     entriesMap.set(company.code, {
+      leaderboardRank: 0,
       companyCode: company.code,
       companyName: company.name ?? company.code,
       fiscalYear: null,
@@ -106,6 +109,7 @@ const fetchGrowthLeaders = async () => {
     const companyName = matchedCompany?.name ?? row.company;
 
     entriesMap.set(companyCode, {
+      leaderboardRank: 0,
       companyCode,
       companyName,
       fiscalYear:
@@ -122,7 +126,13 @@ const fetchGrowthLeaders = async () => {
     });
   });
 
-  const entries: GrowthEntry[] = Array.from(entriesMap.values()).sort((a, b) => {
+  const sortedEntries: Omit<GrowthEntry, "leaderboardRank">[] = Array.from(entriesMap.values())
+    .map((item) => {
+      const { leaderboardRank, ...entry } = item;
+      void leaderboardRank;
+      return entry;
+    })
+    .sort((a, b) => {
       const aScore = typeof a.growthScore === "number" ? a.growthScore : null;
       const bScore = typeof b.growthScore === "number" ? b.growthScore : null;
 
@@ -146,6 +156,11 @@ const fetchGrowthLeaders = async () => {
       if (bBase !== aBase) return bBase - aBase;
       return a.companyName.localeCompare(b.companyName);
     });
+
+  const entries: GrowthEntry[] = assignCompetitionRanks(
+    sortedEntries,
+    (item) => (typeof item.growthScore === "number" ? item.growthScore : null),
+  );
 
   return entries;
 };
