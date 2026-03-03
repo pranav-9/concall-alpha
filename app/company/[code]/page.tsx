@@ -602,19 +602,21 @@ export default async function Page({
         />
 
         {companyRow?.sector && (
-          <SectionCard id="sector-context" title="Industry Overview">
+          <SectionCard
+            id="sector-context"
+            title="Industry Overview"
+            headerAction={
+              sectorPreviewHref ? (
+                <a
+                  href={sectorPreviewHref}
+                  className="inline-flex items-center rounded-md border border-foreground/10 bg-foreground px-3 py-1.5 text-[11px] font-semibold text-background shadow-sm transition-colors hover:bg-foreground/90"
+                >
+                  Full sector view
+                </a>
+              ) : undefined
+            }
+          >
             <div className="space-y-3">
-              {sectorPreviewHref && (
-                <div className="flex items-center justify-end">
-                  <a
-                    href={sectorPreviewHref}
-                    className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-accent transition-colors"
-                  >
-                    Full sector view
-                  </a>
-                </div>
-              )}
-
               {sectorPreview || subSectorPreview ? (
                 <div
                   className={`grid grid-cols-1 gap-3 ${sectorPreview && subSectorPreview ? "lg:grid-cols-2" : ""}`}
@@ -1002,7 +1004,7 @@ export default async function Page({
                           );
                         })}
                       </CarouselContent>
-                      <div className="flex justify-center gap-2 mt-2">
+                      <div className="mt-2 flex justify-center gap-2 xl:hidden">
                         <CarouselPrevious className="static translate-x-0 translate-y-0 border border-border bg-background text-foreground hover:bg-accent" />
                         <CarouselNext className="static translate-x-0 translate-y-0 border border-border bg-background text-foreground hover:bg-accent" />
                       </div>
@@ -1049,34 +1051,12 @@ export default async function Page({
 
               {normalizedGrowthOutlook.catalysts.length > 0 && (
                   <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
-                        Catalysts (next 12-24 months)
-                      </p>
-                      <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-                        <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
-                          Total triggers: {normalizedGrowthOutlook.catalysts.length}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                          Visible per view: 1 / 2 / 3
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border md:hidden">
-                          Slides: {normalizedGrowthOutlook.catalysts.length}
-                        </span>
-                        <span className="hidden md:inline-flex xl:hidden px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                          Slides: {Math.ceil(normalizedGrowthOutlook.catalysts.length / 2)}
-                        </span>
-                        <span className="hidden xl:inline-flex px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                          Slides: {Math.ceil(normalizedGrowthOutlook.catalysts.length / 3)}
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">
-                      Swipe or use arrows to browse all triggers.
+                    <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
+                      Top 3 Growth Catalysts
                     </p>
                     <Carousel opts={{ align: "start" }} className="w-full">
                       <CarouselContent>
-                        {normalizedGrowthOutlook.catalysts.map((c, idx) => {
+                        {normalizedGrowthOutlook.catalysts.slice(0, 3).map((c, idx) => {
                           const timelineItems = c.timelineItems;
                           const remainingTimelineItems = timelineItems.slice(2);
                           const hasTimelineDetails = remainingTimelineItems.length > 0;
@@ -1091,6 +1071,11 @@ export default async function Page({
                                     : "border-l-2 border-l-amber-500/70"
                                 }`}
                               >
+                                {c.catalyst && (
+                                  <p className="text-sm font-semibold text-foreground leading-snug">
+                                    {c.catalyst}
+                                  </p>
+                                )}
                                 <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
                                   {c.type && (
                                     <span className="px-2 py-0.5 rounded-full border border-blue-200 bg-blue-100 text-blue-700 dark:bg-blue-900/35 dark:text-blue-200 dark:border-blue-700/40">
@@ -1103,11 +1088,6 @@ export default async function Page({
                                     </span>
                                   )}
                                 </div>
-                                {c.catalyst && (
-                                  <p className="text-sm font-semibold text-foreground leading-snug">
-                                    {c.catalyst}
-                                  </p>
-                                )}
 
                                 {timelineItems.length > 0 && (
                                   <div className="space-y-1.5">
@@ -1143,7 +1123,7 @@ export default async function Page({
                                                 )}
                                               </div>
                                               {quote && (
-                                                <p className="text-[11px] text-foreground leading-snug line-clamp-2">
+                                                <p className="text-[11px] text-foreground leading-snug">
                                                   {quote}
                                                 </p>
                                               )}

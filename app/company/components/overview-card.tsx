@@ -47,7 +47,6 @@ const rankPillText = (
 
 export function OverviewCard({ data, companyInfo, rankInfo }: OverviewCardProps) {
   const sentiment = data ? categoryFor(data.score) : null;
-  const codeLabel = companyInfo?.code ?? data?.company_code ?? "—";
   const sectorHref = companyInfo?.sector
     ? `/sector/${slugifySector(companyInfo.sector)}`
     : null;
@@ -73,9 +72,6 @@ export function OverviewCard({ data, companyInfo, rankInfo }: OverviewCardProps)
                   )}
                 </p>
               )}
-              <p className="text-sm text-muted-foreground leading-tight">
-                {codeLabel}
-              </p>
             </div>
             {sentiment && (
               <Badge className={`${sentiment.bg} text-xs px-2 py-1 h-fit`}>
@@ -91,29 +87,25 @@ export function OverviewCard({ data, companyInfo, rankInfo }: OverviewCardProps)
             </div>
           )}
         </div>
-        {companyInfo?.sector && (
-          <div className="flex flex-col gap-1">
-            <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-              <Link
-                href={sectorHref ?? "#"}
-                prefetch={false}
-                className="px-2 py-1 rounded-full bg-muted text-foreground border border-border hover:bg-accent transition-colors"
-              >
-                Sector: {companyInfo.sector}
-              </Link>
-              {companyInfo?.subSector && (
-                <Link
-                  href={subSectorHref ?? "#"}
-                  prefetch={false}
-                  className="px-2 py-1 rounded-full bg-muted text-foreground border border-border hover:bg-accent transition-colors"
-                >
-                  Sub-sector: {companyInfo.subSector}
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
-        <div className="flex flex-wrap gap-2 text-[11px]">
+        <div className="flex flex-wrap items-center gap-2 text-[11px]">
+          {companyInfo?.sector && (
+            <Link
+              href={sectorHref ?? "#"}
+              prefetch={false}
+              className="px-2 py-1 rounded-full bg-muted text-foreground border border-border hover:bg-accent transition-colors"
+            >
+              Sector: {companyInfo.sector}
+            </Link>
+          )}
+          {companyInfo?.sector && companyInfo?.subSector && (
+            <Link
+              href={subSectorHref ?? "#"}
+              prefetch={false}
+              className="px-2 py-1 rounded-full bg-muted text-foreground border border-border hover:bg-accent transition-colors"
+            >
+              Sub-sector: {companyInfo.subSector}
+            </Link>
+          )}
           <span
             className={`px-2 py-1 rounded-full border ${rankInfo?.quarter ? percentilePillClass(rankInfo.quarter.percentile) : "bg-muted text-muted-foreground border-border"}`}
           >
