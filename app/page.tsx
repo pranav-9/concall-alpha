@@ -143,24 +143,17 @@ export default async function Home() {
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-[90%] sm:w-full flex flex-col gap-0 justify-items-center items-center">
         {/* <Navbar></Navbar> */}
-        <div className="hidden lg:block w-[95%] sm:w-[90%] pt-6 sm:pt-8">
-          <div className="grid grid-cols-3 gap-6 items-start">
-            <div className="col-span-2">
+        <div className="w-[95%] sm:w-[90%] pt-6 sm:pt-8">
+          <div className="grid grid-cols-1 gap-6 items-start lg:grid-cols-3">
+            <div className="lg:col-span-2">
               <Suspense fallback={<TopStocksHeroFallback />}>
                 <TopStocks heroPanel />
               </Suspense>
             </div>
-            <div className="col-span-1">
+            <div className="lg:col-span-1">
               <RecentScoreUpdates heroPanel />
             </div>
           </div>
-        </div>
-
-        <div className="lg:hidden w-[95%] sm:w-[90%] pt-6 sm:pt-8 space-y-6">
-          <Suspense fallback={<TopStocksHeroFallback />}>
-            <TopStocks heroPanel />
-          </Suspense>
-          <RecentScoreUpdates heroPanel />
         </div>
         <section className="w-[95%] sm:w-[90%] pt-6 sm:pt-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
