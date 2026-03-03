@@ -1078,6 +1078,8 @@ export default async function Page({
                       <CarouselContent>
                         {normalizedGrowthOutlook.catalysts.map((c, idx) => {
                           const timelineItems = c.timelineItems;
+                          const remainingTimelineItems = timelineItems.slice(2);
+                          const hasTimelineDetails = remainingTimelineItems.length > 0;
                           return (
                             <CarouselItem key={idx} className="basis-full md:basis-1/2 xl:basis-1/3">
                               <div
@@ -1095,20 +1097,9 @@ export default async function Page({
                                       {c.type}
                                     </span>
                                   )}
-                                  {c.timing && (
-                                    <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
-                                      {c.timing}
-                                    </span>
-                                  )}
                                   {c.expectedImpact && (
                                     <span className="px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-100 dark:border-emerald-700/40">
                                       Impact: {c.expectedImpact}
-                                    </span>
-                                  )}
-                                  {c.quantified?.value != null && (
-                                    <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
-                                      Qty: {String(c.quantified.value)}
-                                      {c.quantified.unit ? ` ${c.quantified.unit}` : ""}
                                     </span>
                                   )}
                                 </div>
@@ -1116,59 +1107,6 @@ export default async function Page({
                                   <p className="text-sm font-semibold text-foreground leading-snug">
                                     {c.catalyst}
                                   </p>
-                                )}
-
-                                {(c.priority || c.investibilityChecks) && (
-                                  <div className="space-y-1.5">
-                                    {c.priority && (
-                                      <div className="flex flex-wrap gap-1.5 text-[10px]">
-                                        {typeof c.priority.weightedPriority === "number" && (
-                                          <span className="px-2 py-0.5 rounded-full bg-background border border-border">
-                                            Priority: {c.priority.weightedPriority.toFixed(1)}
-                                          </span>
-                                        )}
-                                        {typeof c.priority.certaintyScore === "number" && (
-                                          <span className="px-2 py-0.5 rounded-full bg-background border border-border">
-                                            Certainty: {c.priority.certaintyScore}
-                                          </span>
-                                        )}
-                                        {typeof c.priority.timeRelevance === "number" && (
-                                          <span className="px-2 py-0.5 rounded-full bg-background border border-border">
-                                            Time: {c.priority.timeRelevance}
-                                          </span>
-                                        )}
-                                        {typeof c.priority.progressionDepth === "number" && (
-                                          <span className="px-2 py-0.5 rounded-full bg-background border border-border">
-                                            Progression: {c.priority.progressionDepth}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                    {c.investibilityChecks && (
-                                      <div className="flex flex-wrap gap-1.5 text-[10px] text-muted-foreground">
-                                        {c.investibilityChecks.entryTiming && (
-                                          <span className="px-2 py-0.5 rounded-full bg-muted border border-border">
-                                            Entry: {c.investibilityChecks.entryTiming}
-                                          </span>
-                                        )}
-                                        {c.investibilityChecks.adoption && (
-                                          <span className="px-2 py-0.5 rounded-full bg-muted border border-border">
-                                            Adoption: {c.investibilityChecks.adoption}
-                                          </span>
-                                        )}
-                                        {c.investibilityChecks.feasibility && (
-                                          <span className="px-2 py-0.5 rounded-full bg-muted border border-border">
-                                            Feasibility: {c.investibilityChecks.feasibility}
-                                          </span>
-                                        )}
-                                        {c.investibilityChecks.unitEconomics && (
-                                          <span className="px-2 py-0.5 rounded-full bg-muted border border-border">
-                                            Unit economics: {c.investibilityChecks.unitEconomics}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
                                 )}
 
                                 {timelineItems.length > 0 && (
@@ -1219,86 +1157,60 @@ export default async function Page({
                                         })}
                                       </ul>
                                     </div>
-                                    {timelineItems.length > 2 && (
-                                      <details className="text-[10px] text-muted-foreground">
-                                        <summary className="cursor-pointer hover:text-foreground/80">
-                                          Show full timeline ({timelineItems.length})
-                                        </summary>
-                                        <div className="relative pl-4 mt-1.5 before:content-[''] before:absolute before:left-[3px] before:top-1 before:bottom-1 before:w-px before:bg-border/80">
-                                          <ul className="space-y-2">
-                                            {timelineItems.slice(2).map((t, tIdx) => {
-                                              const stageMeta = getTimelineStageDisplay(t.stage);
-                                              const period = t.period ?? "";
-                                              const source = t.source ?? "";
-                                              const quote = t.quote ?? "";
-                                              const delta = t.delta ?? "";
-                                              return (
-                                                <li
-                                                  key={`${idx}-timeline-extra-${tIdx}`}
-                                                  className="relative pl-3 space-y-1 border-l border-border/60 ml-1"
-                                                >
-                                                  <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-muted-foreground" />
-                                                  <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-                                                    <span
-                                                      className={`px-2 py-0.5 rounded-full uppercase tracking-wide ${stageMeta.className}`}
-                                                    >
-                                                      {stageMeta.label}
-                                                    </span>
-                                                    {(period || source) && (
-                                                      <span className="text-muted-foreground">
-                                                        {period}
-                                                        {period && source ? " · " : ""}
-                                                        {source}
-                                                      </span>
-                                                    )}
-                                                  </div>
-                                                  {quote && (
-                                                    <p className="text-[11px] text-foreground leading-snug">
-                                                      {quote}
-                                                    </p>
-                                                  )}
-                                                  {delta && (
-                                                    <p className="text-[10px] text-muted-foreground leading-snug">
-                                                      {delta}
-                                                    </p>
-                                                  )}
-                                                </li>
-                                              );
-                                            })}
-                                          </ul>
-                                        </div>
-                                      </details>
-                                    )}
                                   </div>
                                 )}
 
-                                {c.evidenceLines.length > 0 && (
-                                  <div className="space-y-1 pt-2 border-t border-border/60">
-                                    {timelineItems.length > 0 ? (
-                                      <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                                        Supporting evidence
-                                      </p>
-                                    ) : null}
-                                    <p className="text-[11px] text-foreground leading-snug">
-                                      • {c.evidenceLines[0]?.meta ? `${c.evidenceLines[0].meta} · ` : ""}
-                                      {c.evidenceLines[0]?.text ?? "Evidence available"}
-                                    </p>
-                                    {c.evidenceLines.length > 1 && (
-                                      <details className="text-[10px] text-muted-foreground">
-                                        <summary className="cursor-pointer hover:text-foreground/80">
-                                          Show evidence ({c.evidenceLines.length})
-                                        </summary>
-                                        <div className="mt-1 space-y-1">
-                                          {c.evidenceLines.slice(1).map((ev, evIdx) => (
-                                            <p key={evIdx} className="leading-snug text-foreground">
-                                              • {ev.meta ? `${ev.meta} · ` : ""}
-                                              {ev.text}
-                                            </p>
-                                          ))}
-                                        </div>
-                                      </details>
-                                    )}
-                                  </div>
+                                {hasTimelineDetails && (
+                                  <details className="rounded-md border border-border bg-muted/20 px-3 py-2">
+                                    <summary className="cursor-pointer list-none text-[11px] text-muted-foreground hover:text-foreground">
+                                      Show full timeline ({timelineItems.length})
+                                    </summary>
+                                    <div className="mt-3 space-y-3">
+                                      <div className="relative pl-4 before:content-[''] before:absolute before:left-[3px] before:top-1 before:bottom-1 before:w-px before:bg-border/80">
+                                        <ul className="space-y-2">
+                                          {remainingTimelineItems.map((t, tIdx) => {
+                                            const stageMeta = getTimelineStageDisplay(t.stage);
+                                            const period = t.period ?? "";
+                                            const source = t.source ?? "";
+                                            const quote = t.quote ?? "";
+                                            const delta = t.delta ?? "";
+                                            return (
+                                              <li
+                                                key={`${idx}-timeline-extra-${tIdx}`}
+                                                className="relative pl-3 space-y-1 border-l border-border/60 ml-1"
+                                              >
+                                                <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-muted-foreground" />
+                                                <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                                                  <span
+                                                    className={`px-2 py-0.5 rounded-full uppercase tracking-wide ${stageMeta.className}`}
+                                                  >
+                                                    {stageMeta.label}
+                                                  </span>
+                                                  {(period || source) && (
+                                                    <span className="text-muted-foreground">
+                                                      {period}
+                                                      {period && source ? " · " : ""}
+                                                      {source}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                {quote && (
+                                                  <p className="text-[11px] text-foreground leading-snug">
+                                                    {quote}
+                                                  </p>
+                                                )}
+                                                {delta && (
+                                                  <p className="text-[10px] text-muted-foreground leading-snug">
+                                                    {delta}
+                                                  </p>
+                                                )}
+                                              </li>
+                                            );
+                                          })}
+                                        </ul>
+                                      </div>
+                                    </div>
+                                  </details>
                                 )}
                               </div>
                             </CarouselItem>
@@ -1459,14 +1371,14 @@ export default async function Page({
 
         <SectionCard id="business-overview" title="Business Snapshot">
           <div className="flex flex-col gap-4">
-            <div className="rounded-xl border border-border bg-muted/20 p-4 sm:p-5">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div className="rounded-xl border border-border bg-muted/15 p-4">
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                       Business Snapshot
                     </p>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-muted-foreground">
                       {normalizedBusinessSnapshot?.generatedAtLabel && (
                         <span>Generated: {normalizedBusinessSnapshot.generatedAtLabel}</span>
                       )}
@@ -1497,163 +1409,146 @@ export default async function Page({
 
                 {normalizedBusinessSnapshot ? (
                   <>
-                    {normalizedBusinessSnapshot.businessSummaryShort ||
-                    normalizedBusinessSnapshot.businessSummaryLong ? (
-                      <div className="rounded-xl border border-border/50 bg-background/70 p-4 space-y-2">
-                        {normalizedBusinessSnapshot.businessSummaryShort && (
-                          <p className="text-sm sm:text-base font-semibold text-foreground leading-relaxed">
-                            {normalizedBusinessSnapshot.businessSummaryShort}
-                          </p>
-                        )}
-                        {normalizedBusinessSnapshot.businessSummaryLong && (
-                          <p className="text-sm text-muted-foreground leading-relaxed max-w-4xl">
-                            {normalizedBusinessSnapshot.businessSummaryLong}
+                    <div className="grid grid-cols-1 gap-3 xl:grid-cols-5">
+                      <div className="xl:col-span-3">
+                        {normalizedBusinessSnapshot.businessSummaryShort ||
+                        normalizedBusinessSnapshot.businessSummaryLong ? (
+                          <div className="rounded-lg border border-border/40 bg-background/60 p-3 space-y-2">
+                            {normalizedBusinessSnapshot.businessSummaryShort && (
+                              <p className="text-sm sm:text-base font-semibold text-foreground leading-relaxed">
+                                {normalizedBusinessSnapshot.businessSummaryShort}
+                              </p>
+                            )}
+                            {normalizedBusinessSnapshot.businessSummaryLong && (
+                              <p className="text-sm text-muted-foreground leading-relaxed sm:line-clamp-3 xl:line-clamp-2">
+                                {normalizedBusinessSnapshot.businessSummaryLong}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No business snapshot summary available yet.
                           </p>
                         )}
                       </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No business snapshot summary available yet.
-                      </p>
-                    )}
 
-                    {(normalizedBusinessSnapshot.businessModelQuality ||
-                      normalizedBusinessSnapshot.operatingModel ||
-                      normalizedBusinessSnapshot.valueChainPosition ||
-                      normalizedBusinessSnapshot.demandShape ||
-                      normalizedBusinessSnapshot.dominantSegment ||
-                      normalizedBusinessSnapshot.emergingSegment) && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                          Business Model Profile
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {normalizedBusinessSnapshot.businessModelQuality && (
-                            <span className="rounded-full border border-border bg-muted px-2 py-1 text-[11px] text-foreground">
-                              Model: {normalizedBusinessSnapshot.businessModelQuality}
-                            </span>
-                          )}
-                          {normalizedBusinessSnapshot.operatingModel && (
-                            <span className="rounded-full border border-border bg-muted px-2 py-1 text-[11px] text-foreground">
-                              Ops: {normalizedBusinessSnapshot.operatingModel}
-                            </span>
-                          )}
-                          {normalizedBusinessSnapshot.valueChainPosition && (
-                            <span className="rounded-full border border-border bg-muted px-2 py-1 text-[11px] text-foreground">
-                              Value chain: {normalizedBusinessSnapshot.valueChainPosition}
-                            </span>
-                          )}
-                          {normalizedBusinessSnapshot.demandShape && (
-                            <span className="rounded-full border border-border bg-muted px-2 py-1 text-[11px] text-foreground">
-                              Demand: {normalizedBusinessSnapshot.demandShape}
-                            </span>
-                          )}
-                          {normalizedBusinessSnapshot.dominantSegment && (
-                            <span className="rounded-full border border-border bg-muted px-2 py-1 text-[11px] text-foreground">
-                              Core: {normalizedBusinessSnapshot.dominantSegment}
-                            </span>
-                          )}
-                          {normalizedBusinessSnapshot.emergingSegment && (
-                            <span className="rounded-full border border-border bg-muted px-2 py-1 text-[11px] text-foreground">
-                              Emerging: {normalizedBusinessSnapshot.emergingSegment}
-                            </span>
-                          )}
+                      {(normalizedBusinessSnapshot.businessModelQuality ||
+                        normalizedBusinessSnapshot.operatingModel ||
+                        normalizedBusinessSnapshot.valueChainPosition ||
+                        normalizedBusinessSnapshot.demandShape ||
+                        normalizedBusinessSnapshot.dominantSegment ||
+                        normalizedBusinessSnapshot.emergingSegment) && (
+                        <div className="rounded-lg border border-border/40 bg-background/60 p-3 xl:col-span-2">
+                          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                            Business Model
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {normalizedBusinessSnapshot.businessModelQuality && (
+                              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                                Model: {normalizedBusinessSnapshot.businessModelQuality}
+                              </span>
+                            )}
+                            {normalizedBusinessSnapshot.operatingModel && (
+                              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                                Ops: {normalizedBusinessSnapshot.operatingModel}
+                              </span>
+                            )}
+                            {normalizedBusinessSnapshot.valueChainPosition && (
+                              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                                Value chain: {normalizedBusinessSnapshot.valueChainPosition}
+                              </span>
+                            )}
+                            {normalizedBusinessSnapshot.demandShape && (
+                              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                                Demand: {normalizedBusinessSnapshot.demandShape}
+                              </span>
+                            )}
+                            {normalizedBusinessSnapshot.dominantSegment && (
+                              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                                Core: {normalizedBusinessSnapshot.dominantSegment}
+                              </span>
+                            )}
+                            {normalizedBusinessSnapshot.emergingSegment && (
+                              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                                Emerging: {normalizedBusinessSnapshot.emergingSegment}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     {(normalizedBusinessSnapshot.topRevenueDrivers.length > 0 ||
-                      normalizedBusinessSnapshot.topGrowthDrivers.length > 0) && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                          What Drives the Business
-                        </p>
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                          {normalizedBusinessSnapshot.topRevenueDrivers.length > 0 && (
-                            <div className="rounded-lg border border-border/50 bg-background/70 p-3">
-                              <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                                Top Revenue Drivers
-                              </p>
-                              <ul className="mt-2 space-y-1">
-                                {normalizedBusinessSnapshot.topRevenueDrivers.map((driver, idx) => (
-                                  <li
-                                    key={idx}
-                                    className="text-xs text-foreground leading-snug border-l border-border/70 pl-2"
-                                  >
-                                    {driver}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          {normalizedBusinessSnapshot.topGrowthDrivers.length > 0 && (
-                            <div className="rounded-lg border border-border/50 bg-background/70 p-3">
-                              <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                                Top Growth Drivers
-                              </p>
-                              <ul className="mt-2 space-y-1">
-                                {normalizedBusinessSnapshot.topGrowthDrivers.map((driver, idx) => (
-                                  <li
-                                    key={idx}
-                                    className="text-xs text-foreground leading-snug border-l border-border/70 pl-2"
-                                  >
-                                    {driver}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {(normalizedBusinessSnapshot.keyDependencies.length > 0 ||
+                      normalizedBusinessSnapshot.keyDependencies.length > 0 ||
                       normalizedBusinessSnapshot.keyRisksToModel.length > 0) && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                          What Can Break the Model
-                        </p>
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                          {normalizedBusinessSnapshot.keyDependencies.length > 0 && (
-                            <div className="rounded-lg border border-border/50 bg-background/70 p-3">
-                              <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                                Key Dependencies
-                              </p>
-                              <ul className="mt-2 space-y-1">
-                                {normalizedBusinessSnapshot.keyDependencies.map((dependency, idx) => (
-                                  <li
-                                    key={idx}
-                                    className="text-xs text-foreground leading-snug border-l border-amber-400/50 pl-2"
-                                  >
-                                    {dependency}
-                                  </li>
-                                ))}
-                              </ul>
+                      <div className="grid grid-cols-1 gap-3 xl:grid-cols-5">
+                        {normalizedBusinessSnapshot.topRevenueDrivers.length > 0 && (
+                          <div className="rounded-lg border border-border/40 bg-background/60 p-3 xl:col-span-2">
+                            <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+                              Top Revenue Drivers
+                            </p>
+                            <ul className="mt-2 space-y-0.5">
+                              {normalizedBusinessSnapshot.topRevenueDrivers.map((driver, idx) => (
+                                <li
+                                  key={idx}
+                                  className="text-xs text-foreground leading-snug border-l border-border/70 pl-2"
+                                >
+                                  {driver}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {(normalizedBusinessSnapshot.keyDependencies.length > 0 ||
+                          normalizedBusinessSnapshot.keyRisksToModel.length > 0) && (
+                          <div className="rounded-lg border border-border/40 bg-background/60 p-3 xl:col-span-3">
+                            <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+                              Model Watchpoints
+                            </p>
+                            <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
+                              {normalizedBusinessSnapshot.keyDependencies.length > 0 && (
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                                    Dependencies
+                                  </p>
+                                  <ul className="mt-1.5 space-y-0.5">
+                                    {normalizedBusinessSnapshot.keyDependencies.map((dependency, idx) => (
+                                      <li
+                                        key={idx}
+                                        className="text-xs text-foreground leading-snug border-l border-amber-400/50 pl-1.5"
+                                      >
+                                        {dependency}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {normalizedBusinessSnapshot.keyRisksToModel.length > 0 && (
+                                <div>
+                                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                                    Risks
+                                  </p>
+                                  <ul className="mt-1.5 space-y-0.5">
+                                    {normalizedBusinessSnapshot.keyRisksToModel.map((risk, idx) => (
+                                      <li
+                                        key={idx}
+                                        className="text-xs text-foreground leading-snug border-l border-red-400/50 pl-1.5"
+                                      >
+                                        {risk}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {normalizedBusinessSnapshot.keyRisksToModel.length > 0 && (
-                            <div className="rounded-lg border border-border/50 bg-background/70 p-3">
-                              <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                                Key Risks to Model
-                              </p>
-                              <ul className="mt-2 space-y-1">
-                                {normalizedBusinessSnapshot.keyRisksToModel.map((risk, idx) => (
-                                  <li
-                                    key={idx}
-                                    className="text-xs text-foreground leading-snug border-l border-red-400/50 pl-2"
-                                  >
-                                    {risk}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
                     {normalizedBusinessSnapshot.mixShiftSummary && (
-                      <div className="rounded-lg border border-sky-200/60 bg-sky-50/60 p-3 space-y-1 dark:border-sky-700/30 dark:bg-sky-950/10">
+                      <div className="rounded-lg border border-sky-200/50 bg-sky-50/40 p-3 space-y-0.5 dark:border-sky-700/30 dark:bg-sky-950/10">
                         <p className="text-[10px] uppercase tracking-wide text-sky-700 dark:text-sky-300 font-semibold">
                           Mix Shift
                         </p>
@@ -1664,7 +1559,7 @@ export default async function Page({
                     )}
 
                     {normalizedBusinessSnapshot.sourceUrls.length > 0 && (
-                      <details className="rounded-lg border border-border/40 bg-background/60 p-3">
+                      <details className="rounded-md border border-border/30 bg-background/40 p-2.5">
                         <summary className="cursor-pointer text-[11px] font-medium text-muted-foreground hover:text-foreground">
                           Sources
                         </summary>
