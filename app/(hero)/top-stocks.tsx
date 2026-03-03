@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import ConcallScore from "@/components/concall-score";
 import { Badge } from "@/components/ui/badge";
+import { isCompanyNew } from "@/lib/company-freshness";
 import { createClient } from "@/lib/supabase/server";
 import TopStocksHeroRail from "@/app/(hero)/top-stocks-hero-rail";
 
@@ -16,7 +17,12 @@ type CompanyRecord = {
   fy: number;
   qtr: number;
   quarter_label: string | null;
-  company: { name?: string | null; sector?: string | null; sub_sector?: string | null } | null;
+  company: {
+    name?: string | null;
+    sector?: string | null;
+    sub_sector?: string | null;
+    created_at?: string | null;
+  } | null;
 };
 
 type RawConcallRow = {
@@ -26,8 +32,18 @@ type RawConcallRow = {
   qtr: number;
   quarter_label?: string | null;
   company?:
-    | { name?: string | null; sector?: string | null; sub_sector?: string | null }[]
-    | { name?: string | null; sector?: string | null; sub_sector?: string | null }
+    | {
+        name?: string | null;
+        sector?: string | null;
+        sub_sector?: string | null;
+        created_at?: string | null;
+      }[]
+    | {
+        name?: string | null;
+        sector?: string | null;
+        sub_sector?: string | null;
+        created_at?: string | null;
+      }
     | null;
 };
 
@@ -36,6 +52,7 @@ type ListItem = {
   name: string;
   sector?: string | null;
   subSector?: string | null;
+  isNew?: boolean;
   latestScore: number;
   delta?: number | null;
   sum4?: number | null;
@@ -66,6 +83,7 @@ type GrowthRow = {
 type GrowthItem = {
   company: string;
   displayName?: string;
+  isNew?: boolean;
   fiscalYear?: string | null;
   base?: number | null;
   upside?: number | null;
@@ -81,7 +99,7 @@ type GrowthItem = {
 const fetchAll = async (supabase: SupabaseServerClient) => {
   const { data, error } = await supabase
     .from("concall_analysis")
-    .select("company_code, score, fy, qtr, quarter_label, company(name, sector, sub_sector)")
+    .select("company_code, score, fy, qtr, quarter_label, company(name, sector, sub_sector, created_at)")
     .order("fy", { ascending: false })
     .order("qtr", { ascending: false });
 
@@ -119,7 +137,7 @@ const uniqueQuarters = (records: CompanyRecord[]) => {
   return quarters;
 };
 
-const buildLists = (records: CompanyRecord[]) => {
+const buildLists = (records: CompanyRecord[], now: Date) => {
   if (!records.length) {
     return {
       strength: [],
@@ -147,6 +165,7 @@ const buildLists = (records: CompanyRecord[]) => {
     const name = sorted[0]?.company?.name ?? "—";
     const sector = sorted[0]?.company?.sector ?? null;
     const subSector = sorted[0]?.company?.sub_sector ?? null;
+    const createdAt = sorted[0]?.company?.created_at ?? null;
     const latestRec =
       latest &&
       sorted.find((r) => r.fy === latest.fy && r.qtr === latest.qtr);
@@ -166,6 +185,7 @@ const buildLists = (records: CompanyRecord[]) => {
       name,
       sector,
       subSector,
+      isNew: isCompanyNew(createdAt, now),
       latestScore: latestRec ? Number(latestRec.score) : NaN,
       delta,
       sum4,
@@ -204,6 +224,7 @@ const buildLists = (records: CompanyRecord[]) => {
     const name = sorted[0]?.company?.name ?? "—";
     const sector = sorted[0]?.company?.sector ?? null;
     const subSector = sorted[0]?.company?.sub_sector ?? null;
+    const createdAt = sorted[0]?.company?.created_at ?? null;
     if (!latest) return;
     const latestRec = sorted.find((r) => r.fy === latest.fy && r.qtr === latest.qtr);
     if (!latestRec) return;
@@ -223,6 +244,7 @@ const buildLists = (records: CompanyRecord[]) => {
       name,
       sector,
       subSector,
+      isNew: isCompanyNew(createdAt, now),
       latestScore: Number(latestRec.score),
       twistPct,
       avg4: prevFourAvg,
@@ -342,6 +364,7 @@ const buildFourQSumMap = (records: CompanyRecord[]) => {
 
 const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) => {
   const supabase = await createClient();
+  const now = new Date();
   const [records, growthLeaders] = await Promise.all([
     fetchAll(supabase),
     fetchGrowthList(supabase),
@@ -355,7 +378,7 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
     );
   }
 
-  const { strength, latestTop, latestLabel, positiveTrendTwist, negativeTrendTwist } = buildLists(records);
+  const { strength, latestTop, latestLabel, positiveTrendTwist, negativeTrendTwist } = buildLists(records, now);
   const latestTopForHero =
     latestTop != null
       ? {
@@ -366,13 +389,23 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
         }
       : strength[0];
   const { sumMap, nameMap } = buildFourQSumMap(records);
+  const freshnessMap = new Map(
+    records.map((r) => [
+      r.company_code.toUpperCase(),
+      isCompanyNew(r.company?.created_at ?? null, now),
+    ]),
+  );
   const enrichedGrowth = growthLeaders.map((g) => {
     const key = g.company?.toUpperCase();
     const sumEntry = key ? sumMap.get(key) ?? null : null;
     const sum4 = sumEntry?.sum ?? null;
     const avg4 = sumEntry ? sumEntry.sum / Math.max(1, sumEntry.count) : null;
     const displayName = key ? nameMap.get(key) ?? g.company : g.company;
-    return { ...g, sum4, avg4, displayName };
+    const isNew =
+      (key ? freshnessMap.get(key) : undefined) ??
+      (displayName ? freshnessMap.get(displayName.toUpperCase()) : undefined) ??
+      false;
+    return { ...g, sum4, avg4, displayName, isNew };
   });
   const sortedGrowth = [...enrichedGrowth]
     .sort((a, b) => {
@@ -510,6 +543,11 @@ function ListCard({
                     <div className="flex flex-col w-3/4 gap-1">
                       <p className="font-medium text-sm leading-tight line-clamp-1 text-foreground">
                         {s.name}
+                        {s.isNew && (
+                          <span className="ml-1.5 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                            New
+                          </span>
+                        )}
                       </p>
                       {list.showSectorPill && sectorLabel && (
                         <span className="w-fit max-w-full truncate text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
@@ -574,6 +612,11 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
                 <div className="flex flex-col w-3/4 gap-1">
                   <p className="font-medium text-sm leading-tight line-clamp-1 text-foreground">
                     {item.displayName || item.company}
+                    {item.isNew && (
+                      <span className="ml-1.5 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                        New
+                      </span>
+                    )}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-0.5 min-w-[72px]">

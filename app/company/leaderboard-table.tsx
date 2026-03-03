@@ -19,13 +19,14 @@ const AverageScoreChip = ({ value, label }: { value: number; label: string }) =>
 export type CompanyRow = {
   company: string;
   leaderboardRank?: number;
+  isNew?: boolean;
   trendDirection?: "improving" | "declining" | "stable";
   trendDescription?: string;
   trendChange?: number;
   trendRecentAvg?: number;
   trendHistoricalAvg?: number;
   // Dynamic quarter columns keyed by label, e.g. "Q1 FY26"
-  [key: string]: string | number | null | undefined;
+  [key: string]: string | number | boolean | null | undefined;
 };
 
 function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
@@ -73,6 +74,11 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
                 <p>{name}</p>
               </Link>
             </div>
+            {row.original.isNew && (
+              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                New
+              </span>
+            )}
             {direction && (
               <span className={`flex items-center gap-1 text-[11px] ${trendColor}`}>
                 {trendIcon}

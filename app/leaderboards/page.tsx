@@ -1,6 +1,7 @@
 import { LeaderboardTable } from "@/app/company/leaderboard-table";
 import { getConcallData } from "@/app/company/get-concall-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { buildNewCompanySet } from "@/lib/company-freshness";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
@@ -22,12 +23,14 @@ type GrowthRow = {
 type CompanyRow = {
   code: string;
   name?: string | null;
+  created_at?: string | null;
 };
 
 type GrowthEntry = {
   leaderboardRank: number;
   companyCode: string;
   companyName: string;
+  isNew: boolean;
   fiscalYear?: string | null;
   updatedAt?: string | null;
   base?: number | null;
@@ -54,7 +57,7 @@ const fetchGrowthLeaders = async () => {
   const supabase = await createClient();
   const [{ data: companiesData, error: companiesError }, { data: growthData, error: growthError }] =
     await Promise.all([
-      supabase.from("company").select("code, name"),
+      supabase.from("company").select("code, name, created_at"),
       supabase
         .from("growth_outlook")
         .select("company, fiscal_year, run_timestamp, base_growth_pct, upside_growth_pct, downside_growth_pct, growth_score, growth_score_formula, growth_score_steps")
@@ -65,6 +68,12 @@ const fetchGrowthLeaders = async () => {
   if (growthError) throw growthError;
 
   const companies = (companiesData ?? []) as CompanyRow[];
+  const newCompanySet = buildNewCompanySet(
+    companies.map((company) => ({
+      code: company.code,
+      created_at: company.created_at ?? null,
+    })),
+  );
   const rows = (growthData ?? []) as GrowthRow[];
   const latestByCompany = new Map<string, GrowthRow>();
   const companyByCode = new Map<string, CompanyRow>();
@@ -92,6 +101,7 @@ const fetchGrowthLeaders = async () => {
       leaderboardRank: 0,
       companyCode: company.code,
       companyName: company.name ?? company.code,
+      isNew: newCompanySet.has(company.code.toUpperCase()),
       fiscalYear: null,
       updatedAt: null,
       base: null,
@@ -112,6 +122,7 @@ const fetchGrowthLeaders = async () => {
       leaderboardRank: 0,
       companyCode,
       companyName,
+      isNew: matchedCompany ? newCompanySet.has(companyCode.toUpperCase()) : false,
       fiscalYear:
         typeof row.fiscal_year === "string"
           ? row.fiscal_year

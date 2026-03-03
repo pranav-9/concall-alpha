@@ -13,6 +13,7 @@ interface OverviewCardProps {
     subSector?: string;
     exchange?: string;
     country?: string;
+    isNew?: boolean;
   };
   rankInfo?: {
     quarter?: { rank: number; total: number; percentile: number } | null;
@@ -65,6 +66,11 @@ export function OverviewCard({ data, companyInfo, rankInfo }: OverviewCardProps)
               {companyInfo?.name && (
                 <p className="font-bold text-2xl leading-tight text-foreground">
                   {companyInfo.name}
+                  {companyInfo?.isNew && (
+                    <span className="ml-2 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 align-middle text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                      New
+                    </span>
+                  )}
                 </p>
               )}
               <p className="text-sm text-muted-foreground leading-tight">

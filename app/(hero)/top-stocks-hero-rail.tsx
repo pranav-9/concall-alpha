@@ -18,6 +18,7 @@ type ListItem = {
   code: string;
   name: string;
   sector?: string | null;
+  isNew?: boolean;
   latestScore: number;
   twistPct?: number | null;
 };
@@ -34,6 +35,7 @@ type ListBlock = {
 type GrowthItem = {
   company: string;
   displayName?: string;
+  isNew?: boolean;
   growthScore?: number | null;
   rank?: number;
 };
@@ -173,6 +175,7 @@ function ListCard({ list, showTitle = true }: { list: ListBlock; showTitle?: boo
         {list.items.length === 0 && <p className="text-sm text-muted-foreground">Not enough data.</p>}
         {list.items.map((s, index) => {
           const sectorLabel = formatSector(s.sector);
+          const showBadgeRow = s.isNew || (list.showSectorPill && sectorLabel);
           return (
             <div key={index}>
               <Link href={"/company/" + s.code} prefetch={false}>
@@ -181,10 +184,19 @@ function ListCard({ list, showTitle = true }: { list: ListBlock; showTitle?: boo
                     <p className="p-1 text-xs leading-snug text-muted-foreground">{index + 1}.</p>
                     <div className="flex w-3/4 flex-col gap-1">
                       <p className="line-clamp-1 text-sm font-medium leading-tight text-foreground">{s.name}</p>
-                      {list.showSectorPill && sectorLabel && (
-                        <span className="w-fit max-w-full truncate rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground sm:text-[11px]">
-                          {sectorLabel}
-                        </span>
+                      {showBadgeRow && (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {s.isNew && (
+                            <span className="w-fit shrink-0 rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                              New
+                            </span>
+                          )}
+                          {list.showSectorPill && sectorLabel && (
+                            <span className="w-fit max-w-full truncate rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground sm:text-[11px]">
+                              {sectorLabel}
+                            </span>
+                          )}
+                        </div>
                       )}
                       {typeof s.twistPct === "number" && (
                         <p className="line-clamp-1 text-[11px] leading-tight text-muted-foreground">
@@ -247,6 +259,13 @@ function GrowthListCard({
                   <p className="line-clamp-1 text-sm font-medium leading-tight text-foreground">
                     {item.displayName || item.company}
                   </p>
+                  {item.isNew && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="w-fit shrink-0 rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                        New
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex min-w-[72px] flex-col items-end gap-0.5">
                   {typeof item.growthScore === "number" ? (

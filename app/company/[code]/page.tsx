@@ -1,6 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
 import { ChartLineLabel } from "./chart";
+import { isCompanyNew } from "@/lib/company-freshness";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -138,11 +139,12 @@ export default async function Page({
 
   const { data: companyRow } = await supabase
     .from("company")
-    .select("name, sector, sub_sector, exchange, country, code, website")
+    .select("name, sector, sub_sector, exchange, country, code, website, created_at")
     .eq("code", code)
     .limit(1)
     .maybeSingle();
   const companyName = companyRow?.name as string | undefined;
+  const companyIsNew = isCompanyNew(companyRow?.created_at ?? null);
 
   // Fetch concall analysis data
   const { data, error } = await supabase
@@ -495,6 +497,7 @@ export default async function Page({
             subSector: companyRow?.sub_sector ?? undefined,
             exchange: companyRow?.exchange ?? undefined,
             country: companyRow?.country ?? undefined,
+            isNew: companyIsNew,
           }}
           rankInfo={rankInfo}
         />

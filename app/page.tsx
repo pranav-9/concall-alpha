@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isCompanyNew } from "@/lib/company-freshness";
 import TopStocks from "./(hero)/top-stocks";
 import RecentScoreUpdates from "./(hero)/recent-score-updates";
 
@@ -28,6 +29,7 @@ type CoverageUniverseData = {
     name: string;
     sector: string | null;
     createdAtLabel: string | null;
+    isNew: boolean;
   }>;
 };
 
@@ -49,6 +51,7 @@ const formatDate = (value: string | null) => {
 
 function buildCoverageUniverse(
   companies: CompanyRow[],
+  now: Date,
 ): CoverageUniverseData {
   const totalCompanies = companies.length;
 
@@ -69,6 +72,7 @@ function buildCoverageUniverse(
     name: string;
     sector: string | null;
     createdAtLabel: string;
+    isNew: boolean;
     createdAtSort: number;
   }> = [];
 
@@ -82,6 +86,7 @@ function buildCoverageUniverse(
       name: company.name ?? company.code,
       sector: company.sector ?? null,
       createdAtLabel: `Added ${formatDate(createdAt)}`,
+      isNew: isCompanyNew(createdAt, now),
       createdAtSort: createdAtMs,
     });
   });
@@ -104,12 +109,14 @@ function buildCoverageUniverse(
 
 export default async function Home() {
   const supabase = await createClient();
+  const now = new Date();
   const { data: companyRows } = await supabase
     .from("company")
     .select("code, name, sector, created_at");
 
   const coverageData = buildCoverageUniverse(
     (companyRows ?? []) as CompanyRow[],
+    now,
   );
 
   let recentStockRequests: RecentStockRequest[] = [];
@@ -244,6 +251,11 @@ export default async function Home() {
                             <div className="min-w-0">
                               <p className="line-clamp-1 text-sm font-medium text-foreground">
                                 {company.name}
+                                {company.isNew && (
+                                  <span className="ml-1.5 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                                    New
+                                  </span>
+                                )}
                               </p>
                               <div className="mt-1 flex flex-wrap items-center gap-2">
                                 {company.sector && (

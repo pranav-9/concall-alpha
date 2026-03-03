@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { buildNewCompanySet } from "@/lib/company-freshness";
 import { calculateTrend } from "./utils";
 import type { CompanyRow } from "./leaderboard-table";
 import type { QuarterData } from "./types";
@@ -21,7 +22,13 @@ const uniqueValues = (
 
 export const getConcallData = async () => {
   const supabase = await createClient();
-  const { data } = await supabase.from("concall_analysis").select();
+  const [{ data }, { data: companyRows }] = await Promise.all([
+    supabase.from("concall_analysis").select(),
+    supabase.from("company").select("code, created_at"),
+  ]);
+  const newCompanySet = buildNewCompanySet(
+    ((companyRows ?? []) as Array<{ code: string; created_at?: string | null }>),
+  );
 
   const records = data ?? [];
 
@@ -46,7 +53,10 @@ export const getConcallData = async () => {
   const companies = uniqueValues(records, "company_code");
 
   const rows: CompanyRow[] = companies.map((companyCode: string) => {
-    const row: CompanyRow = { company: companyCode };
+    const row: CompanyRow = {
+      company: companyCode,
+      isNew: newCompanySet.has(companyCode.toUpperCase()),
+    };
     const companyRecords = sorted.filter((x) => x.company_code === companyCode);
     const trendSample = companyRecords.slice(0, 12);
     const latest4 = companyRecords.slice(0, 4);

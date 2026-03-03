@@ -9,6 +9,7 @@ export type GrowthRowTable = {
   leaderboardRank: number;
   companyCode: string;
   companyName: string;
+  isNew: boolean;
   updatedAt?: string | null;
   growthScore?: number | null;
   base?: number | null;
@@ -48,13 +49,20 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
       const name = row.original.companyName || row.original.companyCode;
       const code = row.original.companyCode;
       return (
-        <Link
-          href={`/company/${code}`}
-          prefetch={false}
-          className="hover:underline font-semibold text-foreground"
-        >
-          {name}
-        </Link>
+        <div className="flex items-center gap-1.5">
+          <Link
+            href={`/company/${code}`}
+            prefetch={false}
+            className="hover:underline font-semibold text-foreground"
+          >
+            {name}
+          </Link>
+          {row.original.isNew && (
+            <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+              New
+            </span>
+          )}
+        </div>
       );
     },
   },

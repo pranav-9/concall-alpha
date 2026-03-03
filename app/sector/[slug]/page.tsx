@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import ConcallScore from "@/components/concall-score";
+import { isCompanyNew } from "@/lib/company-freshness";
 import { createClient } from "@/lib/supabase/server";
 import { findSectorBySlug, slugifySector } from "@/app/sector/utils";
 
@@ -11,6 +12,7 @@ type CompanyRow = {
   name: string | null;
   sector: string | null;
   sub_sector: string | null;
+  created_at?: string | null;
 };
 
 type QuarterScoreRow = {
@@ -29,6 +31,7 @@ type SectorCompanyRow = {
   name: string;
   sector: string;
   subSector: string | null;
+  isNew: boolean;
   latestQuarterScore: number | null;
   growthScore: number | null;
 };
@@ -103,7 +106,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
 
   const { data: companyRows } = await supabase
     .from("company")
-    .select("code, name, sector, sub_sector")
+    .select("code, name, sector, sub_sector, created_at")
     .eq("sector", sectorName);
 
   const companies = (companyRows ?? []) as CompanyRow[];
@@ -169,6 +172,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
       name,
       sector: company.sector ?? sectorName,
       subSector: company.sub_sector ?? null,
+      isNew: isCompanyNew(company.created_at ?? null),
       latestQuarterScore: quarterScoreMap.get(codeKey) ?? null,
       growthScore: latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? null,
     };
@@ -327,9 +331,16 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
                 {sortedRows.map((row) => (
                   <tr key={row.code} className="border-b border-border/60 last:border-b-0">
                     <td className="px-3 py-2">
-                      <Link href={`/company/${row.code}`} className="underline text-foreground" prefetch={false}>
-                        {row.name}
-                      </Link>
+                      <div className="flex items-center gap-1.5">
+                        <Link href={`/company/${row.code}`} className="underline text-foreground" prefetch={false}>
+                          {row.name}
+                        </Link>
+                        {row.isNew && (
+                          <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                            New
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground">{row.code}</p>
                     </td>
                     <td className="px-3 py-2 text-foreground">
