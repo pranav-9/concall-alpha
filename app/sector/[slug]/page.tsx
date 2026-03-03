@@ -4,6 +4,14 @@ import { notFound } from "next/navigation";
 
 import ConcallScore from "@/components/concall-score";
 import { isCompanyNew } from "@/lib/company-freshness";
+import { normalizeSectorIntelligence } from "@/lib/sector-intelligence/normalize";
+import type {
+  NormalizedSectorCatalyst,
+  NormalizedSectorEvidence,
+  NormalizedSectorPolicy,
+  NormalizedSectorTheme,
+  SectorIntelligenceRow,
+} from "@/lib/sector-intelligence/types";
 import { createClient } from "@/lib/supabase/server";
 import { findSectorBySlug, slugifySector } from "@/app/sector/utils";
 
@@ -55,6 +63,206 @@ const compareNullableNumbers = (
   if (b == null) return -1;
   return order === "asc" ? a - b : b - a;
 };
+
+const normalizeFilterKey = (value: string | null | undefined) => {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.toLowerCase() : null;
+};
+
+const timestampValue = (value: string | null | undefined) => {
+  if (!value) return Number.NEGATIVE_INFINITY;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+};
+
+const pickLatestSectorRow = (rows: SectorIntelligenceRow[]) =>
+  [...rows].sort((a, b) => timestampValue(b.generated_at) - timestampValue(a.generated_at))[0] ?? null;
+
+const renderEvidenceLine = (evidence: NormalizedSectorEvidence | undefined) => {
+  if (!evidence?.note) return null;
+  return (
+    <p className="text-xs text-muted-foreground">
+      {evidence.note}
+      {evidence.source ? <span className="text-foreground/70"> ({evidence.source})</span> : null}
+    </p>
+  );
+};
+
+function ThemeColumn({
+  title,
+  items,
+}: {
+  title: string;
+  items: NormalizedSectorTheme[];
+}) {
+  if (!items.length) return null;
+
+  const visible = items.slice(0, 3);
+  const hidden = items.slice(3);
+
+  const renderItem = (item: NormalizedSectorTheme, index: number) => (
+    <div key={`${item.theme}-${index}`} className="space-y-2 rounded-md border border-border/40 bg-background/70 p-3">
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-foreground">{item.theme}</p>
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+          {item.confidence != null && (
+            <span className="rounded-full border border-border bg-muted px-2 py-0.5">
+              Confidence {item.confidence}/5
+            </span>
+          )}
+          {item.impactArea && (
+            <span className="rounded-full border border-border bg-muted px-2 py-0.5 capitalize">
+              {item.impactArea.replace(/_/g, " ")}
+            </span>
+          )}
+          {item.timeHorizon && (
+            <span className="rounded-full border border-border bg-muted px-2 py-0.5 capitalize">
+              {item.timeHorizon.replace(/_/g, " ")}
+            </span>
+          )}
+        </div>
+      </div>
+      {item.whyItMatters && <p className="text-sm text-muted-foreground">{item.whyItMatters}</p>}
+      {item.evidence.slice(0, 2).map((evidence, evidenceIndex) => (
+        <div key={evidenceIndex}>{renderEvidenceLine(evidence)}</div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-3">
+      <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{title}</p>
+      <div className="space-y-3">
+        {visible.map((item, index) => renderItem(item, index))}
+      </div>
+      {hidden.length > 0 && (
+        <details className="rounded-md border border-border/40 bg-background/60 p-3">
+          <summary className="cursor-pointer text-xs font-medium text-foreground">
+            Show more ({hidden.length})
+          </summary>
+          <div className="mt-3 space-y-3">
+            {hidden.map((item, index) => renderItem(item, index + visible.length))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
+function CatalystPolicyColumn({
+  title,
+  items,
+  kind,
+}: {
+  title: string;
+  items: NormalizedSectorCatalyst[] | NormalizedSectorPolicy[];
+  kind: "catalyst" | "policy";
+}) {
+  if (!items.length) return null;
+
+  const visible = items.slice(0, 3);
+  const hidden = items.slice(3);
+
+  const renderItem = (
+    item: NormalizedSectorCatalyst | NormalizedSectorPolicy,
+    index: number,
+  ) => {
+    const key =
+      kind === "catalyst"
+        ? `${(item as NormalizedSectorCatalyst).catalyst}-${index}`
+        : `${(item as NormalizedSectorPolicy).policyName}-${index}`;
+    const titleText =
+      kind === "catalyst"
+        ? (item as NormalizedSectorCatalyst).catalyst
+        : (item as NormalizedSectorPolicy).policyName;
+
+    return (
+      <div key={key} className="space-y-2 rounded-md border border-border/40 bg-background/70 p-3">
+        <p className="text-sm font-medium text-foreground">{titleText}</p>
+        {kind === "catalyst" ? (
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+            {(item as NormalizedSectorCatalyst).type && (
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 capitalize">
+                {(item as NormalizedSectorCatalyst).type!.replace(/_/g, " ")}
+              </span>
+            )}
+            {(item as NormalizedSectorCatalyst).expectedImpact && (
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 capitalize">
+                {(item as NormalizedSectorCatalyst).expectedImpact!}
+              </span>
+            )}
+            {(item as NormalizedSectorCatalyst).timeHorizon && (
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 capitalize">
+                {(item as NormalizedSectorCatalyst).timeHorizon!.replace(/_/g, " ")}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+            {(item as NormalizedSectorPolicy).status && (
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 capitalize">
+                {(item as NormalizedSectorPolicy).status!.replace(/_/g, " ")}
+              </span>
+            )}
+            {(item as NormalizedSectorPolicy).sectorEffect && (
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 capitalize">
+                {(item as NormalizedSectorPolicy).sectorEffect!.replace(/_/g, " ")}
+              </span>
+            )}
+            {(item as NormalizedSectorPolicy).timeline && (
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5">
+                {(item as NormalizedSectorPolicy).timeline}
+              </span>
+            )}
+          </div>
+        )}
+        {kind === "catalyst" ? (
+          (item as NormalizedSectorCatalyst).whyItMatters && (
+            <p className="text-sm text-muted-foreground">
+              {(item as NormalizedSectorCatalyst).whyItMatters}
+            </p>
+          )
+        ) : (
+          <div className="space-y-1 text-sm text-muted-foreground">
+            {(item as NormalizedSectorPolicy).whoBenefits && (
+              <p>
+                <span className="font-medium text-foreground">Who benefits:</span>{" "}
+                {(item as NormalizedSectorPolicy).whoBenefits}
+              </p>
+            )}
+            {(item as NormalizedSectorPolicy).whoIsAtRisk && (
+              <p>
+                <span className="font-medium text-foreground">Who is at risk:</span>{" "}
+                {(item as NormalizedSectorPolicy).whoIsAtRisk}
+              </p>
+            )}
+          </div>
+        )}
+        {"evidence" in item && item.evidence[0] ? renderEvidenceLine(item.evidence[0]) : null}
+      </div>
+    );
+  };
+
+  return (
+    <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-3">
+      <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{title}</p>
+      <div className="space-y-3">
+        {visible.map((item, index) => renderItem(item, index))}
+      </div>
+      {hidden.length > 0 && (
+        <details className="rounded-md border border-border/40 bg-background/60 p-3">
+          <summary className="cursor-pointer text-xs font-medium text-foreground">
+            Show more ({hidden.length})
+          </summary>
+          <div className="mt-3 space-y-3">
+            {hidden.map((item, index) => renderItem(item, index + visible.length))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
 
 type SectorPageProps = {
   params: Promise<{ slug: string }>;
@@ -125,7 +333,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     .map((c) => c.code)
     .filter((code): code is string => Boolean(code));
 
-  const [{ data: latestQuarterKey }, { data: growthRows }] = await Promise.all([
+  const [{ data: latestQuarterKey }, { data: growthRows }, { data: sectorIntelligenceRowsData }] = await Promise.all([
     supabase
       .from("concall_analysis")
       .select("fy, qtr, quarter_label")
@@ -137,6 +345,12 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
       .from("growth_outlook")
       .select("company, growth_score, run_timestamp")
       .order("run_timestamp", { ascending: false }),
+    supabase
+      .from("sector_intelligence")
+      .select(
+        "sector, sub_sector, generated_at, source_mode, sources, sector_overview, tailwinds, headwinds, cycle_view, growth_catalysts, policy_watch, covered_companies, what_matters_now, details",
+      )
+      .eq("sector", sectorName),
   ]);
 
   let quarterScoreMap = new Map<string, number | null>();
@@ -215,6 +429,38 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     ? `Q${latestQuarterKey.qtr} FY${latestQuarterKey.fy}`
     : null;
 
+  const sectorIntelligenceRows = (sectorIntelligenceRowsData ?? []) as SectorIntelligenceRow[];
+  const activeSubSectorKey = normalizeFilterKey(subSectorFilter);
+  const exactRows = activeSubSectorKey
+    ? sectorIntelligenceRows.filter(
+        (row) => normalizeFilterKey(row.sub_sector) === activeSubSectorKey,
+      )
+    : [];
+  const sectorLevelRows = sectorIntelligenceRows.filter(
+    (row) => normalizeFilterKey(row.sub_sector) == null,
+  );
+  const exactMatchRow = pickLatestSectorRow(exactRows);
+  const sectorLevelRow = pickLatestSectorRow(sectorLevelRows);
+  const selectedSectorIntelligenceRow = activeSubSectorKey
+    ? exactMatchRow ?? sectorLevelRow
+    : sectorLevelRow;
+  const normalizedSectorIntelligence = normalizeSectorIntelligence(selectedSectorIntelligenceRow);
+  const usingSubSectorView =
+    Boolean(activeSubSectorKey) &&
+    normalizeFilterKey(selectedSectorIntelligenceRow?.sub_sector) === activeSubSectorKey;
+  const usingSectorFallback = Boolean(activeSubSectorKey) && !exactMatchRow && Boolean(sectorLevelRow);
+  const sectorSummaryMissing =
+    !normalizedSectorIntelligence?.sectorSummaryShort &&
+    !normalizedSectorIntelligence?.sectorSummaryLong &&
+    !normalizedSectorIntelligence?.sectorDefinition;
+  const hasCycleData = Boolean(
+    normalizedSectorIntelligence?.cycleSummary ||
+      normalizedSectorIntelligence?.cyclePosition ||
+      normalizedSectorIntelligence?.cycleEvidence.length ||
+      normalizedSectorIntelligence?.whatImprovesNext.length ||
+      normalizedSectorIntelligence?.whatBreaksTheSetup.length,
+  );
+
   const buildFilterHref = (subSector?: string) => {
     const query = new URLSearchParams();
     if (subSector) query.set("subSector", subSector);
@@ -252,6 +498,291 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
             </span>
           )}
         </div>
+      </div>
+
+      <div className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg font-bold text-foreground">Sector Intelligence</h2>
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-foreground">
+                {usingSubSectorView ? "Sub-sector view" : "Sector view"}
+              </span>
+              {usingSubSectorView && normalizedSectorIntelligence?.subSector && (
+                <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[11px] text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
+                  Sub-sector: {normalizedSectorIntelligence.subSector}
+                </span>
+              )}
+              {usingSectorFallback && (
+                <span className="rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[11px] text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200">
+                  Using sector-level view
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+              {normalizedSectorIntelligence?.generatedAtLabel && (
+                <span>Generated: {normalizedSectorIntelligence.generatedAtLabel}</span>
+              )}
+              {normalizedSectorIntelligence?.sourceMode && (
+                <span>Source: {normalizedSectorIntelligence.sourceMode.replace(/_/g, " ")}</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {!normalizedSectorIntelligence ? (
+          <div className="rounded-lg border border-border/50 bg-muted/20 p-4 text-sm text-muted-foreground">
+            Sector intelligence data not available yet.
+          </div>
+        ) : (
+          <>
+            <div className="rounded-lg border border-border/50 bg-muted/20 p-4 sm:p-5 space-y-3">
+              {sectorSummaryMissing ? (
+                <p className="text-sm text-muted-foreground">Sector intelligence data not available yet.</p>
+              ) : (
+                <>
+                  {normalizedSectorIntelligence.sectorSummaryShort && (
+                    <p className="text-sm sm:text-base font-medium text-foreground">
+                      {normalizedSectorIntelligence.sectorSummaryShort}
+                    </p>
+                  )}
+                  {normalizedSectorIntelligence.sectorSummaryLong && (
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {normalizedSectorIntelligence.sectorSummaryLong}
+                    </p>
+                  )}
+                  {normalizedSectorIntelligence.sectorDefinition && (
+                    <p className="text-xs text-muted-foreground">
+                      {normalizedSectorIntelligence.sectorDefinition}
+                    </p>
+                  )}
+                </>
+              )}
+
+              {normalizedSectorIntelligence.whatDrivesEarnings.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                    What drives earnings
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {normalizedSectorIntelligence.whatDrivesEarnings.slice(0, 5).map((item) => (
+                      <span
+                        key={item}
+                        className="rounded-full border border-border bg-muted px-2 py-1 text-[11px] text-foreground"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {normalizedSectorIntelligence.valueChainMap.filter(Boolean).length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                    Value chain map
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-foreground">
+                    {normalizedSectorIntelligence.valueChainMap
+                      .filter(Boolean)
+                      .map((item, index) => (
+                        <span key={`${item}-${index}`} className="flex items-center gap-2">
+                          <span className="rounded-full border border-border bg-background px-2 py-1">
+                            {item}
+                          </span>
+                          {index < normalizedSectorIntelligence.valueChainMap.filter(Boolean).length - 1 && (
+                            <span className="text-muted-foreground">→</span>
+                          )}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {(normalizedSectorIntelligence.tailwinds.length > 0 ||
+              normalizedSectorIntelligence.headwinds.length > 0) && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <ThemeColumn title="Tailwinds" items={normalizedSectorIntelligence.tailwinds} />
+                <ThemeColumn title="Headwinds" items={normalizedSectorIntelligence.headwinds} />
+              </div>
+            )}
+
+            {hasCycleData && (
+              <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Cycle View</p>
+                  {normalizedSectorIntelligence.cyclePosition && (
+                    <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] text-foreground capitalize">
+                      {normalizedSectorIntelligence.cyclePosition.replace(/_/g, " ")}
+                    </span>
+                  )}
+                </div>
+                {normalizedSectorIntelligence.cycleSummary && (
+                  <p className="text-sm text-muted-foreground">
+                    {normalizedSectorIntelligence.cycleSummary}
+                  </p>
+                )}
+                {normalizedSectorIntelligence.cycleEvidence.length > 0 && (
+                  <div className="space-y-1">
+                    {normalizedSectorIntelligence.cycleEvidence.map((item) => (
+                      <p key={item} className="text-xs text-muted-foreground">
+                        • {item}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {normalizedSectorIntelligence.whatImprovesNext.length > 0 && (
+                    <div className="rounded-md border border-border/40 bg-background/70 p-3 space-y-2">
+                      <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                        What improves next
+                      </p>
+                      <div className="space-y-1">
+                        {normalizedSectorIntelligence.whatImprovesNext.map((item) => (
+                          <p key={item} className="text-sm text-foreground">
+                            • {item}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {normalizedSectorIntelligence.whatBreaksTheSetup.length > 0 && (
+                    <div className="rounded-md border border-border/40 bg-background/70 p-3 space-y-2">
+                      <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                        What breaks the setup
+                      </p>
+                      <div className="space-y-1">
+                        {normalizedSectorIntelligence.whatBreaksTheSetup.map((item) => (
+                          <p key={item} className="text-sm text-foreground">
+                            • {item}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {(normalizedSectorIntelligence.growthCatalysts.length > 0 ||
+              normalizedSectorIntelligence.policyWatch.length > 0) && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <CatalystPolicyColumn
+                  title="Growth Catalysts"
+                  items={normalizedSectorIntelligence.growthCatalysts}
+                  kind="catalyst"
+                />
+                <CatalystPolicyColumn
+                  title="Policy Watch"
+                  items={normalizedSectorIntelligence.policyWatch}
+                  kind="policy"
+                />
+              </div>
+            )}
+
+            {(normalizedSectorIntelligence.whatMattersNow.length > 0 ||
+              normalizedSectorIntelligence.next12mWatchlist.length > 0) && (
+              <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                  What Matters Now
+                </p>
+                {normalizedSectorIntelligence.whatMattersNow.length > 0 && (
+                  <div className="space-y-2">
+                    {normalizedSectorIntelligence.whatMattersNow.map((item) => (
+                      <p key={item} className="text-sm text-foreground">
+                        • {item}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                {normalizedSectorIntelligence.next12mWatchlist.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                      Next 12M Watchlist
+                    </p>
+                    <div className="space-y-2">
+                      {normalizedSectorIntelligence.next12mWatchlist.map((item) => (
+                        <p key={item} className="text-sm text-foreground">
+                          • {item}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {normalizedSectorIntelligence.coveredCompanies.length > 0 && (
+              <div className="rounded-lg border border-border/50 bg-muted/20 p-4 space-y-3">
+                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                  Internal Coverage Snapshot
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {normalizedSectorIntelligence.coveredCompanies.slice(0, 5).map((company) => (
+                    <div
+                      key={company.companyCode}
+                      className="rounded-md border border-border/40 bg-background/70 p-3 space-y-2"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          href={`/company/${company.companyCode}`}
+                          className="font-medium text-foreground underline"
+                          prefetch={false}
+                        >
+                          {company.companyName}
+                        </Link>
+                        {company.subSector && (
+                          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                            {company.subSector}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                        {company.latestSentimentScore != null && (
+                          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-foreground">
+                            Sentiment {company.latestSentimentScore.toFixed(1)}
+                          </span>
+                        )}
+                        {company.latestGrowthScore != null && (
+                          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-foreground">
+                            Growth {company.latestGrowthScore.toFixed(1)}
+                          </span>
+                        )}
+                      </div>
+                      {company.positioningSummary && (
+                        <p className="text-xs text-muted-foreground">
+                          {company.positioningSummary}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {normalizedSectorIntelligence.sourceUrls.length > 0 && (
+              <details className="rounded-lg border border-border/50 bg-muted/10 p-4">
+                <summary className="cursor-pointer text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                  Sources
+                </summary>
+                <div className="mt-3 space-y-2">
+                  {normalizedSectorIntelligence.sourceUrls.map((url) => (
+                    <a
+                      key={url}
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="block break-all text-xs text-foreground underline"
+                    >
+                      {url}
+                    </a>
+                  ))}
+                </div>
+              </details>
+            )}
+          </>
+        )}
       </div>
 
       <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">

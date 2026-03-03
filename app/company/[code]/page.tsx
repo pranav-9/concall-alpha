@@ -41,6 +41,12 @@ import {
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
 import type { NormalizedGrowthScenario } from "@/lib/growth-outlook/types";
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
+import { normalizeSectorIntelligence } from "@/lib/sector-intelligence/normalize";
+import type {
+  NormalizedSectorIntelligence,
+  SectorIntelligenceRow,
+} from "@/lib/sector-intelligence/types";
+import { slugifySector } from "@/app/sector/utils";
 
 type ConcallDetails = {
   score?: number;
@@ -71,6 +77,67 @@ const parseJsonObject = (val: unknown) => {
     }
   }
   return typeof val === "object" ? val : null;
+};
+
+const normalizeFilterKey = (value: string | null | undefined) => {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.toLowerCase() : null;
+};
+
+const timestampValue = (value: string | null | undefined) => {
+  if (!value) return Number.NEGATIVE_INFINITY;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+};
+
+const pickLatestSectorRow = (rows: SectorIntelligenceRow[]) =>
+  [...rows].sort((a, b) => timestampValue(b.generated_at) - timestampValue(a.generated_at))[0] ?? null;
+
+const buildSectorPreview = (
+  normalized: NormalizedSectorIntelligence | null,
+):
+  | {
+      summary: string | null;
+      bullets: string[];
+      generatedAtLabel: string | null;
+    }
+  | null => {
+  if (!normalized) return null;
+
+  const summary =
+    normalized.sectorSummaryShort ??
+    normalized.sectorSummaryLong ??
+    normalized.sectorDefinition ??
+    null;
+
+  const candidates = [
+    normalized.whatMattersNow[0] ?? null,
+    normalized.whatDrivesEarnings[0] ?? null,
+    normalized.tailwinds[0]?.whyItMatters ?? null,
+    normalized.headwinds[0]?.whyItMatters ?? null,
+    normalized.cycleSummary ?? null,
+  ];
+
+  const seen = new Set<string>();
+  const bullets: string[] = [];
+  for (const candidate of candidates) {
+    const text = candidate?.trim();
+    if (!text) continue;
+    const key = text.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    bullets.push(text);
+    if (bullets.length === 2) break;
+  }
+
+  if (!summary && bullets.length === 0) return null;
+
+  return {
+    summary,
+    bullets,
+    generatedAtLabel: normalized.generatedAtLabel,
+  };
 };
 
 const timelineStageConfig: Record<string, { label: string; className: string }> = {
@@ -196,6 +263,15 @@ export default async function Page({
     .order("run_timestamp", { ascending: false })
     .limit(1);
 
+  const { data: sectorIntelligenceRowsData } = companyRow?.sector
+    ? await supabase
+        .from("sector_intelligence")
+        .select(
+          "sector, sub_sector, generated_at, source_mode, sources, sector_overview, tailwinds, headwinds, cycle_view, growth_catalysts, policy_watch, covered_companies, what_matters_now, details",
+        )
+        .eq("sector", companyRow.sector)
+    : { data: null };
+
   if (error) {
     throw error;
   }
@@ -242,6 +318,29 @@ export default async function Page({
     companyWebsite: companyRow?.website ?? null,
     snapshotRow: businessSnapshotData?.[0] ?? null,
   });
+  const sectorIntelligenceRows = (sectorIntelligenceRowsData ?? []) as SectorIntelligenceRow[];
+  const sectorLevelRows = sectorIntelligenceRows.filter(
+    (row) => normalizeFilterKey(row.sub_sector) == null,
+  );
+  const subSectorRows = companyRow?.sub_sector
+    ? sectorIntelligenceRows.filter(
+        (row) =>
+          normalizeFilterKey(row.sub_sector) === normalizeFilterKey(companyRow.sub_sector ?? null),
+      )
+    : [];
+  const normalizedSectorPreview = normalizeSectorIntelligence(pickLatestSectorRow(sectorLevelRows));
+  const normalizedSubSectorPreview = normalizeSectorIntelligence(
+    pickLatestSectorRow(subSectorRows),
+  );
+  const sectorPreview = buildSectorPreview(normalizedSectorPreview);
+  const subSectorPreview = buildSectorPreview(normalizedSubSectorPreview);
+  const sectorPreviewHref = companyRow?.sector
+    ? companyRow?.sub_sector
+      ? `/sector/${slugifySector(companyRow.sector)}?subSector=${encodeURIComponent(
+          companyRow.sub_sector,
+        )}`
+      : `/sector/${slugifySector(companyRow.sector)}`
+    : null;
   const growthUpdatedAtRaw = normalizedGrowthOutlook?.updatedAtRaw ?? null;
   const growthUpdatedDate = growthUpdatedAtRaw ? new Date(growthUpdatedAtRaw) : null;
   const growthUpdatedAt =
@@ -501,6 +600,99 @@ export default async function Page({
           }}
           rankInfo={rankInfo}
         />
+
+        {companyRow?.sector && (
+          <SectionCard id="sector-context" title="Industry Overview">
+            <div className="space-y-3">
+              {sectorPreviewHref && (
+                <div className="flex items-center justify-end">
+                  <a
+                    href={sectorPreviewHref}
+                    className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-accent transition-colors"
+                  >
+                    Full sector view
+                  </a>
+                </div>
+              )}
+
+              {sectorPreview || subSectorPreview ? (
+                <div
+                  className={`grid grid-cols-1 gap-3 ${sectorPreview && subSectorPreview ? "lg:grid-cols-2" : ""}`}
+                >
+                  {sectorPreview && (
+                    <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Sector
+                        </p>
+                        <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                          Sector
+                        </span>
+                      </div>
+                      {sectorPreview.summary && (
+                        <p className="line-clamp-2 text-sm text-foreground leading-relaxed">
+                          {sectorPreview.summary}
+                        </p>
+                      )}
+                      {sectorPreview.bullets.length > 0 && (
+                        <ul className="space-y-1">
+                          {sectorPreview.bullets.map((bullet) => (
+                            <li key={bullet} className="flex items-start gap-1.5 text-[12px] text-muted-foreground leading-relaxed">
+                              <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/30" />
+                              <span>{bullet}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {sectorPreview.generatedAtLabel && (
+                        <p className="text-[10px] text-muted-foreground">
+                          Updated {sectorPreview.generatedAtLabel}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {subSectorPreview && companyRow?.sub_sector && (
+                    <div className="rounded-lg border border-sky-200/50 bg-sky-50/30 p-3 space-y-2.5 dark:border-sky-700/30 dark:bg-sky-900/10">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Sub-sector
+                        </p>
+                        <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
+                          {companyRow.sub_sector}
+                        </span>
+                      </div>
+                      {subSectorPreview.summary && (
+                        <p className="line-clamp-2 text-sm text-foreground leading-relaxed">
+                          {subSectorPreview.summary}
+                        </p>
+                      )}
+                      {subSectorPreview.bullets.length > 0 && (
+                        <ul className="space-y-1">
+                          {subSectorPreview.bullets.map((bullet) => (
+                            <li key={bullet} className="flex items-start gap-1.5 text-[12px] text-muted-foreground leading-relaxed">
+                              <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500/60" />
+                              <span>{bullet}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {subSectorPreview.generatedAtLabel && (
+                        <p className="text-[10px] text-muted-foreground">
+                          Updated {subSectorPreview.generatedAtLabel}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-border/40 bg-muted/15 p-3 text-sm text-muted-foreground">
+                  Sector commentary not available yet.
+                </div>
+              )}
+            </div>
+          </SectionCard>
+        )}
 
         <SectionCard id="sentiment-score" title="Quarterly Score">
           <div className="flex flex-col gap-4">
