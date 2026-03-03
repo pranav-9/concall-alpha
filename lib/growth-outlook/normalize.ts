@@ -3,6 +3,7 @@ import type {
   NormalizedGrowthEvidenceLine,
   NormalizedGrowthOutlook,
   NormalizedGrowthScenario,
+  NormalizedGrowthSourceFile,
   NormalizedGrowthTimelineItem,
   NormalizedGrowthVariantPerception,
 } from "@/lib/growth-outlook/types";
@@ -95,6 +96,17 @@ const normalizeEvidenceLine = (value: unknown): NormalizedGrowthEvidenceLine | n
   };
 };
 
+const normalizeSourceFile = (value: unknown): NormalizedGrowthSourceFile | null => {
+  const item = asRecord(value);
+  if (!item) return null;
+  return {
+    fy: asString(item.fy),
+    kind: asString(item.kind),
+    quarter: asString(item.quarter),
+    sourceUrl: asString(item.source_url),
+  };
+};
+
 const normalizeTimelineItem = (value: unknown): NormalizedGrowthTimelineItem | null => {
   const item = asRecord(value);
   if (!item) return null;
@@ -117,6 +129,8 @@ const normalizeCatalyst = (value: unknown): NormalizedGrowthCatalyst | null => {
   if (!item) return null;
 
   const quantified = asRecord(item.quantified);
+  const priority = asRecord(item.priority);
+  const investibilityChecks = asRecord(item.investibility_checks);
   const normalized: NormalizedGrowthCatalyst = {
     type: asString(item.type),
     timing: asString(item.timing),
@@ -137,6 +151,23 @@ const normalizeCatalyst = (value: unknown): NormalizedGrowthCatalyst | null => {
     evidenceLines: asArray(item.evidence)
       .map((entry) => normalizeEvidenceLine(entry))
       .filter((entry): entry is NormalizedGrowthEvidenceLine => Boolean(entry)),
+    priority: priority
+      ? {
+          impactScore: asNumber(priority.impact_score),
+          timeRelevance: asNumber(priority.time_relevance),
+          certaintyScore: asNumber(priority.certainty_score),
+          progressionDepth: asNumber(priority.progression_depth),
+          weightedPriority: asNumber(priority.weighted_priority),
+        }
+      : null,
+    investibilityChecks: investibilityChecks
+      ? {
+          adoption: asString(investibilityChecks.adoption),
+          feasibility: asString(investibilityChecks.feasibility),
+          entryTiming: asString(investibilityChecks.entry_timing),
+          unitEconomics: asString(investibilityChecks.unit_economics),
+        }
+      : null,
   };
 
   if (
@@ -145,6 +176,8 @@ const normalizeCatalyst = (value: unknown): NormalizedGrowthCatalyst | null => {
     !normalized.catalyst &&
     !normalized.expectedImpact &&
     !normalized.quantified &&
+    !normalized.priority &&
+    !normalized.investibilityChecks &&
     normalized.timelineItems.length === 0 &&
     normalized.evidenceLines.length === 0
   ) {
@@ -214,7 +247,21 @@ export function normalizeGrowthOutlook(input: {
   details: unknown;
   growthScore: unknown;
   runTimestamp: unknown;
+  companyName?: unknown;
+  schemaVersion?: unknown;
+  fiscalYear?: unknown;
+  horizonQuarters?: unknown;
+  horizonYears?: unknown;
   visibilityScore?: unknown;
+  baseGrowthPct?: unknown;
+  upsideGrowthPct?: unknown;
+  downsideGrowthPct?: unknown;
+  summaryBullets?: unknown;
+  growthScoreFormula?: unknown;
+  growthScoreSteps?: unknown;
+  visibilityRationale?: unknown;
+  factBase?: unknown;
+  sourceFiles?: unknown;
   catalysts?: unknown;
   scenarios?: unknown;
   variantPerception?: unknown;
@@ -228,6 +275,39 @@ export function normalizeGrowthOutlook(input: {
   if (!details && growthScore == null && !updatedAtRaw) {
     return null;
   }
+
+  const factBaseSource = input.factBase ?? details?.fact_base;
+  const factBase = asArray(factBaseSource)
+    .map((entry) => normalizeEvidenceLine(entry))
+    .filter((entry): entry is NormalizedGrowthEvidenceLine => Boolean(entry));
+
+  const growthScoreStepsSource = input.growthScoreSteps ?? details?.growth_score_steps;
+  const growthScoreSteps = asArray(growthScoreStepsSource)
+    .map((entry) => {
+      const textOnly = asString(entry);
+      if (textOnly) return textOnly;
+      const item = asRecord(entry);
+      if (!item) return null;
+      const catalyst = asString(item.catalyst);
+      const weightedPriorityNorm = asNumber(item.weighted_priority_norm);
+      const certainty = asNumber(item.certainty);
+      const progression = asNumber(item.progression);
+      const timeRelevance = asNumber(item.time_relevance);
+      const parts = [
+        catalyst,
+        weightedPriorityNorm != null ? `Priority ${weightedPriorityNorm}` : null,
+        certainty != null ? `Certainty ${certainty}` : null,
+        progression != null ? `Progression ${progression}` : null,
+        timeRelevance != null ? `Time relevance ${timeRelevance}` : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? parts.join(" · ") : null;
+    })
+    .filter((entry): entry is string => Boolean(entry));
+
+  const sourceFilesSource = input.sourceFiles ?? details?.source_files;
+  const sourceFiles = asArray(sourceFilesSource)
+    .map((entry) => normalizeSourceFile(entry))
+    .filter((entry): entry is NormalizedGrowthSourceFile => Boolean(entry));
 
   const catalystSource = input.catalysts ?? details?.catalysts ?? details?.catalysts_next_12_24m;
   const catalysts = asArray(catalystSource)
@@ -248,9 +328,31 @@ export function normalizeGrowthOutlook(input: {
     : null;
 
   return {
+    companyName: asString(input.companyName) ?? (details ? asString(details.company_name) : null),
+    schemaVersion: asString(input.schemaVersion) ?? (details ? asString(details.schema_version) : null),
+    fiscalYear: asString(input.fiscalYear) ?? (details ? asString(details.fiscal_year) : null),
+    horizonQuarters: asNumber(input.horizonQuarters) ?? (details ? asNumber(details.horizon_quarters) : null),
+    horizonYears: asNumber(input.horizonYears) ?? (details ? asNumber(details.horizon_years) : null),
     growthScore,
     visibilityPercent: normalizeVisibilityPercent(input.visibilityScore ?? details?.visibility_score),
+    baseGrowthPct:
+      (input.baseGrowthPct != null ? String(input.baseGrowthPct) : null) ??
+      (details?.base_growth_pct != null ? String(details.base_growth_pct) : null),
+    upsideGrowthPct:
+      (input.upsideGrowthPct != null ? String(input.upsideGrowthPct) : null) ??
+      (details?.upside_growth_pct != null ? String(details.upside_growth_pct) : null),
+    downsideGrowthPct:
+      (input.downsideGrowthPct != null ? String(input.downsideGrowthPct) : null) ??
+      (details?.downside_growth_pct != null ? String(details.downside_growth_pct) : null),
+    summaryBullets: asStringArray(input.summaryBullets ?? details?.summary_bullets),
+    growthScoreFormula:
+      asString(input.growthScoreFormula) ?? (details ? asString(details.growth_score_formula) : null),
+    growthScoreSteps,
+    visibilityRationale:
+      asString(input.visibilityRationale) ?? (details ? asString(details.visibility_rationale) : null),
     updatedAtRaw,
+    factBase,
+    sourceFiles,
     catalysts,
     variantPerception,
     scenarios,

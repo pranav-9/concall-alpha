@@ -174,7 +174,7 @@ export default async function Page({
 
   const { data: growthData } = await supabase
     .from("growth_outlook")
-    .select("details, growth_score, run_timestamp, visibility_score, catalysts, scenarios, variant_perception")
+    .select("*")
     .or(
       [code ? `company.eq.${code}` : null, companyName ? `company.eq.${companyName}` : null]
         .filter(Boolean)
@@ -207,7 +207,19 @@ export default async function Page({
     details: growthData?.[0]?.details,
     growthScore: growthData?.[0]?.growth_score,
     runTimestamp: growthData?.[0]?.run_timestamp,
+    companyName: growthData?.[0]?.company_name,
+    fiscalYear: growthData?.[0]?.fiscal_year,
+    horizonQuarters: growthData?.[0]?.horizon_quarters,
+    horizonYears: growthData?.[0]?.horizon_years,
     visibilityScore: growthData?.[0]?.visibility_score,
+    baseGrowthPct: growthData?.[0]?.base_growth_pct,
+    upsideGrowthPct: growthData?.[0]?.upside_growth_pct,
+    downsideGrowthPct: growthData?.[0]?.downside_growth_pct,
+    growthScoreFormula: growthData?.[0]?.growth_score_formula,
+    growthScoreSteps: growthData?.[0]?.growth_score_steps,
+    factBase: growthData?.[0]?.fact_base,
+    summaryBullets: growthData?.[0]?.summary_bullets,
+    visibilityRationale: growthData?.[0]?.visibility_rationale,
     catalysts: growthData?.[0]?.catalysts,
     scenarios: growthData?.[0]?.scenarios,
     variantPerception: growthData?.[0]?.variant_perception,
@@ -794,9 +806,24 @@ export default async function Page({
                     Growth score: {growthScore.toFixed(1)}
                   </span>
                 )}
+                {normalizedGrowthOutlook.fiscalYear && (
+                  <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
+                    {normalizedGrowthOutlook.fiscalYear}
+                  </span>
+                )}
                 {typeof normalizedGrowthOutlook.visibilityPercent === "number" && (
                   <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
                     Visibility: {normalizedGrowthOutlook.visibilityPercent}%
+                  </span>
+                )}
+                {typeof normalizedGrowthOutlook.horizonQuarters === "number" && (
+                  <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
+                    Horizon: {normalizedGrowthOutlook.horizonQuarters}Q
+                  </span>
+                )}
+                {typeof normalizedGrowthOutlook.horizonYears === "number" && (
+                  <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border">
+                    {normalizedGrowthOutlook.horizonYears}Y view
                   </span>
                 )}
                 {growthUpdatedAt && (
@@ -805,6 +832,39 @@ export default async function Page({
                   </span>
                 )}
               </div>
+
+              {(normalizedGrowthOutlook.companyName ||
+                normalizedGrowthOutlook.schemaVersion ||
+                normalizedGrowthOutlook.summaryBullets.length > 0) && (
+                <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+                    {normalizedGrowthOutlook.companyName && (
+                      <span className="px-2 py-0.5 rounded-full bg-background border border-border">
+                        Company: {normalizedGrowthOutlook.companyName}
+                      </span>
+                    )}
+                    {normalizedGrowthOutlook.schemaVersion && (
+                      <span className="px-2 py-0.5 rounded-full bg-background border border-border">
+                        Schema: {normalizedGrowthOutlook.schemaVersion}
+                      </span>
+                    )}
+                  </div>
+                  {normalizedGrowthOutlook.summaryBullets.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+                        Summary
+                      </p>
+                      <ul className="space-y-1">
+                        {normalizedGrowthOutlook.summaryBullets.slice(0, 5).map((bullet, idx) => (
+                          <li key={idx} className="text-[11px] text-foreground leading-snug">
+                            • {bullet}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {normalizedGrowthOutlook.catalysts.length > 0 && (
                   <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
@@ -875,6 +935,59 @@ export default async function Page({
                                   <p className="text-sm font-semibold text-foreground leading-snug">
                                     {c.catalyst}
                                   </p>
+                                )}
+
+                                {(c.priority || c.investibilityChecks) && (
+                                  <div className="space-y-1.5">
+                                    {c.priority && (
+                                      <div className="flex flex-wrap gap-1.5 text-[10px]">
+                                        {typeof c.priority.weightedPriority === "number" && (
+                                          <span className="px-2 py-0.5 rounded-full bg-background border border-border">
+                                            Priority: {c.priority.weightedPriority.toFixed(1)}
+                                          </span>
+                                        )}
+                                        {typeof c.priority.certaintyScore === "number" && (
+                                          <span className="px-2 py-0.5 rounded-full bg-background border border-border">
+                                            Certainty: {c.priority.certaintyScore}
+                                          </span>
+                                        )}
+                                        {typeof c.priority.timeRelevance === "number" && (
+                                          <span className="px-2 py-0.5 rounded-full bg-background border border-border">
+                                            Time: {c.priority.timeRelevance}
+                                          </span>
+                                        )}
+                                        {typeof c.priority.progressionDepth === "number" && (
+                                          <span className="px-2 py-0.5 rounded-full bg-background border border-border">
+                                            Progression: {c.priority.progressionDepth}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                    {c.investibilityChecks && (
+                                      <div className="flex flex-wrap gap-1.5 text-[10px] text-muted-foreground">
+                                        {c.investibilityChecks.entryTiming && (
+                                          <span className="px-2 py-0.5 rounded-full bg-muted border border-border">
+                                            Entry: {c.investibilityChecks.entryTiming}
+                                          </span>
+                                        )}
+                                        {c.investibilityChecks.adoption && (
+                                          <span className="px-2 py-0.5 rounded-full bg-muted border border-border">
+                                            Adoption: {c.investibilityChecks.adoption}
+                                          </span>
+                                        )}
+                                        {c.investibilityChecks.feasibility && (
+                                          <span className="px-2 py-0.5 rounded-full bg-muted border border-border">
+                                            Feasibility: {c.investibilityChecks.feasibility}
+                                          </span>
+                                        )}
+                                        {c.investibilityChecks.unitEconomics && (
+                                          <span className="px-2 py-0.5 rounded-full bg-muted border border-border">
+                                            Unit economics: {c.investibilityChecks.unitEconomics}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
 
                                 {timelineItems.length > 0 && (
@@ -1139,6 +1252,7 @@ export default async function Page({
                   renderScenarioCard(scenarioKey)
                 )}
               </div>
+
             </div>
           ) : (
             <div className="rounded-lg border border-dashed border-border/70 bg-muted/40 p-6 text-sm text-muted-foreground">
