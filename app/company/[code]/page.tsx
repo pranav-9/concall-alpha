@@ -212,6 +212,8 @@ export default async function Page({
     .maybeSingle();
   const companyName = companyRow?.name as string | undefined;
   const companyIsNew = isCompanyNew(companyRow?.created_at ?? null);
+  const companySector = companyRow?.sector?.trim() || undefined;
+  const companySubSector = companyRow?.sub_sector?.trim() || undefined;
 
   // Fetch concall analysis data
   const { data, error } = await supabase
@@ -263,13 +265,13 @@ export default async function Page({
     .order("run_timestamp", { ascending: false })
     .limit(1);
 
-  const { data: sectorIntelligenceRowsData } = companyRow?.sector
+  const { data: sectorIntelligenceRowsData } = companySector
     ? await supabase
         .from("sector_intelligence")
         .select(
           "sector, sub_sector, generated_at, source_mode, sources, sector_overview, tailwinds, headwinds, cycle_view, growth_catalysts, policy_watch, covered_companies, what_matters_now, details",
         )
-        .eq("sector", companyRow.sector)
+        .eq("sector", companySector)
     : { data: null };
 
   if (error) {
@@ -322,10 +324,10 @@ export default async function Page({
   const sectorLevelRows = sectorIntelligenceRows.filter(
     (row) => normalizeFilterKey(row.sub_sector) == null,
   );
-  const subSectorRows = companyRow?.sub_sector
+  const subSectorRows = companySubSector
     ? sectorIntelligenceRows.filter(
         (row) =>
-          normalizeFilterKey(row.sub_sector) === normalizeFilterKey(companyRow.sub_sector ?? null),
+          normalizeFilterKey(row.sub_sector) === normalizeFilterKey(companySubSector),
       )
     : [];
   const normalizedSectorPreview = normalizeSectorIntelligence(pickLatestSectorRow(sectorLevelRows));
@@ -334,12 +336,12 @@ export default async function Page({
   );
   const sectorPreview = buildSectorPreview(normalizedSectorPreview);
   const subSectorPreview = buildSectorPreview(normalizedSubSectorPreview);
-  const sectorPreviewHref = companyRow?.sector
-    ? companyRow?.sub_sector
-      ? `/sector/${slugifySector(companyRow.sector)}?subSector=${encodeURIComponent(
-          companyRow.sub_sector,
+  const sectorPreviewHref = companySector
+    ? companySubSector
+      ? `/sector/${slugifySector(companySector)}?subSector=${encodeURIComponent(
+          companySubSector,
         )}`
-      : `/sector/${slugifySector(companyRow.sector)}`
+      : `/sector/${slugifySector(companySector)}`
     : null;
   const growthUpdatedAtRaw = normalizedGrowthOutlook?.updatedAtRaw ?? null;
   const growthUpdatedDate = growthUpdatedAtRaw ? new Date(growthUpdatedAtRaw) : null;
@@ -349,8 +351,6 @@ export default async function Page({
           day: "2-digit",
           month: "short",
           year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
         }).format(growthUpdatedDate)
       : null;
   const growthScore = normalizedGrowthOutlook?.growthScore ?? null;
@@ -592,8 +592,8 @@ export default async function Page({
           companyInfo={{
             code: companyRow?.code ?? code,
             name: companyRow?.name ?? undefined,
-            sector: companyRow?.sector ?? undefined,
-            subSector: companyRow?.sub_sector ?? undefined,
+            sector: companySector,
+            subSector: companySubSector,
             exchange: companyRow?.exchange ?? undefined,
             country: companyRow?.country ?? undefined,
             isNew: companyIsNew,
@@ -601,7 +601,7 @@ export default async function Page({
           rankInfo={rankInfo}
         />
 
-        {companyRow?.sector && (
+        {companySector && (
           <SectionCard
             id="sector-context"
             title="Industry Overview"
@@ -654,14 +654,14 @@ export default async function Page({
                     </div>
                   )}
 
-                  {subSectorPreview && companyRow?.sub_sector && (
+                  {subSectorPreview && companySubSector && (
                     <div className="rounded-lg border border-sky-200/50 bg-sky-50/30 p-3 space-y-2.5 dark:border-sky-700/30 dark:bg-sky-900/10">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Sub-sector
                         </p>
                         <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
-                          {companyRow.sub_sector}
+                          {companySubSector}
                         </span>
                       </div>
                       {subSectorPreview.summary && (
@@ -1016,28 +1016,28 @@ export default async function Page({
           </div>
         </SectionCard>
 
-        <SectionCard id="placeholder" title="Future Growth Prospects">
+        <SectionCard
+          id="placeholder"
+          title="Future Growth Prospects"
+          headerAction={
+            typeof growthScore === "number" ? <ConcallScore score={growthScore} size="sm" /> : undefined
+          }
+        >
           {normalizedGrowthOutlook ? (
             <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap items-center gap-3 text-xs text-foreground/80">
-                {typeof growthScore === "number" && (
-                  <span className="px-2 py-1 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-100 dark:border-emerald-700/50">
-                    Growth score: {growthScore.toFixed(1)}
-                  </span>
-                )}
-                {growthUpdatedAt && (
-                  <span className="px-2 py-1 rounded-full bg-muted text-foreground border border-border/60">
-                    Updated: {growthUpdatedAt}
-                  </span>
-                )}
-              </div>
-
               {normalizedGrowthOutlook.summaryBullets.length > 0 && (
                 <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
                   <div className="space-y-1.5">
-                    <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                      Summary
-                    </p>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+                        Summary
+                      </p>
+                      {growthUpdatedAt && (
+                        <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border/60 text-[10px]">
+                          Updated: {growthUpdatedAt}
+                        </span>
+                      )}
+                    </div>
                     <ul className="space-y-1">
                       {normalizedGrowthOutlook.summaryBullets.slice(0, 5).map((bullet, idx) => (
                         <li key={idx} className="text-[11px] text-foreground leading-snug">
@@ -1336,7 +1336,7 @@ export default async function Page({
 
         <SectionCard
           id="competitive-strategy"
-          title="Story of the Stock - Top Strategies"
+          title="Top Business Strategies"
         >
           {topStrategiesData && topStrategiesData.length > 0 ? (
             <TopStrategiesDisplay
@@ -1355,10 +1355,7 @@ export default async function Page({
               <div className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                      Business Snapshot
-                    </p>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-muted-foreground">
                       {normalizedBusinessSnapshot?.generatedAtLabel && (
                         <span>Generated: {normalizedBusinessSnapshot.generatedAtLabel}</span>
                       )}

@@ -47,13 +47,15 @@ const rankPillText = (
 
 export function OverviewCard({ data, companyInfo, rankInfo }: OverviewCardProps) {
   const sentiment = data ? categoryFor(data.score) : null;
-  const sectorHref = companyInfo?.sector
-    ? `/sector/${slugifySector(companyInfo.sector)}`
+  const normalizedSector = companyInfo?.sector?.trim() || undefined;
+  const normalizedSubSector = companyInfo?.subSector?.trim() || undefined;
+  const sectorHref = normalizedSector
+    ? `/sector/${slugifySector(normalizedSector)}`
     : null;
   const subSectorHref =
-    companyInfo?.sector && companyInfo?.subSector
-      ? `/sector/${slugifySector(companyInfo.sector)}?subSector=${encodeURIComponent(
-          companyInfo.subSector,
+    normalizedSector && normalizedSubSector
+      ? `/sector/${slugifySector(normalizedSector)}?subSector=${encodeURIComponent(
+          normalizedSubSector,
         )}`
       : null;
   return (
@@ -88,22 +90,22 @@ export function OverviewCard({ data, companyInfo, rankInfo }: OverviewCardProps)
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2 text-[11px]">
-          {companyInfo?.sector && (
+          {normalizedSector && (
             <Link
               href={sectorHref ?? "#"}
               prefetch={false}
               className="px-2 py-1 rounded-full bg-muted text-foreground border border-border hover:bg-accent transition-colors"
             >
-              Sector: {companyInfo.sector}
+              Sector: {normalizedSector}
             </Link>
           )}
-          {companyInfo?.sector && companyInfo?.subSector && (
+          {normalizedSector && normalizedSubSector && (
             <Link
               href={subSectorHref ?? "#"}
               prefetch={false}
               className="px-2 py-1 rounded-full bg-muted text-foreground border border-border hover:bg-accent transition-colors"
             >
-              Sub-sector: {companyInfo.subSector}
+              Sub-sector: {normalizedSubSector}
             </Link>
           )}
           <span
