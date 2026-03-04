@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCompanyNew } from "@/lib/company-freshness";
+import ConcallScore from "@/components/concall-score";
 import TopStocks from "./(hero)/top-stocks";
 import RecentScoreUpdates from "./(hero)/recent-score-updates";
 
@@ -426,40 +427,67 @@ export default async function Home() {
               </p>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {[
                 {
-                  title: "See Future Earnings Drivers",
-                  body: "Go beyond reported numbers to understand the business levers shaping long-term earnings power, from capacity and product mix to pricing and customer traction.",
+                  title: "Industry Outlook",
+                  score: 8.7,
+                  eyebrow: "Qualitative context",
+                  body: "Score sector setup, sub-sector signals, and operating backdrop so investors can see where industry conditions are strengthening or weakening before it is obvious in the numbers.",
+                  example:
+                    "Example: stronger tailwinds and an improving cycle can push the outlook higher even before reported earnings move.",
                 },
                 {
-                  title: "Catch Strategy and Execution Shifts Early",
-                  body: "Track changes in management priorities, expansion plans, capital allocation, and operating milestones before they are fully visible in the financial statements.",
+                  title: "Performance Score",
+                  score: 7.9,
+                  eyebrow: "Execution signal",
+                  body: "Translate management commentary, execution milestones, and quarter-level evidence into a structured performance score instead of relying only on the latest financial statement snapshot.",
+                  example:
+                    "Example: better delivery on capacity, pricing discipline, and operations can support a stronger score before the P&L fully reflects it.",
                 },
                 {
-                  title: "Get Context, Not Just Data",
-                  body: "Use scores, timelines, and source-backed commentary together so you can quickly understand what changed, why it matters, and what to watch next.",
+                  title: "Future Growth Score",
+                  score: 9.2,
+                  eyebrow: "Forward earnings power",
+                  body: "Quantify catalysts, scenarios, and management confidence into a forward-looking growth score so investors can compare future earnings potential across companies on one scale.",
+                  example:
+                    "Example: when catalysts are de-risking and the upside case is strengthening, the growth score makes that shift visible at a glance.",
                 },
               ].map((feature, index) => (
                 <div
                   key={feature.title}
-                  className="rounded-xl border border-border/50 bg-muted/25 p-3 sm:p-4 min-h-36 hover:bg-accent transition-colors"
+                  className="rounded-xl border border-border/50 bg-muted/25 p-3 sm:p-4 min-h-44 hover:bg-accent transition-colors"
                 >
-                  <p className="text-sm font-semibold text-foreground leading-snug flex items-center gap-2">
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        index === 0
-                          ? "bg-emerald-400/90"
-                          : index === 1
-                          ? "bg-sky-400/90"
-                          : "bg-slate-400/90"
-                      }`}
-                    />
-                    {feature.title}
-                  </p>
-                  <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            index === 0
+                              ? "bg-emerald-400/90"
+                              : index === 1
+                                ? "bg-sky-400/90"
+                                : "bg-slate-400/90"
+                          }`}
+                        />
+                        {feature.eyebrow}
+                      </p>
+                      <h3 className="mt-2 text-sm font-semibold text-foreground leading-snug sm:text-base">
+                        {feature.title}
+                      </h3>
+                    </div>
+                    <div className="shrink-0">
+                      <ConcallScore score={feature.score} size="sm" className="ring-2" />
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     {feature.body}
                   </p>
+                  <div className="mt-3 rounded-lg border border-border/40 bg-background/60 px-3 py-2">
+                    <p className="text-[11px] leading-relaxed text-foreground/90">
+                      {feature.example}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
