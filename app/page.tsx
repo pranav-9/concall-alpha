@@ -169,36 +169,26 @@ export default async function Home() {
               <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 Coverage Universe
               </p>
-              <h2 className="mt-2 text-xl sm:text-2xl font-bold text-foreground leading-tight">
-                What&apos;s Covered on the Portal
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground max-w-3xl">
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <h2 className="max-w-2xl text-xl sm:text-2xl font-bold text-foreground leading-tight">
+                  What&apos;s Covered on the Portal
+                </h2>
+                <div className="flex items-end gap-1.5 shrink-0 sm:text-right">
+                  <span className="text-4xl sm:text-5xl font-extrabold leading-none text-foreground">
+                    {coverageData.totalCompanies}
+                  </span>
+                  <span className="pb-1 text-xs sm:text-sm text-muted-foreground">
+                    companies
+                  </span>
+                </div>
+              </div>
+              <p className="mt-2 max-w-2xl text-sm text-muted-foreground leading-relaxed">
                 A quick view of the tracked stock universe, the sectors we cover most, and the names most recently added into our research flow.
               </p>
 
-              <div className="mt-5 rounded-2xl border border-border bg-gradient-to-r from-muted/40 via-card to-muted/20 p-4 sm:p-5">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-4xl sm:text-5xl font-extrabold text-foreground">
-                      {coverageData.totalCompanies}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Companies covered
-                    </p>
-                  </div>
-                  <div className="space-y-1 sm:text-right">
-                    <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
-                      Top sectors by coverage
-                    </p>
-                    <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
-                      Newest additions to the portal
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-                <div className="rounded-xl border border-border/40 bg-muted/20 p-4">
+              <div className="mt-5 rounded-2xl border border-border/50 bg-muted/10 p-3 sm:p-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
                   <p className="text-[11px] sm:text-xs uppercase tracking-[0.16em] text-muted-foreground">
                     Top Sectors
                   </p>
@@ -211,17 +201,17 @@ export default async function Home() {
                       coverageData.topSectors.map((sector, index) => (
                         <div
                           key={sector.sector}
-                          className="flex items-center justify-between gap-3 rounded-lg border border-border/40 bg-background/70 px-3 py-2"
+                          className="flex items-center justify-between gap-3 rounded-lg border border-border/30 bg-background/70 px-3 py-2"
                         >
                           <div className="flex min-w-0 items-center gap-2">
-                            <span className="w-4 shrink-0 text-xs text-muted-foreground">
+                            <span className="w-4 shrink-0 text-[11px] text-muted-foreground">
                               {index + 1}.
                             </span>
                             <span className="truncate text-sm font-medium text-foreground">
                               {sector.sector}
                             </span>
                           </div>
-                          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                          <span className="rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 text-[10px] text-muted-foreground">
                             {sector.companyCount} companies
                           </span>
                         </div>
@@ -230,7 +220,7 @@ export default async function Home() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/40 bg-muted/20 p-4">
+                <div>
                   <p className="text-[11px] sm:text-xs uppercase tracking-[0.16em] text-muted-foreground">
                     Recently Added
                   </p>
@@ -245,10 +235,10 @@ export default async function Home() {
                           key={company.code}
                           href={`/company/${company.code}`}
                           prefetch={false}
-                          className="block rounded-lg border border-border/40 bg-background/70 px-3 py-2 transition-colors hover:bg-accent"
+                          className="block rounded-lg border border-border/25 bg-background/70 px-3 py-2 transition-colors hover:bg-accent/70"
                         >
                           <div className="flex gap-2">
-                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400/80" />
+                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400" />
                             <div className="min-w-0">
                               <p className="line-clamp-1 text-sm font-medium text-foreground">
                                 {company.name}
@@ -277,6 +267,7 @@ export default async function Home() {
                     )}
                   </div>
                 </div>
+                </div>
               </div>
             </div>
 
@@ -287,11 +278,11 @@ export default async function Home() {
               <h2 className="mt-2 text-xl sm:text-2xl font-bold text-foreground leading-tight">
                 Recent Stock Requests
               </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-1.5 text-sm text-muted-foreground">
                 The latest stocks users have asked us to add to the portal.
               </p>
 
-              <div className="mt-5 rounded-xl border border-border/50 bg-muted/15">
+              <div className="mt-4 rounded-xl border border-border/40 bg-muted/10">
                 {requestsUnavailable ? (
                   <div className="p-4">
                     <p className="text-sm text-muted-foreground">
@@ -305,17 +296,17 @@ export default async function Home() {
                     </p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-border">
+                  <div className="divide-y divide-border/70">
                     {recentStockRequests.map((request, index) => (
                       <div
                         key={`${request.subjectTarget}-${request.createdAt ?? index}`}
-                        className="px-4 py-2.5 transition-colors hover:bg-background/50"
+                        className="px-4 py-3 transition-colors hover:bg-background/50"
                       >
                         <p className="text-sm font-medium text-foreground line-clamp-1">
                           {request.subjectTarget}
                         </p>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                          <span className="rounded-full border border-border bg-background px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                          <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
                             Stock request
                           </span>
                           <span className="text-[11px] text-muted-foreground">
@@ -328,15 +319,15 @@ export default async function Home() {
                 )}
               </div>
 
-              <div className="mt-4 border-t border-border pt-4">
+              <div className="mt-4 border-t border-border/70 pt-4">
                 <a
                   href="#request-intake-fab"
-                  className="inline-flex items-center rounded-md border border-border bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-accent sm:text-sm"
+                  className="inline-flex items-center rounded-md border border-border/70 bg-foreground px-3 py-2 text-xs font-semibold text-background transition-colors hover:bg-foreground/90 sm:text-sm"
                 >
                   Request a stock
                 </a>
-                <p className="mt-1.5 text-[11px] text-muted-foreground">
-                  Uses the floating Submit Request button at bottom-right.
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  We cover companies on this portal that do concalls, with Indian stocks and especially mid- and small-cap names preferred.
                 </p>
               </div>
             </div>
