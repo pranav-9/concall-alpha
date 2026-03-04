@@ -70,6 +70,14 @@ const normalizeVisibilityPercent = (value: unknown) => {
   return Math.round(numeric);
 };
 
+const normalizeScenarioConfidence = (value: unknown) => {
+  const numeric = asNumber(value);
+  if (numeric == null) return null;
+  if (numeric <= 1) return numeric;
+  if (numeric <= 100) return numeric / 100;
+  return null;
+};
+
 const normalizeEvidenceLine = (value: unknown): NormalizedGrowthEvidenceLine | null => {
   const textOnly = asString(value);
   if (textOnly) {
@@ -191,21 +199,38 @@ const normalizeVariantPerception = (value: unknown): NormalizedGrowthVariantPerc
   const item = parseJsonObject(value);
   if (!item) return null;
 
+  const consensusView = parseJsonObject(item.consensus_view);
+  const upsideView = parseJsonObject(item.upside_view);
+  const downsideView = parseJsonObject(item.downside_view);
+
+  const nestedConsensus = asString(consensusView?.summary);
+  const nestedUpside = asStringArray(upsideView?.points);
+  const nestedDownside = asStringArray(downsideView?.points);
+
   const consensus =
+    nestedConsensus ??
     asString(item.consensus_vs_company) ??
     asString(item.low) ??
     asString(item.guided_de_risked);
-  const upside = [
-    ...asStringArray(item.upside_nonconsensus),
-    ...(asString(item.high) ? [asString(item.high) as string] : []),
-    ...(asString(item.execution_trajectory) ? [asString(item.execution_trajectory) as string] : []),
-  ];
-  const downside = [
-    ...asStringArray(item.downside_nonconsensus),
-    ...(asString(item.catalyst_to_variant_delta)
-      ? [asString(item.catalyst_to_variant_delta) as string]
-      : []),
-  ];
+  const upside =
+    nestedUpside.length > 0
+      ? nestedUpside
+      : [
+          ...asStringArray(item.upside_nonconsensus),
+          ...(asString(item.high) ? [asString(item.high) as string] : []),
+          ...(asString(item.execution_trajectory)
+            ? [asString(item.execution_trajectory) as string]
+            : []),
+        ];
+  const downside =
+    nestedDownside.length > 0
+      ? nestedDownside
+      : [
+          ...asStringArray(item.downside_nonconsensus),
+          ...(asString(item.catalyst_to_variant_delta)
+            ? [asString(item.catalyst_to_variant_delta) as string]
+            : []),
+        ];
 
   if (!consensus && upside.length === 0 && downside.length === 0) {
     return null;
@@ -218,16 +243,23 @@ const normalizeScenario = (value: unknown): NormalizedGrowthScenario | null => {
   const item = parseJsonObject(value);
   if (!item) return null;
 
-  const drivers = asStringArray(item.key_drivers);
-  const risks = asStringArray(item.key_risks);
-  const summary = asString(item.description);
-  const growthRaw = item.revenue_growth_pct ?? item.revenue_growth ?? item.revenue_impact;
+  const driversPrimary = asStringArray(item.drivers);
+  const driversFallback = asStringArray(item.key_drivers);
+  const drivers = driversPrimary.length > 0 ? driversPrimary : driversFallback;
+
+  const risksPrimary = asStringArray(item.risks);
+  const risksFallback = asStringArray(item.key_risks);
+  const risks = risksPrimary.length > 0 ? risksPrimary : risksFallback;
+
+  const summary = asString(item.quick_takeaway) ?? asString(item.description);
+  const growthRaw =
+    item.growth_pct ?? item.revenue_growth_pct ?? item.revenue_growth ?? item.revenue_impact;
   const growth =
     typeof growthRaw === "string" || typeof growthRaw === "number" ? String(growthRaw) : null;
   const ebitdaRaw = item.ebitda_margin ?? item.margin_impact;
   const ebitdaMargin =
     typeof ebitdaRaw === "string" || typeof ebitdaRaw === "number" ? String(ebitdaRaw) : null;
-  const confidence = asNumber(item.confidence);
+  const confidence = normalizeScenarioConfidence(item.confidence_pct ?? item.confidence);
 
   if (!summary && !growth && !ebitdaMargin && confidence == null && drivers.length === 0 && risks.length === 0) {
     return null;

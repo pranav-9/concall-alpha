@@ -129,7 +129,7 @@ const buildSectorPreview = (
     if (seen.has(key)) continue;
     seen.add(key);
     bullets.push(text);
-    if (bullets.length === 2) break;
+    if (bullets.length === 3) break;
   }
 
   if (!summary && bullets.length === 0) return null;
@@ -139,6 +139,27 @@ const buildSectorPreview = (
     bullets,
     generatedAtLabel: normalized.generatedAtLabel,
   };
+};
+
+const buildSectorSignals = (normalized: NormalizedSectorIntelligence | null): string[] => {
+  if (!normalized) return [];
+
+  const signals: string[] = [];
+
+  if (normalized.whatMattersNow.length > 0) {
+    signals.push(`${normalized.whatMattersNow.length} live watchpoints`);
+  }
+  if (normalized.tailwinds.length > 0) {
+    signals.push(`${normalized.tailwinds.length} tailwinds`);
+  }
+  if (normalized.headwinds.length > 0) {
+    signals.push(`${normalized.headwinds.length} headwinds`);
+  }
+  if (normalized.cyclePosition) {
+    signals.push(normalized.cyclePosition.replace(/_/g, " "));
+  }
+
+  return signals.slice(0, 3);
 };
 
 const timelineStageConfig: Record<string, { label: string; className: string }> = {
@@ -365,6 +386,15 @@ export default async function Page({
   );
   const sectorPreview = buildSectorPreview(normalizedSectorPreview);
   const subSectorPreview = buildSectorPreview(normalizedSubSectorPreview);
+  const preferredPreview = subSectorPreview ?? sectorPreview ?? null;
+  const preferredPreviewKind = subSectorPreview
+    ? "sub_sector"
+    : sectorPreview
+      ? "sector"
+      : null;
+  const preferredSignals = buildSectorSignals(
+    preferredPreviewKind === "sub_sector" ? normalizedSubSectorPreview : normalizedSectorPreview,
+  );
   const sectorPreviewHref = companySector
     ? companySubSector
       ? `/sector/${slugifySector(companySector)}?subSector=${encodeURIComponent(
@@ -656,78 +686,73 @@ export default async function Page({
             }
           >
             <div className="space-y-3">
-              {sectorPreview || subSectorPreview ? (
+              {preferredPreview ? (
                 <div
-                  className={`grid grid-cols-1 gap-3 ${sectorPreview && subSectorPreview ? "lg:grid-cols-2" : ""}`}
+                  className={
+                    preferredPreviewKind === "sub_sector"
+                      ? "space-y-3 border-l-2 border-sky-300/60 pl-3 dark:border-sky-700/40"
+                      : "space-y-3 border-l-2 border-border/40 pl-3"
+                  }
                 >
-                  {sectorPreview && (
-                    <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Sector
-                        </p>
-                        <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
-                          Sector
-                        </span>
-                      </div>
-                      {sectorPreview.summary && (
-                        <p className="line-clamp-2 text-sm text-foreground leading-relaxed">
-                          {sectorPreview.summary}
-                        </p>
-                      )}
-                      {sectorPreview.bullets.length > 0 && (
-                        <ul className="space-y-1">
-                          {sectorPreview.bullets.map((bullet) => (
-                            <li key={bullet} className="flex items-start gap-1.5 text-[12px] text-muted-foreground leading-relaxed">
-                              <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/30" />
-                              <span>{bullet}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {sectorPreview.generatedAtLabel && (
-                        <p className="text-[10px] text-muted-foreground">
-                          Updated {sectorPreview.generatedAtLabel}
-                        </p>
-                      )}
-                    </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      {preferredPreviewKind === "sub_sector" ? "Sub-sector" : "Industry context"}
+                    </p>
+                    <span
+                      className={
+                        preferredPreviewKind === "sub_sector"
+                          ? "rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
+                          : "rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground"
+                      }
+                    >
+                      {preferredPreviewKind === "sub_sector" && companySubSector
+                        ? companySubSector
+                        : "Sector fallback"}
+                    </span>
+                    {preferredSignals.map((signal) => (
+                      <span
+                        key={signal}
+                        className="rounded-full border border-border/50 bg-background/60 px-2 py-0.5 text-[10px] text-muted-foreground"
+                      >
+                        {signal}
+                      </span>
+                    ))}
+                  </div>
+
+                  {preferredPreview.summary && (
+                    <p className="line-clamp-3 text-sm leading-relaxed text-foreground sm:text-[15px]">
+                      {preferredPreview.summary}
+                    </p>
                   )}
 
-                  {subSectorPreview && companySubSector && (
-                    <div className="rounded-lg border border-sky-200/50 bg-sky-50/30 p-3 space-y-2.5 dark:border-sky-700/30 dark:bg-sky-900/10">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Sub-sector
-                        </p>
-                        <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
-                          {companySubSector}
-                        </span>
-                      </div>
-                      {subSectorPreview.summary && (
-                        <p className="line-clamp-2 text-sm text-foreground leading-relaxed">
-                          {subSectorPreview.summary}
-                        </p>
-                      )}
-                      {subSectorPreview.bullets.length > 0 && (
-                        <ul className="space-y-1">
-                          {subSectorPreview.bullets.map((bullet) => (
-                            <li key={bullet} className="flex items-start gap-1.5 text-[12px] text-muted-foreground leading-relaxed">
-                              <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500/60" />
-                              <span>{bullet}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {subSectorPreview.generatedAtLabel && (
-                        <p className="text-[10px] text-muted-foreground">
-                          Updated {subSectorPreview.generatedAtLabel}
-                        </p>
-                      )}
-                    </div>
+                  {preferredPreview.bullets.length > 0 && (
+                    <ul className="space-y-1">
+                      {preferredPreview.bullets.map((bullet) => (
+                        <li
+                          key={bullet}
+                          className="flex items-start gap-1.5 text-[12px] leading-relaxed text-muted-foreground"
+                        >
+                          <span
+                            className={
+                              preferredPreviewKind === "sub_sector"
+                                ? "mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500/60"
+                                : "mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/30"
+                            }
+                          />
+                          <span>{bullet}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {preferredPreview.generatedAtLabel && (
+                    <p className="text-[10px] text-muted-foreground">
+                      Updated {preferredPreview.generatedAtLabel}
+                    </p>
                   )}
                 </div>
               ) : (
-                <div className="rounded-lg border border-border/40 bg-muted/15 p-3 text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground">
                   Sector commentary not available yet.
                 </div>
               )}
