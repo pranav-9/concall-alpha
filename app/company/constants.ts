@@ -1,11 +1,22 @@
+export type CompanySidebarSectionMeta =
+  | { kind: "score"; score: number | null }
+  | { kind: "text"; text: string }
+  | { kind: "count"; count: number; suffix?: string };
+
+export type CompanySidebarSectionItem = {
+  id: string;
+  label: string;
+  meta?: CompanySidebarSectionMeta;
+};
+
 export const SECTIONS = [
   {
-    id: "overview",
-    label: "Overview",
+    id: "sector-context",
+    label: "Industry Overview",
   },
   {
     id: "sentiment-score",
-    label: "Sentiment Score",
+    label: "Quarterly Score",
   },
   {
     id: "placeholder",
@@ -13,18 +24,23 @@ export const SECTIONS = [
   },
   {
     id: "competitive-strategy",
-    label: "Competitive Strategy",
+    label: "Top Business Strategies",
   },
   {
     id: "business-overview",
-    label: "Business Overview",
+    label: "Business Snapshot",
+  },
+  {
+    id: "community",
+    label: "Community",
   },
 ] as const;
 
 export const SECTION_MAP = {
-  overview: SECTIONS[0],
-  sentimentScore: SECTIONS[1],
-  placeholder: SECTIONS[2],
-  competitiveStrategy: SECTIONS[3],
-  businessOverview: SECTIONS[4],
+  sectorContext: SECTIONS[0],
+  quarterlyScore: SECTIONS[1],
+  futureGrowth: SECTIONS[2],
+  topBusinessStrategies: SECTIONS[3],
+  businessSnapshot: SECTIONS[4],
+  community: SECTIONS[5],
 } as const;

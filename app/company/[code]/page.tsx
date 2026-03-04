@@ -4,6 +4,7 @@ import { ChartLineLabel } from "./chart";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { createClient } from "@/lib/supabase/server";
+import { SECTION_MAP } from "../constants";
 import {
   QuarterData,
   BusinessSegment,
@@ -413,6 +414,46 @@ export default async function Page({
         }).format(growthUpdatedDate)
       : null;
   const growthScore = normalizedGrowthOutlook?.growthScore ?? null;
+  const sidebarSections = [
+    {
+      ...SECTION_MAP.sectorContext,
+      meta:
+        preferredPreviewKind === "sub_sector" && companySubSector
+          ? { kind: "text" as const, text: companySubSector }
+          : companySector
+            ? { kind: "text" as const, text: "Sector fallback" }
+            : undefined,
+    },
+    {
+      ...SECTION_MAP.quarterlyScore,
+      meta: { kind: "score" as const, score: latestQuarterData?.score ?? null },
+    },
+    {
+      ...SECTION_MAP.futureGrowth,
+      meta: { kind: "score" as const, score: growthScore },
+    },
+    {
+      ...SECTION_MAP.topBusinessStrategies,
+      meta: { kind: "count" as const, count: topStrategiesData?.length ?? 0 },
+    },
+    {
+      ...SECTION_MAP.businessSnapshot,
+      meta:
+        typeof normalizedBusinessSnapshot?.documentsProcessed === "number"
+          ? {
+              kind: "count" as const,
+              count: normalizedBusinessSnapshot.documentsProcessed,
+              suffix: "docs",
+            }
+          : normalizedBusinessSnapshot
+            ? { kind: "text" as const, text: "Live" }
+            : { kind: "text" as const, text: "Soon" },
+    },
+    {
+      ...SECTION_MAP.community,
+      meta: { kind: "text" as const, text: "Discuss" },
+    },
+  ];
 
   const toNumeric = (value: unknown): number | null => {
     if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -643,7 +684,7 @@ export default async function Page({
 
   return (
     <div className="flex w-full max-w-full overflow-x-hidden gap-4 lg:gap-6 px-3 sm:px-4 lg:px-12 py-4 sm:py-6">
-      <SidebarNavigation />
+      <SidebarNavigation sections={sidebarSections} />
 
       {/* main content - 80% width */}
       <div id="main-content" className="flex-1 min-w-0 flex flex-col gap-4">
