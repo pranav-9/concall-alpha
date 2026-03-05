@@ -42,6 +42,7 @@ type SectorCompanyRow = {
   isNew: boolean;
   latestQuarterScore: number | null;
   growthScore: number | null;
+  avgScore: number | null;
 };
 
 const toNumberOrNull = (value: unknown): number | null => {
@@ -279,7 +280,7 @@ type SectorPageProps = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<{
     subSector?: string;
-    sort?: "latest_qtr" | "growth";
+    sort?: "avg" | "latest_qtr" | "growth";
     order?: "asc" | "desc";
   }>;
 };
@@ -299,8 +300,10 @@ export async function generateMetadata({
 export default async function SectorPage({ params, searchParams }: SectorPageProps) {
   const { slug } = await params;
   const resolvedSearchParams = await searchParams;
-  const subSectorFilter = resolvedSearchParams?.subSector?.trim() ?? "";
-  const sortBy = resolvedSearchParams?.sort === "growth" ? "growth" : "latest_qtr";
+  const sortBy =
+    resolvedSearchParams?.sort === "latest_qtr" || resolvedSearchParams?.sort === "growth"
+      ? resolvedSearchParams.sort
+      : "avg";
   const sortOrder = resolvedSearchParams?.order === "asc" ? "asc" : "desc";
 
   const supabase = await createClient();
@@ -400,9 +403,15 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
       isNew: isCompanyNew(company.created_at ?? null),
       latestQuarterScore: quarterScoreMap.get(codeKey) ?? null,
       growthScore: latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? null,
+      avgScore:
+        quarterScoreMap.get(codeKey) != null &&
+        (latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? null) != null
+          ? ((quarterScoreMap.get(codeKey) as number) +
+              (latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? 0)) /
+            2
+          : null,
     };
   });
-
   const subSectorCounts = allRows.reduce<Map<string, number>>((acc, row) => {
     const key = row.subSector?.trim();
     if (!key) return acc;
@@ -410,25 +419,31 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     return acc;
   }, new Map());
 
-  const subSectorFilters = Array.from(subSectorCounts.entries()).sort((a, b) =>
-    a[0].localeCompare(b[0]),
-  );
-
-  const filteredRows = subSectorFilter
-    ? allRows.filter((row) => (row.subSector ?? "").toLowerCase() === subSectorFilter.toLowerCase())
-    : allRows;
-
-  const sortedRows = [...filteredRows].sort((a, b) => {
+  const sortedRows = [...allRows].sort((a, b) => {
     if (sortBy === "growth") {
       const primary = compareNullableNumbers(a.growthScore, b.growthScore, sortOrder);
       if (primary !== 0) return primary;
       const tieQuarter = compareNullableNumbers(a.latestQuarterScore, b.latestQuarterScore, "desc");
       if (tieQuarter !== 0) return tieQuarter;
+      const tieAvg = compareNullableNumbers(a.avgScore, b.avgScore, "desc");
+      if (tieAvg !== 0) return tieAvg;
       return a.name.localeCompare(b.name);
     }
 
-    const primary = compareNullableNumbers(a.latestQuarterScore, b.latestQuarterScore, sortOrder);
+    if (sortBy === "latest_qtr") {
+      const primary = compareNullableNumbers(a.latestQuarterScore, b.latestQuarterScore, sortOrder);
+      if (primary !== 0) return primary;
+      const tieGrowth = compareNullableNumbers(a.growthScore, b.growthScore, "desc");
+      if (tieGrowth !== 0) return tieGrowth;
+      const tieAvg = compareNullableNumbers(a.avgScore, b.avgScore, "desc");
+      if (tieAvg !== 0) return tieAvg;
+      return a.name.localeCompare(b.name);
+    }
+
+    const primary = compareNullableNumbers(a.avgScore, b.avgScore, sortOrder);
     if (primary !== 0) return primary;
+    const tieQuarter = compareNullableNumbers(a.latestQuarterScore, b.latestQuarterScore, "desc");
+    if (tieQuarter !== 0) return tieQuarter;
     const tieGrowth = compareNullableNumbers(a.growthScore, b.growthScore, "desc");
     if (tieGrowth !== 0) return tieGrowth;
     return a.name.localeCompare(b.name);
@@ -441,7 +456,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     : null;
 
   const sectorIntelligenceRows = (sectorIntelligenceRowsData ?? []) as SectorIntelligenceRow[];
-  const activeSubSectorKey = normalizeFilterKey(subSectorFilter);
+  const activeSubSectorKey = normalizeFilterKey(resolvedSearchParams?.subSector?.trim());
   const exactRows = activeSubSectorKey
     ? sectorIntelligenceRows.filter(
         (row) => normalizeFilterKey(row.sub_sector) === activeSubSectorKey,
@@ -479,25 +494,16 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     ? `${normalizedSectorIntelligence.growthCatalysts.length} growth catalysts and ${normalizedSectorIntelligence.policyWatch.length} policy items tracked`
     : null;
 
-  const buildFilterHref = (subSector?: string) => {
+  const buildSortHref = (nextSort: "avg" | "latest_qtr" | "growth", nextOrder: "asc" | "desc") => {
     const query = new URLSearchParams();
-    if (subSector) query.set("subSector", subSector);
-    if (sortBy !== "latest_qtr") query.set("sort", sortBy);
-    if (sortOrder !== "desc") query.set("order", sortOrder);
-    const qs = query.toString();
-    return qs ? `/sector/${slugifySector(sectorName)}?${qs}` : `/sector/${slugifySector(sectorName)}`;
-  };
-
-  const buildSortHref = (nextSort: "latest_qtr" | "growth", nextOrder: "asc" | "desc") => {
-    const query = new URLSearchParams();
-    if (subSectorFilter) query.set("subSector", subSectorFilter);
-    if (nextSort !== "latest_qtr") query.set("sort", nextSort);
+    if (nextSort !== "avg") query.set("sort", nextSort);
     if (nextOrder !== "desc") query.set("order", nextOrder);
     const qs = query.toString();
     return qs ? `/sector/${slugifySector(sectorName)}?${qs}` : `/sector/${slugifySector(sectorName)}`;
   };
 
-  const sortLabel = sortBy === "growth" ? "Growth score" : "Latest qtr";
+  const sortLabel =
+    sortBy === "growth" ? "Growth score" : sortBy === "latest_qtr" ? "Latest qtr" : "Avg score";
 
   return (
     <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-10 space-y-5 sm:space-y-6">
@@ -838,42 +844,21 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
       </div>
 
       <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href={buildFilterHref(undefined)}
-            className={`px-2 py-1 rounded-full text-xs border ${
-              !subSectorFilter
-                ? "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
-                : "border-border bg-muted text-foreground hover:bg-accent"
-            }`}
-            prefetch={false}
-          >
-            All ({allRows.length})
-          </Link>
-          {subSectorFilters.map(([subSectorName, count]) => (
-            <Link
-              key={subSectorName}
-              href={buildFilterHref(subSectorName)}
-              className={`px-2 py-1 rounded-full text-xs border ${
-                subSectorFilter.toLowerCase() === subSectorName.toLowerCase()
-                  ? "border-sky-200 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
-                  : "border-border bg-muted text-foreground hover:bg-accent"
-              }`}
-              prefetch={false}
-            >
-              {subSectorName} ({count})
-            </Link>
-          ))}
-        </div>
-
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-foreground">Sort:</span>
           <Link
+            href={buildSortHref("avg", sortBy === "avg" && sortOrder === "desc" ? "asc" : "desc")}
+            className={`underline-offset-2 hover:underline ${
+              sortBy === "avg" ? "font-semibold text-foreground" : "text-muted-foreground"
+            }`}
+            prefetch={false}
+          >
+            Avg ({sortBy === "avg" ? sortOrder : "desc"})
+          </Link>
+          <Link
             href={buildSortHref("latest_qtr", sortBy === "latest_qtr" && sortOrder === "desc" ? "asc" : "desc")}
-            className={`px-2 py-1 rounded-full border ${
-              sortBy === "latest_qtr"
-                ? "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
-                : "border-border bg-muted text-foreground hover:bg-accent"
+            className={`underline-offset-2 hover:underline ${
+              sortBy === "latest_qtr" ? "font-semibold text-foreground" : "text-muted-foreground"
             }`}
             prefetch={false}
           >
@@ -881,10 +866,8 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
           </Link>
           <Link
             href={buildSortHref("growth", sortBy === "growth" && sortOrder === "desc" ? "asc" : "desc")}
-            className={`px-2 py-1 rounded-full border ${
-              sortBy === "growth"
-                ? "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
-                : "border-border bg-muted text-foreground hover:bg-accent"
+            className={`underline-offset-2 hover:underline ${
+              sortBy === "growth" ? "font-semibold text-foreground" : "text-muted-foreground"
             }`}
             prefetch={false}
           >
@@ -897,7 +880,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
 
         {sortedRows.length === 0 ? (
           <div className="rounded-md border border-border bg-card p-4 text-sm text-muted-foreground">
-            No companies match this sub-sector filter.
+            No companies available for this sector.
           </div>
         ) : (
           <div className="overflow-x-auto rounded-md border border-border bg-card">
@@ -908,6 +891,9 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
                   <th className="px-3 py-2 font-semibold text-foreground">Sub-sector</th>
                   <th className="px-3 py-2 font-semibold text-foreground">Latest qtr score</th>
                   <th className="px-3 py-2 font-semibold text-foreground">Growth score</th>
+                  <th className="border-l border-border/70 px-3 py-2 font-semibold text-foreground">
+                    Avg score
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -939,6 +925,13 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
                     <td className="px-3 py-2">
                       {row.growthScore != null ? (
                         <ConcallScore score={row.growthScore} />
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="border-l border-border/70 px-3 py-2">
+                      {row.avgScore != null ? (
+                        <ConcallScore score={row.avgScore} />
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
