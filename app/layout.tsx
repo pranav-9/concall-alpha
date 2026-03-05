@@ -58,6 +58,9 @@ export default async function RootLayout({
                   : null
               }
             />
+            <div className="border-b border-amber-300/60 bg-amber-50/80 px-3 py-2 text-center text-xs text-amber-900 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-200">
+              Growth score formula has changed. All companies are currently under revision for the updated formula after March 3, 2026.
+            </div>
             <Suspense fallback={null}>
               <PageViewTracker />
             </Suspense>
