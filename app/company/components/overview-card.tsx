@@ -20,6 +20,7 @@ interface OverviewCardProps {
     quarter?: { rank: number; total: number; percentile: number } | null;
     growth?: { rank: number; total: number; percentile: number } | null;
   };
+  sectorRankInfo?: { rank: number | null; total: number } | null;
   action?: ReactNode;
 }
 
@@ -47,7 +48,13 @@ const rankPillText = (
   return `${label} ${rankData.rank} / ${rankData.total} (Top ${Math.round(rankData.percentile)} percentile)`;
 };
 
-export function OverviewCard({ data, companyInfo, rankInfo, action }: OverviewCardProps) {
+export function OverviewCard({
+  data,
+  companyInfo,
+  rankInfo,
+  sectorRankInfo,
+  action,
+}: OverviewCardProps) {
   const sentiment = data ? categoryFor(data.score) : null;
   const normalizedSector = companyInfo?.sector?.trim() || undefined;
   const normalizedSubSector = companyInfo?.subSector?.trim() || undefined;
@@ -99,6 +106,9 @@ export function OverviewCard({ data, companyInfo, rankInfo, action }: OverviewCa
               className="px-2 py-1 rounded-full bg-muted text-foreground border border-border hover:bg-accent transition-colors"
             >
               Sector: {normalizedSector}
+              {sectorRankInfo
+                ? ` ${sectorRankInfo.rank != null ? `${sectorRankInfo.rank}/${sectorRankInfo.total}` : `N/A/${sectorRankInfo.total}`}`
+                : ""}
             </Link>
           )}
           {normalizedSector && normalizedSubSector && (

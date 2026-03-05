@@ -68,6 +68,8 @@ type RankInfo = {
   growth?: { rank: number; total: number; percentile: number } | null;
 };
 
+type SectorRankInfo = { rank: number | null; total: number } | null;
+
 const parseJsonObject = (val: unknown) => {
   if (!val) return null;
   if (typeof val === "string") {
@@ -85,6 +87,18 @@ const normalizeFilterKey = (value: string | null | undefined) => {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed ? trimmed.toLowerCase() : null;
+};
+
+const computeAvgScore = (latestQuarterScore: number | null, growthScore: number | null) => {
+  if (latestQuarterScore == null || growthScore == null) return null;
+  return (latestQuarterScore + growthScore) / 2;
+};
+
+const compareNullableNumbers = (a: number | null, b: number | null, order: "asc" | "desc") => {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return order === "asc" ? a - b : b - a;
 };
 
 const timestampValue = (value: string | null | undefined) => {
@@ -465,6 +479,8 @@ export default async function Page({
   };
 
   let rankInfo: RankInfo = { quarter: null, growth: null };
+  let sectorRankInfo: SectorRankInfo = null;
+  let latestQuarterRowsGlobal: Array<{ company_code?: unknown; score?: unknown }> = [];
 
   // Quarter rank: latest global quarter across concall_analysis
   const { data: latestQuarterKey } = await supabase
@@ -482,8 +498,13 @@ export default async function Page({
       .eq("fy", latestQuarterKey.fy)
       .eq("qtr", latestQuarterKey.qtr);
 
+    latestQuarterRowsGlobal = (latestQuarterRows ?? []) as Array<{
+      company_code?: unknown;
+      score?: unknown;
+    }>;
+
     const quarterRanked = assignCompetitionRanks(
-      (latestQuarterRows ?? [])
+      latestQuarterRowsGlobal
       .map((row) => ({
         companyCode: String((row as { company_code?: string }).company_code ?? "").toUpperCase(),
         score: toNumeric((row as { score?: unknown }).score),
@@ -554,6 +575,71 @@ export default async function Page({
         percentile: ((growthTotal - growthRank + 1) / growthTotal) * 100,
       },
     };
+  }
+
+  if (companySector) {
+    const { data: sectorPeerRows } = await supabase
+      .from("company")
+      .select("code, name")
+      .eq("sector", companySector);
+
+    const sectorPeers = (sectorPeerRows ?? []) as Array<{ code?: string | null; name?: string | null }>;
+    const sectorTotal = sectorPeers.length;
+
+    if (sectorTotal > 0) {
+      const latestQuarterByCode = new Map<string, number | null>();
+      latestQuarterRowsGlobal.forEach((row) => {
+        const companyCode = String(row.company_code ?? "").toUpperCase();
+        if (!companyCode || latestQuarterByCode.has(companyCode)) return;
+        latestQuarterByCode.set(companyCode, toNumeric(row.score));
+      });
+
+      const sectorPeerAvgRows = sectorPeers.map((peer) => {
+        const peerCode = String(peer.code ?? "").toUpperCase();
+        const peerName = String(peer.name ?? "").toUpperCase();
+        const latestQuarterScore = latestQuarterByCode.get(peerCode) ?? null;
+        const growthScore =
+          latestGrowthByCompany.get(peerCode)?.growthScore ??
+          latestGrowthByCompany.get(peerName)?.growthScore ??
+          null;
+
+        return {
+          code: peerCode,
+          name: String(peer.name ?? peer.code ?? "").trim() || peerCode,
+          latestQuarterScore,
+          growthScore,
+          avgScore: computeAvgScore(latestQuarterScore, growthScore),
+        };
+      });
+
+      const rankedSectorPeers = assignCompetitionRanks(
+        sectorPeerAvgRows
+          .filter((row) => row.avgScore != null)
+          .sort((a, b) => {
+            const avgCompare = compareNullableNumbers(a.avgScore, b.avgScore, "desc");
+            if (avgCompare !== 0) return avgCompare;
+            const latestCompare = compareNullableNumbers(
+              a.latestQuarterScore,
+              b.latestQuarterScore,
+              "desc",
+            );
+            if (latestCompare !== 0) return latestCompare;
+            const growthCompare = compareNullableNumbers(a.growthScore, b.growthScore, "desc");
+            if (growthCompare !== 0) return growthCompare;
+            return a.name.localeCompare(b.name);
+          }),
+        (row) => row.avgScore,
+      );
+
+      const sectorMatchKeys = [code.toUpperCase(), (companyName ?? "").toUpperCase()].filter(Boolean);
+      const sectorRank =
+        rankedSectorPeers.find((row) => sectorMatchKeys.includes(row.code))?.leaderboardRank ?? null;
+
+      sectorRankInfo = {
+        rank: sectorRank,
+        total: sectorTotal,
+      };
+    }
   }
 
   const renderScenarioCard = (scenarioKey: "base" | "upside" | "downside") => {
@@ -699,6 +785,7 @@ export default async function Page({
             isNew: companyIsNew,
           }}
           rankInfo={rankInfo}
+          sectorRankInfo={sectorRankInfo}
           action={
             <WatchlistButton
               companyCode={code}
