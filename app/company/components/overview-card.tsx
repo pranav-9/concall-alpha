@@ -105,9 +105,9 @@ export function OverviewCard({
               prefetch={false}
               className="px-2 py-1 rounded-full bg-muted text-foreground border border-border hover:bg-accent transition-colors"
             >
-              Sector: {normalizedSector}
+              {normalizedSector}
               {sectorRankInfo
-                ? ` ${sectorRankInfo.rank != null ? `${sectorRankInfo.rank}/${sectorRankInfo.total}` : `N/A/${sectorRankInfo.total}`}`
+                ? ` #${sectorRankInfo.rank != null ? `${sectorRankInfo.rank}/${sectorRankInfo.total}` : `N/A/${sectorRankInfo.total}`}`
                 : ""}
             </Link>
           )}
