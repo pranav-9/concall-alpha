@@ -12,15 +12,9 @@ export type GrowthRowTable = {
   isNew: boolean;
   updatedAt?: string | null;
   growthScore?: number | null;
-  base?: number | null;
-  upside?: number | null;
-  downside?: number | null;
-};
-
-const formatPct = (value: number | null | undefined) => {
-  if (value == null) return "—";
-  const rounded = Math.round(value * 10) / 10;
-  return `${rounded}%`;
+  baseDisplay?: string | null;
+  upsideDisplay?: string | null;
+  downsideDisplay?: string | null;
 };
 
 const formatDate = (value: string | null | undefined) => {
@@ -32,6 +26,18 @@ const formatDate = (value: string | null | undefined) => {
     month: "short",
     year: "numeric",
   }).format(d);
+};
+
+const renderGrowthPctCell = (value: string | null) => {
+  const display = value ?? "—";
+  return (
+    <span
+      className="inline-block max-w-[5.5rem] truncate align-middle text-foreground lg:max-w-[7rem]"
+      title={value ?? undefined}
+    >
+      {display}
+    </span>
+  );
 };
 
 const growthColumns: ColumnDef<GrowthRowTable>[] = [
@@ -85,25 +91,28 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
     },
   },
   {
-    accessorKey: "base",
+    accessorKey: "baseDisplay",
     header: "Base %",
-    cell: ({ row }) => (
-      <span className="text-foreground">{formatPct(row.getValue("base") as number | null)}</span>
-    ),
+    cell: ({ row }) => {
+      const value = row.getValue("baseDisplay") as string | null;
+      return renderGrowthPctCell(value);
+    },
   },
   {
-    accessorKey: "upside",
+    accessorKey: "upsideDisplay",
     header: "Upside %",
-    cell: ({ row }) => (
-      <span className="text-foreground">{formatPct(row.getValue("upside") as number | null)}</span>
-    ),
+    cell: ({ row }) => {
+      const value = row.getValue("upsideDisplay") as string | null;
+      return renderGrowthPctCell(value);
+    },
   },
   {
-    accessorKey: "downside",
+    accessorKey: "downsideDisplay",
     header: "Downside %",
-    cell: ({ row }) => (
-      <span className="text-foreground">{formatPct(row.getValue("downside") as number | null)}</span>
-    ),
+    cell: ({ row }) => {
+      const value = row.getValue("downsideDisplay") as string | null;
+      return renderGrowthPctCell(value);
+    },
   },
   {
     accessorKey: "updatedAt",

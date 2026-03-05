@@ -2,6 +2,7 @@ import { LeaderboardTable } from "@/app/company/leaderboard-table";
 import { getConcallData } from "@/app/company/get-concall-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildNewCompanySet } from "@/lib/company-freshness";
+import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { createClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
@@ -33,9 +34,12 @@ type GrowthEntry = {
   isNew: boolean;
   fiscalYear?: string | null;
   updatedAt?: string | null;
-  base?: number | null;
-  upside?: number | null;
-  downside?: number | null;
+  baseDisplay?: string | null;
+  upsideDisplay?: string | null;
+  downsideDisplay?: string | null;
+  baseSort?: number | null;
+  upsideSort?: number | null;
+  downsideSort?: number | null;
   growthScore?: number | null;
   growthFormula?: string | null;
   growthSteps?: string[] | null;
@@ -104,9 +108,12 @@ const fetchGrowthLeaders = async () => {
       isNew: newCompanySet.has(company.code.toUpperCase()),
       fiscalYear: null,
       updatedAt: null,
-      base: null,
-      upside: null,
-      downside: null,
+      baseDisplay: null,
+      upsideDisplay: null,
+      downsideDisplay: null,
+      baseSort: null,
+      upsideSort: null,
+      downsideSort: null,
       growthScore: null,
       growthFormula: null,
       growthSteps: null,
@@ -117,6 +124,9 @@ const fetchGrowthLeaders = async () => {
     const matchedCompany = companyByCode.get(rowKey) ?? companyByName.get(rowKey);
     const companyCode = matchedCompany?.code ?? row.company;
     const companyName = matchedCompany?.name ?? row.company;
+    const basePct = normalizeGrowthPct(row.base_growth_pct);
+    const upsidePct = normalizeGrowthPct(row.upside_growth_pct);
+    const downsidePct = normalizeGrowthPct(row.downside_growth_pct);
 
     entriesMap.set(companyCode, {
       leaderboardRank: 0,
@@ -128,9 +138,12 @@ const fetchGrowthLeaders = async () => {
           ? row.fiscal_year
           : row.fiscal_year?.toString() ?? null,
       updatedAt: row.run_timestamp ?? null,
-      base: parsePct(row.base_growth_pct),
-      upside: parsePct(row.upside_growth_pct),
-      downside: parsePct(row.downside_growth_pct),
+      baseDisplay: basePct.rawText,
+      upsideDisplay: upsidePct.rawText,
+      downsideDisplay: downsidePct.rawText,
+      baseSort: basePct.sortValue,
+      upsideSort: upsidePct.sortValue,
+      downsideSort: downsidePct.sortValue,
       growthScore: parsePct(row.growth_score),
       growthFormula: row.growth_score_formula ?? null,
       growthSteps: Array.isArray(row.growth_score_steps) ? row.growth_score_steps : null,
@@ -149,21 +162,33 @@ const fetchGrowthLeaders = async () => {
 
       if (aScore != null && bScore != null) {
         if (bScore !== aScore) return bScore - aScore;
-        const aBaseTie = a.base ?? Number.NEGATIVE_INFINITY;
-        const bBaseTie = b.base ?? Number.NEGATIVE_INFINITY;
+        const aBaseTie = a.baseSort ?? Number.NEGATIVE_INFINITY;
+        const bBaseTie = b.baseSort ?? Number.NEGATIVE_INFINITY;
         if (bBaseTie !== aBaseTie) return bBaseTie - aBaseTie;
         return a.companyName.localeCompare(b.companyName);
       }
       if (aScore != null) return -1;
       if (bScore != null) return 1;
 
-      const aHasAnyPct = a.base != null || a.upside != null || a.downside != null;
-      const bHasAnyPct = b.base != null || b.upside != null || b.downside != null;
+      const aHasAnyPct =
+        a.baseDisplay != null ||
+        a.upsideDisplay != null ||
+        a.downsideDisplay != null ||
+        a.baseSort != null ||
+        a.upsideSort != null ||
+        a.downsideSort != null;
+      const bHasAnyPct =
+        b.baseDisplay != null ||
+        b.upsideDisplay != null ||
+        b.downsideDisplay != null ||
+        b.baseSort != null ||
+        b.upsideSort != null ||
+        b.downsideSort != null;
       if (aHasAnyPct && !bHasAnyPct) return -1;
       if (!aHasAnyPct && bHasAnyPct) return 1;
 
-      const aBase = a.base ?? Number.NEGATIVE_INFINITY;
-      const bBase = b.base ?? Number.NEGATIVE_INFINITY;
+      const aBase = a.baseSort ?? Number.NEGATIVE_INFINITY;
+      const bBase = b.baseSort ?? Number.NEGATIVE_INFINITY;
       if (bBase !== aBase) return bBase - aBase;
       return a.companyName.localeCompare(b.companyName);
     });
