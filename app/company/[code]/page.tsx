@@ -313,7 +313,7 @@ export default async function Page({
   const { data: businessSnapshotData } = await supabase
     .from("business_snapshot")
     .select(
-      "company, generated_at, documents_processed, segment_profiles, business_snapshot, details, snapshot_phase, snapshot_source, source_urls",
+      "company, generated_at, documents_processed, segment_profiles, business_snapshot, about_company, revenue_breakdown, details, snapshot_phase, snapshot_source, source_urls",
     )
     .eq("company", code)
     .order("generated_at", { ascending: false })
@@ -428,6 +428,109 @@ export default async function Page({
         }).format(growthUpdatedDate)
       : null;
   const growthScore = normalizedGrowthOutlook?.growthScore ?? null;
+  const businessSnapshotGeneratedAtShort = normalizedBusinessSnapshot?.generatedAtRaw
+    ? (() => {
+        const date = new Date(normalizedBusinessSnapshot.generatedAtRaw);
+        if (Number.isNaN(date.getTime())) return null;
+        return new Intl.DateTimeFormat("en-IN", {
+          day: "2-digit",
+          month: "short",
+        }).format(date);
+      })()
+    : null;
+  const aboutCompany = normalizedBusinessSnapshot?.aboutCompany ?? null;
+  const revenueBreakdown = normalizedBusinessSnapshot?.revenueBreakdown ?? null;
+  const hasStructuredBusinessSnapshot =
+    Boolean(
+      aboutCompany?.aboutShort ||
+        aboutCompany?.aboutLong ||
+        (aboutCompany?.primaryCustomers.length ?? 0) > 0 ||
+        (aboutCompany?.coreProductsOrServices.length ?? 0) > 0 ||
+        aboutCompany?.valueChainPosition ||
+        (revenueBreakdown?.bySegment.length ?? 0) > 0 ||
+        (revenueBreakdown?.byGeography.length ?? 0) > 0 ||
+        (revenueBreakdown?.byProductOrService.length ?? 0) > 0,
+    );
+  const hasLegacyBusinessSnapshot =
+    Boolean(
+      normalizedBusinessSnapshot?.businessSummaryShort ||
+        normalizedBusinessSnapshot?.businessSummaryLong ||
+        normalizedBusinessSnapshot?.businessModelQuality ||
+        normalizedBusinessSnapshot?.operatingModel ||
+        normalizedBusinessSnapshot?.valueChainPosition ||
+        normalizedBusinessSnapshot?.demandShape ||
+        normalizedBusinessSnapshot?.dominantSegment ||
+        normalizedBusinessSnapshot?.emergingSegment ||
+        normalizedBusinessSnapshot?.mixShiftSummary ||
+        (normalizedBusinessSnapshot?.topRevenueDrivers.length ?? 0) > 0 ||
+        (normalizedBusinessSnapshot?.keyDependencies.length ?? 0) > 0 ||
+        (normalizedBusinessSnapshot?.keyRisksToModel.length ?? 0) > 0,
+    );
+
+  const renderRevenueBreakdownCard = ({
+    title,
+    entries,
+  }: {
+    title: string;
+    entries: Array<{ name: string; description: string | null; revenueSharePercent: number | null }>;
+  }) => {
+    if (entries.length === 0) return null;
+    const visibleEntries = entries.slice(0, 2);
+    const extraEntries = entries.slice(2);
+    return (
+      <div className="min-w-0 rounded-xl bg-background/55 p-3 sm:p-4">
+        <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+          {title}
+        </p>
+        <div className="mt-2 space-y-0">
+          {visibleEntries.map((entry, idx) => (
+            <div
+              key={`${entry.name}-${idx}`}
+              className={idx === 0 ? "py-2" : "border-t border-border/40 py-2"}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-medium text-foreground leading-snug">{entry.name}</p>
+                {entry.revenueSharePercent != null && (
+                  <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground shrink-0">
+                    {entry.revenueSharePercent}%
+                  </span>
+                )}
+              </div>
+              {entry.description && (
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                  {entry.description}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+        {extraEntries.length > 0 && (
+          <details className="mt-2 border-t border-border/40 pt-2">
+            <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
+              Show more ({extraEntries.length})
+            </summary>
+            <div className="mt-2 space-y-2">
+              {extraEntries.map((entry, idx) => (
+                <div key={`${entry.name}-extra-${idx}`} className="border-l border-border/60 pl-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-[11px] font-medium text-foreground leading-snug">{entry.name}</p>
+                    {entry.revenueSharePercent != null && (
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        {entry.revenueSharePercent}%
+                      </span>
+                    )}
+                  </div>
+                  {entry.description && (
+                    <p className="mt-0.5 text-[11px] text-muted-foreground leading-relaxed">{entry.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+      </div>
+    );
+  };
   const sidebarSections = [
     {
       ...SECTION_MAP.sectorContext,
@@ -1541,212 +1644,277 @@ export default async function Page({
           )}
         </SectionCard>
 
-        <SectionCard id="business-overview" title="Business Snapshot">
+        <SectionCard
+          id="business-overview"
+          title="Business Snapshot"
+          headerAction={
+            businessSnapshotGeneratedAtShort ? (
+              <span className="text-[11px] text-muted-foreground">
+                {businessSnapshotGeneratedAtShort}
+              </span>
+            ) : undefined
+          }
+        >
           <div className="flex flex-col gap-4">
-            <div className="rounded-xl border border-border bg-muted/15 p-4">
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-muted-foreground">
-                      {normalizedBusinessSnapshot?.generatedAtLabel && (
-                        <span>Generated: {normalizedBusinessSnapshot.generatedAtLabel}</span>
-                      )}
-                      {normalizedBusinessSnapshot?.snapshotSource && (
-                        <span>Source: {normalizedBusinessSnapshot.snapshotSource}</span>
-                      )}
-                      {typeof normalizedBusinessSnapshot?.snapshotPhase === "number" && (
-                        <span>Phase: {normalizedBusinessSnapshot.snapshotPhase}</span>
-                      )}
-                      {typeof normalizedBusinessSnapshot?.documentsProcessed === "number" && (
-                        <span>
-                          Docs processed: {normalizedBusinessSnapshot.documentsProcessed}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {normalizedBusinessSnapshot?.website && (
-                    <a
-                      href={normalizedBusinessSnapshot.website}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
-                    >
-                      Visit website
-                    </a>
-                  )}
-                </div>
-
+            <div className="rounded-2xl border border-border/60 bg-muted/10 p-3 sm:p-4">
+              <div className="flex flex-col gap-4">
                 {normalizedBusinessSnapshot ? (
                   <>
-                    <div className="grid grid-cols-1 gap-3 xl:grid-cols-5">
-                      <div className="xl:col-span-3">
-                        {normalizedBusinessSnapshot.businessSummaryShort ||
-                        normalizedBusinessSnapshot.businessSummaryLong ? (
-                          <div className="rounded-lg border border-border/40 bg-background/60 p-3 space-y-2">
-                            {normalizedBusinessSnapshot.businessSummaryShort && (
-                              <p className="text-sm sm:text-base font-semibold text-foreground leading-relaxed">
-                                {normalizedBusinessSnapshot.businessSummaryShort}
+                    {hasStructuredBusinessSnapshot ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.8fr)_minmax(18rem,0.95fr)]">
+                          <div className="min-w-0 space-y-2">
+                            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                              About
+                            </p>
+                            {aboutCompany?.aboutShort && (
+                              <p className="text-base sm:text-lg font-semibold text-foreground leading-snug">
+                                {aboutCompany.aboutShort}
                               </p>
                             )}
-                            {normalizedBusinessSnapshot.businessSummaryLong && (
-                              <p className="text-sm text-muted-foreground leading-relaxed sm:line-clamp-3 xl:line-clamp-2">
-                                {normalizedBusinessSnapshot.businessSummaryLong}
+                            {aboutCompany?.aboutLong && (
+                              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4 max-w-4xl">
+                                {aboutCompany.aboutLong}
                               </p>
                             )}
                           </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No business snapshot summary available yet.
-                          </p>
-                        )}
-                      </div>
 
-                      {(normalizedBusinessSnapshot.businessModelQuality ||
-                        normalizedBusinessSnapshot.operatingModel ||
-                        normalizedBusinessSnapshot.valueChainPosition ||
-                        normalizedBusinessSnapshot.demandShape ||
-                        normalizedBusinessSnapshot.dominantSegment ||
-                        normalizedBusinessSnapshot.emergingSegment) && (
-                        <div className="rounded-lg border border-border/40 bg-background/60 p-3 xl:col-span-2">
-                          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                            Business Model
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {normalizedBusinessSnapshot.businessModelQuality && (
-                              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
-                                Model: {normalizedBusinessSnapshot.businessModelQuality}
-                              </span>
+                          <div className="min-w-0 rounded-xl bg-background/55 p-3 sm:p-4">
+                            {(aboutCompany?.valueChainPosition ||
+                              (aboutCompany?.coreProductsOrServices.length ?? 0) > 0) && (
+                              <div>
+                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                  Company Profile
+                                </p>
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  {aboutCompany?.valueChainPosition && (
+                                    <span className="rounded-full border border-border/60 bg-muted/50 px-2 py-0.5 text-[10px] text-foreground">
+                                      {aboutCompany.valueChainPosition}
+                                    </span>
+                                  )}
+                                  {aboutCompany?.coreProductsOrServices.slice(0, 6).map((item) => (
+                                    <span
+                                      key={item}
+                                      className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground"
+                                    >
+                                      {item}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
                             )}
-                            {normalizedBusinessSnapshot.operatingModel && (
-                              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
-                                Ops: {normalizedBusinessSnapshot.operatingModel}
-                              </span>
-                            )}
-                            {normalizedBusinessSnapshot.valueChainPosition && (
-                              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
-                                Value chain: {normalizedBusinessSnapshot.valueChainPosition}
-                              </span>
-                            )}
-                            {normalizedBusinessSnapshot.demandShape && (
-                              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
-                                Demand: {normalizedBusinessSnapshot.demandShape}
-                              </span>
-                            )}
-                            {normalizedBusinessSnapshot.dominantSegment && (
-                              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
-                                Core: {normalizedBusinessSnapshot.dominantSegment}
-                              </span>
-                            )}
-                            {normalizedBusinessSnapshot.emergingSegment && (
-                              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
-                                Emerging: {normalizedBusinessSnapshot.emergingSegment}
-                              </span>
+
+                            {(aboutCompany?.primaryCustomers.length ?? 0) > 0 && (
+                              <div className="mt-4 border-t border-border/40 pt-3">
+                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                  Primary Customers
+                                </p>
+                                <ul className="mt-2 space-y-1">
+                                  {aboutCompany?.primaryCustomers.slice(0, 3).map((customer) => (
+                                    <li
+                                      key={customer}
+                                      className="text-xs text-foreground leading-snug border-l border-border/70 pl-2"
+                                    >
+                                      {customer}
+                                    </li>
+                                  ))}
+                                </ul>
+                                {(aboutCompany?.primaryCustomers.length ?? 0) > 3 && (
+                                  <details className="mt-2">
+                                    <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
+                                      Show all ({(aboutCompany?.primaryCustomers.length ?? 0) - 3} more)
+                                    </summary>
+                                    <ul className="mt-2 space-y-1">
+                                      {aboutCompany?.primaryCustomers.slice(3).map((customer) => (
+                                        <li
+                                          key={customer}
+                                          className="text-xs text-foreground leading-snug border-l border-border/60 pl-2"
+                                        >
+                                          {customer}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </details>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>
-                      )}
-                    </div>
 
-                    {(normalizedBusinessSnapshot.topRevenueDrivers.length > 0 ||
-                      normalizedBusinessSnapshot.keyDependencies.length > 0 ||
-                      normalizedBusinessSnapshot.keyRisksToModel.length > 0) && (
-                      <div className="grid grid-cols-1 gap-3 xl:grid-cols-5">
-                        {normalizedBusinessSnapshot.topRevenueDrivers.length > 0 && (
-                          <div className="rounded-lg border border-border/40 bg-background/60 p-3 xl:col-span-2">
-                            <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                              Top Revenue Drivers
-                            </p>
-                            <ul className="mt-2 space-y-0.5">
-                              {normalizedBusinessSnapshot.topRevenueDrivers.map((driver, idx) => (
-                                <li
-                                  key={idx}
-                                  className="text-xs text-foreground leading-snug border-l border-border/70 pl-2"
-                                >
-                                  {driver}
-                                </li>
-                              ))}
-                            </ul>
+                        <div className="rounded-2xl bg-muted/25 p-3 sm:p-4">
+                          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+                          {renderRevenueBreakdownCard({
+                            title: "By Segment",
+                            entries: revenueBreakdown?.bySegment ?? [],
+                          })}
+                          {renderRevenueBreakdownCard({
+                            title: "By Geography",
+                            entries: revenueBreakdown?.byGeography ?? [],
+                          })}
+                          {renderRevenueBreakdownCard({
+                            title: "By Product / Service",
+                            entries: revenueBreakdown?.byProductOrService ?? [],
+                          })}
                           </div>
-                        )}
+                        </div>
+                      </div>
+                    ) : hasLegacyBusinessSnapshot ? (
+                      <>
+                        <div className="grid grid-cols-1 gap-3 xl:grid-cols-5">
+                          <div className="xl:col-span-3">
+                            {normalizedBusinessSnapshot.businessSummaryShort ||
+                            normalizedBusinessSnapshot.businessSummaryLong ? (
+                              <div className="rounded-lg border border-border/40 bg-background/60 p-3 space-y-2">
+                                {normalizedBusinessSnapshot.businessSummaryShort && (
+                                  <p className="text-sm sm:text-base font-semibold text-foreground leading-relaxed">
+                                    {normalizedBusinessSnapshot.businessSummaryShort}
+                                  </p>
+                                )}
+                                {normalizedBusinessSnapshot.businessSummaryLong && (
+                                  <p className="text-sm text-muted-foreground leading-relaxed sm:line-clamp-3 xl:line-clamp-2">
+                                    {normalizedBusinessSnapshot.businessSummaryLong}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                No business snapshot summary available yet.
+                              </p>
+                            )}
+                          </div>
 
-                        {(normalizedBusinessSnapshot.keyDependencies.length > 0 ||
-                          normalizedBusinessSnapshot.keyRisksToModel.length > 0) && (
-                          <div className="rounded-lg border border-border/40 bg-background/60 p-3 xl:col-span-3">
-                            <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                              Model Watchpoints
-                            </p>
-                            <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
-                              {normalizedBusinessSnapshot.keyDependencies.length > 0 && (
-                                <div>
-                                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                                    Dependencies
-                                  </p>
-                                  <ul className="mt-1.5 space-y-0.5">
-                                    {normalizedBusinessSnapshot.keyDependencies.map((dependency, idx) => (
-                                      <li
-                                        key={idx}
-                                        className="text-xs text-foreground leading-snug border-l border-amber-400/50 pl-1.5"
-                                      >
-                                        {dependency}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {normalizedBusinessSnapshot.keyRisksToModel.length > 0 && (
-                                <div>
-                                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                                    Risks
-                                  </p>
-                                  <ul className="mt-1.5 space-y-0.5">
-                                    {normalizedBusinessSnapshot.keyRisksToModel.map((risk, idx) => (
-                                      <li
-                                        key={idx}
-                                        className="text-xs text-foreground leading-snug border-l border-red-400/50 pl-1.5"
-                                      >
-                                        {risk}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
+                          {(normalizedBusinessSnapshot.businessModelQuality ||
+                            normalizedBusinessSnapshot.operatingModel ||
+                            normalizedBusinessSnapshot.valueChainPosition ||
+                            normalizedBusinessSnapshot.demandShape ||
+                            normalizedBusinessSnapshot.dominantSegment ||
+                            normalizedBusinessSnapshot.emergingSegment) && (
+                            <div className="rounded-lg border border-border/40 bg-background/60 p-3 xl:col-span-2">
+                              <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                Business Model
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {normalizedBusinessSnapshot.businessModelQuality && (
+                                  <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                                    Model: {normalizedBusinessSnapshot.businessModelQuality}
+                                  </span>
+                                )}
+                                {normalizedBusinessSnapshot.operatingModel && (
+                                  <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                                    Ops: {normalizedBusinessSnapshot.operatingModel}
+                                  </span>
+                                )}
+                                {normalizedBusinessSnapshot.valueChainPosition && (
+                                  <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                                    Value chain: {normalizedBusinessSnapshot.valueChainPosition}
+                                  </span>
+                                )}
+                                {normalizedBusinessSnapshot.demandShape && (
+                                  <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                                    Demand: {normalizedBusinessSnapshot.demandShape}
+                                  </span>
+                                )}
+                                {normalizedBusinessSnapshot.dominantSegment && (
+                                  <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                                    Core: {normalizedBusinessSnapshot.dominantSegment}
+                                  </span>
+                                )}
+                                {normalizedBusinessSnapshot.emergingSegment && (
+                                  <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
+                                    Emerging: {normalizedBusinessSnapshot.emergingSegment}
+                                  </span>
+                                )}
+                              </div>
                             </div>
+                          )}
+                        </div>
+
+                        {(normalizedBusinessSnapshot.topRevenueDrivers.length > 0 ||
+                          normalizedBusinessSnapshot.keyDependencies.length > 0 ||
+                          normalizedBusinessSnapshot.keyRisksToModel.length > 0) && (
+                          <div className="grid grid-cols-1 gap-3 xl:grid-cols-5">
+                            {normalizedBusinessSnapshot.topRevenueDrivers.length > 0 && (
+                              <div className="rounded-lg border border-border/40 bg-background/60 p-3 xl:col-span-2">
+                                <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+                                  Top Revenue Drivers
+                                </p>
+                                <ul className="mt-2 space-y-0.5">
+                                  {normalizedBusinessSnapshot.topRevenueDrivers.map((driver, idx) => (
+                                    <li
+                                      key={idx}
+                                      className="text-xs text-foreground leading-snug border-l border-border/70 pl-2"
+                                    >
+                                      {driver}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {(normalizedBusinessSnapshot.keyDependencies.length > 0 ||
+                              normalizedBusinessSnapshot.keyRisksToModel.length > 0) && (
+                              <div className="rounded-lg border border-border/40 bg-background/60 p-3 xl:col-span-3">
+                                <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+                                  Model Watchpoints
+                                </p>
+                                <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                  {normalizedBusinessSnapshot.keyDependencies.length > 0 && (
+                                    <div>
+                                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                                        Dependencies
+                                      </p>
+                                      <ul className="mt-1.5 space-y-0.5">
+                                        {normalizedBusinessSnapshot.keyDependencies.map((dependency, idx) => (
+                                          <li
+                                            key={idx}
+                                            className="text-xs text-foreground leading-snug border-l border-amber-400/50 pl-1.5"
+                                          >
+                                            {dependency}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  {normalizedBusinessSnapshot.keyRisksToModel.length > 0 && (
+                                    <div>
+                                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                                        Risks
+                                      </p>
+                                      <ul className="mt-1.5 space-y-0.5">
+                                        {normalizedBusinessSnapshot.keyRisksToModel.map((risk, idx) => (
+                                          <li
+                                            key={idx}
+                                            className="text-xs text-foreground leading-snug border-l border-red-400/50 pl-1.5"
+                                          >
+                                            {risk}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
-                      </div>
+
+                        {normalizedBusinessSnapshot.mixShiftSummary && (
+                          <div className="rounded-lg border border-sky-200/50 bg-sky-50/40 p-3 space-y-0.5 dark:border-sky-700/30 dark:bg-sky-950/10">
+                            <p className="text-[10px] uppercase tracking-wide text-sky-700 dark:text-sky-300 font-semibold">
+                              Mix Shift
+                            </p>
+                            <p className="text-xs text-foreground/90 leading-relaxed">
+                              {normalizedBusinessSnapshot.mixShiftSummary}
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Business snapshot data not available yet.
+                      </p>
                     )}
 
-                    {normalizedBusinessSnapshot.mixShiftSummary && (
-                      <div className="rounded-lg border border-sky-200/50 bg-sky-50/40 p-3 space-y-0.5 dark:border-sky-700/30 dark:bg-sky-950/10">
-                        <p className="text-[10px] uppercase tracking-wide text-sky-700 dark:text-sky-300 font-semibold">
-                          Mix Shift
-                        </p>
-                        <p className="text-xs text-foreground/90 leading-relaxed">
-                          {normalizedBusinessSnapshot.mixShiftSummary}
-                        </p>
-                      </div>
-                    )}
-
-                    {normalizedBusinessSnapshot.sourceUrls.length > 0 && (
-                      <details className="rounded-md border border-border/30 bg-background/40 p-2.5">
-                        <summary className="cursor-pointer text-[11px] font-medium text-muted-foreground hover:text-foreground">
-                          Sources
-                        </summary>
-                        <div className="mt-2 flex flex-col gap-1.5">
-                          {normalizedBusinessSnapshot.sourceUrls.map((url, idx) => (
-                            <a
-                              key={`${url}-${idx}`}
-                              href={url}
-                              target="_blank"
-                              rel="noreferrer noopener"
-                              className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 break-all"
-                            >
-                              {url}
-                            </a>
-                          ))}
-                        </div>
-                      </details>
-                    )}
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground">

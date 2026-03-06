@@ -1,6 +1,9 @@
 import type {
   BusinessSnapshotRow,
+  NormalizedAboutCompany,
   NormalizedBusinessSnapshot,
+  NormalizedRevenueBreakdown,
+  NormalizedRevenueBreakdownItem,
 } from "@/lib/business-snapshot/types";
 
 type JsonRecord = Record<string, unknown>;
@@ -61,6 +64,123 @@ const formatDateLabel = (value: string | null | undefined) => {
   }).format(date);
 };
 
+const toRevenueItem = (
+  value: unknown,
+  keyCandidates: string[],
+  descriptionCandidates: string[],
+): NormalizedRevenueBreakdownItem | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const name =
+    keyCandidates
+      .map((key) => asString(row[key]))
+      .find((item): item is string => Boolean(item)) ?? null;
+  if (!name) return null;
+
+  const description =
+    descriptionCandidates
+      .map((key) => asString(row[key]))
+      .find((item): item is string => Boolean(item)) ?? null;
+
+  return {
+    name,
+    description,
+    revenueSharePercent: asNumber(row.revenue_share_percent),
+  };
+};
+
+const toRevenueItems = (
+  value: unknown,
+  keyCandidates: string[],
+  descriptionCandidates: string[],
+): NormalizedRevenueBreakdownItem[] =>
+  parseJsonArrayLike(value)
+    .map((row) => toRevenueItem(row, keyCandidates, descriptionCandidates))
+    .filter((item): item is NormalizedRevenueBreakdownItem => Boolean(item));
+
+const normalizeAboutCompany = ({
+  aboutCompanySource,
+  businessSnapshotObject,
+}: {
+  aboutCompanySource: JsonRecord | null;
+  businessSnapshotObject: JsonRecord | null;
+}): NormalizedAboutCompany | null => {
+  const aboutShort =
+    asString(aboutCompanySource?.about_short) ??
+    asString(businessSnapshotObject?.business_summary_short) ??
+    null;
+  const aboutLong =
+    asString(aboutCompanySource?.about_long) ??
+    asString(businessSnapshotObject?.business_summary_long) ??
+    null;
+  const valueChainPosition =
+    asString(aboutCompanySource?.value_chain_position) ??
+    asString(businessSnapshotObject?.value_chain_position) ??
+    null;
+  const coreProductsOrServices = toStringArray(aboutCompanySource?.core_products_or_services);
+  const primaryCustomers = toStringArray(aboutCompanySource?.primary_customers);
+
+  if (!aboutShort && !aboutLong && !valueChainPosition && coreProductsOrServices.length === 0 && primaryCustomers.length === 0) {
+    return null;
+  }
+
+  return {
+    aboutShort,
+    aboutLong,
+    primaryCustomers,
+    valueChainPosition,
+    coreProductsOrServices,
+  };
+};
+
+const normalizeRevenueBreakdown = ({
+  revenueBreakdownSource,
+  segmentProfiles,
+}: {
+  revenueBreakdownSource: JsonRecord | null;
+  segmentProfiles: unknown[];
+}): NormalizedRevenueBreakdown | null => {
+  const bySegment = toRevenueItems(
+    revenueBreakdownSource?.by_segment,
+    ["segment", "segment_name"],
+    ["segment_explained", "segment_description", "description"],
+  );
+  const byGeography = toRevenueItems(
+    revenueBreakdownSource?.by_geography,
+    ["region", "geography", "name"],
+    ["description"],
+  );
+  const byProductOrService = toRevenueItems(
+    revenueBreakdownSource?.by_product_or_service,
+    ["product_or_service", "product", "service", "name"],
+    ["description"],
+  );
+
+  const bySegmentWithFallback =
+    bySegment.length > 0
+      ? bySegment
+      : segmentProfiles
+          .map((item) =>
+            toRevenueItem(item, ["segment_name", "segment"], ["segment_description", "segment_explained", "description"]),
+          )
+          .filter((item): item is NormalizedRevenueBreakdownItem => Boolean(item));
+
+  if (
+    bySegmentWithFallback.length === 0 &&
+    byGeography.length === 0 &&
+    byProductOrService.length === 0
+  ) {
+    return null;
+  }
+
+  return {
+    bySegment: bySegmentWithFallback,
+    byGeography,
+    byProductOrService,
+  };
+};
+
 export function normalizeBusinessSnapshot({
   companyCode,
   companyWebsite,
@@ -81,11 +201,39 @@ export function normalizeBusinessSnapshot({
     parseJsonObjectLike(detailsRoot?.business_snapshot) ??
     parseJsonObjectLike(detailsRoot?.snapshot) ??
     parseJsonObjectLike(detailsNested?.business_snapshot);
+  const detailsBusinessSnapshot = parseJsonObjectLike(detailsRoot?.business_snapshot);
+  const detailsNestedBusinessSnapshot = parseJsonObjectLike(detailsNested?.business_snapshot);
 
   if (parseJsonObjectLike(snapshotRow.business_snapshot)) {
     schemaHints.add("business_snapshot_column");
   } else if (businessSnapshotObject) {
     schemaHints.add("details_fallback");
+  }
+
+  const aboutCompanySource =
+    parseJsonObjectLike(snapshotRow.about_company) ??
+    parseJsonObjectLike(businessSnapshotObject?.about_company) ??
+    parseJsonObjectLike(detailsBusinessSnapshot?.about_company) ??
+    parseJsonObjectLike(detailsNestedBusinessSnapshot?.about_company) ??
+    null;
+
+  if (parseJsonObjectLike(snapshotRow.about_company)) {
+    schemaHints.add("about_company_column");
+  } else if (parseJsonObjectLike(businessSnapshotObject?.about_company)) {
+    schemaHints.add("about_company_nested");
+  }
+
+  const revenueBreakdownSource =
+    parseJsonObjectLike(snapshotRow.revenue_breakdown) ??
+    parseJsonObjectLike(businessSnapshotObject?.revenue_breakdown) ??
+    parseJsonObjectLike(detailsBusinessSnapshot?.revenue_breakdown) ??
+    parseJsonObjectLike(detailsNestedBusinessSnapshot?.revenue_breakdown) ??
+    null;
+
+  if (parseJsonObjectLike(snapshotRow.revenue_breakdown)) {
+    schemaHints.add("revenue_breakdown_column");
+  } else if (parseJsonObjectLike(businessSnapshotObject?.revenue_breakdown)) {
+    schemaHints.add("revenue_breakdown_nested");
   }
 
   const segmentProfiles =
@@ -133,6 +281,15 @@ export function normalizeBusinessSnapshot({
     schemaHints.add(`details_source_type:${sourceType}`);
   }
 
+  const normalizedAboutCompany = normalizeAboutCompany({
+    aboutCompanySource,
+    businessSnapshotObject,
+  });
+  const normalizedRevenueBreakdown = normalizeRevenueBreakdown({
+    revenueBreakdownSource,
+    segmentProfiles,
+  });
+
   return {
     companyCode: snapshotRow.company ?? companyCode,
     generatedAtRaw: asString(snapshotRow.generated_at),
@@ -156,6 +313,8 @@ export function normalizeBusinessSnapshot({
     keyDependencies: toStringArray(businessSnapshotObject?.key_dependencies).slice(0, 3),
     keyRisksToModel: toStringArray(businessSnapshotObject?.key_risks_to_model).slice(0, 3),
     segmentProfiles,
+    aboutCompany: normalizedAboutCompany,
+    revenueBreakdown: normalizedRevenueBreakdown,
     schemaHints: Array.from(schemaHints),
   };
 }
