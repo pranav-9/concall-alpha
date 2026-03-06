@@ -9,7 +9,6 @@ import {
   QuarterData,
   BusinessSegment,
   SegmentRevenue,
-  TopStrategyLatest,
 } from "../types";
 import { SidebarNavigation } from "../components/sidebar-navigation";
 import { OverviewCard } from "../components/overview-card";
@@ -17,7 +16,6 @@ import { SectionCard } from "../components/section-card";
 import { parseSummary, transformToChartData, calculateTrend } from "../utils";
 import { BusinessSegmentsDisplay } from "../components/business-segments-display";
 import { SegmentRevenueDisplay } from "../components/segment-revenue-display";
-import { TopStrategiesDisplay } from "../components/top-strategies-display";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import ConcallScore from "@/components/concall-score";
 import { CompanyCommentsSection } from "@/components/company/company-comments-section";
@@ -303,13 +301,6 @@ export default async function Page({
     .order("financial_year", { ascending: false });
 
   // Fetch latest top strategies data
-  const { data: topStrategiesData } = await supabase
-    .from("top_strategies_latest")
-    .select()
-    .eq("company", code)
-    .order("latest_fiscal_year", { ascending: false })
-    .order("strategy_rank", { ascending: true });
-
   const { data: businessSnapshotData } = await supabase
     .from("business_snapshot")
     .select(
@@ -548,10 +539,6 @@ export default async function Page({
     {
       ...SECTION_MAP.futureGrowth,
       meta: { kind: "score" as const, score: growthScore },
-    },
-    {
-      ...SECTION_MAP.topBusinessStrategies,
-      meta: { kind: "count" as const, count: topStrategiesData?.length ?? 0 },
     },
     {
       ...SECTION_MAP.businessSnapshot,
@@ -1625,21 +1612,6 @@ export default async function Page({
           ) : (
             <div className="rounded-lg border border-dashed border-border/70 bg-muted/40 p-6 text-sm text-muted-foreground">
               Growth outlook data not available yet for this company.
-            </div>
-          )}
-        </SectionCard>
-
-        <SectionCard
-          id="competitive-strategy"
-          title="Top Business Strategies"
-        >
-          {topStrategiesData && topStrategiesData.length > 0 ? (
-            <TopStrategiesDisplay
-              strategies={topStrategiesData as TopStrategyLatest[]}
-            />
-          ) : (
-            <div className="text-muted-foreground text-sm">
-              No strategy data available
             </div>
           )}
         </SectionCard>

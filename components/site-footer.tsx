@@ -14,7 +14,7 @@ export function SiteFooter() {
           <div className="space-y-1">
             <p className="text-sm font-semibold text-foreground">Story of a Stock</p>
             <p className="text-xs text-muted-foreground">
-              Context-first business tracking for long-term investors.
+              Understanding future growth in Indian mid- and small-cap companies for GARP-minded retail investors, using Quarterly Score and Growth Score as a common yardstick.
             </p>
           </div>
           <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:justify-end">
@@ -42,7 +42,7 @@ export function SiteFooter() {
               Pranav Yadav
             </a>
           </p>
-          <p>Experimental research tool. Not investment advice.</p>
+          <p>Experimental research workflow for Indian equity scuttlebutt. Not investment advice.</p>
         </div>
       </div>
     </footer>
