@@ -51,7 +51,7 @@ export function BusinessSegmentsDisplay({
         {segments.map((segment, index) => (
           <div
             key={segment.id}
-            className="rounded-xl overflow-hidden flex flex-col bg-muted/40 border border-border shadow-sm transition-all duration-300 hover:bg-muted/60"
+            className="rounded-xl overflow-hidden flex flex-col border border-border/35 bg-muted/35 shadow-md shadow-black/25 transition-all duration-300 hover:bg-muted/50 hover:shadow-lg hover:shadow-black/30"
           >
             {/* Segment Header: Always Visible */}
             <button
@@ -82,7 +82,7 @@ export function BusinessSegmentsDisplay({
 
             {/* Expandable Content */}
             {isExpanded(segment.id) && (
-              <div className="border-t border-border px-3.5 py-3 bg-muted/30 space-y-3">
+              <div className="border-t border-border/35 px-3.5 py-3 bg-background/45 space-y-3">
                 {/* Description */}
                 {segment.description && (
                   <div>

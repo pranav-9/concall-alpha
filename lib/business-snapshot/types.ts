@@ -6,6 +6,7 @@ export type BusinessSnapshotRow = {
   business_snapshot?: unknown;
   about_company?: unknown;
   revenue_breakdown?: unknown;
+  revenue_engine?: unknown;
   details?: unknown;
   snapshot_phase?: number | null;
   snapshot_source?: string | null;
@@ -15,9 +16,18 @@ export type BusinessSnapshotRow = {
 export type NormalizedAboutCompany = {
   aboutShort: string | null;
   aboutLong: string | null;
+  economicProblemSolved: string | null;
+  businessActivity: string | null;
+  industryRole: string | null;
   primaryCustomers: string[];
   valueChainPosition: string | null;
   coreProductsOrServices: string[];
+};
+
+export type NormalizedRevenueEngine = {
+  monetizationUnit: string | null;
+  revenueFormula: string | null;
+  revenueModelType: string | null;
 };
 
 export type NormalizedRevenueBreakdownItem = {
@@ -57,5 +67,6 @@ export type NormalizedBusinessSnapshot = {
   segmentProfiles: unknown[];
   aboutCompany: NormalizedAboutCompany | null;
   revenueBreakdown: NormalizedRevenueBreakdown | null;
+  revenueEngine: NormalizedRevenueEngine | null;
   schemaHints: string[];
 };

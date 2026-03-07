@@ -4,6 +4,7 @@ import type {
   NormalizedBusinessSnapshot,
   NormalizedRevenueBreakdown,
   NormalizedRevenueBreakdownItem,
+  NormalizedRevenueEngine,
 } from "@/lib/business-snapshot/types";
 
 type JsonRecord = Record<string, unknown>;
@@ -114,6 +115,9 @@ const normalizeAboutCompany = ({
     asString(aboutCompanySource?.about_long) ??
     asString(businessSnapshotObject?.business_summary_long) ??
     null;
+  const economicProblemSolved = asString(aboutCompanySource?.economic_problem_solved) ?? null;
+  const businessActivity = asString(aboutCompanySource?.business_activity) ?? null;
+  const industryRole = asString(aboutCompanySource?.industry_role) ?? null;
   const valueChainPosition =
     asString(aboutCompanySource?.value_chain_position) ??
     asString(businessSnapshotObject?.value_chain_position) ??
@@ -121,16 +125,48 @@ const normalizeAboutCompany = ({
   const coreProductsOrServices = toStringArray(aboutCompanySource?.core_products_or_services);
   const primaryCustomers = toStringArray(aboutCompanySource?.primary_customers);
 
-  if (!aboutShort && !aboutLong && !valueChainPosition && coreProductsOrServices.length === 0 && primaryCustomers.length === 0) {
+  if (
+    !aboutShort &&
+    !aboutLong &&
+    !economicProblemSolved &&
+    !businessActivity &&
+    !industryRole &&
+    !valueChainPosition &&
+    coreProductsOrServices.length === 0 &&
+    primaryCustomers.length === 0
+  ) {
     return null;
   }
 
   return {
     aboutShort,
     aboutLong,
+    economicProblemSolved,
+    businessActivity,
+    industryRole,
     primaryCustomers,
     valueChainPosition,
     coreProductsOrServices,
+  };
+};
+
+const normalizeRevenueEngine = ({
+  revenueEngineSource,
+}: {
+  revenueEngineSource: JsonRecord | null;
+}): NormalizedRevenueEngine | null => {
+  const monetizationUnit = asString(revenueEngineSource?.monetization_unit) ?? null;
+  const revenueFormula = asString(revenueEngineSource?.revenue_formula) ?? null;
+  const revenueModelType = asString(revenueEngineSource?.revenue_model_type) ?? null;
+
+  if (!monetizationUnit && !revenueFormula && !revenueModelType) {
+    return null;
+  }
+
+  return {
+    monetizationUnit,
+    revenueFormula,
+    revenueModelType,
   };
 };
 
@@ -236,6 +272,19 @@ export function normalizeBusinessSnapshot({
     schemaHints.add("revenue_breakdown_nested");
   }
 
+  const revenueEngineSource =
+    parseJsonObjectLike(snapshotRow.revenue_engine) ??
+    parseJsonObjectLike(businessSnapshotObject?.revenue_engine) ??
+    parseJsonObjectLike(detailsBusinessSnapshot?.revenue_engine) ??
+    parseJsonObjectLike(detailsNestedBusinessSnapshot?.revenue_engine) ??
+    null;
+
+  if (parseJsonObjectLike(snapshotRow.revenue_engine)) {
+    schemaHints.add("revenue_engine_column");
+  } else if (parseJsonObjectLike(businessSnapshotObject?.revenue_engine)) {
+    schemaHints.add("revenue_engine_nested");
+  }
+
   const segmentProfiles =
     parseJsonArrayLike(snapshotRow.segment_profiles).length > 0
       ? parseJsonArrayLike(snapshotRow.segment_profiles)
@@ -289,6 +338,9 @@ export function normalizeBusinessSnapshot({
     revenueBreakdownSource,
     segmentProfiles,
   });
+  const normalizedRevenueEngine = normalizeRevenueEngine({
+    revenueEngineSource,
+  });
 
   return {
     companyCode: snapshotRow.company ?? companyCode,
@@ -315,6 +367,7 @@ export function normalizeBusinessSnapshot({
     segmentProfiles,
     aboutCompany: normalizedAboutCompany,
     revenueBreakdown: normalizedRevenueBreakdown,
+    revenueEngine: normalizedRevenueEngine,
     schemaHints: Array.from(schemaHints),
   };
 }
