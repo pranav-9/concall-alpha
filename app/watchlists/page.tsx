@@ -12,7 +12,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getConcallData } from "@/app/company/get-concall-data";
-import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { createClient } from "@/lib/supabase/server";
 
 type WatchlistItemRow = {
@@ -34,11 +33,9 @@ type WatchlistTableRow = {
   companyCode: string;
   companyName: string;
   latestQuarterScore: number | null;
-  quarterRank: number | null;
   growthScore: number | null;
-  growthRank: number | null;
   avg4QuarterScore: number | null;
-  overallRank: number | null;
+  blendedScore: number | null;
 };
 
 export const metadata: Metadata = {
@@ -55,9 +52,10 @@ const toNumeric = (value: unknown): number | null => {
   return null;
 };
 
-const formatRank = (value: number | null) => {
-  if (value == null) return "—";
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+const computeAverageScore = (values: Array<number | null>) => {
+  const validValues = values.filter((value): value is number => value != null);
+  if (validValues.length === 0) return null;
+  return validValues.reduce((sum, value) => sum + value, 0) / validValues.length;
 };
 
 export default async function WatchlistsPage() {
@@ -152,29 +150,9 @@ export default async function WatchlistsPage() {
       .order("run_timestamp", { ascending: false }),
   ]);
 
-  const latestQuarterRows = latestLabel
-    ? [...rows].sort((a, b) => {
-        const aScore = toNumeric(a[latestLabel]);
-        const bScore = toNumeric(b[latestLabel]);
-        if (aScore != null && bScore != null) {
-          if (bScore !== aScore) return bScore - aScore;
-          return a.company.localeCompare(b.company);
-        }
-        if (aScore != null) return -1;
-        if (bScore != null) return 1;
-        return a.company.localeCompare(b.company);
-      })
-    : [...rows];
-
-  const rankedQuarterRows = assignCompetitionRanks(
-    latestQuarterRows,
-    (row) => (latestLabel ? toNumeric(row[latestLabel]) : null),
-  );
-
-  const quarterRankByCode = new Map<string, { rank: number; latestScore: number | null; avg4: number | null }>();
-  rankedQuarterRows.forEach((row) => {
-    quarterRankByCode.set(row.company.toUpperCase(), {
-      rank: row.leaderboardRank,
+  const quarterScoreByCode = new Map<string, { latestScore: number | null; avg4: number | null }>();
+  rows.forEach((row) => {
+    quarterScoreByCode.set(row.company.toUpperCase(), {
       latestScore: latestLabel ? toNumeric(row[latestLabel]) : null,
       avg4: toNumeric(row["Latest 4Q Avg"]),
     });
@@ -187,30 +165,9 @@ export default async function WatchlistsPage() {
     latestGrowthByCompany.set(key, row);
   });
 
-  const growthRankedRows = assignCompetitionRanks(
-    Array.from(latestGrowthByCompany.values())
-      .map((row) => ({
-        company: (row.company ?? "").trim().toUpperCase(),
-        growthScore: toNumeric(row.growth_score),
-      }))
-      .sort((a, b) => {
-        if (a.growthScore != null && b.growthScore != null) {
-          if (b.growthScore !== a.growthScore) return b.growthScore - a.growthScore;
-          return a.company.localeCompare(b.company);
-        }
-        if (a.growthScore != null) return -1;
-        if (b.growthScore != null) return 1;
-        return a.company.localeCompare(b.company);
-      }),
-    (row) => row.growthScore,
-  );
-
-  const growthRankByCode = new Map<string, { rank: number; growthScore: number | null }>();
-  growthRankedRows.forEach((row) => {
-    growthRankByCode.set(row.company, {
-      rank: row.leaderboardRank,
-      growthScore: row.growthScore,
-    });
+  const growthScoreByCode = new Map<string, number | null>();
+  latestGrowthByCompany.forEach((row, companyCode) => {
+    growthScoreByCode.set(companyCode, toNumeric(row.growth_score));
   });
 
   const companyNameByCode = new Map<string, string>();
@@ -220,48 +177,59 @@ export default async function WatchlistsPage() {
 
   const tableRows: WatchlistTableRow[] = watchlistCodes
     .map((companyCode) => {
-      const quarterData = quarterRankByCode.get(companyCode);
-      const growthData = growthRankByCode.get(companyCode);
-      const quarterRank = quarterData?.rank ?? null;
-      const growthRank = growthData?.rank ?? null;
-      const overallRank =
-        quarterRank != null && growthRank != null
-          ? (quarterRank + growthRank) / 2
-          : quarterRank ?? growthRank ?? null;
+      const quarterData = quarterScoreByCode.get(companyCode);
+      const growthScore = growthScoreByCode.get(companyCode) ?? null;
+      const latestQuarterScore = quarterData?.latestScore ?? null;
+      const avg4QuarterScore = quarterData?.avg4 ?? null;
+      const blendedScore = computeAverageScore([
+        latestQuarterScore,
+        growthScore,
+        avg4QuarterScore,
+      ]);
 
       return {
         companyCode,
         companyName: companyNameByCode.get(companyCode) ?? companyCode,
-        latestQuarterScore: quarterData?.latestScore ?? null,
-        quarterRank,
-        growthScore: growthData?.growthScore ?? null,
-        growthRank,
-        avg4QuarterScore: quarterData?.avg4 ?? null,
-        overallRank,
+        latestQuarterScore,
+        growthScore,
+        avg4QuarterScore,
+        blendedScore,
       };
     })
     .sort((a, b) => {
-      if (a.overallRank != null && b.overallRank != null) {
-        if (a.overallRank !== b.overallRank) return a.overallRank - b.overallRank;
-      } else if (a.overallRank != null) {
+      if (a.blendedScore != null && b.blendedScore != null) {
+        if (b.blendedScore !== a.blendedScore) return b.blendedScore - a.blendedScore;
+      } else if (a.blendedScore != null) {
         return -1;
-      } else if (b.overallRank != null) {
+      } else if (b.blendedScore != null) {
         return 1;
       }
 
-      if (a.quarterRank != null && b.quarterRank != null) {
-        if (a.quarterRank !== b.quarterRank) return a.quarterRank - b.quarterRank;
-      } else if (a.quarterRank != null) {
+      if (a.latestQuarterScore != null && b.latestQuarterScore != null) {
+        if (b.latestQuarterScore !== a.latestQuarterScore) {
+          return b.latestQuarterScore - a.latestQuarterScore;
+        }
+      } else if (a.latestQuarterScore != null) {
         return -1;
-      } else if (b.quarterRank != null) {
+      } else if (b.latestQuarterScore != null) {
         return 1;
       }
 
-      if (a.growthRank != null && b.growthRank != null) {
-        if (a.growthRank !== b.growthRank) return a.growthRank - b.growthRank;
-      } else if (a.growthRank != null) {
+      if (a.growthScore != null && b.growthScore != null) {
+        if (b.growthScore !== a.growthScore) return b.growthScore - a.growthScore;
+      } else if (a.growthScore != null) {
         return -1;
-      } else if (b.growthRank != null) {
+      } else if (b.growthScore != null) {
+        return 1;
+      }
+
+      if (a.avg4QuarterScore != null && b.avg4QuarterScore != null) {
+        if (b.avg4QuarterScore !== a.avg4QuarterScore) {
+          return b.avg4QuarterScore - a.avg4QuarterScore;
+        }
+      } else if (a.avg4QuarterScore != null) {
+        return -1;
+      } else if (b.avg4QuarterScore != null) {
         return 1;
       }
 
@@ -282,12 +250,17 @@ export default async function WatchlistsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Company</TableHead>
-              <TableHead>Latest Qtr Score</TableHead>
-              <TableHead>Qtr Rank</TableHead>
+              <TableHead>Qtr Score</TableHead>
               <TableHead>Growth Score</TableHead>
-              <TableHead>Growth Rank</TableHead>
-              <TableHead>Avg 4 Qtr Score</TableHead>
-              <TableHead>Overall Rank</TableHead>
+              <TableHead>4Q Avg Score</TableHead>
+              <TableHead className="border-l border-border/70 pl-4">
+                <div className="flex flex-col gap-0.5">
+                  <span>Avg Score</span>
+                  <span className="text-[10px] font-medium text-muted-foreground normal-case">
+                    Derived from first 3
+                  </span>
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -305,15 +278,24 @@ export default async function WatchlistsPage() {
                 <TableCell>
                   {row.latestQuarterScore != null ? <ConcallScore score={row.latestQuarterScore} size="sm" /> : "—"}
                 </TableCell>
-                <TableCell>{formatRank(row.quarterRank)}</TableCell>
                 <TableCell>
                   {row.growthScore != null ? <ConcallScore score={row.growthScore} size="sm" /> : "—"}
                 </TableCell>
-                <TableCell>{formatRank(row.growthRank)}</TableCell>
                 <TableCell>
                   {row.avg4QuarterScore != null ? <ConcallScore score={row.avg4QuarterScore} size="sm" /> : "—"}
                 </TableCell>
-                <TableCell>{formatRank(row.overallRank)}</TableCell>
+                <TableCell className="border-l border-border/70 pl-4">
+                  {row.blendedScore != null ? (
+                    <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-200/80 bg-emerald-50 px-2.5 py-1 dark:border-emerald-700/40 dark:bg-emerald-950/20">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                        Blend
+                      </span>
+                      <ConcallScore score={row.blendedScore} size="sm" />
+                    </div>
+                  ) : (
+                    "—"
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
