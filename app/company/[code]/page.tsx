@@ -394,6 +394,12 @@ export default async function Page({
     "rounded-xl border border-border/35 bg-muted/35 shadow-md shadow-black/20";
   const nestedDetailClass =
     "rounded-md border border-border/25 bg-background/45";
+  const hasFutureGrowthDeepDive = Boolean(
+    normalizedGrowthOutlook?.variantPerception ||
+      normalizedGrowthOutlook?.scenarios?.base ||
+      normalizedGrowthOutlook?.scenarios?.upside ||
+      normalizedGrowthOutlook?.scenarios?.downside,
+  );
   const formatSentenceLabel = (value: string | null | undefined) => {
     const normalized = value?.trim().replace(/[_-]+/g, " ");
     if (!normalized) return null;
@@ -2126,119 +2132,143 @@ export default async function Page({
                     </Carousel>
                   </div>
                 )}
-              {normalizedGrowthOutlook.variantPerception && (
-                <div className={`${elevatedMutedBlockClass} p-3 space-y-2.5`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
-                      Variant perception
-                    </p>
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                      Non-consensus view
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-                    <div className={`${elevatedBlockClass} p-2.5 space-y-1.5 border-l-2 border-l-slate-400/70`}>
-                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
-                        Consensus
-                      </span>
-                      {normalizedGrowthOutlook.variantPerception.consensus ? (
-                        <p className="text-[11px] text-foreground leading-snug">
-                          {normalizedGrowthOutlook.variantPerception.consensus}
+              {hasFutureGrowthDeepDive && (
+                <details className={`group ${nestedDetailClass} px-3 py-2.5`}>
+                  <summary className="list-none cursor-pointer">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-foreground/90">
+                          See more about future growth
                         </p>
-                      ) : (
-                        <p className="text-[11px] text-muted-foreground leading-snug">No consensus note.</p>
-                      )}
-                    </div>
-
-                    <div className={`${elevatedBlockClass} p-2.5 space-y-1.5 border-l-2 border-l-emerald-500/70`}>
-                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-200 dark:border-emerald-700/40">
-                        Upside
+                        <p className="text-[11px] leading-snug text-muted-foreground">
+                          Open detailed variant perception and scenario analysis.
+                        </p>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground">
+                        <span className="group-open:hidden">Open</span>
+                        <span className="hidden group-open:inline">Hide</span>
                       </span>
-                      {normalizedGrowthOutlook.variantPerception.upside.length > 0 ? (
-                        <div className="space-y-1.5">
-                          <ul className="space-y-1.5">
-                            <li className="relative pl-3 text-[11px] text-foreground leading-snug">
-                              <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500/70" />
-                              {normalizedGrowthOutlook.variantPerception.upside[0]}
-                            </li>
-                          </ul>
-                          {normalizedGrowthOutlook.variantPerception.upside.length > 1 && (
-                            <details className="group">
-                              <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
-                                <span className="group-open:hidden">
-                                  Show more ({normalizedGrowthOutlook.variantPerception.upside.length - 1})
-                                </span>
-                                <span className="hidden group-open:inline">Hide extras</span>
-                              </summary>
-                              <ul className="mt-1.5 space-y-1.5">
-                                {normalizedGrowthOutlook.variantPerception.upside
-                                  .slice(1)
-                                  .map((x, idx) => (
-                                    <li
-                                      key={idx}
-                                      className="relative pl-3 text-[11px] text-foreground leading-snug"
-                                    >
-                                      <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500/60" />
-                                      {x}
-                                    </li>
-                                  ))}
-                              </ul>
-                            </details>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-[11px] text-muted-foreground leading-snug">No upside variants.</p>
-                      )}
                     </div>
+                  </summary>
 
-                    <div className={`${elevatedBlockClass} p-2.5 space-y-1.5 border-l-2 border-l-red-500/70`}>
-                      <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-red-200 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200 dark:border-red-700/40">
-                        Downside
-                      </span>
-                      {normalizedGrowthOutlook.variantPerception.downside.length > 0 ? (
-                        <div className="space-y-1.5">
-                          <ul className="space-y-1.5">
-                            <li className="relative pl-3 text-[11px] text-foreground leading-snug">
-                              <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500/70" />
-                              {normalizedGrowthOutlook.variantPerception.downside[0]}
-                            </li>
-                          </ul>
-                          {normalizedGrowthOutlook.variantPerception.downside.length > 1 && (
-                            <details className="group">
-                              <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
-                                <span className="group-open:hidden">
-                                  Show more ({normalizedGrowthOutlook.variantPerception.downside.length - 1})
-                                </span>
-                                <span className="hidden group-open:inline">Hide extras</span>
-                              </summary>
-                              <ul className="mt-1.5 space-y-1.5">
-                                {normalizedGrowthOutlook.variantPerception.downside
-                                  .slice(1)
-                                  .map((x, idx) => (
-                                    <li
-                                      key={idx}
-                                      className="relative pl-3 text-[11px] text-foreground leading-snug"
-                                    >
-                                      <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500/60" />
-                                      {x}
-                                    </li>
-                                  ))}
-                              </ul>
-                            </details>
-                          )}
+                  <div className="mt-3 space-y-3">
+                    {normalizedGrowthOutlook.variantPerception && (
+                      <div className={`${elevatedMutedBlockClass} p-3 space-y-2.5`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
+                            Variant perception
+                          </p>
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                            Non-consensus view
+                          </span>
                         </div>
-                      ) : (
-                        <p className="text-[11px] text-muted-foreground leading-snug">No downside variants.</p>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+                          <div className={`${elevatedBlockClass} p-2.5 space-y-1.5 border-l-2 border-l-slate-400/70`}>
+                            <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
+                              Consensus
+                            </span>
+                            {normalizedGrowthOutlook.variantPerception.consensus ? (
+                              <p className="text-[11px] text-foreground leading-snug">
+                                {normalizedGrowthOutlook.variantPerception.consensus}
+                              </p>
+                            ) : (
+                              <p className="text-[11px] text-muted-foreground leading-snug">No consensus note.</p>
+                            )}
+                          </div>
+
+                          <div className={`${elevatedBlockClass} p-2.5 space-y-1.5 border-l-2 border-l-emerald-500/70`}>
+                            <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-200 dark:border-emerald-700/40">
+                              Upside
+                            </span>
+                            {normalizedGrowthOutlook.variantPerception.upside.length > 0 ? (
+                              <div className="space-y-1.5">
+                                <ul className="space-y-1.5">
+                                  <li className="relative pl-3 text-[11px] text-foreground leading-snug">
+                                    <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500/70" />
+                                    {normalizedGrowthOutlook.variantPerception.upside[0]}
+                                  </li>
+                                </ul>
+                                {normalizedGrowthOutlook.variantPerception.upside.length > 1 && (
+                                  <details className="group">
+                                    <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
+                                      <span className="group-open:hidden">
+                                        Show more ({normalizedGrowthOutlook.variantPerception.upside.length - 1})
+                                      </span>
+                                      <span className="hidden group-open:inline">Hide extras</span>
+                                    </summary>
+                                    <ul className="mt-1.5 space-y-1.5">
+                                      {normalizedGrowthOutlook.variantPerception.upside
+                                        .slice(1)
+                                        .map((x, idx) => (
+                                          <li
+                                            key={idx}
+                                            className="relative pl-3 text-[11px] text-foreground leading-snug"
+                                          >
+                                            <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500/60" />
+                                            {x}
+                                          </li>
+                                        ))}
+                                    </ul>
+                                  </details>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-[11px] text-muted-foreground leading-snug">No upside variants.</p>
+                            )}
+                          </div>
+
+                          <div className={`${elevatedBlockClass} p-2.5 space-y-1.5 border-l-2 border-l-red-500/70`}>
+                            <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-red-200 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200 dark:border-red-700/40">
+                              Downside
+                            </span>
+                            {normalizedGrowthOutlook.variantPerception.downside.length > 0 ? (
+                              <div className="space-y-1.5">
+                                <ul className="space-y-1.5">
+                                  <li className="relative pl-3 text-[11px] text-foreground leading-snug">
+                                    <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500/70" />
+                                    {normalizedGrowthOutlook.variantPerception.downside[0]}
+                                  </li>
+                                </ul>
+                                {normalizedGrowthOutlook.variantPerception.downside.length > 1 && (
+                                  <details className="group">
+                                    <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
+                                      <span className="group-open:hidden">
+                                        Show more ({normalizedGrowthOutlook.variantPerception.downside.length - 1})
+                                      </span>
+                                      <span className="hidden group-open:inline">Hide extras</span>
+                                    </summary>
+                                    <ul className="mt-1.5 space-y-1.5">
+                                      {normalizedGrowthOutlook.variantPerception.downside
+                                        .slice(1)
+                                        .map((x, idx) => (
+                                          <li
+                                            key={idx}
+                                            className="relative pl-3 text-[11px] text-foreground leading-snug"
+                                          >
+                                            <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500/60" />
+                                            {x}
+                                          </li>
+                                        ))}
+                                    </ul>
+                                  </details>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-[11px] text-muted-foreground leading-snug">No downside variants.</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                      {(["base", "upside", "downside"] as const).map((scenarioKey) =>
+                        renderScenarioCard(scenarioKey)
                       )}
                     </div>
                   </div>
-                </div>
+                </details>
               )}
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                {(["base", "upside", "downside"] as const).map((scenarioKey) =>
-                  renderScenarioCard(scenarioKey)
-                )}
-              </div>
 
             </div>
           ) : (
