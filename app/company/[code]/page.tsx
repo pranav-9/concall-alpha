@@ -38,10 +38,13 @@ import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
 import type { NormalizedGrowthScenario } from "@/lib/growth-outlook/types";
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
 import { normalizeCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/normalize";
+import { GuidanceHistorySection } from "../components/guidance-history-section";
+import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import type {
   CompanyIndustryAnalysisRow,
   NormalizedIndustryTheme,
 } from "@/lib/company-industry-analysis/types";
+import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 
 type ConcallDetails = {
   score?: number;
@@ -257,6 +260,15 @@ export default async function Page({
     .eq("company", code)
     .limit(1);
 
+  const { data: guidanceTrackingRows, error: guidanceTrackingError } = await supabase
+    .from("guidance_tracking")
+    .select(
+      "id, company_code, guidance_key, guidance_text, guidance_type, first_mentioned_in, target_period, source_mentions, status, status_reason, latest_view, confidence, generated_at, details",
+    )
+    .eq("company_code", code)
+    .order("generated_at", { ascending: false })
+    .order("id", { ascending: false });
+
   if (error) {
     throw error;
   }
@@ -306,6 +318,14 @@ export default async function Page({
   const normalizedCompanyIndustryAnalysis = normalizeCompanyIndustryAnalysis(
     (companyIndustryAnalysisData?.[0] as CompanyIndustryAnalysisRow | undefined) ?? null,
   );
+  if (guidanceTrackingError) {
+    console.error(`Unable to load guidance tracking for ${code}:`, guidanceTrackingError.message);
+  }
+  const guidanceItems = guidanceTrackingError
+    ? []
+    : normalizeGuidanceTrackingRows(
+        (guidanceTrackingRows as GuidanceTrackingRow[] | null | undefined) ?? null,
+      );
   const companyIndustrySignals = buildCompanyIndustrySignals(normalizedCompanyIndustryAnalysis);
   const growthUpdatedAtRaw = normalizedGrowthOutlook?.updatedAtRaw ?? null;
   const growthUpdatedDate = growthUpdatedAtRaw ? new Date(growthUpdatedAtRaw) : null;
@@ -733,6 +753,10 @@ export default async function Page({
     {
       ...SECTION_MAP.futureGrowth,
       meta: { kind: "score" as const, score: growthScore },
+    },
+    {
+      ...SECTION_MAP.guidanceHistory,
+      meta: { kind: "count" as const, count: guidanceItems.length, suffix: "items" },
     },
     {
       ...SECTION_MAP.community,
@@ -1915,7 +1939,7 @@ export default async function Page({
         </SectionCard>
 
         <SectionCard
-          id="placeholder"
+          id="future-growth"
           title="Future Growth Prospects"
           headerAction={
             typeof growthScore === "number" ? <ConcallScore score={growthScore} size="sm" /> : undefined
@@ -2222,6 +2246,18 @@ export default async function Page({
               Growth outlook data not available yet for this company.
             </div>
           )}
+        </SectionCard>
+
+        <SectionCard
+          id="guidance-history"
+          title="Guidance History"
+          headerAction={
+            <span className="text-[11px] text-muted-foreground">
+              {guidanceItems.length} tracked
+            </span>
+          }
+        >
+          <GuidanceHistorySection items={guidanceItems} />
         </SectionCard>
 
         <SectionCard id="community" title="Community">

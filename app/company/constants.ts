@@ -23,8 +23,12 @@ export const SECTIONS = [
     label: "Quarterly Score",
   },
   {
-    id: "placeholder",
+    id: "future-growth",
     label: "Future Growth Prospects",
+  },
+  {
+    id: "guidance-history",
+    label: "Guidance History",
   },
   {
     id: "community",
@@ -41,6 +45,7 @@ export const SECTION_MAP = {
   businessSnapshot: SECTIONS[1],
   quarterlyScore: SECTIONS[2],
   futureGrowth: SECTIONS[3],
-  community: SECTIONS[4],
-  topBusinessStrategies: SECTIONS[5],
+  guidanceHistory: SECTIONS[4],
+  community: SECTIONS[5],
+  topBusinessStrategies: SECTIONS[6],
 } as const;
