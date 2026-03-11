@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { RequestIntakeButton } from "@/components/request-intake-button";
+import Link from "next/link";
 
 const enabledPaths = [/^\/$/, /^\/leaderboards(?:\/|$)/, /^\/company(?:\/|$)/];
 
@@ -11,12 +11,14 @@ export function RequestIntakeFab() {
   if (!show) return null;
 
   return (
-    <div id="request-intake-fab" className="fixed bottom-4 right-4 z-50">
-      <RequestIntakeButton
-        triggerLabel="Submit Request"
-        triggerVariant="default"
-        triggerClassName="rounded-full shadow-lg px-4 h-10"
-      />
+    <div className="fixed bottom-4 right-4 z-50">
+      <Link
+        href="/requests"
+        prefetch={false}
+        className="inline-flex h-10 items-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+      >
+        Submit Request
+      </Link>
     </div>
   );
 }

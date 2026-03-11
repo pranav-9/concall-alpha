@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { isCompanyNew } from "@/lib/company-freshness";
 import ConcallScore from "@/components/concall-score";
 import TopStocks from "./(hero)/top-stocks";
@@ -32,11 +31,6 @@ type CoverageUniverseData = {
     createdAtLabel: string | null;
     isNew: boolean;
   }>;
-};
-
-type RecentStockRequest = {
-  subjectTarget: string;
-  createdAt: string | null;
 };
 
 const formatDate = (value: string | null) => {
@@ -120,33 +114,6 @@ export default async function Home() {
     now,
   );
 
-  let recentStockRequests: RecentStockRequest[] = [];
-  let requestsUnavailable = false;
-
-  try {
-    const admin = createAdminClient();
-    const { data: requestRows, error } = await admin
-      .from("user_requests")
-      .select("subject_target, created_at")
-      .eq("request_type", "stock_addition")
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    if (error) {
-      requestsUnavailable = true;
-    } else {
-      recentStockRequests = ((requestRows ?? []) as Array<{
-        subject_target: string;
-        created_at?: string | null;
-      }>).map((row) => ({
-        subjectTarget: row.subject_target,
-        createdAt: row.created_at ?? null,
-      }));
-    }
-  } catch {
-    requestsUnavailable = true;
-  }
-
   return (
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-[90%] sm:w-full flex flex-col gap-0 justify-items-center items-center">
@@ -164,8 +131,7 @@ export default async function Home() {
           </div>
         </div>
         <section className="w-[95%] sm:w-[90%] pt-6 sm:pt-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 rounded-2xl border border-border bg-card p-4 sm:p-5 lg:p-6">
+          <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 lg:p-6">
               <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 Coverage Universe
               </p>
@@ -269,68 +235,6 @@ export default async function Home() {
                 </div>
                 </div>
               </div>
-            </div>
-
-            <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 lg:p-6">
-              <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                User Demand
-              </p>
-              <h2 className="mt-2 text-xl sm:text-2xl font-bold text-foreground leading-tight">
-                Recent Stock Requests
-              </h2>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                The latest stocks users have asked us to add to the portal.
-              </p>
-
-              <div className="mt-4 rounded-xl border border-border/40 bg-muted/10">
-                {requestsUnavailable ? (
-                  <div className="p-4">
-                    <p className="text-sm text-muted-foreground">
-                      Recent request activity is temporarily unavailable.
-                    </p>
-                  </div>
-                ) : recentStockRequests.length === 0 ? (
-                  <div className="p-4">
-                    <p className="text-sm text-muted-foreground">
-                      No stock requests yet. Use the Submit Request button to suggest a company.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-border/70">
-                    {recentStockRequests.map((request, index) => (
-                      <div
-                        key={`${request.subjectTarget}-${request.createdAt ?? index}`}
-                        className="px-4 py-3 transition-colors hover:bg-background/50"
-                      >
-                        <p className="text-sm font-medium text-foreground line-clamp-1">
-                          {request.subjectTarget}
-                        </p>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                          <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                            Stock request
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">
-                            {formatDate(request.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-4 border-t border-border/70 pt-4">
-                <a
-                  href="#request-intake-fab"
-                  className="inline-flex items-center rounded-md border border-border/70 bg-foreground px-3 py-2 text-xs font-semibold text-background transition-colors hover:bg-foreground/90 sm:text-sm"
-                >
-                  Request a stock
-                </a>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  We cover companies on this portal that do concalls, with Indian stocks and especially mid- and small-cap names preferred.
-                </p>
-              </div>
-            </div>
           </div>
         </section>
         <section className="w-[95%] sm:w-[90%] pt-6 sm:pt-8">

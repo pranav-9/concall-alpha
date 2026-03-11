@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { EnvVarWarning } from "@/components/env-var-warning";
-import { RequestIntakeButton } from "@/components/request-intake-button";
 import { CompanySearch } from "@/components/company-search";
 import { AuthButton, type UserInfo } from "@/components/auth-button";
 import { cn, hasEnvVars } from "@/lib/utils";
@@ -17,6 +16,7 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
     { href: "/watchlists", label: "Watchlists" },
     { href: "/sectors", label: "Sectors" },
     { href: "/how-scores-work", label: "How Scores Work" },
+    { href: "/requests", label: "Submit Request" },
   ];
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
@@ -49,11 +49,6 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
                   {item.label}
                 </Link>
               ))}
-              <RequestIntakeButton
-                triggerLabel="Submit Request"
-                triggerVariant="ghost"
-                triggerClassName="h-auto p-0 text-xs font-medium text-muted-foreground hover:text-foreground"
-              />
               <AuthButton initialUser={initialUser} compact />
             </div>
 
@@ -102,11 +97,6 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
                 {item.label}
               </Link>
             ))}
-            <RequestIntakeButton
-              triggerLabel="Submit Request"
-              triggerVariant="ghost"
-              triggerClassName="h-auto p-0 text-sm font-medium text-muted-foreground hover:text-foreground"
-            />
             <div className="pt-1">
               <AuthButton initialUser={initialUser} compact />
             </div>

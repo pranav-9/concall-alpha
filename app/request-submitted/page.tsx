@@ -22,11 +22,11 @@ export default async function RequestSubmittedPage({
           </span>
         </p>
         <Link
-          href="/"
+          href="/requests"
           prefetch={false}
           className="inline-flex text-sm text-emerald-300 hover:text-emerald-200 underline underline-offset-4"
         >
-          Back to home
+          Back to requests
         </Link>
       </div>
     </main>
