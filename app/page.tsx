@@ -60,7 +60,7 @@ function buildCoverageUniverse(
   const topSectors = Array.from(sectorCounts.entries())
     .map(([sector, companyCount]) => ({ sector, companyCount }))
     .sort((a, b) => b.companyCount - a.companyCount || a.sector.localeCompare(b.sector))
-    .slice(0, 5);
+    .slice(0, 4);
 
   const recentlyAddedCandidates: Array<{
     code: string;
@@ -88,7 +88,7 @@ function buildCoverageUniverse(
 
   const recentlyAddedCompanies = recentlyAddedCandidates
     .sort((a, b) => b.createdAtSort - a.createdAtSort || a.name.localeCompare(b.name))
-    .slice(0, 5)
+    .slice(0, 4)
     .map((company) => {
       const { createdAtSort, ...rest } = company;
       void createdAtSort;
@@ -131,110 +131,113 @@ export default async function Home() {
           </div>
         </div>
         <section className="w-[95%] sm:w-[90%] pt-6 sm:pt-8">
-          <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 lg:p-6">
-              <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                Coverage Universe
-              </p>
-              <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <h2 className="max-w-2xl text-xl sm:text-2xl font-bold text-foreground leading-tight">
+          <div className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  Coverage Universe
+                </p>
+                <h2 className="mt-1.5 text-xl font-bold leading-tight text-foreground sm:text-2xl">
                   What&apos;s Covered on the Portal
                 </h2>
-                <div className="flex items-end gap-1.5 shrink-0 sm:text-right">
-                  <span className="text-4xl sm:text-5xl font-extrabold leading-none text-foreground">
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                  A quick view of the tracked stock universe, the sectors we cover most, and the names most recently added into our research flow.
+                </p>
+              </div>
+              <div className="inline-flex shrink-0 items-center gap-3 self-start rounded-xl border border-border/50 bg-muted/20 px-4 py-3 lg:min-w-[170px] lg:justify-between">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    Coverage
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Total companies
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-3xl font-extrabold leading-none text-foreground sm:text-4xl">
                     {coverageData.totalCompanies}
                   </span>
-                  <span className="pb-1 text-xs sm:text-sm text-muted-foreground">
-                    companies
-                  </span>
                 </div>
               </div>
-              <p className="mt-2 max-w-2xl text-sm text-muted-foreground leading-relaxed">
-                A quick view of the tracked stock universe, the sectors we cover most, and the names most recently added into our research flow.
-              </p>
+            </div>
 
-              <div className="mt-5 rounded-2xl border border-border/50 bg-muted/10 p-3 sm:p-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-[11px] sm:text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                    Top Sectors
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    {coverageData.topSectors.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        Sector coverage will appear here as data becomes available.
-                      </p>
-                    ) : (
-                      coverageData.topSectors.map((sector, index) => (
-                        <div
-                          key={sector.sector}
-                          className="flex items-center justify-between gap-3 rounded-lg border border-border/30 bg-background/70 px-3 py-2"
-                        >
-                          <div className="flex min-w-0 items-center gap-2">
-                            <span className="w-4 shrink-0 text-[11px] text-muted-foreground">
-                              {index + 1}.
-                            </span>
-                            <span className="truncate text-sm font-medium text-foreground">
-                              {sector.sector}
-                            </span>
-                          </div>
-                          <span className="rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 text-[10px] text-muted-foreground">
-                            {sector.companyCount} companies
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
+            <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+              <div className="rounded-xl border border-border/40 bg-muted/10 p-3">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Top Sectors
+                </p>
+                <div className="mt-2.5 space-y-1.5">
+                  {coverageData.topSectors.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Sector coverage will appear here as data becomes available.
+                    </p>
+                  ) : (
+                    coverageData.topSectors.map((sector, index) => (
+                      <div
+                        key={sector.sector}
+                        className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg bg-background/65 px-2.5 py-2"
+                      >
+                        <span className="text-[11px] text-muted-foreground">
+                          {index + 1}.
+                        </span>
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {sector.sector}
+                        </span>
+                        <span className="rounded-full border border-border/50 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                          {sector.companyCount}
+                        </span>
+                      </div>
+                    ))
+                  )}
                 </div>
+              </div>
 
-                <div>
-                  <p className="text-[11px] sm:text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                    Recently Added
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    {coverageData.recentlyAddedCompanies.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        Recently added companies will appear here once coverage history is available.
-                      </p>
-                    ) : (
-                      coverageData.recentlyAddedCompanies.map((company) => (
-                        <Link
-                          key={company.code}
-                          href={`/company/${company.code}`}
-                          prefetch={false}
-                          className="block rounded-lg border border-border/25 bg-background/70 px-3 py-2 transition-colors hover:bg-accent/70"
-                        >
-                          <div className="flex gap-2">
-                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400" />
-                            <div className="min-w-0">
-                              <p className="line-clamp-1 text-sm font-medium text-foreground">
-                                {company.name}
-                                {company.isNew && (
-                                  <span className="ml-1.5 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
-                                    New
-                                  </span>
-                                )}
-                              </p>
-                              <div className="mt-1 flex flex-wrap items-center gap-2">
-                                {company.sector && (
-                                  <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                                    {company.sector}
-                                  </span>
-                                )}
-                                {company.createdAtLabel && (
-                                  <span className="text-[11px] text-muted-foreground">
-                                    {company.createdAtLabel}
-                                  </span>
-                                )}
-                              </div>
+              <div className="rounded-xl border border-border/40 bg-muted/10 p-3">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Recently Added
+                </p>
+                <div className="mt-2.5 space-y-1.5">
+                  {coverageData.recentlyAddedCompanies.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Recently added companies will appear here once coverage history is available.
+                    </p>
+                  ) : (
+                    coverageData.recentlyAddedCompanies.map((company) => (
+                      <Link
+                        key={company.code}
+                        href={`/company/${company.code}`}
+                        prefetch={false}
+                        className="block rounded-lg bg-background/65 px-2.5 py-2 transition-colors hover:bg-accent/70"
+                      >
+                        <div className="flex gap-2">
+                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400" />
+                          <div className="min-w-0">
+                            <p className="line-clamp-1 text-sm font-medium text-foreground">
+                              {company.name}
+                            </p>
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                              {company.isNew && (
+                                <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                                  New
+                                </span>
+                              )}
+                              {company.sector && (
+                                <span className="rounded-full border border-border/50 bg-muted/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                  {company.sector}
+                                </span>
+                              )}
+                              {company.createdAtLabel && (
+                                <span>{company.createdAtLabel}</span>
+                              )}
                             </div>
                           </div>
-                        </Link>
-                      ))
-                    )}
-                  </div>
-                </div>
+                        </div>
+                      </Link>
+                    ))
+                  )}
                 </div>
               </div>
+            </div>
           </div>
         </section>
         <section className="w-[95%] sm:w-[90%] pt-6 sm:pt-8">
