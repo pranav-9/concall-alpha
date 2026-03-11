@@ -128,11 +128,8 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
 
   if (!items.length) {
     return (
-      <div className="rounded-xl border border-border/50 bg-background/70 p-6 shadow-sm shadow-black/10">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Management Guidance Tracker
-        </p>
-        <p className="mt-2 text-sm text-muted-foreground">
+      <div className="rounded-xl border border-border/50 bg-background/70 p-5 shadow-sm shadow-black/10">
+        <p className="text-sm text-muted-foreground">
           No meaningful management guidance tracked yet.
         </p>
       </div>
@@ -140,27 +137,16 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 border-b border-border/40 pb-3 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Management Guidance Tracker
+    <div className="space-y-3.5">
+      <div className="flex flex-col gap-2.5 border-b border-border/35 pb-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-sm leading-snug text-foreground/85">
+            Current management stance and quarter-by-quarter evolution.
           </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm leading-snug text-foreground/85">
-              Current management stance and quarter-by-quarter evolution.
-            </p>
-            <Badge
-              variant="outline"
-              className="border-border/70 bg-muted/40 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground"
-            >
-              {items.length} tracked
-            </Badge>
-          </div>
         </div>
 
         <div className="flex items-center gap-2 self-start md:self-auto">
-          <div className="rounded-full border border-border/60 bg-muted/30 px-3 py-1 text-[11px] font-medium text-muted-foreground">
+          <div className="rounded-full border border-border/60 bg-muted/25 px-3 py-1 text-[11px] font-medium text-muted-foreground">
             {formatSlideCount(currentSlide)} / {formatSlideCount(totalSlides)}
           </div>
           {items.length > 1 && (
@@ -199,10 +185,20 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
           {items.map((item) => {
             const statusStyle = STATUS_STYLES[item.statusKey];
             const metadata = [
-              item.guidanceTypeLabel,
-              item.firstMentionPeriod ? `First mentioned in ${item.firstMentionPeriod}` : null,
-              item.targetPeriod ? `Target: ${item.targetPeriod}` : null,
-            ].filter((entry): entry is string => Boolean(entry));
+              item.firstMentionPeriod
+                ? { label: `First mentioned in ${item.firstMentionPeriod}`, emphasis: false }
+                : null,
+              item.targetPeriod
+                ? { label: `Target: ${item.targetPeriod}`, emphasis: true }
+                : null,
+            ].filter(
+              (
+                entry,
+              ): entry is {
+                label: string;
+                emphasis: boolean;
+              } => Boolean(entry),
+            );
 
             return (
               <CarouselItem
@@ -212,17 +208,20 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
                 <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/40 bg-background/85 shadow-sm shadow-black/10">
                   <div className={cn("h-1.5 w-full", statusStyle.ruleClass)} />
 
-                  <div className="flex h-full flex-col p-4 sm:p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
+                  <div className="flex h-full flex-col p-4">
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="min-w-0 flex-1">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                           {item.guidanceTypeLabel ?? "Guidance Thread"}
+                        </p>
+                        <p className="mt-1.5 line-clamp-2 text-[15px] font-semibold leading-[1.35] text-foreground sm:text-base">
+                          {item.guidanceText}
                         </p>
                       </div>
                       <Badge
                         variant="outline"
                         className={cn(
-                          "h-fit text-[11px] font-semibold",
+                          "mt-0.5 h-fit shrink-0 text-[11px] font-semibold",
                           statusStyle.badgeClass,
                         )}
                       >
@@ -230,67 +229,87 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
                       </Badge>
                     </div>
 
-                    <div className="mt-3 space-y-2">
-                      <p className="text-[14px] font-semibold leading-[1.5] text-foreground sm:text-[15px]">
-                        {item.guidanceText}
-                      </p>
-                      {metadata.length > 0 && (
-                        <p className="text-[11px] leading-relaxed text-muted-foreground">
-                          {metadata.join(" • ")}
-                        </p>
-                      )}
-                    </div>
-
-                    {item.latestView && (
-                      <div
-                        className={cn(
-                          "mt-4 rounded-xl border p-3",
-                          statusStyle.currentViewClass,
-                        )}
-                      >
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Current view
-                        </p>
-                        <p className="mt-1.5 text-[12px] leading-relaxed text-foreground/90">
-                          {item.latestView}
-                        </p>
+                    {metadata.length > 0 && (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                        {metadata.map((entry, index) => (
+                          <React.Fragment key={`${item.guidanceKey}-meta-${entry.label}`}>
+                            {index > 0 && <span className="text-muted-foreground/45">·</span>}
+                            <span
+                              className={cn(
+                                entry.emphasis && "font-medium text-foreground/80",
+                              )}
+                            >
+                              {entry.label}
+                            </span>
+                          </React.Fragment>
+                        ))}
                       </div>
                     )}
 
                     {item.statusReason && (
-                      <div className="mt-3 space-y-1.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      <div className="mt-3 rounded-xl border border-border/40 bg-muted/15 px-3 py-2.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/80">
                           Why it changed
                         </p>
-                        <p className="text-[12px] leading-relaxed text-muted-foreground">
+                        <p className="mt-1.5 text-[12px] leading-relaxed text-foreground/88">
                           {item.statusReason}
                         </p>
                       </div>
                     )}
 
+                    {item.latestView && (
+                      <div
+                        className={cn(
+                          "mt-3 rounded-lg border px-3 py-2",
+                          statusStyle.currentViewClass,
+                        )}
+                      >
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Current view
+                        </p>
+                        <p className="mt-1 text-[11px] leading-relaxed text-foreground/85">
+                          {item.latestView}
+                        </p>
+                      </div>
+                    )}
+
                     {item.mentionedPeriods.length > 0 && (
-                      <div className="mt-auto pt-4">
+                      <div className="mt-auto pt-3.5">
                         <div className="border-t border-border/35 pt-3">
                           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                             Mentioned across
                           </p>
-                          <div className="mt-2 flex flex-wrap gap-1.5">
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
                             {item.mentionedPeriods.map((period, index) => {
                               const isLatestMention =
                                 index === item.mentionedPeriods.length - 1;
 
                               return (
-                                <span
-                                  key={`${item.guidanceKey}-${period}-${index}`}
-                                  className={cn(
-                                    "rounded-full border px-2.5 py-1 text-[10px] font-medium",
-                                    isLatestMention
-                                      ? statusStyle.latestMentionClass
-                                      : "border-border/60 bg-muted/35 text-muted-foreground",
+                                <React.Fragment key={`${item.guidanceKey}-${period}-${index}`}>
+                                  {index > 0 && (
+                                    <span className="text-[10px] text-muted-foreground/35">
+                                      →
+                                    </span>
                                   )}
-                                >
-                                  {period}
-                                </span>
+                                  <span
+                                    className={cn(
+                                      "rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                                      isLatestMention
+                                        ? cn(
+                                            statusStyle.latestMentionClass,
+                                            "shadow-sm shadow-black/5",
+                                          )
+                                        : "border-border/40 bg-muted/20 text-muted-foreground/75",
+                                    )}
+                                  >
+                                    {period}
+                                    {isLatestMention && (
+                                      <span className="ml-1 text-[9px] uppercase tracking-[0.12em]">
+                                        Latest
+                                      </span>
+                                    )}
+                                  </span>
+                                </React.Fragment>
                               );
                             })}
                           </div>
