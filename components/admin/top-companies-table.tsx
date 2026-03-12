@@ -14,6 +14,8 @@ export type TopCompanyView = {
   last_viewed: string | null;
 };
 
+const DEFAULT_VISIBLE_ROWS = 10;
+
 function formatDate(value: string | null) {
   if (!value) return "—";
   const date = new Date(value);
@@ -26,6 +28,29 @@ function formatDate(value: string | null) {
 }
 
 export function TopCompaniesTable({ rows }: { rows: TopCompanyView[] }) {
+  const visibleRows = rows.slice(0, DEFAULT_VISIBLE_ROWS);
+  const hiddenRows = rows.slice(DEFAULT_VISIBLE_ROWS);
+
+  function renderRows(items: TopCompanyView[], startIndex = 0) {
+    return items.map((row, idx) => (
+      <TableRow key={`${row.company_code}-${startIndex + idx}`}>
+        <TableCell>{startIndex + idx + 1}</TableCell>
+        <TableCell className="font-medium text-foreground">
+          {row.company_name ?? row.company_code ?? "Unknown"}
+        </TableCell>
+        <TableCell className="text-muted-foreground">
+          {row.company_code ?? "—"}
+        </TableCell>
+        <TableCell className="text-right font-medium">
+          {Number(row.views).toLocaleString()}
+        </TableCell>
+        <TableCell className="text-muted-foreground">
+          {formatDate(row.last_viewed)}
+        </TableCell>
+      </TableRow>
+    ));
+  }
+
   return (
     <div className="rounded-xl border border-border bg-card">
       <div className="border-b border-border px-4 py-3">
@@ -50,27 +75,33 @@ export function TopCompaniesTable({ rows }: { rows: TopCompanyView[] }) {
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row, idx) => (
-                <TableRow key={`${row.company_code}-${idx}`}>
-                  <TableCell>{idx + 1}</TableCell>
-                  <TableCell className="font-medium text-foreground">
-                    {row.company_name ?? row.company_code ?? "Unknown"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {row.company_code ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {Number(row.views).toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatDate(row.last_viewed)}
-                  </TableCell>
-                </TableRow>
-              ))
+              renderRows(visibleRows)
             )}
           </TableBody>
         </Table>
       </div>
+      {hiddenRows.length > 0 ? (
+        <div className="border-t border-border px-4 py-3">
+          <details className="group">
+            <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg border border-border/70 bg-muted/30 px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-muted/50">
+              <span className="font-medium text-foreground">
+                Show remaining {hiddenRows.length} companies
+              </span>
+              <span className="text-xs uppercase tracking-wide group-open:hidden">
+                Expand
+              </span>
+              <span className="hidden text-xs uppercase tracking-wide group-open:inline">
+                Collapse
+              </span>
+            </summary>
+            <div className="pt-3">
+              <Table>
+                <TableBody>{renderRows(hiddenRows, visibleRows.length)}</TableBody>
+              </Table>
+            </div>
+          </details>
+        </div>
+      ) : null}
     </div>
   );
 }

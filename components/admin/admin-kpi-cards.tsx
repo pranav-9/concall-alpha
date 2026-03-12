@@ -1,5 +1,7 @@
 type Props = {
   uniqueUsers: number;
+  accountsCreatedCount: number;
+  watchlistsCreatedCount: number;
   companyViews: number;
   feedbackCount: number;
   commentsCount: number;
@@ -23,14 +25,18 @@ function KpiCard({
 
 export function AdminKpiCards({
   uniqueUsers,
+  accountsCreatedCount,
+  watchlistsCreatedCount,
   companyViews,
   feedbackCount,
   commentsCount,
   reportsCount,
 }: Props) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
       <KpiCard label="Unique Users" value={uniqueUsers} />
+      <KpiCard label="Accounts Created" value={accountsCreatedCount} />
+      <KpiCard label="Watchlists Created" value={watchlistsCreatedCount} />
       <KpiCard label="Company Views" value={companyViews} />
       <KpiCard label="User Requests" value={feedbackCount} />
       <KpiCard label="Total Comments" value={commentsCount} />

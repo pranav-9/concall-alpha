@@ -5,6 +5,14 @@ import { AdminLoginForm } from "@/components/admin/admin-login-form";
 import { AdminLogoutButton } from "@/components/admin/admin-logout-button";
 import { AdminKpiCards } from "@/components/admin/admin-kpi-cards";
 import {
+  RecentAccountsTable,
+  type RecentAccountRow,
+} from "@/components/admin/recent-accounts-table";
+import {
+  RecentWatchlistsTable,
+  type RecentWatchlistRow,
+} from "@/components/admin/recent-watchlists-table";
+import {
   TopCompaniesTable,
   type TopCompanyView,
 } from "@/components/admin/top-companies-table";
@@ -49,7 +57,56 @@ function parseRange(value: string | undefined): RangeKey {
   if (value === "7d" || value === "30d" || value === "90d" || value === "all") {
     return value;
   }
-  return "30d";
+  return "7d";
+}
+
+async function getRecentAccounts(
+  startIso: string | null,
+): Promise<{
+  count: number;
+  rows: RecentAccountRow[];
+}> {
+  const supabase = createAdminClient();
+  const perPage = 100;
+  let page = 1;
+  const users: RecentAccountRow[] = [];
+
+  while (true) {
+    const result = await supabase.auth.admin.listUsers({ page, perPage });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    const pageRows = result.data.users
+      .filter((user) => {
+        if (!startIso) return true;
+        return new Date(user.created_at).getTime() >= new Date(startIso).getTime();
+      })
+      .map((user) => ({
+        id: user.id,
+        email: user.email ?? null,
+        created_at: user.created_at,
+      }));
+
+    users.push(...pageRows);
+
+    if (!result.data.nextPage || result.data.users.length === 0) {
+      break;
+    }
+
+    page = result.data.nextPage;
+  }
+
+  users.sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+
+  return {
+    count: users.length,
+    rows: users.slice(0, 50),
+  };
 }
 
 async function getAdminData(range: RangeKey) {
@@ -127,6 +184,28 @@ async function getAdminData(range: RangeKey) {
     ? reportsCountBase.gte("created_at", startIso)
     : reportsCountBase;
 
+  const recentAccountsPromise = getRecentAccounts(startIso);
+
+  const recentWatchlistsBase = supabase
+    .from("watchlists")
+    .select("id, user_id, name, created_at")
+    .not("created_at", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  const recentWatchlistsPromise = startIso
+    ? recentWatchlistsBase.gte("created_at", startIso)
+    : recentWatchlistsBase;
+
+  const watchlistsCountBase = supabase
+    .from("watchlists")
+    .select("id", { head: true, count: "exact" })
+    .not("created_at", "is", null);
+
+  const watchlistsCountPromise = startIso
+    ? watchlistsCountBase.gte("created_at", startIso)
+    : watchlistsCountBase;
+
   const [
     uniqueVisitorsResult,
     topCompaniesResult,
@@ -137,6 +216,9 @@ async function getAdminData(range: RangeKey) {
     commentsCountResult,
     reportsRowsResult,
     reportsCountResult,
+    recentAccountsResult,
+    recentWatchlistsResult,
+    watchlistsCountResult,
   ] =
     await Promise.all([
       uniqueVisitorsPromise,
@@ -148,6 +230,9 @@ async function getAdminData(range: RangeKey) {
       commentsCountPromise,
       reportsRowsPromise,
       reportsCountPromise,
+      recentAccountsPromise,
+      recentWatchlistsPromise,
+      watchlistsCountPromise,
     ]);
 
   const uniqueUsers = Number(uniqueVisitorsResult.data ?? 0);
@@ -159,6 +244,11 @@ async function getAdminData(range: RangeKey) {
   const commentsCount = Number(commentsCountResult.count ?? 0);
   const reportsRows = (reportsRowsResult.data ?? []) as AdminReportedRow[];
   const reportsCount = Number(reportsCountResult.count ?? 0);
+  const accountsCreatedCount = recentAccountsResult.count;
+  const recentAccountsRows = recentAccountsResult.rows;
+  const recentWatchlistsRows = (recentWatchlistsResult.data ??
+    []) as RecentWatchlistRow[];
+  const watchlistsCreatedCount = Number(watchlistsCountResult.count ?? 0);
 
   return {
     uniqueUsers,
@@ -170,6 +260,10 @@ async function getAdminData(range: RangeKey) {
     commentsCount,
     reportsRows,
     reportsCount,
+    accountsCreatedCount,
+    recentAccountsRows,
+    watchlistsCreatedCount,
+    recentWatchlistsRows,
   };
 }
 
@@ -201,6 +295,10 @@ export default async function AdminPage({
     commentsCount: 0,
     reportsRows: [] as AdminReportedRow[],
     reportsCount: 0,
+    accountsCreatedCount: 0,
+    recentAccountsRows: [] as RecentAccountRow[],
+    watchlistsCreatedCount: 0,
+    recentWatchlistsRows: [] as RecentWatchlistRow[],
   };
   let dataLoadError: string | null = null;
 
@@ -216,7 +314,7 @@ export default async function AdminPage({
         <div>
           <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
           <p className="text-sm text-muted-foreground">
-            Traffic and request analytics for Story of a Stock.
+            User activity, traffic, and request analytics for Story of a Stock.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -249,6 +347,8 @@ export default async function AdminPage({
 
       <AdminKpiCards
         uniqueUsers={data.uniqueUsers}
+        accountsCreatedCount={data.accountsCreatedCount}
+        watchlistsCreatedCount={data.watchlistsCreatedCount}
         companyViews={data.companyViews}
         feedbackCount={data.feedbackCount}
         commentsCount={data.commentsCount}
@@ -261,6 +361,8 @@ export default async function AdminPage({
         </div>
       ) : null}
 
+      <RecentAccountsTable rows={data.recentAccountsRows} />
+      <RecentWatchlistsTable rows={data.recentWatchlistsRows} />
       <TopCompaniesTable rows={data.topCompanies} />
       <FeedbackRequestsTable rows={data.feedbackRows} />
       <CompanyCommentsTable comments={data.commentsRows} reported={data.reportsRows} />
