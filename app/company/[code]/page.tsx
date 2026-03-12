@@ -322,7 +322,6 @@ export default async function Page({
     : null;
   const aboutCompany = normalizedBusinessSnapshot?.aboutCompany ?? null;
   const revenueBreakdown = normalizedBusinessSnapshot?.revenueBreakdown ?? null;
-  const revenueEngine = normalizedBusinessSnapshot?.revenueEngine ?? null;
   const aboutHeading =
     aboutCompany?.aboutShort ?? normalizedBusinessSnapshot?.businessSummaryShort ?? null;
   const aboutSupportingText =
@@ -334,10 +333,6 @@ export default async function Page({
     Boolean(
       aboutHeading ||
         aboutSupportingText ||
-        (aboutCompany?.primaryCustomers.length ?? 0) > 0 ||
-        revenueEngine?.revenueModelType ||
-        revenueEngine?.monetizationUnit ||
-        revenueEngine?.revenueFormula ||
         (revenueBreakdown?.bySegment.length ?? 0) > 0 ||
         (revenueBreakdown?.byProductOrService.length ?? 0) > 0,
     );
@@ -364,11 +359,6 @@ export default async function Page({
       normalizedGrowthOutlook?.scenarios?.upside ||
       normalizedGrowthOutlook?.scenarios?.downside,
   );
-  const formatSentenceLabel = (value: string | null | undefined) => {
-    const normalized = value?.trim().replace(/[_-]+/g, " ");
-    if (!normalized) return null;
-    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
-  };
   const sortRevenueEntries = (
     entries: Array<{ name: string; description: string | null; revenueSharePercent: number | null }>,
   ) =>
@@ -379,132 +369,9 @@ export default async function Page({
       return b.revenueSharePercent - a.revenueSharePercent;
     });
 
-  type WhyItMattersItem = {
-    title: string;
-    detail: string;
-  };
-
-  const productEntries = sortRevenueEntries(revenueBreakdown?.byProductOrService ?? []);
-  const segmentEntries = sortRevenueEntries(revenueBreakdown?.bySegment ?? []);
   const hasRevenueBreakdown =
     (revenueBreakdown?.bySegment.length ?? 0) > 0 ||
     (revenueBreakdown?.byProductOrService.length ?? 0) > 0;
-  const businessEconomicsItems = [
-    {
-      label: "Revenue model",
-      value: formatSentenceLabel(revenueEngine?.revenueModelType),
-    },
-    {
-      label: "Monetization unit",
-      value: revenueEngine?.monetizationUnit ?? null,
-    },
-    {
-      label: "Revenue formula",
-      value: revenueEngine?.revenueFormula ?? null,
-    },
-  ].filter(
-    (item): item is { label: string; value: string } => Boolean(item.value?.trim()),
-  );
-
-  const whyItMattersItems: WhyItMattersItem[] = [];
-  const pushWhyItMatters = (title: string, detail: string | null | undefined) => {
-    const normalized = detail?.trim();
-    if (!normalized) return;
-    if (
-      whyItMattersItems.some(
-        (item) =>
-          item.title.toLowerCase() === title.toLowerCase() ||
-          item.detail.toLowerCase() === normalized.toLowerCase(),
-      )
-    ) {
-      return;
-    }
-    whyItMattersItems.push({ title, detail: normalized });
-  };
-
-  if (revenueEngine?.revenueModelType) {
-    pushWhyItMatters(
-      "Monetization model",
-      `${formatSentenceLabel(revenueEngine.revenueModelType)}-led monetization means investors should track changes in ${(
-        revenueEngine.monetizationUnit ?? "the core monetization unit"
-      ).toLowerCase()} as a primary earnings input.`,
-    );
-  }
-
-  if (productEntries[0]?.revenueSharePercent != null) {
-    pushWhyItMatters(
-      "Top exposure",
-      `${productEntries[0].name} is the largest disclosed product exposure at ${formatPctLabel(
-        productEntries[0].revenueSharePercent,
-      )}, so mix and volume trends here can drive earnings expectations.`,
-    );
-  }
-
-  if (
-    productEntries[0]?.revenueSharePercent != null &&
-    productEntries[1]?.revenueSharePercent != null
-  ) {
-    const combinedExposure =
-      productEntries[0].revenueSharePercent + productEntries[1].revenueSharePercent;
-    pushWhyItMatters(
-      "Concentration",
-      `The top two disclosed product exposures contribute ${formatPctLabel(
-        combinedExposure,
-      )} combined, which makes revenue mix concentration worth tracking.`,
-    );
-  }
-
-  if (segmentEntries[0]) {
-    pushWhyItMatters(
-      "Core driver",
-      `${segmentEntries[0].name} appears to be a core earnings driver for the business and should anchor how investors read quarterly execution.`,
-    );
-  }
-
-  if (segmentEntries[1] && segmentEntries[1].description) {
-    pushWhyItMatters(
-      "Second driver",
-      `${segmentEntries[1].name} adds a second layer of business mix that can influence operating momentum beyond the main segment.`,
-    );
-  }
-
-  if (whyItMattersItems.length === 0 && normalizedBusinessSnapshot?.topRevenueDrivers[0]) {
-    pushWhyItMatters(
-      "Revenue driver",
-      normalizedBusinessSnapshot.topRevenueDrivers[0],
-    );
-  }
-
-  if (whyItMattersItems.length < 3 && normalizedBusinessSnapshot?.keyDependencies[0]) {
-    pushWhyItMatters(
-      "What to watch",
-      normalizedBusinessSnapshot.keyDependencies[0],
-    );
-  }
-
-  if (whyItMattersItems.length < 4 && normalizedBusinessSnapshot?.mixShiftSummary) {
-    pushWhyItMatters(
-      "Mix shift",
-      normalizedBusinessSnapshot.mixShiftSummary,
-    );
-  }
-
-  if (whyItMattersItems.length < 4 && normalizedBusinessSnapshot?.keyRisksToModel[0]) {
-    pushWhyItMatters(
-      "Risk watch",
-      normalizedBusinessSnapshot.keyRisksToModel[0],
-    );
-  }
-
-  if (whyItMattersItems.length === 0 && (aboutCompany?.primaryCustomers.length ?? 0) > 0) {
-    pushWhyItMatters(
-      "Demand base",
-      `Demand is spread across ${aboutCompany?.primaryCustomers
-        .slice(0, 3)
-        .join(", ")
-        .toLowerCase()}, which shapes how volume growth and participation should be interpreted.`,
-    );
-  }
 
   const renderRevenueBreakdownCard = ({
     title,
@@ -1411,8 +1278,14 @@ export default async function Page({
                 {normalizedBusinessSnapshot ? (
                   <>
                     {hasStructuredBusinessSnapshot ? (
-                      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(18rem,0.95fr)] lg:items-start">
-                        <div className="min-w-0 space-y-2.5">
+                      <div
+                        className={`grid grid-cols-1 gap-3 ${
+                          aboutHeading || aboutSupportingText
+                            ? "lg:grid-cols-[minmax(0,1.55fr)_minmax(18rem,0.95fr)] lg:items-start"
+                            : ""
+                        }`}
+                      >
+                        {(aboutHeading || aboutSupportingText) && (
                           <div className="min-w-0 space-y-1">
                             <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                               About
@@ -1428,60 +1301,10 @@ export default async function Page({
                               </p>
                             )}
                           </div>
+                        )}
 
-                          {businessEconomicsItems.length > 0 && (
-                            <div className="rounded-xl border border-border/25 bg-background/55 px-3 py-2.5">
-                              <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                Business economics
-                              </p>
-                              <div className="mt-1.5 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
-                                {businessEconomicsItems.slice(0, 4).map((item, idx) => (
-                                  <div
-                                    key={`${item.label}-${idx}`}
-                                    className="space-y-0.5"
-                                  >
-                                    <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                      {item.label}
-                                    </p>
-                                    <p className="text-[13px] text-foreground leading-relaxed line-clamp-2">
-                                      {item.value}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="min-w-0 space-y-2.5">
-                          {whyItMattersItems.length > 0 && (
-                            <div className={`${elevatedBlockClass} min-w-0 p-3`}>
-                              <div>
-                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                  Investor takeaway
-                                </p>
-                                <div className="mt-1.5 space-y-1.5">
-                                  {whyItMattersItems.slice(0, 3).map((item, idx) => (
-                                    <div
-                                      key={`${item.title}-${idx}`}
-                                      className={
-                                        idx === 0 ? "space-y-0.5" : "border-t border-border/35 pt-1.5 space-y-0.5"
-                                      }
-                                    >
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground/85">
-                                        {item.title}
-                                      </p>
-                                      <p className="text-[12px] text-muted-foreground leading-relaxed line-clamp-2">
-                                        {item.detail}
-                                      </p>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {hasRevenueBreakdown && (
+                        {hasRevenueBreakdown && (
+                          <div className="min-w-0">
                             <div className="rounded-2xl border border-border/30 bg-muted/20 p-2.5 shadow-md shadow-black/15">
                               <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                                 Revenue Breakdown
@@ -1499,8 +1322,8 @@ export default async function Page({
                                 })}
                               </div>
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     ) : hasLegacyBusinessSnapshot ? (
                       <>
