@@ -13,6 +13,8 @@ type SidebarNavigationProps = {
 };
 
 const STICKY_TOP_CLASS = "top-20";
+const VIEWPORT_RAIL_HEIGHT_CLASS =
+  "h-[calc(100vh-5.5rem)] supports-[height:100dvh]:h-[calc(100dvh-5.5rem)]";
 const ACTIVE_ANCHOR_OFFSET_PX = 120;
 
 const renderMeta = (meta: CompanySidebarSectionMeta, isActive: boolean) => {
@@ -149,8 +151,19 @@ export function SidebarNavigation({ sections }: SidebarNavigationProps) {
   }, [sections]);
 
   return (
-    <aside className={cn("hidden lg:block h-fit shrink-0 w-[15rem] xl:w-[16rem] sticky", STICKY_TOP_CLASS)}>
-      <nav className="rounded-2xl border border-border/70 bg-card/95 p-3 shadow-lg shadow-black/10">
+    <aside
+      className={cn(
+        "hidden lg:block sticky self-start shrink-0 w-[15rem] xl:w-[16rem] z-20",
+        VIEWPORT_RAIL_HEIGHT_CLASS,
+        STICKY_TOP_CLASS,
+      )}
+    >
+      <nav
+        className={cn(
+          "overflow-y-auto overscroll-y-contain rounded-2xl border border-border/70 bg-card/95 p-3 shadow-lg shadow-black/10",
+          VIEWPORT_RAIL_HEIGHT_CLASS,
+        )}
+      >
         <div className="mb-3 space-y-1 px-1">
           <h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Page Guide

@@ -1070,11 +1070,14 @@ export default async function Page({
   };
 
   return (
-    <div className="flex w-full max-w-full overflow-x-hidden gap-4 lg:gap-6 px-3 sm:px-4 lg:px-12 py-4 sm:py-6">
+    <div className="flex w-full max-w-full gap-4 lg:gap-6 px-3 sm:px-4 lg:px-12 py-4 sm:py-6">
       <SidebarNavigation sections={sidebarSections} />
 
       {/* main content - 80% width */}
-      <div id="main-content" className="flex-1 min-w-0 flex flex-col gap-4">
+      <div
+        id="main-content"
+        className="flex-1 min-w-0 flex flex-col gap-4 overflow-x-hidden"
+      >
         <OverviewCard
           companyInfo={{
             code: companyRow?.code ?? code,
