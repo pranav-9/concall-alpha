@@ -93,6 +93,25 @@ const STATUS_STYLES: Record<
 
 const formatSlideCount = (value: number) => value.toString().padStart(2, "0");
 
+const getTrailMentionBadgeClass = (mentionType: string | null) => {
+  const normalized = mentionType?.trim().toLowerCase().replace(/\s+/g, "_");
+
+  switch (normalized) {
+    case "first_mention":
+      return "border-blue-200 bg-blue-100 text-blue-700 dark:bg-blue-900/35 dark:text-blue-200 dark:border-blue-700/40";
+    case "repeat":
+      return "border-border/60 bg-muted/60 text-foreground";
+    case "update":
+      return "border-amber-200 bg-amber-100 text-amber-700 dark:bg-amber-900/35 dark:text-amber-200 dark:border-amber-700/40";
+    case "revision":
+      return "border-sky-200 bg-sky-100 text-sky-700 dark:bg-sky-900/35 dark:text-sky-200 dark:border-sky-700/40";
+    case "met":
+      return "border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-200 dark:border-emerald-700/40";
+    default:
+      return "border-border/60 bg-muted/60 text-foreground";
+  }
+};
+
 export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
   const [carouselApi, setCarouselApi] = React.useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = React.useState(1);
@@ -271,6 +290,93 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
                           {item.latestView}
                         </p>
                       </div>
+                    )}
+
+                    {item.trail.length > 0 && (
+                      <details className="group mt-3 rounded-xl border border-border/35 bg-background/55">
+                        <summary className="list-none cursor-pointer px-3 py-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                                Guidance trail
+                              </p>
+                              <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+                                Quarter-by-quarter management story and evidence.
+                              </p>
+                            </div>
+                            <span className="text-[11px] text-muted-foreground">
+                              <span className="group-open:hidden">
+                                Show story ({item.trail.length})
+                              </span>
+                              <span className="hidden group-open:inline">Hide story</span>
+                            </span>
+                          </div>
+                        </summary>
+
+                        <div className="border-t border-border/35 px-3 py-3 space-y-3">
+                          {item.trail.map((trailItem, idx) => {
+                            const sourceMeta = [
+                              trailItem.documentLabel,
+                              trailItem.documentType,
+                              trailItem.sourceReference,
+                            ].filter((entry): entry is string => Boolean(entry));
+
+                            return (
+                              <div
+                                key={`${item.guidanceKey}-trail-${trailItem.positionInStory ?? idx}`}
+                                className={cn(
+                                  "relative pl-4",
+                                  idx > 0 && "border-t border-border/25 pt-3",
+                                )}
+                              >
+                                <span className="absolute left-0 top-1.5 h-2 w-2 rounded-full bg-muted-foreground/70" />
+                                <div className="space-y-1.5">
+                                  <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                                    {trailItem.quarter && (
+                                      <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-foreground">
+                                        {trailItem.quarter}
+                                      </span>
+                                    )}
+                                    {trailItem.mentionType && (
+                                      <span
+                                        className={cn(
+                                          "rounded-full border px-2 py-0.5",
+                                          getTrailMentionBadgeClass(trailItem.mentionType),
+                                        )}
+                                      >
+                                        {trailItem.mentionType}
+                                      </span>
+                                    )}
+                                    {typeof trailItem.confidence === "number" && (
+                                      <span className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-muted-foreground">
+                                        {(trailItem.confidence * 100).toFixed(0)}% conf
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {trailItem.summary && (
+                                    <p className="text-[12px] font-medium leading-relaxed text-foreground">
+                                      {trailItem.summary}
+                                    </p>
+                                  )}
+
+                                  {trailItem.excerpt && (
+                                    <p className="rounded-md border border-border/25 bg-muted/20 px-2.5 py-2 text-[11px] italic leading-relaxed text-foreground/88">
+                                      “{trailItem.excerpt}”
+                                    </p>
+                                  )}
+
+                                  {sourceMeta.length > 0 && (
+                                    <p className="text-[10px] leading-snug text-muted-foreground">
+                                      {sourceMeta.join(" · ")}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </details>
                     )}
 
                     {item.mentionedPeriods.length > 0 && (

@@ -4,6 +4,7 @@ import type {
   NormalizedGuidanceItem,
   NormalizedGuidanceMention,
   NormalizedGuidanceStatusKey,
+  NormalizedGuidanceTrailItem,
 } from "@/lib/guidance-tracking/types";
 
 type JsonRecord = Record<string, unknown>;
@@ -233,6 +234,47 @@ const normalizeMention = (value: unknown): NormalizedGuidanceMention | null => {
   };
 };
 
+const normalizeTrailItem = (value: unknown): NormalizedGuidanceTrailItem | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const quarter = formatGuidancePeriodLabel(asString(row.quarter));
+  const summary = asString(row.summary);
+  const excerpt = asString(row.excerpt);
+  const mentionType = toTitleCase(asString(row.mention_type));
+  const documentType = toTitleCase(asString(row.document_type));
+  const documentLabel = asString(row.document_label);
+  const sourceReference = asString(row.source_reference);
+  const confidence = asNumber(row.confidence);
+  const positionInStory = asNumber(row.position_in_story);
+
+  if (
+    !quarter &&
+    !summary &&
+    !excerpt &&
+    !mentionType &&
+    !documentType &&
+    !documentLabel &&
+    !sourceReference &&
+    confidence == null &&
+    positionInStory == null
+  ) {
+    return null;
+  }
+
+  return {
+    quarter,
+    summary,
+    excerpt,
+    mentionType,
+    documentType,
+    documentLabel,
+    sourceReference,
+    confidence,
+    positionInStory,
+  };
+};
+
 const comparePeriodsAscending = (a: string, b: string) => {
   const aSort = periodToSortSignal(a);
   const bSort = periodToSortSignal(b);
@@ -246,6 +288,63 @@ const comparePeriodsAscending = (a: string, b: string) => {
 };
 
 const comparePeriodsDescending = (a: string, b: string) => comparePeriodsAscending(b, a);
+
+const compareTrailItemsAscending = (
+  a: NormalizedGuidanceTrailItem,
+  b: NormalizedGuidanceTrailItem,
+) => {
+  const aPosition = a.positionInStory;
+  const bPosition = b.positionInStory;
+  const aHasPosition = typeof aPosition === "number" && Number.isFinite(aPosition);
+  const bHasPosition = typeof bPosition === "number" && Number.isFinite(bPosition);
+
+  if (aHasPosition && bHasPosition && aPosition !== bPosition) {
+    return aPosition - bPosition;
+  }
+  if (aHasPosition && !bHasPosition) return -1;
+  if (!aHasPosition && bHasPosition) return 1;
+
+  if (a.quarter && b.quarter) {
+    const quarterCompare = comparePeriodsAscending(a.quarter, b.quarter);
+    if (quarterCompare !== 0) return quarterCompare;
+  } else if (a.quarter && !b.quarter) {
+    return -1;
+  } else if (!a.quarter && b.quarter) {
+    return 1;
+  }
+
+  return (a.summary ?? a.excerpt ?? "").localeCompare(b.summary ?? b.excerpt ?? "");
+};
+
+const buildTrailFromSourceMentions = (
+  sourceMentions: NormalizedGuidanceMention[],
+): NormalizedGuidanceTrailItem[] =>
+  sourceMentions
+    .map((mention): NormalizedGuidanceTrailItem | null => {
+      const summary = mention.interpretation ?? mention.mentionText;
+      const excerpt =
+        comparableText(mention.mentionText) === comparableText(summary)
+          ? null
+          : mention.mentionText;
+
+      if (!mention.period && !summary && !excerpt && !mention.documentType) {
+        return null;
+      }
+
+      return {
+        quarter: mention.period,
+        summary,
+        excerpt,
+        mentionType: null,
+        documentType: mention.documentType,
+        documentLabel: null,
+        sourceReference: null,
+        confidence: null,
+        positionInStory: null,
+      };
+    })
+    .filter((item): item is NormalizedGuidanceTrailItem => Boolean(item))
+    .sort(compareTrailItemsAscending);
 
 export const formatGuidanceTypeLabel = (value: string | null | undefined) => toTitleCase(value);
 
@@ -298,25 +397,28 @@ const normalizeGuidanceTrackingRow = (
   const sourceMentions = parseJsonArrayLike(row.source_mentions)
     .map((entry) => normalizeMention(entry))
     .filter((entry): entry is NormalizedGuidanceMention => Boolean(entry));
+  const parsedTrail = parseJsonArrayLike(row.trail)
+    .map((entry) => normalizeTrailItem(entry))
+    .filter((entry): entry is NormalizedGuidanceTrailItem => Boolean(entry))
+    .sort(compareTrailItemsAscending);
+  const trail =
+    parsedTrail.length > 0 ? parsedTrail : buildTrailFromSourceMentions(sourceMentions);
 
   const firstMention = parseJsonObjectLike(row.first_mentioned_in);
   const firstMentionPeriodFromField = formatGuidancePeriodLabel(asString(firstMention?.period));
+  const trailPeriods = trail
+    .map((item) => item.quarter)
+    .filter((period): period is string => Boolean(period));
   const earliestMentionPeriod =
-    sourceMentions
-      .map((mention) => mention.period)
-      .filter((period): period is string => Boolean(period))
-      .sort(comparePeriodsAscending)[0] ?? null;
+    [...trailPeriods].sort(comparePeriodsAscending)[0] ?? null;
   const firstMentionPeriod = firstMentionPeriodFromField ?? earliestMentionPeriod;
 
   const latestMentionPeriod =
-    sourceMentions
-      .map((mention) => mention.period)
-      .filter((period): period is string => Boolean(period))
-      .sort(comparePeriodsDescending)[0] ?? firstMentionPeriod;
+    [...trailPeriods].sort(comparePeriodsDescending)[0] ?? firstMentionPeriod;
 
   const mentionedPeriods = Array.from(
     new Set(
-      [firstMentionPeriodFromField, ...sourceMentions.map((mention) => mention.period)].filter(
+      [firstMentionPeriodFromField, ...trailPeriods].filter(
         (period): period is string => Boolean(period),
       ),
     ),
@@ -359,6 +461,7 @@ const normalizeGuidanceTrackingRow = (
     confidence: asNumber(row.confidence),
     generatedAtRaw: asString(row.generated_at),
     sourceMentions,
+    trail,
   };
 };
 

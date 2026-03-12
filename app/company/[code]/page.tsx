@@ -263,7 +263,7 @@ export default async function Page({
   const { data: guidanceTrackingRows, error: guidanceTrackingError } = await supabase
     .from("guidance_tracking")
     .select(
-      "id, company_code, guidance_key, guidance_text, guidance_type, first_mentioned_in, target_period, source_mentions, status, status_reason, latest_view, confidence, generated_at, details",
+      "id, company_code, guidance_key, guidance_text, guidance_type, first_mentioned_in, target_period, source_mentions, trail, status, status_reason, latest_view, confidence, generated_at, details",
     )
     .eq("company_code", code)
     .order("generated_at", { ascending: false })

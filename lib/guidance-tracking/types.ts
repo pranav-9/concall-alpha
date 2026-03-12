@@ -7,6 +7,7 @@ export type GuidanceTrackingRow = {
   first_mentioned_in?: unknown;
   target_period?: string | null;
   source_mentions?: unknown;
+  trail?: unknown;
   status?: string | null;
   status_reason?: string | null;
   latest_view?: string | null;
@@ -33,6 +34,18 @@ export type NormalizedGuidanceMention = {
   interpretation: string | null;
 };
 
+export type NormalizedGuidanceTrailItem = {
+  quarter: string | null;
+  summary: string | null;
+  excerpt: string | null;
+  mentionType: string | null;
+  documentType: string | null;
+  documentLabel: string | null;
+  sourceReference: string | null;
+  confidence: number | null;
+  positionInStory: number | null;
+};
+
 export type NormalizedGuidanceItem = {
   id: number;
   companyCode: string;
@@ -51,4 +64,5 @@ export type NormalizedGuidanceItem = {
   confidence: number | null;
   generatedAtRaw: string | null;
   sourceMentions: NormalizedGuidanceMention[];
+  trail: NormalizedGuidanceTrailItem[];
 };
