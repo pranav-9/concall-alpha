@@ -73,9 +73,6 @@ const buildCompanyIndustrySignals = (
   if (companyIndustryAnalysis.profitPools.length > 0) {
     signals.push(`${companyIndustryAnalysis.profitPools.length} profit pools`);
   }
-  if (companyIndustryAnalysis.competition.length > 0) {
-    signals.push(`${companyIndustryAnalysis.competition.length} competitors`);
-  }
   if (companyIndustryAnalysis.tailwinds.length > 0) {
     signals.push(`${companyIndustryAnalysis.tailwinds.length} tailwinds`);
   }
@@ -512,49 +509,6 @@ export default async function Page({
             </details>
           )}
         </div>
-      </div>
-    );
-  };
-  const renderCompanyFitList = (
-    title: string,
-    items: string[],
-    accentClass: string,
-    detailClassName: string,
-  ) => {
-    if (items.length === 0) return null;
-    const visibleItems = items.slice(0, 2);
-    const extraItems = items.slice(2);
-
-    return (
-      <div className="space-y-1.5">
-        <p className={`text-[10px] uppercase tracking-wide font-semibold ${accentClass}`}>{title}</p>
-        <ul className="space-y-1">
-          {visibleItems.map((item) => (
-            <li
-              key={`${title}-${item}`}
-              className={`text-[11px] text-foreground leading-snug rounded-sm border-l pl-2 ${detailClassName}`}
-            >
-              {item}
-            </li>
-          ))}
-        </ul>
-        {extraItems.length > 0 && (
-          <details className="border-t border-border/35 pt-2">
-            <summary className="cursor-pointer list-none text-[10px] text-muted-foreground hover:text-foreground">
-              Show more ({extraItems.length})
-            </summary>
-            <ul className="mt-2 space-y-1">
-              {extraItems.map((item, idx) => (
-                <li
-                  key={`${title}-${idx}-extra`}
-                  className={`text-[11px] text-foreground leading-snug rounded-sm border-l pl-2 ${detailClassName}`}
-                >
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
       </div>
     );
   };
@@ -1129,80 +1083,6 @@ export default async function Page({
                         )}
                       </div>
                     )}
-                  </div>
-                )}
-
-                {normalizedCompanyIndustryAnalysis.companyFit && (
-                  <div className={`${elevatedBlockClass} p-3 space-y-3`}>
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                      Company fit
-                    </p>
-                    {normalizedCompanyIndustryAnalysis.companyFit.businessModelPosition && (
-                      <p className="text-[12px] text-foreground leading-relaxed">
-                        {normalizedCompanyIndustryAnalysis.companyFit.businessModelPosition}
-                      </p>
-                    )}
-                    {renderCompanyFitList(
-                      "Advantages",
-                      normalizedCompanyIndustryAnalysis.companyFit.advantagesInContext,
-                      "text-emerald-700 dark:text-emerald-300",
-                      "border-emerald-400/60",
-                    )}
-                    {renderCompanyFitList(
-                      "Constraints",
-                      normalizedCompanyIndustryAnalysis.companyFit.constraintsInContext,
-                      "text-red-700 dark:text-red-300",
-                      "border-red-400/60",
-                    )}
-                  </div>
-                )}
-
-                {normalizedCompanyIndustryAnalysis.competition.length > 0 && (
-                  <div className={`${elevatedBlockClass} p-3 space-y-2`}>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                        Competition
-                      </p>
-                      {normalizedCompanyIndustryAnalysis.competition.length > 1 && (
-                        <span className="text-[10px] text-muted-foreground">
-                          {normalizedCompanyIndustryAnalysis.competition.length} items
-                        </span>
-                      )}
-                    </div>
-                    <Carousel opts={{ align: "start" }} className="w-full">
-                      <CarouselContent>
-                        {normalizedCompanyIndustryAnalysis.competition.map((item, idx) => (
-                          <CarouselItem key={`${item.name}-${idx}`} className="basis-full">
-                            <div className={`${nestedDetailClass} h-full p-3 space-y-2`}>
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <p className="text-[12px] font-semibold text-foreground">{item.name}</p>
-                                {item.type && (
-                                  <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
-                                    {item.type}
-                                  </span>
-                                )}
-                              </div>
-                              {item.whyItMatters && (
-                                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                  {item.whyItMatters}
-                                </p>
-                              )}
-                              {item.comparisonBasis && (
-                                <p className="text-[11px] text-foreground/90 leading-relaxed">
-                                  Basis: {item.comparisonBasis}
-                                </p>
-                              )}
-                            </div>
-                          </CarouselItem>
-                        ))}
-                      </CarouselContent>
-                      {normalizedCompanyIndustryAnalysis.competition.length > 1 && (
-                        <div className="flex justify-center gap-2 mt-2">
-                          <CarouselPrevious className="static translate-x-0 translate-y-0 border border-border bg-background text-foreground hover:bg-accent" />
-                          <CarouselNext className="static translate-x-0 translate-y-0 border border-border bg-background text-foreground hover:bg-accent" />
-                        </div>
-                      )}
-                    </Carousel>
                   </div>
                 )}
 
