@@ -13,8 +13,10 @@ type SidebarNavigationProps = {
 };
 
 const STICKY_TOP_CLASS = "top-20";
-const VIEWPORT_RAIL_HEIGHT_CLASS =
-  "h-[calc(100vh-5.5rem)] supports-[height:100dvh]:h-[calc(100dvh-5.5rem)]";
+const VIEWPORT_RAIL_MAX_HEIGHT_CLASS =
+  "max-h-[calc(100vh-5.5rem)] supports-[height:100dvh]:max-h-[calc(100dvh-5.5rem)]";
+const VIEWPORT_LIST_MAX_HEIGHT_CLASS =
+  "max-h-[calc(100vh-12rem)] supports-[height:100dvh]:max-h-[calc(100dvh-12rem)]";
 const ACTIVE_ANCHOR_OFFSET_PX = 120;
 
 const renderMeta = (meta: CompanySidebarSectionMeta, isActive: boolean) => {
@@ -24,17 +26,19 @@ const renderMeta = (meta: CompanySidebarSectionMeta, isActive: boolean) => {
         score={meta.score}
         size="sm"
         className={cn(
-          "h-6 w-6 text-[10px] ring-2 transition-all",
-          isActive ? "ring-foreground/20" : "ring-border/70 opacity-90",
+          "h-7 w-7 shrink-0 text-[11px] ring-2 shadow-sm transition-all",
+          isActive
+            ? "ring-foreground/25 shadow-black/10"
+            : "ring-border/70 opacity-95 shadow-black/5",
         )}
       />
     ) : (
       <span
         className={cn(
-          "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors",
+          "inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[9px] font-medium transition-colors",
           isActive
-            ? "border-foreground/15 bg-background text-foreground"
-            : "border-border/70 bg-background/70 text-muted-foreground",
+            ? "border-foreground/15 bg-background/95 text-foreground"
+            : "border-border/60 bg-background/80 text-muted-foreground",
         )}
       >
         —
@@ -46,10 +50,10 @@ const renderMeta = (meta: CompanySidebarSectionMeta, isActive: boolean) => {
     return (
       <span
         className={cn(
-          "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors",
+          "inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[9px] font-medium transition-colors",
           isActive
-            ? "border-foreground/15 bg-background text-foreground"
-            : "border-border/70 bg-background/70 text-muted-foreground",
+            ? "border-foreground/15 bg-background/95 text-foreground"
+            : "border-border/60 bg-background/80 text-muted-foreground",
         )}
       >
         {meta.count}
@@ -61,10 +65,10 @@ const renderMeta = (meta: CompanySidebarSectionMeta, isActive: boolean) => {
   return (
     <span
       className={cn(
-        "max-w-[8rem] shrink-0 truncate rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors",
+        "max-w-[7rem] shrink-0 truncate rounded-full border px-1.5 py-0.5 text-[9px] font-medium transition-colors",
         isActive
-          ? "border-foreground/15 bg-background text-foreground"
-          : "border-border/70 bg-background/70 text-muted-foreground",
+          ? "border-foreground/15 bg-background/95 text-foreground"
+          : "border-border/60 bg-background/80 text-muted-foreground",
       )}
     >
       {meta.text}
@@ -76,6 +80,10 @@ export function SidebarNavigation({ sections }: SidebarNavigationProps) {
   const [activeSectionId, setActiveSectionId] = React.useState<string>(
     sections[0]?.id ?? "",
   );
+  const activeSectionLabel =
+    sections.find((section) => section.id === activeSectionId)?.label ??
+    sections[0]?.label ??
+    "";
 
   React.useEffect(() => {
     if (sections.length === 0) return;
@@ -154,59 +162,78 @@ export function SidebarNavigation({ sections }: SidebarNavigationProps) {
     <aside
       className={cn(
         "hidden lg:block sticky self-start shrink-0 w-[15rem] xl:w-[16rem] z-20",
-        VIEWPORT_RAIL_HEIGHT_CLASS,
         STICKY_TOP_CLASS,
       )}
     >
       <nav
         className={cn(
-          "overflow-y-auto overscroll-y-contain rounded-2xl border border-border/70 bg-card/95 p-3 shadow-lg shadow-black/10",
-          VIEWPORT_RAIL_HEIGHT_CLASS,
+          "rounded-2xl border border-border/70 bg-card/95 p-3 shadow-lg shadow-black/10",
+          VIEWPORT_RAIL_MAX_HEIGHT_CLASS,
         )}
       >
-        <div className="mb-3 space-y-1 px-1">
-          <h3 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Page Guide
-          </h3>
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            Follow the company page by section as you scroll.
-          </p>
+        <div className="rounded-xl border border-border/50 bg-background/65 px-3 py-2.5 shadow-sm shadow-black/5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 space-y-1">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                On this page
+              </p>
+              <p className="text-[11px] font-medium leading-none text-muted-foreground">
+                Currently reading
+              </p>
+              <p className="truncate text-[13px] font-semibold leading-tight text-foreground">
+                {activeSectionLabel}
+              </p>
+            </div>
+            <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
+              {sections.length} sections
+            </span>
+          </div>
         </div>
 
-        <div className="space-y-1.5">
-          {sections.map((section) => {
-            const isActive = activeSectionId === section.id;
+        <div className="mt-3 h-px bg-border/40" />
 
-            return (
-              <a
-                key={section.id}
-                href={`#${section.id}`}
-                aria-current={isActive ? "location" : undefined}
-                className={cn(
-                  "relative flex items-center justify-between gap-2 overflow-hidden rounded-xl px-3 py-2 transition-all",
-                  isActive
-                    ? "bg-accent/85 text-foreground shadow-sm shadow-black/5"
-                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
-                )}
-              >
-                <span
+        <div className="relative mt-2">
+          <div
+            className={cn(
+              "space-y-1 overflow-y-auto overscroll-y-contain pr-1 [scrollbar-width:thin]",
+              VIEWPORT_LIST_MAX_HEIGHT_CLASS,
+            )}
+          >
+            {sections.map((section) => {
+              const isActive = activeSectionId === section.id;
+
+              return (
+                <a
+                  key={section.id}
+                  href={`#${section.id}`}
+                  aria-current={isActive ? "location" : undefined}
                   className={cn(
-                    "absolute left-0 top-2 bottom-2 w-1 rounded-r-full transition-opacity",
-                    isActive ? "bg-foreground/80 opacity-100" : "opacity-0",
-                  )}
-                />
-                <span
-                  className={cn(
-                    "min-w-0 truncate pr-1 text-xs transition-colors",
-                    isActive ? "font-semibold text-foreground" : "font-medium",
+                    "relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 overflow-hidden rounded-xl border px-2.5 py-2.5 transition-all",
+                    isActive
+                      ? "border-border/60 bg-accent/90 text-foreground shadow-sm shadow-black/10"
+                      : "border-transparent text-muted-foreground hover:border-border/40 hover:bg-accent/55 hover:text-foreground",
                   )}
                 >
-                  {section.label}
-                </span>
-                {section.meta ? renderMeta(section.meta, isActive) : null}
-              </a>
-            );
-          })}
+                  <span
+                    className={cn(
+                      "absolute left-0 top-2 bottom-2 w-1 rounded-r-full transition-opacity",
+                      isActive ? "bg-foreground/85 opacity-100" : "opacity-0",
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "min-w-0 truncate pr-1 text-[12px] transition-colors",
+                      isActive ? "font-semibold text-foreground" : "font-medium",
+                    )}
+                  >
+                    {section.label}
+                  </span>
+                  {section.meta ? renderMeta(section.meta, isActive) : null}
+                </a>
+              );
+            })}
+          </div>
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-card via-card/90 to-transparent" />
         </div>
       </nav>
     </aside>
