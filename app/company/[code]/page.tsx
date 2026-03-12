@@ -60,26 +60,6 @@ const pctFormatter = new Intl.NumberFormat("en-IN", {
 
 const formatPctLabel = (value: number) => `${pctFormatter.format(value)}%`;
 
-const buildCompanyIndustrySignals = (
-  companyIndustryAnalysis: ReturnType<typeof normalizeCompanyIndustryAnalysis>,
-): string[] => {
-  if (!companyIndustryAnalysis) return [];
-
-  const signals: string[] = [];
-  const companyStage = companyIndustryAnalysis.valueChain?.companyStage?.trim();
-  if (companyStage) {
-    signals.push(companyStage);
-  }
-  if (companyIndustryAnalysis.profitPools.length > 0) {
-    signals.push(`${companyIndustryAnalysis.profitPools.length} profit pools`);
-  }
-  if (companyIndustryAnalysis.tailwinds.length > 0) {
-    signals.push(`${companyIndustryAnalysis.tailwinds.length} tailwinds`);
-  }
-
-  return signals.slice(0, 3);
-};
-
 const timelineStageConfig: Record<string, { label: string; className: string }> = {
   announced: {
     label: "announced",
@@ -285,7 +265,6 @@ export default async function Page({
     : normalizeGuidanceTrackingRows(
         (guidanceTrackingRows as GuidanceTrackingRow[] | null | undefined) ?? null,
       );
-  const companyIndustrySignals = buildCompanyIndustrySignals(normalizedCompanyIndustryAnalysis);
   const growthUpdatedAtRaw = normalizedGrowthOutlook?.updatedAtRaw ?? null;
   const growthUpdatedDate = growthUpdatedAtRaw ? new Date(growthUpdatedAtRaw) : null;
   const growthUpdatedAt =
@@ -936,14 +915,6 @@ export default async function Page({
                       {normalizedCompanyIndustryAnalysis.subSector}
                     </span>
                   )}
-                  {companyIndustrySignals.map((signal) => (
-                    <span
-                      key={signal}
-                      className="rounded-full border border-border/50 bg-background/60 px-2 py-0.5 text-[10px] text-muted-foreground"
-                    >
-                      {signal}
-                    </span>
-                  ))}
                 </div>
 
                 <div className="space-y-2">
@@ -982,33 +953,14 @@ export default async function Page({
                   normalizedCompanyIndustryAnalysis.profitPools.length > 0) && (
                   <div className={`${elevatedBlockClass} p-3 space-y-3`}>
                     <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                          Value chain
-                        </p>
-                        {normalizedCompanyIndustryAnalysis.valueChain?.companyStage && (
-                          <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
-                            {normalizedCompanyIndustryAnalysis.valueChain.companyStage}
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                        Value chain
+                      </p>
                       {normalizedCompanyIndustryAnalysis.valueChain?.companyRole && (
                         <p className="text-[12px] text-foreground leading-relaxed">
                           {normalizedCompanyIndustryAnalysis.valueChain.companyRole}
                         </p>
                       )}
-                      {normalizedCompanyIndustryAnalysis.valueChain?.stages.length ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          {normalizedCompanyIndustryAnalysis.valueChain.stages.map((stage) => (
-                            <span
-                              key={stage}
-                              className="rounded-full border border-border/50 bg-background/60 px-2 py-0.5 text-[10px] text-muted-foreground"
-                            >
-                              {stage}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
                     </div>
 
                     {normalizedCompanyIndustryAnalysis.profitPools.length > 0 && (
