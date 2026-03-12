@@ -37,7 +37,7 @@ export function FeedbackDetailDrawer({
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
       <DrawerContent className="w-full max-w-2xl">
         <DrawerHeader className="border-b border-border">
-          <DrawerTitle>Feedback Request Details</DrawerTitle>
+          <DrawerTitle>Request Details</DrawerTitle>
           <DrawerDescription>Read-only request payload from `user_requests`.</DrawerDescription>
         </DrawerHeader>
 

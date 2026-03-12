@@ -1,6 +1,5 @@
 import React from "react";
 import type { Metadata } from "next";
-import { ChartLineLabel } from "./chart";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { createClient } from "@/lib/supabase/server";
@@ -12,21 +11,9 @@ import { SidebarNavigation } from "../components/sidebar-navigation";
 import { OverviewCard } from "../components/overview-card";
 import { SectionCard } from "../components/section-card";
 import { parseSummary, transformToChartData, calculateTrend } from "../utils";
-import { TrendingUp, TrendingDown } from "lucide-react";
 import ConcallScore from "@/components/concall-score";
 import { CompanyCommentsSection } from "@/components/company/company-comments-section";
-import { Button } from "@/components/ui/button";
 import { WatchlistButton } from "@/components/watchlist-button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
 import {
   Carousel,
   CarouselContent,
@@ -39,6 +26,8 @@ import type { NormalizedGrowthScenario } from "@/lib/growth-outlook/types";
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
 import { normalizeCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/normalize";
 import { GuidanceHistorySection } from "../components/guidance-history-section";
+import { MissingSectionRequestButton } from "../components/missing-section-request-button";
+import { QuarterlyScoreSection } from "../components/quarterly-score-section";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import type {
   CompanyIndustryAnalysisRow,
@@ -46,87 +35,12 @@ import type {
 } from "@/lib/company-industry-analysis/types";
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 
-type ConcallDetails = {
-  score?: number;
-  category?: string;
-  rationale?: string[];
-  quarter_summary?: string[];
-  results_summary?: string[];
-  guidance?: string;
-  risks?: string[];
-  fy?: number;
-  qtr?: number;
-  confidence?: number;
-};
-
-type DetailQuarterContext = {
-  details: ConcallDetails | null;
-  risks: string[];
-  rationale: string[];
-  quarterSummary: string[];
-  resultsSummary: string[];
-  guidance: string | null;
-  category: string | null;
-  confidence: number | null;
-  detailScore: number;
-  detailQuarterLabel: string;
-};
-
 type RankInfo = {
   quarter?: { rank: number; total: number; percentile: number } | null;
   growth?: { rank: number; total: number; percentile: number } | null;
 };
 
 type SectorRankInfo = { rank: number | null; total: number } | null;
-
-const parseJsonObject = (val: unknown) => {
-  if (!val) return null;
-  if (typeof val === "string") {
-    try {
-      const parsed = JSON.parse(val);
-      return parsed && typeof parsed === "object" ? parsed : null;
-    } catch {
-      return null;
-    }
-  }
-  return typeof val === "object" ? val : null;
-};
-
-const buildDetailQuarterContext = (quarter: QuarterData): DetailQuarterContext => {
-  const details = parseJsonObject(quarter.details) as ConcallDetails | null;
-  const risks = Array.isArray(details?.risks) ? (details.risks as string[]).slice(0, 2) : [];
-  const rationale = Array.isArray(details?.rationale)
-    ? (details.rationale as string[]).slice(0, 2)
-    : [];
-  const quarterSummary = Array.isArray(details?.quarter_summary)
-    ? (details.quarter_summary as string[]).slice(0, 2)
-    : [];
-  const resultsSummary = Array.isArray(details?.results_summary)
-    ? (details.results_summary as string[]).slice(0, 2)
-    : [];
-  const guidance = typeof details?.guidance === "string" ? (details.guidance as string) : null;
-  const category = typeof details?.category === "string" ? (details.category as string) : null;
-  const confidence =
-    typeof details?.confidence === "number" ? (details.confidence as number) : null;
-  const detailScore = typeof details?.score === "number" ? details.score : quarter.score;
-  const detailQuarterLabel =
-    typeof details?.qtr === "number" && typeof details?.fy === "number"
-      ? `Q${details.qtr} FY${details.fy}`
-      : quarter.quarter_label;
-
-  return {
-    details,
-    risks,
-    rationale,
-    quarterSummary,
-    resultsSummary,
-    guidance,
-    category,
-    confidence,
-    detailScore,
-    detailQuarterLabel,
-  };
-};
 
 const computeAvgScore = (latestQuarterScore: number | null, growthScore: number | null) => {
   if (latestQuarterScore == null || growthScore == null) return null;
@@ -436,6 +350,8 @@ export default async function Page({
       (normalizedBusinessSnapshot?.keyDependencies.length ?? 0) > 0 ||
       (normalizedBusinessSnapshot?.keyRisksToModel.length ?? 0) > 0,
     );
+  const hasBusinessSnapshotContent =
+    hasStructuredBusinessSnapshot || hasLegacyBusinessSnapshot;
   const elevatedBlockClass =
     "rounded-xl border border-border/35 bg-background/75 shadow-md shadow-black/20";
   const elevatedMutedBlockClass =
@@ -775,28 +691,50 @@ export default async function Page({
       </div>
     );
   };
+  const renderMissingSectionState = (
+    sectionId: string,
+    sectionTitle: string,
+    description: string,
+  ) => (
+    <div className="rounded-xl border border-dashed border-border/50 bg-muted/35 p-5 shadow-md shadow-black/15">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-foreground">
+            {sectionTitle} is not ready yet for this company.
+          </p>
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+        <MissingSectionRequestButton
+          companyCode={code}
+          companyName={companyRow?.name ?? null}
+          sectionId={sectionId}
+          sectionTitle={sectionTitle}
+          className="w-full sm:w-auto"
+        />
+      </div>
+    </div>
+  );
   const sidebarSections = [
-    ...(normalizedCompanyIndustryAnalysis
-      ? [
-          {
-            ...SECTION_MAP.industryContext,
-            meta:
-              normalizedCompanyIndustryAnalysis.subSector
-                ? { kind: "text" as const, text: normalizedCompanyIndustryAnalysis.subSector }
-                : { kind: "text" as const, text: "Live" },
-          },
-        ]
-      : []),
+    {
+      ...SECTION_MAP.industryContext,
+      meta:
+        normalizedCompanyIndustryAnalysis?.subSector
+          ? { kind: "text" as const, text: normalizedCompanyIndustryAnalysis.subSector }
+          : normalizedCompanyIndustryAnalysis
+            ? { kind: "text" as const, text: "Live" }
+            : { kind: "text" as const, text: "Soon" },
+    },
     {
       ...SECTION_MAP.businessSnapshot,
       meta:
+        hasBusinessSnapshotContent &&
         typeof normalizedBusinessSnapshot?.documentsProcessed === "number"
           ? {
               kind: "count" as const,
               count: normalizedBusinessSnapshot.documentsProcessed,
               suffix: "docs",
             }
-          : normalizedBusinessSnapshot
+          : hasBusinessSnapshotContent
             ? { kind: "text" as const, text: "Live" }
             : { kind: "text" as const, text: "Soon" },
     },
@@ -806,11 +744,16 @@ export default async function Page({
     },
     {
       ...SECTION_MAP.futureGrowth,
-      meta: { kind: "score" as const, score: growthScore },
+      meta: normalizedGrowthOutlook
+        ? { kind: "score" as const, score: growthScore }
+        : { kind: "text" as const, text: "Soon" },
     },
     {
       ...SECTION_MAP.guidanceHistory,
-      meta: { kind: "count" as const, count: guidanceItems.length, suffix: "items" },
+      meta:
+        guidanceItems.length > 0
+          ? { kind: "count" as const, count: guidanceItems.length, suffix: "items" }
+          : { kind: "text" as const, text: "Soon" },
     },
     {
       ...SECTION_MAP.community,
@@ -1150,20 +1093,20 @@ export default async function Page({
           }
         />
 
-        {normalizedCompanyIndustryAnalysis && (
-          <SectionCard
-            id="industry-context"
-            title="Industry Context"
-            collapsible
-            defaultOpen={false}
-            headerAction={
-              companyIndustryGeneratedAtShort ? (
-                <span className="text-[11px] text-muted-foreground">
-                  {companyIndustryGeneratedAtShort}
-                </span>
-              ) : undefined
-            }
-          >
+        <SectionCard
+          id="industry-context"
+          title="Industry Context"
+          collapsible
+          defaultOpen={false}
+          headerAction={
+            companyIndustryGeneratedAtShort ? (
+              <span className="text-[11px] text-muted-foreground">
+                {companyIndustryGeneratedAtShort}
+              </span>
+            ) : undefined
+          }
+        >
+          {normalizedCompanyIndustryAnalysis ? (
             <div className="space-y-3">
               <div className={`${elevatedBlockClass} space-y-2.5 p-3`}>
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -1440,8 +1383,14 @@ export default async function Page({
                 </details>
               )}
             </div>
-          </SectionCard>
-        )}
+          ) : (
+            renderMissingSectionState(
+              "industry-context",
+              "Industry Context",
+              "We have not generated company-specific industry context for this company yet.",
+            )
+          )}
+        </SectionCard>
 
         <SectionCard
           id="business-overview"
@@ -1660,15 +1609,19 @@ export default async function Page({
                         )}
                       </>
                     ) : (
-                      <p className="text-sm text-muted-foreground">
-                        Business snapshot data not available yet.
-                      </p>
+                      renderMissingSectionState(
+                        "business-overview",
+                        "Business Snapshot",
+                        "We have not generated a usable business snapshot for this company yet.",
+                      )
                     )}
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Business snapshot data not available yet.
-                  </p>
+                  renderMissingSectionState(
+                    "business-overview",
+                    "Business Snapshot",
+                    "We have not generated a usable business snapshot for this company yet.",
+                  )
                 )}
               </div>
             </div>
@@ -1676,286 +1629,11 @@ export default async function Page({
         </SectionCard>
 
         <SectionCard id="sentiment-score" title="Quarterly Score">
-          <div className="flex flex-col gap-4">
-            {/* Trend indicator */}
-            <div
-              className={`flex flex-col sm:flex-row sm:items-center gap-2 rounded-xl p-3 shadow-md shadow-black/20 ${
-                trend.direction === "improving"
-                  ? "border border-emerald-300/70 bg-emerald-100 dark:bg-emerald-500/20 dark:border-emerald-500/50"
-                  : trend.direction === "declining"
-                  ? "border border-red-300/70 bg-red-100 dark:bg-red-500/20 dark:border-red-500/50"
-                  : "border border-amber-300/70 bg-amber-100 dark:bg-amber-500/20 dark:border-amber-500/50"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                {trend.direction === "improving" ? (
-                  <>
-                    <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                      Trend: Improving
-                    </span>
-                  </>
-                ) : trend.direction === "declining" ? (
-                  <>
-                    <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
-                    <span className="text-xs font-semibold text-red-700 dark:text-red-300">
-                      Trend: Declining
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                    ↔ Trend: Stable
-                  </span>
-                )}
-              </div>
-              <span className="text-[11px] text-foreground/80 sm:ml-auto break-words">
-                {trend.description}
-              </span>
-            </div>
-
-            {/* Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-          <div className="flex min-w-0 flex-col gap-2">
-                <div className="flex justify-center">
-                  <ChartLineLabel chartData={chartData} />
-                </div>
-                <p className="text-[11px] text-muted-foreground text-center">
-                  Showing the latest 12 quarterly points (newest to oldest).
-                </p>
-              </div>
-
-              <div className="flex min-w-0 flex-col gap-2 w-full">
-                <p className="text-xs font-semibold text-foreground">
-                  Score context (latest 12 quarters)
-                </p>
-                {detailQuarters.length > 0 ? (
-                  <div className="w-full max-w-full overflow-hidden">
-                    <Carousel opts={{ align: "start" }} className="w-full">
-                      <CarouselContent>
-                        {detailQuarters.map((q, idx) => {
-                          const quarterContext = buildDetailQuarterContext(q);
-                          const isLatest = idx === 0;
-
-                          return (
-                            <CarouselItem key={`${q.fy}-${q.qtr}-${idx}`} className="basis-full">
-                              <div
-                                className={`${elevatedBlockClass} h-full border-t-2 p-3 md:p-4 ${
-                                  isLatest
-                                    ? "border-t-sky-300 dark:border-t-sky-600"
-                                    : "border-t-border/40"
-                                }`}
-                              >
-                                <div className="mb-3 flex items-center justify-between gap-3">
-                                  <span className="flex items-center gap-2">
-                                    <span className="text-[11px] font-semibold text-foreground">
-                                      {quarterContext.detailQuarterLabel}
-                                    </span>
-                                    {isLatest && (
-                                      <span className="rounded-full border border-blue-200 bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:border-blue-700/40 dark:bg-blue-900/40 dark:text-blue-300">
-                                        Latest
-                                      </span>
-                                    )}
-                                  </span>
-                                  <ConcallScore score={quarterContext.detailScore} size="sm" />
-                                </div>
-
-                                {quarterContext.quarterSummary.length > 0 && (
-                                  <div className="mb-3">
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground/70">
-                                      Quarter summary
-                                    </p>
-                                    <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
-                                      {quarterContext.quarterSummary.map((item, rIdx) => (
-                                        <li
-                                          key={rIdx}
-                                          className="text-[11px] leading-relaxed text-foreground/90 line-clamp-2"
-                                        >
-                                          {item}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-
-                                {quarterContext.rationale.length > 0 && (
-                                  <div className="mb-3">
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground/70">
-                                      Rationale
-                                    </p>
-                                    <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
-                                      {quarterContext.rationale.map((item, rIdx) => (
-                                        <li
-                                          key={rIdx}
-                                          className="text-[11px] leading-relaxed text-foreground/90 line-clamp-2"
-                                        >
-                                          {item}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-
-                                {!quarterContext.details && (
-                                  <p className="mt-2 text-[10px] text-muted-foreground">
-                                    No additional context available.
-                                  </p>
-                                )}
-
-                                {quarterContext.details && (
-                                  <Drawer direction="right">
-                                    <div className="mt-3 flex justify-center sm:justify-start">
-                                      <DrawerTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          className="border border-emerald-300 bg-emerald-500 text-xs font-semibold uppercase tracking-wide text-black shadow-sm hover:bg-emerald-400"
-                                        >
-                                          Show details
-                                        </Button>
-                                      </DrawerTrigger>
-                                    </div>
-                                    <DrawerContent>
-                                      <DrawerHeader>
-                                        <DrawerTitle>
-                                          {quarterContext.detailQuarterLabel} details
-                                        </DrawerTitle>
-                                        <DrawerDescription>
-                                          Full quarter context from concall analysis details.
-                                        </DrawerDescription>
-                                      </DrawerHeader>
-                                      <div className="max-h-[75vh] space-y-4 overflow-y-auto px-4 pb-4 text-sm text-foreground">
-                                        <div className="flex items-center gap-2">
-                                          <ConcallScore score={quarterContext.detailScore} size="sm" />
-                                          {isLatest && (
-                                            <span className="rounded-full border border-blue-200 bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:border-blue-700/50 dark:bg-blue-900/40 dark:text-blue-300">
-                                              Latest
-                                            </span>
-                                          )}
-                                          {quarterContext.category && (
-                                            <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-foreground">
-                                              {quarterContext.category}
-                                            </span>
-                                          )}
-                                          {typeof quarterContext.confidence === "number" && (
-                                            <span className="text-[11px] text-muted-foreground">
-                                              Confidence: {(quarterContext.confidence * 100).toFixed(0)}%
-                                            </span>
-                                          )}
-                                        </div>
-                                        {quarterContext.quarterSummary.length > 0 && (
-                                          <div className="space-y-1.5">
-                                            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">
-                                              Quarter summary
-                                            </p>
-                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
-                                              {quarterContext.quarterSummary.map((item, rIdx) => (
-                                                <li
-                                                  key={rIdx}
-                                                  className="text-xs leading-snug text-foreground/80"
-                                                >
-                                                  {item}
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                        {quarterContext.resultsSummary.length > 0 && (
-                                          <div className="space-y-1.5">
-                                            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">
-                                              Results summary
-                                            </p>
-                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
-                                              {quarterContext.resultsSummary.map((item, rIdx) => (
-                                                <li
-                                                  key={rIdx}
-                                                  className="text-xs leading-snug text-foreground/80"
-                                                >
-                                                  {item}
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                        {quarterContext.rationale.length > 0 && (
-                                          <div className="space-y-1.5">
-                                            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">
-                                              Rationale
-                                            </p>
-                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
-                                              {quarterContext.rationale.map((item, rIdx) => (
-                                                <li
-                                                  key={rIdx}
-                                                  className="text-xs leading-snug text-foreground/80"
-                                                >
-                                                  {item}
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                        {quarterContext.guidance && (
-                                          <div className="space-y-1.5">
-                                            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">
-                                              Guidance
-                                            </p>
-                                            <p className="text-xs leading-relaxed text-foreground/80">
-                                              {quarterContext.guidance}
-                                            </p>
-                                          </div>
-                                        )}
-                                        {quarterContext.risks.length > 0 && (
-                                          <div className="space-y-1.5">
-                                            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">
-                                              Risks
-                                            </p>
-                                            <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
-                                              {quarterContext.risks.map((item, rIdx) => (
-                                                <li
-                                                  key={rIdx}
-                                                  className="text-xs leading-snug text-foreground/80"
-                                                >
-                                                  {item}
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          </div>
-                                        )}
-                                      </div>
-                                      <DrawerFooter>
-                                        <DrawerClose asChild>
-                                          <Button variant="outline">
-                                            Close
-                                          </Button>
-                                        </DrawerClose>
-                                      </DrawerFooter>
-                                    </DrawerContent>
-                                  </Drawer>
-                                )}
-                              </div>
-                            </CarouselItem>
-                          );
-                        })}
-                      </CarouselContent>
-                      {detailQuarters.length > 1 && (
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <p className="text-[10px] text-muted-foreground">
-                            Latest quarter shown first. Use arrows to move through prior quarters.
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <CarouselPrevious className="static size-9 translate-x-0 translate-y-0 border border-border bg-background text-foreground shadow-sm hover:bg-accent" />
-                            <CarouselNext className="static size-9 translate-x-0 translate-y-0 border border-border bg-background text-foreground shadow-sm hover:bg-accent" />
-                          </div>
-                        </div>
-                      )}
-                    </Carousel>
-                  </div>
-                ) : (
-                  <div className={`${nestedDetailClass} p-3 text-[11px] text-muted-foreground`}>
-                    No quarterly context available.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <QuarterlyScoreSection
+            chartData={chartData}
+            detailQuarters={detailQuarters}
+            trend={trend}
+          />
         </SectionCard>
 
         <SectionCard
@@ -2286,9 +1964,11 @@ export default async function Page({
 
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-border/50 bg-muted/35 p-6 text-sm text-muted-foreground shadow-md shadow-black/15">
-              Growth outlook data not available yet for this company.
-            </div>
+            renderMissingSectionState(
+              "future-growth",
+              "Future Growth Prospects",
+              "We have not generated forward growth outlook analysis for this company yet.",
+            )
           )}
         </SectionCard>
 
@@ -2297,11 +1977,19 @@ export default async function Page({
           title="Guidance History"
           headerAction={
             <span className="text-[11px] text-muted-foreground">
-              {guidanceItems.length} tracked
+              {guidanceItems.length > 0 ? `${guidanceItems.length} tracked` : "Not ready"}
             </span>
           }
         >
-          <GuidanceHistorySection items={guidanceItems} />
+          {guidanceItems.length > 0 ? (
+            <GuidanceHistorySection items={guidanceItems} />
+          ) : (
+            renderMissingSectionState(
+              "guidance-history",
+              "Guidance History",
+              "We have not tracked meaningful management guidance for this company yet.",
+            )
+          )}
         </SectionCard>
 
         <SectionCard id="community" title="Community">

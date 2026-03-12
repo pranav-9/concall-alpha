@@ -6,6 +6,7 @@ import {
   LabelList,
   Line,
   LineChart,
+  ReferenceLine,
   XAxis,
   YAxis,
 } from "recharts";
@@ -28,6 +29,12 @@ const chartConfig = {
 type ChartPoint = {
   qtr: string;
   score: number;
+};
+
+type ChartLineLabelProps = {
+  chartData: ChartPoint[];
+  selectedQuarter?: string | null;
+  onQuarterSelect?: (quarterLabel: string) => void;
 };
 
 /**
@@ -137,21 +144,80 @@ function shouldShowLabel(index: number, data: ChartPoint[], mobile: boolean) {
 const CustomDot = (props: {
   cx: number;
   cy: number;
-  payload: { score: number };
+  payload: { score: number; qtr?: string };
   mobile?: boolean;
+  selectedQuarter?: string | null;
+  onQuarterSelect?: (quarterLabel: string) => void;
 }) => {
-  const { cx, cy, payload, mobile } = props;
+  const { cx, cy, payload, mobile, selectedQuarter, onQuarterSelect } = props;
   const color = getScoreColor(payload.score);
+  const isSelected = payload.qtr === selectedQuarter;
+  const quarterLabel = typeof payload.qtr === "string" ? payload.qtr : null;
+
   return (
-    <g key={`dot-${cx}-${cy}`}>
+    <g
+      key={`dot-${cx}-${cy}`}
+      className={quarterLabel && onQuarterSelect ? "cursor-pointer" : undefined}
+      onClick={quarterLabel && onQuarterSelect ? () => onQuarterSelect(quarterLabel) : undefined}
+    >
+      {isSelected && (
+        <circle
+          cx={cx}
+          cy={cy}
+          r={mobile ? 7 : 8.5}
+          fill="none"
+          stroke="#38bdf8"
+          strokeWidth={1.75}
+          opacity={0.8}
+        />
+      )}
       <circle
         cx={cx}
         cy={cy}
-        r={mobile ? 3 : 4}
+        r={isSelected ? (mobile ? 4.5 : 5.5) : mobile ? 3 : 4}
         fill={color}
-        stroke={color}
-        strokeWidth={1}
+        stroke={isSelected ? "#0f172a" : color}
+        strokeWidth={isSelected ? 1.5 : 1}
       />
+    </g>
+  );
+};
+
+const CustomXAxisTick = (props: {
+  x?: number;
+  y?: number;
+  payload?: { value?: string };
+  isDark: boolean;
+  selectedQuarter?: string | null;
+  onQuarterSelect?: (quarterLabel: string) => void;
+}) => {
+  const { x = 0, y = 0, payload, isDark, selectedQuarter, onQuarterSelect } = props;
+  const value = typeof payload?.value === "string" ? payload.value : "";
+  const isSelected = value === selectedQuarter;
+  const fill = isSelected
+    ? isDark
+      ? "#e0f2fe"
+      : "#0f172a"
+    : isDark
+      ? "#94a3b8"
+      : "#64748b";
+
+  return (
+    <g
+      transform={`translate(${x},${y})`}
+      className={value && onQuarterSelect ? "cursor-pointer" : undefined}
+      onClick={value && onQuarterSelect ? () => onQuarterSelect(value) : undefined}
+    >
+      <text
+        x={0}
+        y={16}
+        textAnchor="middle"
+        fill={fill}
+        fontSize={11}
+        fontWeight={isSelected ? 700 : 500}
+      >
+        {value}
+      </text>
     </g>
   );
 };
@@ -182,9 +248,11 @@ const CustomActiveDot = (props: {
   );
 };
 
-export function ChartLineLabel(props: {
-  chartData: ChartPoint[];
-}) {
+export function ChartLineLabel({
+  chartData,
+  selectedQuarter,
+  onQuarterSelect,
+}: ChartLineLabelProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
@@ -208,8 +276,8 @@ export function ChartLineLabel(props: {
   const gridStroke = isDark ? "#334155" : "#cbd5e1";
   const lineStroke = isDark ? "#e2e8f0" : "#0f172a";
   const labelFill = isDark ? "#e2e8f0" : "#1e293b";
-  const denseDesktop = !isMobile && props.chartData.length >= 10;
-  const showStar = !isMobile && props.chartData.length <= 10;
+  const denseDesktop = !isMobile && chartData.length >= 10;
+  const showStar = !isMobile && chartData.length <= 10;
 
   return (
     <Card className="w-full bg-transparent border-0 shadow-none">
@@ -217,7 +285,7 @@ export function ChartLineLabel(props: {
         <ChartContainer config={chartConfig}>
           <LineChart
             accessibilityLayer
-            data={props.chartData}
+            data={chartData}
             margin={{
               top: isMobile ? 18 : 24,
               left: isMobile ? 8 : 28,
@@ -226,6 +294,14 @@ export function ChartLineLabel(props: {
             }}
           >
             <CartesianGrid vertical={false} stroke={gridStroke} />
+            {selectedQuarter && (
+              <ReferenceLine
+                x={selectedQuarter}
+                stroke="#38bdf8"
+                strokeDasharray="3 4"
+                strokeOpacity={0.45}
+              />
+            )}
             <XAxis
               dataKey="qtr"
               tickLine={false}
@@ -234,6 +310,14 @@ export function ChartLineLabel(props: {
               minTickGap={isMobile ? 24 : denseDesktop ? 28 : 8}
               interval={isMobile || denseDesktop ? "preserveStartEnd" : 0}
               stroke={axisStroke}
+              tick={(tickProps) => (
+                <CustomXAxisTick
+                  {...tickProps}
+                  isDark={isDark}
+                  selectedQuarter={selectedQuarter}
+                  onQuarterSelect={onQuarterSelect}
+                />
+              )}
             />
             <YAxis
               stroke={axisStroke}
@@ -260,21 +344,29 @@ export function ChartLineLabel(props: {
                 const p = dotProps as {
                   cx?: number;
                   cy?: number;
-                  payload?: { score?: number };
+                  payload?: { score?: number; qtr?: string };
                 };
                 if (typeof p.cx !== "number" || typeof p.cy !== "number") {
                   return <g />;
                 }
                 return (
-                  <CustomDot
-                    key={`dot-${p.cx}-${p.cy}-${Number(p.payload?.score ?? 0)}`}
-                    cx={p.cx}
-                    cy={p.cy}
-                    payload={{ score: Number(p.payload?.score ?? 0) }}
-                    mobile={isMobile}
-                  />
-                );
-              }}
+                    <CustomDot
+                      key={`dot-${p.cx}-${p.cy}-${Number(p.payload?.score ?? 0)}`}
+                      cx={p.cx}
+                      cy={p.cy}
+                      payload={{
+                        score: Number(p.payload?.score ?? 0),
+                        qtr:
+                          typeof p.payload?.qtr === "string"
+                            ? p.payload.qtr
+                            : undefined,
+                      }}
+                      mobile={isMobile}
+                      selectedQuarter={selectedQuarter}
+                      onQuarterSelect={onQuarterSelect}
+                    />
+                  );
+                }}
               activeDot={(dotProps: unknown) => {
                 const p = dotProps as {
                   cx?: number;
@@ -321,7 +413,7 @@ export function ChartLineLabel(props: {
                       y={y}
                       value={value}
                       index={p.index}
-                      chartData={props.chartData}
+                      chartData={chartData}
                       mobile={isMobile}
                       fill={labelFill}
                       showStar={showStar}

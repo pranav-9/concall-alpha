@@ -1,7 +1,8 @@
--- User request intake table for feedback, stock additions, and bug reports
+-- User request intake table for feedback, stock additions, bug reports, and
+-- one-click missing section requests from company pages.
 create table if not exists public.user_requests (
   id uuid primary key default gen_random_uuid(),
-  request_type text not null check (request_type in ('feedback', 'stock_addition', 'bug_report')),
+  request_type text not null check (request_type in ('feedback', 'stock_addition', 'bug_report', 'missing_section')),
   subject_target text not null,
   message text not null,
   status text not null default 'new' check (status in ('new', 'reviewed', 'in_progress', 'resolved', 'closed')),
@@ -9,6 +10,24 @@ create table if not exists public.user_requests (
   user_agent text null,
   created_at timestamptz not null default now()
 );
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'user_requests_request_type_check'
+  ) then
+    alter table public.user_requests
+      drop constraint user_requests_request_type_check;
+  end if;
+
+  alter table public.user_requests
+    add constraint user_requests_request_type_check
+    check (request_type in ('feedback', 'stock_addition', 'bug_report', 'missing_section'));
+exception
+  when duplicate_object then null;
+end $$;
 
 create index if not exists idx_user_requests_created_at_desc
   on public.user_requests (created_at desc);
@@ -38,4 +57,3 @@ begin
       with check (true);
   end if;
 end $$;
-

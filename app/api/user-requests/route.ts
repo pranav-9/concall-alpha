@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
-type RequestType = "feedback" | "stock_addition" | "bug_report";
+type RequestType =
+  | "feedback"
+  | "stock_addition"
+  | "bug_report"
+  | "missing_section";
 
 type Payload = {
   requestType?: string;
@@ -15,6 +19,7 @@ const requestTypes = new Set<RequestType>([
   "feedback",
   "stock_addition",
   "bug_report",
+  "missing_section",
 ]);
 
 function validate(payload: Payload) {

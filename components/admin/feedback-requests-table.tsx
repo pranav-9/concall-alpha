@@ -13,7 +13,7 @@ import { FeedbackDetailDrawer } from "./feedback-detail-drawer";
 
 export type FeedbackRequestRow = {
   id: string;
-  request_type: "feedback" | "stock_addition" | "bug_report";
+  request_type: "feedback" | "stock_addition" | "bug_report" | "missing_section";
   subject_target: string;
   message: string | null;
   source_path: string | null;
@@ -39,7 +39,7 @@ export function FeedbackRequestsTable({ rows }: { rows: FeedbackRequestRow[] }) 
     <>
       <div className="rounded-xl border border-border bg-card">
         <div className="border-b border-border px-4 py-3">
-          <h2 className="text-sm font-semibold text-foreground">Feedback Requests</h2>
+          <h2 className="text-sm font-semibold text-foreground">User Requests</h2>
         </div>
         <div className="p-2">
           <Table>
