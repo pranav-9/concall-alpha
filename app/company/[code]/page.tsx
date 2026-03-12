@@ -59,6 +59,19 @@ type ConcallDetails = {
   confidence?: number;
 };
 
+type DetailQuarterContext = {
+  details: ConcallDetails | null;
+  risks: string[];
+  rationale: string[];
+  quarterSummary: string[];
+  resultsSummary: string[];
+  guidance: string | null;
+  category: string | null;
+  confidence: number | null;
+  detailScore: number;
+  detailQuarterLabel: string;
+};
+
 type RankInfo = {
   quarter?: { rank: number; total: number; percentile: number } | null;
   growth?: { rank: number; total: number; percentile: number } | null;
@@ -77,6 +90,42 @@ const parseJsonObject = (val: unknown) => {
     }
   }
   return typeof val === "object" ? val : null;
+};
+
+const buildDetailQuarterContext = (quarter: QuarterData): DetailQuarterContext => {
+  const details = parseJsonObject(quarter.details) as ConcallDetails | null;
+  const risks = Array.isArray(details?.risks) ? (details.risks as string[]).slice(0, 2) : [];
+  const rationale = Array.isArray(details?.rationale)
+    ? (details.rationale as string[]).slice(0, 2)
+    : [];
+  const quarterSummary = Array.isArray(details?.quarter_summary)
+    ? (details.quarter_summary as string[]).slice(0, 2)
+    : [];
+  const resultsSummary = Array.isArray(details?.results_summary)
+    ? (details.results_summary as string[]).slice(0, 2)
+    : [];
+  const guidance = typeof details?.guidance === "string" ? (details.guidance as string) : null;
+  const category = typeof details?.category === "string" ? (details.category as string) : null;
+  const confidence =
+    typeof details?.confidence === "number" ? (details.confidence as number) : null;
+  const detailScore = typeof details?.score === "number" ? details.score : quarter.score;
+  const detailQuarterLabel =
+    typeof details?.qtr === "number" && typeof details?.fy === "number"
+      ? `Q${details.qtr} FY${details.fy}`
+      : quarter.quarter_label;
+
+  return {
+    details,
+    risks,
+    rationale,
+    quarterSummary,
+    resultsSummary,
+    guidance,
+    category,
+    confidence,
+    detailScore,
+    detailQuarterLabel,
+  };
 };
 
 const computeAvgScore = (latestQuarterScore: number | null, growthScore: number | null) => {
@@ -288,7 +337,6 @@ export default async function Page({
   const chartData = transformToChartData(data);
   const trend = calculateTrend(data.slice(0, 12));
   const detailQuarters = data.slice(0, 12);
-  const detailQuartersOldestFirst = [...detailQuarters].reverse();
   const normalizedGrowthOutlook = normalizeGrowthOutlook({
     details: growthData?.[0]?.details,
     growthScore: growthData?.[0]?.growth_score,
@@ -1680,93 +1728,47 @@ export default async function Page({
                 <p className="text-xs font-semibold text-foreground">
                   Score context (latest 12 quarters)
                 </p>
-                <div className="flex justify-center">
+                {detailQuarters.length > 0 ? (
                   <div className="w-full max-w-full overflow-hidden">
-                    <Carousel
-                      opts={{
-                        align: "start",
-                        startIndex:
-                          detailQuartersOldestFirst.length > 0
-                            ? detailQuartersOldestFirst.length - 1
-                            : 0,
-                      }}
-                      className="w-full"
-                    >
+                    <Carousel opts={{ align: "start" }} className="w-full">
                       <CarouselContent>
-                        {detailQuartersOldestFirst.map((q, idx) => {
-                          const details = parseJsonObject(q.details) as ConcallDetails | null;
-                          const risks = Array.isArray(details?.risks)
-                            ? (details?.risks as string[]).slice(0, 2)
-                            : [];
-                          const rationale = Array.isArray(details?.rationale)
-                            ? (details?.rationale as string[]).slice(0, 2)
-                            : [];
-                          const quarterSummary = Array.isArray(details?.quarter_summary)
-                            ? (details?.quarter_summary as string[]).slice(0, 2)
-                            : [];
-                          const resultsSummary = Array.isArray(details?.results_summary)
-                            ? (details?.results_summary as string[]).slice(0, 2)
-                            : [];
-                          const guidance =
-                            typeof details?.guidance === "string"
-                              ? (details?.guidance as string)
-                              : null;
-                          const category =
-                            typeof details?.category === "string"
-                              ? (details?.category as string)
-                              : null;
-                          const confidence =
-                            typeof details?.confidence === "number"
-                              ? (details?.confidence as number)
-                              : null;
-                          const detailScore =
-                            typeof details?.score === "number" ? details.score : q.score;
-                          const detailQuarterLabel =
-                            typeof details?.qtr === "number" && typeof details?.fy === "number"
-                              ? `Q${details.qtr} FY${details.fy}`
-                              : q.quarter_label;
-                          const isLatest =
-                            idx === detailQuartersOldestFirst.length - 1;
+                        {detailQuarters.map((q, idx) => {
+                          const quarterContext = buildDetailQuarterContext(q);
+                          const isLatest = idx === 0;
 
                           return (
-                            <CarouselItem
-                              key={`${q.fy}-${q.qtr}-${idx}`}
-                              className="basis-full md:basis-1/2 flex justify-center"
-                            >
+                            <CarouselItem key={`${q.fy}-${q.qtr}-${idx}`} className="basis-full">
                               <div
-                                className={`${elevatedBlockClass} h-full w-[90%] p-3 ${
-                                  isLatest ? "border-t-2 border-t-sky-300 dark:border-t-sky-600" : ""
+                                className={`${elevatedBlockClass} h-full border-t-2 p-3 md:p-4 ${
+                                  isLatest
+                                    ? "border-t-sky-300 dark:border-t-sky-600"
+                                    : "border-t-border/40"
                                 }`}
                               >
-                                <div className="flex items-center justify-between mb-2">
+                                <div className="mb-3 flex items-center justify-between gap-3">
                                   <span className="flex items-center gap-2">
                                     <span className="text-[11px] font-semibold text-foreground">
-                                      {detailQuarterLabel}
+                                      {quarterContext.detailQuarterLabel}
                                     </span>
                                     {isLatest && (
-                                      <span className="text-[10px] font-semibold text-blue-700 px-2 py-0.5 rounded-full bg-blue-100 border border-blue-200 dark:text-blue-300 dark:bg-blue-900/40 dark:border-blue-700/40">
+                                      <span className="rounded-full border border-blue-200 bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:border-blue-700/40 dark:bg-blue-900/40 dark:text-blue-300">
                                         Latest
                                       </span>
                                     )}
                                   </span>
-                                  <ConcallScore score={detailScore} size="sm" />
+                                  <ConcallScore score={quarterContext.detailScore} size="sm" />
                                 </div>
-                                {/* category intentionally hidden */}
-                                {guidance && (
-                                  <p className="text-[11px] text-foreground/90 leading-relaxed line-clamp-3 mb-2">
-                                    {guidance}
-                                  </p>
-                                )}
-                                {quarterSummary.length > 0 && (
-                                  <div className="mb-2">
-                                    <p className="text-[10px] uppercase tracking-wide text-foreground/70 font-semibold">
+
+                                {quarterContext.quarterSummary.length > 0 && (
+                                  <div className="mb-3">
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground/70">
                                       Quarter summary
                                     </p>
                                     <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
-                                      {quarterSummary.map((item, rIdx) => (
+                                      {quarterContext.quarterSummary.map((item, rIdx) => (
                                         <li
                                           key={rIdx}
-                                          className="text-[11px] text-foreground/90 leading-relaxed line-clamp-2"
+                                          className="text-[11px] leading-relaxed text-foreground/90 line-clamp-2"
                                         >
                                           {item}
                                         </li>
@@ -1774,16 +1776,17 @@ export default async function Page({
                                     </ul>
                                   </div>
                                 )}
-                                {rationale.length > 0 && (
-                                  <div className="mb-2">
-                                    <p className="text-[10px] uppercase tracking-wide text-foreground/70 font-semibold">
+
+                                {quarterContext.rationale.length > 0 && (
+                                  <div className="mb-3">
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide text-foreground/70">
                                       Rationale
                                     </p>
                                     <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
-                                      {rationale.map((item, rIdx) => (
+                                      {quarterContext.rationale.map((item, rIdx) => (
                                         <li
                                           key={rIdx}
-                                          className="text-[11px] text-foreground/90 leading-relaxed line-clamp-2"
+                                          className="text-[11px] leading-relaxed text-foreground/90 line-clamp-2"
                                         >
                                           {item}
                                         </li>
@@ -1791,18 +1794,20 @@ export default async function Page({
                                     </ul>
                                   </div>
                                 )}
-                                {!details && (
-                                  <p className="text-[10px] text-muted-foreground mt-2">
+
+                                {!quarterContext.details && (
+                                  <p className="mt-2 text-[10px] text-muted-foreground">
                                     No additional context available.
                                   </p>
                                 )}
-                                {details && (
+
+                                {quarterContext.details && (
                                   <Drawer direction="right">
                                     <div className="mt-3 flex justify-center sm:justify-start">
                                       <DrawerTrigger asChild>
                                         <Button
                                           size="sm"
-                                          className="text-xs font-semibold uppercase tracking-wide bg-emerald-500 text-black border border-emerald-300 shadow-sm hover:bg-emerald-400"
+                                          className="border border-emerald-300 bg-emerald-500 text-xs font-semibold uppercase tracking-wide text-black shadow-sm hover:bg-emerald-400"
                                         >
                                           Show details
                                         </Button>
@@ -1811,46 +1816,41 @@ export default async function Page({
                                     <DrawerContent>
                                       <DrawerHeader>
                                         <DrawerTitle>
-                                          {detailQuarterLabel} details
+                                          {quarterContext.detailQuarterLabel} details
                                         </DrawerTitle>
                                         <DrawerDescription>
-                                          Full quarter context from concall
-                                          analysis details.
+                                          Full quarter context from concall analysis details.
                                         </DrawerDescription>
                                       </DrawerHeader>
-                                      <div className="px-4 pb-4 space-y-4 text-sm text-foreground max-h-[75vh] overflow-y-auto">
+                                      <div className="max-h-[75vh] space-y-4 overflow-y-auto px-4 pb-4 text-sm text-foreground">
                                         <div className="flex items-center gap-2">
-                                          <ConcallScore
-                                            score={detailScore}
-                                            size="sm"
-                                          />
+                                          <ConcallScore score={quarterContext.detailScore} size="sm" />
                                           {isLatest && (
-                                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700/50">
+                                            <span className="rounded-full border border-blue-200 bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:border-blue-700/50 dark:bg-blue-900/40 dark:text-blue-300">
                                               Latest
                                             </span>
                                           )}
-                                          {category && (
-                                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
-                                              {category}
+                                          {quarterContext.category && (
+                                            <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-foreground">
+                                              {quarterContext.category}
                                             </span>
                                           )}
-                                          {typeof confidence === "number" && (
+                                          {typeof quarterContext.confidence === "number" && (
                                             <span className="text-[11px] text-muted-foreground">
-                                              Confidence:{" "}
-                                              {(confidence * 100).toFixed(0)}%
+                                              Confidence: {(quarterContext.confidence * 100).toFixed(0)}%
                                             </span>
                                           )}
                                         </div>
-                                        {quarterSummary.length > 0 && (
+                                        {quarterContext.quarterSummary.length > 0 && (
                                           <div className="space-y-1.5">
-                                            <p className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                                            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">
                                               Quarter summary
                                             </p>
                                             <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
-                                              {quarterSummary.map((item, rIdx) => (
+                                              {quarterContext.quarterSummary.map((item, rIdx) => (
                                                 <li
                                                   key={rIdx}
-                                                  className="text-xs text-foreground/80 leading-snug"
+                                                  className="text-xs leading-snug text-foreground/80"
                                                 >
                                                   {item}
                                                 </li>
@@ -1858,16 +1858,16 @@ export default async function Page({
                                             </ul>
                                           </div>
                                         )}
-                                        {resultsSummary.length > 0 && (
+                                        {quarterContext.resultsSummary.length > 0 && (
                                           <div className="space-y-1.5">
-                                            <p className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                                            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">
                                               Results summary
                                             </p>
                                             <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
-                                              {resultsSummary.map((item, rIdx) => (
+                                              {quarterContext.resultsSummary.map((item, rIdx) => (
                                                 <li
                                                   key={rIdx}
-                                                  className="text-xs text-foreground/80 leading-snug"
+                                                  className="text-xs leading-snug text-foreground/80"
                                                 >
                                                   {item}
                                                 </li>
@@ -1875,26 +1875,16 @@ export default async function Page({
                                             </ul>
                                           </div>
                                         )}
-                                        {guidance && (
+                                        {quarterContext.rationale.length > 0 && (
                                           <div className="space-y-1.5">
-                                            <p className="text-sm font-semibold text-foreground uppercase tracking-wide">
-                                              Guidance
-                                            </p>
-                                            <p className="text-xs text-foreground/80 leading-relaxed">
-                                              {guidance}
-                                            </p>
-                                          </div>
-                                        )}
-                                        {rationale.length > 0 && (
-                                          <div className="space-y-1.5">
-                                            <p className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                                            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">
                                               Rationale
                                             </p>
                                             <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
-                                              {rationale.map((item, rIdx) => (
+                                              {quarterContext.rationale.map((item, rIdx) => (
                                                 <li
                                                   key={rIdx}
-                                                  className="text-xs text-foreground/80 leading-snug"
+                                                  className="text-xs leading-snug text-foreground/80"
                                                 >
                                                   {item}
                                                 </li>
@@ -1902,16 +1892,26 @@ export default async function Page({
                                             </ul>
                                           </div>
                                         )}
-                                        {risks.length > 0 && (
+                                        {quarterContext.guidance && (
                                           <div className="space-y-1.5">
-                                            <p className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                                            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">
+                                              Guidance
+                                            </p>
+                                            <p className="text-xs leading-relaxed text-foreground/80">
+                                              {quarterContext.guidance}
+                                            </p>
+                                          </div>
+                                        )}
+                                        {quarterContext.risks.length > 0 && (
+                                          <div className="space-y-1.5">
+                                            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">
                                               Risks
                                             </p>
                                             <ul className="mt-1 space-y-1 list-disc pl-4 marker:text-muted-foreground">
-                                              {risks.map((item, rIdx) => (
+                                              {quarterContext.risks.map((item, rIdx) => (
                                                 <li
                                                   key={rIdx}
-                                                  className="text-xs text-foreground/80 leading-snug"
+                                                  className="text-xs leading-snug text-foreground/80"
                                                 >
                                                   {item}
                                                 </li>
@@ -1935,13 +1935,24 @@ export default async function Page({
                           );
                         })}
                       </CarouselContent>
-                      <div className="mt-2 flex justify-center gap-2 xl:hidden">
-                        <CarouselPrevious className="static translate-x-0 translate-y-0 border border-border bg-background text-foreground hover:bg-accent" />
-                        <CarouselNext className="static translate-x-0 translate-y-0 border border-border bg-background text-foreground hover:bg-accent" />
-                      </div>
+                      {detailQuarters.length > 1 && (
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <p className="text-[10px] text-muted-foreground">
+                            Latest quarter shown first. Use arrows to move through prior quarters.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <CarouselPrevious className="static size-9 translate-x-0 translate-y-0 border border-border bg-background text-foreground shadow-sm hover:bg-accent" />
+                            <CarouselNext className="static size-9 translate-x-0 translate-y-0 border border-border bg-background text-foreground shadow-sm hover:bg-accent" />
+                          </div>
+                        </div>
+                      )}
                     </Carousel>
                   </div>
-                </div>
+                ) : (
+                  <div className={`${nestedDetailClass} p-3 text-[11px] text-muted-foreground`}>
+                    No quarterly context available.
+                  </div>
+                )}
               </div>
             </div>
           </div>
