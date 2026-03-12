@@ -223,9 +223,9 @@ export function QuarterlyScoreSection({
           </p>
         </div>
 
-        <div className="flex min-w-0 flex-col rounded-2xl border border-border/45 border-t-4 border-t-sky-300 bg-card/95 p-3 shadow-lg shadow-black/10">
+        <div className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border/45 border-t-4 border-t-sky-300 bg-card/95 p-4 shadow-lg shadow-black/10">
           {detailQuarters.length > 0 ? (
-            <Carousel setApi={setCarouselApi} opts={{ align: "start" }} className="w-full">
+            <Carousel setApi={setCarouselApi} opts={{ align: "start" }} className="min-w-0 w-full">
               <CarouselContent className="ml-0">
                 {detailQuarters.map((quarter, index) => {
                   const quarterContext = buildDetailQuarterContext(quarter);
@@ -238,7 +238,7 @@ export function QuarterlyScoreSection({
                       key={`${quarter.fy}-${quarter.qtr}-${index}`}
                       className="basis-full pl-0"
                     >
-                      <div className="space-y-4">
+                      <div className="space-y-4 px-1 pb-1">
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0 space-y-1">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -260,11 +260,15 @@ export function QuarterlyScoreSection({
                               )}
                             </div>
                           </div>
-                          <div className="flex shrink-0 items-start gap-2">
+                          <div className="flex shrink-0 items-start gap-2 rounded-xl border border-border/40 bg-background/70 px-2.5 py-1.5">
                             <span className="pt-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                               Score
                             </span>
-                            <ConcallScore score={quarterContext.detailScore} size="md" />
+                            <ConcallScore
+                              score={quarterContext.detailScore}
+                              size="md"
+                              className="ring-[2px] shadow-none"
+                            />
                           </div>
                         </div>
 

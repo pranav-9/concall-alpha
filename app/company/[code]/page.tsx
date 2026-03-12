@@ -444,7 +444,7 @@ export default async function Page({
         <div className="mt-2 space-y-2.5">
           <div className={`space-y-1 border-l-2 pl-2.5 ${accentClass}`}>
             <div className="flex flex-wrap items-center gap-1.5">
-              <p className="text-[13px] font-semibold text-foreground leading-snug">{leadItem.theme}</p>
+              <p className="text-[12px] font-semibold text-foreground leading-snug">{leadItem.theme}</p>
               {leadItem.timeHorizon && (
                 <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
                   {leadItem.timeHorizon.replace(/_/g, " ")}
@@ -923,7 +923,7 @@ export default async function Page({
                       Industry summary
                     </p>
                   {normalizedCompanyIndustryAnalysis.industryPositioning?.industrySummary && (
-                    <p className="max-w-5xl text-[18px] sm:text-[21px] leading-[1.5] text-foreground">
+                    <p className="max-w-5xl text-[15px] sm:text-[16px] font-medium leading-relaxed text-foreground">
                       {normalizedCompanyIndustryAnalysis.industryPositioning.industrySummary}
                     </p>
                   )}
@@ -935,7 +935,7 @@ export default async function Page({
                         <p className="text-[10px] uppercase tracking-[0.14em] text-foreground/70 font-semibold">
                           Where this company fits
                         </p>
-                        <p className="mt-1.5 text-[13px] text-foreground leading-relaxed">
+                        <p className="mt-1.5 text-[12px] text-foreground leading-relaxed">
                           {normalizedCompanyIndustryAnalysis.industryPositioning.whereThisCompanyFits}
                         </p>
                       </div>
@@ -945,7 +945,7 @@ export default async function Page({
                         <p className="text-[10px] uppercase tracking-[0.14em] text-foreground/70 font-semibold">
                           Why this industry exists
                         </p>
-                        <p className="mt-1.5 text-[13px] text-foreground leading-relaxed">
+                        <p className="mt-1.5 text-[12px] text-foreground leading-relaxed">
                           {normalizedCompanyIndustryAnalysis.industryPositioning.whyThisIndustryExists}
                         </p>
                       </div>
@@ -963,7 +963,7 @@ export default async function Page({
                         Value chain
                       </p>
                       {normalizedCompanyIndustryAnalysis.valueChain?.companyRole && (
-                        <p className="max-w-2xl text-[14px] text-foreground leading-relaxed">
+                        <p className="max-w-2xl text-[12px] text-foreground leading-relaxed">
                           {normalizedCompanyIndustryAnalysis.valueChain.companyRole}
                         </p>
                       )}
@@ -989,7 +989,7 @@ export default async function Page({
                                 <CarouselItem key={`${pool.pool}-${idx}`} className="basis-full">
                                   <div className={`${nestedDetailClass} h-full p-3.5 space-y-2.5`}>
                                     <div className="flex flex-wrap items-center gap-1.5">
-                                      <p className="text-[13px] font-semibold text-foreground">{pool.pool}</p>
+                                      <p className="text-[12px] font-semibold text-foreground">{pool.pool}</p>
                                       {pool.companyExposure && (
                                         <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
                                           Exposure: {pool.companyExposure}
@@ -997,12 +997,12 @@ export default async function Page({
                                       )}
                                     </div>
                                     {pool.whoCapturesIt && (
-                                      <p className="text-[12px] text-foreground/90 leading-relaxed">
+                                      <p className="text-[11px] text-foreground/90 leading-relaxed">
                                         Captured by: {pool.whoCapturesIt}
                                       </p>
                                     )}
                                     {pool.whyItIsProfitable && (
-                                      <p className="text-[12px] text-muted-foreground leading-relaxed">
+                                      <p className="text-[11px] text-muted-foreground leading-relaxed">
                                         {pool.whyItIsProfitable}
                                       </p>
                                     )}
@@ -1018,7 +1018,7 @@ export default async function Page({
                         ) : (
                           <div className={`${nestedDetailClass} p-3.5 space-y-2.5`}>
                             <div className="flex flex-wrap items-center gap-1.5">
-                              <p className="text-[13px] font-semibold text-foreground">
+                              <p className="text-[12px] font-semibold text-foreground">
                                 {normalizedCompanyIndustryAnalysis.profitPools[0]?.pool}
                               </p>
                               {normalizedCompanyIndustryAnalysis.profitPools[0]?.companyExposure && (
@@ -1028,12 +1028,12 @@ export default async function Page({
                               )}
                             </div>
                             {normalizedCompanyIndustryAnalysis.profitPools[0]?.whoCapturesIt && (
-                              <p className="text-[12px] text-foreground/90 leading-relaxed">
+                              <p className="text-[11px] text-foreground/90 leading-relaxed">
                                 Captured by: {normalizedCompanyIndustryAnalysis.profitPools[0].whoCapturesIt}
                               </p>
                             )}
                             {normalizedCompanyIndustryAnalysis.profitPools[0]?.whyItIsProfitable && (
-                              <p className="text-[12px] text-muted-foreground leading-relaxed">
+                              <p className="text-[11px] text-muted-foreground leading-relaxed">
                                 {normalizedCompanyIndustryAnalysis.profitPools[0].whyItIsProfitable}
                               </p>
                             )}
