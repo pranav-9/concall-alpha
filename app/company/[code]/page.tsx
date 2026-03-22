@@ -1428,15 +1428,9 @@ export default async function Page({
                                   </p>
                                 )}
                                 {aboutSupportingText && (
-                                  <details className="group flex max-w-4xl flex-col">
-                                    <summary className="order-2 mt-1 list-none cursor-pointer text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
-                                      <span className="group-open:hidden">Show more</span>
-                                      <span className="hidden group-open:inline">Show less</span>
-                                    </summary>
-                                    <p className="order-1 text-[13px] text-muted-foreground leading-relaxed line-clamp-2 group-open:line-clamp-none">
-                                      {aboutSupportingText}
-                                    </p>
-                                  </details>
+                                  <p className="max-w-4xl text-[13px] text-muted-foreground leading-relaxed">
+                                    {aboutSupportingText}
+                                  </p>
                                 )}
                               </div>
                             )}
