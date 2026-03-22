@@ -70,8 +70,32 @@ const getTrailMentionBadgeClass = (mentionType: string | null) => {
 const getGuidanceSupportText = (item: NormalizedGuidanceItem) =>
   item.statusReason ?? item.latestView;
 
-const getGuidanceRecencyLabel = (item: NormalizedGuidanceItem) =>
-  item.latestMentionPeriod ?? item.firstMentionPeriod;
+const getGuidanceMentionCount = (item: NormalizedGuidanceItem) => {
+  if (item.sourceMentions.length > 0) return item.sourceMentions.length;
+  if (item.trail.length > 0) return item.trail.length;
+  return item.mentionedPeriods.length;
+};
+
+const getGuidanceMentionSummaryText = (item: NormalizedGuidanceItem) => {
+  const mentionCount = getGuidanceMentionCount(item);
+  const mentionCountLabel =
+    mentionCount > 0 ? `${mentionCount} mention${mentionCount === 1 ? "" : "s"}` : null;
+
+  if (item.firstMentionPeriod && item.latestMentionPeriod) {
+    const periodLabel =
+      item.firstMentionPeriod === item.latestMentionPeriod
+        ? item.firstMentionPeriod
+        : `${item.firstMentionPeriod} -> ${item.latestMentionPeriod}`;
+    return mentionCountLabel ? `${periodLabel} · ${mentionCountLabel}` : periodLabel;
+  }
+
+  if (item.firstMentionPeriod || item.latestMentionPeriod) {
+    const periodLabel = item.firstMentionPeriod ?? item.latestMentionPeriod;
+    return mentionCountLabel ? `${periodLabel} · ${mentionCountLabel}` : periodLabel;
+  }
+
+  return mentionCountLabel;
+};
 
 function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
   return (
@@ -169,7 +193,7 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
   const renderThread = (item: NormalizedGuidanceItem, index: number) => {
     const statusStyle = STATUS_STYLES[item.statusKey];
     const supportText = getGuidanceSupportText(item);
-    const recencyLabel = getGuidanceRecencyLabel(item);
+    const mentionSummaryText = getGuidanceMentionSummaryText(item);
 
     return (
       <details
@@ -190,9 +214,18 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
                     <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                       {item.guidanceTypeLabel ?? "Guidance"}
                     </span>
-                    {recencyLabel && (
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "h-fit shrink-0 px-2 py-0.5 text-[9px] font-semibold",
+                        statusStyle.badgeClass,
+                      )}
+                    >
+                      {item.statusLabel}
+                    </Badge>
+                    {mentionSummaryText && (
                       <span className="rounded-full border border-border/50 bg-background/85 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
-                        {recencyLabel}
+                        {mentionSummaryText}
                       </span>
                     )}
                   </div>
@@ -201,31 +234,16 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
                   </p>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "h-fit shrink-0 text-[10px] font-semibold",
-                      statusStyle.badgeClass,
-                    )}
-                  >
-                    {item.statusLabel}
-                  </Badge>
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-background/85 text-muted-foreground transition-colors group-hover:bg-accent/60 group-open:bg-accent/70 group-open:text-foreground">
-                    <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
-                  </span>
-                </div>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/85 text-muted-foreground transition-colors group-hover:bg-accent/60 group-open:bg-accent/70 group-open:text-foreground">
+                  <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                </span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-2 pl-9">
-              <p className="min-w-0 flex-1 line-clamp-1 text-[11px] leading-relaxed text-foreground/70">
+            <div className="pl-9">
+              <p className="line-clamp-1 text-[11px] leading-relaxed text-foreground/70">
                 {supportText ?? "Open to view the quarter-by-quarter guidance trail."}
               </p>
-              <span className="shrink-0 text-[11px] font-medium text-muted-foreground">
-                <span className="group-open:hidden">See trail</span>
-                <span className="hidden group-open:inline">Hide trail</span>
-              </span>
             </div>
           </div>
         </summary>
