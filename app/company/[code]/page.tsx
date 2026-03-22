@@ -1329,72 +1329,92 @@ export default async function Page({
               )}
 
               {normalizedGrowthOutlook.catalysts.length > 0 && (
-                  <div className={`${elevatedMutedBlockClass} p-3 space-y-2`}>
-                    <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
-                      Top 3 Growth Catalysts
-                    </p>
-                    <Carousel opts={{ align: "start" }} className="w-full">
-                      <CarouselContent>
-                        {normalizedGrowthOutlook.catalysts.slice(0, 3).map((c, idx) => {
-                          const timelineItems = c.timelineItems;
-                          const remainingTimelineItems = timelineItems.slice(2);
-                          const hasTimelineDetails = remainingTimelineItems.length > 0;
-                          return (
-                            <CarouselItem key={idx} className="basis-full md:basis-1/2 xl:basis-1/3">
-                              <div
-                                className={`h-full rounded-xl border border-border/35 bg-background/75 p-3 shadow-md shadow-black/20 space-y-2 ${
-                                  c.expectedImpact === "revenue"
-                                    ? "border-l-2 border-l-emerald-500/70"
-                                    : c.expectedImpact === "margin"
-                                    ? "border-l-2 border-l-sky-500/70"
-                                    : "border-l-2 border-l-amber-500/70"
-                                }`}
-                              >
-                                {c.catalyst && (
-                                  <p className="text-sm font-semibold text-foreground leading-snug">
-                                    {c.catalyst}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-                                  {c.type && (
-                                    <span className="px-2 py-0.5 rounded-full border border-blue-200 bg-blue-100 text-blue-700 dark:bg-blue-900/35 dark:text-blue-200 dark:border-blue-700/40">
-                                      {c.type}
-                                    </span>
+                <div className={`${elevatedMutedBlockClass} p-3 space-y-3`}>
+                  <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
+                    Top 3 Growth Catalysts
+                  </p>
+                  <Carousel opts={{ align: "start" }} className="w-full">
+                    <CarouselContent className="items-stretch">
+                      {normalizedGrowthOutlook.catalysts.slice(0, 3).map((c, idx) => {
+                        const timelineItems = c.timelineItems;
+                        const visibleTimelineItems = timelineItems.slice(0, 2);
+                        const remainingTimelineItems = timelineItems.slice(2);
+                        const hasTimelineDetails = remainingTimelineItems.length > 0;
+                        const catalystAccentClass =
+                          c.expectedImpact === "revenue"
+                            ? "before:bg-emerald-400/90"
+                            : c.expectedImpact === "margin"
+                              ? "before:bg-sky-400/90"
+                              : "before:bg-amber-400/90";
+                        const catalystDotClass =
+                          c.expectedImpact === "revenue"
+                            ? "bg-emerald-500"
+                            : c.expectedImpact === "margin"
+                              ? "bg-sky-500"
+                              : "bg-amber-500";
+
+                        return (
+                          <CarouselItem key={idx} className="basis-full md:basis-1/2 xl:basis-1/3">
+                            <article
+                              className={`relative flex h-full flex-col overflow-hidden rounded-xl border border-border/25 bg-background/85 p-4 shadow-sm before:absolute before:inset-x-0 before:top-0 before:h-1 ${catalystAccentClass}`}
+                            >
+                              <div className="flex h-full flex-1 flex-col gap-4">
+                                <div className="space-y-2.5">
+                                  {c.catalyst && (
+                                    <p className="text-[15px] font-semibold leading-snug text-foreground">
+                                      {c.catalyst}
+                                    </p>
                                   )}
-                                  {c.expectedImpact && (
-                                    <span className="px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-100 dark:border-emerald-700/40">
-                                      Impact: {c.expectedImpact}
-                                    </span>
-                                  )}
+                                  <div className="flex flex-wrap items-center gap-2 text-[10px]">
+                                    {c.type && (
+                                      <span className="rounded-full border border-blue-200 bg-blue-100 px-2.5 py-0.5 text-blue-700 dark:border-blue-700/40 dark:bg-blue-900/35 dark:text-blue-200">
+                                        {c.type}
+                                      </span>
+                                    )}
+                                    {c.expectedImpact && (
+                                      <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-0.5 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/35 dark:text-emerald-100">
+                                        Impact: {c.expectedImpact}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
 
                                 {timelineItems.length > 0 && (
-                                  <div className="space-y-1.5">
-                                    <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                                      Timeline
-                                    </p>
-                                    <div className="relative pl-4 before:content-[''] before:absolute before:left-[3px] before:top-1 before:bottom-1 before:w-px before:bg-border/80">
-                                      <ul className="space-y-2">
-                                        {timelineItems.slice(0, 2).map((t, tIdx) => {
+                                  <div className="space-y-2.5">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+                                        Timeline
+                                      </p>
+                                      {timelineItems.length > 2 && (
+                                        <span className="text-[10px] text-muted-foreground">
+                                          {timelineItems.length} updates
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="relative pl-6 before:absolute before:left-[8px] before:top-1 before:bottom-1 before:w-px before:bg-border/60">
+                                      <ul className="space-y-3">
+                                        {visibleTimelineItems.map((t, tIdx) => {
                                           const stageMeta = getTimelineStageDisplay(t.stage);
                                           const period = t.period ?? "";
                                           const source = t.source ?? "";
                                           const quote = t.quote ?? "";
                                           const delta = t.delta ?? "";
+
                                           return (
                                             <li
                                               key={`${idx}-timeline-primary-${tIdx}`}
-                                              className="relative pl-3 space-y-1 border-l border-border/60 ml-1"
+                                              className="relative space-y-1.5 pl-4"
                                             >
-                                              <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-muted-foreground" />
-                                              <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                                              <span className={`absolute left-0 top-2 h-2.5 w-2.5 rounded-full border-2 border-background ${catalystDotClass}`} />
+                                              <div className="flex flex-wrap items-center gap-1.5">
                                                 <span
-                                                  className={`px-2 py-0.5 rounded-full uppercase tracking-wide ${stageMeta.className}`}
+                                                  className={`px-2 py-0.5 rounded-full uppercase tracking-wide text-[10px] ${stageMeta.className}`}
                                                 >
                                                   {stageMeta.label}
                                                 </span>
                                                 {(period || source) && (
-                                                  <span className="text-muted-foreground">
+                                                  <span className="text-[11px] text-muted-foreground">
                                                     {period}
                                                     {period && source ? " · " : ""}
                                                     {source}
@@ -1402,12 +1422,12 @@ export default async function Page({
                                                 )}
                                               </div>
                                               {quote && (
-                                                <p className="text-[11px] text-foreground leading-snug">
+                                                <p className="text-[12px] leading-relaxed text-foreground">
                                                   {quote}
                                                 </p>
                                               )}
                                               {delta && (
-                                                <p className="text-[10px] text-muted-foreground leading-snug">
+                                                <p className="text-[11px] leading-relaxed text-muted-foreground">
                                                   {delta}
                                                 </p>
                                               )}
@@ -1420,69 +1440,85 @@ export default async function Page({
                                 )}
 
                                 {hasTimelineDetails && (
-                                  <details className={`${nestedDetailClass} px-3 py-2`}>
-                                    <summary className="cursor-pointer list-none text-[11px] text-muted-foreground hover:text-foreground">
-                                      Show full timeline ({timelineItems.length})
-                                    </summary>
-                                    <div className="mt-3 space-y-3">
-                                      <div className="relative pl-4 before:content-[''] before:absolute before:left-[3px] before:top-1 before:bottom-1 before:w-px before:bg-border/80">
-                                        <ul className="space-y-2">
-                                          {remainingTimelineItems.map((t, tIdx) => {
-                                            const stageMeta = getTimelineStageDisplay(t.stage);
-                                            const period = t.period ?? "";
-                                            const source = t.source ?? "";
-                                            const quote = t.quote ?? "";
-                                            const delta = t.delta ?? "";
-                                            return (
-                                              <li
-                                                key={`${idx}-timeline-extra-${tIdx}`}
-                                                className="relative pl-3 space-y-1 border-l border-border/60 ml-1"
-                                              >
-                                                <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-muted-foreground" />
-                                                <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-                                                  <span
-                                                    className={`px-2 py-0.5 rounded-full uppercase tracking-wide ${stageMeta.className}`}
-                                                  >
-                                                    {stageMeta.label}
-                                                  </span>
-                                                  {(period || source) && (
-                                                    <span className="text-muted-foreground">
-                                                      {period}
-                                                      {period && source ? " · " : ""}
-                                                      {source}
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                {quote && (
-                                                  <p className="text-[11px] text-foreground leading-snug">
-                                                    {quote}
-                                                  </p>
-                                                )}
-                                                {delta && (
-                                                  <p className="text-[10px] text-muted-foreground leading-snug">
-                                                    {delta}
-                                                  </p>
-                                                )}
-                                              </li>
-                                            );
-                                          })}
-                                        </ul>
+                                  <details className="group mt-auto border-t border-border/30 pt-3">
+                                    <summary className="list-none cursor-pointer">
+                                      <div className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/25 px-3 py-2.5 transition-colors hover:border-border hover:bg-muted/35">
+                                        <div className="space-y-0.5">
+                                          <span className="block text-[11px] font-medium text-foreground">
+                                            Open full timeline
+                                          </span>
+                                          <span className="block text-[10px] text-muted-foreground">
+                                            {timelineItems.length} updates across the full catalyst trail
+                                          </span>
+                                        </div>
+                                        <span className="text-[11px] font-medium text-muted-foreground">
+                                          <span className="group-open:hidden">Open</span>
+                                          <span className="hidden group-open:inline">Hide</span>
+                                        </span>
                                       </div>
+                                    </summary>
+                                    <div className="mt-3 relative pl-6 before:absolute before:left-[8px] before:top-1 before:bottom-1 before:w-px before:bg-border/60">
+                                      <ul className="space-y-3">
+                                        {remainingTimelineItems.map((t, tIdx) => {
+                                          const stageMeta = getTimelineStageDisplay(t.stage);
+                                          const period = t.period ?? "";
+                                          const source = t.source ?? "";
+                                          const quote = t.quote ?? "";
+                                          const delta = t.delta ?? "";
+
+                                          return (
+                                            <li
+                                              key={`${idx}-timeline-extra-${tIdx}`}
+                                              className="relative space-y-1.5 pl-4"
+                                            >
+                                              <span className={`absolute left-0 top-2 h-2.5 w-2.5 rounded-full border-2 border-background ${catalystDotClass}`} />
+                                              <div className="flex flex-wrap items-center gap-1.5">
+                                                <span
+                                                  className={`px-2 py-0.5 rounded-full uppercase tracking-wide text-[10px] ${stageMeta.className}`}
+                                                >
+                                                  {stageMeta.label}
+                                                </span>
+                                                {(period || source) && (
+                                                  <span className="text-[11px] text-muted-foreground">
+                                                    {period}
+                                                    {period && source ? " · " : ""}
+                                                    {source}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              {quote && (
+                                                <p className="text-[12px] leading-relaxed text-foreground">
+                                                  {quote}
+                                                </p>
+                                              )}
+                                              {delta && (
+                                                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                                  {delta}
+                                                </p>
+                                              )}
+                                            </li>
+                                          );
+                                        })}
+                                      </ul>
                                     </div>
                                   </details>
                                 )}
                               </div>
-                            </CarouselItem>
-                          );
-                        })}
-                      </CarouselContent>
-                      <div className="flex justify-center gap-2 mt-2">
-                        <CarouselPrevious className="static translate-x-0 translate-y-0 border border-border bg-background text-foreground hover:bg-accent" />
-                        <CarouselNext className="static translate-x-0 translate-y-0 border border-border bg-background text-foreground hover:bg-accent" />
+                            </article>
+                          </CarouselItem>
+                        );
+                      })}
+                    </CarouselContent>
+
+                    <div className="mt-2 flex justify-center gap-2 xl:hidden">
+                      <div className="flex items-center gap-2">
+                        <CarouselPrevious className="static size-9 translate-x-0 translate-y-0 border border-border bg-background/80 text-foreground hover:bg-accent" />
+                        <CarouselNext className="static size-9 translate-x-0 translate-y-0 border border-border bg-background/80 text-foreground hover:bg-accent" />
                       </div>
-                    </Carousel>
-                  </div>
-                )}
+                    </div>
+                  </Carousel>
+                </div>
+              )}
               {hasFutureGrowthDeepDive && (
                 <details className={`group ${nestedDetailClass} px-3 py-2.5`}>
                   <summary className="list-none cursor-pointer">
