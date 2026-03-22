@@ -1,31 +1,78 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# Story of a Stock
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+Story of a Stock is a concall-driven stock research portal built on Next.js and Supabase. It turns earnings-call and management commentary into structured company pages, quarterly and growth scores, rankings, guidance tracking, and lightweight user feedback loops.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+This repository is no longer a starter template. The README below reflects the current product and developer setup.
 
-## Admin Panel (This Project)
+## What the app includes
 
-This project includes a passcode-gated admin panel at `/admin` with:
+- Home page with top stocks, recent score updates, and coverage-universe stats
+- Company detail pages with:
+  - overview card
+  - industry context
+  - business snapshot
+  - quarterly score
+  - future growth prospects
+  - guidance history
+  - community comments
+  - watchlist action
+  - one-click missing-section requests
+- Leaderboards for quarterly sentiment and growth outlook
+- Sector overview pages with score aggregates
+- "How Scores Work" explainer page
+- User request intake flow for stock requests, feedback, and bug reports
+- Authenticated watchlists
+- Passcode-gated admin dashboard for activity and moderation analytics
 
-- Unique visitor count (cookie/device based)
-- Top viewed companies
-- Feedback request monitoring (`user_requests`)
+## Key product capabilities
 
-### Required environment variables
+- Quarterly score and growth score workflows
+- Evidence-backed company research sections
+- Guidance tracking with trail-style history
+- Community comments, likes, and reports
+- Request intake for stock additions, feedback, and bug reports
+- One-click `Request this` actions for missing company sections
+- Authenticated watchlists backed by Supabase Auth
+- Admin analytics around visitors, requests, comments, reports, accounts, and watchlists
+
+## Main routes
+
+- `/` – home / coverage universe
+- `/company/[code]` – company detail page
+- `/company` – latest quarterly sentiment leaderboard
+- `/leaderboards` – sentiment + growth leaderboards
+- `/sectors` – sector overview
+- `/how-scores-work` – scoring methodology explainer
+- `/requests` – request intake form
+- `/watchlists` – authenticated watchlist page
+- `/admin` – passcode-gated admin dashboard
+- `/auth/*` – login, sign-up, forgot password, update password, auth callbacks
+
+## Tech stack
+
+- Next.js 15
+- React 19
+- Supabase
+- Tailwind CSS
+- shadcn/ui + Radix UI primitives
+- Recharts
+- Embla Carousel
+- Sonner
+- Vaul
+- Vercel Analytics
+- Vercel Speed Insights
+
+## Local setup
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure environment variables
+
+Copy `.env.example` to `.env.local` and fill in:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
@@ -34,97 +81,99 @@ ADMIN_PANEL_PASSCODE=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-### Required SQL setup
+What these are used for:
 
-Run these SQL files in Supabase SQL editor:
+- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY`
+  - app-wide Supabase client/server auth and data access
+- `ADMIN_PANEL_PASSCODE`
+  - passcode gate for `/admin`
+- `SUPABASE_SERVICE_ROLE_KEY`
+  - admin dashboard reads and service-role-backed operations
 
-- `lib/supabase/user_requests.sql`
+### 3. Apply the app-owned SQL setup
+
+Run these files in the Supabase SQL editor:
+
 - `lib/supabase/page_view_events.sql`
+- `lib/supabase/user_requests.sql`
 - `lib/supabase/company_comments.sql`
+- `lib/supabase/watchlists.sql`
 
-## Features
+These files set up the portal's interaction and analytics tables:
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+- anonymous page-view tracking
+- user requests
+- company comments / likes / reports
+- watchlists and watchlist items
 
-## Demo
+### 4. Make sure the research data tables exist
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+This repo also expects populated research data tables that are read by the app, including tables such as:
 
-## Deploy to Vercel
+- `company`
+- `concall_analysis`
+- `growth_outlook`
+- `business_snapshot`
+- `company_industry_analysis`
+- `guidance_tracking`
 
-Vercel deployment will guide you through creating a Supabase account and project.
+Those source datasets are not provisioned by the SQL files above.
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+### 5. Run the app
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+```bash
+npm run dev
+```
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+Open `http://localhost:3000`.
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+Other useful commands:
 
-## Clone and run locally
+```bash
+npm run build
+npm run start
+npm run lint
+```
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+## Important operational notes
 
-2. Create a Next.js app using the Supabase Starter template npx command
+- Watchlists require a signed-in Supabase Auth user.
+- The admin dashboard requires both:
+  - `ADMIN_PANEL_PASSCODE`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+- User requests now support an internal `missing_section` type used by one-click company-page requests.
+- The public `/requests` form still exposes only:
+  - `feedback`
+  - `stock_addition`
+  - `bug_report`
+- The admin dashboard defaults to the `7d` range.
+- A floating request CTA and page-view tracking are global app behaviors wired through the root layout.
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+## Admin dashboard
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+The `/admin` panel currently tracks:
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+- unique users
+- accounts created
+- watchlists created
+- company views
+- user requests
+- total comments
+- total reports
 
-3. Use `cd` to change into the app's directory
+It also includes recent-activity and moderation tables such as:
 
-   ```bash
-   cd with-supabase-app
-   ```
+- recent accounts
+- recent watchlists
+- top companies viewed
+- feedback / request intake rows
+- recent company comments
+- reported comments
 
-4. Rename `.env.example` to `.env.local` and update the following:
+## Notes on product behavior
 
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=[INSERT SUPABASE PROJECT API ANON KEY]
-   ```
-
-   Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
-
-5. You can now run the Next.js local development server:
-
-   ```bash
-   npm run dev
-   ```
-
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
-
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
-
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
-
-## Feedback and issues
-
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
-
-## More Supabase examples
-
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+- Company pages are organized around sectioned analysis rather than raw transcript dumps.
+- `Industry Context` and `Business Snapshot` are collapsed by default.
+- `Guidance History` now uses thread-style guidance trails instead of full comparison cards.
+- `Quarterly Score` uses a synced chart + one-card-at-a-time context carousel.
+- Missing company sections can be requested inline with a one-click CTA.
