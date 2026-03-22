@@ -33,6 +33,11 @@ import type {
   CompanyIndustryAnalysisRow,
   NormalizedIndustryTheme,
 } from "@/lib/company-industry-analysis/types";
+import type {
+  NormalizedRevenueBreakdownItem,
+  NormalizedRevenueSplitHistoryRow,
+  NormalizedSegmentGrowthCagr3yRow,
+} from "@/lib/business-snapshot/types";
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 
 type RankInfo = {
@@ -59,6 +64,58 @@ const pctFormatter = new Intl.NumberFormat("en-IN", {
 });
 
 const formatPctLabel = (value: number) => `${pctFormatter.format(value)}%`;
+
+const formatCompactLabel = (value: string) => value.replace(/_/g, " ").trim();
+
+const formatRangeLabel = (start: string | null, end: string | null) => {
+  if (start && end) return `${start} -> ${end}`;
+  return start ?? end ?? null;
+};
+
+const extractSortNumber = (value: string | null | undefined) => {
+  if (!value) return Number.NEGATIVE_INFINITY;
+  const matches = value.match(/\d{2,4}/g);
+  if (!matches?.length) return Number.NEGATIVE_INFINITY;
+  const raw = matches[matches.length - 1];
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+};
+
+const getMarginProfileDisplay = (value: string | null) => {
+  const normalized = value?.trim().toLowerCase();
+  switch (normalized) {
+    case "higher":
+      return {
+        label: "Higher margin",
+        className:
+          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
+      };
+    case "medium":
+      return {
+        label: "Medium margin",
+        className:
+          "border-amber-200/80 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200",
+      };
+    case "lower":
+      return {
+        label: "Lower margin",
+        className:
+          "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
+      };
+    case "unknown":
+      return {
+        label: "Margin unknown",
+        className: "border-border/60 bg-muted/60 text-foreground",
+      };
+    default:
+      return normalized
+        ? {
+            label: formatCompactLabel(normalized),
+            className: "border-border/60 bg-muted/60 text-foreground",
+          }
+        : null;
+  }
+};
 
 const timelineStageConfig: Record<string, { label: string; className: string }> = {
   announced: {
@@ -298,17 +355,21 @@ export default async function Page({
     : null;
   const aboutCompany = normalizedBusinessSnapshot?.aboutCompany ?? null;
   const revenueBreakdown = normalizedBusinessSnapshot?.revenueBreakdown ?? null;
+  const historicalEconomics = normalizedBusinessSnapshot?.historicalEconomics ?? null;
   const aboutHeading =
     aboutCompany?.aboutShort ?? normalizedBusinessSnapshot?.businessSummaryShort ?? null;
   const aboutSupportingText =
-    aboutCompany?.businessActivity ??
-    aboutCompany?.aboutLong ??
-    normalizedBusinessSnapshot?.businessSummaryLong ??
-    null;
+    aboutCompany?.aboutLong ?? normalizedBusinessSnapshot?.businessSummaryLong ?? null;
+  const hasHistoricalEconomics = Boolean(
+    historicalEconomics?.companyRevenueCagr3y ||
+      (historicalEconomics?.revenueSplitHistory.length ?? 0) > 0 ||
+      (historicalEconomics?.segmentGrowthCagr3y.length ?? 0) > 0,
+  );
   const hasStructuredBusinessSnapshot =
     Boolean(
       aboutHeading ||
         aboutSupportingText ||
+        hasHistoricalEconomics ||
         (revenueBreakdown?.bySegment.length ?? 0) > 0 ||
         (revenueBreakdown?.byProductOrService.length ?? 0) > 0,
     );
@@ -340,7 +401,7 @@ export default async function Page({
       normalizedGrowthOutlook?.scenarios?.downside,
   );
   const sortRevenueEntries = (
-    entries: Array<{ name: string; description: string | null; revenueSharePercent: number | null }>,
+    entries: NormalizedRevenueBreakdownItem[],
   ) =>
     [...entries].sort((a, b) => {
       if (a.revenueSharePercent == null && b.revenueSharePercent == null) return 0;
@@ -352,6 +413,13 @@ export default async function Page({
   const hasRevenueBreakdown =
     (revenueBreakdown?.bySegment.length ?? 0) > 0 ||
     (revenueBreakdown?.byProductOrService.length ?? 0) > 0;
+  const hasBusinessSnapshotLeftColumn = Boolean(
+    aboutHeading || aboutSupportingText || historicalEconomics,
+  );
+  const hasBusinessSnapshotRightColumn = hasRevenueBreakdown;
+  const hasStructuredBusinessSnapshotColumns = Boolean(
+    hasBusinessSnapshotLeftColumn || hasBusinessSnapshotRightColumn,
+  );
 
   const renderRevenueBreakdownCard = ({
     title,
@@ -359,7 +427,7 @@ export default async function Page({
     className,
   }: {
     title: string;
-    entries: Array<{ name: string; description: string | null; revenueSharePercent: number | null }>;
+    entries: NormalizedRevenueBreakdownItem[];
     className?: string;
   }) => {
     if (entries.length === 0) return null;
@@ -372,37 +440,48 @@ export default async function Page({
           {title}
         </p>
         <div className="mt-1.5 space-y-0">
-          {visibleEntries.map((entry, idx) => (
-            <div
-              key={`${entry.name}-${idx}`}
-              className={idx === 0 ? "py-2" : "border-t border-border/40 py-2"}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <p className={`${idx === 0 ? "text-[15px]" : "text-sm"} font-medium text-foreground leading-snug`}>
-                      {entry.name}
-                    </p>
-                    {idx === 0 && entry.revenueSharePercent != null && (
-                      <span className="rounded-full border border-emerald-200/80 bg-emerald-100 px-2 py-0.5 text-[10px] text-emerald-800 shrink-0 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
-                        Top disclosed
-                      </span>
+          {visibleEntries.map((entry, idx) => {
+            const marginProfileDisplay = getMarginProfileDisplay(entry.marginProfile);
+
+            return (
+              <div
+                key={`${entry.name}-${idx}`}
+                className={idx === 0 ? "py-2" : "border-t border-border/40 py-2"}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <p className={`${idx === 0 ? "text-[15px]" : "text-sm"} font-medium text-foreground leading-snug`}>
+                        {entry.name}
+                      </p>
+                      {marginProfileDisplay && (
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${marginProfileDisplay.className}`}
+                        >
+                          {marginProfileDisplay.label}
+                        </span>
+                      )}
+                    </div>
+                    {entry.description && (
+                      <p className={`${idx === 0 ? "text-[13px]" : "text-xs"} text-muted-foreground leading-relaxed`}>
+                        {entry.description}
+                      </p>
+                    )}
+                    {entry.marginProfileNote && (
+                      <p className="text-[11px] text-muted-foreground/90 leading-relaxed">
+                        {entry.marginProfileNote}
+                      </p>
                     )}
                   </div>
+                  {entry.revenueSharePercent != null && (
+                    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground shrink-0">
+                      {formatPctLabel(entry.revenueSharePercent)}
+                    </span>
+                  )}
                 </div>
-                {entry.revenueSharePercent != null && (
-                  <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground shrink-0">
-                    {formatPctLabel(entry.revenueSharePercent)}
-                  </span>
-                )}
               </div>
-              {entry.description && (
-                <p className={`mt-1 ${idx === 0 ? "text-[13px]" : "text-xs"} text-muted-foreground leading-relaxed`}>
-                  {entry.description}
-                </p>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
         {extraEntries.length > 0 && (
           <details className="mt-2 border-t border-border/35 pt-2">
@@ -410,24 +489,233 @@ export default async function Page({
               Show more ({extraEntries.length})
             </summary>
             <div className="mt-2 space-y-2">
-              {extraEntries.map((entry, idx) => (
-                <div key={`${entry.name}-extra-${idx}`} className="border-l border-border/60 pl-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-[11px] font-medium text-foreground leading-snug">{entry.name}</p>
-                    {entry.revenueSharePercent != null && (
-                      <span className="text-[10px] text-muted-foreground shrink-0">
-                        {formatPctLabel(entry.revenueSharePercent)}
-                      </span>
-                    )}
+              {extraEntries.map((entry, idx) => {
+                const marginProfileDisplay = getMarginProfileDisplay(entry.marginProfile);
+
+                return (
+                  <div key={`${entry.name}-extra-${idx}`} className="border-l border-border/60 pl-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <p className="text-[11px] font-medium text-foreground leading-snug">{entry.name}</p>
+                          {marginProfileDisplay && (
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${marginProfileDisplay.className}`}
+                            >
+                              {marginProfileDisplay.label}
+                            </span>
+                          )}
+                        </div>
+                        {entry.description && (
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">{entry.description}</p>
+                        )}
+                        {entry.marginProfileNote && (
+                          <p className="text-[10px] text-muted-foreground/90 leading-relaxed">
+                            {entry.marginProfileNote}
+                          </p>
+                        )}
+                      </div>
+                      {entry.revenueSharePercent != null && (
+                        <span className="text-[10px] text-muted-foreground shrink-0">
+                          {formatPctLabel(entry.revenueSharePercent)}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  {entry.description && (
-                    <p className="mt-0.5 text-[11px] text-muted-foreground leading-relaxed">{entry.description}</p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </details>
         )}
+      </div>
+    );
+  };
+  const renderHistoricalEconomicsCard = (
+    history: NonNullable<typeof historicalEconomics>,
+  ) => {
+    const companyRevenueCagr = history.companyRevenueCagr3y;
+    const hasCompanyRevenueCagr = Boolean(
+      companyRevenueCagr &&
+        (companyRevenueCagr.cagrPercent != null ||
+          companyRevenueCagr.startYear ||
+          companyRevenueCagr.endYear ||
+          companyRevenueCagr.scope ||
+          companyRevenueCagr.basis),
+    );
+    const revenueSplitRows = [...history.revenueSplitHistory].sort(
+      (a, b) => extractSortNumber(b.year) - extractSortNumber(a.year),
+    );
+    const visibleRevenueSplitRows = revenueSplitRows.slice(0, 2);
+    const extraRevenueSplitRows = revenueSplitRows.slice(2);
+    const segmentGrowthRows = [...history.segmentGrowthCagr3y].sort((a, b) =>
+      compareNullableNumbers(a.cagrPercent, b.cagrPercent, "desc"),
+    );
+    const hasSegmentGrowth = segmentGrowthRows.length > 0;
+    const hasRevenueSplitHistory = revenueSplitRows.length > 0;
+    const historicalMetaColumn = hasCompanyRevenueCagr || hasSegmentGrowth;
+
+    if (!historicalMetaColumn && !hasRevenueSplitHistory) return null;
+
+    const renderRevenueSplitRow = (
+      row: NormalizedRevenueSplitHistoryRow,
+      key: string,
+    ) => (
+      <div key={key} className={`${snapshotSubsectionClass} p-3`}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] font-semibold text-foreground">
+              {row.year ?? "Period"}
+            </p>
+            {row.basis && (
+              <span className="text-[10px] text-muted-foreground">
+                {formatCompactLabel(row.basis)}
+              </span>
+            )}
+          </div>
+        </div>
+        {row.buckets.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {row.buckets.map((bucket) => (
+              <span
+                key={`${key}-${bucket.name}`}
+                className="rounded-full border border-border/55 bg-background/70 px-2 py-0.5 text-[10px] text-foreground"
+              >
+                {bucket.name}
+                {bucket.revenueSharePercent != null
+                  ? ` ${formatPctLabel(bucket.revenueSharePercent)}`
+                  : ""}
+              </span>
+            ))}
+          </div>
+        )}
+        {row.comparabilityNote && (
+          <p className="mt-2 text-[10px] text-muted-foreground leading-relaxed">
+            {row.comparabilityNote}
+          </p>
+        )}
+      </div>
+    );
+
+    return (
+      <div className={`${snapshotBlockClass} min-w-0 p-3 sm:p-4`}>
+        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          Historical Economics
+        </p>
+        <div
+          className={`mt-2.5 grid grid-cols-1 gap-3 ${
+            historicalMetaColumn && hasRevenueSplitHistory
+              ? "xl:grid-cols-[minmax(17rem,0.9fr)_minmax(0,1.1fr)]"
+              : ""
+          }`}
+        >
+          {historicalMetaColumn && (
+            <div className="space-y-3">
+              {hasCompanyRevenueCagr && companyRevenueCagr && (
+                <div className={`${snapshotSubsectionClass} p-3`}>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                    Company Revenue CAGR (3Y)
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-end gap-2">
+                    {companyRevenueCagr.cagrPercent != null && (
+                      <p className="text-[22px] font-semibold leading-none text-foreground">
+                        {formatPctLabel(companyRevenueCagr.cagrPercent)}
+                      </p>
+                    )}
+                    {formatRangeLabel(
+                      companyRevenueCagr.startYear,
+                      companyRevenueCagr.endYear,
+                    ) && (
+                      <span className="text-[11px] text-muted-foreground">
+                        {formatRangeLabel(
+                          companyRevenueCagr.startYear,
+                          companyRevenueCagr.endYear,
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  {(companyRevenueCagr.scope || companyRevenueCagr.basis) && (
+                    <p className="mt-1.5 text-[10px] text-muted-foreground">
+                      {[companyRevenueCagr.scope, companyRevenueCagr.basis]
+                        .filter((value): value is string => Boolean(value))
+                        .map((value) => formatCompactLabel(value))
+                        .join(" · ")}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {hasSegmentGrowth && (
+                <div className={`${snapshotSubsectionClass} p-3`}>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                    Segment Growth CAGR (3Y)
+                  </p>
+                  <div className="mt-2 space-y-2">
+                    {segmentGrowthRows.map((row: NormalizedSegmentGrowthCagr3yRow, idx) => (
+                      <div
+                        key={`${row.segment}-${idx}`}
+                        className={idx === 0 ? "space-y-1" : "space-y-1 border-t border-border/35 pt-2"}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-[12px] font-medium text-foreground leading-snug">
+                            {row.segment}
+                          </p>
+                          {row.cagrPercent != null && (
+                            <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground shrink-0">
+                              {formatPctLabel(row.cagrPercent)}
+                            </span>
+                          )}
+                        </div>
+                        {(formatRangeLabel(row.startYear, row.endYear) ||
+                          row.comparability ||
+                          row.basis) && (
+                          <p className="text-[10px] text-muted-foreground leading-relaxed">
+                            {[
+                              formatRangeLabel(row.startYear, row.endYear),
+                              row.comparability
+                                ? `${formatCompactLabel(row.comparability)} comparability`
+                                : null,
+                              row.basis ? formatCompactLabel(row.basis) : null,
+                            ]
+                              .filter((value): value is string => Boolean(value))
+                              .join(" · ")}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {hasRevenueSplitHistory && (
+            <div className={`${snapshotSubsectionClass} p-3`}>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                Revenue Split History
+              </p>
+              <div className="mt-2 space-y-2">
+                {visibleRevenueSplitRows.map((row, idx) =>
+                  renderRevenueSplitRow(row, `${row.year ?? "period"}-${idx}`),
+                )}
+              </div>
+              {extraRevenueSplitRows.length > 0 && (
+                <details className="mt-2 border-t border-border/35 pt-2">
+                  <summary className="cursor-pointer text-[10px] text-muted-foreground hover:text-foreground">
+                    Show more ({extraRevenueSplitRows.length})
+                  </summary>
+                  <div className="mt-2 space-y-2">
+                    {extraRevenueSplitRows.map((row, idx) =>
+                      renderRevenueSplitRow(
+                        row,
+                        `${row.year ?? "period"}-extra-${idx}`,
+                      ),
+                    )}
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -1118,51 +1406,67 @@ export default async function Page({
             {normalizedBusinessSnapshot ? (
               <>
                 {hasStructuredBusinessSnapshot ? (
-                  <div
-                    className={`grid grid-cols-1 gap-4 ${
-                      aboutHeading || aboutSupportingText
-                        ? "xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.95fr)] xl:items-start"
-                        : ""
-                    }`}
-                  >
-                    {(aboutHeading || aboutSupportingText) && (
-                      <div className="min-w-0 space-y-2">
-                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                          About
-                        </p>
-                        {aboutHeading && (
-                          <p className="max-w-4xl text-[17px] sm:text-[19px] font-semibold text-foreground leading-snug">
-                            {aboutHeading}
-                          </p>
-                        )}
-                        {aboutSupportingText && (
-                          <p className="max-w-4xl text-[13px] text-muted-foreground leading-relaxed">
-                            {aboutSupportingText}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                  <>
+                    {hasStructuredBusinessSnapshotColumns && (
+                      <div
+                        className={`grid grid-cols-1 gap-4 ${
+                          hasBusinessSnapshotLeftColumn && hasBusinessSnapshotRightColumn
+                            ? "xl:grid-cols-[minmax(0,1.05fr)_minmax(20rem,0.95fr)] xl:items-start"
+                            : ""
+                        }`}
+                      >
+                        {hasBusinessSnapshotLeftColumn && (
+                          <div className="min-w-0 space-y-4">
+                            {(aboutHeading || aboutSupportingText) && (
+                              <div className="min-w-0 space-y-2">
+                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                  About
+                                </p>
+                                {aboutHeading && (
+                                  <p className="max-w-4xl text-[17px] sm:text-[19px] font-semibold text-foreground leading-snug">
+                                    {aboutHeading}
+                                  </p>
+                                )}
+                                {aboutSupportingText && (
+                                  <details className="group flex max-w-4xl flex-col">
+                                    <summary className="order-2 mt-1 list-none cursor-pointer text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+                                      <span className="group-open:hidden">Show more</span>
+                                      <span className="hidden group-open:inline">Show less</span>
+                                    </summary>
+                                    <p className="order-1 text-[13px] text-muted-foreground leading-relaxed line-clamp-2 group-open:line-clamp-none">
+                                      {aboutSupportingText}
+                                    </p>
+                                  </details>
+                                )}
+                              </div>
+                            )}
 
-                    {hasRevenueBreakdown && (
-                      <div className={`${snapshotBlockClass} min-w-0 p-3 sm:p-4`}>
-                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                          Revenue Breakdown
-                        </p>
-                        <div className="mt-2.5 space-y-3">
-                          {renderRevenueBreakdownCard({
-                            title: "By Segment",
-                            entries: revenueBreakdown?.bySegment ?? [],
-                            className: "",
-                          })}
-                          {renderRevenueBreakdownCard({
-                            title: "By Product / Service",
-                            entries: revenueBreakdown?.byProductOrService ?? [],
-                            className: "",
-                          })}
-                        </div>
+                            {historicalEconomics && renderHistoricalEconomicsCard(historicalEconomics)}
+                          </div>
+                        )}
+
+                        {hasBusinessSnapshotRightColumn && (
+                          <div className={`${snapshotBlockClass} min-w-0 p-3 sm:p-4`}>
+                            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                              Revenue Breakdown
+                            </p>
+                            <div className="mt-2.5 space-y-3">
+                              {renderRevenueBreakdownCard({
+                                title: "By Segment",
+                                entries: revenueBreakdown?.bySegment ?? [],
+                                className: "",
+                              })}
+                              {renderRevenueBreakdownCard({
+                                title: "By Product / Service",
+                                entries: revenueBreakdown?.byProductOrService ?? [],
+                                className: "",
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
+                  </>
                 ) : hasLegacyBusinessSnapshot ? (
                   <>
                     <div className="grid grid-cols-1 gap-3">

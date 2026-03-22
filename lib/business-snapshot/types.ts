@@ -4,6 +4,7 @@ export type BusinessSnapshotRow = {
   documents_processed?: number | null;
   segment_profiles?: unknown;
   business_snapshot?: unknown;
+  historical_economics?: unknown;
   about_company?: unknown;
   revenue_breakdown?: unknown;
   revenue_engine?: unknown;
@@ -16,30 +17,54 @@ export type BusinessSnapshotRow = {
 export type NormalizedAboutCompany = {
   aboutShort: string | null;
   aboutLong: string | null;
-  economicProblemSolved: string | null;
-  businessActivity: string | null;
-  industryRole: string | null;
-  primaryCustomers: string[];
-  valueChainPosition: string | null;
-  coreProductsOrServices: string[];
-};
-
-export type NormalizedRevenueEngine = {
-  monetizationUnit: string | null;
-  revenueFormula: string | null;
-  revenueModelType: string | null;
 };
 
 export type NormalizedRevenueBreakdownItem = {
   name: string;
   description: string | null;
   revenueSharePercent: number | null;
+  marginProfile: string | null;
+  marginProfileNote: string | null;
 };
 
 export type NormalizedRevenueBreakdown = {
   bySegment: NormalizedRevenueBreakdownItem[];
-  byGeography: NormalizedRevenueBreakdownItem[];
   byProductOrService: NormalizedRevenueBreakdownItem[];
+};
+
+export type NormalizedCompanyRevenueCagr3y = {
+  basis: string | null;
+  scope: string | null;
+  startYear: string | null;
+  endYear: string | null;
+  cagrPercent: number | null;
+};
+
+export type NormalizedRevenueSplitHistoryBucket = {
+  name: string;
+  revenueSharePercent: number | null;
+};
+
+export type NormalizedRevenueSplitHistoryRow = {
+  year: string | null;
+  basis: string | null;
+  comparabilityNote: string | null;
+  buckets: NormalizedRevenueSplitHistoryBucket[];
+};
+
+export type NormalizedSegmentGrowthCagr3yRow = {
+  basis: string | null;
+  segment: string;
+  startYear: string | null;
+  endYear: string | null;
+  cagrPercent: number | null;
+  comparability: string | null;
+};
+
+export type NormalizedHistoricalEconomics = {
+  companyRevenueCagr3y: NormalizedCompanyRevenueCagr3y | null;
+  revenueSplitHistory: NormalizedRevenueSplitHistoryRow[];
+  segmentGrowthCagr3y: NormalizedSegmentGrowthCagr3yRow[];
 };
 
 export type NormalizedBusinessSnapshot = {
@@ -67,6 +92,6 @@ export type NormalizedBusinessSnapshot = {
   segmentProfiles: unknown[];
   aboutCompany: NormalizedAboutCompany | null;
   revenueBreakdown: NormalizedRevenueBreakdown | null;
-  revenueEngine: NormalizedRevenueEngine | null;
+  historicalEconomics: NormalizedHistoricalEconomics | null;
   schemaHints: string[];
 };

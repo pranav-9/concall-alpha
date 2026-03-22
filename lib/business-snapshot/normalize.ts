@@ -2,9 +2,9 @@ import type {
   BusinessSnapshotRow,
   NormalizedAboutCompany,
   NormalizedBusinessSnapshot,
+  NormalizedHistoricalEconomics,
   NormalizedRevenueBreakdown,
   NormalizedRevenueBreakdownItem,
-  NormalizedRevenueEngine,
 } from "@/lib/business-snapshot/types";
 
 type JsonRecord = Record<string, unknown>;
@@ -37,6 +37,11 @@ const asString = (value: unknown): string | null => {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
+};
+
+const asLowerString = (value: unknown): string | null => {
+  const normalized = asString(value);
+  return normalized ? normalized.toLowerCase() : null;
 };
 
 const asNumber = (value: unknown): number | null => {
@@ -88,6 +93,8 @@ const toRevenueItem = (
     name,
     description,
     revenueSharePercent: asNumber(row.revenue_share_percent),
+    marginProfile: asLowerString(row.margin_profile),
+    marginProfileNote: asString(row.margin_profile_note),
   };
 };
 
@@ -114,59 +121,16 @@ const normalizeAboutCompany = ({
   const aboutLong =
     asString(aboutCompanySource?.about_long) ??
     asString(businessSnapshotObject?.business_summary_long) ??
+    asString(aboutCompanySource?.business_activity) ??
+    asString(aboutCompanySource?.economic_problem_solved) ??
     null;
-  const economicProblemSolved = asString(aboutCompanySource?.economic_problem_solved) ?? null;
-  const businessActivity = asString(aboutCompanySource?.business_activity) ?? null;
-  const industryRole = asString(aboutCompanySource?.industry_role) ?? null;
-  const valueChainPosition =
-    asString(aboutCompanySource?.value_chain_position) ??
-    asString(businessSnapshotObject?.value_chain_position) ??
-    null;
-  const coreProductsOrServices = toStringArray(aboutCompanySource?.core_products_or_services);
-  const primaryCustomers = toStringArray(aboutCompanySource?.primary_customers);
-
-  if (
-    !aboutShort &&
-    !aboutLong &&
-    !economicProblemSolved &&
-    !businessActivity &&
-    !industryRole &&
-    !valueChainPosition &&
-    coreProductsOrServices.length === 0 &&
-    primaryCustomers.length === 0
-  ) {
+  if (!aboutShort && !aboutLong) {
     return null;
   }
 
   return {
     aboutShort,
     aboutLong,
-    economicProblemSolved,
-    businessActivity,
-    industryRole,
-    primaryCustomers,
-    valueChainPosition,
-    coreProductsOrServices,
-  };
-};
-
-const normalizeRevenueEngine = ({
-  revenueEngineSource,
-}: {
-  revenueEngineSource: JsonRecord | null;
-}): NormalizedRevenueEngine | null => {
-  const monetizationUnit = asString(revenueEngineSource?.monetization_unit) ?? null;
-  const revenueFormula = asString(revenueEngineSource?.revenue_formula) ?? null;
-  const revenueModelType = asString(revenueEngineSource?.revenue_model_type) ?? null;
-
-  if (!monetizationUnit && !revenueFormula && !revenueModelType) {
-    return null;
-  }
-
-  return {
-    monetizationUnit,
-    revenueFormula,
-    revenueModelType,
   };
 };
 
@@ -181,11 +145,6 @@ const normalizeRevenueBreakdown = ({
     revenueBreakdownSource?.by_segment,
     ["segment", "segment_name"],
     ["segment_explained", "segment_description", "description"],
-  );
-  const byGeography = toRevenueItems(
-    revenueBreakdownSource?.by_geography,
-    ["region", "geography", "name"],
-    ["description"],
   );
   const byProductOrService = toRevenueItems(
     revenueBreakdownSource?.by_product_or_service,
@@ -202,18 +161,118 @@ const normalizeRevenueBreakdown = ({
           )
           .filter((item): item is NormalizedRevenueBreakdownItem => Boolean(item));
 
-  if (
-    bySegmentWithFallback.length === 0 &&
-    byGeography.length === 0 &&
-    byProductOrService.length === 0
-  ) {
+  if (bySegmentWithFallback.length === 0 && byProductOrService.length === 0) {
     return null;
   }
 
   return {
     bySegment: bySegmentWithFallback,
-    byGeography,
     byProductOrService,
+  };
+};
+
+const normalizeCompanyRevenueCagr3y = (value: unknown) => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const basis = asString(row.basis) ?? null;
+  const scope = asString(row.scope) ?? null;
+  const startYear = asString(row.start_year) ?? null;
+  const endYear = asString(row.end_year) ?? null;
+  const cagrPercent = asNumber(row.cagr_percent);
+
+  if (!basis && !scope && !startYear && !endYear && cagrPercent == null) {
+    return null;
+  }
+
+  return {
+    basis,
+    scope,
+    startYear,
+    endYear,
+    cagrPercent,
+  };
+};
+
+const normalizeRevenueSplitHistoryRow = (value: unknown) => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const year = asString(row.year) ?? null;
+  const basis = asString(row.basis) ?? null;
+  const comparabilityNote = asString(row.comparability_note) ?? null;
+  const buckets = parseJsonArrayLike(row.buckets)
+    .map((item) => {
+      const bucket = parseJsonObjectLike(item);
+      if (!bucket) return null;
+      const name = asString(bucket.name) ?? null;
+      if (!name) return null;
+      return {
+        name,
+        revenueSharePercent: asNumber(bucket.revenue_share_percent),
+      };
+    })
+    .filter(
+      (
+        item,
+      ): item is {
+        name: string;
+        revenueSharePercent: number | null;
+      } => Boolean(item),
+    );
+
+  if (!year && !basis && !comparabilityNote && buckets.length === 0) {
+    return null;
+  }
+
+  return {
+    year,
+    basis,
+    comparabilityNote,
+    buckets,
+  };
+};
+
+const normalizeSegmentGrowthCagr3yRow = (value: unknown) => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const segment = asString(row.segment) ?? null;
+  if (!segment) return null;
+
+  return {
+    basis: asString(row.basis) ?? null,
+    segment,
+    startYear: asString(row.start_year) ?? null,
+    endYear: asString(row.end_year) ?? null,
+    cagrPercent: asNumber(row.cagr_percent),
+    comparability: asString(row.comparability) ?? null,
+  };
+};
+
+const normalizeHistoricalEconomics = ({
+  historicalEconomicsSource,
+}: {
+  historicalEconomicsSource: JsonRecord | null;
+}): NormalizedHistoricalEconomics | null => {
+  const companyRevenueCagr3y = normalizeCompanyRevenueCagr3y(
+    historicalEconomicsSource?.company_revenue_cagr_3y,
+  );
+  const revenueSplitHistory = parseJsonArrayLike(historicalEconomicsSource?.revenue_split_history)
+    .map((item) => normalizeRevenueSplitHistoryRow(item))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const segmentGrowthCagr3y = parseJsonArrayLike(historicalEconomicsSource?.segment_growth_cagr_3y)
+    .map((item) => normalizeSegmentGrowthCagr3yRow(item))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  if (!companyRevenueCagr3y && revenueSplitHistory.length === 0 && segmentGrowthCagr3y.length === 0) {
+    return null;
+  }
+
+  return {
+    companyRevenueCagr3y,
+    revenueSplitHistory,
+    segmentGrowthCagr3y,
   };
 };
 
@@ -272,17 +331,17 @@ export function normalizeBusinessSnapshot({
     schemaHints.add("revenue_breakdown_nested");
   }
 
-  const revenueEngineSource =
-    parseJsonObjectLike(snapshotRow.revenue_engine) ??
-    parseJsonObjectLike(businessSnapshotObject?.revenue_engine) ??
-    parseJsonObjectLike(detailsBusinessSnapshot?.revenue_engine) ??
-    parseJsonObjectLike(detailsNestedBusinessSnapshot?.revenue_engine) ??
+  const historicalEconomicsSource =
+    parseJsonObjectLike(snapshotRow.historical_economics) ??
+    parseJsonObjectLike(businessSnapshotObject?.historical_economics) ??
+    parseJsonObjectLike(detailsBusinessSnapshot?.historical_economics) ??
+    parseJsonObjectLike(detailsNestedBusinessSnapshot?.historical_economics) ??
     null;
 
-  if (parseJsonObjectLike(snapshotRow.revenue_engine)) {
-    schemaHints.add("revenue_engine_column");
-  } else if (parseJsonObjectLike(businessSnapshotObject?.revenue_engine)) {
-    schemaHints.add("revenue_engine_nested");
+  if (parseJsonObjectLike(snapshotRow.historical_economics)) {
+    schemaHints.add("historical_economics_column");
+  } else if (parseJsonObjectLike(businessSnapshotObject?.historical_economics)) {
+    schemaHints.add("historical_economics_nested");
   }
 
   const segmentProfiles =
@@ -338,8 +397,8 @@ export function normalizeBusinessSnapshot({
     revenueBreakdownSource,
     segmentProfiles,
   });
-  const normalizedRevenueEngine = normalizeRevenueEngine({
-    revenueEngineSource,
+  const normalizedHistoricalEconomics = normalizeHistoricalEconomics({
+    historicalEconomicsSource,
   });
 
   return {
@@ -367,7 +426,7 @@ export function normalizeBusinessSnapshot({
     segmentProfiles,
     aboutCompany: normalizedAboutCompany,
     revenueBreakdown: normalizedRevenueBreakdown,
-    revenueEngine: normalizedRevenueEngine,
+    historicalEconomics: normalizedHistoricalEconomics,
     schemaHints: Array.from(schemaHints),
   };
 }
