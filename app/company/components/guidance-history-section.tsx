@@ -97,6 +97,11 @@ const getGuidanceMentionSummaryText = (item: NormalizedGuidanceItem) => {
   return mentionCountLabel;
 };
 
+const isPrimaryGuidanceType = (value: string | null) => {
+  const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return normalized === "revenue" || normalized === "margin";
+};
+
 function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
   return (
     <>
@@ -177,8 +182,12 @@ function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
 
 export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
   const summaryItems = items;
-  const visibleThreads = summaryItems.slice(0, 3);
-  const extraThreads = summaryItems.slice(3);
+  const primaryThreads = summaryItems.filter((item) =>
+    isPrimaryGuidanceType(item.guidanceType),
+  );
+  const secondaryThreads = summaryItems.filter(
+    (item) => !isPrimaryGuidanceType(item.guidanceType),
+  );
 
   if (!items.length) {
     return (
@@ -202,101 +211,117 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
       >
         <summary className="relative list-none cursor-pointer px-1 py-1.5 transition-colors hover:bg-muted/10 focus-visible:outline-none group-open:bg-muted/10">
           <span className="pointer-events-none absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-foreground/35 opacity-0 transition-opacity group-open:opacity-100" />
-          <div className="grid gap-1.5">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/30 text-[10px] font-semibold text-muted-foreground">
-                {index + 1}
-              </span>
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/30 text-[10px] font-semibold text-muted-foreground">
+              {index + 1}
+            </span>
 
-              <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
-                <div className="min-w-0 space-y-0.5">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      {item.guidanceTypeLabel ?? "Guidance"}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "h-fit shrink-0 px-2 py-0.5 text-[9px] font-semibold",
-                        statusStyle.badgeClass,
-                      )}
-                    >
-                      {item.statusLabel}
-                    </Badge>
-                    {mentionSummaryText && (
-                      <span className="rounded-full border border-border/50 bg-background/85 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
-                        {mentionSummaryText}
-                      </span>
+            <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {item.guidanceTypeLabel ?? "Guidance"}
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "h-fit shrink-0 px-2 py-0.5 text-[9px] font-semibold",
+                      statusStyle.badgeClass,
                     )}
-                  </div>
-                  <p className="line-clamp-2 text-[13px] font-semibold leading-[1.3] text-foreground">
-                    {item.guidanceText}
-                  </p>
+                  >
+                    {item.statusLabel}
+                  </Badge>
+                  {mentionSummaryText && (
+                    <span className="rounded-full border border-border/50 bg-background/85 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
+                      {mentionSummaryText}
+                    </span>
+                  )}
                 </div>
-
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/85 text-muted-foreground transition-colors group-hover:bg-accent/60 group-open:bg-accent/70 group-open:text-foreground">
-                  <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
-                </span>
+                <p className="mt-1.5 line-clamp-2 text-[13px] font-semibold leading-[1.3] text-foreground">
+                  {item.guidanceText}
+                </p>
+                <p className="mt-1 line-clamp-1 text-[11px] leading-snug text-foreground/70">
+                  {supportText ?? "Open to view the quarter-by-quarter guidance trail."}
+                </p>
               </div>
-            </div>
 
-            <div className="pl-9">
-              <p className="line-clamp-1 text-[11px] leading-relaxed text-foreground/70">
-                {supportText ?? "Open to view the quarter-by-quarter guidance trail."}
-              </p>
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/85 text-muted-foreground transition-colors group-hover:bg-accent/60 group-open:bg-accent/70 group-open:text-foreground">
+                <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+              </span>
             </div>
           </div>
         </summary>
 
-        <div className="border-t border-border/20 pb-1 pl-9 pr-1 pt-2.5">
+        <div className="border-t border-border/20 pb-1 pl-8 pr-1 pt-2.5">
           <GuidanceTrailContent item={item} />
         </div>
       </details>
     );
   };
 
-  return (
-    <div className="space-y-1.5">
-      <div>
-        <p className="text-[13px] leading-snug text-foreground/82">
-          Current management stance and quarter-by-quarter evolution.
-        </p>
-      </div>
+  const renderThreadGroup = (
+    title: string,
+    threads: NormalizedGuidanceItem[],
+  ) => {
+    if (threads.length === 0) return null;
 
-      <div className="divide-y divide-border/20">
-        {visibleThreads.map((item, index) => renderThread(item, index))}
-      </div>
+    const visibleThreads = threads.slice(0, 3);
+    const extraThreads = threads.slice(3);
 
-      {extraThreads.length > 0 && (
-        <details className="group border-t border-border/20 py-2.5">
-          <summary className="list-none cursor-pointer px-1 py-1.5 transition-colors hover:bg-muted/10 focus-visible:outline-none">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[12px] font-medium leading-tight text-foreground">
-                  <span className="group-open:hidden">
-                    Show remaining {extraThreads.length} thread{extraThreads.length === 1 ? "" : "s"}
-                  </span>
-                  <span className="hidden group-open:inline">
-                    Hide remaining thread{extraThreads.length === 1 ? "" : "s"}
-                  </span>
-                </p>
-                <p className="text-[11px] leading-snug text-muted-foreground">
-                  Expand to view the rest of the tracked management guidance.
-                </p>
+    return (
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            {title}
+          </p>
+          <span className="text-[10px] text-muted-foreground">
+            {threads.length} tracked
+          </span>
+        </div>
+
+        <div className="divide-y divide-border/20">
+          {visibleThreads.map((item, index) => renderThread(item, index))}
+        </div>
+
+        {extraThreads.length > 0 && (
+          <details className="group border-t border-border/20 py-2.5">
+            <summary className="list-none cursor-pointer px-1 py-1.5 transition-colors hover:bg-muted/10 focus-visible:outline-none">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[12px] font-medium leading-tight text-foreground">
+                    <span className="group-open:hidden">
+                      Show remaining {extraThreads.length} thread
+                      {extraThreads.length === 1 ? "" : "s"}
+                    </span>
+                    <span className="hidden group-open:inline">
+                      Hide remaining thread{extraThreads.length === 1 ? "" : "s"}
+                    </span>
+                  </p>
+                  <p className="text-[11px] leading-snug text-muted-foreground">
+                    Expand to view the rest of the tracked management guidance.
+                  </p>
+                </div>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/85 text-muted-foreground transition-colors group-hover:bg-accent/60 group-open:bg-accent/70 group-open:text-foreground">
+                  <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                </span>
               </div>
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/85 text-muted-foreground transition-colors group-hover:bg-accent/60 group-open:bg-accent/70 group-open:text-foreground">
-                <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
-              </span>
-            </div>
-          </summary>
+            </summary>
 
-          <div className="divide-y divide-border/20 pt-1.5">
-            {extraThreads.map((item, index) =>
-              renderThread(item, visibleThreads.length + index),
-            )}
-          </div>
-        </details>
-      )}
+            <div className="divide-y divide-border/20 pt-1.5">
+              {extraThreads.map((item, index) =>
+                renderThread(item, visibleThreads.length + index),
+              )}
+            </div>
+          </details>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-5">
+      {renderThreadGroup("Revenue & Margin Guidance", primaryThreads)}
+      {renderThreadGroup("Other Guidance Threads", secondaryThreads)}
     </div>
   );
 }

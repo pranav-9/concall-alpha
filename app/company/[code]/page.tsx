@@ -2058,6 +2058,7 @@ export default async function Page({
         <SectionCard
           id="guidance-history"
           title="Guidance History"
+          headerDescription="Current management stance and quarter-by-quarter evolution."
           headerAction={
             <span className="text-[11px] text-muted-foreground">
               {guidanceItems.length > 0 ? `${guidanceItems.length} tracked` : "Not ready"}

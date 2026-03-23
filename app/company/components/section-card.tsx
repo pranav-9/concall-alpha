@@ -6,6 +6,7 @@ interface SectionCardProps {
   children: React.ReactNode;
   className?: string;
   headerAction?: React.ReactNode;
+  headerDescription?: React.ReactNode;
   collapsible?: boolean;
   defaultOpen?: boolean;
 }
@@ -16,6 +17,7 @@ export function SectionCard({
   children,
   className = "",
   headerAction,
+  headerDescription,
   collapsible = false,
   defaultOpen = true,
 }: SectionCardProps) {
@@ -61,9 +63,16 @@ export function SectionCard({
     <div id={id} className={`bg-card border border-border rounded-lg p-4 ${className}`}>
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-lg lg:text-lg font-bold text-foreground !leading-tight">
-            {title}
-          </p>
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="text-lg lg:text-lg font-bold text-foreground !leading-tight">
+              {title}
+            </p>
+            {headerDescription ? (
+              <p className="text-[13px] leading-snug text-foreground/82">
+                {headerDescription}
+              </p>
+            ) : null}
+          </div>
           {headerAction}
         </div>
         <div className="border-b border-border"></div>
