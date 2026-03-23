@@ -1,12 +1,9 @@
 import type {
   CompanyIndustryAnalysisRow,
   NormalizedCompanyIndustryAnalysis,
-  NormalizedIndustryCompanyFit,
-  NormalizedIndustryCompetition,
   NormalizedIndustryPositioning,
-  NormalizedIndustryProfitPool,
+  NormalizedIndustryRegulatoryChange,
   NormalizedIndustryTheme,
-  NormalizedIndustryValueChain,
 } from "@/lib/company-industry-analysis/types";
 
 type JsonRecord = Record<string, unknown>;
@@ -41,10 +38,10 @@ const asString = (value: unknown): string | null => {
   return trimmed ? trimmed : null;
 };
 
-const toStringArray = (value: unknown): string[] =>
-  parseJsonArrayLike(value)
-    .map((item) => asString(item))
-    .filter((item): item is string => Boolean(item));
+const asLowerString = (value: unknown): string | null => {
+  const normalized = asString(value);
+  return normalized ? normalized.toLowerCase() : null;
+};
 
 const formatDateLabel = (value: string | null | undefined) => {
   if (!value) return null;
@@ -62,76 +59,37 @@ const normalizeIndustryPositioning = (
   value: unknown,
 ): NormalizedIndustryPositioning | null => {
   const record = parseJsonObjectLike(value);
-  const industrySummary = asString(record?.industry_summary);
+  const customerNeed =
+    asString(record?.customer_need) ?? asString(record?.industry_summary);
+  const industryEconomicsForCompany =
+    asString(record?.industry_economics_for_company) ??
+    asString(record?.why_this_industry_exists);
   const whereThisCompanyFits = asString(record?.where_this_company_fits);
-  const whyThisIndustryExists = asString(record?.why_this_industry_exists);
 
-  if (!industrySummary && !whereThisCompanyFits && !whyThisIndustryExists) {
+  if (!customerNeed && !industryEconomicsForCompany && !whereThisCompanyFits) {
     return null;
   }
 
   return {
-    industrySummary,
+    customerNeed,
+    industryEconomicsForCompany,
     whereThisCompanyFits,
-    whyThisIndustryExists,
   };
 };
 
-const normalizeValueChain = (value: unknown): NormalizedIndustryValueChain | null => {
+const normalizeRegulatoryChange = (
+  value: unknown,
+): NormalizedIndustryRegulatoryChange | null => {
   const record = parseJsonObjectLike(value);
-  const stages = toStringArray(record?.stages);
-  const companyRole = asString(record?.company_role);
-  const companyStage = asString(record?.company_stage);
-
-  if (stages.length === 0 && !companyRole && !companyStage) {
-    return null;
-  }
+  const change = asString(record?.change);
+  if (!change) return null;
 
   return {
-    stages,
-    companyRole,
-    companyStage,
-  };
-};
-
-const normalizeProfitPool = (value: unknown): NormalizedIndustryProfitPool | null => {
-  const record = parseJsonObjectLike(value);
-  const pool = asString(record?.pool);
-  if (!pool) return null;
-  return {
-    pool,
-    whoCapturesIt: asString(record?.who_captures_it),
-    companyExposure: asString(record?.company_exposure),
-    whyItIsProfitable: asString(record?.why_it_is_profitable),
-  };
-};
-
-const normalizeCompanyFit = (value: unknown): NormalizedIndustryCompanyFit | null => {
-  const record = parseJsonObjectLike(value);
-  const businessModelPosition = asString(record?.business_model_position);
-  const advantagesInContext = toStringArray(record?.advantages_in_context);
-  const constraintsInContext = toStringArray(record?.constraints_in_context);
-
-  if (!businessModelPosition && advantagesInContext.length === 0 && constraintsInContext.length === 0) {
-    return null;
-  }
-
-  return {
-    businessModelPosition,
-    advantagesInContext,
-    constraintsInContext,
-  };
-};
-
-const normalizeCompetition = (value: unknown): NormalizedIndustryCompetition | null => {
-  const record = parseJsonObjectLike(value);
-  const name = asString(record?.name);
-  if (!name) return null;
-  return {
-    name,
-    type: asString(record?.type),
-    whyItMatters: asString(record?.why_it_matters),
-    comparisonBasis: asString(record?.comparison_basis),
+    change,
+    period: asString(record?.period),
+    whatChanged: asString(record?.what_changed),
+    companyImpactMechanism: asString(record?.company_impact_mechanism),
+    impactDirection: asLowerString(record?.impact_direction),
   };
 };
 
@@ -141,8 +99,11 @@ const normalizeTheme = (value: unknown): NormalizedIndustryTheme | null => {
   if (!theme) return null;
   return {
     theme,
+    companyMechanism:
+      asString(record?.company_mechanism) ??
+      asString(record?.why_it_matters_for_company),
     timeHorizon: asString(record?.time_horizon),
-    whyItMattersForCompany: asString(record?.why_it_matters_for_company),
+    horizonBasis: asString(record?.horizon_basis),
   };
 };
 
@@ -162,10 +123,7 @@ export function normalizeCompanyIndustryAnalysis(
 
   const schemaHints = new Set<string>();
   if (parseJsonObjectLike(row.industry_positioning)) schemaHints.add("industry_positioning_column");
-  if (parseJsonObjectLike(row.value_chain)) schemaHints.add("value_chain_column");
-  if (parseJsonArrayLike(row.profit_pools).length > 0) schemaHints.add("profit_pools_column");
-  if (parseJsonObjectLike(row.company_fit)) schemaHints.add("company_fit_column");
-  if (parseJsonArrayLike(row.competition).length > 0) schemaHints.add("competition_column");
+  if (parseJsonArrayLike(row.regulatory_changes).length > 0) schemaHints.add("regulatory_changes_column");
   if (parseJsonArrayLike(row.tailwinds).length > 0) schemaHints.add("tailwinds_column");
   if (parseJsonArrayLike(row.headwinds).length > 0) schemaHints.add("headwinds_column");
   if (normalizeSources(row.sources).length > 0) schemaHints.add("sources_column");
@@ -178,14 +136,9 @@ export function normalizeCompanyIndustryAnalysis(
   if (contextSource) schemaHints.add(`context_source:${contextSource}`);
 
   const industryPositioning = normalizeIndustryPositioning(row.industry_positioning);
-  const valueChain = normalizeValueChain(row.value_chain);
-  const profitPools = parseJsonArrayLike(row.profit_pools)
-    .map((item) => normalizeProfitPool(item))
-    .filter((item): item is NormalizedIndustryProfitPool => Boolean(item));
-  const companyFit = normalizeCompanyFit(row.company_fit);
-  const competition = parseJsonArrayLike(row.competition)
-    .map((item) => normalizeCompetition(item))
-    .filter((item): item is NormalizedIndustryCompetition => Boolean(item));
+  const regulatoryChanges = parseJsonArrayLike(row.regulatory_changes)
+    .map((item) => normalizeRegulatoryChange(item))
+    .filter((item): item is NormalizedIndustryRegulatoryChange => Boolean(item));
   const tailwinds = parseJsonArrayLike(row.tailwinds)
     .map((item) => normalizeTheme(item))
     .filter((item): item is NormalizedIndustryTheme => Boolean(item));
@@ -195,10 +148,7 @@ export function normalizeCompanyIndustryAnalysis(
 
   if (
     !industryPositioning &&
-    !valueChain &&
-    profitPools.length === 0 &&
-    !companyFit &&
-    competition.length === 0 &&
+    regulatoryChanges.length === 0 &&
     tailwinds.length === 0 &&
     headwinds.length === 0
   ) {
@@ -213,10 +163,7 @@ export function normalizeCompanyIndustryAnalysis(
     generatedAtLabel: formatDateLabel(asString(row.generated_at)),
     sourceUrls: normalizeSources(row.sources),
     industryPositioning,
-    valueChain,
-    profitPools,
-    companyFit,
-    competition,
+    regulatoryChanges,
     tailwinds,
     headwinds,
     schemaHints: Array.from(schemaHints),
