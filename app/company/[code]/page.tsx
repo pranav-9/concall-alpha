@@ -509,8 +509,6 @@ export default async function Page({
     "rounded-xl border border-border/35 bg-muted/35 shadow-md shadow-black/20";
   const nestedDetailClass =
     "rounded-md border border-border/25 bg-background/45";
-  const snapshotBlockClass =
-    "rounded-xl border border-border/25 bg-background/35";
   const snapshotSubsectionClass =
     "rounded-xl border border-border/20 bg-background/25";
   const hasFutureGrowthDeepDive = Boolean(
@@ -532,123 +530,225 @@ export default async function Page({
   const hasRevenueBreakdown =
     (revenueBreakdown?.bySegment.length ?? 0) > 0 ||
     (revenueBreakdown?.byProductOrService.length ?? 0) > 0;
-  const hasBusinessSnapshotLeftColumn = Boolean(
-    aboutHeading || aboutSupportingText || historicalEconomics,
-  );
-  const hasBusinessSnapshotRightColumn = hasRevenueBreakdown;
-  const hasStructuredBusinessSnapshotColumns = Boolean(
-    hasBusinessSnapshotLeftColumn || hasBusinessSnapshotRightColumn,
+
+  const renderBusinessSnapshotDrawer = ({
+    title,
+    preview,
+    children,
+  }: {
+    title: string;
+    preview: string;
+    children: React.ReactNode;
+  }) => (
+    <details className={`group ${elevatedMutedBlockClass}`}>
+      <summary className="list-none cursor-pointer px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
+              {title}
+            </p>
+            <p className="text-[11px] leading-snug text-muted-foreground">{preview}</p>
+          </div>
+          <span className="shrink-0 text-[11px] text-muted-foreground">
+            <span className="group-open:hidden">Open</span>
+            <span className="hidden group-open:inline">Hide</span>
+          </span>
+        </div>
+      </summary>
+      <div className="border-t border-border/40 px-4 py-3">{children}</div>
+    </details>
   );
 
   const renderRevenueBreakdownCard = ({
     title,
     entries,
     className,
+    useGrid = false,
   }: {
     title: string;
     entries: NormalizedRevenueBreakdownItem[];
     className?: string;
+    useGrid?: boolean;
   }) => {
     if (entries.length === 0) return null;
     const sortedEntries = sortRevenueEntries(entries);
-    const visibleEntries = sortedEntries.slice(0, 2);
-    const extraEntries = sortedEntries.slice(2);
+    const visibleLimit = useGrid ? 4 : 2;
+    const visibleEntries = sortedEntries.slice(0, visibleLimit);
+    const extraEntries = sortedEntries.slice(visibleLimit);
+
+    const renderRevenueEntry = (
+      entry: NormalizedRevenueBreakdownItem,
+      idx: number,
+      variant: "visible" | "extra",
+    ) => {
+      const marginProfileDisplay = getMarginProfileDisplay(entry.marginProfile);
+      const isVisible = variant === "visible";
+
+      if (useGrid) {
+        return (
+          <div
+            key={`${entry.name}-${variant}-${idx}`}
+            className={`${snapshotSubsectionClass} h-full p-3`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className="text-[13px] font-medium text-foreground leading-snug">
+                    {entry.name}
+                  </p>
+                  {marginProfileDisplay && (
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${marginProfileDisplay.className}`}
+                    >
+                      {marginProfileDisplay.label}
+                    </span>
+                  )}
+                </div>
+                {entry.description && (
+                  <p className="text-[12px] text-muted-foreground leading-relaxed">
+                    {entry.description}
+                  </p>
+                )}
+                {entry.marginProfileNote && (
+                  <p className="text-[11px] text-muted-foreground/90 leading-relaxed">
+                    {entry.marginProfileNote}
+                  </p>
+                )}
+              </div>
+              {entry.revenueSharePercent != null && (
+                <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground shrink-0">
+                  {formatPctLabel(entry.revenueSharePercent)}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div
+          key={`${entry.name}-${variant}-${idx}`}
+          className={
+            isVisible
+              ? idx === 0
+                ? "py-2"
+                : "border-t border-border/40 py-2"
+              : "border-l border-border/60 pl-2"
+          }
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <p
+                  className={`${
+                    isVisible ? (idx === 0 ? "text-[15px]" : "text-sm") : "text-[11px]"
+                  } font-medium text-foreground leading-snug`}
+                >
+                  {entry.name}
+                </p>
+                {marginProfileDisplay && (
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${marginProfileDisplay.className}`}
+                  >
+                    {marginProfileDisplay.label}
+                  </span>
+                )}
+              </div>
+              {entry.description && (
+                <p
+                  className={`${
+                    isVisible ? (idx === 0 ? "text-[13px]" : "text-xs") : "text-[11px]"
+                  } text-muted-foreground leading-relaxed`}
+                >
+                  {entry.description}
+                </p>
+              )}
+              {entry.marginProfileNote && (
+                <p
+                  className={`${
+                    isVisible ? "text-[11px]" : "text-[10px]"
+                  } text-muted-foreground/90 leading-relaxed`}
+                >
+                  {entry.marginProfileNote}
+                </p>
+              )}
+            </div>
+            {entry.revenueSharePercent != null && (
+              <span
+                className={`${
+                  isVisible
+                    ? "rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground"
+                    : "text-[10px] text-muted-foreground"
+                } shrink-0`}
+              >
+                {formatPctLabel(entry.revenueSharePercent)}
+              </span>
+            )}
+          </div>
+        </div>
+      );
+    };
+
     return (
       <div className={`${snapshotSubsectionClass} min-w-0 p-3 ${className ?? ""}`}>
         <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
           {title}
         </p>
-        <div className="mt-1.5 space-y-0">
-          {visibleEntries.map((entry, idx) => {
-            const marginProfileDisplay = getMarginProfileDisplay(entry.marginProfile);
-
-            return (
-              <div
-                key={`${entry.name}-${idx}`}
-                className={idx === 0 ? "py-2" : "border-t border-border/40 py-2"}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <p className={`${idx === 0 ? "text-[15px]" : "text-sm"} font-medium text-foreground leading-snug`}>
-                        {entry.name}
-                      </p>
-                      {marginProfileDisplay && (
-                        <span
-                          className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${marginProfileDisplay.className}`}
-                        >
-                          {marginProfileDisplay.label}
-                        </span>
-                      )}
-                    </div>
-                    {entry.description && (
-                      <p className={`${idx === 0 ? "text-[13px]" : "text-xs"} text-muted-foreground leading-relaxed`}>
-                        {entry.description}
-                      </p>
-                    )}
-                    {entry.marginProfileNote && (
-                      <p className="text-[11px] text-muted-foreground/90 leading-relaxed">
-                        {entry.marginProfileNote}
-                      </p>
-                    )}
-                  </div>
-                  {entry.revenueSharePercent != null && (
-                    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground shrink-0">
-                      {formatPctLabel(entry.revenueSharePercent)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        <div className={useGrid ? "mt-1.5 grid grid-cols-1 gap-2 lg:grid-cols-2" : "mt-1.5 space-y-0"}>
+          {visibleEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "visible"))}
         </div>
         {extraEntries.length > 0 && (
           <details className="mt-2 border-t border-border/35 pt-2">
             <summary className="cursor-pointer text-[10px] text-muted-foreground hover:text-foreground">
               Show more ({extraEntries.length})
             </summary>
-            <div className="mt-2 space-y-2">
-              {extraEntries.map((entry, idx) => {
-                const marginProfileDisplay = getMarginProfileDisplay(entry.marginProfile);
-
-                return (
-                  <div key={`${entry.name}-extra-${idx}`} className="border-l border-border/60 pl-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <p className="text-[11px] font-medium text-foreground leading-snug">{entry.name}</p>
-                          {marginProfileDisplay && (
-                            <span
-                              className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${marginProfileDisplay.className}`}
-                            >
-                              {marginProfileDisplay.label}
-                            </span>
-                          )}
-                        </div>
-                        {entry.description && (
-                          <p className="text-[11px] text-muted-foreground leading-relaxed">{entry.description}</p>
-                        )}
-                        {entry.marginProfileNote && (
-                          <p className="text-[10px] text-muted-foreground/90 leading-relaxed">
-                            {entry.marginProfileNote}
-                          </p>
-                        )}
-                      </div>
-                      {entry.revenueSharePercent != null && (
-                        <span className="text-[10px] text-muted-foreground shrink-0">
-                          {formatPctLabel(entry.revenueSharePercent)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className={useGrid ? "mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2" : "mt-2 space-y-2"}>
+              {extraEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "extra"))}
             </div>
           </details>
         )}
       </div>
     );
   };
+
+  const renderRevenueBreakdownDrawer = () => {
+    if (!hasRevenueBreakdown) return null;
+
+    const bySegmentCount = revenueBreakdown?.bySegment.length ?? 0;
+    const byProductCount = revenueBreakdown?.byProductOrService.length ?? 0;
+    const preview =
+      [
+        bySegmentCount > 0
+          ? `${bySegmentCount} segment bucket${bySegmentCount === 1 ? "" : "s"}`
+          : null,
+        byProductCount > 0
+          ? `${byProductCount} product/service bucket${byProductCount === 1 ? "" : "s"}`
+          : null,
+      ]
+        .filter((value): value is string => Boolean(value))
+        .join(" · ") || "Open segment and product split.";
+
+    return renderBusinessSnapshotDrawer({
+      title: "Revenue Breakdown",
+      preview,
+      children: (
+        <div className="space-y-3">
+          {renderRevenueBreakdownCard({
+            title: "By Segment",
+            entries: revenueBreakdown?.bySegment ?? [],
+            className: "",
+            useGrid: true,
+          })}
+          {renderRevenueBreakdownCard({
+            title: "By Product / Service",
+            entries: revenueBreakdown?.byProductOrService ?? [],
+            className: "",
+          })}
+        </div>
+      ),
+    });
+  };
+
   const renderHistoricalEconomicsCard = (
     history: NonNullable<typeof historicalEconomics>,
   ) => {
@@ -672,6 +772,22 @@ export default async function Page({
     const hasSegmentGrowth = segmentGrowthRows.length > 0;
     const hasRevenueSplitHistory = revenueSplitRows.length > 0;
     const historicalMetaColumn = hasCompanyRevenueCagr || hasSegmentGrowth;
+    const preview =
+      [
+        companyRevenueCagr?.cagrPercent != null
+          ? `${formatPctLabel(companyRevenueCagr.cagrPercent)} company CAGR`
+          : hasCompanyRevenueCagr
+            ? "Company CAGR tracked"
+            : null,
+        hasRevenueSplitHistory
+          ? `${revenueSplitRows.length} split year${revenueSplitRows.length === 1 ? "" : "s"}`
+          : null,
+        hasSegmentGrowth
+          ? `${segmentGrowthRows.length} segment CAGR row${segmentGrowthRows.length === 1 ? "" : "s"}`
+          : null,
+      ]
+        .filter((value): value is string => Boolean(value))
+        .join(" · ") || "Open company economics history.";
 
     if (!historicalMetaColumn && !hasRevenueSplitHistory) return null;
 
@@ -715,13 +831,12 @@ export default async function Page({
       </div>
     );
 
-    return (
-      <div className={`${snapshotBlockClass} min-w-0 p-3 sm:p-4`}>
-        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-          Historical Economics
-        </p>
+    return renderBusinessSnapshotDrawer({
+      title: "Historical Economics",
+      preview,
+      children: (
         <div
-          className={`mt-2.5 grid grid-cols-1 gap-3 ${
+          className={`grid grid-cols-1 gap-3 ${
             historicalMetaColumn && hasRevenueSplitHistory
               ? "xl:grid-cols-[minmax(17rem,0.9fr)_minmax(0,1.1fr)]"
               : ""
@@ -835,8 +950,8 @@ export default async function Page({
             </div>
           )}
         </div>
-      </div>
-    );
+      ),
+    });
   };
   const renderIndustryThemes = (
     title: string,
@@ -1559,59 +1674,28 @@ export default async function Page({
               <>
                 {hasStructuredBusinessSnapshot ? (
                   <>
-                    {hasStructuredBusinessSnapshotColumns && (
-                      <div
-                        className={`grid grid-cols-1 gap-4 ${
-                          hasBusinessSnapshotLeftColumn && hasBusinessSnapshotRightColumn
-                            ? "xl:grid-cols-[minmax(0,1.05fr)_minmax(20rem,0.95fr)] xl:items-start"
-                            : ""
-                        }`}
-                      >
-                        {hasBusinessSnapshotLeftColumn && (
-                          <div className="min-w-0 space-y-4">
-                            {(aboutHeading || aboutSupportingText) && (
-                              <div className="min-w-0 space-y-2">
-                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                  About
-                                </p>
-                                {aboutHeading && (
-                                  <p className="max-w-4xl text-[17px] sm:text-[19px] font-semibold text-foreground leading-snug">
-                                    {aboutHeading}
-                                  </p>
-                                )}
-                                {aboutSupportingText && (
-                                  <p className="max-w-4xl text-[13px] text-muted-foreground leading-relaxed">
-                                    {aboutSupportingText}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-
-                            {historicalEconomics && renderHistoricalEconomicsCard(historicalEconomics)}
-                          </div>
-                        )}
-
-                        {hasBusinessSnapshotRightColumn && (
-                          <div className={`${snapshotBlockClass} min-w-0 p-3 sm:p-4`}>
-                            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                              Revenue Breakdown
+                    <div className="space-y-2.5">
+                      {(aboutHeading || aboutSupportingText) && (
+                        <div className={`${elevatedBlockClass} min-w-0 p-4 space-y-2`}>
+                          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                            About
+                          </p>
+                          {aboutHeading && (
+                            <p className="max-w-4xl text-[17px] sm:text-[19px] font-semibold text-foreground leading-snug">
+                              {aboutHeading}
                             </p>
-                            <div className="mt-2.5 space-y-3">
-                              {renderRevenueBreakdownCard({
-                                title: "By Segment",
-                                entries: revenueBreakdown?.bySegment ?? [],
-                                className: "",
-                              })}
-                              {renderRevenueBreakdownCard({
-                                title: "By Product / Service",
-                                entries: revenueBreakdown?.byProductOrService ?? [],
-                                className: "",
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          )}
+                          {aboutSupportingText && (
+                            <p className="max-w-4xl text-[13px] text-muted-foreground leading-relaxed">
+                              {aboutSupportingText}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {historicalEconomics && renderHistoricalEconomicsCard(historicalEconomics)}
+                      {renderRevenueBreakdownDrawer()}
+                    </div>
                   </>
                 ) : hasLegacyBusinessSnapshot ? (
                   <>
@@ -1619,7 +1703,7 @@ export default async function Page({
                       <div>
                         {normalizedBusinessSnapshot.businessSummaryShort ||
                         normalizedBusinessSnapshot.businessSummaryLong ? (
-                          <div className={`${snapshotBlockClass} p-3 space-y-2`}>
+                          <div className={`${elevatedBlockClass} p-4 space-y-2`}>
                             {normalizedBusinessSnapshot.businessSummaryShort && (
                               <p className="text-sm sm:text-base font-semibold text-foreground leading-relaxed">
                                 {normalizedBusinessSnapshot.businessSummaryShort}
@@ -1642,68 +1726,87 @@ export default async function Page({
                     {(normalizedBusinessSnapshot.topRevenueDrivers.length > 0 ||
                       normalizedBusinessSnapshot.keyDependencies.length > 0 ||
                       normalizedBusinessSnapshot.keyRisksToModel.length > 0) && (
-                      <div className="grid grid-cols-1 gap-3 xl:grid-cols-5">
+                      <div className="space-y-2.5">
                         {normalizedBusinessSnapshot.topRevenueDrivers.length > 0 && (
-                          <div className={`${snapshotBlockClass} p-3 xl:col-span-2`}>
-                            <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                              Top Revenue Drivers
-                            </p>
-                            <ul className="mt-2 space-y-0.5">
-                              {normalizedBusinessSnapshot.topRevenueDrivers.map((driver, idx) => (
-                                <li
-                                  key={idx}
-                                  className="text-xs text-foreground leading-snug border-l border-border/70 pl-2"
-                                >
-                                  {driver}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
+                          renderBusinessSnapshotDrawer({
+                            title: "Top Revenue Drivers",
+                            preview: `${normalizedBusinessSnapshot.topRevenueDrivers.length} driver${
+                              normalizedBusinessSnapshot.topRevenueDrivers.length === 1 ? "" : "s"
+                            } tracked.`,
+                            children: (
+                              <div className={`${snapshotSubsectionClass} p-3`}>
+                                <ul className="space-y-1">
+                                  {normalizedBusinessSnapshot.topRevenueDrivers.map((driver, idx) => (
+                                    <li
+                                      key={idx}
+                                      className="text-xs text-foreground leading-snug border-l border-border/70 pl-2"
+                                    >
+                                      {driver}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ),
+                          })
                         )}
 
                         {(normalizedBusinessSnapshot.keyDependencies.length > 0 ||
                           normalizedBusinessSnapshot.keyRisksToModel.length > 0) && (
-                          <div className={`${snapshotBlockClass} p-3 xl:col-span-3`}>
-                            <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                              Model Watchpoints
-                            </p>
-                            <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
-                              {normalizedBusinessSnapshot.keyDependencies.length > 0 && (
-                                <div>
-                                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                                    Dependencies
-                                  </p>
-                                  <ul className="mt-1.5 space-y-0.5">
-                                    {normalizedBusinessSnapshot.keyDependencies.map((dependency, idx) => (
-                                      <li
-                                        key={idx}
-                                        className="text-xs text-foreground leading-snug border-l border-amber-400/50 pl-1.5"
-                                      >
-                                        {dependency}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {normalizedBusinessSnapshot.keyRisksToModel.length > 0 && (
-                                <div>
-                                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                                    Risks
-                                  </p>
-                                  <ul className="mt-1.5 space-y-0.5">
-                                    {normalizedBusinessSnapshot.keyRisksToModel.map((risk, idx) => (
-                                      <li
-                                        key={idx}
-                                        className="text-xs text-foreground leading-snug border-l border-red-400/50 pl-1.5"
-                                      >
-                                        {risk}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                          renderBusinessSnapshotDrawer({
+                            title: "Model Watchpoints",
+                            preview: [
+                              normalizedBusinessSnapshot.keyDependencies.length > 0
+                                ? `${normalizedBusinessSnapshot.keyDependencies.length} dependenc${
+                                    normalizedBusinessSnapshot.keyDependencies.length === 1 ? "y" : "ies"
+                                  }`
+                                : null,
+                              normalizedBusinessSnapshot.keyRisksToModel.length > 0
+                                ? `${normalizedBusinessSnapshot.keyRisksToModel.length} risk${
+                                    normalizedBusinessSnapshot.keyRisksToModel.length === 1 ? "" : "s"
+                                  }`
+                                : null,
+                            ]
+                              .filter((value): value is string => Boolean(value))
+                              .join(" · "),
+                            children: (
+                              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                {normalizedBusinessSnapshot.keyDependencies.length > 0 && (
+                                  <div className={`${snapshotSubsectionClass} p-3`}>
+                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                                      Dependencies
+                                    </p>
+                                    <ul className="mt-1.5 space-y-0.5">
+                                      {normalizedBusinessSnapshot.keyDependencies.map((dependency, idx) => (
+                                        <li
+                                          key={idx}
+                                          className="text-xs text-foreground leading-snug border-l border-amber-400/50 pl-1.5"
+                                        >
+                                          {dependency}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {normalizedBusinessSnapshot.keyRisksToModel.length > 0 && (
+                                  <div className={`${snapshotSubsectionClass} p-3`}>
+                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                                      Risks
+                                    </p>
+                                    <ul className="mt-1.5 space-y-0.5">
+                                      {normalizedBusinessSnapshot.keyRisksToModel.map((risk, idx) => (
+                                        <li
+                                          key={idx}
+                                          className="text-xs text-foreground leading-snug border-l border-red-400/50 pl-1.5"
+                                        >
+                                          {risk}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            ),
+                          })
                         )}
                       </div>
                     )}
