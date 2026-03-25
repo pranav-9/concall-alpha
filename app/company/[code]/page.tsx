@@ -29,6 +29,8 @@ import { GuidanceHistorySection } from "../components/guidance-history-section";
 import { MissingSectionRequestButton } from "../components/missing-section-request-button";
 import { QuarterlyScoreSection } from "../components/quarterly-score-section";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
+import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
+import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import type {
   NormalizedIndustryRegulatoryChange,
   CompanyIndustryAnalysisRow,
@@ -339,6 +341,14 @@ export default async function Page({
     .order("generated_at", { ascending: false })
     .order("id", { ascending: false });
 
+  const { data: moatAnalysisData } = await supabase
+    .from("moat_analysis")
+    .select(
+      "id, company_code, company_name, industry, rating, trajectory, trajectory_direction, porter_summary, porter_verdict, moats, quantitative, durability, risks, created_at, updated_at",
+    )
+    .eq("company_code", code)
+    .limit(1);
+
   if (error) {
     throw error;
   }
@@ -395,6 +405,19 @@ export default async function Page({
     : normalizeGuidanceTrackingRows(
         (guidanceTrackingRows as GuidanceTrackingRow[] | null | undefined) ?? null,
       );
+  const normalizedMoatAnalysis = normalizeMoatAnalysis(
+    (moatAnalysisData?.[0] as MoatAnalysisRow | undefined) ?? null,
+  );
+  const moatGeneratedAtShort = normalizedMoatAnalysis?.generatedAtRaw
+    ? (() => {
+        const date = new Date(normalizedMoatAnalysis.generatedAtRaw);
+        if (Number.isNaN(date.getTime())) return null;
+        return new Intl.DateTimeFormat("en-IN", {
+          day: "2-digit",
+          month: "short",
+        }).format(date);
+      })()
+    : null;
   const growthUpdatedAtRaw = normalizedGrowthOutlook?.updatedAtRaw ?? null;
   const growthUpdatedDate = growthUpdatedAtRaw ? new Date(growthUpdatedAtRaw) : null;
   const growthUpdatedAt =
@@ -1017,6 +1040,12 @@ export default async function Page({
         guidanceItems.length > 0
           ? { kind: "count" as const, count: guidanceItems.length, suffix: "items" }
           : { kind: "text" as const, text: "Soon" },
+    },
+    {
+      ...SECTION_MAP.moatAnalysis,
+      meta: normalizedMoatAnalysis
+        ? { kind: "text" as const, text: normalizedMoatAnalysis.moatRating.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) }
+        : { kind: "text" as const, text: "Soon" },
     },
     {
       ...SECTION_MAP.community,
@@ -2072,6 +2101,211 @@ export default async function Page({
               "guidance-history",
               "Guidance History",
               "We have not tracked meaningful management guidance for this company yet.",
+            )
+          )}
+        </SectionCard>
+
+        <SectionCard
+          id="moat-analysis"
+          title="Moat Analysis"
+          collapsible
+          defaultOpen={false}
+          headerAction={
+            moatGeneratedAtShort ? (
+              <span className="text-[11px] text-muted-foreground">{moatGeneratedAtShort}</span>
+            ) : undefined
+          }
+        >
+          {normalizedMoatAnalysis ? (
+            <div className="space-y-4">
+              {/* Rating + trajectory header */}
+              <div className={`${elevatedBlockClass} p-4 space-y-3`}>
+                <div className="flex flex-wrap items-center gap-2">
+                  {(() => {
+                    const ratingConfig: Record<string, { className: string }> = {
+                      wide_moat: {
+                        className:
+                          "border-emerald-300 bg-emerald-100 text-emerald-900 dark:border-emerald-600/50 dark:bg-emerald-900/35 dark:text-emerald-200",
+                      },
+                      narrow_moat: {
+                        className:
+                          "border-sky-300 bg-sky-100 text-sky-900 dark:border-sky-600/50 dark:bg-sky-900/35 dark:text-sky-200",
+                      },
+                      no_moat: {
+                        className:
+                          "border-rose-300 bg-rose-100 text-rose-900 dark:border-rose-600/50 dark:bg-rose-900/35 dark:text-rose-200",
+                      },
+                      moat_at_risk: {
+                        className:
+                          "border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-600/50 dark:bg-amber-900/35 dark:text-amber-200",
+                      },
+                    };
+                    const cfg = ratingConfig[normalizedMoatAnalysis.moatRating];
+                    const cls = cfg?.className ?? "border-border/60 bg-muted/60 text-foreground";
+                    return (
+                      <span
+                        className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${cls}`}
+                      >
+                        {normalizedMoatAnalysis.moatRatingLabel}
+                      </span>
+                    );
+                  })()}
+                  {normalizedMoatAnalysis.trajectory && (
+                    <span className="rounded-full border border-border/60 bg-muted/50 px-2.5 py-0.5 text-[11px] text-foreground">
+                      {normalizedMoatAnalysis.trajectoryDirection
+                        ? `${normalizedMoatAnalysis.trajectory} ${normalizedMoatAnalysis.trajectoryDirection}`
+                        : normalizedMoatAnalysis.trajectory}
+                    </span>
+                  )}
+                  {normalizedMoatAnalysis.industry && (
+                    <span className="rounded-full border border-border/50 bg-muted/35 px-2 py-0.5 text-[10px] text-muted-foreground">
+                      {normalizedMoatAnalysis.industry}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Moat pillars */}
+              {normalizedMoatAnalysis.moatPillars.length > 0 && (
+                <div className={`${elevatedBlockClass} p-4 space-y-3`}>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                    Competitive Advantages
+                  </p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {normalizedMoatAnalysis.moatPillars.map((pillar, idx) => {
+                      const borderAccent = pillar.present
+                        ? "border-l-2 border-l-emerald-500/70"
+                        : "border-l-2 border-l-border/50";
+                      return (
+                        <div
+                          key={`${pillar.type}-${idx}`}
+                          className={`${snapshotBlockClass} p-3 ${borderAccent} ${pillar.present ? "" : "opacity-60"}`}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-[13px] font-semibold text-foreground leading-snug">
+                              {pillar.type}
+                            </p>
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+                                  pillar.present
+                                    ? "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
+                                    : "border-border/60 bg-muted/60 text-muted-foreground"
+                                }`}
+                              >
+                                {pillar.present ? "Present" : "Absent"}
+                              </span>
+                            </div>
+                          </div>
+                          {pillar.present && pillar.greenwaldLabel && (
+                            <div className="mt-1.5">
+                              <span className="rounded-full border border-violet-200/80 bg-violet-100 px-2 py-0.5 text-[10px] text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/30 dark:text-violet-200">
+                                {pillar.greenwaldLabel}
+                              </span>
+                            </div>
+                          )}
+                          {pillar.evidence && (
+                            <p className="mt-2 text-[12px] text-muted-foreground leading-relaxed">
+                              {pillar.evidence}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Porter + Quantitative */}
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {(normalizedMoatAnalysis.porterSummary || normalizedMoatAnalysis.porterVerdict) && (
+                  <div className={`${elevatedBlockClass} p-4 space-y-3`}>
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                      Industry Structure (Porter)
+                    </p>
+                    {normalizedMoatAnalysis.porterVerdict && (
+                      <div className={`${nestedDetailClass} px-3 py-2`}>
+                        <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                          Verdict
+                        </p>
+                        <p className="mt-1 text-[12px] text-foreground leading-relaxed">
+                          {normalizedMoatAnalysis.porterVerdict}
+                        </p>
+                      </div>
+                    )}
+                    {normalizedMoatAnalysis.porterSummary && (
+                      <p className="text-[12px] text-muted-foreground leading-relaxed">
+                        {normalizedMoatAnalysis.porterSummary}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {normalizedMoatAnalysis.quantitativeCheck && (() => {
+                  const qc = normalizedMoatAnalysis.quantitativeCheck;
+                  const qcItems = [
+                    { label: "ROIC", value: qc.roic },
+                    { label: "Margins", value: qc.margins },
+                    { label: "Market Share", value: qc.marketShare },
+                    { label: "Pricing Power", value: qc.pricingPower },
+                  ].filter((item) => item.value);
+                  if (qcItems.length === 0) return null;
+                  return (
+                    <div className={`${elevatedBlockClass} p-4 space-y-3`}>
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                        Quantitative Context
+                      </p>
+                      <div className="space-y-2">
+                        {qcItems.map(({ label, value }) => (
+                          <div key={label} className={`${nestedDetailClass} px-3 py-2`}>
+                            <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                              {label}
+                            </p>
+                            <p className="mt-1 text-[12px] text-foreground leading-relaxed">
+                              {value}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Durability */}
+              {normalizedMoatAnalysis.durability && (
+                <div className={`${elevatedBlockClass} p-4 space-y-2`}>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                    Durability Assessment
+                  </p>
+                  <p className="text-[13px] text-foreground leading-relaxed">
+                    {normalizedMoatAnalysis.durability}
+                  </p>
+                </div>
+              )}
+
+              {/* Risks */}
+              {normalizedMoatAnalysis.risks.length > 0 && (
+                <div className={`${elevatedBlockClass} p-4 space-y-3`}>
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                    Key Risks to the Moat
+                  </p>
+                  <ul className="space-y-1.5">
+                    {normalizedMoatAnalysis.risks.map((risk, idx) => (
+                      <li key={idx} className="flex items-start gap-2.5">
+                        <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-muted-foreground/60" />
+                        <p className="text-[13px] text-foreground leading-relaxed">{risk}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            renderMissingSectionState(
+              "moat-analysis",
+              "Moat Analysis",
+              "We have not generated a competitive moat analysis for this company yet.",
             )
           )}
         </SectionCard>

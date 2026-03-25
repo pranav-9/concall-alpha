@@ -31,6 +31,10 @@ export const SECTIONS = [
     label: "Guidance History",
   },
   {
+    id: "moat-analysis",
+    label: "Moat Analysis",
+  },
+  {
     id: "community",
     label: "Community",
   },
@@ -46,6 +50,7 @@ export const SECTION_MAP = {
   quarterlyScore: SECTIONS[2],
   futureGrowth: SECTIONS[3],
   guidanceHistory: SECTIONS[4],
-  community: SECTIONS[5],
-  topBusinessStrategies: SECTIONS[6],
+  moatAnalysis: SECTIONS[5],
+  community: SECTIONS[6],
+  topBusinessStrategies: SECTIONS[7],
 } as const;
