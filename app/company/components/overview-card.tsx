@@ -47,11 +47,12 @@ const percentilePillClass = (percentile: number) => {
 };
 
 const rankPillText = (
-  label: string,
+  shortLabel: string,
+  fallbackLabel: string,
   rankData?: { rank: number; total: number; percentile: number } | null,
 ) => {
-  if (!rankData) return `${label}: Not ranked`;
-  return `${label} ${rankData.rank} / ${rankData.total} (Top ${Math.round(rankData.percentile)} percentile)`;
+  if (!rankData) return `${fallbackLabel}: Not ranked`;
+  return `${shortLabel} ${rankData.rank} / ${rankData.total} · Top ${Math.round(rankData.percentile)}%`;
 };
 
 export function OverviewCard({
@@ -93,6 +94,12 @@ export function OverviewCard({
       ? `Moat: ${moatInfo.moatRatingLabel} · ${moatInfo.trajectory}`
       : `Moat: ${moatInfo.moatRatingLabel}`
     : null;
+  const contextPillClass =
+    "inline-flex items-center rounded-full border border-border bg-muted/60 px-2.5 py-1 text-[11px] font-medium text-foreground";
+  const interactiveContextPillClass = `${contextPillClass} transition-colors hover:bg-accent`;
+  const metricPillBaseClass =
+    "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium";
+
   return (
     <div id="overview" className="bg-card border border-border rounded-lg p-6">
       <div className="flex flex-col gap-3">
@@ -124,44 +131,51 @@ export function OverviewCard({
             </div>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-[11px]">
-          {normalizedSector && (
-            <Link
-              href={sectorHref ?? "#"}
-              prefetch={false}
-              className="px-2 py-1 rounded-full bg-muted text-foreground border border-border hover:bg-accent transition-colors"
-            >
-              {normalizedSector}
-              {sectorRankInfo
-                ? ` #${sectorRankInfo.rank != null ? `${sectorRankInfo.rank}/${sectorRankInfo.total}` : `N/A/${sectorRankInfo.total}`}`
-                : ""}
-            </Link>
-          )}
-          {normalizedSector && normalizedSubSector && (
-            <Link
-              href={subSectorHref ?? "#"}
-              prefetch={false}
-              className="px-2 py-1 rounded-full bg-muted text-foreground border border-border hover:bg-accent transition-colors"
-            >
-              Sub-sector: {normalizedSubSector}
-            </Link>
-          )}
-          {moatPillText && (
-            <span className={`px-2 py-1 rounded-full border ${moatPillClass}`}>
-              {moatPillText}
-            </span>
-          )}
-          <span
-            className={`px-2 py-1 rounded-full border ${rankInfo?.quarter ? percentilePillClass(rankInfo.quarter.percentile) : "bg-muted text-muted-foreground border-border"}`}
-          >
-            {rankPillText("Qtr Score Rank", rankInfo?.quarter)}
-          </span>
-          <span
-            className={`px-2 py-1 rounded-full border ${rankInfo?.growth ? percentilePillClass(rankInfo.growth.percentile) : "bg-muted text-muted-foreground border-border"}`}
-          >
-            {rankPillText("Growth Score Rank", rankInfo?.growth)}
-          </span>
-          {action}
+        <div className="flex flex-col gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            {normalizedSector && (
+              <Link
+                href={sectorHref ?? "#"}
+                prefetch={false}
+                className={interactiveContextPillClass}
+              >
+                {normalizedSector}
+                {sectorRankInfo
+                  ? ` #${sectorRankInfo.rank != null ? `${sectorRankInfo.rank}/${sectorRankInfo.total}` : `N/A/${sectorRankInfo.total}`}`
+                  : ""}
+              </Link>
+            )}
+            {normalizedSector && normalizedSubSector && (
+              <Link
+                href={subSectorHref ?? "#"}
+                prefetch={false}
+                className={interactiveContextPillClass}
+              >
+                {normalizedSubSector}
+              </Link>
+            )}
+            {moatPillText && (
+              <span className={`${contextPillClass} ${moatPillClass}`}>
+                {moatPillText}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className={`${metricPillBaseClass} ${rankInfo?.quarter ? percentilePillClass(rankInfo.quarter.percentile) : "bg-muted text-muted-foreground border-border"}`}
+              >
+                {rankPillText("Qtr Rank", "Qtr Score Rank", rankInfo?.quarter)}
+              </span>
+              <span
+                className={`${metricPillBaseClass} ${rankInfo?.growth ? percentilePillClass(rankInfo.growth.percentile) : "bg-muted text-muted-foreground border-border"}`}
+              >
+                {rankPillText("Growth Rank", "Growth Score Rank", rankInfo?.growth)}
+              </span>
+            </div>
+            {action && <div className="flex items-center sm:justify-end">{action}</div>}
+          </div>
         </div>
       </div>
     </div>
