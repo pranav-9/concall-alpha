@@ -408,9 +408,16 @@ export default async function Page({
   const normalizedMoatAnalysis = normalizeMoatAnalysis(
     (moatAnalysisData?.[0] as MoatAnalysisRow | undefined) ?? null,
   );
-  const moatGeneratedAtShort = normalizedMoatAnalysis?.generatedAtRaw
+  const moatThesis =
+    normalizedMoatAnalysis?.porterVerdict ??
+    normalizedMoatAnalysis?.durability ??
+    normalizedMoatAnalysis?.moatPillars.find(
+      (pillar) => pillar.present && pillar.evidence,
+    )?.evidence ??
+    null;
+  const moatGeneratedAtShort = normalizedMoatAnalysis?.updatedAtRaw
     ? (() => {
-        const date = new Date(normalizedMoatAnalysis.generatedAtRaw);
+        const date = new Date(normalizedMoatAnalysis.updatedAtRaw);
         if (Number.isNaN(date.getTime())) return null;
         return new Intl.DateTimeFormat("en-IN", {
           day: "2-digit",
@@ -418,6 +425,22 @@ export default async function Page({
         }).format(date);
       })()
     : null;
+  const moatPresentPillars =
+    normalizedMoatAnalysis?.moatPillars.filter((pillar) => pillar.present) ?? [];
+  const moatAbsentPillars =
+    normalizedMoatAnalysis?.moatPillars.filter((pillar) => !pillar.present) ?? [];
+  const moatTotalPillars = normalizedMoatAnalysis?.moatPillars.length ?? 0;
+  const moatQuantitativeItems = normalizedMoatAnalysis?.quantitativeCheck
+    ? [
+        { label: "ROIC", value: normalizedMoatAnalysis.quantitativeCheck.roic },
+        { label: "Margins", value: normalizedMoatAnalysis.quantitativeCheck.margins },
+        { label: "Market share", value: normalizedMoatAnalysis.quantitativeCheck.marketShare },
+        {
+          label: "Pricing power",
+          value: normalizedMoatAnalysis.quantitativeCheck.pricingPower,
+        },
+      ].filter((item): item is { label: string; value: string } => Boolean(item.value))
+    : [];
   const growthUpdatedAtRaw = normalizedGrowthOutlook?.updatedAtRaw ?? null;
   const growthUpdatedDate = growthUpdatedAtRaw ? new Date(growthUpdatedAtRaw) : null;
   const growthUpdatedAt =
@@ -1373,6 +1396,16 @@ export default async function Page({
           }}
           rankInfo={rankInfo}
           sectorRankInfo={sectorRankInfo}
+          moatInfo={
+            normalizedMoatAnalysis
+              ? {
+                  moatRating: normalizedMoatAnalysis.moatRating,
+                  moatRatingLabel: normalizedMoatAnalysis.moatRatingLabel,
+                  trajectory: normalizedMoatAnalysis.trajectory,
+                  trajectoryDirection: normalizedMoatAnalysis.trajectoryDirection,
+                }
+              : null
+          }
           action={
             <WatchlistButton
               companyCode={code}
@@ -2109,7 +2142,6 @@ export default async function Page({
           id="moat-analysis"
           title="Moat Analysis"
           collapsible
-          defaultOpen={false}
           headerAction={
             moatGeneratedAtShort ? (
               <span className="text-[11px] text-muted-foreground">{moatGeneratedAtShort}</span>
@@ -2118,7 +2150,6 @@ export default async function Page({
         >
           {normalizedMoatAnalysis ? (
             <div className="space-y-4">
-              {/* Rating + trajectory header */}
               <div className={`${elevatedBlockClass} p-4 space-y-3`}>
                 <div className="flex flex-wrap items-center gap-2">
                   {(() => {
@@ -2144,14 +2175,14 @@ export default async function Page({
                     const cls = cfg?.className ?? "border-border/60 bg-muted/60 text-foreground";
                     return (
                       <span
-                        className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${cls}`}
+                        className={`rounded-full border px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.12em] ${cls}`}
                       >
                         {normalizedMoatAnalysis.moatRatingLabel}
                       </span>
                     );
                   })()}
                   {normalizedMoatAnalysis.trajectory && (
-                    <span className="rounded-full border border-border/60 bg-muted/50 px-2.5 py-0.5 text-[11px] text-foreground">
+                    <span className="rounded-full border border-border/60 bg-muted/50 px-2.5 py-0.5 text-[10px] font-medium text-foreground">
                       {normalizedMoatAnalysis.trajectoryDirection
                         ? `${normalizedMoatAnalysis.trajectory} ${normalizedMoatAnalysis.trajectoryDirection}`
                         : normalizedMoatAnalysis.trajectory}
@@ -2163,141 +2194,250 @@ export default async function Page({
                     </span>
                   )}
                 </div>
-              </div>
-
-              {/* Moat pillars */}
-              {normalizedMoatAnalysis.moatPillars.length > 0 && (
-                <div className={`${elevatedBlockClass} p-4 space-y-3`}>
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                    Competitive Advantages
+                {moatThesis && (
+                  <p className="max-w-4xl text-[13px] font-medium leading-relaxed text-foreground">
+                    {moatThesis}
                   </p>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {normalizedMoatAnalysis.moatPillars.map((pillar, idx) => {
-                      const borderAccent = pillar.present
-                        ? "border-l-2 border-l-emerald-500/70"
-                        : "border-l-2 border-l-border/50";
-                      return (
-                        <div
-                          key={`${pillar.type}-${idx}`}
-                          className={`${snapshotBlockClass} p-3 ${borderAccent} ${pillar.present ? "" : "opacity-60"}`}
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-[13px] font-semibold text-foreground leading-snug">
-                              {pillar.type}
-                            </p>
-                            <div className="flex items-center gap-1.5">
-                              <span
-                                className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${
-                                  pillar.present
-                                    ? "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
-                                    : "border-border/60 bg-muted/60 text-muted-foreground"
-                                }`}
-                              >
-                                {pillar.present ? "Present" : "Absent"}
+                )}
+              </div>
+              {(moatTotalPillars > 0 ||
+                normalizedMoatAnalysis.porterVerdict ||
+                normalizedMoatAnalysis.porterSummary ||
+                normalizedMoatAnalysis.durability ||
+                moatQuantitativeItems.length > 0 ||
+                normalizedMoatAnalysis.risks.length > 0) && (
+                <div className="space-y-2">
+                  {moatTotalPillars > 0 && (
+                    <details className={`group ${elevatedMutedBlockClass}`}>
+                      <summary className="list-none cursor-pointer px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
+                                Competitive Advantages
+                              </p>
+                              <span className="rounded-full border border-emerald-200/80 bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                                {moatPresentPillars.length} / {moatTotalPillars} present
                               </span>
+                            </div>
+                            <p className="text-[11px] leading-snug text-muted-foreground">
+                              {moatPresentPillars.length > 0
+                                ? `${moatPresentPillars.length} identified strengths${
+                                    moatAbsentPillars.length > 0
+                                      ? `, ${moatAbsentPillars.length} weaker dimensions`
+                                      : ""
+                                  }.`
+                                : "No durable advantages identified yet."}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-[11px] text-muted-foreground">
+                            <span className="group-open:hidden">Open</span>
+                            <span className="hidden group-open:inline">Hide</span>
+                          </span>
+                        </div>
+                      </summary>
+                      <div className="border-t border-border/40 px-4 py-3 space-y-3">
+                        {moatPresentPillars.length > 0 && (
+                          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                            {moatPresentPillars.map((pillar, idx) => (
+                              <div
+                                key={`${pillar.type}-present-${idx}`}
+                                className={`${elevatedBlockClass} border-l-2 border-l-emerald-500/70 p-3 space-y-2`}
+                              >
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="rounded-full border border-emerald-200/80 bg-emerald-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                                    Present
+                                  </span>
+                                  <p className="text-[12px] font-semibold text-foreground">
+                                    {pillar.type}
+                                  </p>
+                                  {pillar.greenwaldLabel && (
+                                    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                      {pillar.greenwaldLabel}
+                                    </span>
+                                  )}
+                                </div>
+                                {pillar.evidence ? (
+                                  <p className="text-[12px] leading-relaxed text-foreground">
+                                    {pillar.evidence}
+                                  </p>
+                                ) : (
+                                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                    Evidence not captured.
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {moatAbsentPillars.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                              Missing / weak moat dimensions
+                            </p>
+                            <div className="space-y-2">
+                              {moatAbsentPillars.map((pillar, idx) => (
+                                <div
+                                  key={`${pillar.type}-absent-${idx}`}
+                                  className={`${elevatedBlockClass} border-l-2 border-l-border/70 p-3 space-y-1.5`}
+                                >
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <p className="text-[12px] font-medium text-foreground">
+                                      {pillar.type}
+                                    </p>
+                                    {pillar.greenwaldLabel && (
+                                      <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                        {pillar.greenwaldLabel}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {pillar.evidence ? (
+                                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                      {pillar.evidence}
+                                    </p>
+                                  ) : (
+                                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                      No supporting moat evidence captured.
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           </div>
-                          {pillar.present && pillar.greenwaldLabel && (
-                            <div className="mt-1.5">
-                              <span className="rounded-full border border-violet-200/80 bg-violet-100 px-2 py-0.5 text-[10px] text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/30 dark:text-violet-200">
-                                {pillar.greenwaldLabel}
-                              </span>
+                        )}
+                      </div>
+                    </details>
+                  )}
+
+                  {(normalizedMoatAnalysis.porterVerdict ||
+                    normalizedMoatAnalysis.porterSummary ||
+                    normalizedMoatAnalysis.durability) && (
+                    <details className={`group ${elevatedMutedBlockClass}`}>
+                      <summary className="list-none cursor-pointer px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0 space-y-1">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
+                              Defensibility
+                            </p>
+                            <p className="text-[11px] leading-snug text-muted-foreground">
+                              {normalizedMoatAnalysis.porterVerdict ??
+                                normalizedMoatAnalysis.durability ??
+                                "Industry structure and moat durability."}
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-[11px] text-muted-foreground">
+                            <span className="group-open:hidden">Open</span>
+                            <span className="hidden group-open:inline">Hide</span>
+                          </span>
+                        </div>
+                      </summary>
+                      <div className="border-t border-border/40 px-4 py-3">
+                        <div className={`${elevatedBlockClass} p-3 space-y-2`}>
+                          {normalizedMoatAnalysis.porterVerdict && (
+                            <div className="space-y-1">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
+                                Porter verdict
+                              </p>
+                              <p className="text-[12px] leading-relaxed text-foreground">
+                                {normalizedMoatAnalysis.porterVerdict}
+                              </p>
                             </div>
                           )}
-                          {pillar.evidence && (
-                            <p className="mt-2 text-[12px] text-muted-foreground leading-relaxed">
-                              {pillar.evidence}
-                            </p>
+                          {normalizedMoatAnalysis.porterSummary && (
+                            <div className="space-y-1">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                Industry structure
+                              </p>
+                              <p className="text-[12px] leading-relaxed text-muted-foreground">
+                                {normalizedMoatAnalysis.porterSummary}
+                              </p>
+                            </div>
+                          )}
+                          {normalizedMoatAnalysis.durability && (
+                            <div className="space-y-1">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                Durability
+                              </p>
+                              <p className="text-[12px] leading-relaxed text-muted-foreground">
+                                {normalizedMoatAnalysis.durability}
+                              </p>
+                            </div>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Porter + Quantitative */}
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                {(normalizedMoatAnalysis.porterSummary || normalizedMoatAnalysis.porterVerdict) && (
-                  <div className={`${elevatedBlockClass} p-4 space-y-3`}>
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                      Industry Structure (Porter)
-                    </p>
-                    {normalizedMoatAnalysis.porterVerdict && (
-                      <div className={`${nestedDetailClass} px-3 py-2`}>
-                        <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                          Verdict
-                        </p>
-                        <p className="mt-1 text-[12px] text-foreground leading-relaxed">
-                          {normalizedMoatAnalysis.porterVerdict}
-                        </p>
                       </div>
-                    )}
-                    {normalizedMoatAnalysis.porterSummary && (
-                      <p className="text-[12px] text-muted-foreground leading-relaxed">
-                        {normalizedMoatAnalysis.porterSummary}
-                      </p>
-                    )}
-                  </div>
-                )}
+                    </details>
+                  )}
 
-                {normalizedMoatAnalysis.quantitativeCheck && (() => {
-                  const qc = normalizedMoatAnalysis.quantitativeCheck;
-                  const qcItems = [
-                    { label: "ROIC", value: qc.roic },
-                    { label: "Margins", value: qc.margins },
-                    { label: "Market Share", value: qc.marketShare },
-                    { label: "Pricing Power", value: qc.pricingPower },
-                  ].filter((item) => item.value);
-                  if (qcItems.length === 0) return null;
-                  return (
-                    <div className={`${elevatedBlockClass} p-4 space-y-3`}>
-                      <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                        Quantitative Context
-                      </p>
-                      <div className="space-y-2">
-                        {qcItems.map(({ label, value }) => (
-                          <div key={label} className={`${nestedDetailClass} px-3 py-2`}>
-                            <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                              {label}
+                  {moatQuantitativeItems.length > 0 && (
+                    <details className={`group ${elevatedMutedBlockClass}`}>
+                      <summary className="list-none cursor-pointer px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0 space-y-1">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
+                              Quantitative Context
                             </p>
-                            <p className="mt-1 text-[12px] text-foreground leading-relaxed">
-                              {value}
+                            <p className="text-[11px] leading-snug text-muted-foreground">
+                              {moatQuantitativeItems.length} metric
+                              {moatQuantitativeItems.length === 1 ? "" : "s"} tracked.
                             </p>
                           </div>
-                        ))}
+                          <span className="shrink-0 text-[11px] text-muted-foreground">
+                            <span className="group-open:hidden">Open</span>
+                            <span className="hidden group-open:inline">Hide</span>
+                          </span>
+                        </div>
+                      </summary>
+                      <div className="border-t border-border/40 px-4 py-3">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          {moatQuantitativeItems.map((item) => (
+                            <div key={item.label} className={`${elevatedBlockClass} p-3 space-y-1`}>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                {item.label}
+                              </p>
+                              <p className="text-[12px] leading-relaxed text-foreground">
+                                {item.value}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })()}
-              </div>
+                    </details>
+                  )}
 
-              {/* Durability */}
-              {normalizedMoatAnalysis.durability && (
-                <div className={`${elevatedBlockClass} p-4 space-y-2`}>
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                    Durability Assessment
-                  </p>
-                  <p className="text-[13px] text-foreground leading-relaxed">
-                    {normalizedMoatAnalysis.durability}
-                  </p>
-                </div>
-              )}
-
-              {/* Risks */}
-              {normalizedMoatAnalysis.risks.length > 0 && (
-                <div className={`${elevatedBlockClass} p-4 space-y-3`}>
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                    Key Risks to the Moat
-                  </p>
-                  <ul className="space-y-1.5">
-                    {normalizedMoatAnalysis.risks.map((risk, idx) => (
-                      <li key={idx} className="flex items-start gap-2.5">
-                        <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-muted-foreground/60" />
-                        <p className="text-[13px] text-foreground leading-relaxed">{risk}</p>
-                      </li>
-                    ))}
-                  </ul>
+                  {normalizedMoatAnalysis.risks.length > 0 && (
+                    <details className={`group ${elevatedMutedBlockClass}`}>
+                      <summary className="list-none cursor-pointer px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0 space-y-1">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
+                              Key Risks to the Moat
+                            </p>
+                            <p className="text-[11px] leading-snug text-muted-foreground">
+                              {normalizedMoatAnalysis.risks.length} risk
+                              {normalizedMoatAnalysis.risks.length === 1 ? "" : "s"} flagged.
+                            </p>
+                          </div>
+                          <span className="shrink-0 text-[11px] text-muted-foreground">
+                            <span className="group-open:hidden">Open</span>
+                            <span className="hidden group-open:inline">Hide</span>
+                          </span>
+                        </div>
+                      </summary>
+                      <div className="border-t border-border/40 px-4 py-3">
+                        <div className="space-y-2">
+                          {normalizedMoatAnalysis.risks.map((risk, idx) => (
+                            <div
+                              key={`${risk}-${idx}`}
+                              className={`${elevatedBlockClass} border-l-2 border-l-rose-400/70 p-3`}
+                            >
+                              <p className="text-[12px] leading-relaxed text-foreground">{risk}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </details>
+                  )}
                 </div>
               )}
             </div>

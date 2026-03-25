@@ -21,6 +21,12 @@ interface OverviewCardProps {
     growth?: { rank: number; total: number; percentile: number } | null;
   };
   sectorRankInfo?: { rank: number | null; total: number } | null;
+  moatInfo?: {
+    moatRating?: string | null;
+    moatRatingLabel?: string | null;
+    trajectory?: string | null;
+    trajectoryDirection?: string | null;
+  } | null;
   action?: ReactNode;
 }
 
@@ -53,6 +59,7 @@ export function OverviewCard({
   companyInfo,
   rankInfo,
   sectorRankInfo,
+  moatInfo,
   action,
 }: OverviewCardProps) {
   const sentiment = data ? categoryFor(data.score) : null;
@@ -67,6 +74,25 @@ export function OverviewCard({
           normalizedSubSector,
         )}`
       : null;
+  const moatPillClass = (() => {
+    switch (moatInfo?.moatRating) {
+      case "wide_moat":
+        return "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200";
+      case "narrow_moat":
+        return "border-sky-200 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200";
+      case "no_moat":
+        return "border-red-200 bg-red-100 text-red-800 dark:border-red-700/40 dark:bg-red-900/30 dark:text-red-200";
+      case "moat_at_risk":
+        return "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200";
+      default:
+        return "bg-muted text-muted-foreground border-border";
+    }
+  })();
+  const moatPillText = moatInfo?.moatRatingLabel
+    ? moatInfo.trajectory
+      ? `Moat: ${moatInfo.moatRatingLabel} · ${moatInfo.trajectory}`
+      : `Moat: ${moatInfo.moatRatingLabel}`
+    : null;
   return (
     <div id="overview" className="bg-card border border-border rounded-lg p-6">
       <div className="flex flex-col gap-3">
@@ -119,6 +145,11 @@ export function OverviewCard({
             >
               Sub-sector: {normalizedSubSector}
             </Link>
+          )}
+          {moatPillText && (
+            <span className={`px-2 py-1 rounded-full border ${moatPillClass}`}>
+              {moatPillText}
+            </span>
           )}
           <span
             className={`px-2 py-1 rounded-full border ${rankInfo?.quarter ? percentilePillClass(rankInfo.quarter.percentile) : "bg-muted text-muted-foreground border-border"}`}
