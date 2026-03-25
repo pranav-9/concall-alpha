@@ -516,9 +516,7 @@ export default async function Page({
       return b.revenueSharePercent - a.revenueSharePercent;
     });
 
-  const hasRevenueBreakdown =
-    (revenueBreakdown?.bySegment.length ?? 0) > 0 ||
-    (revenueBreakdown?.byProductOrService.length ?? 0) > 0;
+  const hasBusinessSegments = (revenueBreakdown?.bySegment.length ?? 0) > 0;
 
   const renderBusinessSnapshotDrawer = ({
     title,
@@ -529,7 +527,7 @@ export default async function Page({
     preview: string;
     children: React.ReactNode;
   }) => (
-    <details className={`group ${elevatedMutedBlockClass}`}>
+    <details className={`group/business-snapshot-drawer ${elevatedMutedBlockClass}`}>
       <summary className="list-none cursor-pointer px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 space-y-1">
@@ -538,9 +536,11 @@ export default async function Page({
             </p>
             <p className="text-[11px] leading-snug text-muted-foreground">{preview}</p>
           </div>
-          <span className="shrink-0 text-[11px] text-muted-foreground">
-            <span className="group-open:hidden">Open</span>
-            <span className="hidden group-open:inline">Hide</span>
+          <span className="inline-flex shrink-0 items-center rounded-full border border-sky-200 bg-sky-100 px-2.5 py-1 text-[10px] font-medium text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
+            <span className="group-open/business-snapshot-drawer:hidden">Show more</span>
+            <span className="hidden group-open/business-snapshot-drawer:inline">
+              Hide details
+            </span>
           </span>
         </div>
       </summary>
@@ -700,25 +700,16 @@ export default async function Page({
     );
   };
 
-  const renderRevenueBreakdownDrawer = () => {
-    if (!hasRevenueBreakdown) return null;
-
+  const renderBusinessSegmentsDrawer = () => {
+    if (!hasBusinessSegments) return null;
     const bySegmentCount = revenueBreakdown?.bySegment.length ?? 0;
-    const byProductCount = revenueBreakdown?.byProductOrService.length ?? 0;
     const preview =
-      [
-        bySegmentCount > 0
-          ? `${bySegmentCount} segment bucket${bySegmentCount === 1 ? "" : "s"}`
-          : null,
-        byProductCount > 0
-          ? `${byProductCount} product/service bucket${byProductCount === 1 ? "" : "s"}`
-          : null,
-      ]
-        .filter((value): value is string => Boolean(value))
-        .join(" · ") || "Open segment and product split.";
+      bySegmentCount > 0
+        ? `${bySegmentCount} segment bucket${bySegmentCount === 1 ? "" : "s"}`
+        : "Open segment mix and margins.";
 
     return renderBusinessSnapshotDrawer({
-      title: "Revenue Breakdown",
+      title: "Business Segments",
       preview,
       children: (
         <div className="space-y-3">
@@ -727,11 +718,6 @@ export default async function Page({
             entries: revenueBreakdown?.bySegment ?? [],
             className: "",
             useGrid: true,
-          })}
-          {renderRevenueBreakdownCard({
-            title: "By Product / Service",
-            entries: revenueBreakdown?.byProductOrService ?? [],
-            className: "",
           })}
         </div>
       ),
@@ -1665,7 +1651,7 @@ export default async function Page({
                   <>
                     <div className="space-y-2.5">
                       {(aboutHeading || aboutSupportingText) && (
-                        <div className={`${elevatedBlockClass} min-w-0 p-4 space-y-2`}>
+                        <div className="min-w-0 space-y-2">
                           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                             About
                           </p>
@@ -1682,8 +1668,8 @@ export default async function Page({
                         </div>
                       )}
 
+                      {renderBusinessSegmentsDrawer()}
                       {historicalEconomics && renderHistoricalEconomicsCard(historicalEconomics)}
-                      {renderRevenueBreakdownDrawer()}
                     </div>
                   </>
                 ) : hasLegacyBusinessSnapshot ? (
