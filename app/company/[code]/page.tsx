@@ -430,17 +430,6 @@ export default async function Page({
   const moatAbsentPillars =
     normalizedMoatAnalysis?.moatPillars.filter((pillar) => !pillar.present) ?? [];
   const moatTotalPillars = normalizedMoatAnalysis?.moatPillars.length ?? 0;
-  const moatQuantitativeItems = normalizedMoatAnalysis?.quantitativeCheck
-    ? [
-        { label: "ROIC", value: normalizedMoatAnalysis.quantitativeCheck.roic },
-        { label: "Margins", value: normalizedMoatAnalysis.quantitativeCheck.margins },
-        { label: "Market share", value: normalizedMoatAnalysis.quantitativeCheck.marketShare },
-        {
-          label: "Pricing power",
-          value: normalizedMoatAnalysis.quantitativeCheck.pricingPower,
-        },
-      ].filter((item): item is { label: string; value: string } => Boolean(item.value))
-    : [];
   const growthUpdatedAtRaw = normalizedGrowthOutlook?.updatedAtRaw ?? null;
   const growthUpdatedDate = growthUpdatedAtRaw ? new Date(growthUpdatedAtRaw) : null;
   const growthUpdatedAt =
@@ -2307,7 +2296,6 @@ export default async function Page({
                 normalizedMoatAnalysis.porterVerdict ||
                 normalizedMoatAnalysis.porterSummary ||
                 normalizedMoatAnalysis.durability ||
-                moatQuantitativeItems.length > 0 ||
                 normalizedMoatAnalysis.risks.length > 0) && (
                 <div className="space-y-2">
                   {moatTotalPillars > 0 && (
@@ -2467,42 +2455,6 @@ export default async function Page({
                               </p>
                             </div>
                           )}
-                        </div>
-                      </div>
-                    </details>
-                  )}
-
-                  {moatQuantitativeItems.length > 0 && (
-                    <details className={`group ${elevatedMutedBlockClass}`}>
-                      <summary className="list-none cursor-pointer px-4 py-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0 space-y-1">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                              Quantitative Context
-                            </p>
-                            <p className="text-[11px] leading-snug text-muted-foreground">
-                              {moatQuantitativeItems.length} metric
-                              {moatQuantitativeItems.length === 1 ? "" : "s"} tracked.
-                            </p>
-                          </div>
-                          <span className="shrink-0 text-[11px] text-muted-foreground">
-                            <span className="group-open:hidden">Open</span>
-                            <span className="hidden group-open:inline">Hide</span>
-                          </span>
-                        </div>
-                      </summary>
-                      <div className="border-t border-border/40 px-4 py-3">
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                          {moatQuantitativeItems.map((item) => (
-                            <div key={item.label} className={`${elevatedBlockClass} p-3 space-y-1`}>
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                {item.label}
-                              </p>
-                              <p className="text-[12px] leading-relaxed text-foreground">
-                                {item.value}
-                              </p>
-                            </div>
-                          ))}
                         </div>
                       </div>
                     </details>
