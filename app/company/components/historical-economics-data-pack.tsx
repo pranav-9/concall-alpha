@@ -3,8 +3,6 @@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
@@ -44,18 +42,11 @@ const percentFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 1,
 });
 
-const formatCompactLabel = (value: string) => value.replace(/_/g, " ").trim();
-
 const formatAbsoluteValue = (value: number | null | undefined) =>
   value == null ? "—" : valueFormatter.format(value);
 
 const formatPercentValue = (value: number | null | undefined) =>
   value == null ? "—" : `${percentFormatter.format(value)}%`;
-
-const formatRangeLabel = (start: string | null, end: string | null) => {
-  if (start && end) return `${start} -> ${end}`;
-  return start ?? end ?? null;
-};
 
 const getStableUnitColors = (history: NormalizedHistoricalEconomics) => {
   const orderedUnits: string[] = [];
@@ -113,37 +104,73 @@ const buildMixChartData = (
     return row;
   });
 
-const derivePeriods = (history: NormalizedHistoricalEconomics) => {
-  const summaryPeriods = history.summary?.periods ?? [];
-  if (summaryPeriods.length > 0) return summaryPeriods;
-  if ((history.revenueHistoryByUnit?.periods.length ?? 0) > 0) {
-    return history.revenueHistoryByUnit?.periods ?? [];
+const getDisplayPeriods = (periods: string[]) => [...periods].reverse();
+
+const getCagrDisplayClassName = (value: number | null | undefined) => {
+  if (value == null) {
+    return "border-border/60 bg-muted/60 text-muted-foreground";
   }
-  if ((history.revenueMixHistoryByUnit?.periods.length ?? 0) > 0) {
-    return history.revenueMixHistoryByUnit?.periods ?? [];
+  if (value > 0) {
+    return "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200";
   }
-  return history.revenueSplitHistory
-    .map((row) => row.year)
-    .filter((value): value is string => Boolean(value));
+  if (value < 0) {
+    return "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200";
+  }
+  return "border-border/60 bg-muted/60 text-foreground";
 };
 
-const deriveOverallConfidence = (history: NormalizedHistoricalEconomics) => {
-  if (history.summary?.overallConfidence) return history.summary.overallConfidence;
-
-  const confidenceValues = [
-    ...(history.revenueHistoryByUnit?.rows.map((row) => row.confidence).filter(Boolean) ?? []),
-    ...(history.revenueMixHistoryByUnit?.rows.map((row) => row.confidence).filter(Boolean) ?? []),
-  ] as string[];
-
-  const unique = Array.from(new Set(confidenceValues));
-  return unique.length === 1 ? unique[0] : null;
+const getLatestNumericValue = (
+  periods: string[],
+  valuesByPeriod: Record<string, number | null>,
+) => {
+  for (let index = periods.length - 1; index >= 0; index -= 1) {
+    const value = valuesByPeriod[periods[index]];
+    if (typeof value === "number") {
+      return value;
+    }
+  }
+  return Number.NEGATIVE_INFINITY;
 };
 
-const deriveMethodologyNote = (history: NormalizedHistoricalEconomics) =>
-  history.summary?.methodologyNote ??
-  history.revenueHistoryByUnit?.methodologyNote ??
-  history.revenueMixHistoryByUnit?.methodologyNote ??
-  null;
+const getOrderedRevenueHistoryRows = (
+  rows: NormalizedRevenueHistoryByUnitRow[],
+  periods: string[],
+) => {
+  const consolidatedRows = rows.filter((row) => row.isConsolidated);
+  const unitRows = rows.filter((row) => !row.isConsolidated);
+
+  unitRows.sort((a, b) => {
+    const revenueDelta =
+      getLatestNumericValue(periods, b.valuesByPeriod) -
+      getLatestNumericValue(periods, a.valuesByPeriod);
+    if (revenueDelta !== 0) return revenueDelta;
+    return a.unit.localeCompare(b.unit);
+  });
+
+  return [...unitRows, ...consolidatedRows];
+};
+
+const getOrderedRevenueMixRows = (
+  rows: NormalizedRevenueMixHistoryByUnitRow[],
+  periods: string[],
+  rowOrderMap: Map<string, number>,
+) =>
+  [...rows].sort((a, b) => {
+    const aOrder = rowOrderMap.get(a.unit);
+    const bOrder = rowOrderMap.get(b.unit);
+
+    if (aOrder != null && bOrder != null) {
+      return aOrder - bOrder;
+    }
+    if (aOrder != null) return -1;
+    if (bOrder != null) return 1;
+
+    const mixDelta =
+      getLatestNumericValue(periods, b.mixByPeriod) -
+      getLatestNumericValue(periods, a.mixByPeriod);
+    if (mixDelta !== 0) return mixDelta;
+    return a.unit.localeCompare(b.unit);
+  });
 
 function InsightList({ insights }: { insights: string[] }) {
   if (insights.length === 0) return null;
@@ -185,19 +212,56 @@ function UnitLabel({
   );
 }
 
+function ConfidenceBadge({ value }: { value: string | null }) {
+  if (!value) return null;
+
+  return (
+    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
+      {value}
+    </span>
+  );
+}
+
+function UnitLegend({
+  units,
+  unitColors,
+}: {
+  units: string[];
+  unitColors: Record<string, string>;
+}) {
+  if (units.length === 0) return null;
+
+  return (
+    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+      {units.map((unit, index) => (
+        <div key={`${unit}-${index}`} className="flex items-center gap-2">
+          <span
+            className="h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: unitColors[unit] ?? unitPalette[index % unitPalette.length] }}
+          />
+          <span className="text-[11px] leading-snug text-muted-foreground">{unit}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function RevenueHistoryModule({
   module,
   unitColors,
+  orderedRows,
 }: {
   module: NormalizedRevenueHistoryByUnit;
   unitColors: Record<string, string>;
+  orderedRows: NormalizedRevenueHistoryByUnitRow[];
 }) {
   if (module.rows.length === 0 || module.periods.length === 0) return null;
+  const displayPeriods = getDisplayPeriods(module.periods);
 
   const chartRows =
-    module.rows.filter((row) => !row.isConsolidated).length > 0
-      ? module.rows.filter((row) => !row.isConsolidated)
-      : module.rows;
+    orderedRows.filter((row) => !row.isConsolidated).length > 0
+      ? orderedRows.filter((row) => !row.isConsolidated)
+      : orderedRows;
   const chartConfig = buildSeriesConfig(
     chartRows.map((row) => row.unit),
     unitColors,
@@ -219,7 +283,7 @@ function RevenueHistoryModule({
 
       <div
         className={`grid grid-cols-1 gap-3 ${
-          chartData.length > 0 ? "xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]" : ""
+          chartData.length > 0 ? "xl:grid-cols-[minmax(0,1.22fr)_minmax(19rem,0.78fr)]" : ""
         }`}
       >
         <div className="rounded-xl border border-border/20 bg-background/70 p-2">
@@ -227,23 +291,24 @@ function RevenueHistoryModule({
             <TableHeader className="bg-muted/45">
               <TableRow>
                 <TableHead>Unit</TableHead>
-                {module.periods.map((period) => (
+                {displayPeriods.map((period) => (
                   <TableHead key={period} className="text-right">
                     {period}
                   </TableHead>
                 ))}
-                <TableHead className="text-right">CAGR</TableHead>
-                <TableHead>Confidence</TableHead>
+                <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                  CAGR
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {module.rows.map((row) => (
+              {orderedRows.map((row) => (
                 <TableRow
                   key={`revenue-${row.unit}`}
                   className={row.isConsolidated ? "bg-muted/30 font-medium" : undefined}
                 >
                   <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <UnitLabel
                         unit={row.unit}
                         color={unitColors[row.unit] ?? unitPalette[0]}
@@ -254,24 +319,22 @@ function RevenueHistoryModule({
                           Consolidated
                         </span>
                       )}
+                      <ConfidenceBadge value={row.confidence} />
                     </div>
                   </TableCell>
-                  {module.periods.map((period) => (
+                  {displayPeriods.map((period) => (
                     <TableCell key={`${row.unit}-${period}`} className="text-right text-[12px]">
                       {formatAbsoluteValue(row.valuesByPeriod[period])}
                     </TableCell>
                   ))}
-                  <TableCell className="text-right text-[12px]">
-                    {formatPercentValue(row.cagrPercent)}
-                  </TableCell>
-                  <TableCell className="text-[12px]">
-                    {row.confidence ? (
-                      <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
-                        {row.confidence}
-                      </span>
-                    ) : (
-                      "—"
-                    )}
+                  <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                    <span
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
+                        row.cagrPercent,
+                      )}`}
+                    >
+                      {formatPercentValue(row.cagrPercent)}
+                    </span>
                   </TableCell>
                 </TableRow>
               ))}
@@ -280,12 +343,27 @@ function RevenueHistoryModule({
         </div>
 
         {chartData.length > 0 && (
-          <div className="rounded-xl border border-border/20 bg-background/70 p-3">
+          <div className="rounded-xl border border-border/20 bg-background/70 p-3 space-y-3">
+            <div className="space-y-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Chart View
+              </p>
+              <UnitLegend
+                units={chartRows.map((row) => row.unit)}
+                unitColors={unitColors}
+              />
+            </div>
             <ChartContainer
-              className="min-h-[260px] w-full xl:min-h-[320px]"
+              className="h-[280px] w-full aspect-auto xl:h-[320px]"
               config={chartConfig}
             >
-              <BarChart accessibilityLayer data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 8 }}>
+              <BarChart
+                accessibilityLayer
+                data={chartData}
+                margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
+                barCategoryGap="18%"
+                maxBarSize={56}
+              >
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={10} />
                 <YAxis
@@ -295,7 +373,6 @@ function RevenueHistoryModule({
                   tickFormatter={(value: number) => formatAbsoluteValue(value)}
                 />
                 <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
-                <ChartLegend content={<ChartLegendContent />} />
                 {chartRows.map((row, index) => (
                   <Bar
                     key={`series_${index}`}
@@ -319,17 +396,20 @@ function RevenueHistoryModule({
 function RevenueMixHistoryModule({
   module,
   unitColors,
+  orderedRows,
 }: {
   module: NormalizedRevenueMixHistoryByUnit;
   unitColors: Record<string, string>;
+  orderedRows: NormalizedRevenueMixHistoryByUnitRow[];
 }) {
   if (module.rows.length === 0 || module.periods.length === 0) return null;
+  const displayPeriods = getDisplayPeriods(module.periods);
 
   const chartConfig = buildSeriesConfig(
-    module.rows.map((row) => row.unit),
+    orderedRows.map((row) => row.unit),
     unitColors,
   );
-  const chartData = buildMixChartData(module, module.rows);
+  const chartData = buildMixChartData(module, orderedRows);
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
@@ -346,7 +426,7 @@ function RevenueMixHistoryModule({
 
       <div
         className={`grid grid-cols-1 gap-3 ${
-          chartData.length > 0 ? "xl:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]" : ""
+          chartData.length > 0 ? "xl:grid-cols-[minmax(0,1.22fr)_minmax(19rem,0.78fr)]" : ""
         }`}
       >
         <div className="rounded-xl border border-border/20 bg-background/70 p-2">
@@ -354,38 +434,37 @@ function RevenueMixHistoryModule({
             <TableHeader className="bg-muted/45">
               <TableRow>
                 <TableHead>Unit</TableHead>
-                {module.periods.map((period) => (
+                {displayPeriods.map((period) => (
                   <TableHead key={period} className="text-right">
                     {period}
                   </TableHead>
                 ))}
-                <TableHead>Direction</TableHead>
-                <TableHead>Confidence</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {module.rows.map((row) => (
+              {orderedRows.map((row) => (
                 <TableRow key={`mix-${row.unit}`}>
                   <TableCell className="font-medium">
-                    <UnitLabel unit={row.unit} color={unitColors[row.unit] ?? unitPalette[0]} />
+                    <div className="space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <UnitLabel
+                          unit={row.unit}
+                          color={unitColors[row.unit] ?? unitPalette[0]}
+                        />
+                        <ConfidenceBadge value={row.confidence} />
+                      </div>
+                      {row.direction && (
+                        <p className="max-w-[16rem] text-[11px] leading-relaxed text-muted-foreground">
+                          {row.direction}
+                        </p>
+                      )}
+                    </div>
                   </TableCell>
-                  {module.periods.map((period) => (
+                  {displayPeriods.map((period) => (
                     <TableCell key={`${row.unit}-${period}`} className="text-right text-[12px]">
                       {formatPercentValue(row.mixByPeriod[period])}
                     </TableCell>
                   ))}
-                  <TableCell className="text-[12px] whitespace-normal">
-                    {row.direction ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-[12px]">
-                    {row.confidence ? (
-                      <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
-                        {row.confidence}
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -393,12 +472,27 @@ function RevenueMixHistoryModule({
         </div>
 
         {chartData.length > 0 && (
-          <div className="rounded-xl border border-border/20 bg-background/70 p-3">
+          <div className="rounded-xl border border-border/20 bg-background/70 p-3 space-y-3">
+            <div className="space-y-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Chart View
+              </p>
+              <UnitLegend
+                units={orderedRows.map((row) => row.unit)}
+                unitColors={unitColors}
+              />
+            </div>
             <ChartContainer
-              className="min-h-[260px] w-full xl:min-h-[320px]"
+              className="h-[280px] w-full aspect-auto xl:h-[320px]"
               config={chartConfig}
             >
-              <BarChart accessibilityLayer data={chartData} margin={{ top: 12, right: 12, left: 0, bottom: 8 }}>
+              <BarChart
+                accessibilityLayer
+                data={chartData}
+                margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
+                barCategoryGap="18%"
+                maxBarSize={56}
+              >
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={10} />
                 <YAxis
@@ -406,11 +500,11 @@ function RevenueMixHistoryModule({
                   axisLine={false}
                   width={36}
                   domain={[0, 100]}
+                  ticks={[0, 25, 50, 75, 100]}
                   tickFormatter={(value: number) => `${value}%`}
                 />
                 <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
-                <ChartLegend content={<ChartLegendContent />} />
-                {module.rows.map((row, index) => (
+                {orderedRows.map((row, index) => (
                   <Bar
                     key={`series_${index}`}
                     dataKey={`series_${index}`}
@@ -435,85 +529,31 @@ export function HistoricalEconomicsDataPack({
 }: {
   history: NormalizedHistoricalEconomics;
 }) {
-  const summaryCagr = history.summary?.companyRevenueCagr ?? history.companyRevenueCagr3y;
-  const periods = derivePeriods(history);
-  const overallConfidence = deriveOverallConfidence(history);
-  const methodologyNote = deriveMethodologyNote(history);
-  const periodCoverage =
-    periods.length > 1 ? `${periods[0]} -> ${periods[periods.length - 1]}` : periods[0] ?? null;
   const unitColors = getStableUnitColors(history);
+  const orderedRevenueHistoryRows = history.revenueHistoryByUnit
+    ? getOrderedRevenueHistoryRows(
+        history.revenueHistoryByUnit.rows,
+        history.revenueHistoryByUnit.periods,
+      )
+    : [];
+  const revenueRowOrderMap = new Map(
+    orderedRevenueHistoryRows.map((row, index) => [row.unit, index] as const),
+  );
+  const orderedRevenueMixRows = history.revenueMixHistoryByUnit
+    ? getOrderedRevenueMixRows(
+        history.revenueMixHistoryByUnit.rows,
+        history.revenueMixHistoryByUnit.periods,
+        revenueRowOrderMap,
+      )
+    : [];
 
   return (
     <div className="space-y-4">
-      {(summaryCagr || periodCoverage || overallConfidence || methodologyNote) && (
-        <div className="rounded-xl border border-border/20 bg-background/55 p-3">
-          <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
-            {summaryCagr && (
-              <div className="min-w-0 space-y-1">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  Company Revenue CAGR
-                </p>
-                <div className="flex flex-wrap items-end gap-2">
-                  {summaryCagr.cagrPercent != null && (
-                    <p className="text-[20px] font-semibold leading-none text-foreground">
-                      {formatPercentValue(summaryCagr.cagrPercent)}
-                    </p>
-                  )}
-                  {formatRangeLabel(summaryCagr.startYear, summaryCagr.endYear) && (
-                    <span className="text-[11px] text-muted-foreground">
-                      {formatRangeLabel(summaryCagr.startYear, summaryCagr.endYear)}
-                    </span>
-                  )}
-                </div>
-                {(summaryCagr.scope || summaryCagr.basis) && (
-                  <p className="text-[10px] text-muted-foreground">
-                    {[summaryCagr.scope, summaryCagr.basis]
-                      .filter((value): value is string => Boolean(value))
-                      .map((value) => formatCompactLabel(value))
-                      .join(" · ")}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {periodCoverage && (
-              <div className="min-w-0 space-y-1">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  Period Coverage
-                </p>
-                <p className="text-[14px] font-medium leading-snug text-foreground">
-                  {periodCoverage}
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  {periods.length} period{periods.length === 1 ? "" : "s"} tracked
-                </p>
-              </div>
-            )}
-
-            {overallConfidence && (
-              <div className="min-w-0 space-y-1">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  Confidence
-                </p>
-                <span className="inline-flex rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
-                  {overallConfidence}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {methodologyNote && (
-            <p className="mt-3 border-t border-border/25 pt-3 text-[11px] leading-relaxed text-muted-foreground">
-              {methodologyNote}
-            </p>
-          )}
-        </div>
-      )}
-
       {history.revenueHistoryByUnit && (
         <RevenueHistoryModule
           module={history.revenueHistoryByUnit}
           unitColors={unitColors}
+          orderedRows={orderedRevenueHistoryRows}
         />
       )}
 
@@ -521,6 +561,7 @@ export function HistoricalEconomicsDataPack({
         <RevenueMixHistoryModule
           module={history.revenueMixHistoryByUnit}
           unitColors={unitColors}
+          orderedRows={orderedRevenueMixRows}
         />
       )}
     </div>
