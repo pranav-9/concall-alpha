@@ -28,6 +28,7 @@ import { normalizeCompanyIndustryAnalysis } from "@/lib/company-industry-analysi
 import { GuidanceHistorySection } from "../components/guidance-history-section";
 import { MissingSectionRequestButton } from "../components/missing-section-request-button";
 import { QuarterlyScoreSection } from "../components/quarterly-score-section";
+import { HistoricalEconomicsDataPack } from "../components/historical-economics-data-pack";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
@@ -307,7 +308,7 @@ export default async function Page({
   const { data: businessSnapshotData } = await supabase
     .from("business_snapshot")
     .select(
-      "company, generated_at, documents_processed, segment_profiles, business_snapshot, about_company, revenue_breakdown, revenue_engine, details, snapshot_phase, snapshot_source, source_urls",
+      "company, generated_at, segment_profiles, business_snapshot, historical_economics, about_company, revenue_breakdown, revenue_engine, details, snapshot_phase, snapshot_source, source_urls",
     )
     .eq("company", code)
     .order("generated_at", { ascending: false })
@@ -464,12 +465,18 @@ export default async function Page({
   const aboutCompany = normalizedBusinessSnapshot?.aboutCompany ?? null;
   const revenueBreakdown = normalizedBusinessSnapshot?.revenueBreakdown ?? null;
   const historicalEconomics = normalizedBusinessSnapshot?.historicalEconomics ?? null;
+  const hasHistoricalEconomicsSource =
+    normalizedBusinessSnapshot?.hasHistoricalEconomicsSource ?? false;
   const aboutHeading =
     aboutCompany?.aboutShort ?? normalizedBusinessSnapshot?.businessSummaryShort ?? null;
   const aboutSupportingText =
     aboutCompany?.aboutLong ?? normalizedBusinessSnapshot?.businessSummaryLong ?? null;
   const hasHistoricalEconomics = Boolean(
     historicalEconomics?.companyRevenueCagr3y ||
+      historicalEconomics?.summary ||
+      historicalEconomics?.revenueHistoryByUnit ||
+      historicalEconomics?.revenueMixHistoryByUnit ||
+      hasHistoricalEconomicsSource ||
       (historicalEconomics?.revenueSplitHistory.length ?? 0) > 0 ||
       (historicalEconomics?.segmentGrowthCagr3y.length ?? 0) > 0,
   );
@@ -727,6 +734,10 @@ export default async function Page({
   const renderHistoricalEconomicsCard = (
     history: NonNullable<typeof historicalEconomics>,
   ) => {
+    const hasRichHistoricalEconomics =
+      Boolean(history.summary) ||
+      (history.revenueHistoryByUnit?.rows.length ?? 0) > 0 ||
+      (history.revenueMixHistoryByUnit?.rows.length ?? 0) > 0;
     const companyRevenueCagr = history.companyRevenueCagr3y;
     const hasCompanyRevenueCagr = Boolean(
       companyRevenueCagr &&
@@ -747,22 +758,53 @@ export default async function Page({
     const hasSegmentGrowth = segmentGrowthRows.length > 0;
     const hasRevenueSplitHistory = revenueSplitRows.length > 0;
     const historicalMetaColumn = hasCompanyRevenueCagr || hasSegmentGrowth;
+    const richSummaryCagr = history.summary?.companyRevenueCagr ?? history.companyRevenueCagr3y;
+    const richPeriods =
+      (history.summary?.periods.length ?? 0) > 0
+        ? history.summary?.periods ?? []
+        : (history.revenueHistoryByUnit?.periods.length ?? 0) > 0
+          ? history.revenueHistoryByUnit?.periods ?? []
+          : history.revenueMixHistoryByUnit?.periods ?? [];
     const preview =
-      [
-        companyRevenueCagr?.cagrPercent != null
-          ? `${formatPctLabel(companyRevenueCagr.cagrPercent)} company CAGR`
-          : hasCompanyRevenueCagr
-            ? "Company CAGR tracked"
-            : null,
-        hasRevenueSplitHistory
-          ? `${revenueSplitRows.length} split year${revenueSplitRows.length === 1 ? "" : "s"}`
-          : null,
-        hasSegmentGrowth
-          ? `${segmentGrowthRows.length} segment CAGR row${segmentGrowthRows.length === 1 ? "" : "s"}`
-          : null,
-      ]
-        .filter((value): value is string => Boolean(value))
-        .join(" · ") || "Open company economics history.";
+      hasRichHistoricalEconomics
+        ? [
+            richSummaryCagr?.cagrPercent != null
+              ? `${formatPctLabel(richSummaryCagr.cagrPercent)} company CAGR`
+              : richSummaryCagr
+                ? "Company CAGR tracked"
+                : null,
+            richPeriods.length > 0
+              ? `${richPeriods.length} period${richPeriods.length === 1 ? "" : "s"}`
+              : null,
+            history.summary?.overallConfidence
+              ? `${formatCompactLabel(history.summary.overallConfidence)} confidence`
+              : null,
+          ]
+            .filter((value): value is string => Boolean(value))
+            .join(" · ") || "Open historical economics data pack."
+        : [
+            companyRevenueCagr?.cagrPercent != null
+              ? `${formatPctLabel(companyRevenueCagr.cagrPercent)} company CAGR`
+              : hasCompanyRevenueCagr
+                ? "Company CAGR tracked"
+                : null,
+            hasRevenueSplitHistory
+              ? `${revenueSplitRows.length} split year${revenueSplitRows.length === 1 ? "" : "s"}`
+              : null,
+            hasSegmentGrowth
+              ? `${segmentGrowthRows.length} segment CAGR row${segmentGrowthRows.length === 1 ? "" : "s"}`
+              : null,
+          ]
+            .filter((value): value is string => Boolean(value))
+            .join(" · ") || "Open company economics history.";
+
+    if (hasRichHistoricalEconomics) {
+      return renderBusinessSnapshotDrawer({
+        title: "Historical Economics",
+        preview,
+        children: <HistoricalEconomicsDataPack history={history} />,
+      });
+    }
 
     if (!historicalMetaColumn && !hasRevenueSplitHistory) return null;
 
@@ -928,6 +970,25 @@ export default async function Page({
       ),
     });
   };
+
+  const renderHistoricalEconomicsUnavailableCard = () =>
+    renderBusinessSnapshotDrawer({
+      title: "Historical Economics",
+      preview: "Data exists, but the current payload is not display-ready yet.",
+      children: (
+        <div className={`${snapshotSubsectionClass} p-3 space-y-1.5`}>
+          <p className="text-[12px] font-medium text-foreground">
+            Historical economics data is available for this company, but the stored
+            structure does not match the current display format yet.
+          </p>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Once this company&apos;s payload is refreshed to the richer economic-unit
+            schema, this section will show the full data pack with tables, charts,
+            and insights.
+          </p>
+        </div>
+      ),
+    });
   const renderIndustryThemes = (
     title: string,
     items: NormalizedIndustryTheme[],
@@ -1126,16 +1187,9 @@ export default async function Page({
     {
       ...SECTION_MAP.businessSnapshot,
       meta:
-        hasBusinessSnapshotContent &&
-        typeof normalizedBusinessSnapshot?.documentsProcessed === "number"
-          ? {
-              kind: "count" as const,
-              count: normalizedBusinessSnapshot.documentsProcessed,
-              suffix: "docs",
-            }
-          : hasBusinessSnapshotContent
-            ? { kind: "text" as const, text: "Live" }
-            : { kind: "text" as const, text: "Soon" },
+        hasBusinessSnapshotContent
+          ? { kind: "text" as const, text: "Live" }
+          : { kind: "text" as const, text: "Soon" },
     },
     {
       ...SECTION_MAP.quarterlyScore,
@@ -1669,7 +1723,11 @@ export default async function Page({
                       )}
 
                       {renderBusinessSegmentsDrawer()}
-                      {historicalEconomics && renderHistoricalEconomicsCard(historicalEconomics)}
+                      {historicalEconomics
+                        ? renderHistoricalEconomicsCard(historicalEconomics)
+                        : hasHistoricalEconomicsSource
+                          ? renderHistoricalEconomicsUnavailableCard()
+                          : null}
                     </div>
                   </>
                 ) : hasLegacyBusinessSnapshot ? (

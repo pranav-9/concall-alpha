@@ -3,8 +3,13 @@ import type {
   NormalizedAboutCompany,
   NormalizedBusinessSnapshot,
   NormalizedHistoricalEconomics,
+  NormalizedHistoricalEconomicsSummary,
   NormalizedRevenueBreakdown,
   NormalizedRevenueBreakdownItem,
+  NormalizedRevenueHistoryByUnit,
+  NormalizedRevenueHistoryByUnitRow,
+  NormalizedRevenueMixHistoryByUnit,
+  NormalizedRevenueMixHistoryByUnitRow,
 } from "@/lib/business-snapshot/types";
 
 type JsonRecord = Record<string, unknown>;
@@ -49,6 +54,16 @@ const asNumber = (value: unknown): number | null => {
   if (typeof value === "string") {
     const parsed = parseFloat(value);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const asBoolean = (value: unknown): boolean | null => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
   }
   return null;
 };
@@ -194,6 +209,62 @@ const normalizeCompanyRevenueCagr3y = (value: unknown) => {
   };
 };
 
+const normalizeNumericPeriodMap = (value: unknown): Record<string, number | null> => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return {};
+
+  return Object.entries(row).reduce<Record<string, number | null>>((acc, [key, rawValue]) => {
+    const numericValue = asNumber(rawValue);
+    if (numericValue != null || rawValue === null) {
+      acc[key] = numericValue;
+    }
+    return acc;
+  }, {});
+};
+
+const collectPeriodsFromNumericMaps = (
+  maps: Record<string, number | null>[],
+): string[] => {
+  const periods: string[] = [];
+  const seen = new Set<string>();
+
+  maps.forEach((valueMap) => {
+    Object.keys(valueMap).forEach((period) => {
+      if (!seen.has(period)) {
+        seen.add(period);
+        periods.push(period);
+      }
+    });
+  });
+
+  return periods;
+};
+
+const normalizeHistoricalEconomicsSummary = (
+  value: unknown,
+): NormalizedHistoricalEconomicsSummary | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const companyRevenueCagr =
+    normalizeCompanyRevenueCagr3y(row.company_revenue_cagr) ??
+    normalizeCompanyRevenueCagr3y(row.company_revenue_cagr_3y);
+  const periods = toStringArray(row.periods);
+  const overallConfidence = asString(row.overall_confidence) ?? null;
+  const methodologyNote = asString(row.methodology_note) ?? null;
+
+  if (!companyRevenueCagr && periods.length === 0 && !overallConfidence && !methodologyNote) {
+    return null;
+  }
+
+  return {
+    companyRevenueCagr,
+    periods,
+    overallConfidence,
+    methodologyNote,
+  };
+};
+
 const normalizeRevenueSplitHistoryRow = (value: unknown) => {
   const row = parseJsonObjectLike(value);
   if (!row) return null;
@@ -233,6 +304,75 @@ const normalizeRevenueSplitHistoryRow = (value: unknown) => {
   };
 };
 
+const normalizeRevenueHistoryByUnitRow = (
+  value: unknown,
+): NormalizedRevenueHistoryByUnitRow | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const unit = asString(row.unit) ?? null;
+  if (!unit) return null;
+
+  const primaryValuesByPeriod = normalizeNumericPeriodMap(row.values_by_period);
+  const fallbackValuesByPeriod = normalizeNumericPeriodMap(row.values);
+  const valuesByPeriod =
+    Object.keys(primaryValuesByPeriod).length > 0
+      ? primaryValuesByPeriod
+      : fallbackValuesByPeriod;
+  const cagrPercent = asNumber(row.cagr_percent);
+  const confidence = asString(row.confidence) ?? null;
+  const isConsolidated = asBoolean(row.is_consolidated) ?? false;
+
+  if (
+    Object.keys(valuesByPeriod).length === 0 &&
+    cagrPercent == null &&
+    !confidence &&
+    !isConsolidated
+  ) {
+    return null;
+  }
+
+  return {
+    unit,
+    valuesByPeriod,
+    cagrPercent,
+    confidence,
+    isConsolidated,
+  };
+};
+
+const normalizeRevenueHistoryByUnit = (
+  value: unknown,
+): NormalizedRevenueHistoryByUnit | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const rows = parseJsonArrayLike(row.rows)
+    .map((item) => normalizeRevenueHistoryByUnitRow(item))
+    .filter((item): item is NormalizedRevenueHistoryByUnitRow => Boolean(item));
+  const periodsFromRows = collectPeriodsFromNumericMaps(rows.map((item) => item.valuesByPeriod));
+  const periods = toStringArray(row.periods);
+  const insights = toStringArray(row.insights);
+  const methodologyNote = asString(row.methodology_note) ?? null;
+
+  if (
+    rows.length === 0 &&
+    periods.length === 0 &&
+    periodsFromRows.length === 0 &&
+    insights.length === 0 &&
+    !methodologyNote
+  ) {
+    return null;
+  }
+
+  return {
+    periods: periods.length > 0 ? periods : periodsFromRows,
+    rows,
+    insights,
+    methodologyNote,
+  };
+};
+
 const normalizeSegmentGrowthCagr3yRow = (value: unknown) => {
   const row = parseJsonObjectLike(value);
   if (!row) return null;
@@ -250,11 +390,74 @@ const normalizeSegmentGrowthCagr3yRow = (value: unknown) => {
   };
 };
 
+const normalizeRevenueMixHistoryByUnitRow = (
+  value: unknown,
+): NormalizedRevenueMixHistoryByUnitRow | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const unit = asString(row.unit) ?? null;
+  if (!unit) return null;
+
+  const primaryMixByPeriod = normalizeNumericPeriodMap(row.mix_by_period);
+  const fallbackMixByPeriod = normalizeNumericPeriodMap(row.values_by_period);
+  const mixByPeriod =
+    Object.keys(primaryMixByPeriod).length > 0
+      ? primaryMixByPeriod
+      : fallbackMixByPeriod;
+  const direction = asString(row.direction) ?? null;
+  const confidence = asString(row.confidence) ?? null;
+
+  if (Object.keys(mixByPeriod).length === 0 && !direction && !confidence) {
+    return null;
+  }
+
+  return {
+    unit,
+    mixByPeriod,
+    direction,
+    confidence,
+  };
+};
+
+const normalizeRevenueMixHistoryByUnit = (
+  value: unknown,
+): NormalizedRevenueMixHistoryByUnit | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const rows = parseJsonArrayLike(row.rows)
+    .map((item) => normalizeRevenueMixHistoryByUnitRow(item))
+    .filter((item): item is NormalizedRevenueMixHistoryByUnitRow => Boolean(item));
+  const periodsFromRows = collectPeriodsFromNumericMaps(rows.map((item) => item.mixByPeriod));
+  const periods = toStringArray(row.periods);
+  const insights = toStringArray(row.insights);
+  const methodologyNote = asString(row.methodology_note) ?? null;
+
+  if (
+    rows.length === 0 &&
+    periods.length === 0 &&
+    periodsFromRows.length === 0 &&
+    insights.length === 0 &&
+    !methodologyNote
+  ) {
+    return null;
+  }
+
+  return {
+    periods: periods.length > 0 ? periods : periodsFromRows,
+    rows,
+    insights,
+    methodologyNote,
+  };
+};
+
 const normalizeHistoricalEconomics = ({
   historicalEconomicsSource,
 }: {
   historicalEconomicsSource: JsonRecord | null;
 }): NormalizedHistoricalEconomics | null => {
+  const summary = normalizeHistoricalEconomicsSummary(historicalEconomicsSource?.summary);
   const companyRevenueCagr3y = normalizeCompanyRevenueCagr3y(
     historicalEconomicsSource?.company_revenue_cagr_3y,
   );
@@ -264,8 +467,21 @@ const normalizeHistoricalEconomics = ({
   const segmentGrowthCagr3y = parseJsonArrayLike(historicalEconomicsSource?.segment_growth_cagr_3y)
     .map((item) => normalizeSegmentGrowthCagr3yRow(item))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const revenueHistoryByUnit = normalizeRevenueHistoryByUnit(
+    historicalEconomicsSource?.revenue_history_by_unit,
+  );
+  const revenueMixHistoryByUnit = normalizeRevenueMixHistoryByUnit(
+    historicalEconomicsSource?.revenue_mix_history_by_unit,
+  );
 
-  if (!companyRevenueCagr3y && revenueSplitHistory.length === 0 && segmentGrowthCagr3y.length === 0) {
+  if (
+    !summary &&
+    !companyRevenueCagr3y &&
+    revenueSplitHistory.length === 0 &&
+    segmentGrowthCagr3y.length === 0 &&
+    !revenueHistoryByUnit &&
+    !revenueMixHistoryByUnit
+  ) {
     return null;
   }
 
@@ -273,6 +489,9 @@ const normalizeHistoricalEconomics = ({
     companyRevenueCagr3y,
     revenueSplitHistory,
     segmentGrowthCagr3y,
+    summary,
+    revenueHistoryByUnit,
+    revenueMixHistoryByUnit,
   };
 };
 
@@ -337,6 +556,12 @@ export function normalizeBusinessSnapshot({
     parseJsonObjectLike(detailsBusinessSnapshot?.historical_economics) ??
     parseJsonObjectLike(detailsNestedBusinessSnapshot?.historical_economics) ??
     null;
+  const hasHistoricalEconomicsSource = Boolean(
+    snapshotRow.historical_economics != null ||
+      businessSnapshotObject?.historical_economics != null ||
+      detailsBusinessSnapshot?.historical_economics != null ||
+      detailsNestedBusinessSnapshot?.historical_economics != null,
+  );
 
   if (parseJsonObjectLike(snapshotRow.historical_economics)) {
     schemaHints.add("historical_economics_column");
@@ -405,7 +630,6 @@ export function normalizeBusinessSnapshot({
     companyCode: snapshotRow.company ?? companyCode,
     generatedAtRaw: asString(snapshotRow.generated_at),
     generatedAtLabel: formatDateLabel(asString(snapshotRow.generated_at)),
-    documentsProcessed: asNumber(snapshotRow.documents_processed),
     website,
     snapshotPhase: asNumber(snapshotRow.snapshot_phase),
     snapshotSource: asString(snapshotRow.snapshot_source),
@@ -427,6 +651,7 @@ export function normalizeBusinessSnapshot({
     aboutCompany: normalizedAboutCompany,
     revenueBreakdown: normalizedRevenueBreakdown,
     historicalEconomics: normalizedHistoricalEconomics,
+    hasHistoricalEconomicsSource,
     schemaHints: Array.from(schemaHints),
   };
 }
