@@ -291,6 +291,7 @@ function RevenueHistoryModule({
   );
   const chartData = buildRevenueChartData(module, chartRows);
   const hasGraphView = chartData.length > 0;
+  const latestPeriod = module.periods[module.periods.length - 1] ?? null;
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
@@ -298,6 +299,9 @@ function RevenueHistoryModule({
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
             Revenue History by Economic Unit
+          </p>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Largest unit first. Latest periods shown left to right{latestPeriod ? ` through ${latestPeriod}` : ""}.
           </p>
         </div>
         {hasGraphView && (
@@ -325,7 +329,11 @@ function RevenueHistoryModule({
               {orderedRows.map((row) => (
                 <TableRow
                   key={`revenue-${row.unit}`}
-                  className={row.isConsolidated ? "bg-muted/30 font-medium" : undefined}
+                  className={
+                    row.isConsolidated
+                      ? "bg-muted/30 font-medium"
+                      : "odd:bg-background/70 even:bg-muted/15"
+                  }
                 >
                   <TableCell className="font-medium">
                     <div className="flex flex-wrap items-center gap-2">
@@ -361,7 +369,7 @@ function RevenueHistoryModule({
           </Table>
         </div>
       ) : (
-        <div className="rounded-xl border border-border/20 bg-background/70 p-3 space-y-3">
+        <div className="rounded-xl border border-sky-200/40 bg-sky-50/35 p-3 space-y-3 dark:border-sky-700/25 dark:bg-sky-950/10">
           <div className="space-y-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Chart View
@@ -429,6 +437,7 @@ function RevenueMixHistoryModule({
   );
   const chartData = buildMixChartData(module, orderedRows);
   const hasGraphView = chartData.length > 0;
+  const latestPeriod = module.periods[module.periods.length - 1] ?? null;
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
@@ -436,6 +445,9 @@ function RevenueMixHistoryModule({
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
             Revenue Mix History by Economic Unit
+          </p>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Largest unit first. Mix columns read left to right{latestPeriod ? ` through ${latestPeriod}` : ""}.
           </p>
           {module.methodologyNote && (
             <p className="text-[11px] leading-relaxed text-muted-foreground">
@@ -463,7 +475,10 @@ function RevenueMixHistoryModule({
             </TableHeader>
             <TableBody>
               {orderedRows.map((row) => (
-                <TableRow key={`mix-${row.unit}`}>
+                <TableRow
+                  key={`mix-${row.unit}`}
+                  className="odd:bg-background/70 even:bg-muted/15"
+                >
                   <TableCell className="font-medium">
                     <div className="space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
@@ -490,7 +505,7 @@ function RevenueMixHistoryModule({
           </Table>
         </div>
       ) : (
-        <div className="rounded-xl border border-border/20 bg-background/70 p-3 space-y-3">
+        <div className="rounded-xl border border-sky-200/40 bg-sky-50/35 p-3 space-y-3 dark:border-sky-700/25 dark:bg-sky-950/10">
           <div className="space-y-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Chart View
