@@ -571,6 +571,7 @@ export default async function Page({
     const visibleLimit = useGrid ? 4 : 2;
     const visibleEntries = sortedEntries.slice(0, visibleLimit);
     const extraEntries = sortedEntries.slice(visibleLimit);
+    const topEntry = sortedEntries[0] ?? null;
 
     const renderRevenueEntry = (
       entry: NormalizedRevenueBreakdownItem,
@@ -581,10 +582,15 @@ export default async function Page({
       const isVisible = variant === "visible";
 
       if (useGrid) {
+        const isPrimaryCard = isVisible && idx === 0;
         return (
           <div
             key={`${entry.name}-${variant}-${idx}`}
-            className={`${snapshotSubsectionClass} h-full p-3`}
+            className={`h-full p-3 ${
+              isPrimaryCard
+                ? "rounded-xl border border-emerald-200/70 bg-emerald-50/60 shadow-sm shadow-emerald-950/5 dark:border-emerald-700/30 dark:bg-emerald-950/15"
+                : snapshotSubsectionClass
+            }`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 space-y-1.5">
@@ -592,6 +598,11 @@ export default async function Page({
                   <p className="text-[13px] font-medium text-foreground leading-snug">
                     {entry.name}
                   </p>
+                  {isPrimaryCard && (
+                    <span className="rounded-full border border-emerald-200/80 bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                      Anchor business
+                    </span>
+                  )}
                   {marginProfileDisplay && (
                     <span
                       className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${marginProfileDisplay.className}`}
@@ -612,7 +623,13 @@ export default async function Page({
                 )}
               </div>
               {entry.revenueSharePercent != null && (
-                <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground shrink-0">
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${
+                    isPrimaryCard
+                      ? "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
+                      : "border-border/60 bg-muted/60 text-foreground"
+                  }`}
+                >
                   {formatPctLabel(entry.revenueSharePercent)}
                 </span>
               )}
@@ -687,16 +704,31 @@ export default async function Page({
 
     return (
       <div className={`${snapshotSubsectionClass} min-w-0 p-3 ${className ?? ""}`}>
-        <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-          {title}
-        </p>
-        <div className={useGrid ? "mt-1.5 grid grid-cols-1 gap-2 lg:grid-cols-2" : "mt-1.5 space-y-0"}>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+              {title}
+            </p>
+            <p className="text-[11px] leading-snug text-muted-foreground">
+              Revenue mix by business line
+            </p>
+          </div>
+          {topEntry && (
+            <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-100 px-2.5 py-1 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+              Top: {topEntry.name}
+            </span>
+          )}
+        </div>
+        <div className={useGrid ? "mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2" : "mt-1.5 space-y-0"}>
           {visibleEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "visible"))}
         </div>
         {extraEntries.length > 0 && (
-          <details className="mt-2 border-t border-border/35 pt-2">
-            <summary className="cursor-pointer text-[10px] text-muted-foreground hover:text-foreground">
-              Show more ({extraEntries.length})
+          <details className="mt-3">
+            <summary className="list-none cursor-pointer">
+              <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-[10px] font-medium text-foreground transition-colors hover:bg-muted/60">
+                <span>Show more</span>
+                <span className="text-muted-foreground">({extraEntries.length})</span>
+              </div>
             </summary>
             <div className={useGrid ? "mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2" : "mt-2 space-y-2"}>
               {extraEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "extra"))}
@@ -710,6 +742,7 @@ export default async function Page({
   const renderBusinessSegmentsDrawer = () => {
     if (!hasBusinessSegments) return null;
     const bySegmentCount = revenueBreakdown?.bySegment.length ?? 0;
+    const topSegment = sortRevenueEntries(revenueBreakdown?.bySegment ?? [])[0] ?? null;
     const preview =
       bySegmentCount > 0
         ? `${bySegmentCount} segment bucket${bySegmentCount === 1 ? "" : "s"}`
@@ -717,7 +750,7 @@ export default async function Page({
 
     return renderBusinessSnapshotDrawer({
       title: "Business Segments",
-      preview,
+      preview: topSegment ? `${preview} · Top: ${topSegment.name}` : preview,
       children: (
         <div className="space-y-3">
           {renderRevenueBreakdownCard({
