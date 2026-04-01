@@ -106,7 +106,7 @@ const buildMixChartData = (
     return row;
   });
 
-const getDisplayPeriods = (periods: string[]) => [...periods].reverse();
+const getDisplayPeriods = (periods: string[]) => periods;
 
 const getCagrDisplayClassName = (value: number | null | undefined) => {
   if (value == null) {
@@ -244,16 +244,6 @@ function UnitLabel({
   );
 }
 
-function ConfidenceBadge({ value }: { value: string | null }) {
-  if (!value) return null;
-
-  return (
-    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
-      {value}
-    </span>
-  );
-}
-
 function UnitLegend({
   units,
   unitColors,
@@ -309,11 +299,6 @@ function RevenueHistoryModule({
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
             Revenue History by Economic Unit
           </p>
-          {module.methodologyNote && (
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              {module.methodologyNote}
-            </p>
-          )}
         </div>
         {hasGraphView && (
           <ViewToggle value={activeView} onValueChange={setActiveView} />
@@ -354,7 +339,6 @@ function RevenueHistoryModule({
                           Consolidated
                         </span>
                       )}
-                      <ConfidenceBadge value={row.confidence} />
                     </div>
                   </TableCell>
                   {displayPeriods.map((period) => (
@@ -487,7 +471,6 @@ function RevenueMixHistoryModule({
                           unit={row.unit}
                           color={unitColors[row.unit] ?? unitPalette[0]}
                         />
-                        <ConfidenceBadge value={row.confidence} />
                       </div>
                       {row.direction && (
                         <p className="max-w-[16rem] text-[11px] leading-relaxed text-muted-foreground">
