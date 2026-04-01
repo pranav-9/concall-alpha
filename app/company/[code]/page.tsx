@@ -121,6 +121,73 @@ const getMarginProfileDisplay = (value: string | null) => {
   }
 };
 
+const getSegmentRoleDisplay = (value: string | null) => {
+  const normalized = value?.trim().toLowerCase();
+  switch (normalized) {
+    case "core_engine":
+    case "core engine":
+      return {
+        label: "Core engine",
+        className:
+          "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
+      };
+    case "emerging":
+      return {
+        label: "Emerging",
+        className:
+          "border-violet-200/80 bg-violet-100 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/30 dark:text-violet-200",
+      };
+    case "supporting":
+      return {
+        label: "Supporting",
+        className: "border-border/60 bg-muted/60 text-foreground",
+      };
+    default:
+      return normalized
+        ? {
+            label: formatCompactLabel(normalized),
+            className: "border-border/60 bg-muted/60 text-foreground",
+          }
+        : null;
+  }
+};
+
+const getGrowthDirectionDisplay = (value: string | null) => {
+  const normalized = value?.trim().toLowerCase();
+  switch (normalized) {
+    case "accelerating":
+    case "gaining_share":
+    case "gaining share":
+      return {
+        label: "Accelerating",
+        className:
+          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
+      };
+    case "stable":
+    case "steady":
+      return {
+        label: "Stable",
+        className:
+          "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
+      };
+    case "declining":
+    case "losing_share":
+    case "losing share":
+      return {
+        label: "Declining",
+        className:
+          "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
+      };
+    default:
+      return normalized
+        ? {
+            label: formatCompactLabel(normalized),
+            className: "border-border/60 bg-muted/60 text-foreground",
+          }
+        : null;
+  }
+};
+
 const getImpactDirectionDisplay = (value: string | null) => {
   const normalized = value?.trim().toLowerCase();
   switch (normalized) {
@@ -474,6 +541,8 @@ export default async function Page({
   const hasHistoricalEconomics = Boolean(
     historicalEconomics?.companyRevenueCagr3y ||
       historicalEconomics?.summary ||
+      historicalEconomics?.revenueHistoryBySegment ||
+      historicalEconomics?.revenueMixHistoryBySegment ||
       historicalEconomics?.revenueHistoryByUnit ||
       historicalEconomics?.revenueMixHistoryByUnit ||
       hasHistoricalEconomicsSource ||
@@ -579,16 +648,17 @@ export default async function Page({
       variant: "visible" | "extra",
     ) => {
       const marginProfileDisplay = getMarginProfileDisplay(entry.marginProfile);
+      const roleDisplay = getSegmentRoleDisplay(entry.rolePill);
+      const growthDirectionDisplay = getGrowthDirectionDisplay(entry.growthDirectionPill);
       const isVisible = variant === "visible";
 
       if (useGrid) {
-        const isPrimaryCard = isVisible && idx === 0;
         return (
           <div
             key={`${entry.name}-${variant}-${idx}`}
             className={`h-full p-3 ${
-              isPrimaryCard
-                ? "rounded-xl border border-emerald-200/70 bg-emerald-50/60 shadow-sm shadow-emerald-950/5 dark:border-emerald-700/30 dark:bg-emerald-950/15"
+              idx === 0 && isVisible
+                ? "rounded-xl border border-sky-200/70 bg-sky-50/60 shadow-sm shadow-sky-950/5 dark:border-sky-700/30 dark:bg-sky-950/15"
                 : snapshotSubsectionClass
             }`}
           >
@@ -598,9 +668,20 @@ export default async function Page({
                   <p className="text-[13px] font-medium text-foreground leading-snug">
                     {entry.name}
                   </p>
-                  {isPrimaryCard && (
-                    <span className="rounded-full border border-emerald-200/80 bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
-                      Anchor business
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {roleDisplay && (
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${roleDisplay.className}`}
+                    >
+                      {roleDisplay.label}
+                    </span>
+                  )}
+                  {growthDirectionDisplay && (
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${growthDirectionDisplay.className}`}
+                    >
+                      {growthDirectionDisplay.label}
                     </span>
                   )}
                   {marginProfileDisplay && (
@@ -625,8 +706,8 @@ export default async function Page({
               {entry.revenueSharePercent != null && (
                 <span
                   className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${
-                    isPrimaryCard
-                      ? "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
+                    idx === 0 && isVisible
+                      ? "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
                       : "border-border/60 bg-muted/60 text-foreground"
                   }`}
                 >
@@ -659,6 +740,20 @@ export default async function Page({
                 >
                   {entry.name}
                 </p>
+                {roleDisplay && (
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${roleDisplay.className}`}
+                  >
+                    {roleDisplay.label}
+                  </span>
+                )}
+                {growthDirectionDisplay && (
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${growthDirectionDisplay.className}`}
+                  >
+                    {growthDirectionDisplay.label}
+                  </span>
+                )}
                 {marginProfileDisplay && (
                   <span
                     className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${marginProfileDisplay.className}`}
@@ -742,7 +837,6 @@ export default async function Page({
   const renderBusinessSegmentsDrawer = () => {
     if (!hasBusinessSegments) return null;
     const bySegmentCount = revenueBreakdown?.bySegment.length ?? 0;
-    const topSegment = sortRevenueEntries(revenueBreakdown?.bySegment ?? [])[0] ?? null;
     const preview =
       bySegmentCount > 0
         ? `${bySegmentCount} segment bucket${bySegmentCount === 1 ? "" : "s"}`
@@ -750,7 +844,7 @@ export default async function Page({
 
     return renderBusinessSnapshotDrawer({
       title: "Business Segments",
-      preview: topSegment ? `${preview} · Top: ${topSegment.name}` : preview,
+      preview,
       children: (
         <div className="space-y-3">
           {renderRevenueBreakdownCard({
@@ -769,6 +863,8 @@ export default async function Page({
   ) => {
     const hasRichHistoricalEconomics =
       Boolean(history.summary) ||
+      (history.revenueHistoryBySegment?.rows.length ?? 0) > 0 ||
+      (history.revenueMixHistoryBySegment?.rows.length ?? 0) > 0 ||
       (history.revenueHistoryByUnit?.rows.length ?? 0) > 0 ||
       (history.revenueMixHistoryByUnit?.rows.length ?? 0) > 0;
     const companyRevenueCagr = history.companyRevenueCagr3y;
@@ -792,12 +888,24 @@ export default async function Page({
     const hasRevenueSplitHistory = revenueSplitRows.length > 0;
     const historicalMetaColumn = hasCompanyRevenueCagr || hasSegmentGrowth;
     const richSummaryCagr = history.summary?.companyRevenueCagr ?? history.companyRevenueCagr3y;
+    const richSegmentRowCount =
+      history.revenueHistoryBySegment?.rows.length ??
+      history.revenueMixHistoryBySegment?.rows.length ??
+      0;
+    const richUnitRowCount =
+      history.revenueHistoryByUnit?.rows.length ?? history.revenueMixHistoryByUnit?.rows.length ?? 0;
+    const richEntityLabel = richSegmentRowCount > 0 ? "segment" : "unit";
     const richPeriods =
       (history.summary?.periods.length ?? 0) > 0
         ? history.summary?.periods ?? []
+        : (history.revenueHistoryBySegment?.years.length ?? 0) > 0
+          ? history.revenueHistoryBySegment?.years ?? []
         : (history.revenueHistoryByUnit?.periods.length ?? 0) > 0
           ? history.revenueHistoryByUnit?.periods ?? []
-          : history.revenueMixHistoryByUnit?.periods ?? [];
+          : (history.revenueMixHistoryBySegment?.years.length ?? 0) > 0
+            ? history.revenueMixHistoryBySegment?.years ?? []
+            : history.revenueMixHistoryByUnit?.periods ?? [];
+    const richPeriodCount = richPeriods.length;
     const preview =
       hasRichHistoricalEconomics
         ? [
@@ -806,9 +914,14 @@ export default async function Page({
               : richSummaryCagr
                 ? "Company CAGR tracked"
                 : null,
-            richPeriods.length > 0
-              ? `${richPeriods.length} period${richPeriods.length === 1 ? "" : "s"}`
+            richPeriodCount > 0
+              ? `${richPeriodCount} period${richPeriodCount === 1 ? "" : "s"}`
               : null,
+            richSegmentRowCount > 0
+              ? `${richSegmentRowCount} ${richEntityLabel}${richSegmentRowCount === 1 ? "" : "s"}`
+              : richUnitRowCount > 0
+                ? `${richUnitRowCount} ${richEntityLabel}${richUnitRowCount === 1 ? "" : "s"}`
+                : null,
             history.summary?.overallConfidence
               ? `${formatCompactLabel(history.summary.overallConfidence)} confidence`
               : null,

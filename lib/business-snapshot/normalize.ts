@@ -6,8 +6,12 @@ import type {
   NormalizedHistoricalEconomicsSummary,
   NormalizedRevenueBreakdown,
   NormalizedRevenueBreakdownItem,
+  NormalizedRevenueHistoryBySegment,
+  NormalizedRevenueHistoryBySegmentRow,
   NormalizedRevenueHistoryByUnit,
   NormalizedRevenueHistoryByUnitRow,
+  NormalizedRevenueMixHistoryBySegment,
+  NormalizedRevenueMixHistoryBySegmentRow,
   NormalizedRevenueMixHistoryByUnit,
   NormalizedRevenueMixHistoryByUnitRow,
 } from "@/lib/business-snapshot/types";
@@ -110,6 +114,8 @@ const toRevenueItem = (
     revenueSharePercent: asNumber(row.revenue_share_percent),
     marginProfile: asLowerString(row.margin_profile),
     marginProfileNote: asString(row.margin_profile_note),
+    rolePill: asLowerString(row.role_pill),
+    growthDirectionPill: asLowerString(row.growth_direction_pill),
   };
 };
 
@@ -304,6 +310,101 @@ const normalizeRevenueSplitHistoryRow = (value: unknown) => {
   };
 };
 
+const normalizeHistoricalEconomicsInsight = (
+  value: unknown,
+): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : null;
+  }
+
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const segment = asString(row.segment) ?? null;
+  const trendInsight = asString(row.trend_insight) ?? asString(row.trendInsight) ?? null;
+  if (!trendInsight) return null;
+
+  return segment ? `${segment}: ${trendInsight}` : trendInsight;
+};
+
+const normalizeRevenueHistoryBySegmentRow = (
+  value: unknown,
+): NormalizedRevenueHistoryBySegmentRow | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const segment = asString(row.segment) ?? asString(row.segment_name) ?? null;
+  if (!segment) return null;
+
+  const primaryRevenueByYear = normalizeNumericPeriodMap(
+    row.revenue_by_year ?? row.values_by_year ?? row.values_by_period,
+  );
+  const revenueByYear =
+    Object.keys(primaryRevenueByYear).length > 0
+      ? primaryRevenueByYear
+      : normalizeNumericPeriodMap(row.values);
+  const comparabilityLabel = asString(row.comparability_label) ?? null;
+  const growthMetricPeriod = asString(row.growth_metric_period) ?? null;
+  const growthMetricPercent = asNumber(row.growth_metric_percent);
+  const latestPeriodRevenue = asNumber(row.latest_period_revenue);
+
+  if (
+    Object.keys(revenueByYear).length === 0 &&
+    comparabilityLabel == null &&
+    growthMetricPeriod == null &&
+    growthMetricPercent == null &&
+    latestPeriodRevenue == null
+  ) {
+    return null;
+  }
+
+  return {
+    segment,
+    revenueByYear,
+    comparabilityLabel,
+    growthMetricPeriod,
+    growthMetricPercent,
+    latestPeriodRevenue,
+  };
+};
+
+const normalizeRevenueHistoryBySegment = (
+  value: unknown,
+): NormalizedRevenueHistoryBySegment | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const rows = parseJsonArrayLike(row.rows)
+    .map((item) => normalizeRevenueHistoryBySegmentRow(item))
+    .filter((item): item is NormalizedRevenueHistoryBySegmentRow => Boolean(item));
+  const periodsFromRows = collectPeriodsFromNumericMaps(
+    rows.map((item) => item.revenueByYear),
+  );
+  const years = toStringArray(row.years);
+  const insights = parseJsonArrayLike(row.insights)
+    .map((item) => normalizeHistoricalEconomicsInsight(item))
+    .filter((item): item is string => Boolean(item));
+  const latestPeriod = asString(row.latest_period) ?? null;
+
+  if (
+    rows.length === 0 &&
+    years.length === 0 &&
+    periodsFromRows.length === 0 &&
+    insights.length === 0 &&
+    !latestPeriod
+  ) {
+    return null;
+  }
+
+  return {
+    years: years.length > 0 ? years : periodsFromRows,
+    rows,
+    insights,
+    latestPeriod,
+  };
+};
+
 const normalizeRevenueHistoryByUnitRow = (
   value: unknown,
 ): NormalizedRevenueHistoryByUnitRow | null => {
@@ -452,6 +553,80 @@ const normalizeRevenueMixHistoryByUnit = (
   };
 };
 
+const normalizeRevenueMixHistoryBySegmentRow = (
+  value: unknown,
+): NormalizedRevenueMixHistoryBySegmentRow | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const segment = asString(row.segment) ?? asString(row.segment_name) ?? null;
+  if (!segment) return null;
+
+  const primaryMixPercentByYear = normalizeNumericPeriodMap(
+    row.mix_percent_by_year ?? row.values_by_year ?? row.values_by_period,
+  );
+  const mixPercentByYear =
+    Object.keys(primaryMixPercentByYear).length > 0
+      ? primaryMixPercentByYear
+      : normalizeNumericPeriodMap(row.values);
+  const directionLabel = asString(row.direction_label) ?? asString(row.direction) ?? null;
+  const latestMixPercent = asNumber(row.latest_mix_percent);
+  const comparabilityLabel = asString(row.comparability_label) ?? null;
+
+  if (
+    Object.keys(mixPercentByYear).length === 0 &&
+    directionLabel == null &&
+    latestMixPercent == null &&
+    comparabilityLabel == null
+  ) {
+    return null;
+  }
+
+  return {
+    segment,
+    mixPercentByYear,
+    directionLabel,
+    latestMixPercent,
+    comparabilityLabel,
+  };
+};
+
+const normalizeRevenueMixHistoryBySegment = (
+  value: unknown,
+): NormalizedRevenueMixHistoryBySegment | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const rows = parseJsonArrayLike(row.rows)
+    .map((item) => normalizeRevenueMixHistoryBySegmentRow(item))
+    .filter((item): item is NormalizedRevenueMixHistoryBySegmentRow => Boolean(item));
+  const periodsFromRows = collectPeriodsFromNumericMaps(
+    rows.map((item) => item.mixPercentByYear),
+  );
+  const years = toStringArray(row.years);
+  const insights = parseJsonArrayLike(row.insights)
+    .map((item) => normalizeHistoricalEconomicsInsight(item))
+    .filter((item): item is string => Boolean(item));
+  const latestPeriod = asString(row.latest_period) ?? null;
+
+  if (
+    rows.length === 0 &&
+    years.length === 0 &&
+    periodsFromRows.length === 0 &&
+    insights.length === 0 &&
+    !latestPeriod
+  ) {
+    return null;
+  }
+
+  return {
+    years: years.length > 0 ? years : periodsFromRows,
+    rows,
+    insights,
+    latestPeriod,
+  };
+};
+
 const normalizeHistoricalEconomics = ({
   historicalEconomicsSource,
 }: {
@@ -467,6 +642,12 @@ const normalizeHistoricalEconomics = ({
   const segmentGrowthCagr3y = parseJsonArrayLike(historicalEconomicsSource?.segment_growth_cagr_3y)
     .map((item) => normalizeSegmentGrowthCagr3yRow(item))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const revenueHistoryBySegment = normalizeRevenueHistoryBySegment(
+    historicalEconomicsSource?.revenue_history_by_segment,
+  );
+  const revenueMixHistoryBySegment = normalizeRevenueMixHistoryBySegment(
+    historicalEconomicsSource?.revenue_mix_history_by_segment,
+  );
   const revenueHistoryByUnit = normalizeRevenueHistoryByUnit(
     historicalEconomicsSource?.revenue_history_by_unit,
   );
@@ -479,6 +660,8 @@ const normalizeHistoricalEconomics = ({
     !companyRevenueCagr3y &&
     revenueSplitHistory.length === 0 &&
     segmentGrowthCagr3y.length === 0 &&
+    !revenueHistoryBySegment &&
+    !revenueMixHistoryBySegment &&
     !revenueHistoryByUnit &&
     !revenueMixHistoryByUnit
   ) {
@@ -490,6 +673,8 @@ const normalizeHistoricalEconomics = ({
     revenueSplitHistory,
     segmentGrowthCagr3y,
     summary,
+    revenueHistoryBySegment,
+    revenueMixHistoryBySegment,
     revenueHistoryByUnit,
     revenueMixHistoryByUnit,
   };

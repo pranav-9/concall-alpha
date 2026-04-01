@@ -19,6 +19,10 @@ import {
 } from "@/components/ui/table";
 import type {
   NormalizedHistoricalEconomics,
+  NormalizedRevenueHistoryBySegment,
+  NormalizedRevenueHistoryBySegmentRow,
+  NormalizedRevenueMixHistoryBySegment,
+  NormalizedRevenueMixHistoryBySegmentRow,
   NormalizedRevenueHistoryByUnit,
   NormalizedRevenueHistoryByUnitRow,
   NormalizedRevenueMixHistoryByUnit,
@@ -44,28 +48,27 @@ const percentFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 1,
 });
 
+const formatCompactLabel = (value: string) => value.replace(/_/g, " ").trim();
+
 const formatAbsoluteValue = (value: number | null | undefined) =>
   value == null ? "—" : valueFormatter.format(value);
 
 const formatPercentValue = (value: number | null | undefined) =>
   value == null ? "—" : `${percentFormatter.format(value)}%`;
 
-const getStableUnitColors = (history: NormalizedHistoricalEconomics) => {
-  const orderedUnits: string[] = [];
+const getStableSeriesColors = (labels: string[]) => {
+  const orderedLabels: string[] = [];
   const seen = new Set<string>();
 
-  const addUnit = (unit: string) => {
-    if (!seen.has(unit)) {
-      seen.add(unit);
-      orderedUnits.push(unit);
+  labels.forEach((label) => {
+    if (!seen.has(label)) {
+      seen.add(label);
+      orderedLabels.push(label);
     }
-  };
+  });
 
-  history.revenueHistoryByUnit?.rows.forEach((row) => addUnit(row.unit));
-  history.revenueMixHistoryByUnit?.rows.forEach((row) => addUnit(row.unit));
-
-  return orderedUnits.reduce<Record<string, string>>((acc, unit, index) => {
-    acc[unit] = unitPalette[index % unitPalette.length];
+  return orderedLabels.reduce<Record<string, string>>((acc, label, index) => {
+    acc[label] = unitPalette[index % unitPalette.length];
     return acc;
   }, {});
 };
@@ -102,6 +105,30 @@ const buildMixChartData = (
     const row: Record<string, string | number | null> = { period };
     rows.forEach((item, index) => {
       row[`series_${index}`] = item.mixByPeriod[period] ?? null;
+    });
+    return row;
+  });
+
+const buildRevenueSegmentChartData = (
+  periods: string[],
+  rows: NormalizedRevenueHistoryBySegmentRow[],
+) =>
+  periods.map((period) => {
+    const row: Record<string, string | number | null> = { period };
+    rows.forEach((item, index) => {
+      row[`series_${index}`] = item.revenueByYear[period] ?? null;
+    });
+    return row;
+  });
+
+const buildMixSegmentChartData = (
+  periods: string[],
+  rows: NormalizedRevenueMixHistoryBySegmentRow[],
+) =>
+  periods.map((period) => {
+    const row: Record<string, string | number | null> = { period };
+    rows.forEach((item, index) => {
+      row[`series_${index}`] = item.mixPercentByYear[period] ?? null;
     });
     return row;
   });
@@ -172,6 +199,57 @@ const getOrderedRevenueMixRows = (
       getLatestNumericValue(periods, a.mixByPeriod);
     if (mixDelta !== 0) return mixDelta;
     return a.unit.localeCompare(b.unit);
+  });
+
+const getOrderedRevenueHistorySegmentRows = (
+  rows: NormalizedRevenueHistoryBySegmentRow[],
+  periods: string[],
+) => {
+  const latestValue = (row: NormalizedRevenueHistoryBySegmentRow) => {
+    for (let index = periods.length - 1; index >= 0; index -= 1) {
+      const value = row.revenueByYear[periods[index]];
+      if (typeof value === "number") {
+        return value;
+      }
+    }
+    return row.latestPeriodRevenue ?? Number.NEGATIVE_INFINITY;
+  };
+
+  return [...rows].sort((a, b) => {
+    const revenueDelta = latestValue(b) - latestValue(a);
+    if (revenueDelta !== 0) return revenueDelta;
+    return a.segment.localeCompare(b.segment);
+  });
+};
+
+const getOrderedRevenueMixSegmentRows = (
+  rows: NormalizedRevenueMixHistoryBySegmentRow[],
+  periods: string[],
+  rowOrderMap: Map<string, number>,
+) =>
+  [...rows].sort((a, b) => {
+    const aOrder = rowOrderMap.get(a.segment);
+    const bOrder = rowOrderMap.get(b.segment);
+
+    if (aOrder != null && bOrder != null) {
+      return aOrder - bOrder;
+    }
+    if (aOrder != null) return -1;
+    if (bOrder != null) return 1;
+
+    const latestValue = (row: NormalizedRevenueMixHistoryBySegmentRow) => {
+      for (let index = periods.length - 1; index >= 0; index -= 1) {
+        const value = row.mixPercentByYear[periods[index]];
+        if (typeof value === "number") {
+          return value;
+        }
+      }
+      return row.latestMixPercent ?? Number.NEGATIVE_INFINITY;
+    };
+
+    const mixDelta = latestValue(b) - latestValue(a);
+    if (mixDelta !== 0) return mixDelta;
+    return a.segment.localeCompare(b.segment);
   });
 
 function ViewToggle({
@@ -556,46 +634,397 @@ function RevenueMixHistoryModule({
   );
 }
 
+function RevenueHistorySegmentModule({
+  module,
+  unitColors,
+  orderedRows,
+}: {
+  module: NormalizedRevenueHistoryBySegment;
+  unitColors: Record<string, string>;
+  orderedRows: NormalizedRevenueHistoryBySegmentRow[];
+}) {
+  const [activeView, setActiveView] = useState<"table" | "graph">("table");
+  if (module.rows.length === 0 || module.years.length === 0) return null;
+
+  const displayPeriods = module.years;
+  const chartConfig = buildSeriesConfig(
+    orderedRows.map((row) => row.segment),
+    unitColors,
+  );
+  const chartData = buildRevenueSegmentChartData(displayPeriods, orderedRows);
+  const hasGraphView = chartData.length > 0;
+  const latestPeriod = module.latestPeriod ?? module.years[module.years.length - 1] ?? null;
+
+  return (
+    <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
+            Revenue History by Segment
+          </p>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Largest segment first. Periods shown left to right
+            {latestPeriod ? ` through ${latestPeriod}` : ""}.
+          </p>
+        </div>
+        {hasGraphView && (
+          <ViewToggle value={activeView} onValueChange={setActiveView} />
+        )}
+      </div>
+
+      {activeView === "table" || !hasGraphView ? (
+        <div className="rounded-xl border border-border/20 bg-background/70 p-2">
+          <Table>
+            <TableHeader className="bg-muted/45">
+              <TableRow>
+                <TableHead>Segment</TableHead>
+                {displayPeriods.map((period) => (
+                  <TableHead key={period} className="text-right">
+                    {period}
+                  </TableHead>
+                ))}
+                <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                  Growth
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orderedRows.map((row) => (
+                <TableRow
+                  key={`segment-${row.segment}`}
+                  className="odd:bg-background/70 even:bg-muted/15"
+                >
+                  <TableCell className="font-medium">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <UnitLabel
+                          unit={row.segment}
+                          color={unitColors[row.segment] ?? unitPalette[0]}
+                          muted={false}
+                        />
+                        {row.comparabilityLabel && (
+                          <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                            {formatCompactLabel(row.comparabilityLabel)}
+                          </span>
+                        )}
+                      </div>
+                      {(row.growthMetricPeriod || row.latestPeriodRevenue != null) && (
+                        <p className="text-[10px] leading-relaxed text-muted-foreground">
+                          {[
+                            row.growthMetricPeriod
+                              ? formatCompactLabel(row.growthMetricPeriod)
+                              : null,
+                            row.latestPeriodRevenue != null
+                              ? `${formatAbsoluteValue(row.latestPeriodRevenue)} latest`
+                              : null,
+                          ]
+                            .filter((value): value is string => Boolean(value))
+                            .join(" · ")}
+                        </p>
+                      )}
+                    </div>
+                  </TableCell>
+                  {displayPeriods.map((period) => (
+                    <TableCell key={`${row.segment}-${period}`} className="text-right text-[12px]">
+                      {formatAbsoluteValue(row.revenueByYear[period])}
+                    </TableCell>
+                  ))}
+                  <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                    <span
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
+                        row.growthMetricPercent,
+                      )}`}
+                    >
+                      {formatPercentValue(row.growthMetricPercent)}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-sky-200/40 bg-sky-50/35 p-3 space-y-3 dark:border-sky-700/25 dark:bg-sky-950/10">
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Chart View
+            </p>
+            <UnitLegend
+              units={orderedRows.map((row) => row.segment)}
+              unitColors={unitColors}
+            />
+          </div>
+          <ChartContainer
+            className="h-[300px] w-full aspect-auto xl:h-[340px]"
+            config={chartConfig}
+          >
+            <BarChart
+              accessibilityLayer
+              data={chartData}
+              margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
+              barCategoryGap="18%"
+              maxBarSize={56}
+            >
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={10} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                width={44}
+                tickFormatter={(value: number) => formatAbsoluteValue(value)}
+              />
+              <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+              {orderedRows.map((row, index) => (
+                <Bar
+                  key={`series_${index}`}
+                  dataKey={`series_${index}`}
+                  stackId="revenue"
+                  fill={unitColors[row.segment] ?? unitPalette[index % unitPalette.length]}
+                  radius={index === orderedRows.length - 1 ? [4, 4, 0, 0] : 0}
+                />
+              ))}
+            </BarChart>
+          </ChartContainer>
+        </div>
+      )}
+
+      <InsightList insights={module.insights} />
+    </div>
+  );
+}
+
+function RevenueMixHistorySegmentModule({
+  module,
+  unitColors,
+  orderedRows,
+}: {
+  module: NormalizedRevenueMixHistoryBySegment;
+  unitColors: Record<string, string>;
+  orderedRows: NormalizedRevenueMixHistoryBySegmentRow[];
+}) {
+  const [activeView, setActiveView] = useState<"table" | "graph">("table");
+  if (module.rows.length === 0 || module.years.length === 0) return null;
+
+  const displayPeriods = module.years;
+  const chartConfig = buildSeriesConfig(
+    orderedRows.map((row) => row.segment),
+    unitColors,
+  );
+  const chartData = buildMixSegmentChartData(displayPeriods, orderedRows);
+  const hasGraphView = chartData.length > 0;
+  const latestPeriod = module.latestPeriod ?? module.years[module.years.length - 1] ?? null;
+
+  return (
+    <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
+            Revenue Mix History by Segment
+          </p>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Largest segment first. Mix columns read left to right
+            {latestPeriod ? ` through ${latestPeriod}` : ""}.
+          </p>
+        </div>
+        {hasGraphView && (
+          <ViewToggle value={activeView} onValueChange={setActiveView} />
+        )}
+      </div>
+
+      {activeView === "table" || !hasGraphView ? (
+        <div className="rounded-xl border border-border/20 bg-background/70 p-2">
+          <Table>
+            <TableHeader className="bg-muted/45">
+              <TableRow>
+                <TableHead>Segment</TableHead>
+                {displayPeriods.map((period) => (
+                  <TableHead key={period} className="text-right">
+                    {period}
+                  </TableHead>
+                ))}
+                <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                  Latest Mix
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orderedRows.map((row) => (
+                <TableRow
+                  key={`mix-${row.segment}`}
+                  className="odd:bg-background/70 even:bg-muted/15"
+                >
+                  <TableCell className="font-medium">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <UnitLabel
+                          unit={row.segment}
+                          color={unitColors[row.segment] ?? unitPalette[0]}
+                        />
+                        {row.comparabilityLabel && (
+                          <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                            {formatCompactLabel(row.comparabilityLabel)}
+                          </span>
+                        )}
+                      </div>
+                      {row.directionLabel && (
+                        <p className="text-[10px] leading-relaxed text-muted-foreground">
+                          {formatCompactLabel(row.directionLabel)}
+                        </p>
+                      )}
+                    </div>
+                  </TableCell>
+                  {displayPeriods.map((period) => (
+                    <TableCell key={`${row.segment}-${period}`} className="text-right text-[12px]">
+                      {formatPercentValue(row.mixPercentByYear[period])}
+                    </TableCell>
+                  ))}
+                  <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
+                      {formatPercentValue(
+                        row.latestMixPercent ??
+                          getLatestNumericValue(displayPeriods, row.mixPercentByYear),
+                      )}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-sky-200/40 bg-sky-50/35 p-3 space-y-3 dark:border-sky-700/25 dark:bg-sky-950/10">
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Chart View
+            </p>
+            <UnitLegend
+              units={orderedRows.map((row) => row.segment)}
+              unitColors={unitColors}
+            />
+          </div>
+          <ChartContainer
+            className="h-[300px] w-full aspect-auto xl:h-[340px]"
+            config={chartConfig}
+          >
+            <BarChart
+              accessibilityLayer
+              data={chartData}
+              margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
+              barCategoryGap="18%"
+              maxBarSize={56}
+            >
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={10} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                width={36}
+                domain={[0, 100]}
+                ticks={[0, 25, 50, 75, 100]}
+                tickFormatter={(value: number) => `${value}%`}
+              />
+              <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+              {orderedRows.map((row, index) => (
+                <Bar
+                  key={`series_${index}`}
+                  dataKey={`series_${index}`}
+                  stackId="mix"
+                  fill={unitColors[row.segment] ?? unitPalette[index % unitPalette.length]}
+                  radius={index === orderedRows.length - 1 ? [4, 4, 0, 0] : 0}
+                />
+              ))}
+            </BarChart>
+          </ChartContainer>
+        </div>
+      )}
+
+      <InsightList insights={module.insights} />
+    </div>
+  );
+}
+
 export function HistoricalEconomicsDataPack({
   history,
 }: {
   history: NormalizedHistoricalEconomics;
 }) {
-  const unitColors = getStableUnitColors(history);
-  const orderedRevenueHistoryRows = history.revenueHistoryByUnit
-    ? getOrderedRevenueHistoryRows(
-        history.revenueHistoryByUnit.rows,
-        history.revenueHistoryByUnit.periods,
-      )
-    : [];
+  const revenueHistorySource =
+    history.revenueHistoryBySegment ?? history.revenueHistoryByUnit ?? null;
+  const revenueMixHistorySource =
+    history.revenueMixHistoryBySegment ?? history.revenueMixHistoryByUnit ?? null;
+
+  const orderedRevenueHistoryRows = history.revenueHistoryBySegment
+      ? getOrderedRevenueHistorySegmentRows(
+          history.revenueHistoryBySegment.rows,
+          history.revenueHistoryBySegment.years,
+        )
+      : history.revenueHistoryByUnit
+      ? getOrderedRevenueHistoryRows(
+          history.revenueHistoryByUnit.rows,
+          history.revenueHistoryByUnit.periods,
+        )
+      : [];
+
   const revenueRowOrderMap = new Map(
-    orderedRevenueHistoryRows.map((row, index) => [row.unit, index] as const),
+    orderedRevenueHistoryRows.map((row, index) => [
+      "segment" in row ? row.segment : row.unit,
+      index,
+    ] as const),
   );
-  const orderedRevenueMixRows = history.revenueMixHistoryByUnit
-    ? getOrderedRevenueMixRows(
-        history.revenueMixHistoryByUnit.rows,
-        history.revenueMixHistoryByUnit.periods,
+
+  const orderedRevenueMixRows = history.revenueMixHistoryBySegment
+    ? getOrderedRevenueMixSegmentRows(
+        history.revenueMixHistoryBySegment.rows,
+        history.revenueMixHistoryBySegment.years,
         revenueRowOrderMap,
       )
-    : [];
+    : history.revenueMixHistoryByUnit
+      ? getOrderedRevenueMixRows(
+          history.revenueMixHistoryByUnit.rows,
+          history.revenueMixHistoryByUnit.periods,
+          revenueRowOrderMap,
+        )
+      : [];
+
+  const seriesLabels = [
+    ...(revenueHistorySource
+      ? orderedRevenueHistoryRows.map((row) => ("segment" in row ? row.segment : row.unit))
+      : []),
+    ...(revenueMixHistorySource
+      ? orderedRevenueMixRows.map((row) => ("segment" in row ? row.segment : row.unit))
+      : []),
+  ];
+  const unitColors = getStableSeriesColors(seriesLabels);
 
   return (
     <div className="space-y-4">
-      {history.revenueHistoryByUnit && (
+      {history.revenueHistoryBySegment ? (
+        <RevenueHistorySegmentModule
+          module={history.revenueHistoryBySegment}
+          unitColors={unitColors}
+          orderedRows={orderedRevenueHistoryRows as NormalizedRevenueHistoryBySegmentRow[]}
+        />
+      ) : history.revenueHistoryByUnit ? (
         <RevenueHistoryModule
           module={history.revenueHistoryByUnit}
           unitColors={unitColors}
-          orderedRows={orderedRevenueHistoryRows}
+          orderedRows={orderedRevenueHistoryRows as NormalizedRevenueHistoryByUnitRow[]}
         />
-      )}
+      ) : null}
 
-      {history.revenueMixHistoryByUnit && (
+      {history.revenueMixHistoryBySegment ? (
+        <RevenueMixHistorySegmentModule
+          module={history.revenueMixHistoryBySegment}
+          unitColors={unitColors}
+          orderedRows={orderedRevenueMixRows as NormalizedRevenueMixHistoryBySegmentRow[]}
+        />
+      ) : history.revenueMixHistoryByUnit ? (
         <RevenueMixHistoryModule
           module={history.revenueMixHistoryByUnit}
           unitColors={unitColors}
-          orderedRows={orderedRevenueMixRows}
+          orderedRows={orderedRevenueMixRows as NormalizedRevenueMixHistoryByUnitRow[]}
         />
-      )}
+      ) : null}
     </div>
   );
 }

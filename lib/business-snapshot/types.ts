@@ -24,6 +24,8 @@ export type NormalizedRevenueBreakdownItem = {
   revenueSharePercent: number | null;
   marginProfile: string | null;
   marginProfileNote: string | null;
+  rolePill: string | null;
+  growthDirectionPill: string | null;
 };
 
 export type NormalizedRevenueBreakdown = {
@@ -96,11 +98,49 @@ export type NormalizedRevenueMixHistoryByUnit = {
   methodologyNote: string | null;
 };
 
+export type NormalizedRevenueHistoryBySegmentInsight = {
+  segment: string | null;
+  trendInsight: string;
+};
+
+export type NormalizedRevenueHistoryBySegmentRow = {
+  segment: string;
+  revenueByYear: Record<string, number | null>;
+  comparabilityLabel: string | null;
+  growthMetricPeriod: string | null;
+  growthMetricPercent: number | null;
+  latestPeriodRevenue: number | null;
+};
+
+export type NormalizedRevenueHistoryBySegment = {
+  years: string[];
+  rows: NormalizedRevenueHistoryBySegmentRow[];
+  insights: string[];
+  latestPeriod: string | null;
+};
+
+export type NormalizedRevenueMixHistoryBySegmentRow = {
+  segment: string;
+  mixPercentByYear: Record<string, number | null>;
+  directionLabel: string | null;
+  latestMixPercent: number | null;
+  comparabilityLabel: string | null;
+};
+
+export type NormalizedRevenueMixHistoryBySegment = {
+  years: string[];
+  rows: NormalizedRevenueMixHistoryBySegmentRow[];
+  insights: string[];
+  latestPeriod: string | null;
+};
+
 export type NormalizedHistoricalEconomics = {
   companyRevenueCagr3y: NormalizedCompanyRevenueCagr3y | null;
   revenueSplitHistory: NormalizedRevenueSplitHistoryRow[];
   segmentGrowthCagr3y: NormalizedSegmentGrowthCagr3yRow[];
   summary: NormalizedHistoricalEconomicsSummary | null;
+  revenueHistoryBySegment: NormalizedRevenueHistoryBySegment | null;
+  revenueMixHistoryBySegment: NormalizedRevenueMixHistoryBySegment | null;
   revenueHistoryByUnit: NormalizedRevenueHistoryByUnit | null;
   revenueMixHistoryByUnit: NormalizedRevenueMixHistoryByUnit | null;
 };
