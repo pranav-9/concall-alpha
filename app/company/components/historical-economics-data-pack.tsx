@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
@@ -7,6 +8,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Table,
   TableBody,
@@ -172,6 +174,36 @@ const getOrderedRevenueMixRows = (
     return a.unit.localeCompare(b.unit);
   });
 
+function ViewToggle({
+  value,
+  onValueChange,
+}: {
+  value: "table" | "graph";
+  onValueChange: (value: "table" | "graph") => void;
+}) {
+  return (
+    <ToggleGroup
+      type="single"
+      value={value}
+      onValueChange={(nextValue) => {
+        if (nextValue === "table" || nextValue === "graph") {
+          onValueChange(nextValue);
+        }
+      }}
+      variant="outline"
+      size="sm"
+      className="w-fit"
+    >
+      <ToggleGroupItem value="table" aria-label="Show table view">
+        Table
+      </ToggleGroupItem>
+      <ToggleGroupItem value="graph" aria-label="Show graph view">
+        Graph
+      </ToggleGroupItem>
+    </ToggleGroup>
+  );
+}
+
 function InsightList({ insights }: { insights: string[] }) {
   if (insights.length === 0) return null;
 
@@ -255,6 +287,7 @@ function RevenueHistoryModule({
   unitColors: Record<string, string>;
   orderedRows: NormalizedRevenueHistoryByUnitRow[];
 }) {
+  const [activeView, setActiveView] = useState<"table" | "graph">("table");
   if (module.rows.length === 0 || module.periods.length === 0) return null;
   const displayPeriods = getDisplayPeriods(module.periods);
 
@@ -267,25 +300,27 @@ function RevenueHistoryModule({
     unitColors,
   );
   const chartData = buildRevenueChartData(module, chartRows);
+  const hasGraphView = chartData.length > 0;
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
-      <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
-          Revenue History by Economic Unit
-        </p>
-        {module.methodologyNote && (
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            {module.methodologyNote}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
+            Revenue History by Economic Unit
           </p>
+          {module.methodologyNote && (
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              {module.methodologyNote}
+            </p>
+          )}
+        </div>
+        {hasGraphView && (
+          <ViewToggle value={activeView} onValueChange={setActiveView} />
         )}
       </div>
 
-      <div
-        className={`grid grid-cols-1 gap-3 ${
-          chartData.length > 0 ? "xl:grid-cols-[minmax(0,1.22fr)_minmax(19rem,0.78fr)]" : ""
-        }`}
-      >
+      {activeView === "table" || !hasGraphView ? (
         <div className="rounded-xl border border-border/20 bg-background/70 p-2">
           <Table>
             <TableHeader className="bg-muted/45">
@@ -341,52 +376,50 @@ function RevenueHistoryModule({
             </TableBody>
           </Table>
         </div>
-
-        {chartData.length > 0 && (
-          <div className="rounded-xl border border-border/20 bg-background/70 p-3 space-y-3">
-            <div className="space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Chart View
-              </p>
-              <UnitLegend
-                units={chartRows.map((row) => row.unit)}
-                unitColors={unitColors}
-              />
-            </div>
-            <ChartContainer
-              className="h-[280px] w-full aspect-auto xl:h-[320px]"
-              config={chartConfig}
-            >
-              <BarChart
-                accessibilityLayer
-                data={chartData}
-                margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
-                barCategoryGap="18%"
-                maxBarSize={56}
-              >
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={10} />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  width={44}
-                  tickFormatter={(value: number) => formatAbsoluteValue(value)}
-                />
-                <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
-                {chartRows.map((row, index) => (
-                  <Bar
-                    key={`series_${index}`}
-                    dataKey={`series_${index}`}
-                    stackId="revenue"
-                    fill={unitColors[row.unit] ?? unitPalette[index % unitPalette.length]}
-                    radius={index === chartRows.length - 1 ? [4, 4, 0, 0] : 0}
-                  />
-                ))}
-              </BarChart>
-            </ChartContainer>
+      ) : (
+        <div className="rounded-xl border border-border/20 bg-background/70 p-3 space-y-3">
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Chart View
+            </p>
+            <UnitLegend
+              units={chartRows.map((row) => row.unit)}
+              unitColors={unitColors}
+            />
           </div>
-        )}
-      </div>
+          <ChartContainer
+            className="h-[300px] w-full aspect-auto xl:h-[340px]"
+            config={chartConfig}
+          >
+            <BarChart
+              accessibilityLayer
+              data={chartData}
+              margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
+              barCategoryGap="18%"
+              maxBarSize={56}
+            >
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={10} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                width={44}
+                tickFormatter={(value: number) => formatAbsoluteValue(value)}
+              />
+              <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+              {chartRows.map((row, index) => (
+                <Bar
+                  key={`series_${index}`}
+                  dataKey={`series_${index}`}
+                  stackId="revenue"
+                  fill={unitColors[row.unit] ?? unitPalette[index % unitPalette.length]}
+                  radius={index === chartRows.length - 1 ? [4, 4, 0, 0] : 0}
+                />
+              ))}
+            </BarChart>
+          </ChartContainer>
+        </div>
+      )}
 
       <InsightList insights={module.insights} />
     </div>
@@ -402,6 +435,7 @@ function RevenueMixHistoryModule({
   unitColors: Record<string, string>;
   orderedRows: NormalizedRevenueMixHistoryByUnitRow[];
 }) {
+  const [activeView, setActiveView] = useState<"table" | "graph">("table");
   if (module.rows.length === 0 || module.periods.length === 0) return null;
   const displayPeriods = getDisplayPeriods(module.periods);
 
@@ -410,25 +444,27 @@ function RevenueMixHistoryModule({
     unitColors,
   );
   const chartData = buildMixChartData(module, orderedRows);
+  const hasGraphView = chartData.length > 0;
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
-      <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
-          Revenue Mix History by Economic Unit
-        </p>
-        {module.methodologyNote && (
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            {module.methodologyNote}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
+            Revenue Mix History by Economic Unit
           </p>
+          {module.methodologyNote && (
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              {module.methodologyNote}
+            </p>
+          )}
+        </div>
+        {hasGraphView && (
+          <ViewToggle value={activeView} onValueChange={setActiveView} />
         )}
       </div>
 
-      <div
-        className={`grid grid-cols-1 gap-3 ${
-          chartData.length > 0 ? "xl:grid-cols-[minmax(0,1.22fr)_minmax(19rem,0.78fr)]" : ""
-        }`}
-      >
+      {activeView === "table" || !hasGraphView ? (
         <div className="rounded-xl border border-border/20 bg-background/70 p-2">
           <Table>
             <TableHeader className="bg-muted/45">
@@ -470,54 +506,52 @@ function RevenueMixHistoryModule({
             </TableBody>
           </Table>
         </div>
-
-        {chartData.length > 0 && (
-          <div className="rounded-xl border border-border/20 bg-background/70 p-3 space-y-3">
-            <div className="space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Chart View
-              </p>
-              <UnitLegend
-                units={orderedRows.map((row) => row.unit)}
-                unitColors={unitColors}
-              />
-            </div>
-            <ChartContainer
-              className="h-[280px] w-full aspect-auto xl:h-[320px]"
-              config={chartConfig}
-            >
-              <BarChart
-                accessibilityLayer
-                data={chartData}
-                margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
-                barCategoryGap="18%"
-                maxBarSize={56}
-              >
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={10} />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  width={36}
-                  domain={[0, 100]}
-                  ticks={[0, 25, 50, 75, 100]}
-                  tickFormatter={(value: number) => `${value}%`}
-                />
-                <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
-                {orderedRows.map((row, index) => (
-                  <Bar
-                    key={`series_${index}`}
-                    dataKey={`series_${index}`}
-                    stackId="mix"
-                    fill={unitColors[row.unit] ?? unitPalette[index % unitPalette.length]}
-                    radius={index === module.rows.length - 1 ? [4, 4, 0, 0] : 0}
-                  />
-                ))}
-              </BarChart>
-            </ChartContainer>
+      ) : (
+        <div className="rounded-xl border border-border/20 bg-background/70 p-3 space-y-3">
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Chart View
+            </p>
+            <UnitLegend
+              units={orderedRows.map((row) => row.unit)}
+              unitColors={unitColors}
+            />
           </div>
-        )}
-      </div>
+          <ChartContainer
+            className="h-[300px] w-full aspect-auto xl:h-[340px]"
+            config={chartConfig}
+          >
+            <BarChart
+              accessibilityLayer
+              data={chartData}
+              margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
+              barCategoryGap="18%"
+              maxBarSize={56}
+            >
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={10} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                width={36}
+                domain={[0, 100]}
+                ticks={[0, 25, 50, 75, 100]}
+                tickFormatter={(value: number) => `${value}%`}
+              />
+              <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+              {orderedRows.map((row, index) => (
+                <Bar
+                  key={`series_${index}`}
+                  dataKey={`series_${index}`}
+                  stackId="mix"
+                  fill={unitColors[row.unit] ?? unitPalette[index % unitPalette.length]}
+                  radius={index === module.rows.length - 1 ? [4, 4, 0, 0] : 0}
+                />
+              ))}
+            </BarChart>
+          </ChartContainer>
+        </div>
+      )}
 
       <InsightList insights={module.insights} />
     </div>
