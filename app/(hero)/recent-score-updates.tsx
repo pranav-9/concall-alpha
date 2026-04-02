@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ConcallScore from "@/components/concall-score";
+import { isCompanyNew } from "@/lib/company-freshness";
 import { createClient } from "@/lib/supabase/server";
 
 export const revalidate = 120;
@@ -54,6 +55,7 @@ type UnifiedUpdate = {
   type: UpdateType;
   companyName: string;
   companyCode: string | null;
+  companyIsNew: boolean;
   score: number | null;
   detail: string;
   sourceLabel: string;
@@ -198,6 +200,7 @@ async function getUnifiedUpdates(limit: number) {
       type: "quarter",
       companyName: row.company_code,
       companyCode: row.company_code ?? null,
+      companyIsNew: false,
       score: parseScore(row.score),
       detail: quarterLabel,
       sourceLabel: "Quarter Score",
@@ -226,6 +229,7 @@ async function getUnifiedUpdates(limit: number) {
       type: "growth",
       companyName,
       companyCode,
+      companyIsNew: false,
       score: parseScore(row.growth_score),
       detail: fy ? `${fy} outlook` : "Growth outlook",
       sourceLabel: "Growth Update",
@@ -250,13 +254,15 @@ async function getUnifiedUpdates(limit: number) {
       row.snapshot_phase != null ? `Snapshot updated` : "Snapshot refreshed";
     const sourceLabel = "Biz Snapshot";
     const contextLabel =
-      formatFeedLabel(row.snapshot_source) ||
-      (row.snapshot_phase != null ? `Phase ${row.snapshot_phase}` : null);
+      row.snapshot_phase != null
+        ? `${row.snapshot_phase} updated`
+        : formatFeedLabel(row.snapshot_source) || "Updated";
     const candidate: UnifiedUpdate = {
       id: `snapshot-${companyCode}`,
       type: "business_snapshot",
       companyName: companyCode,
       companyCode,
+      companyIsNew: false,
       score: null,
       detail: phaseLabel,
       sourceLabel,
@@ -294,6 +300,7 @@ async function getUnifiedUpdates(limit: number) {
         type: "guidance_monitor",
         companyName: companyCode,
         companyCode,
+        companyIsNew: false,
         score: null,
         detail: threadContext ? `${threadLabel} · ${threadContext}` : threadLabel,
         sourceLabel: "Guidance Monitor",
@@ -316,6 +323,7 @@ async function getUnifiedUpdates(limit: number) {
         type: "guidance_monitor",
         companyName: companyCode,
         companyCode,
+        companyIsNew: false,
         score: null,
         detail: "",
         sourceLabel: "Guidance Monitor",
@@ -368,18 +376,21 @@ async function getUnifiedUpdates(limit: number) {
   if (companyCodes.length > 0) {
     const { data: companyRows } = await supabase
       .from("company")
-      .select("code, name")
+      .select("code, name, created_at")
       .in("code", companyCodes);
 
     const companyNameMap = new Map<string, string>();
-    (companyRows ?? []).forEach((row: { code: string; name?: string | null }) => {
+    const companyFreshnessMap = new Map<string, boolean>();
+    (companyRows ?? []).forEach((row: { code: string; name?: string | null; created_at?: string | null }) => {
       companyNameMap.set(row.code.toUpperCase(), row.name?.trim() || row.code);
+      companyFreshnessMap.set(row.code.toUpperCase(), isCompanyNew(row.created_at ?? null));
     });
 
     updates.forEach((item) => {
       if (!item.companyCode) return;
-      item.companyName =
-        companyNameMap.get(item.companyCode.toUpperCase()) ?? item.companyCode;
+      const companyKey = item.companyCode.toUpperCase();
+      item.companyName = companyNameMap.get(companyKey) ?? item.companyCode;
+      item.companyIsNew = companyFreshnessMap.get(companyKey) ?? false;
     });
   }
 
@@ -406,7 +417,7 @@ export default async function RecentScoreUpdates({
   heroPanel?: boolean;
 } = {}) {
   const isCompact = heroPanel;
-  const updates = await getUnifiedUpdates(isCompact ? 10 : 6);
+  const updates = await getUnifiedUpdates(isCompact ? 12 : 6);
   if (updates.length === 0) return null;
 
   const headerClass = isCompact
@@ -465,6 +476,11 @@ export default async function RecentScoreUpdates({
                 <div className="min-w-0">
                   <p className={companyNameClass}>
                     {item.companyName}
+                    {item.companyIsNew && (
+                      <span className="ml-2 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 align-middle text-[9px] font-medium leading-none text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                        New
+                      </span>
+                    )}
                   </p>
                   <div className={metaRowClass}>
                     <span
@@ -473,22 +489,13 @@ export default async function RecentScoreUpdates({
                       {item.sourceLabel}
                     </span>
                     {item.detail &&
-                      !(item.type === "guidance_monitor" &&
-                        item.guidanceThreads &&
-                        item.guidanceThreads.length > 1) && (
+                      item.type !== "guidance_monitor" && (
                       <span className={detailClass}>
                         {item.detail}
                       </span>
                     )}
                     <span className={dateClass}>{formatDate(item.atRaw)}</span>
                   </div>
-                  {item.type === "guidance_monitor" &&
-                    item.guidanceThreads &&
-                    item.guidanceThreads.length > 1 && (
-                      <p className={detailClass}>
-                        {item.detail}
-                      </p>
-                    )}
                 </div>
                 <div className="shrink-0">
                   {typeof item.score === "number" ? (
