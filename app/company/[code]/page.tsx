@@ -1044,7 +1044,7 @@ export default async function Page({
               : null,
           ]
             .filter((value): value is string => Boolean(value))
-            .join(" · ") || "Open historical economics data pack."
+            .join(" · ") || "Open business momentum data pack."
         : [
             companyRevenueCagr?.cagrPercent != null
               ? `${formatPctLabel(companyRevenueCagr.cagrPercent)} company CAGR`
@@ -1059,11 +1059,11 @@ export default async function Page({
               : null,
           ]
             .filter((value): value is string => Boolean(value))
-            .join(" · ") || "Open company economics history.";
+            .join(" · ") || "Open business momentum history.";
 
     if (hasRichHistoricalEconomics) {
       return renderBusinessSnapshotDrawer({
-        title: "Historical Economics",
+        title: "Business Momentum",
         preview,
         children: <HistoricalEconomicsDataPack history={history} />,
       });
@@ -1112,7 +1112,7 @@ export default async function Page({
     );
 
     return renderBusinessSnapshotDrawer({
-      title: "Historical Economics",
+      title: "Business Momentum",
       preview,
       children: (
         <div
@@ -1236,16 +1236,17 @@ export default async function Page({
 
   const renderHistoricalEconomicsUnavailableCard = () =>
     renderBusinessSnapshotDrawer({
-      title: "Historical Economics",
+      title: "Business Momentum",
       preview: "Data exists, but the current payload is not display-ready yet.",
       children: (
         <div className={`${snapshotSubsectionClass} p-3 space-y-1.5`}>
           <p className="text-[12px] font-medium text-foreground">
-            Historical economics data is available for this company, but the stored
+            Business momentum data is available for this company, but the stored
             structure does not match the current display format yet.
           </p>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Once this company&apos;s payload is refreshed to the richer economic-unit
+            Once this company&apos;s payload is refreshed to the richer
+            segment-history
             schema, this section will show the full data pack with tables, charts,
             and insights.
           </p>

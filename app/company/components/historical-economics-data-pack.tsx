@@ -48,6 +48,10 @@ const percentFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 1,
 });
 
+const integerPercentFormatter = new Intl.NumberFormat("en-IN", {
+  maximumFractionDigits: 0,
+});
+
 const formatCompactLabel = (value: string) => value.replace(/_/g, " ").trim();
 
 const formatAbsoluteValue = (value: number | null | undefined) =>
@@ -55,6 +59,12 @@ const formatAbsoluteValue = (value: number | null | undefined) =>
 
 const formatPercentValue = (value: number | null | undefined) =>
   value == null ? "—" : `${percentFormatter.format(value)}%`;
+
+const formatDeltaPercentValue = (value: number | null | undefined) => {
+  if (value == null) return null;
+  const formatted = integerPercentFormatter.format(Math.abs(value));
+  return `${value > 0 ? "+" : value < 0 ? "-" : ""}${formatted}% YoY`;
+};
 
 const getStableSeriesColors = (labels: string[]) => {
   const orderedLabels: string[] = [];
@@ -159,6 +169,35 @@ const getLatestNumericValue = (
     }
   }
   return Number.NEGATIVE_INFINITY;
+};
+
+const getPeriodOverPeriodGrowth = (
+  periods: string[],
+  valuesByPeriod: Record<string, number | null>,
+  period: string,
+) => {
+  const periodIndex = periods.indexOf(period);
+  if (periodIndex <= 0) return null;
+
+  const currentValue = valuesByPeriod[periods[periodIndex]];
+  const previousValue = valuesByPeriod[periods[periodIndex - 1]];
+
+  if (
+    typeof currentValue !== "number" ||
+    typeof previousValue !== "number" ||
+    previousValue === 0
+  ) {
+    return null;
+  }
+
+  return ((currentValue - previousValue) / previousValue) * 100;
+};
+
+const getInlineDeltaClassName = (value: number | null | undefined) => {
+  if (value == null) return "text-muted-foreground";
+  if (value > 0) return "text-emerald-700/80 dark:text-emerald-300/80";
+  if (value < 0) return "text-rose-700/80 dark:text-rose-300/80";
+  return "text-muted-foreground";
 };
 
 const getOrderedRevenueHistoryRows = (
@@ -376,7 +415,7 @@ function RevenueHistoryModule({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
-            Revenue History by Economic Unit
+            Revenue Trend by Economic Unit
           </p>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             Largest unit first. Latest periods shown left to right{latestPeriod ? ` through ${latestPeriod}` : ""}.
@@ -522,7 +561,7 @@ function RevenueMixHistoryModule({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
-            Revenue Mix History by Economic Unit
+            Mix Shift by Economic Unit
           </p>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             Largest unit first. Mix columns read left to right{latestPeriod ? ` through ${latestPeriod}` : ""}.
@@ -660,7 +699,7 @@ function RevenueHistorySegmentModule({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
-            Revenue History by Segment
+            Revenue Trend by Segment
           </p>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             Largest segment first. Periods shown left to right
@@ -725,8 +764,37 @@ function RevenueHistorySegmentModule({
                     </div>
                   </TableCell>
                   {displayPeriods.map((period) => (
-                    <TableCell key={`${row.segment}-${period}`} className="text-right text-[12px]">
-                      {formatAbsoluteValue(row.revenueByYear[period])}
+                    <TableCell key={`${row.segment}-${period}`} className="text-right">
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-[12px]">
+                          {formatAbsoluteValue(row.revenueByYear[period])}
+                        </span>
+                        {(() => {
+                          const yoyValue = getPeriodOverPeriodGrowth(
+                            displayPeriods,
+                            row.revenueByYear,
+                            period,
+                          );
+                          const yoyLabel = formatDeltaPercentValue(yoyValue);
+                          if (!yoyLabel) {
+                            return (
+                              <span className="text-[10px] leading-none text-muted-foreground">
+                                &nbsp;
+                              </span>
+                            );
+                          }
+
+                          return (
+                            <span
+                              className={`text-[10px] leading-none ${getInlineDeltaClassName(
+                                yoyValue,
+                              )}`}
+                            >
+                              {yoyLabel}
+                            </span>
+                          );
+                        })()}
+                      </div>
                     </TableCell>
                   ))}
                   <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
@@ -819,7 +887,7 @@ function RevenueMixHistorySegmentModule({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
-            Revenue Mix History by Segment
+            Mix Shift by Segment
           </p>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
             Largest segment first. Mix columns read left to right
