@@ -22,7 +22,32 @@ type RawGrowthRow = {
   run_timestamp?: string | null;
 };
 
-type UpdateType = "quarter" | "growth";
+type RawBusinessSnapshotRow = {
+  company: string;
+  generated_at?: string | null;
+  snapshot_phase?: number | null;
+  snapshot_source?: string | null;
+};
+
+type RawGuidanceRow = {
+  company_code: string;
+  guidance_key: string;
+  generated_at?: string | null;
+  guidance_type?: string | null;
+  guidance_text?: string | null;
+  status?: string | null;
+  latest_view?: string | null;
+  status_reason?: string | null;
+};
+
+type UpdateType = "quarter" | "growth" | "business_snapshot" | "guidance_monitor";
+
+type GuidanceBatchThread = {
+  guidanceKey: string;
+  label: string;
+  statusLabel: string | null;
+  contextLabel: string | null;
+};
 
 type UnifiedUpdate = {
   id: string;
@@ -31,8 +56,11 @@ type UnifiedUpdate = {
   companyCode: string | null;
   score: number | null;
   detail: string;
+  sourceLabel: string;
+  contextLabel: string | null;
   atRaw: string | null;
   atMs: number;
+  guidanceThreads?: GuidanceBatchThread[];
 };
 
 const parseDate = (value: string | null | undefined) => {
@@ -62,16 +90,63 @@ const formatDate = (value: string | null) => {
 const eventTimeMs = (value: string | null | undefined) =>
   parseDate(value)?.getTime() ?? 0;
 
+const formatFeedLabel = (value: string | null | undefined) => {
+  if (!value) return null;
+  const trimmed = value.trim().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+  if (!trimmed) return null;
+  return trimmed.replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const typeChipClass = (type: UpdateType) => {
   if (type === "quarter") {
     return "bg-sky-100 border-sky-300 text-sky-700 dark:bg-sky-900/30 dark:border-sky-700/40 dark:text-sky-200";
   }
-  return "bg-emerald-100 border-emerald-300 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700/40 dark:text-emerald-200";
+  if (type === "growth") {
+    return "bg-emerald-100 border-emerald-300 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700/40 dark:text-emerald-200";
+  }
+  if (type === "business_snapshot") {
+    return "bg-violet-100 border-violet-300 text-violet-700 dark:bg-violet-900/30 dark:border-violet-700/40 dark:text-violet-200";
+  }
+  return "bg-amber-100 border-amber-300 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700/40 dark:text-amber-200";
 };
 
-const typeLabel = (type: UpdateType) => {
-  if (type === "quarter") return "Quarter";
-  return "Growth Update";
+const GUIDANCE_STATUS_PRIORITY: Record<string, number> = {
+  revised: 0,
+  delayed: 1,
+  active: 2,
+  not_yet_clear: 3,
+  met: 4,
+  dropped: 5,
+  unknown: 6,
+};
+
+const normalizeStatusKey = (value: string | null | undefined) =>
+  value?.trim().toLowerCase().replace(/[\s-]+/g, "_") ?? "unknown";
+
+const guidanceStatusRank = (value: string | null | undefined) => {
+  const normalized = normalizeStatusKey(value);
+  return GUIDANCE_STATUS_PRIORITY[normalized] ?? GUIDANCE_STATUS_PRIORITY.unknown;
+};
+
+const buildGuidanceThreadLabel = (row: RawGuidanceRow) =>
+  formatFeedLabel(row.guidance_type) || formatFeedLabel(row.guidance_text) || "Thread";
+
+const buildGuidanceThreadContext = (row: RawGuidanceRow) =>
+  formatFeedLabel(row.status) ||
+  formatFeedLabel(row.latest_view) ||
+  formatFeedLabel(row.status_reason) ||
+  null;
+
+const buildGuidanceBatchPreview = (threads: GuidanceBatchThread[]) => {
+  if (threads.length === 0) return null;
+  const visibleThreads = threads.slice(0, 2).map((thread) =>
+    thread.statusLabel ? `${thread.label} · ${thread.statusLabel}` : thread.label,
+  );
+  const moreCount = threads.length - visibleThreads.length;
+  if (moreCount > 0) {
+    visibleThreads.push(`+${moreCount} more`);
+  }
+  return visibleThreads.join(" · ");
 };
 
 async function getUnifiedUpdates(limit: number) {
@@ -81,7 +156,7 @@ async function getUnifiedUpdates(limit: number) {
       supabase
         .from("concall_analysis")
         .select(
-          "company_code,score,fy,qtr,quarter_label,updated_at,created_at,company(name)"
+          "company_code,score,fy,qtr,quarter_label,updated_at,created_at",
         )
         .order("updated_at", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false })
@@ -93,48 +168,49 @@ async function getUnifiedUpdates(limit: number) {
         .limit(120),
     ]);
 
+  const [{ data: businessSnapshotRows }, { data: guidanceRows }] = await Promise.all([
+    supabase
+      .from("business_snapshot")
+      .select("company, generated_at, snapshot_phase, snapshot_source")
+      .order("generated_at", { ascending: false })
+      .limit(160),
+    supabase
+      .from("guidance_tracking")
+      .select(
+        "id, company_code, guidance_key, generated_at, guidance_type, guidance_text, status, latest_view, status_reason",
+      )
+      .order("generated_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(400),
+  ]);
+
   const updates: UnifiedUpdate[] = [];
   const allQuarterRows = (quarterRows ?? []) as RawQuarterRow[];
-  const latestQuarter = allQuarterRows.reduce<{ fy: number; qtr: number } | null>(
-    (acc, row) => {
-      if (!acc) return { fy: row.fy, qtr: row.qtr };
-      if (row.fy > acc.fy) return { fy: row.fy, qtr: row.qtr };
-      if (row.fy === acc.fy && row.qtr > acc.qtr) return { fy: row.fy, qtr: row.qtr };
-      return acc;
-    },
-    null
-  );
-
-  const latestQuarterPerCompanyQuarter = new Map<string, UnifiedUpdate>();
-  allQuarterRows
-    .filter((row) =>
-      latestQuarter ? row.fy === latestQuarter.fy && row.qtr === latestQuarter.qtr : false
-    )
-    .forEach((row) => {
+  const latestQuarterPerCompany = new Map<string, UnifiedUpdate>();
+  allQuarterRows.forEach((row) => {
     const atRaw = row.updated_at ?? row.created_at ?? null;
     const atMs = eventTimeMs(atRaw);
-    const companyNameRaw = Array.isArray(row.company)
-      ? row.company[0]?.name
-      : row.company?.name;
-    const companyName = companyNameRaw ?? row.company_code;
     const quarterLabel = row.quarter_label ?? `Q${row.qtr} FY${row.fy}`;
-    const key = `${row.company_code}-${row.fy}-${row.qtr}`;
+    const companyKey = row.company_code?.trim().toUpperCase();
+    if (!companyKey) return;
     const candidate: UnifiedUpdate = {
-      id: `quarter-${key}`,
+      id: `quarter-${companyKey}`,
       type: "quarter",
-      companyName,
+      companyName: row.company_code,
       companyCode: row.company_code ?? null,
       score: parseScore(row.score),
-      detail: quarterLabel.replace(/\s+/g, ""),
+      detail: quarterLabel,
+      sourceLabel: "Quarter Score",
+      contextLabel: null,
       atRaw,
       atMs,
     };
-    const existing = latestQuarterPerCompanyQuarter.get(key);
+    const existing = latestQuarterPerCompany.get(companyKey);
     if (!existing || candidate.atMs > existing.atMs) {
-      latestQuarterPerCompanyQuarter.set(key, candidate);
+      latestQuarterPerCompany.set(companyKey, candidate);
     }
   });
-  updates.push(...latestQuarterPerCompanyQuarter.values());
+  updates.push(...latestQuarterPerCompany.values());
 
   const latestGrowthPerCompany = new Map<string, UnifiedUpdate>();
   ((growthRows ?? []) as RawGrowthRow[]).forEach((row) => {
@@ -151,7 +227,9 @@ async function getUnifiedUpdates(limit: number) {
       companyName,
       companyCode,
       score: parseScore(row.growth_score),
-      detail: fy ? `${fy} outlook refreshed` : "Growth outlook refreshed",
+      detail: fy ? `${fy} outlook` : "Growth outlook",
+      sourceLabel: "Growth Update",
+      contextLabel: null,
       atRaw,
       atMs,
     };
@@ -162,7 +240,164 @@ async function getUnifiedUpdates(limit: number) {
   });
   updates.push(...latestGrowthPerCompany.values());
 
-  return updates.sort((a, b) => b.atMs - a.atMs).slice(0, limit);
+  const latestSnapshotPerCompany = new Map<string, UnifiedUpdate>();
+  ((businessSnapshotRows ?? []) as RawBusinessSnapshotRow[]).forEach((row) => {
+    const companyCode = row.company?.trim();
+    if (!companyCode) return;
+    const atRaw = row.generated_at ?? null;
+    const atMs = eventTimeMs(atRaw);
+    const phaseLabel =
+      row.snapshot_phase != null ? `Snapshot updated` : "Snapshot refreshed";
+    const sourceLabel = "Biz Snapshot";
+    const contextLabel =
+      formatFeedLabel(row.snapshot_source) ||
+      (row.snapshot_phase != null ? `Phase ${row.snapshot_phase}` : null);
+    const candidate: UnifiedUpdate = {
+      id: `snapshot-${companyCode}`,
+      type: "business_snapshot",
+      companyName: companyCode,
+      companyCode,
+      score: null,
+      detail: phaseLabel,
+      sourceLabel,
+      contextLabel,
+      atRaw,
+      atMs,
+    };
+    const existing = latestSnapshotPerCompany.get(companyCode);
+    if (!existing || candidate.atMs > existing.atMs) {
+      latestSnapshotPerCompany.set(companyCode, candidate);
+    }
+  });
+  updates.push(...latestSnapshotPerCompany.values());
+
+  const latestGuidanceBatches = new Map<string, UnifiedUpdate>();
+  ((guidanceRows ?? []) as RawGuidanceRow[]).forEach((row) => {
+    const companyCode = row.company_code?.trim();
+    const guidanceKey = row.guidance_key?.trim();
+    if (!companyCode || !guidanceKey) return;
+    const atRaw = row.generated_at ?? null;
+    const atMs = eventTimeMs(atRaw);
+    const threadLabel = buildGuidanceThreadLabel(row);
+    const threadContext = buildGuidanceThreadContext(row);
+    const threadStatus = formatFeedLabel(row.status);
+    const thread: GuidanceBatchThread = {
+      guidanceKey,
+      label: threadLabel,
+      statusLabel: threadStatus,
+      contextLabel: threadContext,
+    };
+
+    if (!atRaw) {
+      const candidate: UnifiedUpdate = {
+        id: `guidance-${companyCode}-${guidanceKey}`,
+        type: "guidance_monitor",
+        companyName: companyCode,
+        companyCode,
+        score: null,
+        detail: threadContext ? `${threadLabel} · ${threadContext}` : threadLabel,
+        sourceLabel: "Guidance Monitor",
+        contextLabel: threadStatus ? `${threadStatus} update` : "Guidance",
+        atRaw,
+        atMs,
+      };
+      const existing = latestGuidanceBatches.get(candidate.id);
+      if (!existing || candidate.atMs > existing.atMs) {
+        latestGuidanceBatches.set(candidate.id, candidate);
+      }
+      return;
+    }
+
+    const batchKey = `${companyCode}::${atRaw}`;
+    const existing = latestGuidanceBatches.get(batchKey);
+    if (!existing) {
+      latestGuidanceBatches.set(batchKey, {
+        id: `guidance-batch-${companyCode}-${atMs}`,
+        type: "guidance_monitor",
+        companyName: companyCode,
+        companyCode,
+        score: null,
+        detail: "",
+        sourceLabel: "Guidance Monitor",
+        contextLabel: null,
+        atRaw,
+        atMs,
+        guidanceThreads: [thread],
+      });
+      return;
+    }
+
+    existing.guidanceThreads = [...(existing.guidanceThreads ?? []), thread];
+    if (atMs > existing.atMs) {
+      existing.atMs = atMs;
+      existing.atRaw = atRaw;
+    }
+  });
+  latestGuidanceBatches.forEach((item) => {
+    if (item.guidanceThreads && item.guidanceThreads.length > 1) {
+      item.guidanceThreads = [...item.guidanceThreads].sort((a, b) => {
+        const statusDiff = guidanceStatusRank(a.statusLabel) - guidanceStatusRank(b.statusLabel);
+        if (statusDiff !== 0) return statusDiff;
+        return a.guidanceKey.localeCompare(b.guidanceKey);
+      });
+    }
+
+    if (item.guidanceThreads && item.guidanceThreads.length > 0) {
+      const threads = item.guidanceThreads;
+      const batchCount = threads.length;
+      item.detail = buildGuidanceBatchPreview(threads) ?? "Guidance updates";
+      item.contextLabel = `${batchCount} update${batchCount === 1 ? "" : "s"}`;
+      if (batchCount === 1) {
+        const [thread] = threads;
+        item.detail = thread.contextLabel
+          ? `${thread.label} · ${thread.contextLabel}`
+          : thread.label;
+      }
+    }
+  });
+  updates.push(...latestGuidanceBatches.values());
+
+  const companyCodes = Array.from(
+    new Set(
+      updates
+        .map((item) => item.companyCode?.trim())
+        .filter((item): item is string => Boolean(item)),
+    ),
+  );
+
+  if (companyCodes.length > 0) {
+    const { data: companyRows } = await supabase
+      .from("company")
+      .select("code, name")
+      .in("code", companyCodes);
+
+    const companyNameMap = new Map<string, string>();
+    (companyRows ?? []).forEach((row: { code: string; name?: string | null }) => {
+      companyNameMap.set(row.code.toUpperCase(), row.name?.trim() || row.code);
+    });
+
+    updates.forEach((item) => {
+      if (!item.companyCode) return;
+      item.companyName =
+        companyNameMap.get(item.companyCode.toUpperCase()) ?? item.companyCode;
+    });
+  }
+
+  const typePriority: Record<UpdateType, number> = {
+    quarter: 0,
+    growth: 1,
+    business_snapshot: 2,
+    guidance_monitor: 3,
+  };
+
+  return updates
+    .sort((a, b) => {
+      if (b.atMs !== a.atMs) return b.atMs - a.atMs;
+      const typeDiff = typePriority[a.type] - typePriority[b.type];
+      if (typeDiff !== 0) return typeDiff;
+      return a.id.localeCompare(b.id);
+    })
+    .slice(0, limit);
 }
 
 export default async function RecentScoreUpdates({
@@ -171,35 +406,38 @@ export default async function RecentScoreUpdates({
   heroPanel?: boolean;
 } = {}) {
   const isCompact = heroPanel;
-  const updates = await getUnifiedUpdates(isCompact ? 8 : 6);
+  const updates = await getUnifiedUpdates(isCompact ? 10 : 6);
   if (updates.length === 0) return null;
 
   const headerClass = isCompact
-    ? "p-3 border-b border-border"
+    ? "px-3 py-2.5 border-b border-border"
     : "p-3 sm:p-4 border-b border-border";
   const titleClass = isCompact
-    ? "text-base font-bold text-foreground"
+    ? "text-[15px] font-bold tracking-[-0.01em] text-foreground"
     : "text-base sm:text-lg font-bold text-foreground";
   const subtitleClass = isCompact
-    ? "text-xs text-muted-foreground leading-snug"
+    ? "text-[11px] text-muted-foreground leading-tight"
     : "text-xs text-muted-foreground leading-relaxed";
   const rowClass = isCompact
-    ? "flex items-center justify-between gap-2 px-3 py-2 hover:bg-accent/70 transition-colors"
+    ? "flex items-center justify-between gap-1.5 px-3 py-1.5 hover:bg-accent/70 transition-colors"
     : "flex items-center justify-between gap-2.5 px-3 py-2.5 hover:bg-accent/70 transition-colors";
   const companyNameClass = isCompact
-    ? "text-sm font-semibold leading-tight text-foreground truncate"
+    ? "text-[13px] font-semibold leading-tight text-foreground truncate"
     : "text-sm font-semibold text-foreground truncate";
   const metaRowClass = isCompact
-    ? "mt-0.5 flex flex-wrap items-center gap-1.5 text-xs"
+    ? "mt-0.5 flex flex-wrap items-center gap-1 text-[10px]"
     : "mt-0.5 flex flex-wrap items-center gap-2 text-xs";
   const chipClass = isCompact
-    ? "text-[10px] px-2 py-[2px] rounded-full border font-medium"
+    ? "text-[9px] px-1.5 py-[1px] rounded-full border font-medium leading-none"
     : "text-[11px] px-2.5 py-0.5 rounded-full border font-medium";
   const dateClass = isCompact
-    ? "text-[10px] text-muted-foreground"
+    ? "text-[9px] text-muted-foreground"
     : "text-[11px] text-muted-foreground";
+  const detailClass = isCompact
+    ? "text-[9px] text-muted-foreground line-clamp-1"
+    : "text-[11px] text-muted-foreground line-clamp-1";
   const footerClass = isCompact
-    ? "px-3 pb-2.5 pt-1.5 border-t border-border"
+    ? "px-3 pb-2 pt-1 border-t border-border"
     : "px-3 sm:px-4 pb-3 sm:pb-4 pt-2 border-t border-border";
 
   return (
@@ -216,7 +454,7 @@ export default async function RecentScoreUpdates({
             Latest Updates
           </h2>
           <p className={subtitleClass}>
-            Time-ordered feed: quarter score and growth score updates
+            Time-ordered feed: score updates, snapshot refreshes, and guidance monitoring
           </p>
         </div>
 
@@ -232,18 +470,37 @@ export default async function RecentScoreUpdates({
                     <span
                       className={`${chipClass} ${typeChipClass(item.type)}`}
                     >
-                      {item.type === "quarter" ? item.detail : typeLabel(item.type)}
+                      {item.sourceLabel}
                     </span>
-                    <span className={dateClass}>
-                      {formatDate(item.atRaw)}
-                    </span>
+                    {item.detail &&
+                      !(item.type === "guidance_monitor" &&
+                        item.guidanceThreads &&
+                        item.guidanceThreads.length > 1) && (
+                      <span className={detailClass}>
+                        {item.detail}
+                      </span>
+                    )}
+                    <span className={dateClass}>{formatDate(item.atRaw)}</span>
                   </div>
+                  {item.type === "guidance_monitor" &&
+                    item.guidanceThreads &&
+                    item.guidanceThreads.length > 1 && (
+                      <p className={detailClass}>
+                        {item.detail}
+                      </p>
+                    )}
                 </div>
-                {typeof item.score === "number" ? (
-                  <div className="shrink-0">
+                <div className="shrink-0">
+                  {typeof item.score === "number" ? (
                     <ConcallScore score={item.score} size="sm" />
-                  </div>
-                ) : null}
+                  ) : item.contextLabel ? (
+                    <span
+                      className={`${chipClass} ${typeChipClass(item.type)}`}
+                    >
+                      {item.contextLabel}
+                    </span>
+                  ) : null}
+                </div>
               </div>
             );
 
