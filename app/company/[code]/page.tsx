@@ -421,6 +421,35 @@ const formatCatalystQuantifiedLabel = (catalyst: NormalizedGrowthCatalyst) => {
   return `${quantified.value} ${rawUnit}`;
 };
 
+const splitCatalystQuantifiedLabel = (label: string | null) => {
+  if (!label) {
+    return { headline: null, subline: null };
+  }
+
+  const parentheticalIndex = label.indexOf(" (");
+  const withoutParenthetical =
+    parentheticalIndex >= 0 ? label.slice(0, parentheticalIndex).trim() : label.trim();
+  const parenthetical =
+    parentheticalIndex >= 0 ? label.slice(parentheticalIndex).trim() : null;
+
+  const amountMatch = withoutParenthetical.match(
+    /^([\d,.]+(?:\s*₹)?(?:\s*(?:Cr|crore|lakh|mn|m|bn|billion|cyl|cylinders|MTPA|KTPA|TPA|TPD|MW|GW|kg|tonnes?|units?|%))?)(.*)$/i,
+  );
+
+  if (!amountMatch) {
+    return { headline: withoutParenthetical, subline: parenthetical };
+  }
+
+  const headline = amountMatch[1]?.trim() || withoutParenthetical;
+  const remainder = amountMatch[2]?.trim() || "";
+  const subline = [remainder || null, parenthetical].filter((value): value is string => Boolean(value)).join(" ");
+
+  return {
+    headline,
+    subline: subline || null,
+  };
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -2328,13 +2357,25 @@ export default async function Page({
                   </p>
                   <Carousel opts={{ align: "start" }} className="w-full">
                     <CarouselContent className="items-stretch">
-                      {normalizedGrowthOutlook.catalysts.slice(0, 3).map((c, idx) => {
+                      {[...normalizedGrowthOutlook.catalysts]
+                        .sort((a, b) => {
+                          const aPriority = a.priority?.weightedPriority;
+                          const bPriority = b.priority?.weightedPriority;
+
+                          if (aPriority == null && bPriority == null) return 0;
+                          if (aPriority == null) return 1;
+                          if (bPriority == null) return -1;
+                          return bPriority - aPriority;
+                        })
+                        .slice(0, 3)
+                        .map((c, idx) => {
                         const timelineItems = c.timelineItems;
                         const hasTimelineDetails = timelineItems.length > 0;
                         const statusDisplay = getCatalystStatusDisplay(c.statusTag);
                         const confidenceDisplay = getCatalystConfidenceDisplay(c.pillConfidence);
                         const impactDisplay = getCatalystImpactPillDisplay(c);
                         const quantifiedLabel = formatCatalystQuantifiedLabel(c);
+                        const quantifiedDisplay = splitCatalystQuantifiedLabel(quantifiedLabel);
                         const priorityLabel =
                           c.priority?.weightedPriority != null
                             ? `Priority ${pctFormatter.format(c.priority.weightedPriority)}/5`
@@ -2368,7 +2409,7 @@ export default async function Page({
                               <div className="flex h-full flex-1 flex-col gap-4">
                                 <div className="space-y-3">
                                   {c.catalyst && (
-                                    <p className="text-[15px] font-semibold leading-snug text-foreground">
+                                    <p className="min-h-[2.6rem] line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
                                       {c.catalyst}
                                     </p>
                                   )}
@@ -2388,35 +2429,40 @@ export default async function Page({
                                         {toDisplayLabel(c.type) ?? c.type}
                                       </span>
                                     )}
+                                    {impactDisplay && (
+                                      <span className={`rounded-full border px-2.5 py-0.5 ${impactDisplay.className}`}>
+                                        {impactDisplay.label}
+                                      </span>
+                                    )}
+                                    {confidenceDisplay && (
+                                      <span className={`rounded-full border px-2.5 py-0.5 ${confidenceDisplay.className}`}>
+                                        {confidenceDisplay.label}
+                                      </span>
+                                    )}
+                                    {priorityLabel && (
+                                      <span className="rounded-full border border-violet-200 bg-violet-100 px-2.5 py-0.5 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/35 dark:text-violet-200">
+                                        {priorityLabel}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
 
-                                {(quantifiedLabel || confidenceDisplay || impactDisplay || priorityLabel) && (
-                                  <div className="grid gap-3 rounded-xl border border-border/35 bg-muted/20 p-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                                    <div className="space-y-1">
+                                {quantifiedLabel && (
+                                  <div className="rounded-xl border border-border/35 bg-muted/15 p-3">
+                                    <div className="space-y-2">
                                       <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
                                         Quantified change
                                       </p>
-                                      <p className="text-[22px] font-semibold leading-none text-foreground">
-                                        {quantifiedLabel ?? "Unquantified"}
-                                      </p>
-                                    </div>
-                                    <div className="flex flex-wrap items-start gap-1.5 text-[10px]">
-                                      {impactDisplay && (
-                                        <span className={`rounded-full border px-2.5 py-0.5 ${impactDisplay.className}`}>
-                                          {impactDisplay.label}
-                                        </span>
-                                      )}
-                                      {confidenceDisplay && (
-                                        <span className={`rounded-full border px-2.5 py-0.5 ${confidenceDisplay.className}`}>
-                                          {confidenceDisplay.label}
-                                        </span>
-                                      )}
-                                      {priorityLabel && (
-                                        <span className="rounded-full border border-violet-200 bg-violet-100 px-2.5 py-0.5 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/35 dark:text-violet-200">
-                                          {priorityLabel}
-                                        </span>
-                                      )}
+                                      <div className="space-y-1">
+                                        <p className="text-[18px] font-semibold leading-[1.02] tracking-tight text-foreground sm:text-[20px]">
+                                          {quantifiedDisplay.headline ?? quantifiedLabel ?? "Unquantified"}
+                                        </p>
+                                        {quantifiedDisplay.subline && (
+                                          <p className="max-w-[28rem] text-[11px] leading-relaxed text-muted-foreground">
+                                            {quantifiedDisplay.subline}
+                                          </p>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 )}
