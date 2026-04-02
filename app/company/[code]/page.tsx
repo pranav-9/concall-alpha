@@ -577,7 +577,6 @@ export default async function Page({
   const snapshotSubsectionClass =
     "rounded-xl border border-border/20 bg-background/25";
   const hasFutureGrowthDeepDive = Boolean(
-    normalizedGrowthOutlook?.variantPerception ||
       normalizedGrowthOutlook?.scenarios?.base ||
       normalizedGrowthOutlook?.scenarios?.upside ||
       normalizedGrowthOutlook?.scenarios?.downside,
@@ -1539,44 +1538,189 @@ export default async function Page({
     }
   }
 
-  const renderScenarioCard = (scenarioKey: "base" | "upside" | "downside") => {
+  const getScenarioTone = (scenarioKey: "base" | "upside" | "downside") =>
+    scenarioKey === "base"
+      ? {
+          accentClass: "border-l-emerald-500/70",
+          growthBadgeClass:
+            "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/35 dark:text-emerald-100",
+        }
+      : scenarioKey === "upside"
+        ? {
+            accentClass: "border-l-sky-500/70",
+            growthBadgeClass:
+              "border-sky-200 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/35 dark:text-sky-100",
+          }
+        : {
+            accentClass: "border-l-amber-500/70",
+            growthBadgeClass:
+              "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/35 dark:text-amber-100",
+          };
+
+  const renderBaseScenarioCard = () => {
+    const scenario = normalizedGrowthOutlook?.scenarios?.base as
+      | NormalizedGrowthScenario
+      | null
+      | undefined;
+    if (!scenario) return null;
+
+    const drivers = scenario.drivers.slice(0, 3);
+    const risks = scenario.risks.slice(0, 3);
+    const fallbackDescription = (scenario.summary ?? "").trim();
+    const primaryRisk = (scenario.risks[0] ?? "").trim();
+    const riskWatch = (scenario.riskWatch ?? "").trim();
+    const riskWatchValue = riskWatch || primaryRisk;
+    const growthValue = scenario.growth;
+    const marginValue = scenario.ebitdaMargin;
+    const tone = getScenarioTone("base");
+
+    return (
+      <div className={`${elevatedBlockClass} flex flex-col p-3 space-y-3 border-l-2 ${tone.accentClass}`}>
+        <div className="flex items-start justify-between gap-3">
+          <span className="px-2 py-0.5 rounded-full bg-muted text-foreground font-semibold uppercase tracking-wide">
+            Base case
+          </span>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            {growthValue && (
+              <span className={`rounded-full border px-3 py-1 text-[18px] font-bold leading-none ${tone.growthBadgeClass}`}>
+                {String(growthValue)}
+              </span>
+            )}
+            {typeof scenario.confidence === "number" && (
+              <span className="rounded-full border border-border/60 bg-muted/80 px-2.5 py-0.5 text-[10px] font-medium text-foreground">
+                Confidence {(scenario.confidence * 100).toFixed(0)}%
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+          {marginValue && (
+            <span className="px-2 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/35 dark:text-sky-100 dark:border-sky-700/40">
+              EBITDA margin: {String(marginValue)}
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+            Quick takeaway
+          </p>
+          {fallbackDescription ? (
+            <p className="text-[11px] text-foreground leading-snug line-clamp-2">
+              {fallbackDescription}
+            </p>
+          ) : (
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              No quick takeaway provided.
+            </p>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          <div className="space-y-1.5 rounded-lg border border-emerald-200/50 bg-emerald-50/55 p-2.5 dark:border-emerald-700/25 dark:bg-emerald-900/15">
+            <p className="text-[10px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300 font-semibold">
+              Drivers
+            </p>
+            <ul className="space-y-1">
+              {drivers.length > 0 ? (
+                drivers.map((driver, idx) => (
+                  <li
+                    key={idx}
+                    className="rounded-sm border-l border-emerald-400/60 pl-2 text-[11px] leading-snug text-foreground"
+                  >
+                    {driver}
+                  </li>
+                ))
+              ) : (
+                <li className="text-[11px] leading-snug text-muted-foreground">
+                  No driver details provided.
+                </li>
+              )}
+            </ul>
+          </div>
+
+          <div className="space-y-1.5 rounded-lg border border-rose-200/50 bg-rose-50/55 p-2.5 dark:border-rose-700/25 dark:bg-rose-900/15">
+            <p className="text-[10px] uppercase tracking-wide text-rose-700 dark:text-rose-300 font-semibold">
+              Risks
+            </p>
+            <ul className="space-y-1">
+              {risks.length > 0 ? (
+                risks.map((risk, idx) => (
+                  <li
+                    key={idx}
+                    className="rounded-sm border-l border-rose-400/60 pl-2 text-[11px] leading-snug text-foreground"
+                  >
+                    {risk}
+                  </li>
+                ))
+              ) : (
+                <li className="text-[11px] leading-snug text-muted-foreground">
+                  No risk details provided.
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+
+        {riskWatchValue && (
+          <div className="rounded-lg border border-amber-200/50 bg-amber-50/55 px-2.5 py-2 dark:border-amber-700/25 dark:bg-amber-900/15">
+            <p className="text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-300 font-semibold">
+              Risk watch
+            </p>
+            <p className="mt-1 text-[11px] leading-snug text-foreground">
+              {riskWatchValue}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderCompactScenarioCard = (scenarioKey: "upside" | "downside") => {
     const scenario = normalizedGrowthOutlook?.scenarios?.[scenarioKey] as NormalizedGrowthScenario | null | undefined;
     if (!scenario) return null;
     const drivers = scenario.drivers;
     const risks = scenario.risks;
-    const primaryDriver = (drivers[0] ?? "").trim();
+    const visibleDrivers = drivers.slice(0, 2);
+    const visibleRisks = risks.slice(0, 2);
     const primaryRisk = (risks[0] ?? "").trim();
     const fallbackDescription = (scenario.summary ?? "").trim();
+    const riskWatch = (scenario.riskWatch ?? "").trim();
+    const riskWatchValue = riskWatch || primaryRisk;
     const growthValue = scenario.growth;
     const marginValue = scenario.ebitdaMargin;
-    const accentClass =
-      scenarioKey === "base"
-        ? "border-l-emerald-500/70"
-        : scenarioKey === "upside"
-        ? "border-l-sky-500/70"
-        : "border-l-amber-500/70";
+    const tone = getScenarioTone(scenarioKey);
+    const hasDetailContent =
+      visibleDrivers.length > 0 || visibleRisks.length > 0 || Boolean(riskWatchValue);
+    const detailsLabel =
+      visibleDrivers.length > 0 || visibleRisks.length > 0
+        ? `Show details (${visibleDrivers.length} drivers, ${visibleRisks.length} risks)`
+        : "Show details";
 
     return (
       <div
         key={scenarioKey}
-        className={`${elevatedBlockClass} p-3 space-y-2 border-l-2 ${accentClass}`}
+        className={`${elevatedBlockClass} flex h-full flex-col p-3 space-y-3 border-l-2 ${tone.accentClass}`}
       >
-        <div className="flex items-center justify-between text-[10px]">
+        <div className="flex items-start justify-between gap-3">
           <span className="px-2 py-0.5 rounded-full bg-muted text-foreground font-semibold uppercase tracking-wide">
             {scenarioKey} case
           </span>
-          {typeof scenario.confidence === "number" && (
-            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
-              {(scenario.confidence * 100).toFixed(0)}% conf
-            </span>
-          )}
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            {growthValue && (
+              <span className={`rounded-full border px-3 py-1 text-[18px] font-bold leading-none ${tone.growthBadgeClass}`}>
+                {String(growthValue)}
+              </span>
+            )}
+            {typeof scenario.confidence === "number" && (
+              <span className="rounded-full border border-border/60 bg-muted/80 px-2.5 py-0.5 text-[10px] font-medium text-foreground">
+                Confidence {(scenario.confidence * 100).toFixed(0)}%
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-          {growthValue && (
-            <span className="px-2 py-0.5 rounded-full border bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/35 dark:text-emerald-100 dark:border-emerald-700/40">
-              Growth: {String(growthValue)}
-            </span>
-          )}
           {marginValue && (
             <span className="px-2 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/35 dark:text-sky-100 dark:border-sky-700/40">
               EBITDA margin: {String(marginValue)}
@@ -1588,74 +1732,72 @@ export default async function Page({
             Quick takeaway
           </p>
           <div className="space-y-1">
-            {primaryDriver ? (
-              <p className="text-[11px] text-foreground leading-snug line-clamp-2">
-                {primaryDriver}
-              </p>
-            ) : fallbackDescription ? (
+            {fallbackDescription ? (
               <p className="text-[11px] text-foreground leading-snug line-clamp-2">
                 {fallbackDescription}
               </p>
             ) : (
               <p className="text-[11px] text-muted-foreground leading-snug">
-                No primary driver provided.
+                No quick takeaway provided.
               </p>
             )}
-            {primaryRisk ? (
-              <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">
-                Risk watch: {primaryRisk}
-              </p>
-            ) : !primaryDriver && !fallbackDescription ? (
+            {!fallbackDescription && !riskWatchValue ? (
               <p className="text-[11px] text-muted-foreground leading-snug">
                 No primary risk provided.
               </p>
-            ) : (
-              <></>
-            )}
+            ) : null}
           </div>
         </div>
 
-        {(drivers.length > 1 || risks.length > 1) && (
+        {hasDetailContent && (
           <details className={`group ${nestedDetailClass} px-2 py-1.5`}>
             <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
-              <span className="group-open:hidden">
-                Show details ({Math.min(drivers.length, 2)} drivers, {Math.min(risks.length, 2)} risks)
-              </span>
+              <span className="group-open:hidden">{detailsLabel}</span>
               <span className="hidden group-open:inline">Hide details</span>
             </summary>
             <div className="mt-2 space-y-2">
-              {drivers.length > 0 && (
+              {visibleDrivers.length > 0 && (
                 <div className="space-y-1">
                   <p className="text-[10px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300 font-semibold">
                     Drivers
                   </p>
                   <ul className="space-y-1">
-                    {drivers.slice(0, 2).map((d, idx) => (
+                    {visibleDrivers.map((driver, idx) => (
                       <li
                         key={idx}
                         className="text-[11px] text-foreground leading-snug rounded-sm border-l border-emerald-400/60 pl-2"
                       >
-                        {d}
+                        {driver}
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
-              {risks.length > 0 && (
+              {visibleRisks.length > 0 && (
                 <div className="space-y-1">
                   <p className="text-[10px] uppercase tracking-wide text-red-700 dark:text-red-300 font-semibold">
                     Risks
                   </p>
                   <ul className="space-y-1">
-                    {risks.slice(0, 2).map((r, idx) => (
+                    {visibleRisks.map((risk, idx) => (
                       <li
                         key={idx}
                         className="text-[11px] text-foreground leading-snug rounded-sm border-l border-red-400/60 pl-2"
                       >
-                        {r}
+                        {risk}
                       </li>
                     ))}
                   </ul>
+                </div>
+              )}
+              {riskWatchValue && (
+                <div className="rounded-lg border border-amber-200/50 bg-amber-50/55 px-2.5 py-2 dark:border-amber-700/25 dark:bg-amber-900/15">
+                  <p className="text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-300 font-semibold">
+                    Risk watch
+                  </p>
+                  <p className="mt-1 text-[11px] leading-snug text-foreground">
+                    {riskWatchValue}
+                  </p>
                 </div>
               )}
             </div>
@@ -2252,141 +2394,30 @@ export default async function Page({
                 </div>
               )}
               {hasFutureGrowthDeepDive && (
-                <details className={`group ${nestedDetailClass} px-3 py-2.5`}>
-                  <summary className="list-none cursor-pointer">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="space-y-1">
-                        <p className="text-[11px] font-semibold uppercase tracking-wide text-foreground/90">
-                          See more about future growth
-                        </p>
-                        <p className="text-[11px] leading-snug text-muted-foreground">
-                          Open detailed variant perception and scenario analysis.
-                        </p>
-                      </div>
-                      <span className="text-[11px] text-muted-foreground">
-                        <span className="group-open:hidden">Open</span>
-                        <span className="hidden group-open:inline">Hide</span>
-                      </span>
+                <div className={`${nestedDetailClass} px-3 py-2.5 space-y-3`}>
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-foreground/90">
+                      Scenario Analysis
+                    </p>
+                    <p className="text-[11px] leading-snug text-muted-foreground">
+                      Base case spans the left column; upside and downside stack on the right.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:items-stretch">
+                    <div>
+                      {renderBaseScenarioCard()}
                     </div>
-                  </summary>
-
-                  <div className="mt-3 space-y-3">
-                    {normalizedGrowthOutlook.variantPerception && (
-                      <div className={`${elevatedMutedBlockClass} p-3 space-y-2.5`}>
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
-                            Variant perception
-                          </p>
-                          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                            Non-consensus view
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
-                          <div className={`${elevatedBlockClass} p-2.5 space-y-1.5 border-l-2 border-l-slate-400/70`}>
-                            <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-foreground border border-border">
-                              Consensus
-                            </span>
-                            {normalizedGrowthOutlook.variantPerception.consensus ? (
-                              <p className="text-[11px] text-foreground leading-snug">
-                                {normalizedGrowthOutlook.variantPerception.consensus}
-                              </p>
-                            ) : (
-                              <p className="text-[11px] text-muted-foreground leading-snug">No consensus note.</p>
-                            )}
-                          </div>
-
-                          <div className={`${elevatedBlockClass} p-2.5 space-y-1.5 border-l-2 border-l-emerald-500/70`}>
-                            <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-emerald-200 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/35 dark:text-emerald-200 dark:border-emerald-700/40">
-                              Upside
-                            </span>
-                            {normalizedGrowthOutlook.variantPerception.upside.length > 0 ? (
-                              <div className="space-y-1.5">
-                                <ul className="space-y-1.5">
-                                  <li className="relative pl-3 text-[11px] text-foreground leading-snug">
-                                    <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500/70" />
-                                    {normalizedGrowthOutlook.variantPerception.upside[0]}
-                                  </li>
-                                </ul>
-                                {normalizedGrowthOutlook.variantPerception.upside.length > 1 && (
-                                  <details className="group">
-                                    <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
-                                      <span className="group-open:hidden">
-                                        Show more ({normalizedGrowthOutlook.variantPerception.upside.length - 1})
-                                      </span>
-                                      <span className="hidden group-open:inline">Hide extras</span>
-                                    </summary>
-                                    <ul className="mt-1.5 space-y-1.5">
-                                      {normalizedGrowthOutlook.variantPerception.upside
-                                        .slice(1)
-                                        .map((x, idx) => (
-                                          <li
-                                            key={idx}
-                                            className="relative pl-3 text-[11px] text-foreground leading-snug"
-                                          >
-                                            <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500/60" />
-                                            {x}
-                                          </li>
-                                        ))}
-                                    </ul>
-                                  </details>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="text-[11px] text-muted-foreground leading-snug">No upside variants.</p>
-                            )}
-                          </div>
-
-                          <div className={`${elevatedBlockClass} p-2.5 space-y-1.5 border-l-2 border-l-red-500/70`}>
-                            <span className="inline-flex text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-red-200 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200 dark:border-red-700/40">
-                              Downside
-                            </span>
-                            {normalizedGrowthOutlook.variantPerception.downside.length > 0 ? (
-                              <div className="space-y-1.5">
-                                <ul className="space-y-1.5">
-                                  <li className="relative pl-3 text-[11px] text-foreground leading-snug">
-                                    <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500/70" />
-                                    {normalizedGrowthOutlook.variantPerception.downside[0]}
-                                  </li>
-                                </ul>
-                                {normalizedGrowthOutlook.variantPerception.downside.length > 1 && (
-                                  <details className="group">
-                                    <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
-                                      <span className="group-open:hidden">
-                                        Show more ({normalizedGrowthOutlook.variantPerception.downside.length - 1})
-                                      </span>
-                                      <span className="hidden group-open:inline">Hide extras</span>
-                                    </summary>
-                                    <ul className="mt-1.5 space-y-1.5">
-                                      {normalizedGrowthOutlook.variantPerception.downside
-                                        .slice(1)
-                                        .map((x, idx) => (
-                                          <li
-                                            key={idx}
-                                            className="relative pl-3 text-[11px] text-foreground leading-snug"
-                                          >
-                                            <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500/60" />
-                                            {x}
-                                          </li>
-                                        ))}
-                                    </ul>
-                                  </details>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="text-[11px] text-muted-foreground leading-snug">No downside variants.</p>
-                            )}
-                          </div>
-                        </div>
+                    <div className="grid gap-3 md:h-full md:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
+                      <div className="h-full">
+                        {renderCompactScenarioCard("upside")}
                       </div>
-                    )}
-
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                      {(["base", "upside", "downside"] as const).map((scenarioKey) =>
-                        renderScenarioCard(scenarioKey)
-                      )}
+                      <div className="h-full">
+                        {renderCompactScenarioCard("downside")}
+                      </div>
                     </div>
                   </div>
-                </details>
+                </div>
               )}
 
             </div>

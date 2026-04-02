@@ -55,6 +55,7 @@ export type NormalizedGrowthScenario = {
   growth: string | null;
   ebitdaMargin: string | null;
   summary: string | null;
+  riskWatch: string | null;
   drivers: string[];
   risks: string[];
 };

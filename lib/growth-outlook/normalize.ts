@@ -252,6 +252,11 @@ const normalizeScenario = (value: unknown): NormalizedGrowthScenario | null => {
   const risks = risksPrimary.length > 0 ? risksPrimary : risksFallback;
 
   const summary = asString(item.quick_takeaway) ?? asString(item.description);
+  const riskWatch =
+    asString(item.risk_watch) ??
+    asString(item.risk_watch_summary) ??
+    asString(item.risk_watchpoint) ??
+    asString(item.watchpoint);
   const growthRaw =
     item.growth_pct ?? item.revenue_growth_pct ?? item.revenue_growth ?? item.revenue_impact;
   const growth =
@@ -261,7 +266,15 @@ const normalizeScenario = (value: unknown): NormalizedGrowthScenario | null => {
     typeof ebitdaRaw === "string" || typeof ebitdaRaw === "number" ? String(ebitdaRaw) : null;
   const confidence = normalizeScenarioConfidence(item.confidence_pct ?? item.confidence);
 
-  if (!summary && !growth && !ebitdaMargin && confidence == null && drivers.length === 0 && risks.length === 0) {
+  if (
+    !summary &&
+    !riskWatch &&
+    !growth &&
+    !ebitdaMargin &&
+    confidence == null &&
+    drivers.length === 0 &&
+    risks.length === 0
+  ) {
     return null;
   }
 
@@ -270,6 +283,7 @@ const normalizeScenario = (value: unknown): NormalizedGrowthScenario | null => {
     growth,
     ebitdaMargin,
     summary,
+    riskWatch,
     drivers,
     risks,
   };
