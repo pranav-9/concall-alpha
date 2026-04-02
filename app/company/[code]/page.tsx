@@ -22,7 +22,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
-import type { NormalizedGrowthScenario } from "@/lib/growth-outlook/types";
+import type { NormalizedGrowthCatalyst, NormalizedGrowthScenario } from "@/lib/growth-outlook/types";
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
 import { normalizeCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/normalize";
 import { GuidanceHistorySection } from "../components/guidance-history-section";
@@ -301,6 +301,124 @@ const getTimelineStageDisplay = (stage?: string | null) => {
     };
   }
   return timelineStageConfig.unknown;
+};
+
+const toDisplayLabel = (value: string | null) => {
+  const compact = value ? formatCompactLabel(value) : "";
+  if (!compact) return null;
+  return compact.replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const getCatalystStatusDisplay = (value: string | null) => {
+  const normalized = value?.trim().toLowerCase();
+  switch (normalized) {
+    case "ramping":
+      return {
+        label: "Ramping",
+        className:
+          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
+      };
+    case "in_delivery":
+    case "in delivery":
+      return {
+        label: "In delivery",
+        className:
+          "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
+      };
+    case "announced":
+      return {
+        label: "Announced",
+        className:
+          "border-amber-200/80 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200",
+      };
+    default:
+      return normalized
+        ? {
+            label: toDisplayLabel(normalized) ?? formatCompactLabel(normalized),
+            className: "border-border/60 bg-muted/60 text-foreground",
+          }
+        : null;
+  }
+};
+
+const getCatalystConfidenceDisplay = (value: string | null) => {
+  const normalized = value?.trim().toLowerCase();
+  switch (normalized) {
+    case "high":
+      return {
+        label: "High confidence",
+        className:
+          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
+      };
+    case "medium":
+    case "med":
+      return {
+        label: "Medium confidence",
+        className:
+          "border-amber-200/80 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200",
+      };
+    case "low":
+      return {
+        label: "Low confidence",
+        className:
+          "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
+      };
+    default:
+      return normalized
+        ? {
+            label: `${toDisplayLabel(normalized) ?? formatCompactLabel(normalized)} confidence`,
+            className: "border-border/60 bg-muted/60 text-foreground",
+          }
+        : null;
+  }
+};
+
+const getCatalystImpactPillDisplay = (catalyst: NormalizedGrowthCatalyst) => {
+  if (catalyst.expectedImpact?.toLowerCase() === "revenue" && catalyst.pillRevenueImpact) {
+    const normalized = catalyst.pillRevenueImpact.trim().toLowerCase();
+    return {
+      label: `Revenue: ${toDisplayLabel(normalized) ?? formatCompactLabel(normalized)}`,
+      className:
+        normalized === "high"
+          ? "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
+          : "border-border/60 bg-muted/60 text-foreground",
+    };
+  }
+
+  if (catalyst.expectedImpact?.toLowerCase() === "margin" && catalyst.pillMarginImpact) {
+    const normalized = catalyst.pillMarginImpact.trim().toLowerCase();
+    return {
+      label: `Margin: ${toDisplayLabel(normalized) ?? formatCompactLabel(normalized)}`,
+      className:
+        normalized === "expanding"
+          ? "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
+          : "border-border/60 bg-muted/60 text-foreground",
+    };
+  }
+
+  if (!catalyst.expectedImpact) return null;
+  return {
+    label: `Impact: ${toDisplayLabel(catalyst.expectedImpact) ?? catalyst.expectedImpact}`,
+    className: "border-border/60 bg-muted/60 text-foreground",
+  };
+};
+
+const formatCatalystQuantifiedLabel = (catalyst: NormalizedGrowthCatalyst) => {
+  const quantified = catalyst.quantified;
+  if (!quantified || quantified.value == null) return null;
+
+  const rawUnit = quantified.unit?.trim() ?? "";
+  if (typeof quantified.value === "number") {
+    if (rawUnit === "%") return `${pctFormatter.format(quantified.value)}%`;
+    if (!rawUnit) return pctFormatter.format(quantified.value);
+    return `${pctFormatter.format(quantified.value)} ${rawUnit}`;
+  }
+
+  if (!rawUnit || quantified.value.includes(rawUnit)) {
+    return quantified.value;
+  }
+
+  return `${quantified.value} ${rawUnit}`;
 };
 
 export async function generateMetadata({
@@ -2211,9 +2329,23 @@ export default async function Page({
                     <CarouselContent className="items-stretch">
                       {normalizedGrowthOutlook.catalysts.slice(0, 3).map((c, idx) => {
                         const timelineItems = c.timelineItems;
-                        const visibleTimelineItems = timelineItems.slice(0, 2);
-                        const remainingTimelineItems = timelineItems.slice(2);
-                        const hasTimelineDetails = remainingTimelineItems.length > 0;
+                        const hasTimelineDetails = timelineItems.length > 0;
+                        const statusDisplay = getCatalystStatusDisplay(c.statusTag);
+                        const confidenceDisplay = getCatalystConfidenceDisplay(c.pillConfidence);
+                        const impactDisplay = getCatalystImpactPillDisplay(c);
+                        const quantifiedLabel = formatCatalystQuantifiedLabel(c);
+                        const priorityLabel =
+                          c.priority?.weightedPriority != null
+                            ? `Priority ${pctFormatter.format(c.priority.weightedPriority)}/5`
+                            : null;
+                        const whatIsChanging =
+                          c.whatIsChanging ??
+                          c.evidenceLines.map((line) => line.text).find((line) => Boolean(line)) ??
+                          null;
+                        const whyItMatters =
+                          c.whyItMatters ??
+                          c.evidenceLines.map((line) => line.text).find((line) => line !== whatIsChanging) ??
+                          null;
                         const catalystAccentClass =
                           c.expectedImpact === "revenue"
                             ? "before:bg-emerald-400/90"
@@ -2233,83 +2365,102 @@ export default async function Page({
                               className={`relative flex h-full flex-col overflow-hidden rounded-xl border border-border/25 bg-background/85 p-4 shadow-sm before:absolute before:inset-x-0 before:top-0 before:h-1 ${catalystAccentClass}`}
                             >
                               <div className="flex h-full flex-1 flex-col gap-4">
-                                <div className="space-y-2.5">
+                                <div className="space-y-3">
                                   {c.catalyst && (
                                     <p className="text-[15px] font-semibold leading-snug text-foreground">
                                       {c.catalyst}
                                     </p>
                                   )}
                                   <div className="flex flex-wrap items-center gap-2 text-[10px]">
-                                    {c.type && (
-                                      <span className="rounded-full border border-blue-200 bg-blue-100 px-2.5 py-0.5 text-blue-700 dark:border-blue-700/40 dark:bg-blue-900/35 dark:text-blue-200">
-                                        {c.type}
+                                    {statusDisplay && (
+                                      <span className={`rounded-full border px-2.5 py-0.5 ${statusDisplay.className}`}>
+                                        {statusDisplay.label}
                                       </span>
                                     )}
-                                    {c.expectedImpact && (
-                                      <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-0.5 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/35 dark:text-emerald-100">
-                                        Impact: {c.expectedImpact}
+                                    {c.timing && (
+                                      <span className="rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-foreground">
+                                        {c.timing}
+                                      </span>
+                                    )}
+                                    {c.type && (
+                                      <span className="rounded-full border border-blue-200 bg-blue-100 px-2.5 py-0.5 text-blue-700 dark:border-blue-700/40 dark:bg-blue-900/35 dark:text-blue-200">
+                                        {toDisplayLabel(c.type) ?? c.type}
                                       </span>
                                     )}
                                   </div>
                                 </div>
 
-                                {timelineItems.length > 0 && (
-                                  <div className="space-y-2.5">
-                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                {(quantifiedLabel || confidenceDisplay || impactDisplay || priorityLabel) && (
+                                  <div className="grid gap-3 rounded-xl border border-border/35 bg-muted/20 p-3 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                                    <div className="space-y-1">
                                       <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                                        Timeline
+                                        Quantified change
                                       </p>
-                                      {timelineItems.length > 2 && (
-                                        <span className="text-[10px] text-muted-foreground">
-                                          {timelineItems.length} updates
+                                      <p className="text-[22px] font-semibold leading-none text-foreground">
+                                        {quantifiedLabel ?? "Unquantified"}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-wrap items-start gap-1.5 text-[10px]">
+                                      {impactDisplay && (
+                                        <span className={`rounded-full border px-2.5 py-0.5 ${impactDisplay.className}`}>
+                                          {impactDisplay.label}
+                                        </span>
+                                      )}
+                                      {confidenceDisplay && (
+                                        <span className={`rounded-full border px-2.5 py-0.5 ${confidenceDisplay.className}`}>
+                                          {confidenceDisplay.label}
+                                        </span>
+                                      )}
+                                      {priorityLabel && (
+                                        <span className="rounded-full border border-violet-200 bg-violet-100 px-2.5 py-0.5 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/35 dark:text-violet-200">
+                                          {priorityLabel}
                                         </span>
                                       )}
                                     </div>
+                                  </div>
+                                )}
 
-                                    <div className="relative pl-6 before:absolute before:left-[8px] before:top-1 before:bottom-1 before:w-px before:bg-border/60">
-                                      <ul className="space-y-3">
-                                        {visibleTimelineItems.map((t, tIdx) => {
-                                          const stageMeta = getTimelineStageDisplay(t.stage);
-                                          const period = t.period ?? "";
-                                          const source = t.source ?? "";
-                                          const quote = t.quote ?? "";
-                                          const delta = t.delta ?? "";
+                                {(whatIsChanging || whyItMatters) && (
+                                  <div className="space-y-2">
+                                    {whatIsChanging && (
+                                      <div className="rounded-lg border border-border/35 bg-background/70 p-3 space-y-1">
+                                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+                                          What Is Changing
+                                        </p>
+                                        <p className="text-[12px] leading-relaxed text-foreground">
+                                          {whatIsChanging}
+                                        </p>
+                                      </div>
+                                    )}
+                                    {whyItMatters && (
+                                      <div className="rounded-lg border border-emerald-200/35 bg-emerald-50/35 p-3 space-y-1 dark:border-emerald-700/25 dark:bg-emerald-900/10">
+                                        <p className="text-[10px] uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300 font-semibold">
+                                          Why It Matters
+                                        </p>
+                                        <p className="text-[12px] leading-relaxed text-foreground">
+                                          {whyItMatters}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
 
-                                          return (
-                                            <li
-                                              key={`${idx}-timeline-primary-${tIdx}`}
-                                              className="relative space-y-1.5 pl-4"
-                                            >
-                                              <span className={`absolute left-0 top-2 h-2.5 w-2.5 rounded-full border-2 border-background ${catalystDotClass}`} />
-                                              <div className="flex flex-wrap items-center gap-1.5">
-                                                <span
-                                                  className={`px-2 py-0.5 rounded-full uppercase tracking-wide text-[10px] ${stageMeta.className}`}
-                                                >
-                                                  {stageMeta.label}
-                                                </span>
-                                                {(period || source) && (
-                                                  <span className="text-[11px] text-muted-foreground">
-                                                    {period}
-                                                    {period && source ? " · " : ""}
-                                                    {source}
-                                                  </span>
-                                                )}
-                                              </div>
-                                              {quote && (
-                                                <p className="text-[12px] leading-relaxed text-foreground">
-                                                  {quote}
-                                                </p>
-                                              )}
-                                              {delta && (
-                                                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                                                  {delta}
-                                                </p>
-                                              )}
-                                            </li>
-                                          );
-                                        })}
-                                      </ul>
-                                    </div>
+                                {c.pillDependency && (
+                                  <div className="rounded-lg border border-amber-200/35 bg-amber-50/35 px-3 py-2 dark:border-amber-700/25 dark:bg-amber-900/10">
+                                    <p className="text-[10px] uppercase tracking-[0.16em] text-amber-700 dark:text-amber-300 font-semibold">
+                                      Key dependency
+                                    </p>
+                                    <p className="mt-1 text-[11px] leading-relaxed text-foreground">
+                                      {c.pillDependency}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {timelineItems.length > 0 && (
+                                  <div className="space-y-2.5">
+                                    <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+                                      Timeline
+                                    </p>
                                   </div>
                                 )}
 
@@ -2333,7 +2484,7 @@ export default async function Page({
                                     </summary>
                                     <div className="mt-3 relative pl-6 before:absolute before:left-[8px] before:top-1 before:bottom-1 before:w-px before:bg-border/60">
                                       <ul className="space-y-3">
-                                        {remainingTimelineItems.map((t, tIdx) => {
+                                        {timelineItems.map((t, tIdx) => {
                                           const stageMeta = getTimelineStageDisplay(t.stage);
                                           const period = t.period ?? "";
                                           const source = t.source ?? "";

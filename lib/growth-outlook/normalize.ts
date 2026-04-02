@@ -143,10 +143,17 @@ const normalizeCatalyst = (value: unknown): NormalizedGrowthCatalyst | null => {
     type: asString(item.type),
     timing: asString(item.timing),
     catalyst: asString(item.catalyst),
+    statusTag: asString(item.status_tag),
     expectedImpact: asString(item.expected_impact),
+    whyItMatters: asString(item.why_it_matters),
+    whatIsChanging: asString(item.what_is_changing),
+    pillConfidence: asString(item.pill_confidence),
+    pillDependency: asString(item.pill_dependency),
+    pillMarginImpact: asString(item.pill_margin_impact),
+    pillRevenueImpact: asString(item.pill_revenue_impact),
     quantified: quantified
       ? {
-          unit: asString(quantified.unit),
+          unit: asString(quantified.unit) ?? asString(quantified.member),
           value:
             typeof quantified.value === "string" || typeof quantified.value === "number"
               ? (quantified.value as string | number)
@@ -182,7 +189,14 @@ const normalizeCatalyst = (value: unknown): NormalizedGrowthCatalyst | null => {
     !normalized.type &&
     !normalized.timing &&
     !normalized.catalyst &&
+    !normalized.statusTag &&
     !normalized.expectedImpact &&
+    !normalized.whyItMatters &&
+    !normalized.whatIsChanging &&
+    !normalized.pillConfidence &&
+    !normalized.pillDependency &&
+    !normalized.pillMarginImpact &&
+    !normalized.pillRevenueImpact &&
     !normalized.quantified &&
     !normalized.priority &&
     !normalized.investibilityChecks &&

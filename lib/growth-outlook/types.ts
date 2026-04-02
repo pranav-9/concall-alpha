@@ -22,7 +22,14 @@ export type NormalizedGrowthCatalyst = {
   type: string | null;
   timing: string | null;
   catalyst: string | null;
+  statusTag: string | null;
   expectedImpact: string | null;
+  whyItMatters: string | null;
+  whatIsChanging: string | null;
+  pillConfidence: string | null;
+  pillDependency: string | null;
+  pillMarginImpact: string | null;
+  pillRevenueImpact: string | null;
   quantified: {
     unit: string | null;
     value: string | number | null;
