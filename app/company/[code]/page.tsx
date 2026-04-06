@@ -41,6 +41,7 @@ import { MissingSectionRequestButton } from "../components/missing-section-reque
 import { QuarterlyScoreSection } from "../components/quarterly-score-section";
 import { HistoricalEconomicsDataPack } from "../components/historical-economics-data-pack";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
+import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import type {
@@ -54,6 +55,10 @@ import type {
   NormalizedSegmentGrowthCagr3yRow,
 } from "@/lib/business-snapshot/types";
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
+import type {
+  GuidanceSnapshotRow,
+  NormalizedPriorTwoYearAccuracyRow,
+} from "@/lib/guidance-snapshot/types";
 
 type RankInfo = {
   quarter?: { rank: number; total: number; percentile: number } | null;
@@ -461,6 +466,100 @@ const splitCatalystQuantifiedLabel = (label: string | null) => {
   };
 };
 
+const getGuidanceSnapshotStyleDisplay = (value: string | null) => {
+  const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  switch (normalized) {
+    case "directional":
+      return {
+        label: "Directional",
+        className:
+          "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
+      };
+    case "quantitative":
+      return {
+        label: "Quantitative",
+        className:
+          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
+      };
+    case "mixed":
+      return {
+        label: "Mixed",
+        className:
+          "border-violet-200/80 bg-violet-100 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/30 dark:text-violet-200",
+      };
+    default:
+      return normalized
+        ? {
+            label: toDisplayLabel(normalized) ?? formatCompactLabel(normalized),
+            className: "border-border/60 bg-muted/60 text-foreground",
+          }
+        : null;
+  }
+};
+
+const getGuidanceSignalTrendDisplay = (value: string | null) => {
+  const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  switch (normalized) {
+    case "upgraded":
+      return {
+        label: "Upgraded",
+        className:
+          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
+      };
+    case "reiterated":
+    case "active":
+      return {
+        label: "Reiterated",
+        className:
+          "border-slate-200/80 bg-slate-100 text-slate-800 dark:border-slate-700/40 dark:bg-slate-900/30 dark:text-slate-200",
+      };
+    case "downgraded":
+      return {
+        label: "Downgraded",
+        className:
+          "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
+      };
+    default:
+      return normalized
+        ? {
+            label: toDisplayLabel(normalized) ?? formatCompactLabel(normalized),
+            className: "border-border/60 bg-muted/60 text-foreground",
+          }
+        : null;
+  }
+};
+
+const getGuidanceAccuracyVerdictDisplay = (value: string | null) => {
+  const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  switch (normalized) {
+    case "beat":
+      return {
+        label: "Beat",
+        className:
+          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
+      };
+    case "met":
+      return {
+        label: "Met",
+        className:
+          "border-slate-200/80 bg-slate-100 text-slate-800 dark:border-slate-700/40 dark:bg-slate-900/30 dark:text-slate-200",
+      };
+    case "missed":
+      return {
+        label: "Missed",
+        className:
+          "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
+      };
+    default:
+      return normalized
+        ? {
+            label: toDisplayLabel(normalized) ?? formatCompactLabel(normalized),
+            className: "border-border/60 bg-muted/60 text-foreground",
+          }
+        : null;
+  }
+};
+
 const getGrowthScoreComponentLabel = (key: string) => {
   switch (key) {
     case "sentiment_score":
@@ -588,6 +687,15 @@ export default async function Page({
     .order("generated_at", { ascending: false })
     .order("id", { ascending: false });
 
+  const { data: guidanceSnapshotData, error: guidanceSnapshotError } = await supabase
+    .from("guidance_snapshot")
+    .select(
+      "company_code, generated_at, analysis_window_quarters, guidance_style_classification, big_picture_growth_guidance, current_year_revenue_guidance, prior_two_year_accuracy, guidance_items, source_files, details, updated_at",
+    )
+    .eq("company_code", code)
+    .order("generated_at", { ascending: false })
+    .limit(1);
+
   const { data: moatAnalysisData } = await supabase
     .from("moat_analysis")
     .select(
@@ -644,14 +752,23 @@ export default async function Page({
   const normalizedCompanyIndustryAnalysis = normalizeCompanyIndustryAnalysis(
     (companyIndustryAnalysisData?.[0] as CompanyIndustryAnalysisRow | undefined) ?? null,
   );
+  if (guidanceSnapshotError) {
+    console.error(`Unable to load guidance snapshot for ${code}:`, guidanceSnapshotError.message);
+  }
   if (guidanceTrackingError) {
     console.error(`Unable to load guidance tracking for ${code}:`, guidanceTrackingError.message);
   }
-  const guidanceItems = guidanceTrackingError
+  const normalizedGuidanceSnapshot = guidanceSnapshotError
+    ? null
+    : normalizeGuidanceSnapshot(
+        (guidanceSnapshotData?.[0] as GuidanceSnapshotRow | undefined) ?? null,
+      );
+  const legacyGuidanceItems = guidanceTrackingError
     ? []
     : normalizeGuidanceTrackingRows(
         (guidanceTrackingRows as GuidanceTrackingRow[] | null | undefined) ?? null,
       );
+  const guidanceItems = normalizedGuidanceSnapshot?.guidanceItems ?? legacyGuidanceItems;
   const normalizedMoatAnalysis = normalizeMoatAnalysis(
     (moatAnalysisData?.[0] as MoatAnalysisRow | undefined) ?? null,
   );
@@ -1314,6 +1431,257 @@ export default async function Page({
         </div>
       ),
     });
+  const renderGuidanceSnapshotContextDrawer = () => {
+    if (!normalizedGuidanceSnapshot) return null;
+
+    const styleCard = normalizedGuidanceSnapshot.guidanceStyleClassification;
+    const bigPicture = normalizedGuidanceSnapshot.bigPictureGrowthGuidance;
+
+    if (!styleCard && !bigPicture) return null;
+
+    return (
+      <Drawer direction="right">
+        <DrawerTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
+          >
+            <span>Guidance Style</span>
+            {(() => {
+              const styleDisplay = getGuidanceSnapshotStyleDisplay(styleCard?.style ?? null);
+              return styleDisplay ? (
+                <span
+                  className={`ml-2 rounded-full border px-2 py-0.5 text-[10px] ${styleDisplay.className}`}
+                >
+                  {styleDisplay.label}
+                </span>
+              ) : null;
+            })()}
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent className="w-full max-w-xl">
+          <DrawerHeader className="border-b border-border">
+            <DrawerTitle>Guidance Style & Big Picture</DrawerTitle>
+            <DrawerDescription>
+              How management tends to frame guidance and the long-term growth statement they are anchoring to.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="space-y-4 overflow-y-auto px-4 py-4">
+            {styleCard && (
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                    Style
+                  </p>
+                  {(() => {
+                    const styleDisplay = getGuidanceSnapshotStyleDisplay(styleCard.style);
+                    return styleDisplay ? (
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] ${styleDisplay.className}`}
+                      >
+                        {styleDisplay.label}
+                      </span>
+                    ) : null;
+                  })()}
+                </div>
+                {styleCard.rationale && (
+                  <p className="text-[12px] leading-relaxed text-foreground">
+                    {styleCard.rationale}
+                  </p>
+                )}
+                {styleCard.evidenceQuarters.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                      Evidence Quarters
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {styleCard.evidenceQuarters.map((quarter) => (
+                        <span
+                          key={quarter}
+                          className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground"
+                        >
+                          {quarter}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {bigPicture && (
+              <div className="space-y-2 rounded-lg border border-border/30 bg-background/70 px-3 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                    Big Picture Growth Guidance
+                  </p>
+                  {(() => {
+                    const statusDisplay = getGuidanceSignalTrendDisplay(bigPicture.statusSinceFirst);
+                    return statusDisplay ? (
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] ${statusDisplay.className}`}
+                      >
+                        {statusDisplay.label}
+                      </span>
+                    ) : null;
+                  })()}
+                </div>
+                {bigPicture.headlineStatement && (
+                  <p className="text-[12px] font-semibold leading-relaxed text-foreground">
+                    {bigPicture.headlineStatement}
+                  </p>
+                )}
+                {bigPicture.currentStatement && (
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    {bigPicture.currentStatement}
+                  </p>
+                )}
+                {bigPicture.source && (
+                  <p className="text-[10px] text-muted-foreground">Source: {bigPicture.source}</p>
+                )}
+              </div>
+            )}
+          </div>
+          <DrawerFooter className="border-t border-border">
+            <DrawerClose asChild>
+              <Button variant="outline">Close</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  };
+  const renderGuidanceSnapshotSummary = () => {
+    if (!normalizedGuidanceSnapshot) return null;
+
+    const styleCard = normalizedGuidanceSnapshot.guidanceStyleClassification;
+    const bigPicture = normalizedGuidanceSnapshot.bigPictureGrowthGuidance;
+    const currentYear = normalizedGuidanceSnapshot.currentYearRevenueGuidance;
+    const priorAccuracy = normalizedGuidanceSnapshot.priorTwoYearAccuracy;
+
+    const hasSummaryCards =
+      Boolean(styleCard || bigPicture || currentYear) || priorAccuracy.length > 0;
+
+    if (!hasSummaryCards) return null;
+
+    const renderAccuracyRow = (row: NormalizedPriorTwoYearAccuracyRow, index: number) => {
+      const verdictDisplay = getGuidanceAccuracyVerdictDisplay(row.verdict);
+
+      return (
+        <div
+          key={`${row.fiscalYear ?? "year"}-${index}`}
+          className={`${nestedDetailClass} px-3.5 py-3 space-y-2`}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="text-[12px] font-semibold text-foreground">
+                {row.fiscalYear ?? "Prior year"}
+              </p>
+              {row.finalSignalAfterRevisions && (
+                <p className="mt-0.5 text-[10px] text-muted-foreground">
+                  Final signal: {row.finalSignalAfterRevisions}
+                </p>
+              )}
+            </div>
+            {verdictDisplay && (
+              <span
+                className={`rounded-full border px-2 py-0.5 text-[10px] ${verdictDisplay.className}`}
+              >
+                {verdictDisplay.label}
+              </span>
+            )}
+          </div>
+          {row.actualOutcome && (
+            <p className="text-[11px] leading-relaxed text-foreground">{row.actualOutcome}</p>
+          )}
+          {row.signalSummary && (
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              {row.signalSummary}
+            </p>
+          )}
+          {row.reason && (
+            <p className="text-[10px] leading-relaxed text-muted-foreground/90">
+              {row.reason}
+            </p>
+          )}
+        </div>
+      );
+    };
+
+    return (
+      <div className="space-y-3">
+        {currentYear && (
+          <div className="grid grid-cols-1 gap-3">
+            {currentYear && (
+              <div className={`${elevatedBlockClass} p-4 space-y-3`}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                      Current Year Revenue Guidance
+                    </p>
+                    {currentYear.fiscalYear && (
+                      <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                        {currentYear.fiscalYear}
+                      </span>
+                    )}
+                  </div>
+                  {(() => {
+                    const trendDisplay = getGuidanceSignalTrendDisplay(currentYear.signalTrend);
+                    return trendDisplay ? (
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] ${trendDisplay.className}`}
+                      >
+                        {trendDisplay.label}
+                      </span>
+                    ) : null;
+                  })()}
+                </div>
+                {currentYear.consolidatedStatement && (
+                  <p className="text-[13px] font-semibold leading-relaxed text-foreground">
+                    {currentYear.consolidatedStatement}
+                  </p>
+                )}
+                {currentYear.inYearRevisionNote && (
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    {currentYear.inYearRevisionNote}
+                  </p>
+                )}
+                {currentYear.sourceQuarters.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {currentYear.sourceQuarters.map((quarter) => (
+                      <span
+                        key={quarter}
+                        className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground"
+                      >
+                        {quarter}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {priorAccuracy.length > 0 && (
+          <div className={`${elevatedBlockClass} p-4 space-y-3`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                Prior Two-Year Accuracy
+              </p>
+              <span className="text-[10px] text-muted-foreground">
+                {priorAccuracy.length} year{priorAccuracy.length === 1 ? "" : "s"} tracked
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+              {priorAccuracy.map(renderAccuracyRow)}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
   const renderIndustryThemes = (
     title: string,
     items: NormalizedIndustryTheme[],
@@ -1531,6 +1899,8 @@ export default async function Page({
       meta:
         guidanceItems.length > 0
           ? { kind: "count" as const, count: guidanceItems.length, suffix: "items" }
+          : normalizedGuidanceSnapshot
+            ? { kind: "text" as const, text: "Live" }
           : { kind: "text" as const, text: "Soon" },
     },
     {
@@ -2840,12 +3210,35 @@ export default async function Page({
           title="Guidance History"
           headerDescription="Current management stance and quarter-by-quarter evolution."
           headerAction={
-            <span className="text-[11px] text-muted-foreground">
-              {guidanceItems.length > 0 ? `${guidanceItems.length} tracked` : "Not ready"}
-            </span>
+            renderGuidanceSnapshotContextDrawer() ?? (
+              <span className="text-[11px] text-muted-foreground">
+                {guidanceItems.length > 0
+                  ? `${guidanceItems.length} tracked`
+                  : normalizedGuidanceSnapshot
+                    ? "Live"
+                    : "Not ready"}
+              </span>
+            )
           }
         >
-          {guidanceItems.length > 0 ? (
+          {normalizedGuidanceSnapshot ? (
+            <div className="space-y-4">
+              {renderGuidanceSnapshotSummary()}
+              {guidanceItems.length > 0 ? (
+                <div className={`${elevatedMutedBlockClass} p-3 space-y-3`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+                      Detailed Guidance History
+                    </p>
+                    <span className="text-[10px] text-muted-foreground">
+                      {guidanceItems.length} thread{guidanceItems.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <GuidanceHistorySection items={guidanceItems} />
+                </div>
+              ) : null}
+            </div>
+          ) : guidanceItems.length > 0 ? (
             <GuidanceHistorySection items={guidanceItems} />
           ) : (
             renderMissingSectionState(

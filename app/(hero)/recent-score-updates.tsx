@@ -41,6 +41,11 @@ type RawGuidanceRow = {
   status_reason?: string | null;
 };
 
+type RawGuidanceSnapshotRow = {
+  company_code: string;
+  generated_at?: string | null;
+};
+
 type UpdateType = "quarter" | "growth" | "business_snapshot" | "guidance_monitor";
 
 type GuidanceBatchThread = {
@@ -170,10 +175,15 @@ async function getUnifiedUpdates(limit: number) {
         .limit(120),
     ]);
 
-  const [{ data: businessSnapshotRows }, { data: guidanceRows }] = await Promise.all([
+  const [{ data: businessSnapshotRows }, { data: guidanceSnapshotRows }, { data: guidanceRows }] = await Promise.all([
     supabase
       .from("business_snapshot")
       .select("company, generated_at, snapshot_phase, snapshot_source")
+      .order("generated_at", { ascending: false })
+      .limit(160),
+    supabase
+      .from("guidance_snapshot")
+      .select("company_code, generated_at")
       .order("generated_at", { ascending: false })
       .limit(160),
     supabase
@@ -277,11 +287,38 @@ async function getUnifiedUpdates(limit: number) {
   });
   updates.push(...latestSnapshotPerCompany.values());
 
+  const latestGuidanceSnapshots = new Map<string, UnifiedUpdate>();
+  ((guidanceSnapshotRows ?? []) as RawGuidanceSnapshotRow[]).forEach((row) => {
+    const companyCode = row.company_code?.trim();
+    if (!companyCode) return;
+    const atRaw = row.generated_at ?? null;
+    const atMs = eventTimeMs(atRaw);
+    const candidate: UnifiedUpdate = {
+      id: `guidance-snapshot-${companyCode}`,
+      type: "guidance_monitor",
+      companyName: companyCode,
+      companyCode,
+      companyIsNew: false,
+      score: null,
+      detail: "",
+      sourceLabel: "Guidance Monitor",
+      contextLabel: "Updated",
+      atRaw,
+      atMs,
+    };
+    const existing = latestGuidanceSnapshots.get(companyCode);
+    if (!existing || candidate.atMs > existing.atMs) {
+      latestGuidanceSnapshots.set(companyCode, candidate);
+    }
+  });
+  updates.push(...latestGuidanceSnapshots.values());
+
   const latestGuidanceBatches = new Map<string, UnifiedUpdate>();
   ((guidanceRows ?? []) as RawGuidanceRow[]).forEach((row) => {
     const companyCode = row.company_code?.trim();
     const guidanceKey = row.guidance_key?.trim();
     if (!companyCode || !guidanceKey) return;
+    if (latestGuidanceSnapshots.has(companyCode)) return;
     const atRaw = row.generated_at ?? null;
     const atMs = eventTimeMs(atRaw);
     const threadLabel = buildGuidanceThreadLabel(row);
