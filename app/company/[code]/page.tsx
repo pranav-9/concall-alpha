@@ -1593,17 +1593,32 @@ export default async function Page({
             )}
           </div>
           {row.actualOutcome && (
-            <p className="text-[11px] leading-relaxed text-foreground">{row.actualOutcome}</p>
+            <div className="space-y-0.5">
+              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                Actual Outcome
+              </p>
+              <p className="text-[11px] leading-relaxed text-foreground">{row.actualOutcome}</p>
+            </div>
           )}
           {row.signalSummary && (
-            <p className="text-[10px] leading-relaxed text-muted-foreground">
-              {row.signalSummary}
-            </p>
+            <div className="space-y-0.5">
+              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                Guidance Given
+              </p>
+              <p className="text-[10px] leading-relaxed text-muted-foreground">
+                {row.signalSummary}
+              </p>
+            </div>
           )}
           {row.reason && (
-            <p className="text-[10px] leading-relaxed text-muted-foreground/90">
-              {row.reason}
-            </p>
+            <div className="space-y-0.5">
+              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                Why
+              </p>
+              <p className="text-[10px] leading-relaxed text-muted-foreground/90">
+                {row.reason}
+              </p>
+            </div>
           )}
         </div>
       );
