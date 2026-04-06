@@ -1626,38 +1626,92 @@ export default async function Page({
                       </span>
                     )}
                   </div>
-                  {(() => {
-                    const trendDisplay = getGuidanceSignalTrendDisplay(currentYear.signalTrend);
-                    return trendDisplay ? (
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-[10px] ${trendDisplay.className}`}
-                      >
-                        {trendDisplay.label}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {currentYear.officialCurrentGuidancePercent != null && (
+                      <span className="rounded-full border border-emerald-200/80 bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                        {formatPctLabel(currentYear.officialCurrentGuidancePercent)}
                       </span>
-                    ) : null;
-                  })()}
-                </div>
-                {currentYear.consolidatedStatement && (
-                  <p className="text-[13px] font-semibold leading-relaxed text-foreground">
-                    {currentYear.consolidatedStatement}
-                  </p>
-                )}
-                {currentYear.inYearRevisionNote && (
-                  <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    {currentYear.inYearRevisionNote}
-                  </p>
-                )}
-                {currentYear.sourceQuarters.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {currentYear.sourceQuarters.map((quarter) => (
-                      <span
-                        key={quarter}
-                        className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground"
-                      >
-                        {quarter}
-                      </span>
-                    ))}
+                    )}
+                    {(() => {
+                      const trendDisplay = getGuidanceSignalTrendDisplay(currentYear.signalTrend);
+                      return trendDisplay ? (
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[10px] ${trendDisplay.className}`}
+                        >
+                          {trendDisplay.label}
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
+                </div>
+                {(currentYear.officialCurrentGuidanceText || currentYear.consolidatedStatement) && (
+                  <p className="text-[13px] font-semibold leading-relaxed text-foreground">
+                    {currentYear.officialCurrentGuidanceText ?? currentYear.consolidatedStatement}
+                  </p>
+                )}
+                {currentYear.consolidatedStatement &&
+                  currentYear.consolidatedStatement !== currentYear.officialCurrentGuidanceText && (
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      {currentYear.consolidatedStatement}
+                    </p>
+                  )}
+                {currentYear.inYearRevisionNote && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                      Revision Note
+                    </p>
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      {currentYear.inYearRevisionNote}
+                    </p>
+                  </div>
+                )}
+                {currentYear.sourceQuarterTimeline.length > 0 && (
+                  <details className={`${nestedDetailClass} px-3 py-2`}>
+                    <summary className="cursor-pointer list-none text-[11px] font-medium text-muted-foreground">
+                      Show guidance evolution ({currentYear.sourceQuarterTimeline.length} quarter
+                      {currentYear.sourceQuarterTimeline.length === 1 ? "" : "s"})
+                    </summary>
+                    <div className="mt-3 space-y-2">
+                      {currentYear.sourceQuarterTimeline.map((entry, index) => (
+                        <div
+                          key={`${entry.quarter ?? "quarter"}-${index}`}
+                          className="space-y-1 rounded-lg border border-border/30 bg-background/70 px-3 py-2"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {entry.quarter && (
+                                <p className="text-[11px] font-semibold text-foreground">
+                                  {entry.quarter}
+                                </p>
+                              )}
+                              {entry.guidanceType && (
+                                <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                  {formatCompactLabel(entry.guidanceType)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {entry.guidancePercent != null && (
+                                <span className="rounded-full border border-emerald-200/80 bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                                  {formatPctLabel(entry.guidancePercent)}
+                                </span>
+                              )}
+                              {entry.sourceReference && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {entry.sourceReference}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {entry.whatWasSaid && (
+                            <p className="text-[11px] leading-relaxed text-muted-foreground">
+                              {entry.whatWasSaid}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </details>
                 )}
               </div>
             )}

@@ -5,6 +5,7 @@ import type {
   GuidanceSnapshotRow,
   NormalizedBigPictureGrowthGuidance,
   NormalizedCurrentYearRevenueGuidance,
+  NormalizedCurrentYearRevenueGuidanceTimelineRow,
   NormalizedGuidanceSnapshot,
   NormalizedGuidanceStyleClassification,
   NormalizedPriorTwoYearAccuracyRow,
@@ -68,6 +69,36 @@ const asFormattedPeriodArray = (value: unknown) =>
     .map((entry) => formatGuidancePeriodLabel(asString(entry)))
     .filter((entry): entry is string => Boolean(entry));
 
+const normalizeCurrentYearRevenueGuidanceTimeline = (
+  value: unknown,
+): NormalizedCurrentYearRevenueGuidanceTimelineRow[] =>
+  parseJsonArrayLike(value)
+    .map((entry) => {
+      const row = parseJsonObjectLike(entry);
+      if (!row) return null;
+
+      const normalized: NormalizedCurrentYearRevenueGuidanceTimelineRow = {
+        quarter: formatGuidancePeriodLabel(asString(row.quarter)) ?? asString(row.quarter),
+        guidanceType: asString(row.guidance_type),
+        whatWasSaid: asString(row.what_was_said),
+        guidancePercent: asNumber(row.guidance_percent),
+        sourceReference: asString(row.source_reference),
+      };
+
+      if (
+        !normalized.quarter &&
+        !normalized.guidanceType &&
+        !normalized.whatWasSaid &&
+        normalized.guidancePercent == null &&
+        !normalized.sourceReference
+      ) {
+        return null;
+      }
+
+      return normalized;
+    })
+    .filter((entry): entry is NormalizedCurrentYearRevenueGuidanceTimelineRow => Boolean(entry));
+
 const normalizeGuidanceStyleClassification = (
   value: unknown,
 ): NormalizedGuidanceStyleClassification | null => {
@@ -125,6 +156,14 @@ const normalizeCurrentYearRevenueGuidance = (
     inYearRevisionFlag: asBoolean(row.in_year_revision_flag),
     inYearRevisionNote: asString(row.in_year_revision_note),
     consolidatedStatement: asString(row.consolidated_statement),
+    officialCurrentGuidanceText: asString(row.official_current_guidance_text),
+    officialCurrentGuidancePercent: asNumber(row.official_current_guidance_percent),
+    officialCurrentGuidanceSourceQuarter:
+      formatGuidancePeriodLabel(asString(row.official_current_guidance_source_quarter)) ??
+      asString(row.official_current_guidance_source_quarter),
+    sourceQuarterTimeline: normalizeCurrentYearRevenueGuidanceTimeline(
+      row.source_quarter_timeline,
+    ),
   };
 
   if (
@@ -133,7 +172,11 @@ const normalizeCurrentYearRevenueGuidance = (
     normalized.sourceQuarters.length === 0 &&
     !normalized.inYearRevisionFlag &&
     !normalized.inYearRevisionNote &&
-    !normalized.consolidatedStatement
+    !normalized.consolidatedStatement &&
+    !normalized.officialCurrentGuidanceText &&
+    normalized.officialCurrentGuidancePercent == null &&
+    !normalized.officialCurrentGuidanceSourceQuarter &&
+    normalized.sourceQuarterTimeline.length === 0
   ) {
     return null;
   }

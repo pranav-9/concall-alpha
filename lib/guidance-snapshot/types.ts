@@ -39,6 +39,18 @@ export type NormalizedCurrentYearRevenueGuidance = {
   inYearRevisionFlag: boolean;
   inYearRevisionNote: string | null;
   consolidatedStatement: string | null;
+  officialCurrentGuidanceText: string | null;
+  officialCurrentGuidancePercent: number | null;
+  officialCurrentGuidanceSourceQuarter: string | null;
+  sourceQuarterTimeline: NormalizedCurrentYearRevenueGuidanceTimelineRow[];
+};
+
+export type NormalizedCurrentYearRevenueGuidanceTimelineRow = {
+  quarter: string | null;
+  guidanceType: string | null;
+  whatWasSaid: string | null;
+  guidancePercent: number | null;
+  sourceReference: string | null;
 };
 
 export type NormalizedPriorTwoYearAccuracyRow = {
