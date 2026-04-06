@@ -1,8 +1,11 @@
 import type {
   NormalizedGrowthCatalyst,
+  NormalizedGrowthDiscoverySummary,
   NormalizedGrowthEvidenceLine,
+  NormalizedGrowthAlsoConsidered,
   NormalizedGrowthOutlook,
   NormalizedGrowthScenario,
+  NormalizedGrowthScoreComponent,
   NormalizedGrowthSourceFile,
   NormalizedGrowthTimelineItem,
   NormalizedGrowthVariantPerception,
@@ -303,6 +306,82 @@ const normalizeScenario = (value: unknown): NormalizedGrowthScenario | null => {
   };
 };
 
+const growthScoreComponentOrder = [
+  "sentiment_score",
+  "catalyst_strength",
+  "guidance_strength",
+  "scenario_strength",
+  "execution_confidence",
+  "quantified_forward_facts",
+  "industry_score",
+] as const;
+
+const normalizeGrowthScoreComponents = (value: unknown): NormalizedGrowthScoreComponent[] => {
+  const item = asRecord(value);
+  if (!item) return [];
+
+  const orderedKeys = [
+    ...growthScoreComponentOrder,
+    ...Object.keys(item).filter(
+      (key) => !growthScoreComponentOrder.includes(key as (typeof growthScoreComponentOrder)[number]),
+    ),
+  ];
+
+  return orderedKeys
+    .map((key) => {
+      const score = asNumber(item[key]);
+      return score == null ? null : { key, score };
+    })
+    .filter((entry): entry is NormalizedGrowthScoreComponent => Boolean(entry));
+};
+
+const normalizeDiscoverySummary = (
+  value: unknown,
+): NormalizedGrowthDiscoverySummary | null => {
+  const item = asRecord(value);
+  if (!item) return null;
+
+  const selectedCount = asNumber(item.selected_count);
+  const totalCandidatesConsidered = asNumber(item.total_candidates_considered);
+  const selectionPriorityStack = asString(item.selection_priority_stack);
+
+  if (
+    selectedCount == null &&
+    totalCandidatesConsidered == null &&
+    !selectionPriorityStack
+  ) {
+    return null;
+  }
+
+  return {
+    selectedCount,
+    totalCandidatesConsidered,
+    selectionPriorityStack,
+  };
+};
+
+const normalizeAlsoConsidered = (value: unknown): NormalizedGrowthAlsoConsidered[] =>
+  asArray(value)
+    .map((entry) => {
+      const item = asRecord(entry);
+      if (!item) return null;
+
+      const catalyst = asString(item.catalyst);
+      const currentStage = asString(item.current_stage);
+      const whyNotTop3 = asString(item.why_not_top_3);
+
+      if (!catalyst && !currentStage && !whyNotTop3) {
+        return null;
+      }
+
+      return {
+        catalyst,
+        currentStage,
+        whyNotTop3,
+      };
+    })
+    .filter((entry): entry is NormalizedGrowthAlsoConsidered => Boolean(entry));
+
 export function normalizeGrowthOutlook(input: {
   details: unknown;
   growthScore: unknown;
@@ -411,6 +490,10 @@ export function normalizeGrowthOutlook(input: {
     visibilityRationale:
       asString(input.visibilityRationale) ?? (details ? asString(details.visibility_rationale) : null),
     updatedAtRaw,
+    growthScoreComponents: normalizeGrowthScoreComponents(details?.growth_score_components),
+    discoverySummary: normalizeDiscoverySummary(details?.discovery_summary),
+    alsoConsideredNote: asString(details?.also_considered_note),
+    alsoConsidered: normalizeAlsoConsidered(details?.also_considered),
     factBase,
     sourceFiles,
     catalysts,

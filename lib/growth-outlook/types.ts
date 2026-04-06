@@ -67,6 +67,23 @@ export type NormalizedGrowthScenario = {
   risks: string[];
 };
 
+export type NormalizedGrowthScoreComponent = {
+  key: string;
+  score: number;
+};
+
+export type NormalizedGrowthDiscoverySummary = {
+  selectedCount: number | null;
+  totalCandidatesConsidered: number | null;
+  selectionPriorityStack: string | null;
+};
+
+export type NormalizedGrowthAlsoConsidered = {
+  catalyst: string | null;
+  currentStage: string | null;
+  whyNotTop3: string | null;
+};
+
 export type NormalizedGrowthOutlook = {
   companyName: string | null;
   schemaVersion: string | null;
@@ -83,6 +100,10 @@ export type NormalizedGrowthOutlook = {
   growthScoreSteps: string[];
   visibilityRationale: string | null;
   updatedAtRaw: string | null;
+  growthScoreComponents: NormalizedGrowthScoreComponent[];
+  discoverySummary: NormalizedGrowthDiscoverySummary | null;
+  alsoConsideredNote: string | null;
+  alsoConsidered: NormalizedGrowthAlsoConsidered[];
   factBase: NormalizedGrowthEvidenceLine[];
   sourceFiles: NormalizedGrowthSourceFile[];
   catalysts: NormalizedGrowthCatalyst[];

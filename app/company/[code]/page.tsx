@@ -21,6 +21,17 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
 import type { NormalizedGrowthCatalyst, NormalizedGrowthScenario } from "@/lib/growth-outlook/types";
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
@@ -448,6 +459,27 @@ const splitCatalystQuantifiedLabel = (label: string | null) => {
     headline,
     subline: subline || null,
   };
+};
+
+const getGrowthScoreComponentLabel = (key: string) => {
+  switch (key) {
+    case "sentiment_score":
+      return "Sentiment";
+    case "catalyst_strength":
+      return "Catalysts";
+    case "guidance_strength":
+      return "Guidance";
+    case "scenario_strength":
+      return "Scenarios";
+    case "execution_confidence":
+      return "Execution";
+    case "quantified_forward_facts":
+      return "Forward facts";
+    case "industry_score":
+      return "Industry";
+    default:
+      return toDisplayLabel(key) ?? formatCompactLabel(key);
+  }
 };
 
 export async function generateMetadata({
@@ -2326,35 +2358,210 @@ export default async function Page({
         >
           {normalizedGrowthOutlook ? (
             <div className="flex flex-col gap-4">
-              {normalizedGrowthOutlook.summaryBullets.length > 0 && (
+              {(normalizedGrowthOutlook.summaryBullets.length > 0 ||
+                normalizedGrowthOutlook.growthScoreComponents.length > 0) && (
                 <div className={`${elevatedMutedBlockClass} p-3 space-y-2`}>
-                  <div className="space-y-1.5">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                        Summary
-                      </p>
-                      {growthUpdatedAt && (
-                        <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border/60 text-[10px]">
-                          Updated: {growthUpdatedAt}
-                        </span>
-                      )}
+                  {normalizedGrowthOutlook.summaryBullets.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+                          Summary
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {normalizedGrowthOutlook.growthScoreComponents.length > 0 && (
+                            <Drawer direction="right">
+                              <DrawerTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
+                                >
+                                  View score breakdown
+                                </Button>
+                              </DrawerTrigger>
+                              <DrawerContent className="w-full max-w-xl">
+                                <DrawerHeader className="border-b border-border">
+                                  <DrawerTitle>Growth score breakdown</DrawerTitle>
+                                  <DrawerDescription>
+                                    Component-level view of what is currently driving the forward growth score.
+                                  </DrawerDescription>
+                                </DrawerHeader>
+                                <div className="space-y-3 overflow-y-auto px-4 py-4">
+                                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                    {normalizedGrowthOutlook.growthScoreComponents.map((component) => (
+                                      <div
+                                        key={component.key}
+                                        className="rounded-lg border border-border/30 bg-background/70 px-3 py-2.5"
+                                      >
+                                        <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                                          {getGrowthScoreComponentLabel(component.key)}
+                                        </p>
+                                        <p className="mt-1 text-[18px] font-semibold leading-none text-foreground">
+                                          {pctFormatter.format(component.score)}
+                                          <span className="ml-1 text-[10px] font-medium text-muted-foreground">
+                                            /10
+                                          </span>
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                <DrawerFooter className="border-t border-border">
+                                  <DrawerClose asChild>
+                                    <Button variant="outline">Close</Button>
+                                  </DrawerClose>
+                                </DrawerFooter>
+                              </DrawerContent>
+                            </Drawer>
+                          )}
+                          {growthUpdatedAt && (
+                            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border/60 text-[10px]">
+                              Updated: {growthUpdatedAt}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <ul className="space-y-1">
+                        {normalizedGrowthOutlook.summaryBullets.slice(0, 5).map((bullet, idx) => (
+                          <li key={idx} className="text-[11px] text-foreground leading-snug">
+                            • {bullet}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <ul className="space-y-1">
-                      {normalizedGrowthOutlook.summaryBullets.slice(0, 5).map((bullet, idx) => (
-                        <li key={idx} className="text-[11px] text-foreground leading-snug">
-                          • {bullet}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  )}
+
                 </div>
               )}
 
               {normalizedGrowthOutlook.catalysts.length > 0 && (
                 <div className={`${elevatedMutedBlockClass} p-3 space-y-3`}>
-                  <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
-                    Top 3 Growth Catalysts
-                  </p>
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
+                        Top 3 Growth Catalysts
+                      </p>
+                      {normalizedGrowthOutlook.alsoConsidered.length > 0 && (
+                        <Drawer direction="right">
+                          <DrawerTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
+                            >
+                              View also considered
+                            </Button>
+                          </DrawerTrigger>
+                          <DrawerContent className="w-full max-w-xl">
+                            <DrawerHeader className="border-b border-border">
+                              <DrawerTitle>Also considered</DrawerTitle>
+                              <DrawerDescription>
+                                Secondary growth candidates screened but not included in the top catalyst set.
+                              </DrawerDescription>
+                            </DrawerHeader>
+                            <div className="space-y-3 overflow-y-auto px-4 py-4">
+                              {normalizedGrowthOutlook.alsoConsideredNote && (
+                                <div className="rounded-lg border border-border/30 bg-muted/25 px-3 py-2.5">
+                                  <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                                    Note
+                                  </p>
+                                  <p className="mt-1 text-[11px] leading-relaxed text-foreground">
+                                    {normalizedGrowthOutlook.alsoConsideredNote}
+                                  </p>
+                                </div>
+                              )}
+                              {normalizedGrowthOutlook.alsoConsidered
+                                .slice(0, 2)
+                                .map((item, idx) => (
+                                  <div
+                                    key={`also-considered-drawer-visible-${idx}`}
+                                    className="rounded-lg border border-border/30 bg-background/70 px-3 py-2.5 space-y-1.5"
+                                  >
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      {item.catalyst && (
+                                        <p className="text-[12px] font-medium leading-snug text-foreground">
+                                          {item.catalyst}
+                                        </p>
+                                      )}
+                                      {item.currentStage && (
+                                        <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                          {toDisplayLabel(item.currentStage) ?? formatCompactLabel(item.currentStage)}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {item.whyNotTop3 && (
+                                      <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                        {item.whyNotTop3}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                              {normalizedGrowthOutlook.alsoConsidered.length > 2 && (
+                                <details className="border-t border-border/35 pt-2">
+                                  <summary className="cursor-pointer list-none text-[10px] text-muted-foreground hover:text-foreground">
+                                    Show more ({normalizedGrowthOutlook.alsoConsidered.length - 2})
+                                  </summary>
+                                  <div className="mt-2 space-y-3">
+                                    {normalizedGrowthOutlook.alsoConsidered
+                                      .slice(2)
+                                      .map((item, idx) => (
+                                        <div
+                                          key={`also-considered-drawer-extra-${idx}`}
+                                          className="rounded-lg border border-border/30 bg-background/70 px-3 py-2.5 space-y-1.5"
+                                        >
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            {item.catalyst && (
+                                              <p className="text-[12px] font-medium leading-snug text-foreground">
+                                                {item.catalyst}
+                                              </p>
+                                            )}
+                                            {item.currentStage && (
+                                              <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                                {toDisplayLabel(item.currentStage) ?? formatCompactLabel(item.currentStage)}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {item.whyNotTop3 && (
+                                            <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                              {item.whyNotTop3}
+                                            </p>
+                                          )}
+                                        </div>
+                                      ))}
+                                  </div>
+                                </details>
+                              )}
+                            </div>
+                            <DrawerFooter className="border-t border-border">
+                              <DrawerClose asChild>
+                                <Button variant="outline">Close</Button>
+                              </DrawerClose>
+                            </DrawerFooter>
+                          </DrawerContent>
+                        </Drawer>
+                      )}
+                    </div>
+                    {normalizedGrowthOutlook.discoverySummary &&
+                      (normalizedGrowthOutlook.discoverySummary.selectedCount != null ||
+                        normalizedGrowthOutlook.discoverySummary.totalCandidatesConsidered != null ||
+                        normalizedGrowthOutlook.discoverySummary.selectionPriorityStack) && (
+                        <p className="text-[11px] leading-relaxed text-muted-foreground">
+                          {[
+                            normalizedGrowthOutlook.discoverySummary.selectedCount != null &&
+                            normalizedGrowthOutlook.discoverySummary.totalCandidatesConsidered != null
+                              ? `${normalizedGrowthOutlook.discoverySummary.selectedCount} selected from ${normalizedGrowthOutlook.discoverySummary.totalCandidatesConsidered} candidates`
+                              : null,
+                            normalizedGrowthOutlook.discoverySummary.selectionPriorityStack
+                              ? formatCompactLabel(
+                                  normalizedGrowthOutlook.discoverySummary.selectionPriorityStack,
+                                ).replace(/>/g, " > ")
+                              : null,
+                          ]
+                            .filter((value): value is string => Boolean(value))
+                            .join(" · ")}
+                        </p>
+                      )}
+                  </div>
                   <Carousel opts={{ align: "start" }} className="w-full">
                     <CarouselContent className="items-stretch">
                       {[...normalizedGrowthOutlook.catalysts]
