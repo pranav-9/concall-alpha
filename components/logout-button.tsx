@@ -19,7 +19,7 @@ export function LogoutButton({ compact = false }: { compact?: boolean }) {
       <button
         type="button"
         onClick={logout}
-        className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
       >
         Logout
       </button>

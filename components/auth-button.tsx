@@ -6,6 +6,7 @@ import { LogoutButton } from "./logout-button";
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export type UserInfo = {
   email: string | null;
@@ -67,13 +68,17 @@ export function AuthButton({
     <div className="flex items-center gap-3">
       <Link
         href="/auth/login"
-        className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        className={cn(
+          "inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+        )}
       >
         Sign in
       </Link>
       <Link
         href="/auth/sign-up"
-        className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+        className={cn(
+          "inline-flex items-center rounded-full border border-foreground bg-foreground px-3 py-2 text-xs font-medium text-background transition-colors hover:bg-foreground/90",
+        )}
       >
         Sign up
       </Link>

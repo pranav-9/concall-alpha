@@ -489,14 +489,14 @@ export default async function RecentScoreUpdates({
     : "px-3 sm:px-4 pb-3 sm:pb-4 pt-2 border-t border-border";
 
   return (
-    <section className={heroPanel ? "w-full" : "w-[95%] sm:w-[90%] pt-6 sm:pt-8"}>
+    <section className={heroPanel ? "h-full w-full" : "w-[95%] sm:w-[90%] pt-6 sm:pt-8"}>
       {!heroPanel && (
         <div className="mb-2">
           <h2 className="text-base font-bold text-foreground">Latest Updates</h2>
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-card">
+      <div className={heroPanel ? "flex h-full flex-col rounded-xl border border-border bg-card" : "rounded-xl border border-border bg-card"}>
         <div className={headerClass}>
           <h2 className={titleClass}>
             Latest Updates
@@ -506,7 +506,7 @@ export default async function RecentScoreUpdates({
           </p>
         </div>
 
-        <div className="divide-y divide-border">
+        <div className={heroPanel ? "flex-1 divide-y divide-border overflow-y-auto" : "divide-y divide-border"}>
           {updates.map((item) => {
             const row = (
               <div className={rowClass}>

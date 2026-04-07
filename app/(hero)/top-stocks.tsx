@@ -378,7 +378,7 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
     );
   }
 
-  const { strength, latestTop, latestLabel, positiveTrendTwist, negativeTrendTwist } = buildLists(records, now);
+  const { strength, latestTop, latestLabel, positiveTrendTwist } = buildLists(records, now);
   const latestTopForHero =
     latestTop != null
       ? {
@@ -441,26 +441,22 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
         subtitle:
           "Companies with the strongest forward growth outlook based on latest guidance-driven growth scores.",
       },
-      ...(positiveTrendTwist && positiveTrendTwist.items.length > 0
-        ? [
-            {
-              key: "twist_positive" as const,
-              railLabel: "Positive Twist" as const,
-              type: "list" as const,
-              list: positiveTrendTwist,
-            },
-          ]
-        : []),
-      ...(negativeTrendTwist && negativeTrendTwist.items.length > 0
-        ? [
-            {
-              key: "twist_negative" as const,
-              railLabel: "Negative Twist" as const,
-              type: "list" as const,
-              list: negativeTrendTwist,
-            },
-          ]
-        : []),
+      {
+        key: "twist_positive" as const,
+        railLabel: "Positive Twist" as const,
+        type: "list" as const,
+        list: {
+          ...(positiveTrendTwist ?? {
+            title: "Positive Trend Twist",
+            items: [],
+            scoreKey: "latest" as const,
+          }),
+          title: "Positive Trend Twist",
+          subtitle:
+            positiveTrendTwist?.subtitle ??
+            "Companies whose latest quarter score is meaningfully above their previous 4-quarter average.",
+        },
+      },
     ];
 
     return (
