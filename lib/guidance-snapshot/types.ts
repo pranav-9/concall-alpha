@@ -8,6 +8,7 @@ export type GuidanceSnapshotRow = {
   big_picture_growth_guidance?: unknown;
   current_year_revenue_guidance?: unknown;
   prior_two_year_accuracy?: unknown;
+  credibility_verdict?: unknown;
   guidance_items?: unknown;
   source_files?: unknown;
   details?: unknown;
@@ -64,6 +65,11 @@ export type NormalizedPriorTwoYearAccuracyRow = {
   reason: string | null;
 };
 
+export type NormalizedGuidanceCredibilityVerdict = {
+  verdict: string | null;
+  supportingLine: string | null;
+};
+
 export type NormalizedGuidanceSnapshot = {
   companyCode: string;
   generatedAtRaw: string | null;
@@ -73,6 +79,7 @@ export type NormalizedGuidanceSnapshot = {
   bigPictureGrowthGuidance: NormalizedBigPictureGrowthGuidance | null;
   currentYearRevenueGuidance: NormalizedCurrentYearRevenueGuidance | null;
   priorTwoYearAccuracy: NormalizedPriorTwoYearAccuracyRow[];
+  credibilityVerdict: NormalizedGuidanceCredibilityVerdict | null;
   guidanceItems: NormalizedGuidanceItem[];
   sourceFiles: unknown[];
   details: Record<string, unknown> | null;

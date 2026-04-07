@@ -97,9 +97,9 @@ const getGuidanceMentionSummaryText = (item: NormalizedGuidanceItem) => {
   return mentionCountLabel;
 };
 
-const isPrimaryGuidanceType = (value: string | null) => {
+const isRevenueGuidanceType = (value: string | null) => {
   const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
-  return normalized === "revenue" || normalized === "margin";
+  return normalized === "revenue";
 };
 
 function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
@@ -181,13 +181,32 @@ function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
 }
 
 export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
-  const summaryItems = items;
-  const primaryThreads = summaryItems.filter((item) =>
-    isPrimaryGuidanceType(item.guidanceType),
-  );
-  const secondaryThreads = summaryItems.filter(
-    (item) => !isPrimaryGuidanceType(item.guidanceType),
-  );
+  const summaryItems = items.filter((item) => !isRevenueGuidanceType(item.guidanceType));
+  const statusGroups = React.useMemo(() => {
+    const groups = new Map<
+      NormalizedGuidanceStatusKey,
+      { title: string; threads: NormalizedGuidanceItem[] }
+    >();
+
+    summaryItems.forEach((item) => {
+      const existing = groups.get(item.statusKey);
+      if (existing) {
+        existing.threads.push(item);
+        return;
+      }
+
+      groups.set(item.statusKey, {
+        title: item.statusLabel,
+        threads: [item],
+      });
+    });
+
+    return Array.from(groups.entries()).map(([statusKey, group]) => ({
+      statusKey,
+      title: group.title,
+      threads: group.threads,
+    }));
+  }, [summaryItems]);
 
   if (!items.length) {
     return (
@@ -320,8 +339,11 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
 
   return (
     <div className="space-y-5">
-      {renderThreadGroup("Revenue & Margin Guidance", primaryThreads)}
-      {renderThreadGroup("Other Guidance Threads", secondaryThreads)}
+      {statusGroups.map((group) => (
+        <React.Fragment key={group.statusKey}>
+          {renderThreadGroup(group.title, group.threads)}
+        </React.Fragment>
+      ))}
     </div>
   );
 }

@@ -560,6 +560,49 @@ const getGuidanceAccuracyVerdictDisplay = (value: string | null) => {
   }
 };
 
+const getGuidanceCredibilityVerdictDisplay = (value: string | null) => {
+  const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  switch (normalized) {
+    case "high_trust":
+      return {
+        label: "High trust",
+        className:
+          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
+      };
+    case "credible":
+      return {
+        label: "Credible",
+        className:
+          "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
+      };
+    case "mixed":
+      return {
+        label: "Mixed",
+        className:
+          "border-amber-200/80 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200",
+      };
+    case "low_trust":
+      return {
+        label: "Low trust",
+        className:
+          "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
+      };
+    case "not_assessable":
+      return {
+        label: "Not assessable",
+        className:
+          "border-slate-200/80 bg-slate-100 text-slate-800 dark:border-slate-700/40 dark:bg-slate-900/30 dark:text-slate-200",
+      };
+    default:
+      return normalized
+        ? {
+            label: toDisplayLabel(normalized) ?? formatCompactLabel(normalized),
+            className: "border-border/60 bg-muted/60 text-foreground",
+          }
+        : null;
+  }
+};
+
 const getGrowthScoreComponentLabel = (key: string) => {
   switch (key) {
     case "sentiment_score":
@@ -690,7 +733,7 @@ export default async function Page({
   const { data: guidanceSnapshotData, error: guidanceSnapshotError } = await supabase
     .from("guidance_snapshot")
     .select(
-      "company_code, generated_at, analysis_window_quarters, guidance_style_classification, big_picture_growth_guidance, current_year_revenue_guidance, prior_two_year_accuracy, guidance_items, source_files, details, updated_at",
+      "company_code, generated_at, analysis_window_quarters, guidance_style_classification, big_picture_growth_guidance, current_year_revenue_guidance, prior_two_year_accuracy, credibility_verdict, guidance_items, source_files, details, updated_at",
     )
     .eq("company_code", code)
     .order("generated_at", { ascending: false })
@@ -1559,9 +1602,11 @@ export default async function Page({
     const bigPicture = normalizedGuidanceSnapshot.bigPictureGrowthGuidance;
     const currentYear = normalizedGuidanceSnapshot.currentYearRevenueGuidance;
     const priorAccuracy = normalizedGuidanceSnapshot.priorTwoYearAccuracy;
+    const credibilityVerdict = normalizedGuidanceSnapshot.credibilityVerdict;
 
     const hasSummaryCards =
-      Boolean(styleCard || bigPicture || currentYear) || priorAccuracy.length > 0;
+      Boolean(styleCard || bigPicture || currentYear || credibilityVerdict) ||
+      priorAccuracy.length > 0;
 
     if (!hasSummaryCards) return null;
 
@@ -1746,6 +1791,33 @@ export default async function Page({
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
               {priorAccuracy.map(renderAccuracyRow)}
             </div>
+          </div>
+        )}
+
+        {credibilityVerdict && (
+          <div className={`${elevatedBlockClass} p-4 space-y-3`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                Credibility Verdict
+              </p>
+              {(() => {
+                const verdictDisplay = getGuidanceCredibilityVerdictDisplay(
+                  credibilityVerdict.verdict,
+                );
+                return verdictDisplay ? (
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] ${verdictDisplay.className}`}
+                  >
+                    {verdictDisplay.label}
+                  </span>
+                ) : null;
+              })()}
+            </div>
+            {credibilityVerdict.supportingLine && (
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                {credibilityVerdict.supportingLine}
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -3297,7 +3369,7 @@ export default async function Page({
                 <div className={`${elevatedMutedBlockClass} p-3 space-y-3`}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                      Detailed Guidance History
+                      Guidance Tracker
                     </p>
                     <span className="text-[10px] text-muted-foreground">
                       {guidanceItems.length} thread{guidanceItems.length === 1 ? "" : "s"}

@@ -2,6 +2,7 @@ import { formatGuidancePeriodLabel, normalizeGuidanceTrackingRows } from "@/lib/
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 import type {
   GuidanceSnapshotGuidanceItemRow,
+  NormalizedGuidanceCredibilityVerdict,
   GuidanceSnapshotRow,
   NormalizedBigPictureGrowthGuidance,
   NormalizedCurrentYearRevenueGuidance,
@@ -221,6 +222,24 @@ const normalizePriorTwoYearAccuracy = (
     })
     .filter((entry): entry is NormalizedPriorTwoYearAccuracyRow => Boolean(entry));
 
+const normalizeGuidanceCredibilityVerdict = (
+  value: unknown,
+): NormalizedGuidanceCredibilityVerdict | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+
+  const normalized: NormalizedGuidanceCredibilityVerdict = {
+    verdict: asString(row.verdict),
+    supportingLine: asString(row.supporting_line),
+  };
+
+  if (!normalized.verdict && !normalized.supportingLine) {
+    return null;
+  }
+
+  return normalized;
+};
+
 const normalizeSnapshotGuidanceItems = (
   companyCode: string,
   generatedAtRaw: string | null,
@@ -274,6 +293,7 @@ export function normalizeGuidanceSnapshot(
     row.current_year_revenue_guidance,
   );
   const priorTwoYearAccuracy = normalizePriorTwoYearAccuracy(row.prior_two_year_accuracy);
+  const credibilityVerdict = normalizeGuidanceCredibilityVerdict(row.credibility_verdict);
   const guidanceItems = normalizeSnapshotGuidanceItems(
     row.company_code,
     generatedAtRaw,
@@ -287,6 +307,7 @@ export function normalizeGuidanceSnapshot(
     !bigPictureGrowthGuidance &&
     !currentYearRevenueGuidance &&
     priorTwoYearAccuracy.length === 0 &&
+    !credibilityVerdict &&
     guidanceItems.length === 0
   ) {
     return null;
@@ -301,6 +322,7 @@ export function normalizeGuidanceSnapshot(
     bigPictureGrowthGuidance,
     currentYearRevenueGuidance,
     priorTwoYearAccuracy,
+    credibilityVerdict,
     guidanceItems,
     sourceFiles,
     details,
