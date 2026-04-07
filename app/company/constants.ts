@@ -19,6 +19,10 @@ export const SECTIONS = [
     label: "Business Snapshot",
   },
   {
+    id: "key-variables",
+    label: "Key Variables",
+  },
+  {
     id: "sentiment-score",
     label: "Quarterly Score",
   },
@@ -47,10 +51,11 @@ export const SECTIONS = [
 export const SECTION_MAP = {
   industryContext: SECTIONS[0],
   businessSnapshot: SECTIONS[1],
-  quarterlyScore: SECTIONS[2],
-  futureGrowth: SECTIONS[3],
-  guidanceHistory: SECTIONS[4],
-  moatAnalysis: SECTIONS[5],
-  community: SECTIONS[6],
-  topBusinessStrategies: SECTIONS[7],
+  keyVariables: SECTIONS[2],
+  quarterlyScore: SECTIONS[3],
+  futureGrowth: SECTIONS[4],
+  guidanceHistory: SECTIONS[5],
+  moatAnalysis: SECTIONS[6],
+  community: SECTIONS[7],
+  topBusinessStrategies: SECTIONS[8],
 } as const;

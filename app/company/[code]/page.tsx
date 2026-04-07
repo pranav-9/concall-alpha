@@ -36,13 +36,16 @@ import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
 import type { NormalizedGrowthCatalyst, NormalizedGrowthScenario } from "@/lib/growth-outlook/types";
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
 import { normalizeCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/normalize";
+import { normalizeKeyVariablesSnapshot } from "@/lib/key-variables-snapshot/normalize";
 import { GuidanceHistorySection } from "../components/guidance-history-section";
+import { KeyVariablesSection } from "../components/key-variables-section";
 import { MissingSectionRequestButton } from "../components/missing-section-request-button";
 import { QuarterlyScoreSection } from "../components/quarterly-score-section";
 import { HistoricalEconomicsDataPack } from "../components/historical-economics-data-pack";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
+import type { KeyVariablesSnapshotRow } from "@/lib/key-variables-snapshot/types";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import type {
   NormalizedIndustryRegulatoryChange,
@@ -747,6 +750,15 @@ export default async function Page({
     .eq("company_code", code)
     .limit(1);
 
+  const { data: keyVariablesSnapshotData } = await supabase
+    .from("key_variables_snapshot")
+    .select(
+      "company_code, generated_at, analysis_window_quarters, discovery_summary, full_variable_list, deep_treatment, section_synthesis, source_files, details, updated_at",
+    )
+    .eq("company_code", code)
+    .order("generated_at", { ascending: false })
+    .limit(1);
+
   if (error) {
     throw error;
   }
@@ -794,6 +806,9 @@ export default async function Page({
   });
   const normalizedCompanyIndustryAnalysis = normalizeCompanyIndustryAnalysis(
     (companyIndustryAnalysisData?.[0] as CompanyIndustryAnalysisRow | undefined) ?? null,
+  );
+  const normalizedKeyVariablesSnapshot = normalizeKeyVariablesSnapshot(
+    (keyVariablesSnapshotData?.[0] as KeyVariablesSnapshotRow | undefined) ?? null,
   );
   if (guidanceSnapshotError) {
     console.error(`Unable to load guidance snapshot for ${code}:`, guidanceSnapshotError.message);
@@ -861,6 +876,16 @@ export default async function Page({
   const companyIndustryGeneratedAtShort = normalizedCompanyIndustryAnalysis?.generatedAtRaw
     ? (() => {
         const date = new Date(normalizedCompanyIndustryAnalysis.generatedAtRaw);
+        if (Number.isNaN(date.getTime())) return null;
+        return new Intl.DateTimeFormat("en-IN", {
+          day: "2-digit",
+          month: "short",
+        }).format(date);
+      })()
+    : null;
+  const keyVariablesGeneratedAtShort = normalizedKeyVariablesSnapshot?.generatedAtRaw
+    ? (() => {
+        const date = new Date(normalizedKeyVariablesSnapshot.generatedAtRaw);
         if (Number.isNaN(date.getTime())) return null;
         return new Intl.DateTimeFormat("en-IN", {
           day: "2-digit",
@@ -2026,6 +2051,19 @@ export default async function Page({
           : { kind: "text" as const, text: "Soon" },
     },
     {
+      ...SECTION_MAP.keyVariables,
+      meta:
+        normalizedKeyVariablesSnapshot?.deepTreatment.length
+          ? {
+              kind: "count" as const,
+              count: normalizedKeyVariablesSnapshot.deepTreatment.length,
+              suffix: "vars",
+            }
+          : normalizedKeyVariablesSnapshot
+            ? { kind: "text" as const, text: "Live" }
+            : { kind: "text" as const, text: "Soon" },
+    },
+    {
       ...SECTION_MAP.quarterlyScore,
       meta: { kind: "score" as const, score: latestQuarterData?.score ?? null },
     },
@@ -2850,6 +2888,29 @@ export default async function Page({
               )
             )}
           </div>
+        </SectionCard>
+
+        <SectionCard
+          id="key-variables"
+          title="Key Variables"
+          headerDescription="The non-financial variables that best explain whether growth is healthy, sustainable, and improving in quality."
+          headerAction={
+            keyVariablesGeneratedAtShort ? (
+              <span className="text-[11px] text-muted-foreground">
+                {keyVariablesGeneratedAtShort}
+              </span>
+            ) : undefined
+          }
+        >
+          {normalizedKeyVariablesSnapshot ? (
+            <KeyVariablesSection snapshot={normalizedKeyVariablesSnapshot} />
+          ) : (
+            renderMissingSectionState(
+              "key-variables",
+              "Key Variables",
+              "We have not generated a key variables snapshot for this company yet.",
+            )
+          )}
         </SectionCard>
 
         <SectionCard id="sentiment-score" title="Quarterly Score">
