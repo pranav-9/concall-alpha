@@ -248,6 +248,13 @@ const getImpactDirectionDisplay = (value: string | null) => {
 const getTimeHorizonDisplay = (value: string | null) => {
   const normalized = value?.trim().toLowerCase();
   switch (normalized) {
+    case "near_term":
+    case "near term":
+      return {
+        label: "Near term",
+        className:
+          "border-amber-200/80 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200",
+      };
     case "long_term":
     case "long term":
       return {
@@ -2684,7 +2691,7 @@ export default async function Page({
                     {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed && (
                       <div className="space-y-2">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                          Customer need
+                          Industry overview
                         </p>
                         <p className="max-w-5xl text-[16px] sm:text-[18px] font-semibold leading-relaxed tracking-[-0.01em] text-foreground">
                           {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed}
