@@ -2090,6 +2090,148 @@ export default async function Page({
       </Drawer>
     );
   };
+  const renderValueChainMapContent = () => {
+    if (!normalizedCompanyIndustryAnalysis?.valueChainMap) return null;
+
+    return (
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
+            Value Chain Map
+          </p>
+          {normalizedCompanyIndustryAnalysis.valueChainMap.structureType && (
+            <span className="rounded-full border border-border/60 bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground">
+              {formatCompactLabel(normalizedCompanyIndustryAnalysis.valueChainMap.structureType)}
+            </span>
+          )}
+        </div>
+
+        {normalizedCompanyIndustryAnalysis.valueChainMap.synthesis && (
+          <p className="text-[12px] leading-relaxed text-muted-foreground">
+            {normalizedCompanyIndustryAnalysis.valueChainMap.synthesis}
+          </p>
+        )}
+
+        {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length > 0 && (
+          <div className="space-y-2.5">
+            {normalizedCompanyIndustryAnalysis.valueChainMap.layers.map((layer, index) => (
+              <div
+                key={`${layer.layerName}-${index}`}
+                className="rounded-xl border border-border/20 bg-background/45 px-4 py-3 border-l-2 border-l-sky-400/70"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                    Layer {index + 1}
+                  </span>
+                  <p className="text-[12px] font-semibold leading-snug text-foreground">
+                    {layer.layerName}
+                  </p>
+                </div>
+                {layer.layerDescription && (
+                  <p className="mt-2 text-[11px] leading-relaxed text-foreground/90">
+                    {layer.layerDescription}
+                  </p>
+                )}
+                <div className="mt-2 space-y-2">
+                  {layer.connectionToCompany && (
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                        Connection to Company
+                      </p>
+                      <p className="text-[11px] leading-relaxed text-muted-foreground">
+                        {layer.connectionToCompany}
+                      </p>
+                    </div>
+                  )}
+                  {layer.structuralCharacteristic && (
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                        Structural Characteristic
+                      </p>
+                      <p className="text-[11px] leading-relaxed text-muted-foreground">
+                        {layer.structuralCharacteristic}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+  const renderClassificationMapContent = () => {
+    if (!normalizedCompanyIndustryAnalysis?.classificationMap) return null;
+
+    return (
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
+            Classification Map
+          </p>
+          <p className="text-[12px] leading-relaxed text-muted-foreground">
+            The main lenses used to understand how this industry segments itself and where the company participates.
+          </p>
+        </div>
+
+        <div className="space-y-2.5">
+          {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.map(
+            (dimension, index) => (
+              <div
+                key={`${dimension.dimensionName}-${index}`}
+                className="rounded-xl border border-border/20 bg-background/45 px-4 py-3 border-l-2 border-l-violet-400/70"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                    Dimension {index + 1}
+                  </span>
+                  <p className="text-[12px] font-semibold leading-snug text-foreground">
+                    {dimension.dimensionName}
+                  </p>
+                </div>
+
+                {dimension.dimensionExplanation && (
+                  <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                    {dimension.dimensionExplanation}
+                  </p>
+                )}
+
+                {dimension.categories.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {dimension.categories.map((category) => (
+                      <span
+                        key={`${dimension.dimensionName}-${category.category}`}
+                        className={`rounded-full border px-2 py-0.5 text-[10px] ${
+                          category.isCompanyPosition
+                            ? "border-violet-200 bg-violet-100 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/30 dark:text-violet-200"
+                            : "border-border/60 bg-muted/60 text-muted-foreground"
+                        }`}
+                      >
+                        {category.category}
+                        {category.isCompanyPosition ? " · company" : ""}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {dimension.implication && (
+                  <div className="mt-2 space-y-0.5">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                      Implication
+                    </p>
+                    <p className="text-[11px] leading-relaxed text-foreground/90">
+                      {dimension.implication}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ),
+          )}
+        </div>
+      </div>
+    );
+  };
   const renderMissingSectionState = (
     sectionId: string,
     sectionTitle: string,
@@ -2704,145 +2846,40 @@ export default async function Page({
                       <>
                         <div className="border-t border-border/30" />
 
-                        {normalizedCompanyIndustryAnalysis.valueChainMap && (
-                          <div className="space-y-3">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
-                                Value Chain Map
-                              </p>
-                              {normalizedCompanyIndustryAnalysis.valueChainMap.structureType && (
-                                <span className="rounded-full border border-border/60 bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                  {formatCompactLabel(
-                                    normalizedCompanyIndustryAnalysis.valueChainMap.structureType,
-                                  )}
-                                </span>
-                              )}
-                            </div>
+                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                          {renderIndustryContextDrawerCard({
+                            title: "Value Chain Map",
+                            count:
+                              normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length ?? 0,
+                            description:
+                              normalizedCompanyIndustryAnalysis.valueChainMap
+                                ? "See the industry layers, where the company sits, and the structural characteristics shaping economics."
+                                : "No value chain map tracked yet for this company.",
+                            accentClass: "bg-sky-500/80",
+                            drawerTitle: "Value Chain Map",
+                            drawerDescription:
+                              "Structured map of the industry layers and how the company connects to them.",
+                            children: renderValueChainMapContent(),
+                            disabled: !normalizedCompanyIndustryAnalysis.valueChainMap,
+                          })}
 
-                            {normalizedCompanyIndustryAnalysis.valueChainMap.synthesis && (
-                              <p className="text-[12px] leading-relaxed text-muted-foreground">
-                                {normalizedCompanyIndustryAnalysis.valueChainMap.synthesis}
-                              </p>
-                            )}
-
-                            {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length > 0 && (
-                              <div className="space-y-2.5">
-                                {normalizedCompanyIndustryAnalysis.valueChainMap.layers.map(
-                                  (layer, index) => (
-                                    <div
-                                      key={`${layer.layerName}-${index}`}
-                                      className="rounded-xl border border-border/20 bg-background/45 px-4 py-3 border-l-2 border-l-sky-400/70"
-                                    >
-                                      <div className="flex flex-wrap items-center gap-2">
-                                        <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                          Layer {index + 1}
-                                        </span>
-                                        <p className="text-[12px] font-semibold leading-snug text-foreground">
-                                          {layer.layerName}
-                                        </p>
-                                      </div>
-                                      {layer.layerDescription && (
-                                        <p className="mt-2 text-[11px] leading-relaxed text-foreground/90">
-                                          {layer.layerDescription}
-                                        </p>
-                                      )}
-                                      <div className="mt-2 space-y-2">
-                                        {layer.connectionToCompany && (
-                                          <div className="space-y-0.5">
-                                            <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                                              Connection to Company
-                                            </p>
-                                            <p className="text-[11px] leading-relaxed text-muted-foreground">
-                                              {layer.connectionToCompany}
-                                            </p>
-                                          </div>
-                                        )}
-                                        {layer.structuralCharacteristic && (
-                                          <div className="space-y-0.5">
-                                            <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                                              Structural Characteristic
-                                            </p>
-                                            <p className="text-[11px] leading-relaxed text-muted-foreground">
-                                              {layer.structuralCharacteristic}
-                                            </p>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ),
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {normalizedCompanyIndustryAnalysis.classificationMap && (
-                          <div className="space-y-3">
-                            <div className="space-y-1">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
-                                Classification Map
-                              </p>
-                              <p className="text-[12px] leading-relaxed text-muted-foreground">
-                                The main lenses used to understand how this industry segments itself and where the company participates.
-                              </p>
-                            </div>
-
-                            <div className="space-y-2.5">
-                              {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.map(
-                                (dimension, index) => (
-                                  <div
-                                    key={`${dimension.dimensionName}-${index}`}
-                                    className="rounded-xl border border-border/20 bg-background/45 px-4 py-3 border-l-2 border-l-violet-400/70"
-                                  >
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                        Dimension {index + 1}
-                                      </span>
-                                      <p className="text-[12px] font-semibold leading-snug text-foreground">
-                                        {dimension.dimensionName}
-                                      </p>
-                                    </div>
-
-                                    {dimension.dimensionExplanation && (
-                                      <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                                        {dimension.dimensionExplanation}
-                                      </p>
-                                    )}
-
-                                    {dimension.categories.length > 0 && (
-                                      <div className="mt-2 flex flex-wrap gap-1.5">
-                                        {dimension.categories.map((category) => (
-                                          <span
-                                            key={`${dimension.dimensionName}-${category.category}`}
-                                            className={`rounded-full border px-2 py-0.5 text-[10px] ${
-                                              category.isCompanyPosition
-                                                ? "border-violet-200 bg-violet-100 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/30 dark:text-violet-200"
-                                                : "border-border/60 bg-muted/60 text-muted-foreground"
-                                            }`}
-                                          >
-                                            {category.category}
-                                            {category.isCompanyPosition ? " · company" : ""}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    )}
-
-                                    {dimension.implication && (
-                                      <div className="mt-2 space-y-0.5">
-                                        <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                                          Implication
-                                        </p>
-                                        <p className="text-[11px] leading-relaxed text-foreground/90">
-                                          {dimension.implication}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          </div>
-                        )}
+                          {renderIndustryContextDrawerCard({
+                            title: "Classification Map",
+                            count:
+                              normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
+                                .length ?? 0,
+                            description:
+                              normalizedCompanyIndustryAnalysis.classificationMap
+                                ? "See the key dimensions used to classify the industry and where the company is positioned."
+                                : "No classification map tracked yet for this company.",
+                            accentClass: "bg-violet-500/80",
+                            drawerTitle: "Classification Map",
+                            drawerDescription:
+                              "Structured map of industry classification dimensions, categories, and company position.",
+                            children: renderClassificationMapContent(),
+                            disabled: !normalizedCompanyIndustryAnalysis.classificationMap,
+                          })}
+                        </div>
                       </>
                     )}
                   </div>
