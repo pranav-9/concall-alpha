@@ -7,10 +7,56 @@ const numberFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 2,
 });
 
+const deltaFormatter = new Intl.NumberFormat("en-IN", {
+  maximumFractionDigits: 0,
+});
+
 const formatCellValue = (value: string | number | null | undefined) => {
   if (typeof value === "number") return numberFormatter.format(value);
   if (typeof value === "string") return value;
   return "—";
+};
+
+const asNumericValue = (value: string | number | null | undefined) => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const normalized = value.replace(/,/g, "").trim();
+    if (!normalized) return null;
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const getPeriodOverPeriodGrowth = (
+  periods: string[],
+  valuesByPeriod: Record<string, string | number | null>,
+  period: string,
+) => {
+  const periodIndex = periods.indexOf(period);
+  if (periodIndex <= 0) return null;
+
+  const currentValue = asNumericValue(valuesByPeriod[periods[periodIndex]]);
+  const previousValue = asNumericValue(valuesByPeriod[periods[periodIndex - 1]]);
+
+  if (currentValue == null || previousValue == null || previousValue === 0) {
+    return null;
+  }
+
+  return ((currentValue - previousValue) / previousValue) * 100;
+};
+
+const formatDeltaPercentValue = (value: number | null | undefined) => {
+  if (value == null) return null;
+  const formatted = deltaFormatter.format(Math.abs(value));
+  return `${value > 0 ? "+" : value < 0 ? "-" : ""}${formatted}% YoY`;
+};
+
+const getInlineDeltaClassName = (value: number | null | undefined) => {
+  if (value == null) return "text-muted-foreground";
+  if (value > 0) return "text-emerald-700/80 dark:text-emerald-300/80";
+  if (value < 0) return "text-rose-700/80 dark:text-rose-300/80";
+  return "text-muted-foreground";
 };
 
 function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory }) {
@@ -44,11 +90,37 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
                 <td className="px-3 py-2.5 text-[12px] font-medium text-foreground">
                   {row.metric}
                 </td>
-                {periods.map((period) => (
-                  <td key={period} className="px-3 py-2.5 text-[12px] text-muted-foreground">
-                    {formatCellValue(row.valuesByPeriod[period])}
-                  </td>
-                ))}
+                {periods.map((period) => {
+                  const yoyValue = getPeriodOverPeriodGrowth(
+                    periods,
+                    row.valuesByPeriod,
+                    period,
+                  );
+                  const yoyLabel = formatDeltaPercentValue(yoyValue);
+
+                  return (
+                    <td key={period} className="px-3 py-2.5 text-right">
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-[12px] text-muted-foreground">
+                          {formatCellValue(row.valuesByPeriod[period])}
+                        </span>
+                        {yoyLabel ? (
+                          <span
+                            className={`text-[10px] leading-none ${getInlineDeltaClassName(
+                              yoyValue,
+                            )}`}
+                          >
+                            {yoyLabel}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] leading-none text-muted-foreground">
+                            &nbsp;
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>

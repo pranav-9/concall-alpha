@@ -2051,6 +2051,10 @@ export default async function Page({
           : { kind: "text" as const, text: "Soon" },
     },
     {
+      ...SECTION_MAP.quarterlyScore,
+      meta: { kind: "score" as const, score: latestQuarterData?.score ?? null },
+    },
+    {
       ...SECTION_MAP.keyVariables,
       meta:
         normalizedKeyVariablesSnapshot?.deepTreatment.length
@@ -2062,10 +2066,6 @@ export default async function Page({
           : normalizedKeyVariablesSnapshot
             ? { kind: "text" as const, text: "Live" }
             : { kind: "text" as const, text: "Soon" },
-    },
-    {
-      ...SECTION_MAP.quarterlyScore,
-      meta: { kind: "score" as const, score: latestQuarterData?.score ?? null },
     },
     {
       ...SECTION_MAP.futureGrowth,
@@ -2890,6 +2890,14 @@ export default async function Page({
           </div>
         </SectionCard>
 
+        <SectionCard id="sentiment-score" title="Quarterly Score">
+          <QuarterlyScoreSection
+            chartData={chartData}
+            detailQuarters={detailQuarters}
+            trend={trend}
+          />
+        </SectionCard>
+
         <SectionCard
           id="key-variables"
           title="Key Variables"
@@ -2911,14 +2919,6 @@ export default async function Page({
               "We have not generated a key variables snapshot for this company yet.",
             )
           )}
-        </SectionCard>
-
-        <SectionCard id="sentiment-score" title="Quarterly Score">
-          <QuarterlyScoreSection
-            chartData={chartData}
-            detailQuarters={detailQuarters}
-            trend={trend}
-          />
         </SectionCard>
 
         <SectionCard
