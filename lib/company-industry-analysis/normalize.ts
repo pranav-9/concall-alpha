@@ -1,9 +1,14 @@
 import type {
   CompanyIndustryAnalysisRow,
   NormalizedCompanyIndustryAnalysis,
+  NormalizedIndustryClassificationCategory,
+  NormalizedIndustryClassificationDimension,
+  NormalizedIndustryClassificationMap,
   NormalizedIndustryPositioning,
   NormalizedIndustryRegulatoryChange,
   NormalizedIndustryTheme,
+  NormalizedIndustryValueChainLayer,
+  NormalizedIndustryValueChainMap,
 } from "@/lib/company-industry-analysis/types";
 
 type JsonRecord = Record<string, unknown>;
@@ -116,6 +121,94 @@ const buildCompanyFitSummary = (detailsRoot: JsonRecord | null) => {
   return [...summaries, ...implications.slice(0, 1)].join(" ");
 };
 
+const normalizeValueChainLayer = (
+  value: unknown,
+): NormalizedIndustryValueChainLayer | null => {
+  const record = parseJsonObjectLike(value);
+  const layerName = asString(record?.layer_name);
+  if (!layerName) return null;
+
+  return {
+    layerName,
+    layerDescription: asString(record?.layer_description),
+    connectionToCompany: asString(record?.connection_to_company),
+    structuralCharacteristic: asString(record?.structural_characteristic),
+  };
+};
+
+const normalizeValueChainMap = (
+  detailsRoot: JsonRecord | null,
+  positioningRecord: JsonRecord | null,
+  fallbackSummary: string | null,
+): NormalizedIndustryValueChainMap | null => {
+  const record = parseJsonObjectLike(detailsRoot?.value_chain_map);
+  const layers = parseJsonArrayLike(record?.layers)
+    .map((item) => normalizeValueChainLayer(item))
+    .filter((item): item is NormalizedIndustryValueChainLayer => Boolean(item));
+  const structureType =
+    asString(record?.structure_type) ??
+    asString(positioningRecord?.value_chain_structure_type);
+  const synthesis = asString(record?.synthesis) ?? fallbackSummary;
+
+  if (!structureType && !synthesis && layers.length === 0) {
+    return null;
+  }
+
+  return {
+    structureType,
+    synthesis,
+    layers,
+  };
+};
+
+const normalizeClassificationCategory = (
+  value: unknown,
+): NormalizedIndustryClassificationCategory | null => {
+  const record = parseJsonObjectLike(value);
+  const category = asString(record?.category);
+  if (!category) return null;
+
+  return {
+    category,
+    description: asString(record?.description),
+    isCompanyPosition: record?.is_company_position === true,
+  };
+};
+
+const normalizeClassificationDimension = (
+  value: unknown,
+): NormalizedIndustryClassificationDimension | null => {
+  const record = parseJsonObjectLike(value);
+  const dimensionName = asString(record?.dimension_name);
+  if (!dimensionName) return null;
+
+  const categories = parseJsonArrayLike(record?.categories)
+    .map((item) => normalizeClassificationCategory(item))
+    .filter((item): item is NormalizedIndustryClassificationCategory => Boolean(item));
+
+  return {
+    dimensionName,
+    dimensionExplanation: asString(record?.dimension_explanation),
+    implication: asString(record?.implication),
+    categories,
+  };
+};
+
+const normalizeClassificationMap = (
+  detailsRoot: JsonRecord | null,
+): NormalizedIndustryClassificationMap | null => {
+  const record = parseJsonObjectLike(detailsRoot?.classification_map);
+  const dimensions = parseJsonArrayLike(record?.dimensions)
+    .map((item) => normalizeClassificationDimension(item))
+    .filter((item): item is NormalizedIndustryClassificationDimension => Boolean(item));
+
+  if (dimensions.length === 0) return null;
+
+  return {
+    dimensions,
+  };
+};
+
 const normalizeIndustryPositioning = (
   value: unknown,
   detailsRoot: JsonRecord | null,
@@ -205,7 +298,14 @@ export function normalizeCompanyIndustryAnalysis(
   const contextSource = asString(detailsNested?.context_source);
   if (contextSource) schemaHints.add(`context_source:${contextSource}`);
 
+  const positioningRecord = parseJsonObjectLike(row.industry_positioning);
   const industryPositioning = normalizeIndustryPositioning(row.industry_positioning, detailsRoot);
+  const valueChainMap = normalizeValueChainMap(
+    detailsRoot,
+    positioningRecord,
+    industryPositioning?.industryEconomicsForCompany ?? null,
+  );
+  const classificationMap = normalizeClassificationMap(detailsRoot);
   const regulatoryChanges = parseJsonArrayLike(row.regulatory_changes)
     .map((item) => normalizeRegulatoryChange(item))
     .filter((item): item is NormalizedIndustryRegulatoryChange => Boolean(item));
@@ -233,6 +333,8 @@ export function normalizeCompanyIndustryAnalysis(
     generatedAtLabel: formatDateLabel(asString(row.generated_at)),
     sourceUrls: normalizeSources(row.sources),
     industryPositioning,
+    valueChainMap,
+    classificationMap,
     regulatoryChanges,
     tailwinds,
     headwinds,
