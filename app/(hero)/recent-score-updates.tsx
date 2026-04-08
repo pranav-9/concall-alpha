@@ -30,6 +30,12 @@ type RawBusinessSnapshotRow = {
   snapshot_source?: string | null;
 };
 
+type RawKeyVariablesRow = {
+  company_code: string;
+  generated_at?: string | null;
+  deep_treatment?: unknown;
+};
+
 type RawGuidanceRow = {
   company_code: string;
   guidance_key: string;
@@ -46,7 +52,12 @@ type RawGuidanceSnapshotRow = {
   generated_at?: string | null;
 };
 
-type UpdateType = "quarter" | "growth" | "business_snapshot" | "guidance_monitor";
+type UpdateType =
+  | "quarter"
+  | "growth"
+  | "business_snapshot"
+  | "key_variables"
+  | "guidance_monitor";
 
 type GuidanceBatchThread = {
   guidanceKey: string;
@@ -104,6 +115,30 @@ const formatFeedLabel = (value: string | null | undefined) => {
   return trimmed.replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
+const parseJsonValue = (value: unknown): unknown => {
+  if (value == null) return null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return value;
+    }
+  }
+  return value;
+};
+
+const extractDeepTreatmentCount = (value: unknown) => {
+  const parsed = parseJsonValue(value);
+  if (Array.isArray(parsed)) return parsed.length;
+  if (parsed && typeof parsed === "object") {
+    const variables = (parsed as { variables?: unknown }).variables;
+    if (Array.isArray(variables)) return variables.length;
+  }
+  return null;
+};
+
 const typeChipClass = (type: UpdateType) => {
   if (type === "quarter") {
     return "bg-sky-100 border-sky-300 text-sky-700 dark:bg-sky-900/30 dark:border-sky-700/40 dark:text-sky-200";
@@ -113,6 +148,9 @@ const typeChipClass = (type: UpdateType) => {
   }
   if (type === "business_snapshot") {
     return "bg-violet-100 border-violet-300 text-violet-700 dark:bg-violet-900/30 dark:border-violet-700/40 dark:text-violet-200";
+  }
+  if (type === "key_variables") {
+    return "bg-cyan-100 border-cyan-300 text-cyan-700 dark:bg-cyan-900/30 dark:border-cyan-700/40 dark:text-cyan-200";
   }
   return "bg-amber-100 border-amber-300 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700/40 dark:text-amber-200";
 };
@@ -175,10 +213,20 @@ async function getUnifiedUpdates(limit: number) {
         .limit(120),
     ]);
 
-  const [{ data: businessSnapshotRows }, { data: guidanceSnapshotRows }, { data: guidanceRows }] = await Promise.all([
+  const [
+    { data: businessSnapshotRows },
+    { data: keyVariablesRows },
+    { data: guidanceSnapshotRows },
+    { data: guidanceRows },
+  ] = await Promise.all([
     supabase
       .from("business_snapshot")
       .select("company, generated_at, snapshot_phase, snapshot_source")
+      .order("generated_at", { ascending: false })
+      .limit(160),
+    supabase
+      .from("key_variables_snapshot")
+      .select("company_code, generated_at, deep_treatment")
       .order("generated_at", { ascending: false })
       .limit(160),
     supabase
@@ -286,6 +334,36 @@ async function getUnifiedUpdates(limit: number) {
     }
   });
   updates.push(...latestSnapshotPerCompany.values());
+
+  const latestKeyVariablesPerCompany = new Map<string, UnifiedUpdate>();
+  ((keyVariablesRows ?? []) as RawKeyVariablesRow[]).forEach((row) => {
+    const companyCode = row.company_code?.trim();
+    if (!companyCode) return;
+    const atRaw = row.generated_at ?? null;
+    const atMs = eventTimeMs(atRaw);
+    const variableCount = extractDeepTreatmentCount(row.deep_treatment);
+    const candidate: UnifiedUpdate = {
+      id: `key-variables-${companyCode}`,
+      type: "key_variables",
+      companyName: companyCode,
+      companyCode,
+      companyIsNew: false,
+      score: null,
+      detail:
+        variableCount != null
+          ? `${variableCount} variable${variableCount === 1 ? "" : "s"} tracked`
+          : "Variables refreshed",
+      sourceLabel: "Key Variables",
+      contextLabel: "Updated",
+      atRaw,
+      atMs,
+    };
+    const existing = latestKeyVariablesPerCompany.get(companyCode);
+    if (!existing || candidate.atMs > existing.atMs) {
+      latestKeyVariablesPerCompany.set(companyCode, candidate);
+    }
+  });
+  updates.push(...latestKeyVariablesPerCompany.values());
 
   const latestGuidanceSnapshots = new Map<string, UnifiedUpdate>();
   ((guidanceSnapshotRows ?? []) as RawGuidanceSnapshotRow[]).forEach((row) => {
@@ -435,7 +513,8 @@ async function getUnifiedUpdates(limit: number) {
     quarter: 0,
     growth: 1,
     business_snapshot: 2,
-    guidance_monitor: 3,
+    key_variables: 3,
+    guidance_monitor: 4,
   };
 
   return updates
@@ -502,7 +581,7 @@ export default async function RecentScoreUpdates({
             Latest Updates
           </h2>
           <p className={subtitleClass}>
-            Time-ordered feed: score updates, snapshot refreshes, and guidance monitoring
+            Time-ordered feed: score updates, snapshot refreshes, key variable updates, and guidance monitoring
           </p>
         </div>
 
