@@ -2843,158 +2843,156 @@ export default async function Page({
           {normalizedCompanyIndustryAnalysis ? (
             <div className="space-y-3">
               {normalizedCompanyIndustryAnalysis.industryPositioning && (
-                <div className="rounded-2xl border border-border/30 bg-background/75 p-4 shadow-md shadow-black/20 sm:p-5">
-                  <div className="space-y-5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-border/50 bg-muted/45 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                        {companyRow?.code ?? code}
+                <div className="space-y-5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-border/50 bg-muted/45 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                      {companyRow?.code ?? code}
+                    </span>
+                    {normalizedCompanyIndustryAnalysis.subSector && (
+                      <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
+                        {normalizedCompanyIndustryAnalysis.subSector}
                       </span>
-                      {normalizedCompanyIndustryAnalysis.subSector && (
-                        <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
-                          {normalizedCompanyIndustryAnalysis.subSector}
-                        </span>
-                      )}
-                    </div>
-
-                    {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                          Industry overview
-                        </p>
-                        <p className="max-w-5xl text-[16px] sm:text-[18px] font-semibold leading-relaxed tracking-[-0.01em] text-foreground">
-                          {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed}
-                        </p>
-                      </div>
-                    )}
-
-                    {(normalizedCompanyIndustryAnalysis.valueChainMap ||
-                      normalizedCompanyIndustryAnalysis.classificationMap) && (
-                      <>
-                        <div className="border-t border-border/30" />
-
-                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                          {renderIndustryContextDrawerCard({
-                            title: "Value Chain Map",
-                            count:
-                              normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length ?? 0,
-                            countLabel:
-                              normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length === 1
-                                ? "layer"
-                                : "layers",
-                            description:
-                              normalizedCompanyIndustryAnalysis.valueChainMap
-                                ? (
-                                    <div className="space-y-1.5">
-                                        {normalizedCompanyIndustryAnalysis.valueChainMap.layers
-                                          .slice(0, 4)
-                                          .map((layer, index, visibleLayers) => (
-                                            <div key={layer.layerName} className="space-y-1">
-                                              <div className="flex items-center gap-2">
-                                                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/80 text-[10px] font-medium text-muted-foreground">
-                                                  {index + 1}
-                                                </span>
-                                                <span className="text-[11px] font-medium text-foreground">
-                                                  {layer.layerName}
-                                                </span>
-                                              </div>
-                                              {index < visibleLayers.length - 1 ? (
-                                                <div className="pl-2.5 text-[11px] leading-none text-foreground/60">
-                                                  |
-                                                </div>
-                                              ) : null}
-                                            </div>
-                                          ))}
-                                        {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length > 4 && (
-                                          <div className="pl-7">
-                                            <span className="inline-flex rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                              +
-                                              {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length - 4}{" "}
-                                              more
-                                            </span>
-                                          </div>
-                                        )}
-                                    </div>
-                                  )
-                                : "No value chain map tracked yet for this company.",
-                            accentClass: "bg-sky-500/80",
-                            drawerTitle: "Value Chain Map",
-                            drawerDescription:
-                              "Structured map of the industry layers and how the company connects to them.",
-                            children: renderValueChainMapContent(),
-                            disabled: !normalizedCompanyIndustryAnalysis.valueChainMap,
-                            hideDrawerHeader: true,
-                          })}
-
-                          {renderIndustryContextDrawerCard({
-                            title: "Classification Map",
-                            count:
-                              normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
-                                .length ?? 0,
-                            countLabel:
-                              normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
-                                .length === 1
-                                ? "dimension"
-                                : "dimensions",
-                            description:
-                              normalizedCompanyIndustryAnalysis.classificationMap
-                                ? (
-                                    <div className="space-y-2">
-                                      {normalizedCompanyIndustryAnalysis.classificationMap.dimensions
-                                        .slice(0, 3)
-                                        .map((dimension) => {
-                                          const companyCategories = dimension.categories.filter(
-                                            (category) => category.isCompanyPosition,
-                                          );
-
-                                          return (
-                                            <div
-                                              key={dimension.dimensionName}
-                                              className="rounded-xl border border-border/40 bg-background/70 px-3 py-2"
-                                            >
-                                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                                                {dimension.dimensionName}
-                                              </p>
-                                              <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                                {companyCategories.length > 0 ? (
-                                                  companyCategories.map((category) => (
-                                                    <span
-                                                      key={`${dimension.dimensionName}-${category.category}`}
-                                                      className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
-                                                    >
-                                                      {category.category}
-                                                    </span>
-                                                  ))
-                                                ) : (
-                                                  <span className="text-[10px] text-muted-foreground">
-                                                    No tagged company position
-                                                  </span>
-                                                )}
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                      {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length > 3 && (
-                                        <span className="inline-flex rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                          +
-                                          {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length - 3}{" "}
-                                          more dimensions
-                                        </span>
-                                      )}
-                                    </div>
-                                  )
-                                : "No classification map tracked yet for this company.",
-                            accentClass: "bg-violet-500/80",
-                            drawerTitle: "Classification Map",
-                            drawerDescription:
-                              "Structured map of industry classification dimensions, categories, and company position.",
-                            children: renderClassificationMapContent(),
-                            disabled: !normalizedCompanyIndustryAnalysis.classificationMap,
-                            hideDrawerHeader: true,
-                          })}
-                        </div>
-                      </>
                     )}
                   </div>
+
+                  {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed && (
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Industry overview
+                      </p>
+                      <p className="max-w-5xl text-[16px] sm:text-[18px] font-semibold leading-relaxed tracking-[-0.01em] text-foreground">
+                        {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed}
+                      </p>
+                    </div>
+                  )}
+
+                  {(normalizedCompanyIndustryAnalysis.valueChainMap ||
+                    normalizedCompanyIndustryAnalysis.classificationMap) && (
+                    <>
+                      <div className="border-t border-border/30" />
+
+                      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                        {renderIndustryContextDrawerCard({
+                          title: "Value Chain Map",
+                          count:
+                            normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length ?? 0,
+                          countLabel:
+                            normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length === 1
+                              ? "layer"
+                              : "layers",
+                          description:
+                            normalizedCompanyIndustryAnalysis.valueChainMap
+                              ? (
+                                  <div className="space-y-1.5">
+                                    {normalizedCompanyIndustryAnalysis.valueChainMap.layers
+                                      .slice(0, 4)
+                                      .map((layer, index, visibleLayers) => (
+                                        <div key={layer.layerName} className="space-y-1">
+                                          <div className="flex items-center gap-2">
+                                            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/80 text-[10px] font-medium text-muted-foreground">
+                                              {index + 1}
+                                            </span>
+                                            <span className="text-[11px] font-medium text-foreground">
+                                              {layer.layerName}
+                                            </span>
+                                          </div>
+                                          {index < visibleLayers.length - 1 ? (
+                                            <div className="pl-2.5 text-[11px] leading-none text-foreground/60">
+                                              |
+                                            </div>
+                                          ) : null}
+                                        </div>
+                                      ))}
+                                    {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length > 4 && (
+                                      <div className="pl-7">
+                                        <span className="inline-flex rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                          +
+                                          {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length - 4}{" "}
+                                          more
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              : "No value chain map tracked yet for this company.",
+                          accentClass: "bg-sky-500/80",
+                          drawerTitle: "Value Chain Map",
+                          drawerDescription:
+                            "Structured map of the industry layers and how the company connects to them.",
+                          children: renderValueChainMapContent(),
+                          disabled: !normalizedCompanyIndustryAnalysis.valueChainMap,
+                          hideDrawerHeader: true,
+                        })}
+
+                        {renderIndustryContextDrawerCard({
+                          title: "Classification Map",
+                          count:
+                            normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
+                              .length ?? 0,
+                          countLabel:
+                            normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
+                              .length === 1
+                              ? "dimension"
+                              : "dimensions",
+                          description:
+                            normalizedCompanyIndustryAnalysis.classificationMap
+                              ? (
+                                  <div className="space-y-2">
+                                    {normalizedCompanyIndustryAnalysis.classificationMap.dimensions
+                                      .slice(0, 3)
+                                      .map((dimension) => {
+                                        const companyCategories = dimension.categories.filter(
+                                          (category) => category.isCompanyPosition,
+                                        );
+
+                                        return (
+                                          <div
+                                            key={dimension.dimensionName}
+                                            className="rounded-xl border border-border/40 bg-background/70 px-3 py-2"
+                                          >
+                                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                              {dimension.dimensionName}
+                                            </p>
+                                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                              {companyCategories.length > 0 ? (
+                                                companyCategories.map((category) => (
+                                                  <span
+                                                    key={`${dimension.dimensionName}-${category.category}`}
+                                                    className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
+                                                  >
+                                                    {category.category}
+                                                  </span>
+                                                ))
+                                              ) : (
+                                                <span className="text-[10px] text-muted-foreground">
+                                                  No tagged company position
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length > 3 && (
+                                      <span className="inline-flex rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                        +
+                                        {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length - 3}{" "}
+                                        more dimensions
+                                      </span>
+                                    )}
+                                  </div>
+                                )
+                              : "No classification map tracked yet for this company.",
+                          accentClass: "bg-violet-500/80",
+                          drawerTitle: "Classification Map",
+                          drawerDescription:
+                            "Structured map of industry classification dimensions, categories, and company position.",
+                          children: renderClassificationMapContent(),
+                          disabled: !normalizedCompanyIndustryAnalysis.classificationMap,
+                          hideDrawerHeader: true,
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
               {(normalizedCompanyIndustryAnalysis.tailwinds.length > 0 ||
