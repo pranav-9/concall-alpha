@@ -26,7 +26,7 @@ export function SectionCard({
       <details
         id={id}
         className={`group bg-card border border-border rounded-lg p-4 ${className}`}
-        open={defaultOpen}
+        open={defaultOpen ? true : undefined}
       >
         <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
           <div className="flex flex-wrap items-center justify-between gap-3 transition-colors group-hover:text-foreground">

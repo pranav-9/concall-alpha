@@ -2020,21 +2020,25 @@ export default async function Page({
   const renderIndustryContextDrawerCard = ({
     title,
     count,
+    countLabel = "items",
     description,
     accentClass,
     drawerTitle,
     drawerDescription,
     children,
     disabled = false,
+    hideDrawerHeader = false,
   }: {
     title: string;
     count: number;
-    description: string;
+    countLabel?: string;
+    description: React.ReactNode;
     accentClass: string;
     drawerTitle: string;
     drawerDescription: string;
     children: React.ReactNode;
     disabled?: boolean;
+    hideDrawerHeader?: boolean;
   }) => {
     const cardBody = (
       <div
@@ -2049,12 +2053,12 @@ export default async function Page({
                 {title}
               </p>
               <p className="text-sm font-semibold leading-snug text-foreground">
-                {count} item{count === 1 ? "" : "s"} tracked
+                {count} {countLabel}
               </p>
             </div>
             <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${accentClass}`} />
           </div>
-          <p className="text-[12px] leading-relaxed text-muted-foreground">{description}</p>
+          <div className="text-[12px] leading-relaxed text-muted-foreground">{description}</div>
         </div>
         <div className="pt-4">
           <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground">
@@ -2076,10 +2080,12 @@ export default async function Page({
           </button>
         </DrawerTrigger>
         <DrawerContent className="w-full max-w-2xl">
-          <DrawerHeader className="border-b border-border">
-            <DrawerTitle>{drawerTitle}</DrawerTitle>
-            <DrawerDescription>{drawerDescription}</DrawerDescription>
-          </DrawerHeader>
+          {!hideDrawerHeader ? (
+            <DrawerHeader className="border-b border-border">
+              <DrawerTitle>{drawerTitle}</DrawerTitle>
+              <DrawerDescription>{drawerDescription}</DrawerDescription>
+            </DrawerHeader>
+          ) : null}
           <div className="overflow-y-auto p-4">{children}</div>
           <DrawerFooter className="border-t border-border">
             <DrawerClose asChild>
@@ -2132,28 +2138,16 @@ export default async function Page({
                     {layer.layerDescription}
                   </p>
                 )}
-                <div className="mt-2 space-y-2">
                   {layer.connectionToCompany && (
-                    <div className="space-y-0.5">
+                    <div className="mt-2 space-y-0.5">
                       <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                        Connection to Company
+                        {(companyRow?.name ?? code).trim()}'s role
                       </p>
                       <p className="text-[11px] leading-relaxed text-muted-foreground">
                         {layer.connectionToCompany}
                       </p>
                     </div>
-                  )}
-                  {layer.structuralCharacteristic && (
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                        Structural Characteristic
-                      </p>
-                      <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        {layer.structuralCharacteristic}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             ))}
           </div>
@@ -2198,19 +2192,32 @@ export default async function Page({
                 )}
 
                 {dimension.categories.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                  <div className="mt-2 space-y-2">
                     {dimension.categories.map((category) => (
-                      <span
+                      <div
                         key={`${dimension.dimensionName}-${category.category}`}
-                        className={`rounded-full border px-2 py-0.5 text-[10px] ${
-                          category.isCompanyPosition
-                            ? "border-violet-200 bg-violet-100 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/30 dark:text-violet-200"
-                            : "border-border/60 bg-muted/60 text-muted-foreground"
-                        }`}
+                        className="flex items-start gap-2"
                       >
-                        {category.category}
-                        {category.isCompanyPosition ? " · company" : ""}
-                      </span>
+                        <span
+                          className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold leading-none ${
+                            category.isCompanyPosition
+                              ? "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
+                              : "border-border/60 bg-muted/60 text-muted-foreground"
+                          }`}
+                        >
+                          {category.isCompanyPosition ? "✓" : "•"}
+                        </span>
+                        <div className="min-w-0 space-y-0.5">
+                          <p className="text-[11px] font-medium leading-snug text-foreground">
+                            {category.category}
+                          </p>
+                          {category.description && (
+                            <p className="text-[10px] leading-relaxed text-muted-foreground">
+                              {category.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -2851,9 +2858,42 @@ export default async function Page({
                             title: "Value Chain Map",
                             count:
                               normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length ?? 0,
+                            countLabel:
+                              normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length === 1
+                                ? "layer"
+                                : "layers",
                             description:
                               normalizedCompanyIndustryAnalysis.valueChainMap
-                                ? "See the industry layers, where the company sits, and the structural characteristics shaping economics."
+                                ? (
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                        {normalizedCompanyIndustryAnalysis.valueChainMap.layers
+                                          .slice(0, 4)
+                                          .map((layer, index, visibleLayers) => (
+                                            <React.Fragment key={layer.layerName}>
+                                              <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground">
+                                                {layer.layerName}
+                                              </span>
+                                              {index < visibleLayers.length - 1 ? (
+                                                <span className="text-sm font-semibold leading-none text-foreground/70">
+                                                  →
+                                                </span>
+                                              ) : null}
+                                            </React.Fragment>
+                                          ))}
+                                        {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length > 4 && (
+                                          <>
+                                            <span className="text-sm font-semibold leading-none text-foreground/70">
+                                              →
+                                            </span>
+                                            <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                              +
+                                              {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length - 4}{" "}
+                                              more
+                                            </span>
+                                          </>
+                                        )}
+                                    </div>
+                                  )
                                 : "No value chain map tracked yet for this company.",
                             accentClass: "bg-sky-500/80",
                             drawerTitle: "Value Chain Map",
@@ -2861,6 +2901,7 @@ export default async function Page({
                               "Structured map of the industry layers and how the company connects to them.",
                             children: renderValueChainMapContent(),
                             disabled: !normalizedCompanyIndustryAnalysis.valueChainMap,
+                            hideDrawerHeader: true,
                           })}
 
                           {renderIndustryContextDrawerCard({
@@ -2868,9 +2909,58 @@ export default async function Page({
                             count:
                               normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
                                 .length ?? 0,
+                            countLabel:
+                              normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
+                                .length === 1
+                                ? "dimension"
+                                : "dimensions",
                             description:
                               normalizedCompanyIndustryAnalysis.classificationMap
-                                ? "See the key dimensions used to classify the industry and where the company is positioned."
+                                ? (
+                                    <div className="space-y-2">
+                                      {normalizedCompanyIndustryAnalysis.classificationMap.dimensions
+                                        .slice(0, 3)
+                                        .map((dimension) => {
+                                          const companyCategories = dimension.categories.filter(
+                                            (category) => category.isCompanyPosition,
+                                          );
+
+                                          return (
+                                            <div
+                                              key={dimension.dimensionName}
+                                              className="rounded-xl border border-border/40 bg-background/70 px-3 py-2"
+                                            >
+                                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                                {dimension.dimensionName}
+                                              </p>
+                                              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                                {companyCategories.length > 0 ? (
+                                                  companyCategories.map((category) => (
+                                                    <span
+                                                      key={`${dimension.dimensionName}-${category.category}`}
+                                                      className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
+                                                    >
+                                                      {category.category}
+                                                    </span>
+                                                  ))
+                                                ) : (
+                                                  <span className="text-[10px] text-muted-foreground">
+                                                    No tagged company position
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length > 3 && (
+                                        <span className="inline-flex rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                          +
+                                          {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length - 3}{" "}
+                                          more dimensions
+                                        </span>
+                                      )}
+                                    </div>
+                                  )
                                 : "No classification map tracked yet for this company.",
                             accentClass: "bg-violet-500/80",
                             drawerTitle: "Classification Map",
@@ -2878,6 +2968,7 @@ export default async function Page({
                               "Structured map of industry classification dimensions, categories, and company position.",
                             children: renderClassificationMapContent(),
                             disabled: !normalizedCompanyIndustryAnalysis.classificationMap,
+                            hideDrawerHeader: true,
                           })}
                         </div>
                       </>
