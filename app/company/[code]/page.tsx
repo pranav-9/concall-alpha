@@ -2022,6 +2022,7 @@ export default async function Page({
     count,
     countLabel = "items",
     description,
+    previewItems,
     accentClass,
     drawerTitle,
     drawerDescription,
@@ -2033,6 +2034,7 @@ export default async function Page({
     count: number;
     countLabel?: string;
     description: React.ReactNode;
+    previewItems?: string[];
     accentClass: string;
     drawerTitle: string;
     drawerDescription: string;
@@ -2059,6 +2061,23 @@ export default async function Page({
             <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${accentClass}`} />
           </div>
           <div className="text-[12px] leading-relaxed text-muted-foreground">{description}</div>
+          {previewItems && previewItems.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {previewItems.slice(0, 3).map((item, index) => (
+                <span
+                  key={`${title}-preview-${index}`}
+                  className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground"
+                >
+                  {item}
+                </span>
+              ))}
+              {previewItems.length > 3 ? (
+                <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                  +{previewItems.length - 3} more
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         <div className="pt-4">
           <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground">
@@ -2989,6 +3008,9 @@ export default async function Page({
                       normalizedCompanyIndustryAnalysis.regulatoryChanges.length > 0
                         ? "Policy and regulatory changes affecting economics, operating freedom, or market structure."
                         : "No meaningful regulatory changes tracked yet for this company.",
+                    previewItems: normalizedCompanyIndustryAnalysis.regulatoryChanges.map(
+                      (item) => item.change,
+                    ),
                     accentClass: "bg-amber-500/80",
                     drawerTitle: "Regulatory Changes",
                     drawerDescription:
@@ -3006,6 +3028,9 @@ export default async function Page({
                       normalizedCompanyIndustryAnalysis.tailwinds.length > 0
                         ? "Positive industry forces currently supporting demand, pricing, share gains, or execution."
                         : "No material tailwinds tracked yet for this company.",
+                    previewItems: normalizedCompanyIndustryAnalysis.tailwinds.map(
+                      (item) => item.theme,
+                    ),
                     accentClass: "bg-emerald-500/80",
                     drawerTitle: "Industry Tailwinds",
                     drawerDescription:
@@ -3024,6 +3049,9 @@ export default async function Page({
                       normalizedCompanyIndustryAnalysis.headwinds.length > 0
                         ? "Negative industry forces that could pressure growth, margins, demand, or competitiveness."
                         : "No material headwinds tracked yet for this company.",
+                    previewItems: normalizedCompanyIndustryAnalysis.headwinds.map(
+                      (item) => item.theme,
+                    ),
                     accentClass: "bg-rose-500/80",
                     drawerTitle: "Industry Headwinds",
                     drawerDescription:
