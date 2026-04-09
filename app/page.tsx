@@ -141,7 +141,7 @@ export default async function Home() {
       accentClass: "bg-amber-400/90",
       borderClass:
         "border-amber-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.95),rgba(255,255,255,0.98))] dark:border-amber-700/35 dark:bg-[linear-gradient(180deg,rgba(120,53,15,0.28),rgba(15,23,42,0.92))]",
-      badge: { kind: "text" as const, label: "Segments" },
+      badge: { kind: "text" as const, label: "25% 4 yr CAGR" },
     },
     {
       title: "Quarterly Score",
@@ -161,7 +161,7 @@ export default async function Home() {
       accentClass: "bg-emerald-400/90",
       borderClass:
         "border-teal-200/70 bg-[linear-gradient(180deg,rgba(240,253,250,0.95),rgba(255,255,255,0.98))] dark:border-teal-700/35 dark:bg-[linear-gradient(180deg,rgba(19,78,74,0.3),rgba(15,23,42,0.92))]",
-      badge: { kind: "text" as const, label: "4 vars" },
+      badge: { kind: "text" as const, label: "18% volume growth" },
     },
     {
       title: "Future Growth",
@@ -181,7 +181,7 @@ export default async function Home() {
       accentClass: "bg-amber-400/90",
       borderClass:
         "border-orange-200/70 bg-[linear-gradient(180deg,rgba(255,247,237,0.95),rgba(255,255,255,0.98))] dark:border-orange-700/35 dark:bg-[linear-gradient(180deg,rgba(124,45,18,0.28),rgba(15,23,42,0.92))]",
-      badge: { kind: "text" as const, label: "12 threads" },
+      badge: { kind: "text" as const, label: "15% growth" },
     },
     {
       title: "Moat Analysis",
@@ -191,7 +191,7 @@ export default async function Home() {
       accentClass: "bg-violet-400/90",
       borderClass:
         "border-violet-200/70 bg-[linear-gradient(180deg,rgba(245,243,255,0.95),rgba(255,255,255,0.98))] dark:border-violet-700/35 dark:bg-[linear-gradient(180deg,rgba(91,33,182,0.24),rgba(15,23,42,0.92))]",
-      badge: { kind: "text" as const, label: "Narrow Moat" },
+      badge: { kind: "moat" as const, label: "Narrow Moat" },
     },
   ];
 
@@ -353,7 +353,7 @@ export default async function Home() {
                 Analysis framework
               </p>
               <h2 className="mt-2 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
-                A repeatable 8-section framework to analyse any company
+                7-step framework
               </h2>
             </div>
 
@@ -375,6 +375,10 @@ export default async function Home() {
                     </div>
                     {item.badge.kind === "score" ? (
                       <ConcallScore score={item.badge.value} size="sm" className="ring-2" />
+                    ) : item.badge.kind === "moat" ? (
+                      <span className="shrink-0 rounded-full border border-violet-200 bg-violet-100 px-2.5 py-1 text-[10px] font-medium text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/30 dark:text-violet-200">
+                        {item.badge.label}
+                      </span>
                     ) : (
                       <span className="shrink-0 rounded-full border border-border/55 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-foreground/85">
                         {item.badge.label}
