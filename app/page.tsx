@@ -127,48 +127,72 @@ export default async function Home() {
       body:
         "Start with the headline business, where it operates, and how it currently ranks on the platform.",
       accentClass: "bg-emerald-400/90",
+      borderClass:
+        "border-emerald-200/70 bg-[linear-gradient(180deg,rgba(236,253,245,0.9),rgba(255,255,255,0.98))] dark:border-emerald-700/35 dark:bg-[linear-gradient(180deg,rgba(6,78,59,0.28),rgba(15,23,42,0.92))]",
+      badge: "Rank context",
     },
     {
       title: "Industry Context",
       body:
         "Understand the industry overview, value chain, classification map, regulations, tailwinds, and headwinds shaping the business.",
       accentClass: "bg-sky-400/90",
+      borderClass:
+        "border-sky-200/70 bg-[linear-gradient(180deg,rgba(240,249,255,0.95),rgba(255,255,255,0.98))] dark:border-sky-700/35 dark:bg-[linear-gradient(180deg,rgba(12,74,110,0.3),rgba(15,23,42,0.92))]",
+      badge: "Maps + drivers",
     },
     {
       title: "Business Snapshot",
       body:
         "Break the company into segments, revenue drivers, business mix, and the historical economics that explain how it has made money.",
       accentClass: "bg-amber-400/90",
+      borderClass:
+        "border-amber-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.95),rgba(255,255,255,0.98))] dark:border-amber-700/35 dark:bg-[linear-gradient(180deg,rgba(120,53,15,0.28),rgba(15,23,42,0.92))]",
+      badge: "Segments",
     },
     {
       title: "Quarterly Score",
       body:
         "Get a compact read on the latest quarter so a beginner can orient quickly and an advanced investor can spot signal changes fast.",
       accentClass: "bg-rose-400/90",
+      borderClass:
+        "border-rose-200/70 bg-[linear-gradient(180deg,rgba(255,241,242,0.95),rgba(255,255,255,0.98))] dark:border-rose-700/35 dark:bg-[linear-gradient(180deg,rgba(127,29,29,0.28),rgba(15,23,42,0.92))]",
+      badge: "Score",
     },
     {
       title: "Key Variables",
       body:
         "Track the few non-financial business variables that best explain whether growth quality is strengthening or weakening.",
       accentClass: "bg-emerald-400/90",
+      borderClass:
+        "border-teal-200/70 bg-[linear-gradient(180deg,rgba(240,253,250,0.95),rgba(255,255,255,0.98))] dark:border-teal-700/35 dark:bg-[linear-gradient(180deg,rgba(19,78,74,0.3),rgba(15,23,42,0.92))]",
+      badge: "Operating KPIs",
     },
     {
       title: "Future Growth",
       body:
         "Move from what has happened to what could happen next through catalysts, scenarios, and the forward setup.",
       accentClass: "bg-sky-400/90",
+      borderClass:
+        "border-cyan-200/70 bg-[linear-gradient(180deg,rgba(236,254,255,0.95),rgba(255,255,255,0.98))] dark:border-cyan-700/35 dark:bg-[linear-gradient(180deg,rgba(14,116,144,0.28),rgba(15,23,42,0.92))]",
+      badge: "Scenarios",
     },
     {
       title: "Guidance Tracker",
       body:
         "See how management has guided over time, what changed, and whether credibility is strengthening or deteriorating.",
       accentClass: "bg-amber-400/90",
+      borderClass:
+        "border-orange-200/70 bg-[linear-gradient(180deg,rgba(255,247,237,0.95),rgba(255,255,255,0.98))] dark:border-orange-700/35 dark:bg-[linear-gradient(180deg,rgba(124,45,18,0.28),rgba(15,23,42,0.92))]",
+      badge: "Tracker",
     },
     {
       title: "Moat Analysis",
       body:
         "Close with the durability layer: competitive position, structural advantages, and what could erode them.",
       accentClass: "bg-violet-400/90",
+      borderClass:
+        "border-violet-200/70 bg-[linear-gradient(180deg,rgba(245,243,255,0.95),rgba(255,255,255,0.98))] dark:border-violet-700/35 dark:bg-[linear-gradient(180deg,rgba(91,33,182,0.24),rgba(15,23,42,0.92))]",
+      badge: "Moat",
     },
   ];
 
@@ -348,23 +372,29 @@ export default async function Home() {
               {analysisFramework.map((item, index) => (
                 <div
                   key={item.title}
-                  className="min-h-44 rounded-2xl border border-border/50 bg-muted/20 p-4 transition-colors hover:bg-accent/60 sm:p-5"
+                  className={`group min-h-48 rounded-[1.65rem] border p-4 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.35)] transition-transform transition-colors hover:-translate-y-0.5 sm:p-5 ${item.borderClass}`}
                 >
-                  <div className="flex items-start gap-3">
-                    <span
-                      className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${item.accentClass}`}
-                    />
+                  <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                      <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                        <span className={`h-1.5 w-1.5 rounded-full ${item.accentClass}`} />
                         Step {index + 1}
                       </p>
                       <h3 className="mt-2 text-base font-semibold leading-snug text-foreground">
                         {item.title}
                       </h3>
                     </div>
+                    <span className="shrink-0 rounded-full border border-border/55 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-foreground/85">
+                      {item.badge}
+                    </span>
                   </div>
 
-                  <p className="mt-4 text-sm leading-6 text-muted-foreground">{item.body}</p>
+                  <p className="mt-4 text-sm leading-6 text-foreground/78">{item.body}</p>
+
+                  <div className="mt-5 flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    <span className={`h-2 w-2 rounded-full ${item.accentClass}`} />
+                    <span>Built into company detail pages</span>
+                  </div>
                 </div>
               ))}
             </div>
