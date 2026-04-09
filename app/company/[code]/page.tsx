@@ -2981,70 +2981,60 @@ export default async function Page({
               {(normalizedCompanyIndustryAnalysis.tailwinds.length > 0 ||
                 normalizedCompanyIndustryAnalysis.headwinds.length > 0 ||
                 normalizedCompanyIndustryAnalysis.regulatoryChanges.length > 0) && (
-                <div className={`${elevatedBlockClass} p-4 space-y-4`}>
-                  <div className="space-y-1">
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                      Industry Drivers
-                    </p>
-                    <p className="text-[12px] leading-relaxed text-muted-foreground">
-                      Open a focused drawer to inspect regulations, tailwinds, and headwinds without expanding the full section on-page.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
-                    {renderIndustryContextDrawerCard({
-                      title: "Regulations",
-                      count: normalizedCompanyIndustryAnalysis.regulatoryChanges.length,
-                      description:
-                        normalizedCompanyIndustryAnalysis.regulatoryChanges.length > 0
-                          ? "Policy and regulatory changes affecting economics, operating freedom, or market structure."
-                          : "No meaningful regulatory changes tracked yet for this company.",
-                      accentClass: "bg-amber-500/80",
-                      drawerTitle: "Regulatory Changes",
-                      drawerDescription:
-                        "Changes in policy or regulation that can alter industry economics or company positioning.",
-                      children: renderRegulatoryChanges(
-                        normalizedCompanyIndustryAnalysis.regulatoryChanges,
-                      ),
-                      disabled:
-                        normalizedCompanyIndustryAnalysis.regulatoryChanges.length === 0,
-                    })}
-                    {renderIndustryContextDrawerCard({
-                      title: "Tailwinds",
-                      count: normalizedCompanyIndustryAnalysis.tailwinds.length,
-                      description:
-                        normalizedCompanyIndustryAnalysis.tailwinds.length > 0
-                          ? "Positive industry forces currently supporting demand, pricing, share gains, or execution."
-                          : "No material tailwinds tracked yet for this company.",
-                      accentClass: "bg-emerald-500/80",
-                      drawerTitle: "Industry Tailwinds",
-                      drawerDescription:
-                        "Positive external forces supporting the company’s operating environment.",
-                      children: renderIndustryThemes(
-                        "Tailwinds",
-                        normalizedCompanyIndustryAnalysis.tailwinds,
-                        "border-l-emerald-500/70",
-                      ),
-                      disabled: normalizedCompanyIndustryAnalysis.tailwinds.length === 0,
-                    })}
-                    {renderIndustryContextDrawerCard({
-                      title: "Headwinds",
-                      count: normalizedCompanyIndustryAnalysis.headwinds.length,
-                      description:
-                        normalizedCompanyIndustryAnalysis.headwinds.length > 0
-                          ? "Negative industry forces that could pressure growth, margins, demand, or competitiveness."
-                          : "No material headwinds tracked yet for this company.",
-                      accentClass: "bg-rose-500/80",
-                      drawerTitle: "Industry Headwinds",
-                      drawerDescription:
-                        "External risks or adverse conditions that could weigh on business quality or future growth.",
-                      children: renderIndustryThemes(
-                        "Headwinds",
-                        normalizedCompanyIndustryAnalysis.headwinds,
-                        "border-l-red-500/70",
-                      ),
-                      disabled: normalizedCompanyIndustryAnalysis.headwinds.length === 0,
-                    })}
-                  </div>
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+                  {renderIndustryContextDrawerCard({
+                    title: "Regulations",
+                    count: normalizedCompanyIndustryAnalysis.regulatoryChanges.length,
+                    description:
+                      normalizedCompanyIndustryAnalysis.regulatoryChanges.length > 0
+                        ? "Policy and regulatory changes affecting economics, operating freedom, or market structure."
+                        : "No meaningful regulatory changes tracked yet for this company.",
+                    accentClass: "bg-amber-500/80",
+                    drawerTitle: "Regulatory Changes",
+                    drawerDescription:
+                      "Changes in policy or regulation that can alter industry economics or company positioning.",
+                    children: renderRegulatoryChanges(
+                      normalizedCompanyIndustryAnalysis.regulatoryChanges,
+                    ),
+                    disabled:
+                      normalizedCompanyIndustryAnalysis.regulatoryChanges.length === 0,
+                  })}
+                  {renderIndustryContextDrawerCard({
+                    title: "Tailwinds",
+                    count: normalizedCompanyIndustryAnalysis.tailwinds.length,
+                    description:
+                      normalizedCompanyIndustryAnalysis.tailwinds.length > 0
+                        ? "Positive industry forces currently supporting demand, pricing, share gains, or execution."
+                        : "No material tailwinds tracked yet for this company.",
+                    accentClass: "bg-emerald-500/80",
+                    drawerTitle: "Industry Tailwinds",
+                    drawerDescription:
+                      "Positive external forces supporting the company’s operating environment.",
+                    children: renderIndustryThemes(
+                      "Tailwinds",
+                      normalizedCompanyIndustryAnalysis.tailwinds,
+                      "border-l-emerald-500/70",
+                    ),
+                    disabled: normalizedCompanyIndustryAnalysis.tailwinds.length === 0,
+                  })}
+                  {renderIndustryContextDrawerCard({
+                    title: "Headwinds",
+                    count: normalizedCompanyIndustryAnalysis.headwinds.length,
+                    description:
+                      normalizedCompanyIndustryAnalysis.headwinds.length > 0
+                        ? "Negative industry forces that could pressure growth, margins, demand, or competitiveness."
+                        : "No material headwinds tracked yet for this company.",
+                    accentClass: "bg-rose-500/80",
+                    drawerTitle: "Industry Headwinds",
+                    drawerDescription:
+                      "External risks or adverse conditions that could weigh on business quality or future growth.",
+                    children: renderIndustryThemes(
+                      "Headwinds",
+                      normalizedCompanyIndustryAnalysis.headwinds,
+                      "border-l-red-500/70",
+                    ),
+                    disabled: normalizedCompanyIndustryAnalysis.headwinds.length === 0,
+                  })}
                 </div>
               )}
 
