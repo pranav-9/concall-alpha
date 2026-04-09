@@ -314,19 +314,10 @@ export default async function Home() {
 
         <section className="space-y-6">
           <div className="rounded-[2rem] border border-border/60 bg-card/95 p-4 shadow-[0_18px_70px_-42px_rgba(15,23,42,0.45)] sm:p-6">
-            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                  Signal board
-                </p>
-                <h2 className="mt-1 text-2xl font-bold leading-tight text-foreground">
-                  Live signal shifts across the coverage universe
-                </h2>
-              </div>
-              <p className="max-w-md text-sm leading-6 text-muted-foreground">
-                Switch between quarter leaders, growth leaders, and trend twists to see where
-                conviction is improving, fading, or changing direction.
-              </p>
+            <div className="mb-5">
+              <h2 className="text-2xl font-bold leading-tight text-foreground">
+                Fundamental Screeners
+              </h2>
             </div>
             <Suspense fallback={<TopStocksHeroFallback />}>
               <TopStocks heroPanel />

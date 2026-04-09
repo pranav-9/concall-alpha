@@ -2865,32 +2865,34 @@ export default async function Page({
                             description:
                               normalizedCompanyIndustryAnalysis.valueChainMap
                                 ? (
-                                    <div className="flex flex-wrap items-center gap-1.5">
+                                    <div className="space-y-1.5">
                                         {normalizedCompanyIndustryAnalysis.valueChainMap.layers
                                           .slice(0, 4)
                                           .map((layer, index, visibleLayers) => (
-                                            <React.Fragment key={layer.layerName}>
-                                              <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground">
-                                                {layer.layerName}
-                                              </span>
-                                              {index < visibleLayers.length - 1 ? (
-                                                <span className="text-sm font-semibold leading-none text-foreground/70">
-                                                  →
+                                            <div key={layer.layerName} className="space-y-1">
+                                              <div className="flex items-center gap-2">
+                                                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/80 text-[10px] font-medium text-muted-foreground">
+                                                  {index + 1}
                                                 </span>
+                                                <span className="text-[11px] font-medium text-foreground">
+                                                  {layer.layerName}
+                                                </span>
+                                              </div>
+                                              {index < visibleLayers.length - 1 ? (
+                                                <div className="pl-2.5 text-[11px] leading-none text-foreground/60">
+                                                  |
+                                                </div>
                                               ) : null}
-                                            </React.Fragment>
+                                            </div>
                                           ))}
                                         {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length > 4 && (
-                                          <>
-                                            <span className="text-sm font-semibold leading-none text-foreground/70">
-                                              →
-                                            </span>
-                                            <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                          <div className="pl-7">
+                                            <span className="inline-flex rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
                                               +
                                               {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length - 4}{" "}
                                               more
                                             </span>
-                                          </>
+                                          </div>
                                         )}
                                     </div>
                                   )
