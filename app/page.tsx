@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { isCompanyNew } from "@/lib/company-freshness";
+import ConcallScore from "@/components/concall-score";
 import { slugifySector } from "@/app/sector/utils";
 import TopStocks from "./(hero)/top-stocks";
 import RecentScoreUpdates from "./(hero)/recent-score-updates";
@@ -123,76 +124,74 @@ export default async function Home() {
   );
   const analysisFramework = [
     {
-      title: "Company Overview",
-      body:
-        "Start with the headline business, where it operates, and how it currently ranks on the platform.",
-      accentClass: "bg-emerald-400/90",
-      borderClass:
-        "border-emerald-200/70 bg-[linear-gradient(180deg,rgba(236,253,245,0.9),rgba(255,255,255,0.98))] dark:border-emerald-700/35 dark:bg-[linear-gradient(180deg,rgba(6,78,59,0.28),rgba(15,23,42,0.92))]",
-      badge: "Rank context",
-    },
-    {
       title: "Industry Context",
+      eyebrow: "Industry layer",
       body:
         "Understand the industry overview, value chain, classification map, regulations, tailwinds, and headwinds shaping the business.",
       accentClass: "bg-sky-400/90",
       borderClass:
         "border-sky-200/70 bg-[linear-gradient(180deg,rgba(240,249,255,0.95),rgba(255,255,255,0.98))] dark:border-sky-700/35 dark:bg-[linear-gradient(180deg,rgba(12,74,110,0.3),rgba(15,23,42,0.92))]",
-      badge: "Maps + drivers",
+      badge: { kind: "text" as const, label: "Maps + drivers" },
     },
     {
       title: "Business Snapshot",
+      eyebrow: "Business layer",
       body:
         "Break the company into segments, revenue drivers, business mix, and the historical economics that explain how it has made money.",
       accentClass: "bg-amber-400/90",
       borderClass:
         "border-amber-200/70 bg-[linear-gradient(180deg,rgba(255,251,235,0.95),rgba(255,255,255,0.98))] dark:border-amber-700/35 dark:bg-[linear-gradient(180deg,rgba(120,53,15,0.28),rgba(15,23,42,0.92))]",
-      badge: "Segments",
+      badge: { kind: "text" as const, label: "Segments" },
     },
     {
       title: "Quarterly Score",
+      eyebrow: "Score layer",
       body:
         "Get a compact read on the latest quarter so a beginner can orient quickly and an advanced investor can spot signal changes fast.",
       accentClass: "bg-rose-400/90",
       borderClass:
         "border-rose-200/70 bg-[linear-gradient(180deg,rgba(255,241,242,0.95),rgba(255,255,255,0.98))] dark:border-rose-700/35 dark:bg-[linear-gradient(180deg,rgba(127,29,29,0.28),rgba(15,23,42,0.92))]",
-      badge: "Score",
+      badge: { kind: "score" as const, value: 8.2 },
     },
     {
       title: "Key Variables",
+      eyebrow: "Operating layer",
       body:
         "Track the few non-financial business variables that best explain whether growth quality is strengthening or weakening.",
       accentClass: "bg-emerald-400/90",
       borderClass:
         "border-teal-200/70 bg-[linear-gradient(180deg,rgba(240,253,250,0.95),rgba(255,255,255,0.98))] dark:border-teal-700/35 dark:bg-[linear-gradient(180deg,rgba(19,78,74,0.3),rgba(15,23,42,0.92))]",
-      badge: "Operating KPIs",
+      badge: { kind: "text" as const, label: "4 vars" },
     },
     {
       title: "Future Growth",
+      eyebrow: "Forward layer",
       body:
         "Move from what has happened to what could happen next through catalysts, scenarios, and the forward setup.",
       accentClass: "bg-sky-400/90",
       borderClass:
         "border-cyan-200/70 bg-[linear-gradient(180deg,rgba(236,254,255,0.95),rgba(255,255,255,0.98))] dark:border-cyan-700/35 dark:bg-[linear-gradient(180deg,rgba(14,116,144,0.28),rgba(15,23,42,0.92))]",
-      badge: "Scenarios",
+      badge: { kind: "score" as const, value: 8.7 },
     },
     {
       title: "Guidance Tracker",
+      eyebrow: "Management layer",
       body:
         "See how management has guided over time, what changed, and whether credibility is strengthening or deteriorating.",
       accentClass: "bg-amber-400/90",
       borderClass:
         "border-orange-200/70 bg-[linear-gradient(180deg,rgba(255,247,237,0.95),rgba(255,255,255,0.98))] dark:border-orange-700/35 dark:bg-[linear-gradient(180deg,rgba(124,45,18,0.28),rgba(15,23,42,0.92))]",
-      badge: "Tracker",
+      badge: { kind: "text" as const, label: "12 threads" },
     },
     {
       title: "Moat Analysis",
+      eyebrow: "Durability layer",
       body:
         "Close with the durability layer: competitive position, structural advantages, and what could erode them.",
       accentClass: "bg-violet-400/90",
       borderClass:
         "border-violet-200/70 bg-[linear-gradient(180deg,rgba(245,243,255,0.95),rgba(255,255,255,0.98))] dark:border-violet-700/35 dark:bg-[linear-gradient(180deg,rgba(91,33,182,0.24),rgba(15,23,42,0.92))]",
-      badge: "Moat",
+      badge: { kind: "text" as const, label: "Narrow Moat" },
     },
   ];
 
@@ -356,20 +355,10 @@ export default async function Home() {
               <h2 className="mt-2 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
                 A repeatable 8-section framework to analyse any company
               </h2>
-              <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base">
-                The platform is designed as a structured research flow that works for a beginner
-                learning how to break down a business and for an advanced analyst or investor who
-                wants a faster first-pass framework.
-              </p>
-              <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
-                Instead of jumping between decks, transcripts, and spreadsheets, each company page
-                follows the same sequence from business model and industry context to key variables,
-                forward growth, guidance, and moat.
-              </p>
             </div>
 
             <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {analysisFramework.map((item, index) => (
+              {analysisFramework.map((item) => (
                 <div
                   key={item.title}
                   className={`group min-h-48 rounded-[1.65rem] border p-4 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.35)] transition-transform transition-colors hover:-translate-y-0.5 sm:p-5 ${item.borderClass}`}
@@ -378,23 +367,22 @@ export default async function Home() {
                     <div className="min-w-0">
                       <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                         <span className={`h-1.5 w-1.5 rounded-full ${item.accentClass}`} />
-                        Step {index + 1}
+                        {item.eyebrow}
                       </p>
                       <h3 className="mt-2 text-base font-semibold leading-snug text-foreground">
                         {item.title}
                       </h3>
                     </div>
-                    <span className="shrink-0 rounded-full border border-border/55 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-foreground/85">
-                      {item.badge}
-                    </span>
+                    {item.badge.kind === "score" ? (
+                      <ConcallScore score={item.badge.value} size="sm" className="ring-2" />
+                    ) : (
+                      <span className="shrink-0 rounded-full border border-border/55 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-foreground/85">
+                        {item.badge.label}
+                      </span>
+                    )}
                   </div>
 
                   <p className="mt-4 text-sm leading-6 text-foreground/78">{item.body}</p>
-
-                  <div className="mt-5 flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                    <span className={`h-2 w-2 rounded-full ${item.accentClass}`} />
-                    <span>Built into company detail pages</span>
-                  </div>
                 </div>
               ))}
             </div>
