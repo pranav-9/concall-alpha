@@ -2141,7 +2141,7 @@ export default async function Page({
                   {layer.connectionToCompany && (
                     <div className="mt-2 space-y-0.5">
                       <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                        {(companyRow?.name ?? code).trim()}'s role
+                        {(companyRow?.name ?? code).trim()}&apos;s role
                       </p>
                       <p className="text-[11px] leading-relaxed text-muted-foreground">
                         {layer.connectionToCompany}
