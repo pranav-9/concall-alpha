@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { isCompanyNew } from "@/lib/company-freshness";
-import ConcallScore from "@/components/concall-score";
 import { slugifySector } from "@/app/sector/utils";
 import TopStocks from "./(hero)/top-stocks";
 import RecentScoreUpdates from "./(hero)/recent-score-updates";
@@ -122,53 +121,54 @@ export default async function Home() {
     (companyRows ?? []) as CompanyRow[],
     now,
   );
-  const signalPillars = [
+  const analysisFramework = [
     {
-      title: "Quarterly temperature",
+      title: "Company Overview",
       body:
-        "See where management tone, delivery, and operating momentum improved or weakened in the latest quarter.",
+        "Start with the headline business, where it operates, and how it currently ranks on the platform.",
       accentClass: "bg-emerald-400/90",
     },
     {
-      title: "Forward earnings path",
+      title: "Industry Context",
       body:
-        "Track catalysts, scenarios, and guidance changes before the next few quarters are fully obvious in reported numbers.",
+        "Understand the industry overview, value chain, classification map, regulations, tailwinds, and headwinds shaping the business.",
       accentClass: "bg-sky-400/90",
     },
     {
-      title: "Business quality context",
+      title: "Business Snapshot",
       body:
-        "Read operating structure, industry setup, moat signals, and execution evidence in one page instead of hopping between decks and transcripts.",
+        "Break the company into segments, revenue drivers, business mix, and the historical economics that explain how it has made money.",
       accentClass: "bg-amber-400/90",
     },
-  ];
-  const investorAdvantages = [
     {
-      title: "Industry Outlook",
-      score: 8.7,
-      eyebrow: "Qualitative context",
+      title: "Quarterly Score",
       body:
-        "Score sector setup, sub-sector signals, and operating backdrop so investors can see where industry conditions are strengthening or weakening before it is obvious in the numbers.",
-      example:
-        "Example: stronger tailwinds and an improving cycle can push the outlook higher even before reported earnings move.",
+        "Get a compact read on the latest quarter so a beginner can orient quickly and an advanced investor can spot signal changes fast.",
+      accentClass: "bg-rose-400/90",
     },
     {
-      title: "Performance Score",
-      score: 7.9,
-      eyebrow: "Execution signal",
+      title: "Key Variables",
       body:
-        "Translate management commentary, execution milestones, and quarter-level evidence into a structured performance score instead of relying only on the latest financial statement snapshot.",
-      example:
-        "Example: better delivery on capacity, pricing discipline, and operations can support a stronger score before the P&L fully reflects it.",
+        "Track the few non-financial business variables that best explain whether growth quality is strengthening or weakening.",
+      accentClass: "bg-emerald-400/90",
     },
     {
-      title: "Future Growth Score",
-      score: 9.2,
-      eyebrow: "Forward earnings power",
+      title: "Future Growth",
       body:
-        "Quantify catalysts, scenarios, and management confidence into a forward-looking growth score so investors can compare future earnings potential across companies on one scale.",
-      example:
-        "Example: when catalysts are de-risking and the upside case is strengthening, the growth score makes that shift visible at a glance.",
+        "Move from what has happened to what could happen next through catalysts, scenarios, and the forward setup.",
+      accentClass: "bg-sky-400/90",
+    },
+    {
+      title: "Guidance Tracker",
+      body:
+        "See how management has guided over time, what changed, and whether credibility is strengthening or deteriorating.",
+      accentClass: "bg-amber-400/90",
+    },
+    {
+      title: "Moat Analysis",
+      body:
+        "Close with the durability layer: competitive position, structural advantages, and what could erode them.",
+      accentClass: "bg-violet-400/90",
     },
   ];
 
@@ -324,85 +324,50 @@ export default async function Home() {
             </Suspense>
           </div>
 
-          <div className="rounded-[2rem] border border-border/60 bg-[linear-gradient(180deg,rgba(248,250,252,0.92),rgba(241,245,249,0.92),rgba(255,255,255,0.98))] p-6 shadow-[0_18px_70px_-42px_rgba(15,23,42,0.4)] dark:bg-[linear-gradient(180deg,rgba(17,24,39,0.95),rgba(15,23,42,0.95),rgba(2,6,23,0.95))]">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              Reading frame
-            </p>
-            <h2 className="mt-2 text-2xl font-bold leading-tight text-foreground">
-              Prices chase earnings. The edge is reading the setup early.
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-muted-foreground">
-              Use this portal to move from raw commentary to an investable view: what changed,
-              what management is guiding, what the business structure looks like, and what may
-              matter over the next few quarters.
-            </p>
+          <div className="rounded-[2rem] border border-border/60 bg-[linear-gradient(180deg,rgba(248,250,252,0.92),rgba(241,245,249,0.92),rgba(255,255,255,0.98))] p-6 shadow-[0_18px_70px_-42px_rgba(15,23,42,0.4)] dark:bg-[linear-gradient(180deg,rgba(17,24,39,0.95),rgba(15,23,42,0.95),rgba(2,6,23,0.95))] sm:p-6 lg:p-8">
+            <div className="max-w-4xl">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                Analysis framework
+              </p>
+              <h2 className="mt-2 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
+                A repeatable 8-section framework to analyse any company
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground sm:text-base">
+                The platform is designed as a structured research flow that works for a beginner
+                learning how to break down a business and for an advanced analyst or investor who
+                wants a faster first-pass framework.
+              </p>
+              <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
+                Instead of jumping between decks, transcripts, and spreadsheets, each company page
+                follows the same sequence from business model and industry context to key variables,
+                forward growth, guidance, and moat.
+              </p>
+            </div>
 
-            <div className="mt-6 space-y-3">
-              {signalPillars.map((item) => (
+            <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {analysisFramework.map((item, index) => (
                 <div
-                  key={`rail-${item.title}`}
-                  className="rounded-2xl border border-border/45 bg-background/72 px-4 py-3"
+                  key={item.title}
+                  className="min-h-44 rounded-2xl border border-border/50 bg-muted/20 p-4 transition-colors hover:bg-accent/60 sm:p-5"
                 >
-                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <span className={`h-2 w-2 rounded-full ${item.accentClass}`} />
-                    {item.title}
-                  </p>
-                  <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                    {item.body}
-                  </p>
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${item.accentClass}`}
+                    />
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                        Step {index + 1}
+                      </p>
+                      <h3 className="mt-2 text-base font-semibold leading-snug text-foreground">
+                        {item.title}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <p className="mt-4 text-sm leading-6 text-muted-foreground">{item.body}</p>
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-
-        <section className="rounded-[2rem] border border-border/60 bg-card/95 p-5 shadow-[0_18px_70px_-42px_rgba(15,23,42,0.45)] sm:p-6 lg:p-8">
-          <div className="max-w-3xl">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              Investor lens
-            </p>
-            <h2 className="mt-2 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
-              Three views that help you understand long-term earnings power
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">
-              This product is built for investors who want to connect operating context,
-              management behavior, and forward catalysts into one consistent research surface.
-            </p>
-          </div>
-
-          <div className="mt-8 grid grid-cols-1 gap-3 lg:grid-cols-3">
-            {investorAdvantages.map((feature, index) => (
-              <div
-                key={feature.title}
-                className="min-h-48 rounded-2xl border border-border/50 bg-muted/20 p-4 transition-colors hover:bg-accent/60 sm:p-5"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          index === 0
-                            ? "bg-emerald-400/90"
-                            : index === 1
-                              ? "bg-sky-400/90"
-                              : "bg-amber-400/90"
-                        }`}
-                      />
-                      {feature.eyebrow}
-                    </p>
-                    <h3 className="mt-2 text-base font-semibold leading-snug text-foreground">
-                      {feature.title}
-                    </h3>
-                  </div>
-                  <ConcallScore score={feature.score} size="sm" className="ring-2" />
-                </div>
-
-                <p className="mt-4 text-sm leading-6 text-muted-foreground">{feature.body}</p>
-                <div className="mt-4 rounded-xl border border-border/45 bg-background/72 px-3 py-2.5">
-                  <p className="text-[11px] leading-6 text-foreground/90">{feature.example}</p>
-                </div>
-              </div>
-            ))}
           </div>
         </section>
       </div>
