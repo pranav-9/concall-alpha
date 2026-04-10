@@ -2441,13 +2441,13 @@ export default async function Page({
   }) => {
     const cardBody = (
       <div
-        className={`group flex h-full min-h-[10.5rem] w-full flex-col justify-between rounded-2xl border border-border/30 bg-background/70 p-4 text-left shadow-md shadow-black/10 transition-colors ${
+        className={`group flex h-full min-h-[9.5rem] w-full flex-col justify-between rounded-2xl border border-border/30 bg-background/70 p-3.5 text-left shadow-md shadow-black/10 transition-colors ${
           disabled ? "cursor-default opacity-60" : "hover:bg-accent/45"
         }`}
       >
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 {title}
               </p>
@@ -2455,9 +2455,14 @@ export default async function Page({
                 {count} {countLabel}
               </p>
             </div>
-            <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${accentClass}`} />
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              <span className={`h-2.5 w-2.5 rounded-full ${accentClass}`} />
+              <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-foreground">
+                {disabled ? "Unavailable" : "Open details"}
+              </span>
+            </div>
           </div>
-          <div className="text-[12px] leading-relaxed text-muted-foreground">{description}</div>
+          <div className="text-[11px] leading-snug text-muted-foreground">{description}</div>
           {previewItems && previewItems.length > 0 ? (
             <div className="flex flex-wrap items-center gap-1.5">
               {previewItems.slice(0, 3).map((item, index) => (
@@ -2475,11 +2480,6 @@ export default async function Page({
               ) : null}
             </div>
           ) : null}
-        </div>
-        <div className="pt-4">
-          <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground">
-            {disabled ? "Unavailable" : "Open details"}
-          </span>
         </div>
       </div>
     );
@@ -3253,11 +3253,11 @@ export default async function Page({
                   </div>
 
                   {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed && (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Industry overview
                       </p>
-                      <p className="max-w-5xl text-[16px] sm:text-[18px] font-semibold leading-relaxed tracking-[-0.01em] text-foreground">
+                      <p className="max-w-4xl text-[15px] sm:text-[16px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
                         {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed}
                       </p>
                     </div>
@@ -3282,14 +3282,14 @@ export default async function Page({
                               ? (
                                   <div className="space-y-1.5">
                                     {normalizedCompanyIndustryAnalysis.valueChainMap.layers
-                                      .slice(0, 4)
+                                      .slice(0, 3)
                                       .map((layer, index, visibleLayers) => (
                                         <div key={layer.layerName} className="space-y-1">
                                           <div className="flex items-center gap-2">
                                             <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/80 text-[10px] font-medium text-muted-foreground">
                                               {index + 1}
                                             </span>
-                                            <span className="text-[11px] font-medium text-foreground">
+                                            <span className="text-[11px] font-semibold text-foreground">
                                               {layer.layerName}
                                             </span>
                                           </div>
@@ -3300,11 +3300,11 @@ export default async function Page({
                                           ) : null}
                                         </div>
                                       ))}
-                                    {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length > 4 && (
+                                    {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length > 3 && (
                                       <div className="pl-7">
                                         <span className="inline-flex rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
                                           +
-                                          {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length - 4}{" "}
+                                          {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length - 3}{" "}
                                           more
                                         </span>
                                       </div>
@@ -3336,7 +3336,7 @@ export default async function Page({
                               ? (
                                   <div className="space-y-2">
                                     {normalizedCompanyIndustryAnalysis.classificationMap.dimensions
-                                      .slice(0, 3)
+                                      .slice(0, 2)
                                       .map((dimension) => {
                                         const companyCategories = dimension.categories.filter(
                                           (category) => category.isCompanyPosition,
@@ -3369,10 +3369,10 @@ export default async function Page({
                                           </div>
                                         );
                                       })}
-                                    {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length > 3 && (
+                                    {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length > 2 && (
                                       <span className="inline-flex rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
                                         +
-                                        {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length - 3}{" "}
+                                        {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length - 2}{" "}
                                         more dimensions
                                       </span>
                                     )}
