@@ -939,6 +939,55 @@ export default async function Page({
     );
   const hasBusinessSnapshotContent =
     hasStructuredBusinessSnapshot || hasLegacyBusinessSnapshot;
+  const overviewSectionPreviews = [
+    {
+      title: "Industry Context",
+      href: "#industry-context",
+      summary: "Value chain, classification, and the operating backdrop.",
+      badge:
+        normalizedCompanyIndustryAnalysis?.subSector ??
+        (normalizedCompanyIndustryAnalysis ? "Live" : "Soon"),
+      tone: "sky" as const,
+    },
+    {
+      title: "Business Snapshot",
+      href: "#business-overview",
+      summary: "Business model, revenue mix, and operating economics.",
+      badge: hasBusinessSnapshotContent ? "Live" : "Soon",
+      tone: "emerald" as const,
+    },
+    {
+      title: "Key Variables",
+      href: "#key-variables",
+      summary: "Non-financial drivers behind quality, sustainability, and direction.",
+      badge: normalizedKeyVariablesSnapshot
+        ? `${normalizedKeyVariablesSnapshot.deepTreatment.length} vars`
+        : "Soon",
+      tone: "violet" as const,
+    },
+    {
+      title: "Growth Prospects",
+      href: "#future-growth",
+      summary: "Catalysts, scenarios, and the next leg of the story.",
+      score: growthScore,
+      badge: growthScore == null ? "Soon" : null,
+      tone: "sky" as const,
+    },
+    {
+      title: "Guidance Tracker",
+      href: "#guidance-history",
+      summary: "How management guidance is evolving quarter by quarter.",
+      badge: guidanceItems.length > 0 ? `${guidanceItems.length} items` : normalizedGuidanceSnapshot ? "Live" : "Soon",
+      tone: "amber" as const,
+    },
+    {
+      title: "Moat Analysis",
+      href: "#moat-analysis",
+      summary: "Durability, barriers to entry, and competitive protection.",
+      badge: normalizedMoatAnalysis?.moatRatingLabel ?? "Soon",
+      tone: "rose" as const,
+    },
+  ];
   const elevatedBlockClass =
     "rounded-xl border border-border/35 bg-background/75 shadow-md shadow-black/20";
   const elevatedMutedBlockClass =
@@ -3087,32 +3136,33 @@ export default async function Page({
       >
         <CompanyPageWorkspace sections={sidebarSections} defaultSectionId="overview">
           <div data-section-id="overview">
-            <OverviewCard
-              data={latestQuarterData}
-              companyInfo={{
-                code: companyRow?.code ?? code,
-                name: companyRow?.name ?? undefined,
+        <OverviewCard
+          data={latestQuarterData}
+          companyInfo={{
+            code: companyRow?.code ?? code,
+            name: companyRow?.name ?? undefined,
                 sector: companySector,
                 subSector: companySubSector,
                 exchange: companyRow?.exchange ?? undefined,
                 country: companyRow?.country ?? undefined,
                 isNew: companyIsNew,
               }}
-              rankInfo={rankInfo}
-              sectorRankInfo={sectorRankInfo}
-              moatInfo={
-                normalizedMoatAnalysis
-                  ? {
+          rankInfo={rankInfo}
+          sectorRankInfo={sectorRankInfo}
+          moatInfo={
+            normalizedMoatAnalysis
+              ? {
                       moatRating: normalizedMoatAnalysis.moatRating,
                       moatRatingLabel: normalizedMoatAnalysis.moatRatingLabel,
                       trajectory: normalizedMoatAnalysis.trajectory,
                       trajectoryDirection: normalizedMoatAnalysis.trajectoryDirection,
                     }
-                  : null
-              }
-              action={
-                <WatchlistButton
-                  companyCode={code}
+              : null
+          }
+          sectionPreviews={overviewSectionPreviews}
+          action={
+            <WatchlistButton
+              companyCode={code}
                   loginRedirectPath={`/company/${code}`}
                   initialIsAuthenticated={Boolean(authenticatedUserId)}
                   initialHasWatchlist={Boolean(firstWatchlist)}
