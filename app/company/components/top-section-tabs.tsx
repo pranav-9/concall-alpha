@@ -22,7 +22,6 @@ const SHORT_LABELS: Record<string, string> = {
   "key-variables": "Variables",
   "future-growth": "Growth",
   "guidance-history": "Guidance",
-  "moat-analysis": "Moat",
   community: "Community",
 };
 
