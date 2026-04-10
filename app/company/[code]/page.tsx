@@ -7,7 +7,7 @@ import { SECTION_MAP } from "../constants";
 import {
   QuarterData,
 } from "../types";
-import { TopSectionTabs } from "../components/top-section-tabs";
+import { CompanyPageWorkspace } from "../components/company-page-workspace";
 import { OverviewCard } from "../components/overview-card";
 import { SectionCard } from "../components/section-card";
 import { parseSummary, transformToChartData, calculateTrend } from "../utils";
@@ -2798,48 +2798,48 @@ export default async function Page({
         id="main-content"
         className="flex min-w-0 flex-col gap-4 overflow-x-hidden"
       >
-        <TopSectionTabs sections={sidebarSections} />
-
-        <OverviewCard
-          data={latestQuarterData}
-          companyInfo={{
-            code: companyRow?.code ?? code,
-            name: companyRow?.name ?? undefined,
-            sector: companySector,
-            subSector: companySubSector,
-            exchange: companyRow?.exchange ?? undefined,
-            country: companyRow?.country ?? undefined,
-            isNew: companyIsNew,
-          }}
-          rankInfo={rankInfo}
-          sectorRankInfo={sectorRankInfo}
-          moatInfo={
-            normalizedMoatAnalysis
-              ? {
-                  moatRating: normalizedMoatAnalysis.moatRating,
-                  moatRatingLabel: normalizedMoatAnalysis.moatRatingLabel,
-                  trajectory: normalizedMoatAnalysis.trajectory,
-                  trajectoryDirection: normalizedMoatAnalysis.trajectoryDirection,
-                }
-              : null
-          }
-          action={
-            <WatchlistButton
-              companyCode={code}
-              loginRedirectPath={`/company/${code}`}
-              initialIsAuthenticated={Boolean(authenticatedUserId)}
-              initialHasWatchlist={Boolean(firstWatchlist)}
-              initialIsInWatchlist={isInFirstWatchlist}
-              initialWatchlistName={firstWatchlist?.name ?? null}
+        <CompanyPageWorkspace sections={sidebarSections} defaultSectionId="overview">
+          <div data-section-id="overview">
+            <OverviewCard
+              data={latestQuarterData}
+              companyInfo={{
+                code: companyRow?.code ?? code,
+                name: companyRow?.name ?? undefined,
+                sector: companySector,
+                subSector: companySubSector,
+                exchange: companyRow?.exchange ?? undefined,
+                country: companyRow?.country ?? undefined,
+                isNew: companyIsNew,
+              }}
+              rankInfo={rankInfo}
+              sectorRankInfo={sectorRankInfo}
+              moatInfo={
+                normalizedMoatAnalysis
+                  ? {
+                      moatRating: normalizedMoatAnalysis.moatRating,
+                      moatRatingLabel: normalizedMoatAnalysis.moatRatingLabel,
+                      trajectory: normalizedMoatAnalysis.trajectory,
+                      trajectoryDirection: normalizedMoatAnalysis.trajectoryDirection,
+                    }
+                  : null
+              }
+              action={
+                <WatchlistButton
+                  companyCode={code}
+                  loginRedirectPath={`/company/${code}`}
+                  initialIsAuthenticated={Boolean(authenticatedUserId)}
+                  initialHasWatchlist={Boolean(firstWatchlist)}
+                  initialIsInWatchlist={isInFirstWatchlist}
+                  initialWatchlistName={firstWatchlist?.name ?? null}
+                />
+              }
             />
-          }
-        />
+          </div>
 
+          <div data-section-id="industry-context">
         <SectionCard
           id="industry-context"
           title="Industry Context"
-          collapsible
-          defaultOpen={false}
           headerAction={
             companyIndustryGeneratedAtShort ? (
               <span className="text-[11px] text-muted-foreground">
@@ -3102,12 +3102,12 @@ export default async function Page({
             )
           )}
         </SectionCard>
+          </div>
 
+          <div data-section-id="business-overview">
         <SectionCard
           id="business-overview"
           title="Business Snapshot"
-          collapsible
-          defaultOpen={false}
           headerAction={
             businessSnapshotGeneratedAtShort ? (
               <span className="text-[11px] text-muted-foreground">
@@ -3290,7 +3290,9 @@ export default async function Page({
             )}
           </div>
         </SectionCard>
+          </div>
 
+          <div data-section-id="sentiment-score">
         <SectionCard id="sentiment-score" title="Quarterly Score">
           <QuarterlyScoreSection
             chartData={chartData}
@@ -3298,7 +3300,9 @@ export default async function Page({
             trend={trend}
           />
         </SectionCard>
+          </div>
 
+          <div data-section-id="key-variables">
         <SectionCard
           id="key-variables"
           title="Key Variables"
@@ -3321,7 +3325,9 @@ export default async function Page({
             )
           )}
         </SectionCard>
+          </div>
 
+          <div data-section-id="future-growth">
         <SectionCard
           id="future-growth"
           title="Future Growth Prospects"
@@ -3807,7 +3813,9 @@ export default async function Page({
             )
           )}
         </SectionCard>
+          </div>
 
+          <div data-section-id="guidance-history">
         <SectionCard
           id="guidance-history"
           title="Guidance History"
@@ -3851,11 +3859,12 @@ export default async function Page({
             )
           )}
         </SectionCard>
+          </div>
 
+          <div data-section-id="moat-analysis">
         <SectionCard
           id="moat-analysis"
           title="Moat Analysis"
-          collapsible
           headerAction={
             moatGeneratedAtShort ? (
               <span className="text-[11px] text-muted-foreground">{moatGeneratedAtShort}</span>
@@ -4126,10 +4135,14 @@ export default async function Page({
             )
           )}
         </SectionCard>
+          </div>
 
+          <div data-section-id="community">
         <SectionCard id="community" title="Community">
           <CompanyCommentsSection companyCode={code} />
         </SectionCard>
+          </div>
+        </CompanyPageWorkspace>
       </div>
     </div>
   );
