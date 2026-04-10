@@ -1025,7 +1025,11 @@ export default async function Page({
       title: "Guidance Tracker",
       href: "#guidance-history",
       summary: oneLine(
-        firstGuidanceItem?.guidanceText ??
+        normalizedGuidanceSnapshot?.currentYearRevenueGuidance?.officialCurrentGuidanceText
+          ? normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidancePercent != null
+            ? `${normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidanceText} (${normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidancePercent}%)`
+            : normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidanceText
+          : firstGuidanceItem?.guidanceText ??
           firstGuidanceItem?.statusReason ??
           firstGuidanceItem?.latestView,
         `How ${companyLabel}’s management guidance is moving over time.`,
