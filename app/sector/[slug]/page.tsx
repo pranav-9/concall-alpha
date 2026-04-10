@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import ConcallScore from "@/components/concall-score";
+import { getConcallData } from "@/app/company/get-concall-data";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { normalizeSectorIntelligence } from "@/lib/sector-intelligence/normalize";
 import type {
@@ -23,11 +24,6 @@ type CompanyRow = {
   created_at?: string | null;
 };
 
-type QuarterScoreRow = {
-  company_code: string;
-  score: number | null;
-};
-
 type GrowthOutlookRow = {
   company: string;
   growth_score?: string | number | null;
@@ -42,6 +38,7 @@ type SectorCompanyRow = {
   isNew: boolean;
   latestQuarterScore: number | null;
   growthScore: number | null;
+  avg4QuarterScore: number | null;
   avgScore: number | null;
 };
 
@@ -343,18 +340,8 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     );
   }
 
-  const companyCodes = companies
-    .map((c) => c.code)
-    .filter((code): code is string => Boolean(code));
-
-  const [{ data: latestQuarterKey }, { data: growthRows }, { data: sectorIntelligenceRowsData }] = await Promise.all([
-    supabase
-      .from("concall_analysis")
-      .select("fy, qtr, quarter_label")
-      .order("fy", { ascending: false })
-      .order("qtr", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+  const [{ rows: concallRows, latestLabel }, { data: growthRows }, { data: sectorIntelligenceRowsData }] = await Promise.all([
+    getConcallData(),
     supabase
       .from("growth_outlook")
       .select("company, growth_score, run_timestamp")
@@ -367,22 +354,16 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
       .eq("sector", sectorName),
   ]);
 
-  let quarterScoreMap = new Map<string, number | null>();
-  if (latestQuarterKey?.fy != null && latestQuarterKey?.qtr != null && companyCodes.length > 0) {
-    const { data: latestQuarterScores } = await supabase
-      .from("concall_analysis")
-      .select("company_code, score")
-      .eq("fy", latestQuarterKey.fy)
-      .eq("qtr", latestQuarterKey.qtr)
-      .in("company_code", companyCodes);
-
-    quarterScoreMap = new Map(
-      ((latestQuarterScores ?? []) as QuarterScoreRow[]).map((row) => [
-        row.company_code.toUpperCase(),
-        toNumberOrNull(row.score),
-      ]),
-    );
-  }
+  const concallScoreByCode = new Map<
+    string,
+    { latestScore: number | null; avg4QuarterScore: number | null }
+  >();
+  concallRows.forEach((row) => {
+    concallScoreByCode.set(row.company.toUpperCase(), {
+      latestScore: latestLabel ? toNumberOrNull(row[latestLabel]) : null,
+      avg4QuarterScore: toNumberOrNull(row["Latest 4Q Avg"]),
+    });
+  });
 
   const latestGrowthByKey = new Map<string, number | null>();
   ((growthRows ?? []) as GrowthOutlookRow[]).forEach((row) => {
@@ -395,20 +376,26 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     const codeKey = company.code.toUpperCase();
     const name = company.name?.trim() || company.code;
     const nameKey = name.toUpperCase();
+    const concallScore = concallScoreByCode.get(codeKey);
+    const latestQuarterScore = concallScore?.latestScore ?? null;
+    const growthScore = latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? null;
+    const avg4QuarterScore = concallScore?.avg4QuarterScore ?? null;
+    const validValues = [latestQuarterScore, growthScore, avg4QuarterScore].filter(
+      (value): value is number => value != null,
+    );
+
     return {
       code: company.code,
       name,
       sector: company.sector ?? sectorName,
       subSector: company.sub_sector ?? null,
       isNew: isCompanyNew(company.created_at ?? null),
-      latestQuarterScore: quarterScoreMap.get(codeKey) ?? null,
-      growthScore: latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? null,
+      latestQuarterScore,
+      growthScore,
+      avg4QuarterScore,
       avgScore:
-        quarterScoreMap.get(codeKey) != null &&
-        (latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? null) != null
-          ? ((quarterScoreMap.get(codeKey) as number) +
-              (latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? 0)) /
-            2
+        validValues.length > 0
+          ? validValues.reduce((sum, value) => sum + value, 0) / validValues.length
           : null,
     };
   });
@@ -449,11 +436,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     return a.name.localeCompare(b.name);
   });
 
-  const latestQuarterLabel = latestQuarterKey?.quarter_label
-    ? String(latestQuarterKey.quarter_label)
-    : latestQuarterKey?.fy != null && latestQuarterKey?.qtr != null
-    ? `Q${latestQuarterKey.qtr} FY${latestQuarterKey.fy}`
-    : null;
+  const latestQuarterLabel = latestLabel ?? null;
 
   const sectorIntelligenceRows = (sectorIntelligenceRowsData ?? []) as SectorIntelligenceRow[];
   const activeSubSectorKey = normalizeFilterKey(resolvedSearchParams?.subSector?.trim());
@@ -891,8 +874,14 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
                   <th className="px-3 py-2 font-semibold text-foreground">Sub-sector</th>
                   <th className="px-3 py-2 font-semibold text-foreground">Latest qtr score</th>
                   <th className="px-3 py-2 font-semibold text-foreground">Growth score</th>
+                  <th className="px-3 py-2 font-semibold text-foreground">4Q Avg Score</th>
                   <th className="border-l border-border/70 px-3 py-2 font-semibold text-foreground">
-                    Avg score
+                    <div className="flex flex-col gap-0.5">
+                      <span>Avg score</span>
+                      <span className="text-[10px] font-medium text-muted-foreground normal-case">
+                        Derived from first 3
+                      </span>
+                    </div>
                   </th>
                 </tr>
               </thead>
@@ -929,9 +918,21 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
+                    <td className="px-3 py-2">
+                      {row.avg4QuarterScore != null ? (
+                        <ConcallScore score={row.avg4QuarterScore} />
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="border-l border-border/70 px-3 py-2">
                       {row.avgScore != null ? (
-                        <ConcallScore score={row.avgScore} />
+                        <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-200/80 bg-emerald-50 px-2.5 py-1 dark:border-emerald-700/40 dark:bg-emerald-950/20">
+                          <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                            Blend
+                          </span>
+                          <ConcallScore score={row.avgScore} size="sm" />
+                        </div>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
