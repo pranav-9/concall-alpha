@@ -46,10 +46,10 @@ const TONE_CLASSES: Record<
       "bg-[radial-gradient(circle_at_top_right,_rgba(52,211,153,0.14),_transparent_42%)] dark:bg-[radial-gradient(circle_at_top_right,_rgba(52,211,153,0.18),_transparent_42%)]",
   },
   amber: {
-    shell: "border-amber-200/60 bg-amber-50/20 dark:border-amber-700/35 dark:bg-amber-950/20",
+    shell: "border-amber-200/55 bg-amber-50/16 dark:border-amber-700/30 dark:bg-amber-950/16",
     accent: "bg-amber-500",
     glow:
-      "bg-[radial-gradient(circle_at_top_right,_rgba(251,191,36,0.14),_transparent_42%)] dark:bg-[radial-gradient(circle_at_top_right,_rgba(251,191,36,0.18),_transparent_42%)]",
+      "bg-[radial-gradient(circle_at_top_right,_rgba(251,191,36,0.09),_transparent_42%)] dark:bg-[radial-gradient(circle_at_top_right,_rgba(251,191,36,0.11),_transparent_42%)]",
   },
   violet: {
     shell:
