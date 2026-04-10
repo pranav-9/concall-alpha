@@ -4,6 +4,16 @@ import * as React from "react";
 import type { CompanySidebarSectionItem } from "../constants";
 import { TopSectionTabs } from "./top-section-tabs";
 
+type CompanyPageNavigationContextValue = {
+  navigateToSection: (sectionId: string) => void;
+};
+
+const CompanyPageNavigationContext =
+  React.createContext<CompanyPageNavigationContextValue | null>(null);
+
+export const useCompanyPageNavigation = () =>
+  React.useContext(CompanyPageNavigationContext);
+
 type CompanyPageWorkspaceProps = {
   sections: CompanySidebarSectionItem[];
   defaultSectionId?: string;
@@ -99,13 +109,15 @@ export function CompanyPageWorkspace({
     null;
 
   return (
-    <div className="flex min-w-0 flex-col gap-4 overflow-x-hidden">
-      <TopSectionTabs
-        sections={sections}
-        activeSectionId={activeSectionId}
-        onSectionChange={handleSectionChange}
-      />
-      <div ref={contentRef}>{activePanel}</div>
-    </div>
+    <CompanyPageNavigationContext.Provider value={{ navigateToSection: handleSectionChange }}>
+      <div className="flex min-w-0 flex-col gap-4 overflow-x-hidden">
+        <TopSectionTabs
+          sections={sections}
+          activeSectionId={activeSectionId}
+          onSectionChange={handleSectionChange}
+        />
+        <div ref={contentRef}>{activePanel}</div>
+      </div>
+    </CompanyPageNavigationContext.Provider>
   );
 }

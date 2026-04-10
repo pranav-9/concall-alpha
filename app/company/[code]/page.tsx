@@ -13,7 +13,6 @@ import { SectionCard } from "../components/section-card";
 import { parseSummary, transformToChartData, calculateTrend } from "../utils";
 import ConcallScore from "@/components/concall-score";
 import { CompanyCommentsSection } from "@/components/company/company-comments-section";
-import { WatchlistButton } from "@/components/watchlist-button";
 import {
   Carousel,
   CarouselContent,
@@ -939,11 +938,28 @@ export default async function Page({
     );
   const hasBusinessSnapshotContent =
     hasStructuredBusinessSnapshot || hasLegacyBusinessSnapshot;
+  const companyLabel = companyRow?.name ?? code;
+  const oneLine = (value: string | null | undefined, fallback: string, maxLength = 92) => {
+    const text = (value ?? "").replace(/\s+/g, " ").trim();
+    const source = text || fallback;
+    return source.length > maxLength ? `${source.slice(0, maxLength - 1).trimEnd()}…` : source;
+  };
+  const firstVariableName = normalizedKeyVariablesSnapshot?.deepTreatment[0]?.variable ?? null;
+  const firstGrowthCatalyst = normalizedGrowthOutlook?.catalysts[0]?.catalyst ?? null;
+  const firstGuidanceItem = guidanceItems[0];
+  const industryPositioning = normalizedCompanyIndustryAnalysis?.industryPositioning;
+  const businessSummaryLine =
+    aboutHeading ?? normalizedBusinessSnapshot?.businessSummaryShort ?? null;
   const overviewSectionPreviews = [
     {
       title: "Industry Context",
       href: "#industry-context",
-      summary: "Value chain, classification, and the operating backdrop.",
+      summary: oneLine(
+        industryPositioning?.whereThisCompanyFits ??
+          industryPositioning?.industryEconomicsForCompany ??
+          industryPositioning?.customerNeed,
+        `${companyLabel}’s operating backdrop and where it fits in the value chain.`,
+      ),
       badge:
         normalizedCompanyIndustryAnalysis?.subSector ??
         (normalizedCompanyIndustryAnalysis ? "Live" : "Soon"),
@@ -952,23 +968,55 @@ export default async function Page({
     {
       title: "Business Snapshot",
       href: "#business-overview",
-      summary: "Business model, revenue mix, and operating economics.",
+      summary: oneLine(
+        businessSummaryLine ??
+          aboutSupportingText ??
+          normalizedBusinessSnapshot?.mixShiftSummary,
+        `How ${companyLabel} makes money and where the mix is shifting.`,
+      ),
       badge: hasBusinessSnapshotContent ? "Live" : "Soon",
       tone: "emerald" as const,
     },
     {
       title: "Key Variables",
       href: "#key-variables",
-      summary: "Non-financial drivers behind quality, sustainability, and direction.",
+      summary: oneLine(
+        firstVariableName
+          ? `Top tracked variable: ${firstVariableName}`
+          : null,
+        `${companyLabel}’s non-financial drivers that explain quality and direction.`,
+      ),
       badge: normalizedKeyVariablesSnapshot
         ? `${normalizedKeyVariablesSnapshot.deepTreatment.length} vars`
         : "Soon",
       tone: "violet" as const,
     },
     {
+      title: "Quarterly Score",
+      href: "#sentiment-score",
+      summary: oneLine(
+        latestQuarterData?.summary?.[0]
+          ? `${latestQuarterData.summary[0].topic}: ${
+              latestQuarterData.summary[0].detail || latestQuarterData.summary[0].text
+            }`
+          : null,
+        `The latest quarter signal for ${companyLabel}.`,
+      ),
+      score: latestQuarterData?.score ?? null,
+      badge: latestQuarterData ? null : "Soon",
+      tone: "emerald" as const,
+    },
+    {
       title: "Growth Prospects",
       href: "#future-growth",
-      summary: "Catalysts, scenarios, and the next leg of the story.",
+      summary: oneLine(
+        normalizedGrowthOutlook?.baseGrowthPct
+          ? `Base case growth: ${normalizedGrowthOutlook.baseGrowthPct}`
+          : firstGrowthCatalyst ??
+          normalizedGrowthOutlook?.summaryBullets[0] ??
+          normalizedGrowthOutlook?.visibilityRationale,
+        `${companyLabel}’s next catalysts and scenario path.`,
+      ),
       score: growthScore,
       badge: growthScore == null ? "Soon" : null,
       tone: "sky" as const,
@@ -976,16 +1024,19 @@ export default async function Page({
     {
       title: "Guidance Tracker",
       href: "#guidance-history",
-      summary: "How management guidance is evolving quarter by quarter.",
-      badge: guidanceItems.length > 0 ? `${guidanceItems.length} items` : normalizedGuidanceSnapshot ? "Live" : "Soon",
+      summary: oneLine(
+        firstGuidanceItem?.guidanceText ??
+          firstGuidanceItem?.statusReason ??
+          firstGuidanceItem?.latestView,
+        `How ${companyLabel}’s management guidance is moving over time.`,
+      ),
+      badge:
+        guidanceItems.length > 0
+          ? `${guidanceItems.length} items`
+          : normalizedGuidanceSnapshot
+            ? "Live"
+            : "Soon",
       tone: "amber" as const,
-    },
-    {
-      title: "Moat Analysis",
-      href: "#moat-analysis",
-      summary: "Durability, barriers to entry, and competitive protection.",
-      badge: normalizedMoatAnalysis?.moatRatingLabel ?? "Soon",
-      tone: "rose" as const,
     },
   ];
   const elevatedBlockClass =
@@ -3136,40 +3187,37 @@ export default async function Page({
       >
         <CompanyPageWorkspace sections={sidebarSections} defaultSectionId="overview">
           <div data-section-id="overview">
-        <OverviewCard
-          data={latestQuarterData}
-          companyInfo={{
-            code: companyRow?.code ?? code,
-            name: companyRow?.name ?? undefined,
+            <OverviewCard
+              companyInfo={{
+                code: companyRow?.code ?? code,
+                name: companyRow?.name ?? undefined,
                 sector: companySector,
                 subSector: companySubSector,
                 exchange: companyRow?.exchange ?? undefined,
                 country: companyRow?.country ?? undefined,
                 isNew: companyIsNew,
               }}
-          rankInfo={rankInfo}
-          sectorRankInfo={sectorRankInfo}
-          moatInfo={
-            normalizedMoatAnalysis
-              ? {
+              rankInfo={rankInfo}
+              sectorRankInfo={sectorRankInfo}
+              moatInfo={
+                normalizedMoatAnalysis
+                  ? {
                       moatRating: normalizedMoatAnalysis.moatRating,
                       moatRatingLabel: normalizedMoatAnalysis.moatRatingLabel,
                       trajectory: normalizedMoatAnalysis.trajectory,
                       trajectoryDirection: normalizedMoatAnalysis.trajectoryDirection,
                     }
-              : null
-          }
-          sectionPreviews={overviewSectionPreviews}
-          action={
-            <WatchlistButton
-              companyCode={code}
-                  loginRedirectPath={`/company/${code}`}
-                  initialIsAuthenticated={Boolean(authenticatedUserId)}
-                  initialHasWatchlist={Boolean(firstWatchlist)}
-                  initialIsInWatchlist={isInFirstWatchlist}
-                  initialWatchlistName={firstWatchlist?.name ?? null}
-                />
+                  : null
               }
+              sectionPreviews={overviewSectionPreviews}
+              watchlist={{
+                companyCode: code,
+                loginRedirectPath: `/company/${code}`,
+                initialIsAuthenticated: Boolean(authenticatedUserId),
+                initialHasWatchlist: Boolean(firstWatchlist),
+                initialIsInWatchlist: isInFirstWatchlist,
+                initialWatchlistName: firstWatchlist?.name ?? null,
+              }}
             />
           </div>
 
