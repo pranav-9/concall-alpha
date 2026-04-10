@@ -188,9 +188,9 @@ export function OverviewCard({
     >
       <div className="relative">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_48%),radial-gradient(circle_at_top_right,_rgba(34,197,94,0.10),_transparent_38%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_48%),radial-gradient(circle_at_top_right,_rgba(34,197,94,0.14),_transparent_38%)]" />
-        <div className="relative flex flex-col gap-5">
+        <div className="relative flex flex-col gap-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl space-y-3">
+            <div className="max-w-3xl space-y-3 pl-1 sm:pl-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center rounded-full border border-border/60 bg-muted/50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   Overview
@@ -261,17 +261,7 @@ export function OverviewCard({
           </div>
 
           {sectionPreviews.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Explore next
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Fast links into the sections that complete the story.
-                  </p>
-                </div>
-              </div>
+            <div className="space-y-2.5 pt-1">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {sectionPreviews.map((preview) => (
                   <button
