@@ -101,7 +101,14 @@ export function OverviewCard({
     "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium";
 
   return (
-    <div id="overview" className="bg-card border border-border rounded-lg p-6">
+    <div
+      id="overview"
+      className="scroll-mt-40 bg-card border border-border rounded-lg p-6"
+      style={{
+        scrollMarginTop:
+          "calc(var(--global-navbar-height, 84px) + var(--company-tabs-height, 56px) + 1rem)",
+      }}
+    >
       <div className="flex flex-col gap-3">
         <div className="flex justify-between items-start">
           <div className="flex items-start justify-between w-full gap-3">

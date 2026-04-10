@@ -2283,6 +2283,13 @@ export default async function Page({
   );
   const sidebarSections = [
     {
+      ...SECTION_MAP.overview,
+      meta:
+        companySector
+          ? { kind: "text" as const, text: companySector }
+          : { kind: "text" as const, text: "Live" },
+    },
+    {
       ...SECTION_MAP.industryContext,
       meta:
         normalizedCompanyIndustryAnalysis?.subSector
@@ -2355,7 +2362,6 @@ export default async function Page({
   let sectorRankInfo: SectorRankInfo = null;
   let latestQuarterRowsGlobal: Array<{ company_code?: unknown; score?: unknown }> = [];
 
-  // Quarter rank: latest global quarter across concall_analysis
   const { data: latestQuarterKey } = await supabase
     .from("concall_analysis")
     .select("fy, qtr")
@@ -2378,15 +2384,15 @@ export default async function Page({
 
     const quarterRanked = assignCompetitionRanks(
       latestQuarterRowsGlobal
-      .map((row) => ({
-        companyCode: String((row as { company_code?: string }).company_code ?? "").toUpperCase(),
-        score: toNumeric((row as { score?: unknown }).score),
-      }))
-      .filter((row) => row.companyCode && row.score != null)
-      .sort((a, b) => {
-        if ((b.score ?? 0) !== (a.score ?? 0)) return (b.score ?? 0) - (a.score ?? 0);
-        return a.companyCode.localeCompare(b.companyCode);
-      }),
+        .map((row) => ({
+          companyCode: String((row as { company_code?: string }).company_code ?? "").toUpperCase(),
+          score: toNumeric((row as { score?: unknown }).score),
+        }))
+        .filter((row) => row.companyCode && row.score != null)
+        .sort((a, b) => {
+          if ((b.score ?? 0) !== (a.score ?? 0)) return (b.score ?? 0) - (a.score ?? 0);
+          return a.companyCode.localeCompare(b.companyCode);
+        }),
       (row) => row.score,
     );
 
@@ -2405,13 +2411,15 @@ export default async function Page({
     }
   }
 
-  // Growth rank: latest row per company from growth_outlook
   const { data: growthRankRows } = await supabase
     .from("growth_outlook")
     .select("company, growth_score, base_growth_pct, run_timestamp")
     .order("run_timestamp", { ascending: false });
 
-  const latestGrowthByCompany = new Map<string, { company: string; growthScore: number; base: number | null }>();
+  const latestGrowthByCompany = new Map<
+    string,
+    { company: string; growthScore: number; base: number | null }
+  >();
   (growthRankRows ?? []).forEach((row) => {
     const companyKey = String((row as { company?: string }).company ?? "").toUpperCase();
     if (!companyKey || latestGrowthByCompany.has(companyKey)) return;
@@ -2790,7 +2798,10 @@ export default async function Page({
         id="main-content"
         className="flex min-w-0 flex-col gap-4 overflow-x-hidden"
       >
+        <TopSectionTabs sections={sidebarSections} />
+
         <OverviewCard
+          data={latestQuarterData}
           companyInfo={{
             code: companyRow?.code ?? code,
             name: companyRow?.name ?? undefined,
@@ -2823,8 +2834,6 @@ export default async function Page({
             />
           }
         />
-
-        <TopSectionTabs sections={sidebarSections} />
 
         <SectionCard
           id="industry-context"

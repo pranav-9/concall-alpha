@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { CompanySearch } from "@/components/company-search";
 import { AuthButton, type UserInfo } from "@/components/auth-button";
@@ -11,6 +11,7 @@ import { usePathname } from "next/navigation";
 const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navRef = useRef<HTMLElement | null>(null);
   const navItems = [
     { href: "/leaderboards", label: "Leaderboards" },
     { href: "/watchlists", label: "Watchlists" },
@@ -20,8 +21,38 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
+  useEffect(() => {
+    const element = navRef.current;
+    if (!element) return;
+
+    const updateNavbarHeight = () => {
+      document.documentElement.style.setProperty(
+        "--global-navbar-height",
+        `${element.offsetHeight}px`,
+      );
+    };
+
+    updateNavbarHeight();
+
+    const observer = new ResizeObserver(() => {
+      updateNavbarHeight();
+    });
+
+    observer.observe(element);
+    window.addEventListener("resize", updateNavbarHeight);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateNavbarHeight);
+    };
+  }, []);
+
   return (
-    <nav className="sticky top-0 z-50 flex justify-center bg-background/38 backdrop-blur-lg">
+    <nav
+      ref={navRef}
+      id="global-navbar"
+      className="sticky top-0 z-50 flex justify-center bg-background/38 backdrop-blur-lg"
+    >
       <div className="relative w-full max-w-[1440px] px-3 py-2 sm:px-6 lg:px-10">
         <div className="flex min-h-[4.25rem] items-center justify-between gap-3 rounded-[1.5rem] border border-border/60 bg-background/82 px-3 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.45)] sm:px-4">
           <div className="min-w-0 shrink-0">

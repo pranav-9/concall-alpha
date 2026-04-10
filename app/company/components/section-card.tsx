@@ -26,6 +26,10 @@ export function SectionCard({
       <details
         id={id}
         className={`group scroll-mt-40 bg-card border border-border rounded-lg p-4 ${className}`}
+        style={{
+          scrollMarginTop:
+            "calc(var(--global-navbar-height, 84px) + var(--company-tabs-height, 56px) + 1rem)",
+        }}
         open={defaultOpen ? true : undefined}
       >
         <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
@@ -60,7 +64,14 @@ export function SectionCard({
   }
 
   return (
-    <div id={id} className={`scroll-mt-40 bg-card border border-border rounded-lg p-4 ${className}`}>
+    <div
+      id={id}
+      className={`scroll-mt-40 bg-card border border-border rounded-lg p-4 ${className}`}
+      style={{
+        scrollMarginTop:
+          "calc(var(--global-navbar-height, 84px) + var(--company-tabs-height, 56px) + 1rem)",
+      }}
+    >
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-1">

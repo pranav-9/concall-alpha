@@ -11,6 +11,10 @@ export type CompanySidebarSectionItem = {
 
 export const SECTIONS = [
   {
+    id: "overview",
+    label: "Overview",
+  },
+  {
     id: "industry-context",
     label: "Industry Context",
   },
@@ -49,13 +53,14 @@ export const SECTIONS = [
 ] as const;
 
 export const SECTION_MAP = {
-  industryContext: SECTIONS[0],
-  businessSnapshot: SECTIONS[1],
-  keyVariables: SECTIONS[2],
-  quarterlyScore: SECTIONS[3],
-  futureGrowth: SECTIONS[4],
-  guidanceHistory: SECTIONS[5],
-  moatAnalysis: SECTIONS[6],
-  community: SECTIONS[7],
-  topBusinessStrategies: SECTIONS[8],
+  overview: SECTIONS[0],
+  industryContext: SECTIONS[1],
+  businessSnapshot: SECTIONS[2],
+  keyVariables: SECTIONS[3],
+  quarterlyScore: SECTIONS[4],
+  futureGrowth: SECTIONS[5],
+  guidanceHistory: SECTIONS[6],
+  moatAnalysis: SECTIONS[7],
+  community: SECTIONS[8],
+  topBusinessStrategies: SECTIONS[9],
 } as const;

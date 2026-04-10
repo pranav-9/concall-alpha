@@ -12,8 +12,9 @@ type TopSectionTabsProps = {
   sections: CompanySidebarSectionItem[];
 };
 
-const ACTIVE_ANCHOR_OFFSET_PX = 172;
+const DEFAULT_ACTIVE_ANCHOR_OFFSET_PX = 172;
 const SHORT_LABELS: Record<string, string> = {
+  overview: "Overview",
   "industry-context": "Industry",
   "business-overview": "Business",
   "sentiment-score": "Quarterly",
@@ -52,10 +53,62 @@ const renderMeta = (meta: CompanySidebarSectionMeta) => {
 };
 
 export function TopSectionTabs({ sections }: TopSectionTabsProps) {
+  const placeholderRef = React.useRef<HTMLDivElement | null>(null);
+  const floatingRef = React.useRef<HTMLDivElement | null>(null);
   const [activeSectionId, setActiveSectionId] = React.useState<string>(
     sections[0]?.id ?? "",
   );
+  const [anchorOffsetPx, setAnchorOffsetPx] = React.useState<number>(
+    DEFAULT_ACTIVE_ANCHOR_OFFSET_PX,
+  );
+  const [floatingFrame, setFloatingFrame] = React.useState<{ left: number; width: number }>({
+    left: 0,
+    width: 0,
+  });
   const tabRefs = React.useRef<Record<string, HTMLAnchorElement | null>>({});
+
+  React.useEffect(() => {
+    const placeholderElement = placeholderRef.current;
+    const floatingElement = floatingRef.current;
+    const navElement = document.getElementById("global-navbar");
+    if (!placeholderElement || !floatingElement) return;
+
+    const syncLayout = () => {
+      const navbarHeight = navElement?.offsetHeight ?? 0;
+      const tabsHeight = floatingElement.offsetHeight;
+      const rect = placeholderElement.getBoundingClientRect();
+
+      document.documentElement.style.setProperty("--company-tabs-height", `${tabsHeight}px`);
+      setAnchorOffsetPx(navbarHeight + tabsHeight + 16);
+      setFloatingFrame((current) => {
+        if (current.left === rect.left && current.width === rect.width) {
+          return current;
+        }
+        return {
+          left: rect.left,
+          width: rect.width,
+        };
+      });
+    };
+
+    syncLayout();
+
+    const observer = new ResizeObserver(() => {
+      syncLayout();
+    });
+
+    observer.observe(placeholderElement);
+    observer.observe(floatingElement);
+    if (navElement) observer.observe(navElement);
+    window.addEventListener("resize", syncLayout);
+    window.addEventListener("scroll", syncLayout, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", syncLayout);
+      window.removeEventListener("scroll", syncLayout);
+    };
+  }, []);
 
   React.useEffect(() => {
     if (sections.length === 0) return;
@@ -69,7 +122,7 @@ export function TopSectionTabs({ sections }: TopSectionTabsProps) {
     let frameId: number | null = null;
 
     const updateActiveSection = () => {
-      const anchor = ACTIVE_ANCHOR_OFFSET_PX;
+      const anchor = anchorOffsetPx;
       const visibleSections = sectionElements
         .map((element) => ({
           id: element.id,
@@ -109,7 +162,7 @@ export function TopSectionTabs({ sections }: TopSectionTabsProps) {
 
     const observer = new IntersectionObserver(scheduleUpdate, {
       root: null,
-      rootMargin: `-${ACTIVE_ANCHOR_OFFSET_PX}px 0px -55% 0px`,
+      rootMargin: `-${anchorOffsetPx}px 0px -55% 0px`,
       threshold: [0, 0.15, 0.35, 0.6, 1],
     });
 
@@ -127,7 +180,7 @@ export function TopSectionTabs({ sections }: TopSectionTabsProps) {
         window.cancelAnimationFrame(frameId);
       }
     };
-  }, [sections]);
+  }, [anchorOffsetPx, sections]);
 
   React.useEffect(() => {
     const activeTab = tabRefs.current[activeSectionId];
@@ -139,8 +192,21 @@ export function TopSectionTabs({ sections }: TopSectionTabsProps) {
   }, [activeSectionId]);
 
   return (
-    <div className="sticky top-[5.5rem] z-30 -mx-1">
-      <div className="relative rounded-[1.4rem] border border-border/60 bg-background/78 px-2 py-2 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:px-3">
+    <div
+      ref={placeholderRef}
+      className="-mx-1"
+      style={{ height: "calc(var(--company-tabs-height, 56px) + 0.25rem)" }}
+    >
+      <div
+        ref={floatingRef}
+        className="fixed z-40"
+        style={{
+          top: "calc(var(--global-navbar-height, 84px) + 0.5rem)",
+          left: floatingFrame.left,
+          width: floatingFrame.width,
+        }}
+      >
+        <div className="relative rounded-[1.4rem] border border-border/60 bg-background/78 px-2 py-2 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:px-3">
         <div className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <nav className="flex min-w-full items-center gap-2 whitespace-nowrap pr-2">
             {sections.map((section) => {
@@ -174,6 +240,7 @@ export function TopSectionTabs({ sections }: TopSectionTabsProps) {
 
         <div className="pointer-events-none absolute inset-y-0 left-0 w-10 rounded-l-[1.4rem] bg-gradient-to-r from-background/95 via-background/55 to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-[1.4rem] bg-gradient-to-l from-background/95 via-background/55 to-transparent" />
+      </div>
       </div>
     </div>
   );
