@@ -2267,16 +2267,20 @@ export default async function Page({
     title: string,
     items: NormalizedIndustryTheme[],
     accentClass: string,
+    showTitle = true,
+    showAll = false,
   ) => {
     if (items.length === 0) return null;
-    const visibleItems = items.slice(0, 2);
-    const extraItems = items.slice(2);
+    const visibleItems = showAll ? items : items.slice(0, 2);
+    const extraItems = showAll ? [] : items.slice(2);
 
     return (
       <div className="min-w-0 rounded-xl border border-border/25 bg-background/55 p-3">
-        <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-          {title}
-        </p>
+        {showTitle ? (
+          <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+            {title}
+          </p>
+        ) : null}
         <div className="mt-2 space-y-2.5">
           <div className="space-y-2">
             {visibleItems.map((item, idx) => {
@@ -2302,11 +2306,6 @@ export default async function Page({
                   {item.companyMechanism && (
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
                       {item.companyMechanism}
-                    </p>
-                  )}
-                  {item.horizonBasis && (
-                    <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
-                      Horizon basis: {item.horizonBasis}
                     </p>
                   )}
                 </div>
@@ -2345,11 +2344,6 @@ export default async function Page({
                           {item.companyMechanism}
                         </p>
                       )}
-                      {item.horizonBasis && (
-                        <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
-                          Horizon basis: {item.horizonBasis}
-                        </p>
-                      )}
                     </div>
                   );
                 })}
@@ -2367,9 +2361,6 @@ export default async function Page({
 
     return (
       <div className={`${elevatedBlockClass} p-4 space-y-3`}>
-        <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-          Regulatory Changes
-        </p>
         <div className="space-y-3">
           {items.map((item, idx) => {
             const impactDirectionDisplay = getImpactDirectionDisplay(item.impactDirection);
@@ -2384,25 +2375,24 @@ export default async function Page({
                     <p className="text-[12px] font-semibold text-foreground leading-snug">
                       {item.change}
                     </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
                     {item.period && (
-                      <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      <span className="rounded-full border border-border/60 bg-muted/50 px-2 py-0.5 text-[10px] text-foreground">
                         {item.period}
-                      </p>
+                      </span>
+                    )}
+                    {impactDirectionDisplay && (
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${impactDirectionDisplay.className}`}
+                      >
+                        {impactDirectionDisplay.label}
+                      </span>
                     )}
                   </div>
-                  {impactDirectionDisplay && (
-                    <span
-                      className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${impactDirectionDisplay.className}`}
-                    >
-                      {impactDirectionDisplay.label}
-                    </span>
-                  )}
                 </div>
                 {item.whatChanged && (
                   <div className="space-y-0.5">
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                      What Changed
-                    </p>
                     <p className="text-[11px] text-foreground/90 leading-relaxed">
                       {item.whatChanged}
                     </p>
@@ -2411,7 +2401,7 @@ export default async function Page({
                 {item.companyImpactMechanism && (
                   <div className="space-y-0.5">
                     <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                      Company Impact Mechanism
+                      Why it matters
                     </p>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
                       {item.companyImpactMechanism}
@@ -3346,78 +3336,55 @@ export default async function Page({
               {(normalizedCompanyIndustryAnalysis.tailwinds.length > 0 ||
                 normalizedCompanyIndustryAnalysis.headwinds.length > 0 ||
                 normalizedCompanyIndustryAnalysis.regulatoryChanges.length > 0) && (
-                <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+                <div className="space-y-3">
                   {renderIndustryContextDrawerCard({
-                    title: "Regulations",
+                    title: "Industry Regulations",
                     count: normalizedCompanyIndustryAnalysis.regulatoryChanges.length,
-                    subtitle: normalizedCompanyIndustryAnalysis.regulatoryChanges[0]?.change
-                      ? `Leading change: ${normalizedCompanyIndustryAnalysis.regulatoryChanges[0].change}`
-                      : undefined,
-                    description:
-                      normalizedCompanyIndustryAnalysis.regulatoryChanges.length > 0
-                        ? "Policy and regulatory changes affecting economics, operating freedom, or market structure."
-                        : "No meaningful regulatory changes tracked yet for this company.",
-                    previewItems: normalizedCompanyIndustryAnalysis.regulatoryChanges.map(
-                      (item) => item.change,
-                    ),
-                    accentClass: "bg-amber-500/80",
-                    drawerTitle: "Regulatory Changes",
-                    drawerDescription:
-                      "Changes in policy or regulation that can alter industry economics or company positioning.",
-                    children: renderRegulatoryChanges(
+                    description: renderRegulatoryChanges(
                       normalizedCompanyIndustryAnalysis.regulatoryChanges,
                     ),
+                    accentClass: "bg-amber-500/80",
                     disabled:
                       normalizedCompanyIndustryAnalysis.regulatoryChanges.length === 0,
+                    inline: true,
+                    hideCount: true,
+                    hideAccentDot: true,
                   })}
-                  {renderIndustryContextDrawerCard({
-                    title: "Tailwinds",
-                    count: normalizedCompanyIndustryAnalysis.tailwinds.length,
-                    subtitle: normalizedCompanyIndustryAnalysis.tailwinds[0]?.theme
-                      ? `Leading theme: ${normalizedCompanyIndustryAnalysis.tailwinds[0].theme}`
-                      : undefined,
-                    description:
-                      normalizedCompanyIndustryAnalysis.tailwinds.length > 0
-                        ? "Positive industry forces currently supporting demand, pricing, share gains, or execution."
-                        : "No material tailwinds tracked yet for this company.",
-                    previewItems: normalizedCompanyIndustryAnalysis.tailwinds.map(
-                      (item) => item.theme,
-                    ),
-                    accentClass: "bg-emerald-500/80",
-                    drawerTitle: "Industry Tailwinds",
-                    drawerDescription:
-                      "Positive external forces supporting the company’s operating environment.",
-                    children: renderIndustryThemes(
-                      "Tailwinds",
-                      normalizedCompanyIndustryAnalysis.tailwinds,
-                      "border-l-emerald-500/70",
-                    ),
-                    disabled: normalizedCompanyIndustryAnalysis.tailwinds.length === 0,
-                  })}
-                  {renderIndustryContextDrawerCard({
-                    title: "Headwinds",
-                    count: normalizedCompanyIndustryAnalysis.headwinds.length,
-                    subtitle: normalizedCompanyIndustryAnalysis.headwinds[0]?.theme
-                      ? `Leading risk: ${normalizedCompanyIndustryAnalysis.headwinds[0].theme}`
-                      : undefined,
-                    description:
-                      normalizedCompanyIndustryAnalysis.headwinds.length > 0
-                        ? "Negative industry forces that could pressure growth, margins, demand, or competitiveness."
-                        : "No material headwinds tracked yet for this company.",
-                    previewItems: normalizedCompanyIndustryAnalysis.headwinds.map(
-                      (item) => item.theme,
-                    ),
-                    accentClass: "bg-rose-500/80",
-                    drawerTitle: "Industry Headwinds",
-                    drawerDescription:
-                      "External risks or adverse conditions that could weigh on business quality or future growth.",
-                    children: renderIndustryThemes(
-                      "Headwinds",
-                      normalizedCompanyIndustryAnalysis.headwinds,
-                      "border-l-red-500/70",
-                    ),
-                    disabled: normalizedCompanyIndustryAnalysis.headwinds.length === 0,
-                  })}
+                  {(normalizedCompanyIndustryAnalysis.tailwinds.length > 0 ||
+                    normalizedCompanyIndustryAnalysis.headwinds.length > 0) && (
+                    <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                      {renderIndustryContextDrawerCard({
+                        title: "Tailwinds",
+                        count: normalizedCompanyIndustryAnalysis.tailwinds.length,
+                        description: renderIndustryThemes(
+                          "Tailwinds",
+                          normalizedCompanyIndustryAnalysis.tailwinds,
+                          "border-l-emerald-500/70",
+                          false,
+                          true,
+                        ),
+                        accentClass: "bg-emerald-500/80",
+                        inline: true,
+                        hideCount: true,
+                        hideAccentDot: false,
+                      })}
+                      {renderIndustryContextDrawerCard({
+                        title: "Headwinds",
+                        count: normalizedCompanyIndustryAnalysis.headwinds.length,
+                        description: renderIndustryThemes(
+                          "Headwinds",
+                          normalizedCompanyIndustryAnalysis.headwinds,
+                          "border-l-red-500/70",
+                          false,
+                          true,
+                        ),
+                        accentClass: "bg-rose-500/80",
+                        inline: true,
+                        hideCount: true,
+                        hideAccentDot: false,
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
