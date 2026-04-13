@@ -3236,23 +3236,18 @@ export default async function Page({
                                         (layer, index) => (
                                           <React.Fragment key={`${layer.layerName}-${index}`}>
                                             <div className="rounded-xl border border-border/30 bg-background/68 px-3 py-2.5 lg:flex-1 lg:min-w-0">
-                                              <div className="flex items-center justify-between gap-2">
-                                                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground">
-                                                  Layer {index + 1}
+                                              <div className="flex items-start gap-2">
+                                                <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-muted/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground">
+                                                  {index + 1}
+                                                </span>
+                                                <p className="text-[12px] font-semibold leading-snug text-foreground">
+                                                  {layer.layerName}
                                                 </p>
                                               </div>
-                                              <p className="mt-1 text-[12px] font-semibold leading-snug text-foreground">
-                                                {layer.layerName}
-                                              </p>
-                                              {layer.connectionToCompany && (
-                                                <details className="group mt-1.5">
-                                                  <summary className="cursor-pointer list-none text-[10px] font-medium text-foreground hover:text-foreground/90 [&::-webkit-details-marker]:hidden">
-                                                    Show connection
-                                                  </summary>
-                                                  <p className="mt-1 text-[10px] leading-relaxed text-foreground/90">
-                                                    {layer.connectionToCompany}
-                                                  </p>
-                                                </details>
+                                              {layer.layerDescription && (
+                                                <p className="mt-1.5 text-[10px] leading-relaxed text-foreground/90">
+                                                  {layer.layerDescription}
+                                                </p>
                                               )}
                                             </div>
                                             {index <
@@ -3319,17 +3314,17 @@ export default async function Page({
                                                 </p>
                                                 {category.description && (
                                                   <p
-                                                    className={`mt-1 line-clamp-2 leading-relaxed text-[9px] ${
+                                                    className={`mt-1 leading-relaxed text-[9px] ${
                                                       category.isCompanyPosition
                                                         ? "text-emerald-50/80"
                                                         : "text-foreground/80"
                                                     }`}
                                                   >
-                                                      {category.description}
-                                                    </p>
-                                                  )}
-                                                </div>
-                                              ))}
+                                                    {category.description}
+                                                  </p>
+                                                )}
+                                              </div>
+                                            ))}
                                           </div>
                                         </div>
                                       ))}
