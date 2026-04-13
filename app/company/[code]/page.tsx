@@ -67,8 +67,6 @@ type RankInfo = {
   growth?: { rank: number; total: number; percentile: number } | null;
 };
 
-type SectorRankInfo = { rank: number | null; total: number } | null;
-
 const computeAvgScore = (latestQuarterScore: number | null, growthScore: number | null) => {
   if (latestQuarterScore == null || growthScore == null) return null;
   return (latestQuarterScore + growthScore) / 2;
@@ -950,99 +948,6 @@ export default async function Page({
   const industryPositioning = normalizedCompanyIndustryAnalysis?.industryPositioning;
   const businessSummaryLine =
     aboutHeading ?? normalizedBusinessSnapshot?.businessSummaryShort ?? null;
-  const overviewSectionPreviews = [
-    {
-      title: "Industry Context",
-      href: "#industry-context",
-      summary: oneLine(
-        industryPositioning?.whereThisCompanyFits ??
-          industryPositioning?.industryEconomicsForCompany ??
-          industryPositioning?.customerNeed,
-        `${companyLabel}’s operating backdrop and where it fits in the value chain.`,
-      ),
-      badge:
-        normalizedCompanyIndustryAnalysis?.subSector ??
-        (normalizedCompanyIndustryAnalysis ? "Live" : "Soon"),
-      tone: "sky" as const,
-    },
-    {
-      title: "Business Snapshot",
-      href: "#business-overview",
-      summary: oneLine(
-        businessSummaryLine ??
-          aboutSupportingText ??
-          normalizedBusinessSnapshot?.mixShiftSummary,
-        `How ${companyLabel} makes money and where the mix is shifting.`,
-      ),
-      badge: hasBusinessSnapshotContent ? "Live" : "Soon",
-      tone: "emerald" as const,
-    },
-    {
-      title: "Key Variables",
-      href: "#key-variables",
-      summary: oneLine(
-        firstVariableName
-          ? `Top tracked variable: ${firstVariableName}`
-          : null,
-        `${companyLabel}’s non-financial drivers that explain quality and direction.`,
-      ),
-      badge: normalizedKeyVariablesSnapshot
-        ? `${normalizedKeyVariablesSnapshot.deepTreatment.length} vars`
-        : "Soon",
-      tone: "violet" as const,
-    },
-    {
-      title: "Quarterly Score",
-      href: "#sentiment-score",
-      summary: oneLine(
-        latestQuarterData?.summary?.[0]
-          ? `${latestQuarterData.summary[0].topic}: ${
-              latestQuarterData.summary[0].detail || latestQuarterData.summary[0].text
-            }`
-          : null,
-        `The latest quarter signal for ${companyLabel}.`,
-      ),
-      score: latestQuarterData?.score ?? null,
-      badge: latestQuarterData ? null : "Soon",
-      tone: "emerald" as const,
-    },
-    {
-      title: "Growth Prospects",
-      href: "#future-growth",
-      summary: oneLine(
-        normalizedGrowthOutlook?.baseGrowthPct
-          ? `Base case growth: ${normalizedGrowthOutlook.baseGrowthPct}`
-          : firstGrowthCatalyst ??
-          normalizedGrowthOutlook?.summaryBullets[0] ??
-          normalizedGrowthOutlook?.visibilityRationale,
-        `${companyLabel}’s next catalysts and scenario path.`,
-      ),
-      score: growthScore,
-      badge: growthScore == null ? "Soon" : null,
-      tone: "sky" as const,
-    },
-    {
-      title: "Guidance Tracker",
-      href: "#guidance-history",
-      summary: oneLine(
-        normalizedGuidanceSnapshot?.currentYearRevenueGuidance?.officialCurrentGuidanceText
-          ? normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidancePercent != null
-            ? `${normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidanceText} (${normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidancePercent}%)`
-            : normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidanceText
-          : firstGuidanceItem?.guidanceText ??
-          firstGuidanceItem?.statusReason ??
-          firstGuidanceItem?.latestView,
-        `How ${companyLabel}’s management guidance is moving over time.`,
-      ),
-      badge:
-        guidanceItems.length > 0
-          ? `${guidanceItems.length} items`
-          : normalizedGuidanceSnapshot
-            ? "Live"
-            : "Soon",
-      tone: "amber" as const,
-    },
-  ];
   const elevatedBlockClass =
     "rounded-xl border border-border/35 bg-background/75 shadow-md shadow-black/20";
   const elevatedMutedBlockClass =
@@ -2686,7 +2591,6 @@ export default async function Page({
   };
 
   let rankInfo: RankInfo = { quarter: null, growth: null };
-  let sectorRankInfo: SectorRankInfo = null;
   let latestQuarterRowsGlobal: Array<{ company_code?: unknown; score?: unknown }> = [];
 
   const { data: latestQuarterKey } = await supabase
@@ -2785,70 +2689,112 @@ export default async function Page({
     };
   }
 
-  if (companySector) {
-    const { data: sectorPeerRows } = await supabase
-      .from("company")
-      .select("code, name")
-      .eq("sector", companySector);
-
-    const sectorPeers = (sectorPeerRows ?? []) as Array<{ code?: string | null; name?: string | null }>;
-    const sectorTotal = sectorPeers.length;
-
-    if (sectorTotal > 0) {
-      const latestQuarterByCode = new Map<string, number | null>();
-      latestQuarterRowsGlobal.forEach((row) => {
-        const companyCode = String(row.company_code ?? "").toUpperCase();
-        if (!companyCode || latestQuarterByCode.has(companyCode)) return;
-        latestQuarterByCode.set(companyCode, toNumeric(row.score));
-      });
-
-      const sectorPeerAvgRows = sectorPeers.map((peer) => {
-        const peerCode = String(peer.code ?? "").toUpperCase();
-        const peerName = String(peer.name ?? "").toUpperCase();
-        const latestQuarterScore = latestQuarterByCode.get(peerCode) ?? null;
-        const growthScore =
-          latestGrowthByCompany.get(peerCode)?.growthScore ??
-          latestGrowthByCompany.get(peerName)?.growthScore ??
-          null;
-
-        return {
-          code: peerCode,
-          name: String(peer.name ?? peer.code ?? "").trim() || peerCode,
-          latestQuarterScore,
-          growthScore,
-          avgScore: computeAvgScore(latestQuarterScore, growthScore),
-        };
-      });
-
-      const rankedSectorPeers = assignCompetitionRanks(
-        sectorPeerAvgRows
-          .filter((row) => row.avgScore != null)
-          .sort((a, b) => {
-            const avgCompare = compareNullableNumbers(a.avgScore, b.avgScore, "desc");
-            if (avgCompare !== 0) return avgCompare;
-            const latestCompare = compareNullableNumbers(
-              a.latestQuarterScore,
-              b.latestQuarterScore,
-              "desc",
-            );
-            if (latestCompare !== 0) return latestCompare;
-            const growthCompare = compareNullableNumbers(a.growthScore, b.growthScore, "desc");
-            if (growthCompare !== 0) return growthCompare;
-            return a.name.localeCompare(b.name);
-          }),
-        (row) => row.avgScore,
-      );
-
-      const sectorMatchKeys = [code.toUpperCase(), (companyName ?? "").toUpperCase()].filter(Boolean);
-      const sectorRank =
-        rankedSectorPeers.find((row) => sectorMatchKeys.includes(row.code))?.leaderboardRank ?? null;
-
-      sectorRankInfo = {
-        rank: sectorRank,
-        total: sectorTotal,
-      };
-    }
-  }
+  const overviewSectionPreviews = [
+    {
+      title: "Industry Context",
+      href: "#industry-context",
+      summary: oneLine(
+        [
+          companySector ? `Sector: ${companySector}` : null,
+          companySubSector ? `Sub-sector: ${companySubSector}` : null,
+          industryPositioning?.whereThisCompanyFits ??
+            industryPositioning?.industryEconomicsForCompany ??
+            industryPositioning?.customerNeed,
+        ]
+          .filter((value): value is string => Boolean(value))
+          .join(" · "),
+        `${companyLabel}’s operating backdrop and where it fits in the value chain.`,
+      ),
+      badge: normalizedCompanyIndustryAnalysis ? "Live" : "Soon",
+      tone: "sky" as const,
+    },
+    {
+      title: "Business Snapshot",
+      href: "#business-overview",
+      summary: oneLine(
+        businessSummaryLine ??
+          aboutSupportingText ??
+          normalizedBusinessSnapshot?.mixShiftSummary,
+        `How ${companyLabel} makes money and where the mix is shifting.`,
+      ),
+      metaBadge: normalizedMoatAnalysis?.moatRatingLabel
+        ? `Moat: ${normalizedMoatAnalysis.moatRatingLabel}`
+        : null,
+      badge: hasBusinessSnapshotContent ? "Live" : "Soon",
+      tone: "emerald" as const,
+    },
+    {
+      title: "Key Variables",
+      href: "#key-variables",
+      summary: oneLine(
+        firstVariableName
+          ? `Top tracked variable: ${firstVariableName}`
+          : null,
+        `${companyLabel}’s non-financial drivers that explain quality and direction.`,
+      ),
+      badge: normalizedKeyVariablesSnapshot
+        ? `${normalizedKeyVariablesSnapshot.deepTreatment.length} vars`
+        : "Soon",
+      tone: "violet" as const,
+    },
+    {
+      title: "Quarterly Score",
+      href: "#sentiment-score",
+      summary: oneLine(
+        latestQuarterData?.summary?.[0]
+          ? `${latestQuarterData.summary[0].topic}: ${
+              latestQuarterData.summary[0].detail || latestQuarterData.summary[0].text
+            }`
+          : null,
+        `The latest quarter signal for ${companyLabel}.`,
+      ),
+      score: latestQuarterData?.score ?? null,
+      rankLabel: rankInfo.quarter
+        ? `Qtr Rank ${rankInfo.quarter.rank}/${rankInfo.quarter.total} · Top ${Math.round(rankInfo.quarter.percentile)}%`
+        : null,
+      badge: latestQuarterData ? null : "Soon",
+      tone: "emerald" as const,
+    },
+    {
+      title: "Growth Prospects",
+      href: "#future-growth",
+      summary: oneLine(
+        normalizedGrowthOutlook?.baseGrowthPct
+          ? `Base case growth: ${normalizedGrowthOutlook.baseGrowthPct}`
+          : firstGrowthCatalyst ??
+            normalizedGrowthOutlook?.summaryBullets[0] ??
+            normalizedGrowthOutlook?.visibilityRationale,
+        `${companyLabel}’s next catalysts and scenario path.`,
+      ),
+      score: growthScore,
+      rankLabel: rankInfo.growth
+        ? `Growth Rank ${rankInfo.growth.rank}/${rankInfo.growth.total} · Top ${Math.round(rankInfo.growth.percentile)}%`
+        : null,
+      badge: growthScore == null ? "Soon" : null,
+      tone: "sky" as const,
+    },
+    {
+      title: "Guidance Tracker",
+      href: "#guidance-history",
+      summary: oneLine(
+        normalizedGuidanceSnapshot?.currentYearRevenueGuidance?.officialCurrentGuidanceText
+          ? normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidancePercent != null
+            ? `${normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidanceText} (${normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidancePercent}%)`
+            : normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidanceText
+          : firstGuidanceItem?.guidanceText ??
+            firstGuidanceItem?.statusReason ??
+            firstGuidanceItem?.latestView,
+        `How ${companyLabel}’s management guidance is moving over time.`,
+      ),
+      badge:
+        guidanceItems.length > 0
+          ? `${guidanceItems.length} items`
+          : normalizedGuidanceSnapshot
+            ? "Live"
+            : "Soon",
+      tone: "amber" as const,
+    },
+  ];
 
   const getScenarioTone = (scenarioKey: "base" | "upside" | "downside") =>
     scenarioKey === "base"
@@ -3137,18 +3083,6 @@ export default async function Page({
                 country: companyRow?.country ?? undefined,
                 isNew: companyIsNew,
               }}
-              rankInfo={rankInfo}
-              sectorRankInfo={sectorRankInfo}
-              moatInfo={
-                normalizedMoatAnalysis
-                  ? {
-                      moatRating: normalizedMoatAnalysis.moatRating,
-                      moatRatingLabel: normalizedMoatAnalysis.moatRatingLabel,
-                      trajectory: normalizedMoatAnalysis.trajectory,
-                      trajectoryDirection: normalizedMoatAnalysis.trajectoryDirection,
-                    }
-                  : null
-              }
               sectionPreviews={overviewSectionPreviews}
               watchlist={{
                 companyCode: code,
