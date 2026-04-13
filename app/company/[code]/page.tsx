@@ -1010,18 +1010,19 @@ export default async function Page({
     entries,
     className,
     useGrid = false,
+    hideTitle = false,
   }: {
     title: string;
     entries: NormalizedRevenueBreakdownItem[];
     className?: string;
     useGrid?: boolean;
+    hideTitle?: boolean;
   }) => {
     if (entries.length === 0) return null;
     const sortedEntries = sortRevenueEntries(entries);
     const visibleLimit = useGrid ? 4 : 2;
     const visibleEntries = sortedEntries.slice(0, visibleLimit);
     const extraEntries = sortedEntries.slice(visibleLimit);
-    const topEntry = sortedEntries[0] ?? null;
 
     const renderRevenueEntry = (
       entry: NormalizedRevenueBreakdownItem,
@@ -1180,13 +1181,15 @@ export default async function Page({
 
     return (
       <div className={`${snapshotSubsectionClass} min-w-0 p-3 ${className ?? ""}`}>
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-              {title}
-            </p>
+        {!hideTitle ? (
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="space-y-1">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+                {title}
+              </p>
+            </div>
           </div>
-        </div>
+        ) : null}
         <div className={useGrid ? "mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2" : "mt-1.5 space-y-0"}>
           {visibleEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "visible"))}
         </div>
@@ -1224,6 +1227,7 @@ export default async function Page({
           entries: revenueBreakdown?.bySegment ?? [],
           className: "",
           useGrid: true,
+          hideTitle: true,
         })}
       </div>
     );
@@ -3427,12 +3431,12 @@ export default async function Page({
                             About
                           </p>
                           {aboutHeading && (
-                            <p className="max-w-4xl text-[17px] sm:text-[19px] font-semibold text-foreground leading-snug">
+                            <p className="text-[17px] sm:text-[19px] font-semibold text-foreground leading-snug">
                               {aboutHeading}
                             </p>
                           )}
                           {aboutSupportingText && (
-                            <p className="max-w-4xl text-[13px] text-muted-foreground leading-relaxed">
+                            <p className="text-[13px] text-muted-foreground leading-relaxed">
                               {aboutSupportingText}
                             </p>
                           )}
