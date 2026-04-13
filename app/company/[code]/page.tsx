@@ -2461,7 +2461,7 @@ export default async function Page({
     const cardBody = (
       <div
         className={`group flex h-full min-h-[9.5rem] w-full flex-col justify-between rounded-2xl border border-border/30 bg-background/70 p-3.5 text-left shadow-md shadow-black/10 transition-colors ${
-          disabled || inline ? "cursor-default opacity-60" : "hover:bg-accent/45"
+          disabled ? "cursor-default opacity-60" : inline ? "cursor-default" : "hover:bg-accent/45"
         }`}
       >
         <div className="space-y-2.5">
@@ -2490,7 +2490,13 @@ export default async function Page({
               {subtitle}
             </p>
           ) : null}
-          <div className="text-[11px] leading-snug text-muted-foreground">{description}</div>
+          <div
+            className={`text-[11px] leading-snug ${
+              inline ? "text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            {description}
+          </div>
           {previewItems && previewItems.length > 0 ? (
             <div className="flex flex-wrap items-center gap-1.5">
               {previewItems.slice(0, 3).map((item, index) => (
@@ -3231,22 +3237,19 @@ export default async function Page({
                                           <React.Fragment key={`${layer.layerName}-${index}`}>
                                             <div className="rounded-xl border border-border/30 bg-background/68 px-3 py-2.5 lg:flex-1 lg:min-w-0">
                                               <div className="flex items-center justify-between gap-2">
-                                                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
+                                                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground">
                                                   Layer {index + 1}
                                                 </p>
-                                                <span className="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/70 text-[9px] text-foreground/70">
-                                                  {index + 1}
-                                                </span>
                                               </div>
                                               <p className="mt-1 text-[12px] font-semibold leading-snug text-foreground">
                                                 {layer.layerName}
                                               </p>
                                               {layer.connectionToCompany && (
                                                 <details className="group mt-1.5">
-                                                  <summary className="cursor-pointer list-none text-[10px] font-medium text-foreground/70 hover:text-foreground [&::-webkit-details-marker]:hidden">
+                                                  <summary className="cursor-pointer list-none text-[10px] font-medium text-foreground hover:text-foreground/90 [&::-webkit-details-marker]:hidden">
                                                     Show connection
                                                   </summary>
-                                                  <p className="mt-1 text-[10px] leading-relaxed text-foreground/80">
+                                                  <p className="mt-1 text-[10px] leading-relaxed text-foreground/90">
                                                     {layer.connectionToCompany}
                                                   </p>
                                                 </details>
@@ -3256,7 +3259,7 @@ export default async function Page({
                                             (normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length ??
                                               0) -
                                               1 ? (
-                                              <div className="hidden lg:flex items-center justify-center px-0.5 text-foreground/40">
+                                              <div className="hidden lg:flex items-center justify-center px-0.5 text-foreground/55">
                                                 <span className="text-sm leading-none">→</span>
                                               </div>
                                             ) : null}
@@ -3294,33 +3297,39 @@ export default async function Page({
                                 ? (
                                     <div className="space-y-2">
                                       {classificationMap.dimensions.map((dimension, dimensionIndex) => (
-                                        <div
-                                          key={dimension.dimensionName}
-                                          className="rounded-xl border border-border/40 bg-background/75 px-3 py-2"
-                                        >
-                                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
-                                            {dimensionIndex + 1}. Based on {dimension.dimensionName}
-                                          </p>
-                                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                          <div
+                                            key={dimension.dimensionName}
+                                            className="rounded-xl border border-border/40 bg-background/75 px-3 py-2 text-foreground"
+                                          >
+                                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground">
+                                              {dimensionIndex + 1}. Based on {dimension.dimensionName}
+                                            </p>
+                                          <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                                             {dimension.categories.map((category) => (
                                               <div
                                                 key={`${dimension.dimensionName}-${category.category}`}
-                                                className={`min-w-[10rem] flex-1 rounded-lg border px-2.5 py-2 text-[10px] ${
+                                                className={`min-h-full rounded-lg border px-2 py-1.5 text-[10px] ${
                                                   category.isCompanyPosition
-                                                    ? "border-emerald-200 bg-emerald-100/90 text-emerald-900 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-100"
-                                                    : "border-border/60 bg-muted/45 text-foreground/75"
+                                                    ? "border-emerald-200/35 bg-emerald-950/30 text-emerald-50 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-50"
+                                                    : "border-border/60 bg-muted/35 text-foreground"
                                                 }`}
                                               >
-                                                <p className="font-semibold leading-snug">
-                                                  {category.isCompanyPosition ? "Company position" : "Other category"}: {category.category}
+                                                <p className="font-semibold leading-snug text-inherit">
+                                                  {category.category}
                                                 </p>
                                                 {category.description && (
-                                                  <p className="mt-1 leading-relaxed text-[9px] text-foreground/75">
-                                                    {category.description}
-                                                  </p>
-                                                )}
-                                              </div>
-                                            ))}
+                                                  <p
+                                                    className={`mt-1 line-clamp-2 leading-relaxed text-[9px] ${
+                                                      category.isCompanyPosition
+                                                        ? "text-emerald-50/80"
+                                                        : "text-foreground/80"
+                                                    }`}
+                                                  >
+                                                      {category.description}
+                                                    </p>
+                                                  )}
+                                                </div>
+                                              ))}
                                           </div>
                                         </div>
                                       ))}
