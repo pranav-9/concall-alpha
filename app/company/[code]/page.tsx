@@ -2621,11 +2621,8 @@ export default async function Page({
                 className="rounded-xl border border-border/20 bg-background/45 px-4 py-3 border-l-2 border-l-violet-400/70"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                    Dimension {index + 1}
-                  </span>
                   <p className="text-[12px] font-semibold leading-snug text-foreground">
-                    {dimension.dimensionName}
+                    {index + 1}. Based on {dimension.dimensionName}
                   </p>
                 </div>
 
@@ -3366,20 +3363,16 @@ export default async function Page({
                               .length === 1
                               ? "dimension"
                               : "dimensions",
-                          subtitle:
-                            normalizedCompanyIndustryAnalysis.classificationMap
-                              ? `${(companyRow?.name ?? code).trim()} is positioned as an integrated OEM partner across product application and service model dimensions.`
-                              : undefined,
                           description:
                             normalizedCompanyIndustryAnalysis.classificationMap
                               ? (
                                   <div className="space-y-2">
-                                    {normalizedCompanyIndustryAnalysis.classificationMap.dimensions
-                                      .slice(0, 2)
-                                      .map((dimension) => {
-                                        const companyCategories = dimension.categories.filter(
-                                          (category) => category.isCompanyPosition,
-                                        );
+                                    {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.map(
+                                      (dimension) => {
+                                        const dimensionNumber =
+                                          normalizedCompanyIndustryAnalysis.classificationMap.dimensions.findIndex(
+                                            (item) => item.dimensionName === dimension.dimensionName,
+                                          ) + 1;
 
                                         return (
                                           <div
@@ -3387,44 +3380,35 @@ export default async function Page({
                                             className="rounded-xl border border-border/40 bg-background/75 px-3 py-2"
                                           >
                                             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
-                                              {dimension.dimensionName}
+                                              {dimensionNumber}. Based on {dimension.dimensionName}
                                             </p>
-                                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                              {companyCategories.length > 0 ? (
-                                                companyCategories.map((category) => (
-                                                  <span
-                                                    key={`${dimension.dimensionName}-${category.category}`}
-                                                    className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
-                                                  >
-                                                    {category.category}
-                                                  </span>
-                                                ))
-                                              ) : (
-                                                  <span className="text-[10px] text-foreground/70">
-                                                  No tagged company position
+                                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                              {dimension.categories.map((category) => (
+                                                <span
+                                                  key={`${dimension.dimensionName}-${category.category}`}
+                                                  className={`rounded-full border px-2 py-0.5 text-[10px] ${
+                                                    category.isCompanyPosition
+                                                      ? "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
+                                                      : "border-border/60 bg-muted/60 text-foreground/70"
+                                                  }`}
+                                                >
+                                                  {category.isCompanyPosition ? "✓ " : "• "}
+                                                  {category.category}
                                                 </span>
-                                              )}
+                                              ))}
                                             </div>
                                           </div>
                                         );
-                                      })}
-                                    {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length > 2 && (
-                                      <span className="inline-flex rounded-full border border-border/60 bg-muted/70 px-2 py-0.5 text-[10px] text-foreground/70">
-                                        +
-                                        {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length - 2}{" "}
-                                        more dimensions
-                                      </span>
+                                      },
                                     )}
                                   </div>
                                 )
                               : "No player map tracked yet for this company.",
                           accentClass: "bg-violet-500/80",
-                          drawerTitle: "Types of Players",
-                          drawerDescription:
-                            "Structured map of industry player types, categories, and company position.",
-                          children: renderClassificationMapContent(),
                           disabled: !normalizedCompanyIndustryAnalysis.classificationMap,
-                          hideDrawerHeader: true,
+                          inline: true,
+                          hideCount: true,
+                          hideAccentDot: true,
                         })}
                       </div>
                     </>
