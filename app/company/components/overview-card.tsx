@@ -11,9 +11,8 @@ type OverviewSectionPreview = {
   href: string;
   summary: string;
   score?: number | null;
-  rankLabel?: string | null;
-  badge?: string | null;
   metaBadge?: string | null;
+  badge?: string | null;
   tone?: "emerald" | "sky" | "amber" | "violet" | "rose" | "slate";
 };
 
@@ -141,11 +140,6 @@ export function OverviewCard({
                           <p className="text-[11px] leading-snug text-muted-foreground">
                             {preview.summary}
                           </p>
-                          {preview.metaBadge ? (
-                            <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
-                              {preview.metaBadge}
-                            </span>
-                          ) : null}
                         </div>
                         <div className="shrink-0 flex flex-col items-end gap-2">
                           {typeof preview.score === "number" ? (
@@ -155,9 +149,9 @@ export function OverviewCard({
                               {preview.badge}
                             </span>
                           ) : null}
-                          {preview.rankLabel ? (
+                          {preview.metaBadge ? (
                             <span className="inline-flex max-w-full items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
-                              {preview.rankLabel}
+                              {preview.metaBadge}
                             </span>
                           ) : null}
                         </div>

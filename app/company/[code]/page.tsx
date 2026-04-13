@@ -67,6 +67,8 @@ type RankInfo = {
   growth?: { rank: number; total: number; percentile: number } | null;
 };
 
+type SectorRankInfo = { rank: number | null; total: number } | null;
+
 const computeAvgScore = (latestQuarterScore: number | null, growthScore: number | null) => {
   if (latestQuarterScore == null || growthScore == null) return null;
   return (latestQuarterScore + growthScore) / 2;
@@ -2591,6 +2593,7 @@ export default async function Page({
   };
 
   let rankInfo: RankInfo = { quarter: null, growth: null };
+  let sectorRankInfo: SectorRankInfo = null;
   let latestQuarterRowsGlobal: Array<{ company_code?: unknown; score?: unknown }> = [];
 
   const { data: latestQuarterKey } = await supabase
@@ -2689,6 +2692,71 @@ export default async function Page({
     };
   }
 
+  if (companySector) {
+    const { data: sectorPeerRows } = await supabase
+      .from("company")
+      .select("code, name")
+      .eq("sector", companySector);
+
+    const sectorPeers = (sectorPeerRows ?? []) as Array<{ code?: string | null; name?: string | null }>;
+    const sectorTotal = sectorPeers.length;
+
+    if (sectorTotal > 0) {
+      const latestQuarterByCode = new Map<string, number | null>();
+      latestQuarterRowsGlobal.forEach((row) => {
+        const companyCode = String(row.company_code ?? "").toUpperCase();
+        if (!companyCode || latestQuarterByCode.has(companyCode)) return;
+        latestQuarterByCode.set(companyCode, toNumeric(row.score));
+      });
+
+      const sectorPeerAvgRows = sectorPeers.map((peer) => {
+        const peerCode = String(peer.code ?? "").toUpperCase();
+        const peerName = String(peer.name ?? "").toUpperCase();
+        const latestQuarterScore = latestQuarterByCode.get(peerCode) ?? null;
+        const growthScore =
+          latestGrowthByCompany.get(peerCode)?.growthScore ??
+          latestGrowthByCompany.get(peerName)?.growthScore ??
+          null;
+
+        return {
+          code: peerCode,
+          name: String(peer.name ?? peer.code ?? "").trim() || peerCode,
+          latestQuarterScore,
+          growthScore,
+          avgScore: computeAvgScore(latestQuarterScore, growthScore),
+        };
+      });
+
+      const rankedSectorPeers = assignCompetitionRanks(
+        sectorPeerAvgRows
+          .filter((row) => row.avgScore != null)
+          .sort((a, b) => {
+            const avgCompare = compareNullableNumbers(a.avgScore, b.avgScore, "desc");
+            if (avgCompare !== 0) return avgCompare;
+            const latestCompare = compareNullableNumbers(
+              a.latestQuarterScore,
+              b.latestQuarterScore,
+              "desc",
+            );
+            if (latestCompare !== 0) return latestCompare;
+            const growthCompare = compareNullableNumbers(a.growthScore, b.growthScore, "desc");
+            if (growthCompare !== 0) return growthCompare;
+            return a.name.localeCompare(b.name);
+          }),
+        (row) => row.avgScore,
+      );
+
+      const sectorMatchKeys = [code.toUpperCase(), (companyName ?? "").toUpperCase()].filter(Boolean);
+      const sectorRank =
+        rankedSectorPeers.find((row) => sectorMatchKeys.includes(row.code))?.leaderboardRank ?? null;
+
+      sectorRankInfo = {
+        rank: sectorRank,
+        total: sectorTotal,
+      };
+    }
+  }
+
   const overviewSectionPreviews = [
     {
       title: "Industry Context",
@@ -2699,12 +2767,18 @@ export default async function Page({
           companySubSector ? `Sub-sector: ${companySubSector}` : null,
           industryPositioning?.whereThisCompanyFits ??
             industryPositioning?.industryEconomicsForCompany ??
-            industryPositioning?.customerNeed,
+          industryPositioning?.customerNeed,
         ]
           .filter((value): value is string => Boolean(value))
           .join(" · "),
         `${companyLabel}’s operating backdrop and where it fits in the value chain.`,
       ),
+      metaBadge:
+        sectorRankInfo?.rank != null
+          ? `Sector #${sectorRankInfo.rank}/${sectorRankInfo.total}`
+          : normalizedCompanyIndustryAnalysis
+            ? "Live"
+            : "Soon",
       badge: normalizedCompanyIndustryAnalysis ? "Live" : "Soon",
       tone: "sky" as const,
     },
@@ -2749,7 +2823,7 @@ export default async function Page({
         `The latest quarter signal for ${companyLabel}.`,
       ),
       score: latestQuarterData?.score ?? null,
-      rankLabel: rankInfo.quarter
+      metaBadge: rankInfo.quarter
         ? `Qtr Rank ${rankInfo.quarter.rank}/${rankInfo.quarter.total} · Top ${Math.round(rankInfo.quarter.percentile)}%`
         : null,
       badge: latestQuarterData ? null : "Soon",
@@ -2767,7 +2841,7 @@ export default async function Page({
         `${companyLabel}’s next catalysts and scenario path.`,
       ),
       score: growthScore,
-      rankLabel: rankInfo.growth
+      metaBadge: rankInfo.growth
         ? `Growth Rank ${rankInfo.growth.rank}/${rankInfo.growth.total} · Top ${Math.round(rankInfo.growth.percentile)}%`
         : null,
       badge: growthScore == null ? "Soon" : null,
