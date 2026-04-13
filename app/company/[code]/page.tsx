@@ -1278,15 +1278,7 @@ export default async function Page({
             <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
               {title}
             </p>
-            <p className="text-[11px] leading-snug text-muted-foreground">
-              Revenue mix by business line
-            </p>
           </div>
-          {topEntry && (
-            <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-100 px-2.5 py-1 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
-              Top: {topEntry.name}
-            </span>
-          )}
         </div>
         <div className={useGrid ? "mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2" : "mt-1.5 space-y-0"}>
           {visibleEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "visible"))}
