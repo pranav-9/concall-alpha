@@ -2429,6 +2429,7 @@ export default async function Page({
     title,
     count,
     countLabel = "items",
+    subtitle,
     description,
     previewItems,
     accentClass,
@@ -2437,23 +2438,30 @@ export default async function Page({
     children,
     disabled = false,
     hideDrawerHeader = false,
+    inline = false,
+    hideCount = false,
+    hideAccentDot = false,
   }: {
     title: string;
     count: number;
     countLabel?: string;
+    subtitle?: string;
     description: React.ReactNode;
     previewItems?: string[];
     accentClass: string;
-    drawerTitle: string;
-    drawerDescription: string;
+    drawerTitle?: string;
+    drawerDescription?: string;
     children: React.ReactNode;
     disabled?: boolean;
     hideDrawerHeader?: boolean;
+    inline?: boolean;
+    hideCount?: boolean;
+    hideAccentDot?: boolean;
   }) => {
     const cardBody = (
       <div
         className={`group flex h-full min-h-[9.5rem] w-full flex-col justify-between rounded-2xl border border-border/30 bg-background/70 p-3.5 text-left shadow-md shadow-black/10 transition-colors ${
-          disabled ? "cursor-default opacity-60" : "hover:bg-accent/45"
+          disabled || inline ? "cursor-default opacity-60" : "hover:bg-accent/45"
         }`}
       >
         <div className="space-y-2.5">
@@ -2462,17 +2470,26 @@ export default async function Page({
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 {title}
               </p>
-              <p className="text-sm font-semibold leading-snug text-foreground">
-                {count} {countLabel}
-              </p>
+              {!hideCount ? (
+                <p className="text-sm font-semibold leading-snug text-foreground">
+                  {count} {countLabel}
+                </p>
+              ) : null}
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2">
-              <span className={`h-2.5 w-2.5 rounded-full ${accentClass}`} />
-              <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-foreground">
-                {disabled ? "Unavailable" : "Open details"}
-              </span>
+              {!hideAccentDot ? <span className={`h-2.5 w-2.5 rounded-full ${accentClass}`} /> : null}
+              {!inline ? (
+                <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-foreground">
+                  {disabled ? "Unavailable" : "Open details"}
+                </span>
+              ) : null}
             </div>
           </div>
+          {subtitle ? (
+            <p className="text-[11px] font-medium leading-snug text-foreground/90">
+              {subtitle}
+            </p>
+          ) : null}
           <div className="text-[11px] leading-snug text-muted-foreground">{description}</div>
           {previewItems && previewItems.length > 0 ? (
             <div className="flex flex-wrap items-center gap-1.5">
@@ -2495,7 +2512,7 @@ export default async function Page({
       </div>
     );
 
-    if (disabled) {
+    if (disabled || inline) {
       return cardBody;
     }
 
@@ -2589,7 +2606,7 @@ export default async function Page({
       <div className="space-y-3">
         <div className="space-y-1">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
-            Classification Map
+            Types of Players
           </p>
           <p className="text-[12px] leading-relaxed text-muted-foreground">
             The main lenses used to understand how this industry segments itself and where the company participates.
@@ -3268,7 +3285,7 @@ export default async function Page({
                       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Industry overview
                       </p>
-                      <p className="max-w-4xl text-[15px] sm:text-[16px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
+                      <p className="max-w-3xl text-[14px] sm:text-[15px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
                         {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed}
                       </p>
                     </div>
@@ -3279,7 +3296,7 @@ export default async function Page({
                     <>
                       <div className="border-t border-border/30" />
 
-                      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-3">
                         {renderIndustryContextDrawerCard({
                           title: "Value Chain Map",
                           count:
@@ -3290,50 +3307,57 @@ export default async function Page({
                               : "layers",
                           description:
                             normalizedCompanyIndustryAnalysis.valueChainMap
-                              ? (
-                                  <div className="space-y-1.5">
-                                    {normalizedCompanyIndustryAnalysis.valueChainMap.layers
-                                      .slice(0, 3)
-                                      .map((layer, index, visibleLayers) => (
-                                        <div key={layer.layerName} className="space-y-1">
-                                          <div className="flex items-center gap-2">
-                                            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/80 text-[10px] font-medium text-muted-foreground">
-                                              {index + 1}
-                                            </span>
-                                            <span className="text-[11px] font-semibold text-foreground">
-                                              {layer.layerName}
-                                            </span>
-                                          </div>
-                                          {index < visibleLayers.length - 1 ? (
-                                            <div className="pl-2.5 text-[11px] leading-none text-foreground/60">
-                                              |
+                                ? (
+                                  <div className="space-y-3">
+                                      <div className="grid gap-3 lg:flex lg:items-stretch lg:gap-1.5">
+                                      {normalizedCompanyIndustryAnalysis.valueChainMap.layers.map(
+                                        (layer, index) => (
+                                          <React.Fragment key={`${layer.layerName}-${index}`}>
+                                            <div className="rounded-xl border border-border/30 bg-background/68 px-3 py-2.5 lg:flex-1 lg:min-w-0">
+                                              <div className="flex items-center justify-between gap-2">
+                                                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
+                                                  Layer {index + 1}
+                                                </p>
+                                                <span className="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/70 text-[9px] text-foreground/70">
+                                                  {index + 1}
+                                                </span>
+                                              </div>
+                                              <p className="mt-1 text-[12px] font-semibold leading-snug text-foreground">
+                                                {layer.layerName}
+                                              </p>
+                                              {layer.connectionToCompany && (
+                                                <details className="group mt-1.5">
+                                                  <summary className="cursor-pointer list-none text-[10px] font-medium text-foreground/70 hover:text-foreground [&::-webkit-details-marker]:hidden">
+                                                    Show connection
+                                                  </summary>
+                                                  <p className="mt-1 text-[10px] leading-relaxed text-foreground/80">
+                                                    {layer.connectionToCompany}
+                                                  </p>
+                                                </details>
+                                              )}
                                             </div>
-                                          ) : null}
-                                        </div>
-                                      ))}
-                                    {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length > 3 && (
-                                      <div className="pl-7">
-                                        <span className="inline-flex rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                          +
-                                          {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length - 3}{" "}
-                                          more
-                                        </span>
-                                      </div>
-                                    )}
+                                            {index < normalizedCompanyIndustryAnalysis.valueChainMap.layers.length - 1 ? (
+                                              <div className="hidden lg:flex items-center justify-center px-0.5 text-foreground/40">
+                                                <span className="text-sm leading-none">→</span>
+                                              </div>
+                                            ) : null}
+                                          </React.Fragment>
+                                        ),
+                                      )}
+                                    </div>
                                   </div>
                                 )
                               : "No value chain map tracked yet for this company.",
                           accentClass: "bg-sky-500/80",
-                          drawerTitle: "Value Chain Map",
-                          drawerDescription:
-                            "Structured map of the industry layers and how the company connects to them.",
                           children: renderValueChainMapContent(),
                           disabled: !normalizedCompanyIndustryAnalysis.valueChainMap,
-                          hideDrawerHeader: true,
+                          inline: true,
+                          hideCount: true,
+                          hideAccentDot: true,
                         })}
 
                         {renderIndustryContextDrawerCard({
-                          title: "Classification Map",
+                          title: "Types of Players",
                           count:
                             normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
                               .length ?? 0,
@@ -3342,6 +3366,10 @@ export default async function Page({
                               .length === 1
                               ? "dimension"
                               : "dimensions",
+                          subtitle:
+                            normalizedCompanyIndustryAnalysis.classificationMap
+                              ? `${(companyRow?.name ?? code).trim()} is positioned as an integrated OEM partner across product application and service model dimensions.`
+                              : undefined,
                           description:
                             normalizedCompanyIndustryAnalysis.classificationMap
                               ? (
@@ -3356,9 +3384,9 @@ export default async function Page({
                                         return (
                                           <div
                                             key={dimension.dimensionName}
-                                            className="rounded-xl border border-border/40 bg-background/70 px-3 py-2"
+                                            className="rounded-xl border border-border/40 bg-background/75 px-3 py-2"
                                           >
-                                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
                                               {dimension.dimensionName}
                                             </p>
                                             <div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -3372,7 +3400,7 @@ export default async function Page({
                                                   </span>
                                                 ))
                                               ) : (
-                                                <span className="text-[10px] text-muted-foreground">
+                                                  <span className="text-[10px] text-foreground/70">
                                                   No tagged company position
                                                 </span>
                                               )}
@@ -3381,7 +3409,7 @@ export default async function Page({
                                         );
                                       })}
                                     {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length > 2 && (
-                                      <span className="inline-flex rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                      <span className="inline-flex rounded-full border border-border/60 bg-muted/70 px-2 py-0.5 text-[10px] text-foreground/70">
                                         +
                                         {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.length - 2}{" "}
                                         more dimensions
@@ -3389,11 +3417,11 @@ export default async function Page({
                                     )}
                                   </div>
                                 )
-                              : "No classification map tracked yet for this company.",
+                              : "No player map tracked yet for this company.",
                           accentClass: "bg-violet-500/80",
-                          drawerTitle: "Classification Map",
+                          drawerTitle: "Types of Players",
                           drawerDescription:
-                            "Structured map of industry classification dimensions, categories, and company position.",
+                            "Structured map of industry player types, categories, and company position.",
                           children: renderClassificationMapContent(),
                           disabled: !normalizedCompanyIndustryAnalysis.classificationMap,
                           hideDrawerHeader: true,
@@ -3410,6 +3438,9 @@ export default async function Page({
                   {renderIndustryContextDrawerCard({
                     title: "Regulations",
                     count: normalizedCompanyIndustryAnalysis.regulatoryChanges.length,
+                    subtitle: normalizedCompanyIndustryAnalysis.regulatoryChanges[0]?.change
+                      ? `Leading change: ${normalizedCompanyIndustryAnalysis.regulatoryChanges[0].change}`
+                      : undefined,
                     description:
                       normalizedCompanyIndustryAnalysis.regulatoryChanges.length > 0
                         ? "Policy and regulatory changes affecting economics, operating freedom, or market structure."
@@ -3430,6 +3461,9 @@ export default async function Page({
                   {renderIndustryContextDrawerCard({
                     title: "Tailwinds",
                     count: normalizedCompanyIndustryAnalysis.tailwinds.length,
+                    subtitle: normalizedCompanyIndustryAnalysis.tailwinds[0]?.theme
+                      ? `Leading theme: ${normalizedCompanyIndustryAnalysis.tailwinds[0].theme}`
+                      : undefined,
                     description:
                       normalizedCompanyIndustryAnalysis.tailwinds.length > 0
                         ? "Positive industry forces currently supporting demand, pricing, share gains, or execution."
@@ -3451,6 +3485,9 @@ export default async function Page({
                   {renderIndustryContextDrawerCard({
                     title: "Headwinds",
                     count: normalizedCompanyIndustryAnalysis.headwinds.length,
+                    subtitle: normalizedCompanyIndustryAnalysis.headwinds[0]?.theme
+                      ? `Leading risk: ${normalizedCompanyIndustryAnalysis.headwinds[0].theme}`
+                      : undefined,
                     description:
                       normalizedCompanyIndustryAnalysis.headwinds.length > 0
                         ? "Negative industry forces that could pressure growth, margins, demand, or competitiveness."
@@ -3472,27 +3509,6 @@ export default async function Page({
                 </div>
               )}
 
-              {normalizedCompanyIndustryAnalysis.sourceUrls.length > 0 && (
-                <details className={`${nestedDetailClass} px-3 py-2`}>
-                  <summary className="cursor-pointer list-none text-[11px] text-muted-foreground hover:text-foreground">
-                    Sources ({normalizedCompanyIndustryAnalysis.sourceUrls.length})
-                  </summary>
-                  <ul className="mt-2 space-y-1.5">
-                    {normalizedCompanyIndustryAnalysis.sourceUrls.map((url) => (
-                      <li key={url}>
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] text-foreground underline underline-offset-2 break-all"
-                        >
-                          {url}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
             </div>
           ) : (
             renderMissingSectionState(
