@@ -2451,7 +2451,7 @@ export default async function Page({
     accentClass: string;
     drawerTitle?: string;
     drawerDescription?: string;
-    children: React.ReactNode;
+    children?: React.ReactNode;
     disabled?: boolean;
     hideDrawerHeader?: boolean;
     inline?: boolean;
@@ -2596,87 +2596,6 @@ export default async function Page({
             ))}
           </div>
         )}
-      </div>
-    );
-  };
-  const renderClassificationMapContent = () => {
-    if (!normalizedCompanyIndustryAnalysis?.classificationMap) return null;
-
-    return (
-      <div className="space-y-3">
-        <div className="space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
-            Types of Players
-          </p>
-          <p className="text-[12px] leading-relaxed text-muted-foreground">
-            The main lenses used to understand how this industry segments itself and where the company participates.
-          </p>
-        </div>
-
-        <div className="space-y-2.5">
-          {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.map(
-            (dimension, index) => (
-              <div
-                key={`${dimension.dimensionName}-${index}`}
-                className="rounded-xl border border-border/20 bg-background/45 px-4 py-3 border-l-2 border-l-violet-400/70"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-[12px] font-semibold leading-snug text-foreground">
-                    {index + 1}. Based on {dimension.dimensionName}
-                  </p>
-                </div>
-
-                {dimension.dimensionExplanation && (
-                  <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                    {dimension.dimensionExplanation}
-                  </p>
-                )}
-
-                {dimension.categories.length > 0 && (
-                  <div className="mt-2 space-y-2">
-                    {dimension.categories.map((category) => (
-                      <div
-                        key={`${dimension.dimensionName}-${category.category}`}
-                        className="flex items-start gap-2"
-                      >
-                        <span
-                          className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold leading-none ${
-                            category.isCompanyPosition
-                              ? "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
-                              : "border-border/60 bg-muted/60 text-muted-foreground"
-                          }`}
-                        >
-                          {category.isCompanyPosition ? "✓" : "•"}
-                        </span>
-                        <div className="min-w-0 space-y-0.5">
-                          <p className="text-[11px] font-medium leading-snug text-foreground">
-                            {category.category}
-                          </p>
-                          {category.description && (
-                            <p className="text-[10px] leading-relaxed text-muted-foreground">
-                              {category.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {dimension.implication && (
-                  <div className="mt-2 space-y-0.5">
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                      Implication
-                    </p>
-                    <p className="text-[11px] leading-relaxed text-foreground/90">
-                      {dimension.implication}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ),
-          )}
-        </div>
       </div>
     );
   };
@@ -3333,7 +3252,10 @@ export default async function Page({
                                                 </details>
                                               )}
                                             </div>
-                                            {index < normalizedCompanyIndustryAnalysis.valueChainMap.layers.length - 1 ? (
+                                            {index <
+                                            (normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length ??
+                                              0) -
+                                              1 ? (
                                               <div className="hidden lg:flex items-center justify-center px-0.5 text-foreground/40">
                                                 <span className="text-sm leading-none">→</span>
                                               </div>
@@ -3363,47 +3285,49 @@ export default async function Page({
                               .length === 1
                               ? "dimension"
                               : "dimensions",
+                          // Bind once so the render branch stays type-safe inside nested callbacks.
                           description:
-                            normalizedCompanyIndustryAnalysis.classificationMap
-                              ? (
-                                  <div className="space-y-2">
-                                    {normalizedCompanyIndustryAnalysis.classificationMap.dimensions.map(
-                                      (dimension) => {
-                                        const dimensionNumber =
-                                          normalizedCompanyIndustryAnalysis.classificationMap.dimensions.findIndex(
-                                            (item) => item.dimensionName === dimension.dimensionName,
-                                          ) + 1;
+                            (() => {
+                              const classificationMap = normalizedCompanyIndustryAnalysis.classificationMap;
 
-                                        return (
-                                          <div
-                                            key={dimension.dimensionName}
-                                            className="rounded-xl border border-border/40 bg-background/75 px-3 py-2"
-                                          >
-                                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
-                                              {dimensionNumber}. Based on {dimension.dimensionName}
-                                            </p>
-                                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                                              {dimension.categories.map((category) => (
-                                                <span
-                                                  key={`${dimension.dimensionName}-${category.category}`}
-                                                  className={`rounded-full border px-2 py-0.5 text-[10px] ${
-                                                    category.isCompanyPosition
-                                                      ? "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200"
-                                                      : "border-border/60 bg-muted/60 text-foreground/70"
-                                                  }`}
-                                                >
-                                                  {category.isCompanyPosition ? "✓ " : "• "}
-                                                  {category.category}
-                                                </span>
-                                              ))}
-                                            </div>
+                              return classificationMap
+                                ? (
+                                    <div className="space-y-2">
+                                      {classificationMap.dimensions.map((dimension, dimensionIndex) => (
+                                        <div
+                                          key={dimension.dimensionName}
+                                          className="rounded-xl border border-border/40 bg-background/75 px-3 py-2"
+                                        >
+                                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
+                                            {dimensionIndex + 1}. Based on {dimension.dimensionName}
+                                          </p>
+                                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                            {dimension.categories.map((category) => (
+                                              <div
+                                                key={`${dimension.dimensionName}-${category.category}`}
+                                                className={`min-w-[10rem] flex-1 rounded-lg border px-2.5 py-2 text-[10px] ${
+                                                  category.isCompanyPosition
+                                                    ? "border-emerald-200 bg-emerald-100/90 text-emerald-900 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-100"
+                                                    : "border-border/60 bg-muted/45 text-foreground/75"
+                                                }`}
+                                              >
+                                                <p className="font-semibold leading-snug">
+                                                  {category.isCompanyPosition ? "Company position" : "Other category"}: {category.category}
+                                                </p>
+                                                {category.description && (
+                                                  <p className="mt-1 leading-relaxed text-[9px] text-foreground/75">
+                                                    {category.description}
+                                                  </p>
+                                                )}
+                                              </div>
+                                            ))}
                                           </div>
-                                        );
-                                      },
-                                    )}
-                                  </div>
-                                )
-                              : "No player map tracked yet for this company.",
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )
+                                : "No player map tracked yet for this company.";
+                            })(),
                           accentClass: "bg-violet-500/80",
                           disabled: !normalizedCompanyIndustryAnalysis.classificationMap,
                           inline: true,
