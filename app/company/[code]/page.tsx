@@ -2457,7 +2457,11 @@ export default async function Page({
         <div className="space-y-2.5">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-0.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              <p
+                className={`font-semibold uppercase tracking-[0.16em] ${
+                  inline ? "text-[10px] text-foreground" : "text-[10px] text-muted-foreground"
+                }`}
+              >
                 {title}
               </p>
               {!hideCount ? (
@@ -3209,10 +3213,10 @@ export default async function Page({
                       <div className="border-t border-border/30" />
 
                       <div className="grid grid-cols-1 gap-3">
-                        {renderIndustryContextDrawerCard({
-                          title: "Value Chain Map",
-                          count:
-                            normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length ?? 0,
+                      {renderIndustryContextDrawerCard({
+                        title: "Value Chain Map",
+                        count:
+                          normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length ?? 0,
                           countLabel:
                             normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length === 1
                               ? "layer"
@@ -3263,11 +3267,11 @@ export default async function Page({
                           hideAccentDot: true,
                         })}
 
-                        {renderIndustryContextDrawerCard({
-                          title: "Types of Players",
-                          count:
-                            normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
-                              .length ?? 0,
+                      {renderIndustryContextDrawerCard({
+                        title: "Types of Players",
+                        count:
+                          normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
+                            .length ?? 0,
                           countLabel:
                             normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
                               .length === 1
