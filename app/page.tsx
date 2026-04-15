@@ -391,6 +391,36 @@ export default async function Home() {
               ))}
             </div>
           </div>
+
+          <div className="overflow-hidden rounded-[2rem] border border-border/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.94))] p-6 shadow-[0_18px_70px_-46px_rgba(15,23,42,0.42)] dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(2,6,23,0.96))] sm:p-7 lg:p-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-3xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-red-700 dark:border-red-900/60 dark:bg-red-950/35 dark:text-red-200">
+                    Video research
+                  </span>
+                  <span className="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    Company walkthroughs
+                  </span>
+                </div>
+                <h2 className="mt-4 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
+                  Watch the research in action
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-foreground/75 sm:text-base">
+                  Company walkthroughs using Story of a Stock to connect business context,
+                  management commentary, and numbers.
+                </p>
+              </div>
+              <a
+                href="https://www.youtube.com/@pranavyadav6958"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-fit items-center justify-center rounded-full border border-border bg-foreground px-5 py-3 text-sm font-semibold text-background shadow-[0_18px_45px_-30px_rgba(15,23,42,0.7)] transition-transform hover:-translate-y-0.5"
+              >
+                Watch on YouTube →
+              </a>
+            </div>
+          </div>
         </section>
       </div>
     </main>
