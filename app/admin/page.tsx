@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { AdminAnalyticsTabs } from "@/components/admin/admin-analytics-tabs";
 import {
   AdminDailyVisitorsChart,
-  type DailyActiveVisitorPoint,
+  type ActiveVisitorPoint,
 } from "@/components/admin/admin-daily-visitors-chart";
 import { AdminLoginForm } from "@/components/admin/admin-login-form";
 import { AdminLogoutButton } from "@/components/admin/admin-logout-button";
@@ -77,6 +77,7 @@ type VisitorEventRow = {
 };
 
 const ADMIN_CHART_MAX_DAYS = 90;
+const ACTIVE_VISITOR_LOOKBACK_DAYS = 29;
 const EVENT_PAGE_SIZE = 1000;
 const EVENT_CHART_MAX_ROWS = 20000;
 const INDIA_TIME_ZONE = "Asia/Kolkata";
@@ -101,6 +102,12 @@ function getChartStartIso(range: RangeKey): string {
     ).toISOString();
   }
   return getStartIso(range) ?? new Date(0).toISOString();
+}
+
+function getChartFetchStartIso(chartStartIso: string): string {
+  const start = new Date(chartStartIso);
+  start.setUTCDate(start.getUTCDate() - ACTIVE_VISITOR_LOOKBACK_DAYS);
+  return start.toISOString();
 }
 
 function parseRange(value: string | undefined): RangeKey {
@@ -138,22 +145,45 @@ function getLocalDateKey(value: string | Date): string | null {
   return year && month && day ? `${year}-${month}-${day}` : null;
 }
 
-function buildDailyActiveVisitors(
+function shiftDateKey(dateKey: string, days: number): string {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function getDateKeysBetween(startIso: string, end: Date): string[] {
+  const startKey = getLocalDateKey(startIso);
+  const endKey = getLocalDateKey(end);
+  if (!startKey || !endKey) return [];
+
+  const keys: string[] = [];
+  let cursor = startKey;
+  while (cursor <= endKey) {
+    keys.push(cursor);
+    cursor = shiftDateKey(cursor, 1);
+  }
+  return keys;
+}
+
+function countRollingVisitors(
+  visitorsByDate: Map<string, Set<string>>,
+  dateKey: string,
+  days: number,
+): number {
+  const visitors = new Set<string>();
+  for (let offset = 0; offset < days; offset += 1) {
+    const bucket = visitorsByDate.get(shiftDateKey(dateKey, -offset));
+    bucket?.forEach((visitorId) => visitors.add(visitorId));
+  }
+  return visitors.size;
+}
+
+function buildActiveVisitors(
   rows: VisitorEventRow[],
   chartStartIso: string,
-): DailyActiveVisitorPoint[] {
+): ActiveVisitorPoint[] {
   const visitorsByDate = new Map<string, Set<string>>();
-  const start = new Date(chartStartIso);
-  const end = new Date();
-
-  for (
-    const cursor = new Date(start);
-    cursor <= end;
-    cursor.setUTCDate(cursor.getUTCDate() + 1)
-  ) {
-    const key = getLocalDateKey(cursor);
-    if (key) visitorsByDate.set(key, new Set<string>());
-  }
 
   rows.forEach((row) => {
     if (!row.visitor_id || !row.created_at) return;
@@ -164,16 +194,20 @@ function buildDailyActiveVisitors(
     visitorsByDate.set(key, bucket);
   });
 
-  return Array.from(visitorsByDate.entries())
-    .map(([date, visitors]) => ({ date, visitors: visitors.size }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  return getDateKeysBetween(chartStartIso, new Date()).map((date) => ({
+    date,
+    dau: countRollingVisitors(visitorsByDate, date, 1),
+    wau: countRollingVisitors(visitorsByDate, date, 7),
+    mau: countRollingVisitors(visitorsByDate, date, 30),
+  }));
 }
 
-async function getDailyActiveVisitors(
+async function getActiveVisitors(
   chartStartIso: string,
-): Promise<DailyActiveVisitorPoint[]> {
+): Promise<ActiveVisitorPoint[]> {
   const supabase = createAdminClient();
   const rows: VisitorEventRow[] = [];
+  const fetchStartIso = getChartFetchStartIso(chartStartIso);
   let from = 0;
 
   while (rows.length < EVENT_CHART_MAX_ROWS) {
@@ -181,7 +215,7 @@ async function getDailyActiveVisitors(
     const { data, error } = await supabase
       .from("page_view_events")
       .select("visitor_id, created_at")
-      .gte("created_at", chartStartIso)
+      .gte("created_at", fetchStartIso)
       .order("created_at", { ascending: true })
       .range(from, to);
 
@@ -199,7 +233,7 @@ async function getDailyActiveVisitors(
     from += EVENT_PAGE_SIZE;
   }
 
-  return buildDailyActiveVisitors(rows, chartStartIso);
+  return buildActiveVisitors(rows, chartStartIso);
 }
 
 function countRequestsByType(rows: FeedbackRequestRow[]) {
@@ -347,7 +381,7 @@ async function getAdminData(range: RangeKey) {
     : reportsCountBase;
 
   const recentAccountsPromise = getRecentAccounts(startIso);
-  const dailyActiveVisitorsPromise = getDailyActiveVisitors(chartStartIso);
+  const activeVisitorsPromise = getActiveVisitors(chartStartIso);
 
   const recentWatchlistsBase = supabase
     .from("watchlists")
@@ -401,7 +435,7 @@ async function getAdminData(range: RangeKey) {
     reportsRowsResult,
     reportsCountResult,
     recentAccountsResult,
-    dailyActiveVisitors,
+    activeVisitors,
     recentWatchlistsResult,
     watchlistsCountResult,
     watchlistItemsResult,
@@ -419,7 +453,7 @@ async function getAdminData(range: RangeKey) {
       reportsRowsPromise,
       reportsCountPromise,
       recentAccountsPromise,
-      dailyActiveVisitorsPromise,
+      activeVisitorsPromise,
       recentWatchlistsPromise,
       watchlistsCountPromise,
       watchlistItemsPromise,
@@ -549,7 +583,7 @@ async function getAdminData(range: RangeKey) {
       watchlistsCreatedCount,
       commentsCount,
       feedbackCount,
-      dailyActiveVisitors,
+      activeVisitors,
       recentAccountsRows,
       recentWatchlistsRows,
     },
@@ -600,7 +634,7 @@ export default async function AdminPage({
       watchlistsCreatedCount: 0,
       commentsCount: 0,
       feedbackCount: 0,
-      dailyActiveVisitors: [] as DailyActiveVisitorPoint[],
+      activeVisitors: [] as ActiveVisitorPoint[],
       recentAccountsRows: [] as RecentAccountRow[],
       recentWatchlistsRows: [] as RecentWatchlistRow[],
     },
@@ -695,7 +729,7 @@ export default async function AdminPage({
                 { label: "Requests Submitted", value: data.usage.feedbackCount },
               ]}
             />
-            <AdminDailyVisitorsChart data={data.usage.dailyActiveVisitors} />
+            <AdminDailyVisitorsChart data={data.usage.activeVisitors} />
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
               <RecentAccountsTable rows={data.usage.recentAccountsRows} />
               <RecentWatchlistsTable rows={data.usage.recentWatchlistsRows} />

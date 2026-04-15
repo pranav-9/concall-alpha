@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -14,14 +15,32 @@ import {
 } from "@/components/ui/chart";
 import type { ChartConfig } from "@/components/ui/chart";
 
-export type DailyActiveVisitorPoint = {
+export type ActiveVisitorPoint = {
   date: string;
-  visitors: number;
+  dau: number;
+  wau: number;
+  mau: number;
+};
+
+type ActiveVisitorMetric = "dau" | "wau" | "mau";
+
+const metricLabels: Record<ActiveVisitorMetric, string> = {
+  dau: "DAU",
+  wau: "WAU",
+  mau: "MAU",
 };
 
 const chartConfig = {
-  visitors: {
-    label: "Visitors",
+  dau: {
+    label: "DAU",
+    color: "hsl(var(--foreground))",
+  },
+  wau: {
+    label: "WAU",
+    color: "hsl(var(--foreground))",
+  },
+  mau: {
+    label: "MAU",
     color: "hsl(var(--foreground))",
   },
 } satisfies ChartConfig;
@@ -49,19 +68,43 @@ function formatLongDate(value: unknown) {
 export function AdminDailyVisitorsChart({
   data,
 }: {
-  data: DailyActiveVisitorPoint[];
+  data: ActiveVisitorPoint[];
 }) {
-  const hasData = data.some((point) => point.visitors > 0);
+  const [metric, setMetric] = useState<ActiveVisitorMetric>("dau");
+  const hasData = data.some(
+    (point) => point.dau > 0 || point.wau > 0 || point.mau > 0,
+  );
 
   return (
     <div className="rounded-xl border border-border bg-card">
-      <div className="border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold text-foreground">
-          Daily Active Visitors
-        </h3>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Distinct visitors by day for the selected range.
-        </p>
+      <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">
+            Active Visitors
+          </h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Daily, weekly, and monthly active visitors.
+          </p>
+        </div>
+        <div className="flex w-fit rounded-full border border-border bg-muted/40 p-1">
+          {(Object.keys(metricLabels) as ActiveVisitorMetric[]).map((key) => {
+            const active = key === metric;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setMetric(key)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                  active
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {metricLabels[key]}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {hasData ? (
@@ -95,14 +138,15 @@ export function AdminDailyVisitorsChart({
                 content={
                   <ChartTooltipContent
                     indicator="line"
+                    nameKey={metric}
                     labelFormatter={formatLongDate}
                   />
                 }
               />
               <Line
-                dataKey="visitors"
+                dataKey={metric}
                 type="monotone"
-                stroke="var(--color-visitors)"
+                stroke={`var(--color-${metric})`}
                 strokeWidth={2}
                 dot={false}
                 activeDot={{ r: 4 }}
