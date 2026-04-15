@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { AdminAnalyticsTabs } from "@/components/admin/admin-analytics-tabs";
 import { AdminLoginForm } from "@/components/admin/admin-login-form";
 import { AdminLogoutButton } from "@/components/admin/admin-logout-button";
 import { AdminMetricGrid } from "@/components/admin/admin-metric-grid";
@@ -568,65 +569,71 @@ export default async function AdminPage({
         </div>
       ) : null}
 
-      <AdminSection
-        title="User Usage"
-        description="Adoption and engagement signals across visitors, accounts, watchlists, comments, and requests."
-      >
-        <AdminMetricGrid
-          metrics={[
-            { label: "Unique Visitors", value: data.usage.uniqueUsers },
-            { label: "Accounts Created", value: data.usage.accountsCreatedCount },
-            { label: "Watchlists Created", value: data.usage.watchlistsCreatedCount },
-            { label: "Comments Created", value: data.usage.commentsCount },
-            { label: "Requests Submitted", value: data.usage.feedbackCount },
-          ]}
-        />
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-          <RecentAccountsTable rows={data.usage.recentAccountsRows} />
-          <RecentWatchlistsTable rows={data.usage.recentWatchlistsRows} />
-        </div>
-      </AdminSection>
-
-      <AdminSection
-        title="Company Interest"
-        description="Demand signals showing which companies and sectors are attracting attention."
-      >
-        <AdminMetricGrid
-          metrics={[
-            { label: "Company Page Views", value: data.companyInterest.companyViews },
-            { label: "Companies Viewed", value: data.companyInterest.companiesViewedCount },
-            { label: "Watchlist Adds", value: data.companyInterest.watchlistAddsCount },
-            { label: "Most Viewed Company", value: data.companyInterest.mostViewedCompany },
-          ]}
-        />
-        <CompanyInterestTable rows={data.companyInterest.companyInterestRows} />
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.35fr_0.65fr]">
-          <TopCompaniesTable rows={data.companyInterest.topCompanies} />
-          <TopSectorsTable rows={data.companyInterest.topSectors} />
-        </div>
-      </AdminSection>
-
-      <AdminSection
-        title="Requests & Moderation"
-        description="Operational queue for user requests, comments, and reported community activity."
-      >
-        <AdminMetricGrid
-          metrics={[
-            { label: "Total Reports", value: data.operations.reportsCount },
-            { label: "Reported Comments", value: data.operations.reportedCommentsCount },
-            { label: "Bug Reports", value: data.operations.requestTypeCounts.bug_report },
-            {
-              label: "Missing Section Requests",
-              value: data.operations.requestTypeCounts.missing_section,
-            },
-          ]}
-        />
-        <FeedbackRequestsTable rows={data.operations.feedbackRows} />
-        <CompanyCommentsTable
-          comments={data.operations.commentsRows}
-          reported={data.operations.reportsRows}
-        />
-      </AdminSection>
+      <AdminAnalyticsTabs
+        usage={
+          <AdminSection
+            title="User Usage"
+            description="Adoption and engagement signals across visitors, accounts, watchlists, comments, and requests."
+          >
+            <AdminMetricGrid
+              metrics={[
+                { label: "Unique Visitors", value: data.usage.uniqueUsers },
+                { label: "Accounts Created", value: data.usage.accountsCreatedCount },
+                { label: "Watchlists Created", value: data.usage.watchlistsCreatedCount },
+                { label: "Comments Created", value: data.usage.commentsCount },
+                { label: "Requests Submitted", value: data.usage.feedbackCount },
+              ]}
+            />
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+              <RecentAccountsTable rows={data.usage.recentAccountsRows} />
+              <RecentWatchlistsTable rows={data.usage.recentWatchlistsRows} />
+            </div>
+          </AdminSection>
+        }
+        companyInterest={
+          <AdminSection
+            title="Company Interest"
+            description="Demand signals showing which companies and sectors are attracting attention."
+          >
+            <AdminMetricGrid
+              metrics={[
+                { label: "Company Page Views", value: data.companyInterest.companyViews },
+                { label: "Companies Viewed", value: data.companyInterest.companiesViewedCount },
+                { label: "Watchlist Adds", value: data.companyInterest.watchlistAddsCount },
+                { label: "Most Viewed Company", value: data.companyInterest.mostViewedCompany },
+              ]}
+            />
+            <CompanyInterestTable rows={data.companyInterest.companyInterestRows} />
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.35fr_0.65fr]">
+              <TopCompaniesTable rows={data.companyInterest.topCompanies} />
+              <TopSectorsTable rows={data.companyInterest.topSectors} />
+            </div>
+          </AdminSection>
+        }
+        operations={
+          <AdminSection
+            title="Requests & Moderation"
+            description="Operational queue for user requests, comments, and reported community activity."
+          >
+            <AdminMetricGrid
+              metrics={[
+                { label: "Total Reports", value: data.operations.reportsCount },
+                { label: "Reported Comments", value: data.operations.reportedCommentsCount },
+                { label: "Bug Reports", value: data.operations.requestTypeCounts.bug_report },
+                {
+                  label: "Missing Section Requests",
+                  value: data.operations.requestTypeCounts.missing_section,
+                },
+              ]}
+            />
+            <FeedbackRequestsTable rows={data.operations.feedbackRows} />
+            <CompanyCommentsTable
+              comments={data.operations.commentsRows}
+              reported={data.operations.reportsRows}
+            />
+          </AdminSection>
+        }
+      />
     </main>
   );
 }
