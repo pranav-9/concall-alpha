@@ -18,6 +18,9 @@ export type CompanyIndustryAnalysisRow = {
   sub_sector?: string | null;
   industry_positioning?: unknown;
   value_chain?: unknown;
+  sub_sector_identification?: unknown;
+  types_of_players?: unknown;
+  sub_sector_cards?: unknown;
   profit_pools?: unknown;
   company_fit?: unknown;
   competition?: unknown;

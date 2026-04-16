@@ -211,11 +211,14 @@ const normalizePlayerTypeDimension = (
 };
 
 const normalizeTypesOfPlayers = (
+  rawTypesOfPlayers: unknown,
   rawCompetition: unknown,
   detailsRoot: JsonRecord | null,
 ): NormalizedIndustryTypesOfPlayers | null => {
   const record =
-    parseJsonObjectLike(rawCompetition) ?? parseJsonObjectLike(detailsRoot?.types_of_players);
+    parseJsonObjectLike(rawTypesOfPlayers) ??
+    parseJsonObjectLike(rawCompetition) ??
+    parseJsonObjectLike(detailsRoot?.types_of_players);
   const dimensions = parseJsonArrayLike(record?.dimensions)
     .map((item) => normalizePlayerTypeDimension(item))
     .filter((item): item is NormalizedIndustryPlayerTypeDimension => Boolean(item));
@@ -242,10 +245,12 @@ const normalizeCompanyFitSubSector = (
 };
 
 const normalizeCompanyFit = (
+  rawSubSectorIdentification: unknown,
   rawCompanyFit: unknown,
   detailsRoot: JsonRecord | null,
 ): NormalizedIndustryCompanyFit | null => {
   const record =
+    parseJsonObjectLike(rawSubSectorIdentification) ??
     parseJsonObjectLike(rawCompanyFit) ??
     parseJsonObjectLike(detailsRoot?.sub_sector_identification);
   if (!record) return null;
@@ -453,6 +458,7 @@ const normalizeSubSectorCard = (
 };
 
 const normalizeSubSectorCards = (
+  rawSubSectorCards: unknown,
   rawProfitPools: unknown,
   detailsRoot: JsonRecord | null,
   companyFit: NormalizedIndustryCompanyFit | null,
@@ -462,9 +468,11 @@ const normalizeSubSectorCards = (
   );
 
   const rawCards =
-    parseJsonArrayLike(rawProfitPools).length > 0
-      ? parseJsonArrayLike(rawProfitPools)
-      : parseJsonArrayLike(detailsRoot?.sub_sector_cards);
+    parseJsonArrayLike(rawSubSectorCards).length > 0
+      ? parseJsonArrayLike(rawSubSectorCards)
+      : parseJsonArrayLike(rawProfitPools).length > 0
+        ? parseJsonArrayLike(rawProfitPools)
+        : parseJsonArrayLike(detailsRoot?.sub_sector_cards);
 
   const cards = rawCards
     .map((item) => normalizeSubSectorCard(item, relevanceMap))
@@ -494,6 +502,11 @@ export function normalizeCompanyIndustryAnalysis(
   const schemaHints = new Set<string>();
   if (parseJsonObjectLike(row.industry_positioning)) schemaHints.add("industry_positioning_column");
   if (parseJsonObjectLike(row.value_chain)) schemaHints.add("value_chain_column");
+  if (parseJsonObjectLike(row.sub_sector_identification)) {
+    schemaHints.add("sub_sector_identification_column");
+  }
+  if (parseJsonObjectLike(row.types_of_players)) schemaHints.add("types_of_players_column");
+  if (parseJsonArrayLike(row.sub_sector_cards).length > 0) schemaHints.add("sub_sector_cards_column");
   if (parseJsonArrayLike(row.profit_pools).length > 0) schemaHints.add("profit_pools_column");
   if (parseJsonObjectLike(row.company_fit)) schemaHints.add("company_fit_column");
   if (parseJsonObjectLike(row.competition)) schemaHints.add("competition_column");
@@ -522,7 +535,11 @@ export function normalizeCompanyIndustryAnalysis(
   const positioningRecord = parseJsonObjectLike(row.industry_positioning);
   const valueChainRecord =
     parseJsonObjectLike(row.value_chain) ?? parseJsonObjectLike(detailsRoot?.value_chain_map);
-  const companyFit = normalizeCompanyFit(row.company_fit, detailsRoot);
+  const companyFit = normalizeCompanyFit(
+    row.sub_sector_identification,
+    row.company_fit,
+    detailsRoot,
+  );
   const companyFitSummary = buildCompanyFitSummary(companyFit, detailsRoot);
   const valueChainMap = normalizeValueChainMap(
     row.value_chain,
@@ -537,11 +554,20 @@ export function normalizeCompanyIndustryAnalysis(
     valueChainMap,
     companyFitSummary,
   );
-  const typesOfPlayers = normalizeTypesOfPlayers(row.competition, detailsRoot);
+  const typesOfPlayers = normalizeTypesOfPlayers(
+    row.types_of_players,
+    row.competition,
+    detailsRoot,
+  );
   const regulatoryChanges = parseJsonArrayLike(row.regulatory_changes)
     .map((item) => normalizeRegulatoryChange(item))
     .filter((item): item is NormalizedIndustryRegulatoryChange => Boolean(item));
-  const subSectorCards = normalizeSubSectorCards(row.profit_pools, detailsRoot, companyFit);
+  const subSectorCards = normalizeSubSectorCards(
+    row.sub_sector_cards,
+    row.profit_pools,
+    detailsRoot,
+    companyFit,
+  );
   const tailwinds = parseJsonArrayLike(row.tailwinds)
     .map((item) => normalizeTheme(item))
     .filter((item): item is NormalizedIndustryTheme => Boolean(item));

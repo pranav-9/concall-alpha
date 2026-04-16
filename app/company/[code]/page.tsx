@@ -726,7 +726,7 @@ export default async function Page({
   const { data: companyIndustryAnalysisData } = await supabase
     .from("company_industry_analysis")
     .select(
-      "company, generated_at, sector, sub_sector, industry_positioning, value_chain, profit_pools, company_fit, competition, regulatory_changes, tailwinds, headwinds, sources, details",
+      "company, generated_at, sector, sub_sector, industry_positioning, value_chain, sub_sector_identification, types_of_players, sub_sector_cards, profit_pools, company_fit, competition, regulatory_changes, tailwinds, headwinds, sources, details",
     )
     .eq("company", code)
     .limit(1);
