@@ -1,3 +1,16 @@
+export type CompanyIndustryAnalysisDetailsPayload = {
+  industry_overview?: unknown;
+  sub_sector_identification?: unknown;
+  types_of_players?: unknown;
+  sub_sector_cards?: unknown;
+  value_chain_map?: unknown;
+  classification_map?: unknown;
+  sources_used?: unknown;
+  context_source?: unknown;
+  details?: unknown;
+  [key: string]: unknown;
+};
+
 export type CompanyIndustryAnalysisRow = {
   company: string;
   generated_at?: string | null;
@@ -12,7 +25,7 @@ export type CompanyIndustryAnalysisRow = {
   tailwinds?: unknown;
   headwinds?: unknown;
   sources?: unknown;
-  details?: unknown;
+  details?: CompanyIndustryAnalysisDetailsPayload | string | null;
 };
 
 export type NormalizedIndustryPositioning = {

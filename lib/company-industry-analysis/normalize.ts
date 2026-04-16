@@ -214,7 +214,8 @@ const normalizeTypesOfPlayers = (
   rawCompetition: unknown,
   detailsRoot: JsonRecord | null,
 ): NormalizedIndustryTypesOfPlayers | null => {
-  const record = parseJsonObjectLike(rawCompetition);
+  const record =
+    parseJsonObjectLike(rawCompetition) ?? parseJsonObjectLike(detailsRoot?.types_of_players);
   const dimensions = parseJsonArrayLike(record?.dimensions)
     .map((item) => normalizePlayerTypeDimension(item))
     .filter((item): item is NormalizedIndustryPlayerTypeDimension => Boolean(item));
@@ -240,8 +241,13 @@ const normalizeCompanyFitSubSector = (
   };
 };
 
-const normalizeCompanyFit = (rawCompanyFit: unknown): NormalizedIndustryCompanyFit | null => {
-  const record = parseJsonObjectLike(rawCompanyFit);
+const normalizeCompanyFit = (
+  rawCompanyFit: unknown,
+  detailsRoot: JsonRecord | null,
+): NormalizedIndustryCompanyFit | null => {
+  const record =
+    parseJsonObjectLike(rawCompanyFit) ??
+    parseJsonObjectLike(detailsRoot?.sub_sector_identification);
   if (!record) return null;
 
   const qualifyingSubSectors = parseJsonArrayLike(record.qualifying_sub_sectors)
@@ -448,13 +454,19 @@ const normalizeSubSectorCard = (
 
 const normalizeSubSectorCards = (
   rawProfitPools: unknown,
+  detailsRoot: JsonRecord | null,
   companyFit: NormalizedIndustryCompanyFit | null,
 ) => {
   const relevanceMap = new Map(
     (companyFit?.qualifyingSubSectors ?? []).map((item) => [normalizeKey(item.subSector), item]),
   );
 
-  const cards = parseJsonArrayLike(rawProfitPools)
+  const rawCards =
+    parseJsonArrayLike(rawProfitPools).length > 0
+      ? parseJsonArrayLike(rawProfitPools)
+      : parseJsonArrayLike(detailsRoot?.sub_sector_cards);
+
+  const cards = rawCards
     .map((item) => normalizeSubSectorCard(item, relevanceMap))
     .filter((item): item is NormalizedIndustrySubSectorCard => Boolean(item));
 
@@ -491,16 +503,26 @@ export function normalizeCompanyIndustryAnalysis(
   if (normalizeSources(row.sources).length > 0) schemaHints.add("sources_column");
 
   const detailsRoot = parseJsonObjectLike(row.details);
-  const detailsNested = parseJsonObjectLike(detailsRoot?.details);
-  const sourcesUsed = asString(detailsNested?.sources_used);
+  if (parseJsonObjectLike(detailsRoot?.sub_sector_identification)) {
+    schemaHints.add("sub_sector_identification_details");
+  }
+  if (parseJsonObjectLike(detailsRoot?.types_of_players)) {
+    schemaHints.add("types_of_players_details");
+  }
+  if (parseJsonArrayLike(detailsRoot?.sub_sector_cards).length > 0) {
+    schemaHints.add("sub_sector_cards_details");
+  }
+
+  const detailsMetadataRoot = parseJsonObjectLike(detailsRoot?.details) ?? detailsRoot;
+  const sourcesUsed = asString(detailsMetadataRoot?.sources_used);
   if (sourcesUsed) schemaHints.add(`sources_used:${sourcesUsed}`);
-  const contextSource = asString(detailsNested?.context_source);
+  const contextSource = asString(detailsMetadataRoot?.context_source);
   if (contextSource) schemaHints.add(`context_source:${contextSource}`);
 
   const positioningRecord = parseJsonObjectLike(row.industry_positioning);
   const valueChainRecord =
     parseJsonObjectLike(row.value_chain) ?? parseJsonObjectLike(detailsRoot?.value_chain_map);
-  const companyFit = normalizeCompanyFit(row.company_fit);
+  const companyFit = normalizeCompanyFit(row.company_fit, detailsRoot);
   const companyFitSummary = buildCompanyFitSummary(companyFit, detailsRoot);
   const valueChainMap = normalizeValueChainMap(
     row.value_chain,
@@ -519,7 +541,7 @@ export function normalizeCompanyIndustryAnalysis(
   const regulatoryChanges = parseJsonArrayLike(row.regulatory_changes)
     .map((item) => normalizeRegulatoryChange(item))
     .filter((item): item is NormalizedIndustryRegulatoryChange => Boolean(item));
-  const subSectorCards = normalizeSubSectorCards(row.profit_pools, companyFit);
+  const subSectorCards = normalizeSubSectorCards(row.profit_pools, detailsRoot, companyFit);
   const tailwinds = parseJsonArrayLike(row.tailwinds)
     .map((item) => normalizeTheme(item))
     .filter((item): item is NormalizedIndustryTheme => Boolean(item));
