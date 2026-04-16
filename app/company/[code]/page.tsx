@@ -49,6 +49,7 @@ import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import type {
   NormalizedIndustryRegulatoryChange,
   CompanyIndustryAnalysisRow,
+  NormalizedIndustrySubSectorCard,
   NormalizedIndustryTheme,
 } from "@/lib/company-industry-analysis/types";
 import type {
@@ -725,7 +726,7 @@ export default async function Page({
   const { data: companyIndustryAnalysisData } = await supabase
     .from("company_industry_analysis")
     .select(
-      "company, generated_at, sector, sub_sector, industry_positioning, regulatory_changes, tailwinds, headwinds, sources, details",
+      "company, generated_at, sector, sub_sector, industry_positioning, value_chain, profit_pools, company_fit, competition, regulatory_changes, tailwinds, headwinds, sources, details",
     )
     .eq("company", code)
     .limit(1);
@@ -2285,6 +2286,13 @@ export default async function Page({
                         {item.period}
                       </span>
                     )}
+                    {item.subSectorScope && (
+                      <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground">
+                        {item.subSectorScope === "industry_wide"
+                          ? "Industry-wide"
+                          : item.subSectorScope}
+                      </span>
+                    )}
                     {impactDirectionDisplay && (
                       <span
                         className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${impactDirectionDisplay.className}`}
@@ -2301,13 +2309,13 @@ export default async function Page({
                     </p>
                   </div>
                 )}
-                {item.companyImpactMechanism && (
+                {(item.industrySubSectorImpact ?? item.companyImpactMechanism) && (
                   <div className="space-y-0.5">
                     <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
                       Why it matters
                     </p>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      {item.companyImpactMechanism}
+                      {item.industrySubSectorImpact ?? item.companyImpactMechanism}
                     </p>
                   </div>
                 )}
@@ -2315,6 +2323,235 @@ export default async function Page({
             );
           })}
         </div>
+      </div>
+    );
+  };
+  const renderTypesOfPlayers = () => {
+    if (!normalizedCompanyIndustryAnalysis?.typesOfPlayers) return null;
+
+    return (
+      <div className="space-y-2">
+        {normalizedCompanyIndustryAnalysis.typesOfPlayers.dimensions.map(
+          (dimension, dimensionIndex) => (
+            <div
+              key={dimension.dimensionName}
+              className={`${elevatedBlockClass} p-3.5 space-y-3`}
+            >
+              <div className="space-y-1">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground">
+                  {dimensionIndex + 1}. Based on {dimension.dimensionName}
+                </p>
+                {dimension.dimensionExplanation && (
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    {dimension.dimensionExplanation}
+                  </p>
+                )}
+              </div>
+
+              {dimension.categories.length > 0 && (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  {dimension.categories.map((category) => (
+                    <div
+                      key={`${dimension.dimensionName}-${category}`}
+                      className={`${nestedDetailClass} px-3 py-2`}
+                    >
+                      <p className="text-[11px] font-semibold leading-snug text-foreground">
+                        {category}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {dimension.players.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Named players
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {dimension.players.map((player) => (
+                      <span
+                        key={`${dimension.dimensionName}-${player.playerName}-${player.category ?? "none"}`}
+                        className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground"
+                      >
+                        {player.playerName}
+                        {player.category ? ` · ${player.category}` : ""}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {dimension.competitiveStructureNote && (
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  {dimension.competitiveStructureNote}
+                </p>
+              )}
+            </div>
+          ),
+        )}
+      </div>
+    );
+  };
+  const renderQualifiedSubSectors = () => {
+    const qualifyingSubSectors =
+      normalizedCompanyIndustryAnalysis?.companyFit?.qualifyingSubSectors ?? [];
+    if (qualifyingSubSectors.length === 0) return null;
+
+    return (
+      renderIndustryContextDrawerCard({
+        title: "Relevant Sub-sectors",
+        count: qualifyingSubSectors.length,
+        accentClass: "bg-sky-500/80",
+        inline: true,
+        hideCount: true,
+        hideAccentDot: true,
+        description: (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {qualifyingSubSectors.map((item, index) => {
+              return (
+                <div
+                  key={`${item.subSector}-${index}`}
+                  className={`${nestedDetailClass} px-3 py-3`}
+                >
+                  <p className="text-[12px] font-semibold leading-snug text-foreground">
+                    {item.subSector}
+                  </p>
+                  {item.description && (
+                    <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                      {item.description}
+                    </p>
+                  )}
+                  {item.relevanceRationale && (
+                    <div className="mt-2 space-y-0.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                        Why relevant
+                      </p>
+                      <p className="text-[11px] leading-relaxed text-foreground/90">
+                        {item.relevanceRationale}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ),
+      })
+    );
+  };
+  const renderRelevantSubSectors = (
+    cards: NormalizedIndustrySubSectorCard[],
+  ) => {
+    if (cards.length === 0) return null;
+
+    return (
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+        {cards.map((card, index) => {
+          const capitalCycleStage = toDisplayLabel(card.capitalCycle?.stage ?? null);
+          const capitalCycleDirection = toDisplayLabel(card.capitalCycle?.direction ?? null);
+
+          return (
+            <div key={`${card.subSector}-${index}`} className={`${elevatedBlockClass} p-4 space-y-3`}>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0 space-y-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Relevant sub-sector
+                  </p>
+                  <p className="text-[14px] font-semibold leading-snug text-foreground">
+                    {card.subSector}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {capitalCycleStage && (
+                    <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-foreground">
+                      {capitalCycleStage}
+                    </span>
+                  )}
+                  {capitalCycleDirection && (
+                    <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground">
+                      {capitalCycleDirection}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {card.subSectorDescription && (
+                <p className="text-[11px] leading-relaxed text-foreground/90">
+                  {card.subSectorDescription}
+                </p>
+              )}
+
+              {card.capitalCycle?.supplySideRead && (
+                <div className="space-y-0.5">
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                    Capital cycle read
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    {card.capitalCycle.supplySideRead}
+                  </p>
+                </div>
+              )}
+
+              {card.marketShareSnapshot && (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                    Market share snapshot
+                  </p>
+                  <div className={`${nestedDetailClass} px-3 py-2.5 space-y-2`}>
+                    {(card.marketShareSnapshot.shareBasis || card.marketShareSnapshot.dataVintage) && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {card.marketShareSnapshot.shareBasis && (
+                          <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground">
+                            {card.marketShareSnapshot.shareBasis}
+                          </span>
+                        )}
+                        {card.marketShareSnapshot.dataVintage && (
+                          <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                            {card.marketShareSnapshot.dataVintage}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {card.marketShareSnapshot.players.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {card.marketShareSnapshot.players.map((player) => (
+                          <span
+                            key={`${card.subSector}-${player.playerName}`}
+                            className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground"
+                          >
+                            {player.playerName}
+                            {player.shareValue ? ` · ${player.shareValue}` : ""}
+                            {player.shareIsEstimated ? " (est.)" : ""}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {(card.tailwinds.length > 0 || card.headwinds.length > 0) && (
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                  {card.tailwinds.length > 0 && renderIndustryThemes(
+                    "Tailwinds",
+                    card.tailwinds,
+                    "border-l-emerald-500/70",
+                    true,
+                    true,
+                  )}
+                  {card.headwinds.length > 0 && renderIndustryThemes(
+                    "Headwinds",
+                    card.headwinds,
+                    "border-l-red-500/70",
+                    true,
+                    true,
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -3187,163 +3424,115 @@ export default async function Page({
         >
           {normalizedCompanyIndustryAnalysis ? (
             <div className="space-y-3">
-              {normalizedCompanyIndustryAnalysis.industryPositioning && (
-                <div className="space-y-5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-border/50 bg-muted/45 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                      {companyRow?.code ?? code}
+              <div className="space-y-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-border/50 bg-muted/45 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    {companyRow?.code ?? code}
+                  </span>
+                  {normalizedCompanyIndustryAnalysis.subSector && (
+                    <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
+                      {normalizedCompanyIndustryAnalysis.subSector}
                     </span>
-                    {normalizedCompanyIndustryAnalysis.subSector && (
-                      <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
-                        {normalizedCompanyIndustryAnalysis.subSector}
-                      </span>
-                    )}
-                  </div>
-
-                  {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed && (
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        Industry overview
-                      </p>
-                      <p className="max-w-3xl text-[14px] sm:text-[15px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
-                        {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed}
-                      </p>
-                    </div>
                   )}
+                </div>
 
-                  {(normalizedCompanyIndustryAnalysis.valueChainMap ||
-                    normalizedCompanyIndustryAnalysis.classificationMap) && (
-                    <>
-                      <div className="border-t border-border/30" />
+                {normalizedCompanyIndustryAnalysis.industryPositioning?.customerNeed && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Industry overview
+                    </p>
+                    <p className="text-[14px] sm:text-[15px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
+                      {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed}
+                    </p>
+                  </div>
+                )}
 
-                      <div className="grid grid-cols-1 gap-3">
+                {(normalizedCompanyIndustryAnalysis.valueChainMap ||
+                  normalizedCompanyIndustryAnalysis.typesOfPlayers) && (
+                  <>
+                    <div className="border-t border-border/30" />
+
+                    <div className="grid grid-cols-1 gap-3">
                       {renderIndustryContextDrawerCard({
                         title: "Value Chain Map",
                         count:
                           normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length ?? 0,
-                          countLabel:
-                            normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length === 1
-                              ? "layer"
-                              : "layers",
-                          description:
-                            normalizedCompanyIndustryAnalysis.valueChainMap
-                                ? (
-                                  <div className="space-y-3">
-                                      <div className="grid gap-3 lg:flex lg:items-stretch lg:gap-1.5">
-                                      {normalizedCompanyIndustryAnalysis.valueChainMap.layers.map(
-                                        (layer, index) => (
-                                          <React.Fragment key={`${layer.layerName}-${index}`}>
-                                            <div className="rounded-xl border border-border/30 bg-background/68 px-3 py-2.5 lg:flex-1 lg:min-w-0">
-                                              <div className="flex items-start gap-2">
-                                                <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-muted/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground">
-                                                  {index + 1}
-                                                </span>
-                                                <p className="text-[12px] font-semibold leading-snug text-foreground">
-                                                  {layer.layerName}
-                                                </p>
-                                              </div>
-                                              {layer.layerDescription && (
-                                                <p className="mt-1.5 text-[10px] leading-relaxed text-foreground/90">
-                                                  {layer.layerDescription}
-                                                </p>
-                                              )}
-                                            </div>
-                                            {index <
-                                            (normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length ??
-                                              0) -
-                                              1 ? (
-                                              <div className="hidden lg:flex items-center justify-center px-0.5 text-foreground/55">
-                                                <span className="text-sm leading-none">→</span>
-                                              </div>
-                                            ) : null}
-                                          </React.Fragment>
-                                        ),
-                                      )}
-                                    </div>
-                                  </div>
-                                )
-                              : "No value chain map tracked yet for this company.",
-                          accentClass: "bg-sky-500/80",
-                          children: renderValueChainMapContent(),
-                          disabled: !normalizedCompanyIndustryAnalysis.valueChainMap,
-                          inline: true,
-                          hideCount: true,
-                          hideAccentDot: true,
-                        })}
+                        countLabel:
+                          normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length === 1
+                            ? "layer"
+                            : "layers",
+                        description:
+                          normalizedCompanyIndustryAnalysis.valueChainMap ? (
+                            <div className="space-y-3">
+                              <div className="grid gap-3 lg:flex lg:items-stretch lg:gap-1.5">
+                                {normalizedCompanyIndustryAnalysis.valueChainMap.layers.map(
+                                  (layer, index) => (
+                                    <React.Fragment key={`${layer.layerName}-${index}`}>
+                                      <div className="rounded-xl border border-border/30 bg-background/68 px-3 py-2.5 lg:flex-1 lg:min-w-0">
+                                        <div className="flex items-start gap-2">
+                                          <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-muted/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground">
+                                            {index + 1}
+                                          </span>
+                                          <p className="text-[12px] font-semibold leading-snug text-foreground">
+                                            {layer.layerName}
+                                          </p>
+                                        </div>
+                                        {layer.layerDescription && (
+                                          <p className="mt-1.5 text-[10px] leading-relaxed text-foreground/90">
+                                            {layer.layerDescription}
+                                          </p>
+                                        )}
+                                      </div>
+                                      {index <
+                                      (normalizedCompanyIndustryAnalysis.valueChainMap?.layers
+                                        .length ?? 0) -
+                                        1 ? (
+                                        <div className="hidden lg:flex items-center justify-center px-0.5 text-foreground/55">
+                                          <span className="text-sm leading-none">→</span>
+                                        </div>
+                                      ) : null}
+                                    </React.Fragment>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            "No value chain map tracked yet for this company."
+                          ),
+                        accentClass: "bg-sky-500/80",
+                        children: renderValueChainMapContent(),
+                        disabled: !normalizedCompanyIndustryAnalysis.valueChainMap,
+                        inline: true,
+                        hideCount: true,
+                        hideAccentDot: true,
+                      })}
 
                       {renderIndustryContextDrawerCard({
                         title: "Types of Players",
                         count:
-                          normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
-                            .length ?? 0,
-                          countLabel:
-                            normalizedCompanyIndustryAnalysis.classificationMap?.dimensions
-                              .length === 1
-                              ? "dimension"
-                              : "dimensions",
-                          // Bind once so the render branch stays type-safe inside nested callbacks.
-                          description:
-                            (() => {
-                              const classificationMap = normalizedCompanyIndustryAnalysis.classificationMap;
+                          normalizedCompanyIndustryAnalysis.typesOfPlayers?.dimensions.length ?? 0,
+                        countLabel:
+                          normalizedCompanyIndustryAnalysis.typesOfPlayers?.dimensions.length === 1
+                            ? "dimension"
+                            : "dimensions",
+                        description: normalizedCompanyIndustryAnalysis.typesOfPlayers
+                          ? renderTypesOfPlayers()
+                          : "No player map tracked yet for this company.",
+                        accentClass: "bg-violet-500/80",
+                        disabled: !normalizedCompanyIndustryAnalysis.typesOfPlayers,
+                        inline: true,
+                        hideCount: true,
+                        hideAccentDot: true,
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
 
-                              return classificationMap
-                                ? (
-                                    <div className="space-y-2">
-                                      {classificationMap.dimensions.map((dimension, dimensionIndex) => (
-                                          <div
-                                            key={dimension.dimensionName}
-                                            className="rounded-xl border border-border/40 bg-background/75 px-3 py-2 text-foreground"
-                                          >
-                                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground">
-                                              {dimensionIndex + 1}. Based on {dimension.dimensionName}
-                                            </p>
-                                          <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                                            {dimension.categories.map((category) => (
-                                              <div
-                                                key={`${dimension.dimensionName}-${category.category}`}
-                                                className={`min-h-full rounded-lg border px-2 py-1.5 text-[10px] ${
-                                                  category.isCompanyPosition
-                                                    ? "border-emerald-200/35 bg-emerald-950/30 text-emerald-50 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-50"
-                                                    : "border-border/60 bg-muted/35 text-foreground"
-                                                }`}
-                                              >
-                                                <p className="font-semibold leading-snug text-inherit">
-                                                  {category.category}
-                                                </p>
-                                                {category.description && (
-                                                  <p
-                                                    className={`mt-1 leading-relaxed text-[9px] ${
-                                                      category.isCompanyPosition
-                                                        ? "text-emerald-50/80"
-                                                        : "text-foreground/80"
-                                                    }`}
-                                                  >
-                                                    {category.description}
-                                                  </p>
-                                                )}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )
-                                : "No player map tracked yet for this company.";
-                            })(),
-                          accentClass: "bg-violet-500/80",
-                          disabled: !normalizedCompanyIndustryAnalysis.classificationMap,
-                          inline: true,
-                          hideCount: true,
-                          hideAccentDot: true,
-                        })}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-              {(normalizedCompanyIndustryAnalysis.tailwinds.length > 0 ||
-                normalizedCompanyIndustryAnalysis.headwinds.length > 0 ||
-                normalizedCompanyIndustryAnalysis.regulatoryChanges.length > 0) && (
+              {(normalizedCompanyIndustryAnalysis.regulatoryChanges.length > 0 ||
+                normalizedCompanyIndustryAnalysis.subSectorCards.length > 0 ||
+                normalizedCompanyIndustryAnalysis.tailwinds.length > 0 ||
+                normalizedCompanyIndustryAnalysis.headwinds.length > 0) && (
                 <div className="space-y-3">
                   {renderIndustryContextDrawerCard({
                     title: "Industry Regulations",
@@ -3358,8 +3547,23 @@ export default async function Page({
                     hideCount: true,
                     hideAccentDot: true,
                   })}
-                  {(normalizedCompanyIndustryAnalysis.tailwinds.length > 0 ||
-                    normalizedCompanyIndustryAnalysis.headwinds.length > 0) && (
+                  {normalizedCompanyIndustryAnalysis.companyFit?.qualifyingSubSectors.length ? (
+                    renderQualifiedSubSectors()
+                  ) : null}
+                  {normalizedCompanyIndustryAnalysis.subSectorCards.length > 0 ? (
+                    renderIndustryContextDrawerCard({
+                      title: "Sub-sector Supply Side Analysis",
+                      count: normalizedCompanyIndustryAnalysis.subSectorCards.length,
+                      description: renderRelevantSubSectors(
+                        normalizedCompanyIndustryAnalysis.subSectorCards,
+                      ),
+                      accentClass: "bg-sky-500/80",
+                      inline: true,
+                      hideCount: true,
+                      hideAccentDot: true,
+                    })
+                  ) : (normalizedCompanyIndustryAnalysis.tailwinds.length > 0 ||
+                    normalizedCompanyIndustryAnalysis.headwinds.length > 0) ? (
                     <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                       {renderIndustryContextDrawerCard({
                         title: "Tailwinds",
@@ -3392,7 +3596,7 @@ export default async function Page({
                         hideAccentDot: false,
                       })}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               )}
 

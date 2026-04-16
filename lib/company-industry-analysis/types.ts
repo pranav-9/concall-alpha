@@ -4,6 +4,10 @@ export type CompanyIndustryAnalysisRow = {
   sector?: string | null;
   sub_sector?: string | null;
   industry_positioning?: unknown;
+  value_chain?: unknown;
+  profit_pools?: unknown;
+  company_fit?: unknown;
+  competition?: unknown;
   regulatory_changes?: unknown;
   tailwinds?: unknown;
   headwinds?: unknown;
@@ -47,12 +51,34 @@ export type NormalizedIndustryClassificationMap = {
   dimensions: NormalizedIndustryClassificationDimension[];
 };
 
+export type NormalizedIndustryPlayerTypePlayer = {
+  playerName: string;
+  category: string | null;
+  playerStatus: string | null;
+  shareValue: string | null;
+  shareIsEstimated: boolean;
+};
+
+export type NormalizedIndustryPlayerTypeDimension = {
+  dimensionName: string;
+  dimensionExplanation: string | null;
+  competitiveStructureNote: string | null;
+  categories: string[];
+  players: NormalizedIndustryPlayerTypePlayer[];
+};
+
+export type NormalizedIndustryTypesOfPlayers = {
+  dimensions: NormalizedIndustryPlayerTypeDimension[];
+};
+
 export type NormalizedIndustryRegulatoryChange = {
   change: string;
   period: string | null;
   whatChanged: string | null;
   companyImpactMechanism: string | null;
+  industrySubSectorImpact: string | null;
   impactDirection: string | null;
+  subSectorScope: string | null;
 };
 
 export type NormalizedIndustryTheme = {
@@ -60,6 +86,46 @@ export type NormalizedIndustryTheme = {
   companyMechanism: string | null;
   timeHorizon: string | null;
   horizonBasis: string | null;
+};
+
+export type NormalizedIndustryCompanyFitSubSector = {
+  subSector: string;
+  description: string | null;
+  relevanceRationale: string | null;
+};
+
+export type NormalizedIndustryCompanyFit = {
+  nonQualifyingNote: string | null;
+  qualifyingSubSectors: NormalizedIndustryCompanyFitSubSector[];
+};
+
+export type NormalizedIndustryCapitalCycle = {
+  stage: string | null;
+  direction: string | null;
+  supplySideRead: string | null;
+};
+
+export type NormalizedIndustryMarketSharePlayer = {
+  playerName: string;
+  shareValue: string | null;
+  playerStatus: string | null;
+  shareIsEstimated: boolean;
+};
+
+export type NormalizedIndustryMarketShareSnapshot = {
+  shareBasis: string | null;
+  dataVintage: string | null;
+  players: NormalizedIndustryMarketSharePlayer[];
+};
+
+export type NormalizedIndustrySubSectorCard = {
+  subSector: string;
+  subSectorDescription: string | null;
+  relevanceRationale: string | null;
+  capitalCycle: NormalizedIndustryCapitalCycle | null;
+  marketShareSnapshot: NormalizedIndustryMarketShareSnapshot | null;
+  tailwinds: NormalizedIndustryTheme[];
+  headwinds: NormalizedIndustryTheme[];
 };
 
 export type NormalizedCompanyIndustryAnalysis = {
@@ -71,8 +137,10 @@ export type NormalizedCompanyIndustryAnalysis = {
   sourceUrls: string[];
   industryPositioning: NormalizedIndustryPositioning | null;
   valueChainMap: NormalizedIndustryValueChainMap | null;
-  classificationMap: NormalizedIndustryClassificationMap | null;
+  typesOfPlayers: NormalizedIndustryTypesOfPlayers | null;
+  companyFit: NormalizedIndustryCompanyFit | null;
   regulatoryChanges: NormalizedIndustryRegulatoryChange[];
+  subSectorCards: NormalizedIndustrySubSectorCard[];
   tailwinds: NormalizedIndustryTheme[];
   headwinds: NormalizedIndustryTheme[];
   schemaHints: string[];

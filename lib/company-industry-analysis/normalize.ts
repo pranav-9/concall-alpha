@@ -1,12 +1,18 @@
 import type {
   CompanyIndustryAnalysisRow,
   NormalizedCompanyIndustryAnalysis,
-  NormalizedIndustryClassificationCategory,
-  NormalizedIndustryClassificationDimension,
-  NormalizedIndustryClassificationMap,
+  NormalizedIndustryCapitalCycle,
+  NormalizedIndustryCompanyFit,
+  NormalizedIndustryCompanyFitSubSector,
+  NormalizedIndustryMarketSharePlayer,
+  NormalizedIndustryMarketShareSnapshot,
+  NormalizedIndustryPlayerTypeDimension,
+  NormalizedIndustryPlayerTypePlayer,
   NormalizedIndustryPositioning,
   NormalizedIndustryRegulatoryChange,
+  NormalizedIndustrySubSectorCard,
   NormalizedIndustryTheme,
+  NormalizedIndustryTypesOfPlayers,
   NormalizedIndustryValueChainLayer,
   NormalizedIndustryValueChainMap,
 } from "@/lib/company-industry-analysis/types";
@@ -69,31 +75,205 @@ const formatDateLabel = (value: string | null | undefined) => {
   }).format(date);
 };
 
-const buildIndustryEconomicsSummary = (
-  positioningRecord: JsonRecord | null,
-  detailsRoot: JsonRecord | null,
-) => {
-  const valueChainMap = parseJsonObjectLike(detailsRoot?.value_chain_map);
-  const synthesis = asString(valueChainMap?.synthesis);
-  const structureType =
-    asString(positioningRecord?.value_chain_structure_type) ??
-    asString(valueChainMap?.structure_type);
-  const classificationDimensions = parseJsonArrayLike(positioningRecord?.classification_dimensions)
+const normalizeKey = (value: string | null | undefined) =>
+  (value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+
+const toStringArray = (value: unknown) =>
+  parseJsonArrayLike(value)
     .map((item) => asString(item))
     .filter((item): item is string => Boolean(item));
+
+const normalizeValueChainLayer = (value: unknown): NormalizedIndustryValueChainLayer | null => {
+  const record = parseJsonObjectLike(value);
+  const layerName = asString(record?.layer_name);
+  if (!layerName) return null;
+
+  return {
+    layerName,
+    layerDescription: asString(record?.layer_description),
+    connectionToCompany:
+      asString(record?.connection_to_company) ?? asString(record?.sub_sector_linkage),
+    structuralCharacteristic: asString(record?.structural_characteristic),
+  };
+};
+
+const buildIndustryEconomicsSummary = (
+  positioningRecord: JsonRecord | null,
+  valueChainRecord: JsonRecord | null,
+) => {
+  const synthesis = asString(valueChainRecord?.synthesis);
+  const structureType =
+    asString(positioningRecord?.value_chain_structure_type) ??
+    asString(valueChainRecord?.structure_type);
+  const classificationDimensions =
+    toStringArray(positioningRecord?.classification_dimensions).length > 0
+      ? toStringArray(positioningRecord?.classification_dimensions)
+      : toStringArray(positioningRecord?.player_dimensions);
 
   const detailParts: string[] = [];
   if (structureType) {
     detailParts.push(`Value chain structure: ${formatCompactLabel(structureType)}.`);
   }
   if (classificationDimensions.length > 0) {
-    detailParts.push(`Key classification dimensions: ${formatList(classificationDimensions)}.`);
+    detailParts.push(`Key player dimensions: ${formatList(classificationDimensions)}.`);
   }
 
-  return [synthesis, detailParts.join(" ")].filter((item): item is string => Boolean(item)).join(" ");
+  return [synthesis, detailParts.join(" ")]
+    .filter((item): item is string => Boolean(item))
+    .join(" ");
 };
 
-const buildCompanyFitSummary = (detailsRoot: JsonRecord | null) => {
+const normalizeValueChainMap = (
+  rawValueChain: unknown,
+  detailsRoot: JsonRecord | null,
+  positioningRecord: JsonRecord | null,
+  fallbackSummary: string | null,
+): NormalizedIndustryValueChainMap | null => {
+  const record =
+    parseJsonObjectLike(rawValueChain) ?? parseJsonObjectLike(detailsRoot?.value_chain_map);
+  const layers = parseJsonArrayLike(record?.layers)
+    .map((item) => normalizeValueChainLayer(item))
+    .filter((item): item is NormalizedIndustryValueChainLayer => Boolean(item));
+  const structureType =
+    asString(record?.structure_type) ??
+    asString(positioningRecord?.value_chain_structure_type);
+  const synthesis = asString(record?.synthesis) ?? fallbackSummary;
+
+  if (!structureType && !synthesis && layers.length === 0) {
+    return null;
+  }
+
+  return {
+    structureType,
+    synthesis,
+    layers,
+  };
+};
+
+const normalizeLegacyTypesOfPlayers = (detailsRoot: JsonRecord | null) => {
+  const record = parseJsonObjectLike(detailsRoot?.classification_map);
+  const dimensions = parseJsonArrayLike(record?.dimensions)
+    .map((item) => parseJsonObjectLike(item))
+    .filter((item): item is JsonRecord => Boolean(item))
+    .map((dimensionRecord) => {
+      const dimensionName = asString(dimensionRecord.dimension_name);
+      if (!dimensionName) return null;
+
+      return {
+        dimensionName,
+        dimensionExplanation: asString(dimensionRecord.dimension_explanation),
+        competitiveStructureNote: asString(dimensionRecord.implication),
+        categories: parseJsonArrayLike(dimensionRecord.categories)
+          .map((item) => parseJsonObjectLike(item))
+          .filter((item): item is JsonRecord => Boolean(item))
+          .map((item) => asString(item.category))
+          .filter((item): item is string => Boolean(item)),
+        players: [] as NormalizedIndustryPlayerTypePlayer[],
+      };
+    })
+    .filter((item): item is NormalizedIndustryPlayerTypeDimension => Boolean(item));
+
+  return dimensions.length > 0 ? { dimensions } : null;
+};
+
+const normalizePlayerTypePlayer = (
+  value: unknown,
+): NormalizedIndustryPlayerTypePlayer | null => {
+  const record = parseJsonObjectLike(value);
+  const playerName = asString(record?.player_name);
+  if (!playerName) return null;
+
+  return {
+    playerName,
+    category: asString(record?.category),
+    playerStatus: asString(record?.player_status),
+    shareValue: asString(record?.share_value),
+    shareIsEstimated: record?.share_is_estimated === true,
+  };
+};
+
+const normalizePlayerTypeDimension = (
+  value: unknown,
+): NormalizedIndustryPlayerTypeDimension | null => {
+  const record = parseJsonObjectLike(value);
+  const dimensionName = asString(record?.dimension_name);
+  if (!dimensionName) return null;
+
+  return {
+    dimensionName,
+    dimensionExplanation: asString(record?.dimension_explanation),
+    competitiveStructureNote: asString(record?.competitive_structure_note),
+    categories: toStringArray(record?.categories),
+    players: parseJsonArrayLike(record?.players)
+      .map((item) => normalizePlayerTypePlayer(item))
+      .filter((item): item is NormalizedIndustryPlayerTypePlayer => Boolean(item)),
+  };
+};
+
+const normalizeTypesOfPlayers = (
+  rawCompetition: unknown,
+  detailsRoot: JsonRecord | null,
+): NormalizedIndustryTypesOfPlayers | null => {
+  const record = parseJsonObjectLike(rawCompetition);
+  const dimensions = parseJsonArrayLike(record?.dimensions)
+    .map((item) => normalizePlayerTypeDimension(item))
+    .filter((item): item is NormalizedIndustryPlayerTypeDimension => Boolean(item));
+
+  if (dimensions.length > 0) {
+    return { dimensions };
+  }
+
+  return normalizeLegacyTypesOfPlayers(detailsRoot);
+};
+
+const normalizeCompanyFitSubSector = (
+  value: unknown,
+): NormalizedIndustryCompanyFitSubSector | null => {
+  const record = parseJsonObjectLike(value);
+  const subSector = asString(record?.sub_sector);
+  if (!subSector) return null;
+
+  return {
+    subSector,
+    description: asString(record?.description),
+    relevanceRationale: asString(record?.relevance_rationale),
+  };
+};
+
+const normalizeCompanyFit = (rawCompanyFit: unknown): NormalizedIndustryCompanyFit | null => {
+  const record = parseJsonObjectLike(rawCompanyFit);
+  if (!record) return null;
+
+  const qualifyingSubSectors = parseJsonArrayLike(record.qualifying_sub_sectors)
+    .map((item) => normalizeCompanyFitSubSector(item))
+    .filter((item): item is NormalizedIndustryCompanyFitSubSector => Boolean(item));
+  const nonQualifyingNote = asString(record.non_qualifying_note);
+
+  if (!nonQualifyingNote && qualifyingSubSectors.length === 0) {
+    return null;
+  }
+
+  return {
+    nonQualifyingNote,
+    qualifyingSubSectors,
+  };
+};
+
+const buildCompanyFitSummary = (
+  companyFit: NormalizedIndustryCompanyFit | null,
+  detailsRoot: JsonRecord | null,
+) => {
+  if (companyFit?.qualifyingSubSectors.length) {
+    const summaries = companyFit.qualifyingSubSectors
+      .map((item) => {
+        const rationale = item.relevanceRationale ? `: ${item.relevanceRationale}` : "";
+        return `${item.subSector}${rationale}`;
+      })
+      .slice(0, 3);
+
+    return summaries.join(" ");
+  }
+
   const classificationMap = parseJsonObjectLike(detailsRoot?.classification_map);
   const dimensionRecords = parseJsonArrayLike(classificationMap?.dimensions)
     .map((item) => parseJsonObjectLike(item))
@@ -114,104 +294,15 @@ const buildCompanyFitSummary = (detailsRoot: JsonRecord | null) => {
     })
     .filter((item): item is string => Boolean(item));
 
-  const implications = dimensionRecords
-    .map((dimensionRecord) => asString(dimensionRecord.implication))
-    .filter((item): item is string => Boolean(item));
-
-  return [...summaries, ...implications.slice(0, 1)].join(" ");
-};
-
-const normalizeValueChainLayer = (
-  value: unknown,
-): NormalizedIndustryValueChainLayer | null => {
-  const record = parseJsonObjectLike(value);
-  const layerName = asString(record?.layer_name);
-  if (!layerName) return null;
-
-  return {
-    layerName,
-    layerDescription: asString(record?.layer_description),
-    connectionToCompany: asString(record?.connection_to_company),
-    structuralCharacteristic: asString(record?.structural_characteristic),
-  };
-};
-
-const normalizeValueChainMap = (
-  detailsRoot: JsonRecord | null,
-  positioningRecord: JsonRecord | null,
-  fallbackSummary: string | null,
-): NormalizedIndustryValueChainMap | null => {
-  const record = parseJsonObjectLike(detailsRoot?.value_chain_map);
-  const layers = parseJsonArrayLike(record?.layers)
-    .map((item) => normalizeValueChainLayer(item))
-    .filter((item): item is NormalizedIndustryValueChainLayer => Boolean(item));
-  const structureType =
-    asString(record?.structure_type) ??
-    asString(positioningRecord?.value_chain_structure_type);
-  const synthesis = asString(record?.synthesis) ?? fallbackSummary;
-
-  if (!structureType && !synthesis && layers.length === 0) {
-    return null;
-  }
-
-  return {
-    structureType,
-    synthesis,
-    layers,
-  };
-};
-
-const normalizeClassificationCategory = (
-  value: unknown,
-): NormalizedIndustryClassificationCategory | null => {
-  const record = parseJsonObjectLike(value);
-  const category = asString(record?.category);
-  if (!category) return null;
-
-  return {
-    category,
-    description: asString(record?.description),
-    isCompanyPosition: record?.is_company_position === true,
-  };
-};
-
-const normalizeClassificationDimension = (
-  value: unknown,
-): NormalizedIndustryClassificationDimension | null => {
-  const record = parseJsonObjectLike(value);
-  const dimensionName = asString(record?.dimension_name);
-  if (!dimensionName) return null;
-
-  const categories = parseJsonArrayLike(record?.categories)
-    .map((item) => normalizeClassificationCategory(item))
-    .filter((item): item is NormalizedIndustryClassificationCategory => Boolean(item));
-
-  return {
-    dimensionName,
-    dimensionExplanation: asString(record?.dimension_explanation),
-    implication: asString(record?.implication),
-    categories,
-  };
-};
-
-const normalizeClassificationMap = (
-  detailsRoot: JsonRecord | null,
-): NormalizedIndustryClassificationMap | null => {
-  const record = parseJsonObjectLike(detailsRoot?.classification_map);
-  const dimensions = parseJsonArrayLike(record?.dimensions)
-    .map((item) => normalizeClassificationDimension(item))
-    .filter((item): item is NormalizedIndustryClassificationDimension => Boolean(item));
-
-  if (dimensions.length === 0) return null;
-
-  return {
-    dimensions,
-  };
+  return summaries.join(" ");
 };
 
 const normalizeIndustryPositioning = (
   value: unknown,
   detailsRoot: JsonRecord | null,
+  valueChainRecord: JsonRecord | null,
+  valueChainMap: NormalizedIndustryValueChainMap | null,
+  companyFitSummary: string | null,
 ): NormalizedIndustryPositioning | null => {
   const record = parseJsonObjectLike(value);
   const customerNeed =
@@ -222,12 +313,11 @@ const normalizeIndustryPositioning = (
   const industryEconomicsForCompany =
     asString(record?.industry_economics_for_company) ??
     asString(record?.why_this_industry_exists) ??
-    buildIndustryEconomicsSummary(record, detailsRoot) ??
+    buildIndustryEconomicsSummary(record, valueChainRecord) ??
+    valueChainMap?.synthesis ??
     null;
   const whereThisCompanyFits =
-    asString(record?.where_this_company_fits) ??
-    buildCompanyFitSummary(detailsRoot) ??
-    null;
+    asString(record?.where_this_company_fits) ?? companyFitSummary ?? null;
 
   if (!customerNeed && !industryEconomicsForCompany && !whereThisCompanyFits) {
     return null;
@@ -252,7 +342,9 @@ const normalizeRegulatoryChange = (
     period: asString(record?.period),
     whatChanged: asString(record?.what_changed),
     companyImpactMechanism: asString(record?.company_impact_mechanism),
+    industrySubSectorImpact: asString(record?.industry_sub_sector_impact),
     impactDirection: asLowerString(record?.impact_direction),
+    subSectorScope: asString(record?.sub_sector_scope),
   };
 };
 
@@ -260,14 +352,117 @@ const normalizeTheme = (value: unknown): NormalizedIndustryTheme | null => {
   const record = parseJsonObjectLike(value);
   const theme = asString(record?.theme);
   if (!theme) return null;
+
   return {
     theme,
     companyMechanism:
       asString(record?.company_mechanism) ??
-      asString(record?.why_it_matters_for_company),
+      asString(record?.why_it_matters_for_company) ??
+      asString(record?.sub_sector_mechanism),
     timeHorizon: asString(record?.time_horizon),
     horizonBasis: asString(record?.horizon_basis),
   };
+};
+
+const normalizeCapitalCycle = (value: unknown): NormalizedIndustryCapitalCycle | null => {
+  const record = parseJsonObjectLike(value);
+  if (!record) return null;
+
+  const stage = asString(record.stage);
+  const direction = asString(record.direction);
+  const supplySideRead = asString(record.supply_side_read);
+
+  if (!stage && !direction && !supplySideRead) {
+    return null;
+  }
+
+  return {
+    stage,
+    direction,
+    supplySideRead,
+  };
+};
+
+const normalizeMarketSharePlayer = (
+  value: unknown,
+): NormalizedIndustryMarketSharePlayer | null => {
+  const record = parseJsonObjectLike(value);
+  const playerName = asString(record?.player_name);
+  if (!playerName) return null;
+
+  return {
+    playerName,
+    shareValue: asString(record?.share_value),
+    playerStatus: asString(record?.player_status),
+    shareIsEstimated: record?.share_is_estimated === true,
+  };
+};
+
+const normalizeMarketShareSnapshot = (
+  value: unknown,
+): NormalizedIndustryMarketShareSnapshot | null => {
+  const record = parseJsonObjectLike(value);
+  if (!record) return null;
+
+  const players = parseJsonArrayLike(record.players)
+    .map((item) => normalizeMarketSharePlayer(item))
+    .filter((item): item is NormalizedIndustryMarketSharePlayer => Boolean(item));
+  const shareBasis = asString(record.share_basis);
+  const dataVintage = asString(record.data_vintage);
+
+  if (!shareBasis && !dataVintage && players.length === 0) {
+    return null;
+  }
+
+  return {
+    shareBasis,
+    dataVintage,
+    players,
+  };
+};
+
+const normalizeSubSectorCard = (
+  value: unknown,
+  relevanceMap: Map<string, NormalizedIndustryCompanyFitSubSector>,
+): NormalizedIndustrySubSectorCard | null => {
+  const record = parseJsonObjectLike(value);
+  const subSector = asString(record?.sub_sector);
+  if (!subSector) return null;
+
+  const fitEntry = relevanceMap.get(normalizeKey(subSector)) ?? null;
+
+  return {
+    subSector,
+    subSectorDescription: asString(record?.sub_sector_description),
+    relevanceRationale: fitEntry?.relevanceRationale ?? null,
+    capitalCycle: normalizeCapitalCycle(record?.capital_cycle),
+    marketShareSnapshot: normalizeMarketShareSnapshot(record?.market_share_snapshot),
+    tailwinds: parseJsonArrayLike(record?.tailwinds)
+      .map((item) => normalizeTheme(item))
+      .filter((item): item is NormalizedIndustryTheme => Boolean(item)),
+    headwinds: parseJsonArrayLike(record?.headwinds)
+      .map((item) => normalizeTheme(item))
+      .filter((item): item is NormalizedIndustryTheme => Boolean(item)),
+  };
+};
+
+const normalizeSubSectorCards = (
+  rawProfitPools: unknown,
+  companyFit: NormalizedIndustryCompanyFit | null,
+) => {
+  const relevanceMap = new Map(
+    (companyFit?.qualifyingSubSectors ?? []).map((item) => [normalizeKey(item.subSector), item]),
+  );
+
+  const cards = parseJsonArrayLike(rawProfitPools)
+    .map((item) => normalizeSubSectorCard(item, relevanceMap))
+    .filter((item): item is NormalizedIndustrySubSectorCard => Boolean(item));
+
+  if (cards.length === 0) return [];
+  if (relevanceMap.size === 0) return cards;
+
+  const matchedCards = cards.filter((card) => relevanceMap.has(normalizeKey(card.subSector)));
+  return matchedCards.length > 0 ? matchedCards : cards;
 };
 
 const normalizeSources = (value: unknown): string[] =>
@@ -286,6 +481,10 @@ export function normalizeCompanyIndustryAnalysis(
 
   const schemaHints = new Set<string>();
   if (parseJsonObjectLike(row.industry_positioning)) schemaHints.add("industry_positioning_column");
+  if (parseJsonObjectLike(row.value_chain)) schemaHints.add("value_chain_column");
+  if (parseJsonArrayLike(row.profit_pools).length > 0) schemaHints.add("profit_pools_column");
+  if (parseJsonObjectLike(row.company_fit)) schemaHints.add("company_fit_column");
+  if (parseJsonObjectLike(row.competition)) schemaHints.add("competition_column");
   if (parseJsonArrayLike(row.regulatory_changes).length > 0) schemaHints.add("regulatory_changes_column");
   if (parseJsonArrayLike(row.tailwinds).length > 0) schemaHints.add("tailwinds_column");
   if (parseJsonArrayLike(row.headwinds).length > 0) schemaHints.add("headwinds_column");
@@ -299,16 +498,28 @@ export function normalizeCompanyIndustryAnalysis(
   if (contextSource) schemaHints.add(`context_source:${contextSource}`);
 
   const positioningRecord = parseJsonObjectLike(row.industry_positioning);
-  const industryPositioning = normalizeIndustryPositioning(row.industry_positioning, detailsRoot);
+  const valueChainRecord =
+    parseJsonObjectLike(row.value_chain) ?? parseJsonObjectLike(detailsRoot?.value_chain_map);
+  const companyFit = normalizeCompanyFit(row.company_fit);
+  const companyFitSummary = buildCompanyFitSummary(companyFit, detailsRoot);
   const valueChainMap = normalizeValueChainMap(
+    row.value_chain,
     detailsRoot,
     positioningRecord,
-    industryPositioning?.industryEconomicsForCompany ?? null,
+    null,
   );
-  const classificationMap = normalizeClassificationMap(detailsRoot);
+  const industryPositioning = normalizeIndustryPositioning(
+    row.industry_positioning,
+    detailsRoot,
+    valueChainRecord,
+    valueChainMap,
+    companyFitSummary,
+  );
+  const typesOfPlayers = normalizeTypesOfPlayers(row.competition, detailsRoot);
   const regulatoryChanges = parseJsonArrayLike(row.regulatory_changes)
     .map((item) => normalizeRegulatoryChange(item))
     .filter((item): item is NormalizedIndustryRegulatoryChange => Boolean(item));
+  const subSectorCards = normalizeSubSectorCards(row.profit_pools, companyFit);
   const tailwinds = parseJsonArrayLike(row.tailwinds)
     .map((item) => normalizeTheme(item))
     .filter((item): item is NormalizedIndustryTheme => Boolean(item));
@@ -318,7 +529,11 @@ export function normalizeCompanyIndustryAnalysis(
 
   if (
     !industryPositioning &&
+    !valueChainMap &&
+    !typesOfPlayers &&
+    !companyFit &&
     regulatoryChanges.length === 0 &&
+    subSectorCards.length === 0 &&
     tailwinds.length === 0 &&
     headwinds.length === 0
   ) {
@@ -334,8 +549,10 @@ export function normalizeCompanyIndustryAnalysis(
     sourceUrls: normalizeSources(row.sources),
     industryPositioning,
     valueChainMap,
-    classificationMap,
+    typesOfPlayers,
+    companyFit,
     regulatoryChanges,
+    subSectorCards,
     tailwinds,
     headwinds,
     schemaHints: Array.from(schemaHints),
