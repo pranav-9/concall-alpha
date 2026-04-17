@@ -205,7 +205,6 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
       .sort((a, b) => b.latestScore - a.latestScore)
       .slice(0, 5),
     scoreKey: "latest",
-    showSectorPill: true,
   };
 
   const decliners = companies
@@ -253,8 +252,7 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
 
   const positiveTrendTwist: ListBlock = {
     title: "Positive Trend Twist",
-    subtitle:
-      "Companies whose latest quarter score is meaningfully above their previous 4-quarter average.",
+    subtitle: "Latest quarter score is above the prior 4-quarter average.",
     items: trendTwistItems
       .filter((item) => (item.twistPct ?? 0) > 0)
       .sort((a, b) => (b.twistPct ?? 0) - (a.twistPct ?? 0))
@@ -264,8 +262,7 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
 
   const negativeTrendTwist: ListBlock = {
     title: "Negative Trend Twist",
-    subtitle:
-      "Companies whose latest quarter score is meaningfully below their previous 4-quarter average.",
+    subtitle: "Latest quarter score is below the prior 4-quarter average.",
     items: trendTwistItems
       .filter((item) => (item.twistPct ?? 0) < 0)
       .sort((a, b) => (a.twistPct ?? 0) - (b.twistPct ?? 0))
@@ -378,14 +375,15 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
     );
   }
 
-  const { strength, latestTop, latestLabel, positiveTrendTwist } = buildLists(records, now);
+  const { strength, latestTop, latestLabel, positiveTrendTwist, negativeTrendTwist } =
+    buildLists(records, now);
   const latestTopForHero =
     latestTop != null
       ? {
           ...latestTop,
           title: `${latestLabel || "Latest qtr"} Top Performers`,
           subtitle:
-            "Highest quarter sentiment scores in the latest reported quarter across covered companies.",
+            "Highest latest-quarter sentiment scores across covered companies.",
         }
       : strength[0];
   const { sumMap, nameMap } = buildFourQSumMap(records);
@@ -439,7 +437,7 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
         type: "growth" as const,
         items: sortedGrowth,
         subtitle:
-          "Companies with the strongest forward growth outlook based on latest guidance-driven growth scores.",
+          "Strongest forward growth outlook from latest guidance-driven scores.",
       },
       {
         key: "twist_positive" as const,
@@ -454,7 +452,23 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
           title: "Positive Trend Twist",
           subtitle:
             positiveTrendTwist?.subtitle ??
-            "Companies whose latest quarter score is meaningfully above their previous 4-quarter average.",
+            "Latest quarter score is above the prior 4-quarter average.",
+        },
+      },
+      {
+        key: "twist_negative" as const,
+        railLabel: "Negative Twist" as const,
+        type: "list" as const,
+        list: {
+          ...(negativeTrendTwist ?? {
+            title: "Negative Trend Twist",
+            items: [],
+            scoreKey: "latest" as const,
+          }),
+          title: "Negative Trend Twist",
+          subtitle:
+            negativeTrendTwist?.subtitle ??
+            "Latest quarter score is below the prior 4-quarter average.",
         },
       },
     ];

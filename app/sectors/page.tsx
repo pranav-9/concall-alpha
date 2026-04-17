@@ -306,7 +306,7 @@ export default async function SectorsPage({
                 <td className="px-3 py-2">
                   {row.avgLatestQuarterScore != null ? (
                     <div className="flex items-center gap-2">
-                      <ConcallScore score={row.avgLatestQuarterScore} />
+                      <ConcallScore score={row.avgLatestQuarterScore} size="sm" />
                       <span className="text-xs text-muted-foreground">
                         ({row.latestQuarterEligibleCount}/{row.companyCount})
                       </span>
@@ -318,7 +318,7 @@ export default async function SectorsPage({
                 <td className="px-3 py-2">
                   {row.avgGrowthScore != null ? (
                     <div className="flex items-center gap-2">
-                      <ConcallScore score={row.avgGrowthScore} />
+                      <ConcallScore score={row.avgGrowthScore} size="sm" />
                       <span className="text-xs text-muted-foreground">
                         ({row.growthEligibleCount}/{row.companyCount})
                       </span>

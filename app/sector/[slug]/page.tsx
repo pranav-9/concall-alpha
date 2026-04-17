@@ -906,21 +906,21 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
                     </td>
                     <td className="px-3 py-2">
                       {row.latestQuarterScore != null ? (
-                        <ConcallScore score={row.latestQuarterScore} />
+                        <ConcallScore score={row.latestQuarterScore} size="sm" />
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-3 py-2">
                       {row.growthScore != null ? (
-                        <ConcallScore score={row.growthScore} />
+                        <ConcallScore score={row.growthScore} size="sm" />
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-3 py-2">
                       {row.avg4QuarterScore != null ? (
-                        <ConcallScore score={row.avg4QuarterScore} />
+                        <ConcallScore score={row.avg4QuarterScore} size="sm" />
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}

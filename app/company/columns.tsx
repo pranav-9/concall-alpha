@@ -63,7 +63,7 @@ export const columns: ColumnDef<ConcallRow>[] = [
       const score = parseFloat(row.getValue("q1fy26"));
       return (
         <div>
-          <ConcallScore score={score}></ConcallScore>
+          <ConcallScore score={score} size="sm"></ConcallScore>
         </div>
       );
     },
@@ -86,7 +86,7 @@ export const columns: ColumnDef<ConcallRow>[] = [
       const score = parseFloat(row.getValue("q4fy25"));
       return (
         <div>
-          <ConcallScore score={score}></ConcallScore>
+          <ConcallScore score={score} size="sm"></ConcallScore>
         </div>
       );
     },
@@ -109,7 +109,7 @@ export const columns: ColumnDef<ConcallRow>[] = [
       const score = parseFloat(row.getValue("q3fy25"));
       return (
         <div>
-          <ConcallScore score={score}></ConcallScore>
+          <ConcallScore score={score} size="sm"></ConcallScore>
         </div>
       );
     },
@@ -139,7 +139,7 @@ export const columns: ColumnDef<ConcallRow>[] = [
           >
             <p className="text-lg font-extrabold  text-black">{amount}</p>
           </Badge> */}
-          <ConcallScore score={amount}></ConcallScore>
+          <ConcallScore score={amount} size="sm"></ConcallScore>
         </div>
       );
     },

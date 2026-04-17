@@ -112,7 +112,7 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
         if (Number.isNaN(score)) {
           return <span className="text-muted-foreground">—</span>;
         }
-        return <ConcallScore score={score} />;
+        return <ConcallScore score={score} size="sm" />;
       },
     });
   });
