@@ -5,6 +5,7 @@ import ConcallScore from "@/components/concall-score";
 import { WatchlistButton } from "@/components/watchlist-button";
 import { cn } from "@/lib/utils";
 import { useCompanyPageNavigation } from "./company-page-workspace";
+import { MissingSectionRequestButton } from "./missing-section-request-button";
 
 type OverviewSectionPreview = {
   title: string;
@@ -73,6 +74,8 @@ export function OverviewCard({
     window.history.replaceState(null, "", `#${targetId}`);
   };
 
+  const getSectionId = (href: string) => (href.startsWith("#") ? href.slice(1) : href);
+
   return (
     <div
       id="overview"
@@ -121,47 +124,109 @@ export function OverviewCard({
             <div className="space-y-2.5 pt-1">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {sectionPreviews.map((preview) => (
-                  <button
-                    key={preview.title}
-                    type="button"
-                    onClick={() => navigateToSection(preview.href)}
-                    className={cn(
-                      "group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-border/85 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_12px_24px_-20px_rgba(15,23,42,0.30)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_24px_-20px_rgba(0,0,0,0.36)]",
-                      previewToneClass(),
-                    )}
-                  >
-                    <div
-                      className={cn("absolute inset-x-0 top-0 h-1.5", previewAccentClass())}
-                    />
-                    <div className="flex h-full flex-col justify-between gap-4 pt-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 space-y-1">
-                          <p className="text-sm font-semibold text-foreground">{preview.title}</p>
-                          <p className="text-[11px] leading-snug text-muted-foreground">
-                            {preview.summary}
-                          </p>
+                  (() => {
+                    const isLocked = preview.badge === "Soon";
+                    const sectionId = getSectionId(preview.href);
+                    const requestLabel = "Request this section";
+                    const previewShellClass = "flex h-full flex-col gap-4 pt-1";
+
+                    if (isLocked) {
+                      return (
+                        <div
+                          key={preview.title}
+                          className={cn(
+                            "group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200",
+                            previewToneClass(),
+                          )}
+                        >
+                          <div
+                            className={cn("absolute inset-x-0 top-0 h-1.5", previewAccentClass())}
+                          />
+                          <div className={previewShellClass}>
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 space-y-1">
+                                <p className="text-sm font-semibold text-foreground">{preview.title}</p>
+                              </div>
+                              <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
+                                Not ready
+                              </span>
+                            </div>
+
+                            <div className="relative flex flex-1 items-center justify-center rounded-xl border border-border/40 bg-background/60 p-3">
+                              <p className="w-full text-[11px] leading-snug text-muted-foreground/85 blur-[0.8px] opacity-70 select-none">
+                                {preview.summary}
+                              </p>
+                              {companyInfo?.code && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <MissingSectionRequestButton
+                                    companyCode={companyInfo.code}
+                                    companyName={companyInfo.name ?? null}
+                                    sectionId={sectionId}
+                                    sectionTitle={preview.title}
+                                    label={requestLabel}
+                                    className="h-8 rounded-full border-border/60 bg-background/95 px-3 text-[10px] font-medium text-foreground shadow-sm hover:bg-background"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/40 pt-3">
+                              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                                Locked preview
+                              </p>
+                              <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                                Request access to unlock
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="shrink-0 flex flex-col items-end gap-2">
-                          {typeof preview.score === "number" ? (
-                            <ConcallScore score={preview.score} size="sm" />
-                          ) : preview.badge ? (
-                            <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
-                              {preview.badge}
-                            </span>
-                          ) : null}
-                          {preview.metaBadge ? (
-                            <span className="inline-flex max-w-full items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
-                              {preview.metaBadge}
-                            </span>
-                          ) : null}
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={preview.title}
+                        type="button"
+                        onClick={() => navigateToSection(preview.href)}
+                        className={cn(
+                          "group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-border/85 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_12px_24px_-20px_rgba(15,23,42,0.30)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_24px_-20px_rgba(0,0,0,0.36)]",
+                          previewToneClass(),
+                        )}
+                      >
+                        <div
+                          className={cn("absolute inset-x-0 top-0 h-1.5", previewAccentClass())}
+                        />
+                        <div className={previewShellClass}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 space-y-1">
+                              <p className="text-sm font-semibold text-foreground">{preview.title}</p>
+                              <p className="text-[11px] leading-snug text-muted-foreground">
+                                {preview.summary}
+                              </p>
+                            </div>
+                            <div className="shrink-0 flex flex-col items-end gap-2">
+                              {typeof preview.score === "number" ? (
+                                <ConcallScore score={preview.score} size="sm" />
+                              ) : preview.badge ? (
+                                <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
+                                  {preview.badge}
+                                </span>
+                              ) : null}
+                              {preview.metaBadge ? (
+                                <span className="inline-flex max-w-full items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
+                                  {preview.metaBadge}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="mt-auto inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-foreground/60 transition-colors group-hover:text-foreground/80">
+                            <span>Explore more</span>
+                            <ArrowRight className="h-3 w-3" />
+                          </div>
                         </div>
-                      </div>
-                      <div className="inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-foreground/60 transition-colors group-hover:text-foreground/80">
-                        <span>Explore more</span>
-                        <ArrowRight className="h-3 w-3" />
-                      </div>
-                    </div>
-                  </button>
+                      </button>
+                    );
+                  })()
                 ))}
               </div>
             </div>

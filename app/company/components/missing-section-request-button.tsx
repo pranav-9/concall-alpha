@@ -11,6 +11,7 @@ type MissingSectionRequestButtonProps = {
   sectionId: string;
   sectionTitle: string;
   className?: string;
+  label?: string;
 };
 
 const REQUEST_DEDUPE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -25,6 +26,7 @@ export function MissingSectionRequestButton({
   sectionId,
   sectionTitle,
   className,
+  label,
 }: MissingSectionRequestButtonProps) {
   const pathname = usePathname();
   const storageKey = React.useMemo(
@@ -114,7 +116,7 @@ export function MissingSectionRequestButton({
       disabled={requested || submitting}
       onClick={handleClick}
     >
-      {requested ? "Requested" : submitting ? "Requesting..." : "Request this"}
+      {requested ? "Requested" : submitting ? "Requesting..." : label ?? "Request this"}
     </Button>
   );
 }
