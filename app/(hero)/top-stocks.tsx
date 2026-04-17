@@ -50,8 +50,6 @@ type RawConcallRow = {
 type ListItem = {
   code: string;
   name: string;
-  sector?: string | null;
-  subSector?: string | null;
   isNew?: boolean;
   latestScore: number;
   delta?: number | null;
@@ -66,7 +64,6 @@ type ListBlock = {
   scoreKey?: "latest" | "avg4";
   items: ListItem[];
   signal?: "sentiment" | "growth";
-  showSectorPill?: boolean;
 };
 
 type GrowthRow = {
@@ -163,8 +160,6 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
   companyMap.forEach((rows, code) => {
     const sorted = [...rows].sort((a, b) => b.fy - a.fy || b.qtr - a.qtr);
     const name = sorted[0]?.company?.name ?? "—";
-    const sector = sorted[0]?.company?.sector ?? null;
-    const subSector = sorted[0]?.company?.sub_sector ?? null;
     const createdAt = sorted[0]?.company?.created_at ?? null;
     const latestRec =
       latest &&
@@ -183,8 +178,6 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
     companies.push({
       code,
       name,
-      sector,
-      subSector,
       isNew: isCompanyNew(createdAt, now),
       latestScore: latestRec ? Number(latestRec.score) : NaN,
       delta,
@@ -221,8 +214,6 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
   companyMap.forEach((rows, code) => {
     const sorted = [...rows].sort((a, b) => b.fy - a.fy || b.qtr - a.qtr);
     const name = sorted[0]?.company?.name ?? "—";
-    const sector = sorted[0]?.company?.sector ?? null;
-    const subSector = sorted[0]?.company?.sub_sector ?? null;
     const createdAt = sorted[0]?.company?.created_at ?? null;
     if (!latest) return;
     const latestRec = sorted.find((r) => r.fy === latest.fy && r.qtr === latest.qtr);
@@ -241,8 +232,6 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
     trendTwistItems.push({
       code,
       name,
-      sector,
-      subSector,
       isNew: isCompanyNew(createdAt, now),
       latestScore: Number(latestRec.score),
       twistPct,
@@ -520,11 +509,8 @@ function ListCard({
     items: ListItem[];
     scoreKey?: "latest" | "avg4";
     signal?: "sentiment" | "growth";
-    showSectorPill?: boolean;
   };
 }) {
-  const formatSector = (sector?: string | null) => sector?.trim() || null;
-
   return (
     <div className="flex flex-col rounded-xl border border-border bg-card">
       <div className="p-3 font-bold text-foreground text-base sm:text-lg bg-muted/40 rounded-t-xl border-b border-border">
@@ -542,7 +528,6 @@ function ListCard({
           <p className="text-sm text-muted-foreground">Not enough data.</p>
         )}
         {list.items.map((s, index) => {
-          const sectorLabel = formatSector(s.sector);
           return (
             <div key={index}>
               <Link href={"/company/" + s.code} prefetch={false}>
@@ -559,11 +544,6 @@ function ListCard({
                           </span>
                         )}
                       </p>
-                      {list.showSectorPill && sectorLabel && (
-                        <span className="w-fit max-w-full truncate text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                          {sectorLabel}
-                        </span>
-                      )}
                       {typeof s.twistPct === "number" && (
                         <p className="text-[11px] text-muted-foreground leading-tight line-clamp-1">
                           {`${s.twistPct >= 0 ? "+" : ""}${s.twistPct.toFixed(1)}% vs prev 4Q avg`}

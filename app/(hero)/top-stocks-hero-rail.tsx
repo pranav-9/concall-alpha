@@ -106,13 +106,10 @@ export default function TopStocksHeroRail({ slides }: { slides: HeroRailSlide[] 
 }
 
 function ListCard({ list }: { list: ListBlock }) {
-  const formatSector = (sector?: string | null) => sector?.trim() || null;
-
   return (
     <div className="flex flex-col gap-3">
       {list.items.length === 0 && <p className="text-sm text-muted-foreground">Not enough data.</p>}
       {list.items.map((item, index) => {
-        const sectorLabel = formatSector(item.sector);
         const showBadgeRow = item.isNew;
 
         return (
