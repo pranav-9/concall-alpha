@@ -386,7 +386,7 @@ export default async function Home() {
                     )}
                   </div>
 
-                  <p className="mt-4 text-sm leading-6 text-foreground/78">{item.body}</p>
+                  <p className="mt-4 text-sm leading-5 text-foreground/78">{item.body}</p>
                 </div>
               ))}
             </div>
