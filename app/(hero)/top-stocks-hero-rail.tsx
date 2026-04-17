@@ -30,6 +30,16 @@ type GrowthItem = {
   rank?: number;
 };
 
+type MoatItem = {
+  code: string;
+  name: string;
+  moatLabel: string;
+  presentPillarCount: number;
+  trajectoryLabel: string;
+  trajectoryRank: number;
+  updatedAtSort: number;
+};
+
 type HeroRailSlide =
   | {
       key: "quarter";
@@ -51,10 +61,12 @@ type HeroRailSlide =
       list: ListBlock;
     }
   | {
-      key: "twist_negative";
-      railLabel: "Negative Twist";
-      type: "list";
-      list: ListBlock;
+      key: "moat";
+      railLabel: "Moat Leaders";
+      type: "moat";
+      title: string;
+      subtitle?: string;
+      items: MoatItem[];
     };
 
 export default function TopStocksHeroRail({ slides }: { slides: HeroRailSlide[] }) {
@@ -81,19 +93,27 @@ export default function TopStocksHeroRail({ slides }: { slides: HeroRailSlide[] 
                 ) : null}
               </div>
               <h3 className="mt-2 text-xl font-bold leading-tight text-foreground">
-                {slide.type === "growth" ? "Top Growth Outlook" : slide.list.title}
+                {slide.type === "growth"
+                  ? "Top Growth Outlook"
+                  : slide.type === "moat"
+                    ? slide.title
+                    : slide.list.title}
               </h3>
               <p className="mt-1 text-[13px] leading-5 text-muted-foreground">
                 {slide.type === "growth"
                   ? slide.subtitle ??
                     "Companies with the strongest forward growth outlook based on the latest available growth score."
-                  : slide.list.subtitle ?? "Track the strongest live shifts across covered companies."}
+                  : slide.type === "moat"
+                    ? slide.subtitle ?? "Label-ranked moat positions across covered companies."
+                    : slide.list.subtitle ?? "Track the strongest live shifts across covered companies."}
               </p>
             </div>
 
             <div className="p-3.5">
               {slide.type === "growth" ? (
                 <GrowthListCard items={slide.items} />
+              ) : slide.type === "moat" ? (
+                <MoatListCard items={slide.items} />
               ) : (
                 <ListCard list={slide.list} />
               )}
@@ -183,6 +203,61 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
                     -
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+const moatBadgeClass = (label: string) => {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("wide")) {
+    return "border-emerald-200 bg-emerald-100 text-emerald-900 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200";
+  }
+  if (normalized.includes("narrow")) {
+    return "border-sky-200 bg-sky-100 text-sky-900 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200";
+  }
+  if (normalized.includes("risk")) {
+    return "border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-600/40 dark:bg-amber-900/30 dark:text-amber-200";
+  }
+  if (normalized.includes("no moat")) {
+    return "border-rose-300 bg-rose-100 text-rose-900 dark:border-rose-600/40 dark:bg-rose-900/30 dark:text-rose-200";
+  }
+  return "border-border/60 bg-muted/60 text-foreground";
+};
+
+function MoatListCard({ items }: { items: MoatItem[] }) {
+  const visible = items.slice(0, 5);
+
+  return (
+    <div className="flex flex-col gap-3">
+      {visible.length === 0 && <p className="text-sm text-muted-foreground">No moat data yet.</p>}
+      {visible.map((item, index) => (
+        <Link key={`${item.code}-${index}`} href={`/company/${item.code}`} prefetch={false}>
+          <div className="flex items-start gap-2 rounded-2xl border border-border/50 bg-background/70 p-2.5 transition-colors hover:bg-accent/60">
+            <p className="p-1 text-[11px] leading-snug text-muted-foreground">
+              {index + 1}.
+            </p>
+            <div className="flex min-w-0 flex-1 items-start gap-2">
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <p className="line-clamp-1 text-[12px] font-medium leading-tight text-foreground">
+                  {item.name}
+                </p>
+                <p className="line-clamp-1 text-[10px] leading-tight text-muted-foreground">
+                  {item.presentPillarCount} pillars · {item.trajectoryLabel.toLowerCase()}
+                </p>
+              </div>
+              <div className="flex shrink-0 min-w-[84px] flex-col items-end gap-0.5">
+                <span
+                  className={`inline-flex max-w-[84px] items-center justify-center rounded-full border px-2.5 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.12em] ${moatBadgeClass(
+                    item.moatLabel,
+                  )}`}
+                >
+                  {item.moatLabel}
+                </span>
               </div>
             </div>
           </div>

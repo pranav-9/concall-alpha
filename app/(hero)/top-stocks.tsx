@@ -4,6 +4,8 @@ import Link from "next/link";
 import ConcallScore from "@/components/concall-score";
 import { Badge } from "@/components/ui/badge";
 import { isCompanyNew } from "@/lib/company-freshness";
+import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
+import type { MoatAnalysisRow, MoatRatingKey, NormalizedMoatAnalysis } from "@/lib/moat-analysis/types";
 import { createClient } from "@/lib/supabase/server";
 import TopStocksHeroRail from "@/app/(hero)/top-stocks-hero-rail";
 
@@ -93,6 +95,47 @@ type GrowthItem = {
   rank?: number;
 };
 
+type MoatItem = {
+  code: string;
+  name: string;
+  moatRating: MoatRatingKey;
+  moatLabel: string;
+  presentPillarCount: number;
+  trajectoryLabel: string;
+  trajectoryRank: number;
+  updatedAtSort: number;
+};
+
+const MOAT_RATING_ORDER: Record<MoatRatingKey, number> = {
+  wide_moat: 0,
+  narrow_moat: 1,
+  no_moat: 2,
+  moat_at_risk: 3,
+  unknown: 4,
+};
+
+const MOAT_TRAJECTORY_ORDER: Record<string, number> = {
+  improving: 0,
+  stable: 1,
+  declining: 2,
+  unknown: 3,
+};
+
+const normalizeSortText = (value: string | null | undefined) =>
+  (value ?? "Unknown").trim().toLowerCase();
+
+const formatTrajectoryLabel = (value: string | null | undefined) => {
+  const normalized = (value ?? "").trim();
+  if (!normalized) return "Unknown";
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+};
+
+const sortTimestamp = (value: string | null | undefined) => {
+  if (!value) return Number.NEGATIVE_INFINITY;
+  const ts = Date.parse(value);
+  return Number.isFinite(ts) ? ts : Number.NEGATIVE_INFINITY;
+};
+
 const fetchAll = async (supabase: SupabaseServerClient) => {
   const { data, error } = await supabase
     .from("concall_analysis")
@@ -115,6 +158,59 @@ const fetchAll = async (supabase: SupabaseServerClient) => {
     };
   });
   return normalized;
+};
+
+const fetchMoatLeaders = async (supabase: SupabaseServerClient) => {
+  const { data, error } = await supabase
+    .from("moat_analysis")
+    .select(
+      "id, company_code, company_name, industry, rating, trajectory, trajectory_direction, porter_summary, porter_verdict, moats, quantitative, durability, risks, created_at, updated_at",
+    )
+    .order("updated_at", { ascending: false })
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
+
+  if (error) throw error;
+
+  const rows = (data ?? []) as MoatAnalysisRow[];
+  const latestByCompany = new Map<string, NormalizedMoatAnalysis>();
+
+  rows.forEach((row) => {
+    const normalized = normalizeMoatAnalysis(row);
+    if (!normalized) return;
+    const key = normalized.companyCode.toUpperCase();
+    if (!latestByCompany.has(key)) {
+      latestByCompany.set(key, normalized);
+    }
+  });
+
+  return Array.from(latestByCompany.values())
+    .map((item) => {
+      const directionRaw = item.trajectoryDirection ?? item.trajectory ?? null;
+      const directionSortKey = normalizeSortText(directionRaw);
+      const directionRank = MOAT_TRAJECTORY_ORDER[directionSortKey] ?? MOAT_TRAJECTORY_ORDER.unknown;
+      const presentPillarCount = item.moatPillars.filter((pillar) => pillar.present).length;
+
+      return {
+        code: item.companyCode,
+        name: item.companyName ?? item.companyCode,
+        moatRating: item.moatRating,
+        moatLabel: item.moatRatingLabel,
+        presentPillarCount,
+        trajectoryLabel: formatTrajectoryLabel(directionRaw),
+        trajectoryRank: directionRank,
+        updatedAtSort: sortTimestamp(item.updatedAtRaw),
+      } satisfies MoatItem;
+    })
+    .sort((a, b) => {
+      const ratingDiff = MOAT_RATING_ORDER[a.moatRating] - MOAT_RATING_ORDER[b.moatRating];
+      if (ratingDiff !== 0) return ratingDiff;
+      if (b.presentPillarCount !== a.presentPillarCount) return b.presentPillarCount - a.presentPillarCount;
+      if (a.trajectoryRank !== b.trajectoryRank) return a.trajectoryRank - b.trajectoryRank;
+      if (b.updatedAtSort !== a.updatedAtSort) return b.updatedAtSort - a.updatedAtSort;
+      return a.name.localeCompare(b.name);
+    })
+    .slice(0, 5);
 };
 
 const uniqueQuarters = (records: CompanyRecord[]) => {
@@ -142,7 +238,6 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
       latestTop: null,
       latestLabel: "",
       positiveTrendTwist: null,
-      negativeTrendTwist: null,
     };
   }
 
@@ -249,16 +344,6 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
     scoreKey: "latest",
   };
 
-  const negativeTrendTwist: ListBlock = {
-    title: "Negative Trend Twist",
-    subtitle: "Latest quarter score is below the prior 4-quarter average.",
-    items: trendTwistItems
-      .filter((item) => (item.twistPct ?? 0) < 0)
-      .sort((a, b) => (a.twistPct ?? 0) - (b.twistPct ?? 0))
-      .slice(0, 5),
-    scoreKey: "latest",
-  };
-
   const strength: ListBlock[] = [
     { title: "Top Past Sentiment (4Q avg)", items: strong4Q, scoreKey: "avg4", signal: "sentiment" },
   ];
@@ -274,7 +359,6 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
     latestTop,
     latestLabel: latest?.label ?? "",
     positiveTrendTwist,
-    negativeTrendTwist,
   };
 };
 
@@ -351,9 +435,10 @@ const buildFourQSumMap = (records: CompanyRecord[]) => {
 const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) => {
   const supabase = await createClient();
   const now = new Date();
-  const [records, growthLeaders] = await Promise.all([
+  const [records, growthLeaders, moatLeaders] = await Promise.all([
     fetchAll(supabase),
     fetchGrowthList(supabase),
+    fetchMoatLeaders(supabase),
   ]);
 
   if (!records.length) {
@@ -364,8 +449,7 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
     );
   }
 
-  const { strength, latestTop, latestLabel, positiveTrendTwist, negativeTrendTwist } =
-    buildLists(records, now);
+  const { strength, latestTop, latestLabel, positiveTrendTwist } = buildLists(records, now);
   const latestTopForHero =
     latestTop != null
       ? {
@@ -445,20 +529,12 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
         },
       },
       {
-        key: "twist_negative" as const,
-        railLabel: "Negative Twist" as const,
-        type: "list" as const,
-        list: {
-          ...(negativeTrendTwist ?? {
-            title: "Negative Trend Twist",
-            items: [],
-            scoreKey: "latest" as const,
-          }),
-          title: "Negative Trend Twist",
-          subtitle:
-            negativeTrendTwist?.subtitle ??
-            "Latest quarter score is below the prior 4-quarter average.",
-        },
+        key: "moat" as const,
+        railLabel: "Moat Leaders" as const,
+        type: "moat" as const,
+        title: "Moat Leaders",
+        subtitle: "Label-ranked moat positions across covered companies.",
+        items: moatLeaders,
       },
     ];
 
