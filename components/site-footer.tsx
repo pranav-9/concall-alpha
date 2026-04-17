@@ -20,6 +20,11 @@ const learnLinks: FooterLinkItem[] = [
     external: true,
     highlight: true,
   },
+  {
+    href: "https://x.com/pranav_handle",
+    label: "X",
+    external: true,
+  },
   { href: "/requests", label: "Submit Request" },
 ];
 
