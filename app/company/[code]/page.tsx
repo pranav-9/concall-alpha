@@ -2388,7 +2388,7 @@ export default async function Page({
     if (!hasRelevantSubSectors && !hasSubSectorCards) {
       return renderMissingSectionState(
         "sub-sector",
-        "Sub-sector",
+        "Sub-sector Analysis",
         "We have not generated sub-sector-specific cards for this company yet.",
       );
     }
@@ -3758,7 +3758,7 @@ export default async function Page({
           <div data-section-id="sub-sector">
             <SectionCard
               id="sub-sector"
-              title="Sub-sector"
+              title="Sub-sector Analysis"
               headerAction={
                 companyIndustryGeneratedAtShort ? (
                   <span className="text-[11px] text-muted-foreground">

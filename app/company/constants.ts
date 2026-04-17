@@ -20,7 +20,7 @@ export const SECTIONS = [
   },
   {
     id: "sub-sector",
-    label: "Sub-sector",
+    label: "Sub-sector Analysis",
   },
   {
     id: "business-overview",

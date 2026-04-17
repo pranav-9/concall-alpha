@@ -17,7 +17,7 @@ type TopSectionTabsProps = {
 const SHORT_LABELS: Record<string, string> = {
   overview: "Overview",
   "industry-context": "Industry",
-  "sub-sector": "Sub-sector",
+  "sub-sector": "Sub-sector Analysis",
   "business-overview": "Business",
   "sentiment-score": "Quarterly",
   "key-variables": "Variables",
