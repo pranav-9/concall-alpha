@@ -75,11 +75,16 @@ export type NormalizedIndustryPlayerTypePlayer = {
   shareIsEstimated: boolean;
 };
 
+export type NormalizedIndustryPlayerTypeCategory = {
+  categoryName: string;
+  categoryDescription: string | null;
+  playerExamples: string[];
+};
+
 export type NormalizedIndustryPlayerTypeDimension = {
   dimensionName: string;
   dimensionExplanation: string | null;
-  competitiveStructureNote: string | null;
-  categories: string[];
+  categories: NormalizedIndustryPlayerTypeCategory[];
   players: NormalizedIndustryPlayerTypePlayer[];
 };
 

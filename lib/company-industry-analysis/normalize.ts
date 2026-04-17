@@ -4,6 +4,7 @@ import type {
   NormalizedIndustryCapitalCycle,
   NormalizedIndustryCompanyFit,
   NormalizedIndustryCompanyFitSubSector,
+  NormalizedIndustryPlayerTypeCategory,
   NormalizedIndustryMarketSharePlayer,
   NormalizedIndustryMarketShareSnapshot,
   NormalizedIndustryPlayerTypeDimension,
@@ -82,6 +83,41 @@ const toStringArray = (value: unknown) =>
   parseJsonArrayLike(value)
     .map((item) => asString(item))
     .filter((item): item is string => Boolean(item));
+
+const normalizePlayerTypeExamples = (value: unknown): string[] =>
+  parseJsonArrayLike(value)
+    .map((item) => asString(item))
+    .filter((item): item is string => Boolean(item));
+
+const normalizePlayerTypeCategory = (
+  value: unknown,
+): NormalizedIndustryPlayerTypeCategory | null => {
+  const record = parseJsonObjectLike(value);
+  if (record) {
+    const categoryName =
+      asString(record.category_name) ??
+      asString(record.category);
+    if (!categoryName) return null;
+
+    return {
+      categoryName,
+      categoryDescription:
+        asString(record.category_description) ??
+        asString(record.description) ??
+        asString(record.category_detail),
+      playerExamples: normalizePlayerTypeExamples(record.player_examples),
+    };
+  }
+
+  const categoryName = asString(value);
+  if (!categoryName) return null;
+
+  return {
+    categoryName,
+    categoryDescription: null,
+    playerExamples: [],
+  };
+};
 
 const normalizeValueChainLayer = (value: unknown): NormalizedIndustryValueChainLayer | null => {
   const record = parseJsonObjectLike(value);
@@ -162,12 +198,9 @@ const normalizeLegacyTypesOfPlayers = (detailsRoot: JsonRecord | null) => {
       return {
         dimensionName,
         dimensionExplanation: asString(dimensionRecord.dimension_explanation),
-        competitiveStructureNote: asString(dimensionRecord.implication),
         categories: parseJsonArrayLike(dimensionRecord.categories)
-          .map((item) => parseJsonObjectLike(item))
-          .filter((item): item is JsonRecord => Boolean(item))
-          .map((item) => asString(item.category))
-          .filter((item): item is string => Boolean(item)),
+          .map((item) => normalizePlayerTypeCategory(item))
+          .filter((item): item is NormalizedIndustryPlayerTypeCategory => Boolean(item)),
         players: [] as NormalizedIndustryPlayerTypePlayer[],
       };
     })
@@ -202,8 +235,9 @@ const normalizePlayerTypeDimension = (
   return {
     dimensionName,
     dimensionExplanation: asString(record?.dimension_explanation),
-    competitiveStructureNote: asString(record?.competitive_structure_note),
-    categories: toStringArray(record?.categories),
+    categories: parseJsonArrayLike(record?.categories)
+      .map((item) => normalizePlayerTypeCategory(item))
+      .filter((item): item is NormalizedIndustryPlayerTypeCategory => Boolean(item)),
     players: parseJsonArrayLike(record?.players)
       .map((item) => normalizePlayerTypePlayer(item))
       .filter((item): item is NormalizedIndustryPlayerTypePlayer => Boolean(item)),
