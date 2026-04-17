@@ -2332,63 +2332,95 @@ export default async function Page({
     return (
       <div className="space-y-2">
         {normalizedCompanyIndustryAnalysis.typesOfPlayers.dimensions.map(
-          (dimension, dimensionIndex) => (
-            <div
-              key={dimension.dimensionName}
-              className={`${elevatedBlockClass} p-3.5 space-y-3`}
-            >
-              <div className="space-y-1">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground">
-                  {dimensionIndex + 1}. Based on {dimension.dimensionName}
-                </p>
-                {dimension.dimensionExplanation && (
-                  <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    {dimension.dimensionExplanation}
+          (dimension) => {
+            const categorySet = new Set(dimension.categories);
+            const playersByCategory = new Map<string, string[]>();
+
+            dimension.players.forEach((player) => {
+              if (!player.category || !categorySet.has(player.category)) return;
+              const existing = playersByCategory.get(player.category) ?? [];
+              playersByCategory.set(player.category, [...existing, player.playerName]);
+            });
+
+            const unmatchedPlayers = dimension.players.filter(
+              (player) => !player.category || !categorySet.has(player.category),
+            );
+
+            return (
+              <div
+                key={dimension.dimensionName}
+                className={`${elevatedBlockClass} p-3.5 space-y-3`}
+              >
+                <div className="space-y-1.5">
+                  <p className="text-[12px] font-semibold leading-snug text-foreground">
+                    {`By ${dimension.dimensionName.toLowerCase()}`}
                   </p>
+                  {dimension.dimensionExplanation && (
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      {dimension.dimensionExplanation}
+                    </p>
+                  )}
+                </div>
+
+                {dimension.categories.length > 0 && (
+                  <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+                    {dimension.categories.map((category) => {
+                      const categoryPlayers = playersByCategory.get(category) ?? [];
+                      const visiblePlayers = categoryPlayers.slice(0, 2);
+                      const remainingPlayers = categoryPlayers.length - visiblePlayers.length;
+
+                      return (
+                        <div
+                          key={`${dimension.dimensionName}-${category}`}
+                          className={`${nestedDetailClass} space-y-2 px-3 py-3`}
+                        >
+                          <p className="text-[11px] font-semibold leading-snug text-foreground">
+                            {category}
+                          </p>
+                          <p className="text-[10px] leading-relaxed text-muted-foreground">
+                            {categoryPlayers.length > 0
+                              ? `Representative: ${visiblePlayers.join(", ")}${
+                                  remainingPlayers > 0 ? ` +${remainingPlayers} more` : ""
+                                }`
+                              : "Player type tracked in this market map"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {unmatchedPlayers.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-medium tracking-[0.04em] text-muted-foreground">
+                      Other tracked players
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {unmatchedPlayers.map((player) => (
+                        <span
+                          key={`${dimension.dimensionName}-${player.playerName}-${player.category ?? "none"}`}
+                          className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground"
+                        >
+                          {player.playerName}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {dimension.competitiveStructureNote && (
+                  <div className={`${nestedDetailClass} space-y-1 px-3 py-2.5`}>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      What this means
+                    </p>
+                    <p className="text-[11px] leading-relaxed text-foreground/90">
+                      {dimension.competitiveStructureNote}
+                    </p>
+                  </div>
                 )}
               </div>
-
-              {dimension.categories.length > 0 && (
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                  {dimension.categories.map((category) => (
-                    <div
-                      key={`${dimension.dimensionName}-${category}`}
-                      className={`${nestedDetailClass} px-3 py-2`}
-                    >
-                      <p className="text-[11px] font-semibold leading-snug text-foreground">
-                        {category}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {dimension.players.length > 0 && (
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    Named players
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {dimension.players.map((player) => (
-                      <span
-                        key={`${dimension.dimensionName}-${player.playerName}-${player.category ?? "none"}`}
-                        className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground"
-                      >
-                        {player.playerName}
-                        {player.category ? ` · ${player.category}` : ""}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {dimension.competitiveStructureNote && (
-                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  {dimension.competitiveStructureNote}
-                </p>
-              )}
-            </div>
-          ),
+            );
+          },
         )}
       </div>
     );

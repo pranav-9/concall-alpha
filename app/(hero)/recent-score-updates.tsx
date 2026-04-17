@@ -30,6 +30,11 @@ type RawBusinessSnapshotRow = {
   snapshot_source?: string | null;
 };
 
+type RawIndustryContextRow = {
+  company: string;
+  generated_at?: string | null;
+};
+
 type RawKeyVariablesRow = {
   company_code: string;
   generated_at?: string | null;
@@ -56,6 +61,7 @@ type UpdateType =
   | "quarter"
   | "growth"
   | "business_snapshot"
+  | "industry_context"
   | "key_variables"
   | "guidance_monitor";
 
@@ -149,6 +155,9 @@ const typeChipClass = (type: UpdateType) => {
   if (type === "business_snapshot") {
     return "bg-violet-100 border-violet-300 text-violet-700 dark:bg-violet-900/30 dark:border-violet-700/40 dark:text-violet-200";
   }
+  if (type === "industry_context") {
+    return "bg-slate-100 border-slate-300 text-slate-700 dark:bg-slate-900/30 dark:border-slate-700/40 dark:text-slate-200";
+  }
   if (type === "key_variables") {
     return "bg-cyan-100 border-cyan-300 text-cyan-700 dark:bg-cyan-900/30 dark:border-cyan-700/40 dark:text-cyan-200";
   }
@@ -215,6 +224,7 @@ async function getUnifiedUpdates(limit: number) {
 
   const [
     { data: businessSnapshotRows },
+    { data: industryContextRows },
     { data: keyVariablesRows },
     { data: guidanceSnapshotRows },
     { data: guidanceRows },
@@ -222,6 +232,11 @@ async function getUnifiedUpdates(limit: number) {
     supabase
       .from("business_snapshot")
       .select("company, generated_at, snapshot_phase, snapshot_source")
+      .order("generated_at", { ascending: false })
+      .limit(160),
+    supabase
+      .from("company_industry_analysis")
+      .select("company, generated_at")
       .order("generated_at", { ascending: false })
       .limit(160),
     supabase
@@ -334,6 +349,32 @@ async function getUnifiedUpdates(limit: number) {
     }
   });
   updates.push(...latestSnapshotPerCompany.values());
+
+  const latestIndustryContextPerCompany = new Map<string, UnifiedUpdate>();
+  ((industryContextRows ?? []) as RawIndustryContextRow[]).forEach((row) => {
+    const companyCode = row.company?.trim();
+    if (!companyCode) return;
+    const atRaw = row.generated_at ?? null;
+    const atMs = eventTimeMs(atRaw);
+    const candidate: UnifiedUpdate = {
+      id: `industry-context-${companyCode}`,
+      type: "industry_context",
+      companyName: companyCode,
+      companyCode,
+      companyIsNew: false,
+      score: null,
+      detail: "",
+      sourceLabel: "Industry Context",
+      contextLabel: null,
+      atRaw,
+      atMs,
+    };
+    const existing = latestIndustryContextPerCompany.get(companyCode);
+    if (!existing || candidate.atMs > existing.atMs) {
+      latestIndustryContextPerCompany.set(companyCode, candidate);
+    }
+  });
+  updates.push(...latestIndustryContextPerCompany.values());
 
   const latestKeyVariablesPerCompany = new Map<string, UnifiedUpdate>();
   ((keyVariablesRows ?? []) as RawKeyVariablesRow[]).forEach((row) => {
@@ -513,8 +554,9 @@ async function getUnifiedUpdates(limit: number) {
     quarter: 0,
     growth: 1,
     business_snapshot: 2,
-    key_variables: 3,
-    guidance_monitor: 4,
+    industry_context: 3,
+    key_variables: 4,
+    guidance_monitor: 5,
   };
 
   return updates
@@ -581,7 +623,7 @@ export default async function RecentScoreUpdates({
             Latest Updates
           </h2>
           <p className={subtitleClass}>
-            Time-ordered feed: score updates, snapshot refreshes, key variable updates, and guidance monitoring
+            Time-ordered feed: score updates, snapshot refreshes, industry context, key variable updates, and guidance monitoring
           </p>
         </div>
 
