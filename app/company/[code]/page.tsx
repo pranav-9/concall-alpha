@@ -69,6 +69,7 @@ type RankInfo = {
 };
 
 type SectorRankInfo = { rank: number | null; total: number } | null;
+type ThemeItemWithSource = NormalizedIndustryTheme & { sourceSubSector?: string };
 
 const computeAvgScore = (latestQuarterScore: number | null, growthScore: number | null) => {
   if (latestQuarterScore == null || growthScore == null) return null;
@@ -2169,7 +2170,7 @@ export default async function Page({
   };
   const renderIndustryThemes = (
     title: string,
-    items: NormalizedIndustryTheme[],
+    items: ThemeItemWithSource[],
     accentClass: string,
     showTitle = true,
     showAll = false,
@@ -2206,6 +2207,11 @@ export default async function Page({
                         {timeHorizonDisplay.label}
                       </span>
                     )}
+                    {item.sourceSubSector && (
+                      <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-muted-foreground">
+                        Source: {item.sourceSubSector}
+                      </span>
+                    )}
                   </div>
                   {item.companyMechanism && (
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -2240,6 +2246,11 @@ export default async function Page({
                             className={`rounded-full border px-2 py-0.5 text-[10px] ${timeHorizonDisplay.className}`}
                           >
                             {timeHorizonDisplay.label}
+                          </span>
+                        )}
+                        {item.sourceSubSector && (
+                          <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-muted-foreground">
+                            Source: {item.sourceSubSector}
                           </span>
                         )}
                       </div>
@@ -2323,6 +2334,81 @@ export default async function Page({
             );
           })}
         </div>
+      </div>
+    );
+  };
+  const collectSubSectorThemes = (
+    cards: NormalizedIndustrySubSectorCard[],
+    themeKey: "tailwinds" | "headwinds",
+  ): ThemeItemWithSource[] =>
+    cards.flatMap((card) =>
+      (card[themeKey] ?? []).map((item) => ({
+        ...item,
+        sourceSubSector: card.subSector,
+      })),
+    );
+  const renderTailwindsHeadwindsSection = () => {
+    if (!normalizedCompanyIndustryAnalysis) return null;
+    const analysis = normalizedCompanyIndustryAnalysis;
+    const hasSubSectorCards = analysis.subSectorCards.length > 0;
+    const tailwinds = hasSubSectorCards
+      ? collectSubSectorThemes(analysis.subSectorCards, "tailwinds")
+      : (analysis.tailwinds as ThemeItemWithSource[]);
+    const headwinds = hasSubSectorCards
+      ? collectSubSectorThemes(analysis.subSectorCards, "headwinds")
+      : (analysis.headwinds as ThemeItemWithSource[]);
+
+    if (tailwinds.length === 0 && headwinds.length === 0) return null;
+
+    return (
+      <div className={`${elevatedBlockClass} p-4 space-y-3`}>
+        <div className="space-y-1">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            Tailwinds & Headwinds
+          </p>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Themes pulled up from the sub-sector cards and grouped here for easier scanning.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          {tailwinds.length > 0 &&
+            renderIndustryThemes("Tailwinds", tailwinds, "border-l-emerald-500/70", true, true)}
+          {headwinds.length > 0 &&
+            renderIndustryThemes("Headwinds", headwinds, "border-l-red-500/70", true, true)}
+        </div>
+      </div>
+    );
+  };
+  const renderSubSectorSection = () => {
+    const hasRelevantSubSectors =
+      (normalizedCompanyIndustryAnalysis?.companyFit?.qualifyingSubSectors.length ?? 0) > 0;
+    const hasSubSectorCards =
+      (normalizedCompanyIndustryAnalysis?.subSectorCards.length ?? 0) > 0;
+
+    if (!hasRelevantSubSectors && !hasSubSectorCards) {
+      return renderMissingSectionState(
+        "sub-sector",
+        "Sub-sector",
+        "We have not generated sub-sector-specific cards for this company yet.",
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {hasRelevantSubSectors ? renderQualifiedSubSectors() : null}
+        {hasSubSectorCards
+          ? renderIndustryContextDrawerCard({
+              title: "Sub-sector Supply Side Analysis",
+              count: normalizedCompanyIndustryAnalysis?.subSectorCards.length ?? 0,
+              description: renderRelevantSubSectors(
+                normalizedCompanyIndustryAnalysis?.subSectorCards ?? [],
+              ),
+              accentClass: "bg-sky-500/80",
+              inline: true,
+              hideCount: true,
+              hideAccentDot: true,
+            })
+          : null}
       </div>
     );
   };
@@ -2544,22 +2630,109 @@ export default async function Page({
                 </div>
               )}
 
-              {(card.tailwinds.length > 0 || card.headwinds.length > 0) && (
-                <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-                  {card.tailwinds.length > 0 && renderIndustryThemes(
-                    "Tailwinds",
-                    card.tailwinds,
-                    "border-l-emerald-500/70",
-                    true,
-                    true,
+              {card.supplySideEvidencePack && (
+                <div className="space-y-2.5 rounded-xl border border-border/25 bg-background/55 p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Supply Side Evidence Pack
+                    </p>
+                    {card.supplySideEvidencePack.evidenceWindowYears != null && (
+                      <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-foreground">
+                        {card.supplySideEvidencePack.evidenceWindowYears}-year window
+                      </span>
+                    )}
+                    {card.supplySideEvidencePack.evidenceConfidence && (
+                      <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-muted-foreground">
+                        Confidence: {formatCompactLabel(card.supplySideEvidencePack.evidenceConfidence)}
+                      </span>
+                    )}
+                  </div>
+
+                  {card.supplySideEvidencePack.interpretation && (
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      {card.supplySideEvidencePack.interpretation}
+                    </p>
                   )}
-                  {card.headwinds.length > 0 && renderIndustryThemes(
-                    "Headwinds",
-                    card.headwinds,
-                    "border-l-red-500/70",
-                    true,
-                    true,
-                  )}
+
+                  <div className="space-y-2">
+                    {card.supplySideEvidencePack.rows.map((row, rowIndex) => (
+                      <div
+                        key={`${card.subSector}-supply-pack-${rowIndex}`}
+                        className="space-y-2 rounded-xl border border-border/20 bg-background/70 px-3 py-2.5"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {row.category && (
+                                <p className="text-[12px] font-semibold leading-snug text-foreground">
+                                  {row.category}
+                                </p>
+                              )}
+                              {row.proxyLabel && (
+                                <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                  Proxy: {row.proxyLabel}
+                                </span>
+                              )}
+                            </div>
+                            {row.summary && (
+                              <p className="text-[11px] leading-relaxed text-foreground/90">
+                                {row.summary}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {row.evidence.length > 0 && (
+                          <div className="space-y-2 border-t border-border/20 pt-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                              Source trail
+                            </p>
+                            <div className="space-y-2">
+                              {row.evidence.map((evidence, evidenceIndex) => (
+                                <div
+                                  key={`${card.subSector}-supply-pack-${rowIndex}-evidence-${evidenceIndex}`}
+                                  className="space-y-1.5 rounded-lg border border-border/20 bg-background/80 px-2.5 py-2"
+                                >
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    {evidence.sourceTitle && (
+                                      <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
+                                        {evidence.sourceTitle}
+                                      </span>
+                                    )}
+                                    {evidence.sourceDate && (
+                                      <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                        {evidence.sourceDate}
+                                      </span>
+                                    )}
+                                    {evidence.retrievalType && (
+                                      <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                        {formatCompactLabel(evidence.retrievalType)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {evidence.note && (
+                                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                      {evidence.note}
+                                    </p>
+                                  )}
+                                  {evidence.sourceUrl && (
+                                    <a
+                                      href={evidence.sourceUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 text-[10px] font-medium text-sky-600 underline-offset-4 hover:underline dark:text-sky-300"
+                                    >
+                                      Open source
+                                    </a>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -2791,6 +2964,14 @@ export default async function Page({
           : normalizedCompanyIndustryAnalysis
             ? { kind: "text" as const, text: "Live" }
             : { kind: "text" as const, text: "Soon" },
+    },
+    {
+      ...SECTION_MAP.subSector,
+      meta:
+        (normalizedCompanyIndustryAnalysis?.companyFit?.qualifyingSubSectors.length ?? 0) > 0 ||
+        (normalizedCompanyIndustryAnalysis?.subSectorCards.length ?? 0) > 0
+          ? { kind: "text" as const, text: "Live" }
+          : { kind: "text" as const, text: "Soon" },
     },
     {
       ...SECTION_MAP.businessSnapshot,
@@ -3543,7 +3724,6 @@ export default async function Page({
               </div>
 
               {(normalizedCompanyIndustryAnalysis.regulatoryChanges.length > 0 ||
-                normalizedCompanyIndustryAnalysis.subSectorCards.length > 0 ||
                 normalizedCompanyIndustryAnalysis.tailwinds.length > 0 ||
                 normalizedCompanyIndustryAnalysis.headwinds.length > 0) && (
                 <div className="space-y-3">
@@ -3560,56 +3740,7 @@ export default async function Page({
                     hideCount: true,
                     hideAccentDot: true,
                   })}
-                  {normalizedCompanyIndustryAnalysis.companyFit?.qualifyingSubSectors.length ? (
-                    renderQualifiedSubSectors()
-                  ) : null}
-                  {normalizedCompanyIndustryAnalysis.subSectorCards.length > 0 ? (
-                    renderIndustryContextDrawerCard({
-                      title: "Sub-sector Supply Side Analysis",
-                      count: normalizedCompanyIndustryAnalysis.subSectorCards.length,
-                      description: renderRelevantSubSectors(
-                        normalizedCompanyIndustryAnalysis.subSectorCards,
-                      ),
-                      accentClass: "bg-sky-500/80",
-                      inline: true,
-                      hideCount: true,
-                      hideAccentDot: true,
-                    })
-                  ) : (normalizedCompanyIndustryAnalysis.tailwinds.length > 0 ||
-                    normalizedCompanyIndustryAnalysis.headwinds.length > 0) ? (
-                    <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-                      {renderIndustryContextDrawerCard({
-                        title: "Tailwinds",
-                        count: normalizedCompanyIndustryAnalysis.tailwinds.length,
-                        description: renderIndustryThemes(
-                          "Tailwinds",
-                          normalizedCompanyIndustryAnalysis.tailwinds,
-                          "border-l-emerald-500/70",
-                          false,
-                          true,
-                        ),
-                        accentClass: "bg-emerald-500/80",
-                        inline: true,
-                        hideCount: true,
-                        hideAccentDot: false,
-                      })}
-                      {renderIndustryContextDrawerCard({
-                        title: "Headwinds",
-                        count: normalizedCompanyIndustryAnalysis.headwinds.length,
-                        description: renderIndustryThemes(
-                          "Headwinds",
-                          normalizedCompanyIndustryAnalysis.headwinds,
-                          "border-l-red-500/70",
-                          false,
-                          true,
-                        ),
-                        accentClass: "bg-rose-500/80",
-                        inline: true,
-                        hideCount: true,
-                        hideAccentDot: false,
-                      })}
-                    </div>
-                  ) : null}
+                  {renderTailwindsHeadwindsSection()}
                 </div>
               )}
 
@@ -3622,6 +3753,22 @@ export default async function Page({
             )
           )}
         </SectionCard>
+          </div>
+
+          <div data-section-id="sub-sector">
+            <SectionCard
+              id="sub-sector"
+              title="Sub-sector"
+              headerAction={
+                companyIndustryGeneratedAtShort ? (
+                  <span className="text-[11px] text-muted-foreground">
+                    {companyIndustryGeneratedAtShort}
+                  </span>
+                ) : undefined
+              }
+            >
+              {renderSubSectorSection()}
+            </SectionCard>
           </div>
 
           <div data-section-id="business-overview">

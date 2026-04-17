@@ -11,6 +11,9 @@ import type {
   NormalizedIndustryPlayerTypePlayer,
   NormalizedIndustryPositioning,
   NormalizedIndustryRegulatoryChange,
+  NormalizedIndustrySupplySideEvidenceItem,
+  NormalizedIndustrySupplySideEvidencePack,
+  NormalizedIndustrySupplySideEvidencePackRow,
   NormalizedIndustrySubSectorCard,
   NormalizedIndustryTheme,
   NormalizedIndustryTypesOfPlayers,
@@ -466,6 +469,90 @@ const normalizeMarketShareSnapshot = (
   };
 };
 
+const asNumeric = (value: unknown): number | null => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const normalizeSupplySideEvidenceItem = (
+  value: unknown,
+): NormalizedIndustrySupplySideEvidenceItem | null => {
+  const record = parseJsonObjectLike(value);
+  if (!record) return null;
+
+  const note = asString(record.note);
+  const sourceTitle = asString(record.source_title);
+  const sourceUrl = asString(record.source_url);
+  const sourceDate = asString(record.source_date);
+  const retrievalType = asString(record.retrieval_type);
+
+  if (!note && !sourceTitle && !sourceUrl && !sourceDate && !retrievalType) {
+    return null;
+  }
+
+  return {
+    note,
+    sourceTitle,
+    sourceUrl,
+    sourceDate,
+    retrievalType,
+  };
+};
+
+const normalizeSupplySideEvidencePackRow = (
+  value: unknown,
+): NormalizedIndustrySupplySideEvidencePackRow | null => {
+  const record = parseJsonObjectLike(value);
+  if (!record) return null;
+
+  const category = asString(record.category);
+  const summary = asString(record.summary);
+  const proxyLabel = asString(record.proxy_label);
+  const evidence = parseJsonArrayLike(record.evidence)
+    .map((item) => normalizeSupplySideEvidenceItem(item))
+    .filter((item): item is NormalizedIndustrySupplySideEvidenceItem => Boolean(item));
+
+  if (!category && !summary && !proxyLabel && evidence.length === 0) {
+    return null;
+  }
+
+  return {
+    category,
+    summary,
+    proxyLabel,
+    evidence,
+  };
+};
+
+const normalizeSupplySideEvidencePack = (
+  value: unknown,
+): NormalizedIndustrySupplySideEvidencePack | null => {
+  const record = parseJsonObjectLike(value);
+  if (!record) return null;
+
+  const rows = parseJsonArrayLike(record.rows)
+    .map((item) => normalizeSupplySideEvidencePackRow(item))
+    .filter((item): item is NormalizedIndustrySupplySideEvidencePackRow => Boolean(item));
+  const interpretation = asString(record.interpretation);
+  const evidenceConfidence = asString(record.evidence_confidence);
+  const evidenceWindowYears = asNumeric(record.evidence_window_years);
+
+  if (!interpretation && !evidenceConfidence && evidenceWindowYears == null && rows.length === 0) {
+    return null;
+  }
+
+  return {
+    interpretation,
+    evidenceConfidence,
+    evidenceWindowYears,
+    rows,
+  };
+};
+
 const normalizeSubSectorCard = (
   value: unknown,
   relevanceMap: Map<string, NormalizedIndustryCompanyFitSubSector>,
@@ -488,6 +575,9 @@ const normalizeSubSectorCard = (
     headwinds: parseJsonArrayLike(record?.headwinds)
       .map((item) => normalizeTheme(item))
       .filter((item): item is NormalizedIndustryTheme => Boolean(item)),
+    supplySideEvidencePack: normalizeSupplySideEvidencePack(
+      record?.supply_side_evidence_pack,
+    ),
   };
 };
 

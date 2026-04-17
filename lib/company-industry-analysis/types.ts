@@ -139,6 +139,28 @@ export type NormalizedIndustryMarketShareSnapshot = {
   players: NormalizedIndustryMarketSharePlayer[];
 };
 
+export type NormalizedIndustrySupplySideEvidenceItem = {
+  note: string | null;
+  sourceTitle: string | null;
+  sourceUrl: string | null;
+  sourceDate: string | null;
+  retrievalType: string | null;
+};
+
+export type NormalizedIndustrySupplySideEvidencePackRow = {
+  category: string | null;
+  summary: string | null;
+  proxyLabel: string | null;
+  evidence: NormalizedIndustrySupplySideEvidenceItem[];
+};
+
+export type NormalizedIndustrySupplySideEvidencePack = {
+  interpretation: string | null;
+  evidenceConfidence: string | null;
+  evidenceWindowYears: number | null;
+  rows: NormalizedIndustrySupplySideEvidencePackRow[];
+};
+
 export type NormalizedIndustrySubSectorCard = {
   subSector: string;
   subSectorDescription: string | null;
@@ -147,6 +169,7 @@ export type NormalizedIndustrySubSectorCard = {
   marketShareSnapshot: NormalizedIndustryMarketShareSnapshot | null;
   tailwinds: NormalizedIndustryTheme[];
   headwinds: NormalizedIndustryTheme[];
+  supplySideEvidencePack: NormalizedIndustrySupplySideEvidencePack | null;
 };
 
 export type NormalizedCompanyIndustryAnalysis = {
