@@ -1007,6 +1007,54 @@ export default async function Page({
         normalizedBusinessSnapshot?.mixShiftSummary ? "Mix shift" : null,
         normalizedMoatAnalysis ? "Moat analysis" : null,
       ].filter((value): value is string => Boolean(value));
+  const subSectorHeaderPills = [
+    (normalizedCompanyIndustryAnalysis?.companyFit?.qualifyingSubSectors.length ?? 0) > 0
+      ? "Relevant sub-sectors"
+      : null,
+    (normalizedCompanyIndustryAnalysis?.subSectorCards.length ?? 0) > 0
+      ? "Supply-side analysis"
+      : null,
+    normalizedCompanyIndustryAnalysis?.subSectorCards.some(
+      (card) => Boolean(card.supplySideEvidencePack),
+    )
+      ? "Supply-side evidence pack"
+      : null,
+  ].filter((value): value is string => Boolean(value));
+  const quarterlyHeaderPills = [
+    chartData.length > 0 ? "Score trend" : null,
+    detailQuarters.length > 0 ? "Quarter detail" : null,
+    trend ? "Trend" : null,
+  ].filter((value): value is string => Boolean(value));
+  const keyVariablesHeaderPills = normalizedKeyVariablesSnapshot
+    ? [
+        normalizedKeyVariablesSnapshot.discoverySummary ? "Discovery summary" : null,
+        normalizedKeyVariablesSnapshot.deepTreatment.length > 0 ? "Deep treatment" : null,
+        normalizedKeyVariablesSnapshot.deepTreatment.some((item) => Boolean(item.kpiHistory))
+          ? "KPI history"
+          : null,
+      ].filter((value): value is string => Boolean(value))
+    : [];
+  const futureGrowthHeaderPills = normalizedGrowthOutlook
+    ? [
+        normalizedGrowthOutlook.summaryBullets.length > 0 ||
+        normalizedGrowthOutlook.growthScoreComponents.length > 0 ||
+        normalizedGrowthOutlook.baseGrowthPct
+          ? "Summary"
+          : null,
+        normalizedGrowthOutlook.catalysts.length > 0 ? "Top catalysts" : null,
+        hasFutureGrowthDeepDive ? "Scenarios" : null,
+      ].filter((value): value is string => Boolean(value))
+    : [];
+  const guidanceHeaderPills = normalizedGuidanceSnapshot
+    ? [
+        normalizedGuidanceSnapshot.currentYearRevenueGuidance ? "Current guidance" : null,
+        normalizedGuidanceSnapshot.currentYearRevenueGuidance?.sourceQuarterTimeline.length
+          ? "Guidance evolution"
+          : null,
+        normalizedGuidanceSnapshot.priorTwoYearAccuracy.length > 0 ? "Accuracy" : null,
+        normalizedGuidanceSnapshot.credibilityVerdict ? "Credibility verdict" : null,
+      ].filter((value): value is string => Boolean(value))
+    : [];
 
   const renderBusinessSnapshotDrawer = ({
     title,
@@ -3798,14 +3846,15 @@ export default async function Page({
           </div>
 
           <div data-section-id="sub-sector">
-            <SectionCard
-              id="sub-sector"
-              title="Sub-sector Analysis"
-              headerAction={
-                companyIndustryGeneratedAtShort ? (
-                  <span className="text-[11px] text-muted-foreground">
-                    {companyIndustryGeneratedAtShort}
-                  </span>
+        <SectionCard
+          id="sub-sector"
+          title="Sub-sector Analysis"
+          headerPills={subSectorHeaderPills}
+          headerAction={
+            companyIndustryGeneratedAtShort ? (
+              <span className="text-[11px] text-muted-foreground">
+                {companyIndustryGeneratedAtShort}
+              </span>
                 ) : undefined
               }
             >
@@ -4004,7 +4053,11 @@ export default async function Page({
           </div>
 
           <div data-section-id="sentiment-score">
-        <SectionCard id="sentiment-score" title="Quarterly Score">
+        <SectionCard
+          id="sentiment-score"
+          title="Quarterly Score"
+          headerPills={quarterlyHeaderPills}
+        >
           <QuarterlyScoreSection
             chartData={chartData}
             detailQuarters={detailQuarters}
@@ -4017,6 +4070,7 @@ export default async function Page({
         <SectionCard
           id="key-variables"
           title="Key Variables"
+          headerPills={keyVariablesHeaderPills}
           headerDescription="The non-financial variables that best explain whether growth is healthy, sustainable, and improving in quality."
           headerAction={
             keyVariablesGeneratedAtShort ? (
@@ -4042,6 +4096,7 @@ export default async function Page({
         <SectionCard
           id="future-growth"
           title="Future Growth Prospects"
+          headerPills={futureGrowthHeaderPills}
           headerAction={
             typeof growthScore === "number" ? <ConcallScore score={growthScore} size="sm" /> : undefined
           }
@@ -4530,6 +4585,7 @@ export default async function Page({
         <SectionCard
           id="guidance-history"
           title="Guidance History"
+          headerPills={guidanceHeaderPills}
           headerDescription="Current management stance and quarter-by-quarter evolution."
           headerAction={
             renderGuidanceSnapshotContextDrawer() ?? (
