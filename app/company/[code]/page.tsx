@@ -976,6 +976,37 @@ export default async function Page({
     });
 
   const hasBusinessSegments = (revenueBreakdown?.bySegment.length ?? 0) > 0;
+  const industryHeaderPills = [
+    (industryPositioning?.customerNeed || industryPositioning?.industryEconomicsForCompany)
+      ? "Industry overview"
+      : null,
+    normalizedCompanyIndustryAnalysis?.valueChainMap ? "Value chain" : null,
+    normalizedCompanyIndustryAnalysis?.typesOfPlayers ? "Players" : null,
+    normalizedCompanyIndustryAnalysis?.regulatoryChanges.length ? "Regulations" : null,
+    normalizedCompanyIndustryAnalysis?.tailwinds.length ? "Tailwinds" : null,
+    normalizedCompanyIndustryAnalysis?.headwinds.length ? "Headwinds" : null,
+  ].filter((value): value is string => Boolean(value));
+  const businessHeaderPills = hasStructuredBusinessSnapshot
+    ? [
+        aboutHeading || aboutSupportingText ? "About" : null,
+        hasBusinessSegments ? "Business segments" : null,
+        hasHistoricalEconomics ? "Business Momentum" : null,
+        normalizedBusinessSnapshot?.mixShiftSummary ? "Mix shift" : null,
+        normalizedMoatAnalysis ? "Moat analysis" : null,
+      ].filter((value): value is string => Boolean(value))
+    : [
+        normalizedBusinessSnapshot?.businessSummaryShort ||
+        normalizedBusinessSnapshot?.businessSummaryLong
+          ? "Summary"
+          : null,
+        normalizedBusinessSnapshot?.topRevenueDrivers.length ? "Revenue drivers" : null,
+        (normalizedBusinessSnapshot?.keyDependencies.length ?? 0) > 0 ||
+        (normalizedBusinessSnapshot?.keyRisksToModel.length ?? 0) > 0
+          ? "Model watchpoints"
+          : null,
+        normalizedBusinessSnapshot?.mixShiftSummary ? "Mix shift" : null,
+        normalizedMoatAnalysis ? "Moat analysis" : null,
+      ].filter((value): value is string => Boolean(value));
 
   const renderBusinessSnapshotDrawer = ({
     title,
@@ -3618,6 +3649,7 @@ export default async function Page({
         <SectionCard
           id="industry-context"
           title="Industry Context"
+          headerPills={industryHeaderPills}
           headerAction={
             companyIndustryGeneratedAtShort ? (
               <span className="text-[11px] text-muted-foreground">
@@ -3785,6 +3817,7 @@ export default async function Page({
         <SectionCard
           id="business-overview"
           title="Business Snapshot"
+          headerPills={businessHeaderPills}
           headerAction={
             businessSnapshotGeneratedAtShort ? (
               <span className="text-[11px] text-muted-foreground">

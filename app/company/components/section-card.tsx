@@ -9,6 +9,7 @@ interface SectionCardProps {
   className?: string;
   headerAction?: React.ReactNode;
   headerDescription?: React.ReactNode;
+  headerPills?: string[];
   collapsible?: boolean;
   defaultOpen?: boolean;
   tone?: SectionTone;
@@ -79,6 +80,7 @@ export function SectionCard({
   className = "",
   headerAction,
   headerDescription,
+  headerPills = [],
   collapsible = false,
   defaultOpen = true,
   tone,
@@ -141,11 +143,11 @@ export function SectionCard({
     >
       <div className={`pointer-events-none absolute inset-0 ${toneClasses.glow}`} />
       <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accent}`} />
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-1">
-            <p className="text-lg lg:text-lg font-bold text-foreground !leading-tight">
-              {title}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-1">
+              <p className="text-lg lg:text-lg font-bold text-foreground !leading-tight">
+                {title}
             </p>
             {headerDescription ? (
               <p className="text-[13px] leading-snug text-foreground/82">
@@ -154,10 +156,22 @@ export function SectionCard({
             ) : null}
           </div>
           {headerAction}
+          </div>
+          {headerPills.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {headerPills.map((pill) => (
+                <span
+                  key={`${id}-${pill}`}
+                  className="inline-flex items-center rounded-full border border-border/60 bg-background/70 px-2.5 py-1 text-[10px] font-medium text-muted-foreground"
+                >
+                  {pill}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="border-b border-border"></div>
+          {children}
         </div>
-        <div className="border-b border-border"></div>
-        {children}
       </div>
-    </div>
   );
 }
