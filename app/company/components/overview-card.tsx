@@ -48,8 +48,24 @@ export function OverviewCard({
   watchlist = null,
 }: OverviewCardProps) {
   const previewToneClass = () =>
-    "border-border/70 bg-gradient-to-b from-background/85 via-background/75 to-muted/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_32px_-26px_rgba(15,23,42,0.42)] dark:from-background/90 dark:via-background/82 dark:to-background/68 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_16px_32px_-26px_rgba(0,0,0,0.45)]";
-  const previewAccentClass = () => "bg-border/45";
+    "border-border/95 bg-gradient-to-b from-background/98 via-background/94 to-muted/24 shadow-[inset_0_1px_0_rgba(255,255,255,0.62),0_18px_28px_-24px_rgba(15,23,42,0.42)] ring-1 ring-border/30 dark:from-background/94 dark:via-background/90 dark:to-background/80 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_28px_-24px_rgba(0,0,0,0.50)] dark:ring-border/40";
+  const previewAccentClass = (tone?: OverviewSectionPreview["tone"]) => {
+    switch (tone ?? "slate") {
+      case "emerald":
+        return "bg-gradient-to-r from-transparent via-emerald-500/70 to-transparent shadow-[0_0_0_1px_rgba(16,185,129,0.16)] dark:via-emerald-400/55 dark:shadow-[0_0_0_1px_rgba(16,185,129,0.18)]";
+      case "sky":
+        return "bg-gradient-to-r from-transparent via-sky-500/70 to-transparent shadow-[0_0_0_1px_rgba(14,165,233,0.16)] dark:via-sky-400/55 dark:shadow-[0_0_0_1px_rgba(14,165,233,0.18)]";
+      case "amber":
+        return "bg-gradient-to-r from-transparent via-amber-500/70 to-transparent shadow-[0_0_0_1px_rgba(245,158,11,0.16)] dark:via-amber-400/55 dark:shadow-[0_0_0_1px_rgba(245,158,11,0.18)]";
+      case "violet":
+        return "bg-gradient-to-r from-transparent via-violet-500/70 to-transparent shadow-[0_0_0_1px_rgba(139,92,246,0.16)] dark:via-violet-400/55 dark:shadow-[0_0_0_1px_rgba(139,92,246,0.18)]";
+      case "rose":
+        return "bg-gradient-to-r from-transparent via-rose-500/70 to-transparent shadow-[0_0_0_1px_rgba(244,63,94,0.16)] dark:via-rose-400/55 dark:shadow-[0_0_0_1px_rgba(244,63,94,0.18)]";
+      case "slate":
+      default:
+        return "bg-gradient-to-r from-transparent via-slate-500/70 to-transparent shadow-[0_0_0_1px_rgba(100,116,139,0.16)] dark:via-slate-400/55 dark:shadow-[0_0_0_1px_rgba(100,116,139,0.18)]";
+    }
+  };
   const bodyPillClass = (tone: NonNullable<OverviewSectionPreview["bodyPills"]>[number]["tone"]) => {
     switch (tone ?? "slate") {
       case "emerald":
@@ -174,7 +190,7 @@ export function OverviewCard({
                           )}
                         >
                           <div
-                            className={cn("absolute inset-x-0 top-0 h-1.5", previewAccentClass())}
+                            className={cn("absolute inset-x-0 top-0 h-2", previewAccentClass(preview.tone))}
                           />
                           <div className={previewShellClass}>
                           <div className="flex items-start justify-between gap-3">
@@ -220,7 +236,7 @@ export function OverviewCard({
                         )}
                       >
                         <div
-                          className={cn("absolute inset-x-0 top-0 h-1.5", previewAccentClass())}
+                          className={cn("absolute inset-x-0 top-0 h-2", previewAccentClass(preview.tone))}
                         />
                         <div className={previewShellClass}>
                           <div className="flex items-start justify-between gap-3">
