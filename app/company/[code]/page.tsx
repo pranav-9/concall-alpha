@@ -3208,13 +3208,15 @@ export default async function Page({
           .join(" · "),
         `${companyLabel}’s operating backdrop and where it fits in the value chain.`,
       ),
-      metaBadge:
+      indicator:
         sectorRankInfo?.rank != null
-          ? `Sector #${sectorRankInfo.rank}/${sectorRankInfo.total}`
+          ? {
+              kind: "pill" as const,
+              label: `Sector #${sectorRankInfo.rank}/${sectorRankInfo.total}`,
+            }
           : normalizedCompanyIndustryAnalysis
-            ? "Live"
-            : "Soon",
-      badge: normalizedCompanyIndustryAnalysis ? "Live" : "Soon",
+            ? { kind: "pill" as const, label: "Live" }
+            : { kind: "pill" as const, label: "Soon" },
       tone: "sky" as const,
     },
     {
@@ -3226,10 +3228,14 @@ export default async function Page({
           normalizedBusinessSnapshot?.mixShiftSummary,
         `How ${companyLabel} makes money and where the mix is shifting.`,
       ),
-      metaBadge: normalizedMoatAnalysis?.moatRatingLabel
-        ? `Moat: ${normalizedMoatAnalysis.moatRatingLabel}`
-        : null,
-      badge: hasBusinessSnapshotContent ? "Live" : "Soon",
+      indicator: normalizedMoatAnalysis?.moatRatingLabel
+        ? {
+            kind: "pill" as const,
+            label: `Moat: ${normalizedMoatAnalysis.moatRatingLabel}`,
+          }
+        : hasBusinessSnapshotContent
+          ? { kind: "pill" as const, label: "Live" }
+          : { kind: "pill" as const, label: "Soon" },
       tone: "emerald" as const,
     },
     {
@@ -3241,9 +3247,12 @@ export default async function Page({
           : null,
         `${companyLabel}’s non-financial drivers that explain quality and direction.`,
       ),
-      badge: normalizedKeyVariablesSnapshot
-        ? `${normalizedKeyVariablesSnapshot.deepTreatment.length} vars`
-        : "Soon",
+      indicator: normalizedKeyVariablesSnapshot
+        ? {
+            kind: "pill" as const,
+            label: `${normalizedKeyVariablesSnapshot.deepTreatment.length} vars`,
+          }
+        : { kind: "pill" as const, label: "Soon" },
       tone: "violet" as const,
     },
     {
@@ -3257,11 +3266,10 @@ export default async function Page({
           : null,
         `The latest quarter signal for ${companyLabel}.`,
       ),
-      score: latestQuarterData?.score ?? null,
-      metaBadge: rankInfo.quarter
-        ? `Qtr Rank ${rankInfo.quarter.rank}/${rankInfo.quarter.total} · Top ${Math.round(rankInfo.quarter.percentile)}%`
-        : null,
-      badge: latestQuarterData ? null : "Soon",
+      indicator:
+        latestQuarterData?.score != null
+          ? { kind: "score" as const, score: latestQuarterData.score }
+          : { kind: "pill" as const, label: "Soon" },
       tone: "emerald" as const,
     },
     {
@@ -3275,11 +3283,10 @@ export default async function Page({
             normalizedGrowthOutlook?.visibilityRationale,
         `${companyLabel}’s next catalysts and scenario path.`,
       ),
-      score: growthScore,
-      metaBadge: rankInfo.growth
-        ? `Growth Rank ${rankInfo.growth.rank}/${rankInfo.growth.total} · Top ${Math.round(rankInfo.growth.percentile)}%`
-        : null,
-      badge: growthScore == null ? "Soon" : null,
+      indicator:
+        growthScore != null
+          ? { kind: "score" as const, score: growthScore }
+          : { kind: "pill" as const, label: "Soon" },
       tone: "sky" as const,
     },
     {
@@ -3295,12 +3302,15 @@ export default async function Page({
             firstGuidanceItem?.latestView,
         `How ${companyLabel}’s management guidance is moving over time.`,
       ),
-      badge:
+      indicator:
         guidanceItems.length > 0
-          ? `${guidanceItems.length} items`
+          ? {
+              kind: "pill" as const,
+              label: `${guidanceItems.length} items`,
+            }
           : normalizedGuidanceSnapshot
-            ? "Live"
-            : "Soon",
+            ? { kind: "pill" as const, label: "Live" }
+            : { kind: "pill" as const, label: "Soon" },
       tone: "amber" as const,
     },
   ];

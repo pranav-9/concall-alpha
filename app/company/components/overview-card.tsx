@@ -11,9 +11,9 @@ type OverviewSectionPreview = {
   title: string;
   href: string;
   summary: string;
-  score?: number | null;
-  metaBadge?: string | null;
-  badge?: string | null;
+  indicator?:
+    | { kind: "score"; score: number | null }
+    | { kind: "pill"; label: string };
   tone?: "emerald" | "sky" | "amber" | "violet" | "rose" | "slate";
 };
 
@@ -47,6 +47,21 @@ export function OverviewCard({
     "border-border/70 bg-gradient-to-b from-background/85 via-background/75 to-muted/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_32px_-26px_rgba(15,23,42,0.42)] dark:from-background/90 dark:via-background/82 dark:to-background/68 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_16px_32px_-26px_rgba(0,0,0,0.45)]";
   const previewAccentClass = () => "bg-border/45";
   const navigation = useCompanyPageNavigation();
+  const renderIndicator = (indicator?: OverviewSectionPreview["indicator"]) => {
+    if (!indicator) return null;
+
+    if (indicator.kind === "score") {
+      return typeof indicator.score === "number" ? (
+        <ConcallScore score={indicator.score} size="sm" />
+      ) : null;
+    }
+
+    return (
+      <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
+        {indicator.label}
+      </span>
+    );
+  };
 
   const navigateToSection = (href: string) => {
     if (typeof window === "undefined") return;
@@ -125,7 +140,7 @@ export function OverviewCard({
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {sectionPreviews.map((preview) => (
                   (() => {
-                    const isLocked = preview.badge === "Soon";
+                    const isLocked = preview.indicator?.kind === "pill" && preview.indicator.label === "Soon";
                     const sectionId = getSectionId(preview.href);
                     const requestLabel = "Request this section";
                     const previewShellClass = "flex h-full flex-col gap-4 pt-1";
@@ -143,14 +158,14 @@ export function OverviewCard({
                             className={cn("absolute inset-x-0 top-0 h-1.5", previewAccentClass())}
                           />
                           <div className={previewShellClass}>
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0 space-y-1">
-                                <p className="text-sm font-semibold text-foreground">{preview.title}</p>
-                              </div>
-                              <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
-                                Not ready
-                              </span>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 space-y-1">
+                              <p className="text-sm font-semibold text-foreground">{preview.title}</p>
                             </div>
+                            <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
+                                Not ready
+                            </span>
+                          </div>
 
                             <div className="relative flex flex-1 items-center justify-center rounded-xl border border-border/40 bg-background/60 p-3">
                               <p className="w-full text-[11px] leading-snug text-muted-foreground/85 blur-[0.8px] opacity-70 select-none">
@@ -170,14 +185,6 @@ export function OverviewCard({
                               )}
                             </div>
 
-                            <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/40 pt-3">
-                              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                                Locked preview
-                              </p>
-                              <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                                Request access to unlock
-                              </span>
-                            </div>
                           </div>
                         </div>
                       );
@@ -204,20 +211,7 @@ export function OverviewCard({
                                 {preview.summary}
                               </p>
                             </div>
-                            <div className="shrink-0 flex flex-col items-end gap-2">
-                              {typeof preview.score === "number" ? (
-                                <ConcallScore score={preview.score} size="sm" />
-                              ) : preview.badge ? (
-                                <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
-                                  {preview.badge}
-                                </span>
-                              ) : null}
-                              {preview.metaBadge ? (
-                                <span className="inline-flex max-w-full items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
-                                  {preview.metaBadge}
-                                </span>
-                              ) : null}
-                            </div>
+                            <div className="shrink-0">{renderIndicator(preview.indicator)}</div>
                           </div>
                           <div className="mt-auto inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-foreground/60 transition-colors group-hover:text-foreground/80">
                             <span>Explore more</span>
