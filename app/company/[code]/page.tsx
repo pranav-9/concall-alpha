@@ -63,11 +63,6 @@ import type {
   NormalizedPriorTwoYearAccuracyRow,
 } from "@/lib/guidance-snapshot/types";
 
-type RankInfo = {
-  quarter?: { rank: number; total: number; percentile: number } | null;
-  growth?: { rank: number; total: number; percentile: number } | null;
-};
-
 type SectorRankInfo = { rank: number | null; total: number } | null;
 type ThemeItemWithSource = NormalizedIndustryTheme & { sourceSubSector?: string };
 
@@ -3106,7 +3101,6 @@ export default async function Page({
     return null;
   };
 
-  let rankInfo: RankInfo = { quarter: null, growth: null };
   let sectorRankInfo: SectorRankInfo = null;
   let latestQuarterRowsGlobal: Array<{ company_code?: unknown; score?: unknown }> = [];
 
@@ -3130,33 +3124,6 @@ export default async function Page({
       score?: unknown;
     }>;
 
-    const quarterRanked = assignCompetitionRanks(
-      latestQuarterRowsGlobal
-        .map((row) => ({
-          companyCode: String((row as { company_code?: string }).company_code ?? "").toUpperCase(),
-          score: toNumeric((row as { score?: unknown }).score),
-        }))
-        .filter((row) => row.companyCode && row.score != null)
-        .sort((a, b) => {
-          if ((b.score ?? 0) !== (a.score ?? 0)) return (b.score ?? 0) - (a.score ?? 0);
-          return a.companyCode.localeCompare(b.companyCode);
-        }),
-      (row) => row.score,
-    );
-
-    const quarterTotal = quarterRanked.length;
-    const quarterRank =
-      quarterRanked.find((row) => row.companyCode === code.toUpperCase())?.leaderboardRank ?? 0;
-    if (quarterTotal > 0 && quarterRank > 0) {
-      rankInfo = {
-        ...rankInfo,
-        quarter: {
-          rank: quarterRank,
-          total: quarterTotal,
-          percentile: ((quarterTotal - quarterRank + 1) / quarterTotal) * 100,
-        },
-      };
-    }
   }
 
   const { data: growthRankRows } = await supabase
@@ -3179,32 +3146,6 @@ export default async function Page({
       base: toNumeric((row as { base_growth_pct?: unknown }).base_growth_pct),
     });
   });
-
-  const growthRanked = assignCompetitionRanks(
-    Array.from(latestGrowthByCompany.values()).sort((a, b) => {
-      if (b.growthScore !== a.growthScore) return b.growthScore - a.growthScore;
-      const aBase = a.base ?? Number.NEGATIVE_INFINITY;
-      const bBase = b.base ?? Number.NEGATIVE_INFINITY;
-      if (bBase !== aBase) return bBase - aBase;
-      return a.company.localeCompare(b.company);
-    }),
-    (row) => row.growthScore,
-  );
-
-  const growthTotal = growthRanked.length;
-  const growthKeys = [code.toUpperCase(), (companyName ?? "").toUpperCase()].filter(Boolean);
-  const growthRank =
-    growthRanked.find((row) => growthKeys.includes(row.company))?.leaderboardRank ?? 0;
-  if (growthTotal > 0 && growthRank > 0) {
-    rankInfo = {
-      ...rankInfo,
-      growth: {
-        rank: growthRank,
-        total: growthTotal,
-        percentile: ((growthTotal - growthRank + 1) / growthTotal) * 100,
-      },
-    };
-  }
 
   if (companySector) {
     const { data: sectorPeerRows } = await supabase
