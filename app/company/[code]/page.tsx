@@ -66,6 +66,15 @@ import type {
 type SectorRankInfo = { rank: number | null; total: number } | null;
 type ThemeItemWithSource = NormalizedIndustryTheme & { sourceSubSector?: string };
 
+type OverviewBodyPillTone = "emerald" | "sky" | "amber" | "rose" | "slate";
+
+const getPercentileTone = (percentile: number): OverviewBodyPillTone => {
+  if (percentile >= 90) return "emerald";
+  if (percentile >= 75) return "sky";
+  if (percentile >= 50) return "amber";
+  return "rose";
+};
+
 const computeAvgScore = (latestQuarterScore: number | null, growthScore: number | null) => {
   if (latestQuarterScore == null || growthScore == null) return null;
   return (latestQuarterScore + growthScore) / 2;
@@ -3212,6 +3221,69 @@ export default async function Page({
     }
   }
 
+  const quarterRankInfo = (() => {
+    if (!latestQuarterRowsGlobal.length) return null;
+
+    const quarterRanked = assignCompetitionRanks(
+      latestQuarterRowsGlobal
+        .map((row) => ({
+          companyCode: String((row as { company_code?: string }).company_code ?? "").toUpperCase(),
+          score: toNumeric((row as { score?: unknown }).score),
+        }))
+        .filter((row) => row.companyCode && row.score != null)
+        .sort((a, b) => {
+          if ((b.score ?? 0) !== (a.score ?? 0)) return (b.score ?? 0) - (a.score ?? 0);
+          return a.companyCode.localeCompare(b.companyCode);
+        }),
+      (row) => row.score,
+    );
+
+    const quarterTotal = quarterRanked.length;
+    if (quarterTotal === 0) return null;
+
+    const quarterKeys = [code.toUpperCase(), (companyRow?.code ?? "").toUpperCase()].filter(
+      Boolean,
+    );
+    const quarterRank =
+      quarterRanked.find((row) => quarterKeys.includes(row.companyCode))?.leaderboardRank ?? null;
+    if (quarterRank == null) return null;
+
+    return {
+      rank: quarterRank,
+      total: quarterTotal,
+      percentile: ((quarterTotal - quarterRank + 1) / quarterTotal) * 100,
+    };
+  })();
+
+  const growthRankInfo = (() => {
+    if (!growthRankRows?.length || latestGrowthByCompany.size === 0) return null;
+
+    const growthRanked = assignCompetitionRanks(
+      Array.from(latestGrowthByCompany.values()).sort((a, b) => {
+        if (b.growthScore !== a.growthScore) return b.growthScore - a.growthScore;
+        const aBase = a.base ?? Number.NEGATIVE_INFINITY;
+        const bBase = b.base ?? Number.NEGATIVE_INFINITY;
+        if (bBase !== aBase) return bBase - aBase;
+        return a.company.localeCompare(b.company);
+      }),
+      (row) => row.growthScore,
+    );
+
+    const growthTotal = growthRanked.length;
+    if (growthTotal === 0) return null;
+
+    const growthKeys = [code.toUpperCase(), (companyName ?? "").toUpperCase()].filter(Boolean);
+    const growthRank =
+      growthRanked.find((row) => growthKeys.includes(row.company))?.leaderboardRank ?? null;
+    if (growthRank == null) return null;
+
+    return {
+      rank: growthRank,
+      total: growthTotal,
+      percentile: ((growthTotal - growthRank + 1) / growthTotal) * 100,
+    };
+  })();
+
   const overviewSectionPreviews = [
     {
       title: "Industry Context",
@@ -3278,6 +3350,19 @@ export default async function Page({
     {
       title: "Quarterly Score",
       href: "#sentiment-score",
+      bodyPills:
+        quarterRankInfo?.rank != null
+          ? [
+              {
+                label: `Q Rank ${quarterRankInfo.rank}/${quarterRankInfo.total}`,
+                tone: getPercentileTone(quarterRankInfo.percentile),
+              },
+              {
+                label: `Top ${Math.round(quarterRankInfo.percentile)}%`,
+                tone: getPercentileTone(quarterRankInfo.percentile),
+              },
+            ]
+          : undefined,
       summary: oneLine(
         latestQuarterData?.summary?.[0]
           ? `${latestQuarterData.summary[0].topic}: ${
@@ -3295,6 +3380,19 @@ export default async function Page({
     {
       title: "Growth Prospects",
       href: "#future-growth",
+      bodyPills:
+        growthRankInfo?.rank != null
+          ? [
+              {
+                label: `Growth Rank ${growthRankInfo.rank}/${growthRankInfo.total}`,
+                tone: getPercentileTone(growthRankInfo.percentile),
+              },
+              {
+                label: `Top ${Math.round(growthRankInfo.percentile)}%`,
+                tone: getPercentileTone(growthRankInfo.percentile),
+              },
+            ]
+          : undefined,
       summary: oneLine(
         normalizedGrowthOutlook?.baseGrowthPct
           ? `Base case growth: ${normalizedGrowthOutlook.baseGrowthPct}`

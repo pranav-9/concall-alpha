@@ -11,6 +11,10 @@ type OverviewSectionPreview = {
   title: string;
   href: string;
   summary: string;
+  bodyPills?: Array<{
+    label: string;
+    tone?: "emerald" | "sky" | "amber" | "rose" | "slate";
+  }>;
   indicator?:
     | { kind: "score"; score: number | null }
     | { kind: "pill"; label: string };
@@ -46,6 +50,21 @@ export function OverviewCard({
   const previewToneClass = () =>
     "border-border/70 bg-gradient-to-b from-background/85 via-background/75 to-muted/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_32px_-26px_rgba(15,23,42,0.42)] dark:from-background/90 dark:via-background/82 dark:to-background/68 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_16px_32px_-26px_rgba(0,0,0,0.45)]";
   const previewAccentClass = () => "bg-border/45";
+  const bodyPillClass = (tone: NonNullable<OverviewSectionPreview["bodyPills"]>[number]["tone"]) => {
+    switch (tone ?? "slate") {
+      case "emerald":
+        return "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200";
+      case "sky":
+        return "border-sky-200 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200";
+      case "amber":
+        return "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200";
+      case "rose":
+        return "border-rose-200 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200";
+      case "slate":
+      default:
+        return "border-border/60 bg-background/75 text-muted-foreground";
+    }
+  };
   const navigation = useCompanyPageNavigation();
   const renderIndicator = (indicator?: OverviewSectionPreview["indicator"]) => {
     if (!indicator) return null;
@@ -205,8 +224,23 @@ export function OverviewCard({
                         />
                         <div className={previewShellClass}>
                           <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 space-y-1">
+                            <div className="min-w-0 space-y-2">
                               <p className="text-sm font-semibold text-foreground">{preview.title}</p>
+                              {preview.bodyPills && preview.bodyPills.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {preview.bodyPills.map((pill) => (
+                                    <span
+                                      key={`${preview.title}-${pill.label}`}
+                                      className={cn(
+                                        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium",
+                                        bodyPillClass(pill.tone),
+                                      )}
+                                    >
+                                      {pill.label}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                               <p className="text-[11px] leading-snug text-muted-foreground">
                                 {preview.summary}
                               </p>
