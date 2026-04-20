@@ -6,6 +6,7 @@ import ConcallScore from "@/components/concall-score";
 import { slugifySector } from "@/app/sector/utils";
 import TopStocks from "./(hero)/top-stocks";
 import RecentScoreUpdates from "./(hero)/recent-score-updates";
+import { latestChangelogEntry } from "./changelog/changelog-data";
 
 function TopStocksHeroFallback() {
   return (
@@ -332,6 +333,65 @@ export default async function Home() {
 
           <div className="grid grid-cols-1 gap-6 lg:h-full">
             <RecentScoreUpdates heroPanel />
+            <section className="rounded-[2rem] border border-violet-200/35 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.94),rgba(245,243,255,0.76))] p-4 shadow-[0_18px_70px_-42px_rgba(15,23,42,0.4)] dark:border-violet-700/25 dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(17,24,39,0.94),rgba(49,46,129,0.16))]">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-violet-200/60 bg-violet-100/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-800 dark:border-violet-700/35 dark:bg-violet-900/30 dark:text-violet-200">
+                  Portal updates
+                </span>
+                <span className="rounded-full border border-border/60 bg-background/75 px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  {latestChangelogEntry.releasedLabel}
+                </span>
+              </div>
+
+              <div className="mt-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                    Changelog
+                  </p>
+                  <h3 className="mt-1 text-lg font-bold leading-tight text-foreground">
+                    {latestChangelogEntry.title}
+                  </h3>
+                </div>
+                <span className="shrink-0 rounded-full border border-violet-200/60 bg-violet-100/70 px-2.5 py-1 text-[10px] font-medium text-violet-800 dark:border-violet-700/35 dark:bg-violet-900/30 dark:text-violet-200">
+                  {latestChangelogEntry.version}
+                </span>
+              </div>
+
+              <p className="mt-2 text-sm leading-6 text-foreground/75">
+                {latestChangelogEntry.summary}
+              </p>
+
+              <ul className="mt-3 space-y-2">
+                {latestChangelogEntry.highlights.slice(0, 2).map((item) => (
+                  <li
+                    key={item.text}
+                    className="flex gap-2 rounded-2xl border border-border/35 bg-background/68 px-3 py-2.5"
+                  >
+                    <span
+                      className={`mt-0.5 inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                        item.kind === "added"
+                          ? "border-emerald-200/70 bg-emerald-100/80 text-emerald-800 dark:border-emerald-700/35 dark:bg-emerald-900/30 dark:text-emerald-200"
+                          : item.kind === "improved"
+                            ? "border-sky-200/70 bg-sky-100/80 text-sky-800 dark:border-sky-700/35 dark:bg-sky-900/30 dark:text-sky-200"
+                            : "border-amber-200/70 bg-amber-100/80 text-amber-800 dark:border-amber-700/35 dark:bg-amber-900/30 dark:text-amber-200"
+                      }`}
+                    >
+                      {item.kind}
+                    </span>
+                    <p className="text-sm leading-6 text-foreground/80">{item.text}</p>
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="/changelog"
+                prefetch={false}
+                className="mt-4 inline-flex items-center gap-2 rounded-full border border-violet-200/60 bg-violet-100/70 px-3 py-1.5 text-xs font-semibold text-violet-800 transition-colors hover:bg-violet-100 dark:border-violet-700/35 dark:bg-violet-900/30 dark:text-violet-200 dark:hover:bg-violet-900/40"
+              >
+                Open changelog
+                <span aria-hidden="true">→</span>
+              </Link>
+            </section>
           </div>
         </section>
 

@@ -11,6 +11,7 @@ const exploreLinks: FooterLinkItem[] = [
   { href: "/leaderboards", label: "Leaderboards" },
   { href: "/sectors", label: "Sectors" },
   { href: "/how-scores-work", label: "How Scores Work" },
+  { href: "/changelog", label: "Changelog" },
 ];
 
 const learnLinks: FooterLinkItem[] = [

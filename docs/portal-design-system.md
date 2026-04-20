@@ -164,6 +164,19 @@ Use:
 - keep the existing guidance tracker underneath the snapshot and data cards
 - avoid unnecessary explanatory copy; keep text light because the dashboard already carries a lot of text
 
+### Changelog pages
+
+The changelog page in [`app/changelog/page.tsx`](/Users/pranavyadav/Documents/tech/concall-alpha-1/concall-alpha-1/app/changelog/page.tsx) should feel like a release ledger, not a blog post.
+
+Use:
+
+- newest-first release cards
+- version and date chips with a clear scope badge
+- short `added` / `improved` / `fixed` bullets for each shipped release
+- one supporting side panel for reading rules and related links
+
+Keep the palette in the violet or slate family so the page reads as an archival product surface rather than a marketing announcement.
+
 ## Surface Grammar
 
 The portal uses a consistent surface grammar across most pages.
