@@ -1,11 +1,24 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
+import dynamic from "next/dynamic";
 import ConcallScore from "@/components/concall-score";
-import { WatchlistButton } from "@/components/watchlist-button";
 import { cn } from "@/lib/utils";
 import { useCompanyPageNavigation } from "./company-page-workspace";
 import { MissingSectionRequestButton } from "./missing-section-request-button";
+
+type WatchlistButtonProps = {
+  companyCode: string;
+  loginRedirectPath: string;
+  initialIsAuthenticated: boolean;
+  initialHasWatchlist: boolean;
+  initialIsInWatchlist: boolean;
+  initialWatchlistName?: string | null;
+};
+
+const WatchlistButton = dynamic<WatchlistButtonProps>(
+  () => import("@/components/watchlist-button").then((mod) => mod.WatchlistButton),
+);
 
 type OverviewSectionPreview = {
   title: string;

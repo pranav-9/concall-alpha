@@ -10,16 +10,6 @@ type QuarterInfo = {
   label: string;
 };
 
-const uniqueValues = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  arr: any[] | null,
-  key: string,
-  { excludeNullish = true } = {}
-) => {
-  const vals = arr?.map((o) => o?.[key]);
-  return [...new Set(excludeNullish ? vals?.filter((v) => v != null) : vals)];
-};
-
 export const getConcallData = async () => {
   const supabase = await createClient();
   const [{ data }, { data: companyRows }] = await Promise.all([
@@ -50,44 +40,53 @@ export const getConcallData = async () => {
   });
   const selectedQuarters = quarters.slice(0, 4);
 
-  const companies = uniqueValues(records, "company_code");
+  const recordsByCompany = new Map<string, QuarterData[]>();
+  for (const row of sorted as QuarterData[]) {
+    const bucket = recordsByCompany.get(row.company_code);
+    if (bucket) {
+      bucket.push(row);
+    } else {
+      recordsByCompany.set(row.company_code, [row]);
+    }
+  }
 
-  const rows: CompanyRow[] = companies.map((companyCode: string) => {
-    const row: CompanyRow = {
-      company: companyCode,
-      isNew: newCompanySet.has(companyCode.toUpperCase()),
-    };
-    const companyRecords = sorted.filter((x) => x.company_code === companyCode);
-    const trendSample = companyRecords.slice(0, 12);
-    const latest4 = companyRecords.slice(0, 4);
-    const latest12 = companyRecords.slice(0, 12);
-
-    row["Latest 4Q Avg"] =
-      latest4.length > 0
-        ? latest4.reduce((acc, curr) => acc + Number(curr.score ?? 0), 0) / latest4.length
-        : null;
-    row["Latest 12Q Avg"] =
-      latest12.length > 0
-        ? latest12.reduce((acc, curr) => acc + Number(curr.score ?? 0), 0) / latest12.length
-        : null;
-
-    selectedQuarters.forEach((q) => {
-      const match = companyRecords.find(
-        (x) => x.fy === q.fy && x.qtr === q.qtr
+  const rows: CompanyRow[] = Array.from(recordsByCompany.entries()).map(
+    ([companyCode, companyRecords]) => {
+      const row: CompanyRow = {
+        company: companyCode,
+        isNew: newCompanySet.has(companyCode.toUpperCase()),
+      };
+      const latest4 = companyRecords.slice(0, 4);
+      const latest12 = companyRecords.slice(0, 12);
+      const recordsByQuarter = new Map(
+        companyRecords.map((record) => [`${record.fy}-${record.qtr}`, record] as const),
       );
-      row[q.label] = match?.score ?? null;
-    });
 
-    // Trend calculation reused from company detail page
-    const trend = calculateTrend(trendSample as QuarterData[]);
-    row.trendDirection = trend.direction;
-    row.trendDescription = trend.description;
-    row.trendChange = trend.change;
-    row.trendRecentAvg = trend.recentAvg;
-    row.trendHistoricalAvg = trend.historicalAvg;
+      row["Latest 4Q Avg"] =
+        latest4.length > 0
+          ? latest4.reduce((acc, curr) => acc + Number(curr.score ?? 0), 0) / latest4.length
+          : null;
+      row["Latest 12Q Avg"] =
+        latest12.length > 0
+          ? latest12.reduce((acc, curr) => acc + Number(curr.score ?? 0), 0) / latest12.length
+          : null;
 
-    return row;
-  });
+      selectedQuarters.forEach((q) => {
+        const match = recordsByQuarter.get(`${q.fy}-${q.qtr}`);
+        row[q.label] = match?.score ?? null;
+      });
+
+      // Trend calculation reused from company detail page
+      const trend = calculateTrend(companyRecords.slice(0, 12));
+      row.trendDirection = trend.direction;
+      row.trendDescription = trend.description;
+      row.trendChange = trend.change;
+      row.trendRecentAvg = trend.recentAvg;
+      row.trendHistoricalAvg = trend.historicalAvg;
+
+      return row;
+    },
+  );
 
   const latestLabel = selectedQuarters[0]?.label;
   const sortedRows = latestLabel

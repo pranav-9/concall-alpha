@@ -2,11 +2,33 @@
 
 import { useEffect, useRef, useState } from "react";
 import { EnvVarWarning } from "@/components/env-var-warning";
-import { CompanySearch } from "@/components/company-search";
-import { AuthButton, type UserInfo } from "@/components/auth-button";
 import { cn, hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
+
+type UserInfo = {
+  email: string | null;
+  name: string | null;
+  avatar: string | null;
+} | null;
+
+type LogoutButtonProps = {
+  compact?: boolean;
+};
+
+type CompanySearchProps = {
+  className?: string;
+  onNavigate?: () => void;
+};
+
+const CompanySearch = dynamic<CompanySearchProps>(
+  () => import("@/components/company-search").then((mod) => mod.CompanySearch),
+);
+
+const LogoutButton = dynamic<LogoutButtonProps>(
+  () => import("@/components/logout-button").then((mod) => mod.LogoutButton),
+);
 
 const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
   const pathname = usePathname();
@@ -20,6 +42,56 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
   ];
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+  const renderSignedOutAuth = (compact: boolean) => {
+    if (compact) {
+      return (
+        <div className="flex items-center gap-3">
+          <Link
+            href="/auth/login"
+            className={cn(
+              "inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+            )}
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/auth/sign-up"
+            className={cn(
+              "inline-flex items-center rounded-full border border-foreground bg-foreground px-3 py-2 text-xs font-medium text-background transition-colors hover:bg-foreground/90",
+            )}
+          >
+            Sign up
+          </Link>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex gap-2">
+        <Link
+          href="/auth/login"
+          className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
+        >
+          Sign in
+        </Link>
+        <Link
+          href="/auth/sign-up"
+          className="inline-flex h-9 items-center justify-center rounded-md border border-transparent bg-foreground px-3 text-sm font-medium text-background shadow-sm transition-colors hover:bg-foreground/90"
+        >
+          Sign up
+        </Link>
+      </div>
+    );
+  };
+
+  const renderAuthControls = (compact: boolean) => {
+    if (!initialUser) {
+      return renderSignedOutAuth(compact);
+    }
+
+    return <LogoutButton compact={compact} />;
+  };
 
   useEffect(() => {
     const element = navRef.current;
@@ -89,9 +161,9 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
                   )}
                 >
                   {item.label}
-                </Link>
+                  </Link>
               ))}
-              <AuthButton initialUser={initialUser} compact />
+              {renderAuthControls(true)}
             </div>
 
             <button
@@ -123,31 +195,29 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
         {isMenuOpen && (
           <div className="md:hidden absolute left-3 right-3 top-[calc(100%+0.5rem)] overflow-hidden rounded-[1.5rem] border border-border/60 bg-background/96 shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl">
             <div className="space-y-2 px-3 py-3">
-            <CompanySearch className="w-full mb-1" onNavigate={() => setIsMenuOpen(false)} />
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch={false}
-                onClick={() => setIsMenuOpen(false)}
-                className={cn(
-                  "flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-                  isActive(item.href)
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <div className="pt-1">
-              <AuthButton initialUser={initialUser} compact />
-            </div>
-            {!hasEnvVars ? (
-              <div className="pt-1">
-                <EnvVarWarning />
-              </div>
-            ) : null}
+              <CompanySearch className="mb-1 w-full" onNavigate={() => setIsMenuOpen(false)} />
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  prefetch={false}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={cn(
+                    "flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                    isActive(item.href)
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <div className="pt-1">{renderAuthControls(true)}</div>
+              {!hasEnvVars ? (
+                <div className="pt-1">
+                  <EnvVarWarning />
+                </div>
+              ) : null}
             </div>
           </div>
         )}

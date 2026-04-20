@@ -12,7 +12,6 @@ import { OverviewCard } from "../components/overview-card";
 import { SectionCard } from "../components/section-card";
 import { parseSummary, transformToChartData, calculateTrend } from "../utils";
 import ConcallScore from "@/components/concall-score";
-import { CompanyCommentsSection } from "@/components/company/company-comments-section";
 import {
   Carousel,
   CarouselContent,
@@ -36,11 +35,14 @@ import type { NormalizedGrowthCatalyst, NormalizedGrowthScenario } from "@/lib/g
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
 import { normalizeCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/normalize";
 import { normalizeKeyVariablesSnapshot } from "@/lib/key-variables-snapshot/normalize";
-import { GuidanceHistorySection } from "../components/guidance-history-section";
+import {
+  CompanyCommentsSection,
+  GuidanceHistorySection,
+  HistoricalEconomicsDataPack,
+  QuarterlyScoreSection,
+} from "../components/deferred-company-sections";
 import { KeyVariablesSection } from "../components/key-variables-section";
 import { MissingSectionRequestButton } from "../components/missing-section-request-button";
-import { QuarterlyScoreSection } from "../components/quarterly-score-section";
-import { HistoricalEconomicsDataPack } from "../components/historical-economics-data-pack";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
