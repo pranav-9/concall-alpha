@@ -114,21 +114,7 @@ export function OverviewCard({
           tone: "emerald" as const,
         }
       : null,
-    companyInfo?.exchange
-      ? {
-          label: companyInfo.exchange,
-          tone: "amber" as const,
-        }
-      : null,
-    companyInfo?.country
-      ? {
-          label: companyInfo.country,
-          tone: "rose" as const,
-        }
-      : null,
-  ].filter((pill): pill is { label: string; tone: "emerald" | "sky" | "amber" | "rose" | "slate" } =>
-    Boolean(pill),
-  );
+  ].filter((pill): pill is { label: string; tone: "emerald" | "sky" | "slate" } => Boolean(pill));
 
   const companyMetaClass = (tone: "emerald" | "sky" | "amber" | "rose" | "slate") => {
     switch (tone) {
@@ -233,10 +219,6 @@ export function OverviewCard({
                   ))}
                 </div>
               ) : null}
-              <p className="max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
-                A focused view of the company narrative, score drivers, and the sections that matter
-                most for research.
-              </p>
             </div>
             {watchlist && (
               <div className="shrink-0 self-start rounded-2xl border border-border/60 bg-background/70 p-3 shadow-sm backdrop-blur-sm lg:ml-auto lg:pt-1">

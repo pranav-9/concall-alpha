@@ -3324,7 +3324,7 @@ export default async function Page({
           : normalizedCompanyIndustryAnalysis
             ? { kind: "pill" as const, label: "Live" }
             : { kind: "pill" as const, label: "Soon" },
-      tone: "sky" as const,
+      tone: "slate" as const,
     },
     {
       title: "Business Snapshot",
@@ -3343,7 +3343,7 @@ export default async function Page({
         : hasBusinessSnapshotContent
           ? { kind: "pill" as const, label: "Live" }
           : { kind: "pill" as const, label: "Soon" },
-      tone: "emerald" as const,
+      tone: "slate" as const,
     },
     {
       title: "Key Variables",
@@ -3360,7 +3360,7 @@ export default async function Page({
             label: `${normalizedKeyVariablesSnapshot.deepTreatment.length} vars`,
           }
         : { kind: "pill" as const, label: "Soon" },
-      tone: "violet" as const,
+      tone: "slate" as const,
     },
     {
       title: "Quarterly Score",
@@ -3390,7 +3390,7 @@ export default async function Page({
         latestQuarterData?.score != null
           ? { kind: "score" as const, score: latestQuarterData.score }
           : { kind: "pill" as const, label: "Soon" },
-      tone: "emerald" as const,
+      tone: "slate" as const,
     },
     {
       title: "Growth Prospects",
@@ -3420,7 +3420,7 @@ export default async function Page({
         growthScore != null
           ? { kind: "score" as const, score: growthScore }
           : { kind: "pill" as const, label: "Soon" },
-      tone: "sky" as const,
+      tone: "slate" as const,
     },
     {
       title: "Guidance Tracker",
@@ -3444,7 +3444,7 @@ export default async function Page({
           : normalizedGuidanceSnapshot
             ? { kind: "pill" as const, label: "Live" }
             : { kind: "pill" as const, label: "Soon" },
-      tone: "amber" as const,
+      tone: "slate" as const,
     },
   ];
 
