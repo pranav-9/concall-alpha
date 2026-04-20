@@ -964,6 +964,10 @@ export default async function Page({
     "rounded-md border border-border/25 bg-background/45";
   const snapshotSubsectionClass =
     "rounded-xl border border-border/20 bg-background/25";
+  const businessSnapshotSurfaceClass =
+    "rounded-[1.45rem] border border-emerald-200/35 bg-gradient-to-br from-background/96 via-background/92 to-emerald-50/14 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.48),0_18px_32px_-28px_rgba(15,23,42,0.2)] backdrop-blur-sm dark:border-emerald-700/25 dark:from-background/90 dark:via-background/84 dark:to-emerald-950/14";
+  const businessSnapshotBlockClass =
+    "rounded-xl border border-border/25 bg-gradient-to-br from-background/96 via-background/91 to-muted/12 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_14px_24px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:from-background/88 dark:via-background/82 dark:to-background/70";
   const hasFutureGrowthDeepDive = Boolean(
       normalizedGrowthOutlook?.scenarios?.base ||
       normalizedGrowthOutlook?.scenarios?.upside ||
@@ -1069,7 +1073,7 @@ export default async function Page({
     preview: string;
     children: React.ReactNode;
   }) => (
-    <details className={`group/business-snapshot-drawer ${elevatedMutedBlockClass}`}>
+    <details className={`group/business-snapshot-drawer ${businessSnapshotBlockClass}`}>
       <summary className="list-none cursor-pointer px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 space-y-1">
@@ -1086,7 +1090,7 @@ export default async function Page({
           </span>
         </div>
       </summary>
-      <div className="border-t border-border/40 px-4 py-3">{children}</div>
+      <div className="border-t border-border/35 px-4 py-3">{children}</div>
     </details>
   );
 
@@ -1298,7 +1302,7 @@ export default async function Page({
   const renderBusinessSegmentsInline = () => {
     if (!hasBusinessSegments) return null;
     return (
-      <div className={`${elevatedMutedBlockClass} p-4 space-y-3`}>
+      <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
             Business Segments
@@ -1406,7 +1410,7 @@ export default async function Page({
 
     if (hasRichHistoricalEconomics) {
       return (
-        <div className={`${elevatedMutedBlockClass} p-4 space-y-3`}>
+        <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
           <div className="space-y-1">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
               Business Momentum
@@ -1461,7 +1465,7 @@ export default async function Page({
     );
 
     return (
-      <div className={`${elevatedMutedBlockClass} p-4 space-y-3`}>
+      <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
             Business Momentum
@@ -1588,7 +1592,7 @@ export default async function Page({
   };
 
   const renderHistoricalEconomicsUnavailableCard = () => (
-    <div className={`${elevatedMutedBlockClass} p-4 space-y-3`}>
+    <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
       <div className="space-y-1">
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
           Business Momentum
@@ -1612,7 +1616,7 @@ export default async function Page({
     </div>
   );
   const renderBusinessMoatAnalysisInline = () => (
-    <div className={`${elevatedMutedBlockClass} p-4 space-y-3`}>
+    <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
@@ -1628,7 +1632,7 @@ export default async function Page({
       </div>
       {normalizedMoatAnalysis ? (
         <div className="space-y-4">
-          <div className={`${elevatedBlockClass} p-4 space-y-3`}>
+          <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
             <div className="flex flex-wrap items-center gap-2">
               {(() => {
                 const ratingConfig: Record<string, { className: string }> = {
@@ -3703,10 +3707,11 @@ export default async function Page({
   };
 
   return (
-    <div className="w-full max-w-full px-3 py-4 sm:px-4 sm:py-6 lg:px-12">
+    <div className="relative isolate w-full overflow-hidden px-3 py-3 pb-24 sm:px-4 sm:py-4 sm:pb-28 lg:px-8">
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.08),_transparent_42%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.06),_transparent_34%),linear-gradient(to_bottom,_rgba(255,255,255,0.75),_transparent)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_42%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_34%),linear-gradient(to_bottom,_rgba(15,23,42,0.32),_transparent)]" />
       <div
         id="main-content"
-        className="flex min-w-0 flex-col gap-4 overflow-x-hidden"
+        className="mx-auto flex w-full max-w-[1500px] min-w-0 flex-col gap-5 overflow-x-hidden"
       >
         <CompanyPageWorkspace sections={sidebarSections} defaultSectionId="overview">
           <div data-section-id="overview">
@@ -3916,12 +3921,13 @@ export default async function Page({
         >
           <div className="flex flex-col gap-4">
             {normalizedBusinessSnapshot ? (
-              <>
+              <div className={businessSnapshotSurfaceClass}>
+                <div className="space-y-4">
                 {hasStructuredBusinessSnapshot ? (
                   <>
-                    <div className="space-y-2.5">
+                    <div className="space-y-3">
                       {(aboutHeading || aboutSupportingText) && (
-                        <div className="min-w-0 space-y-2">
+                        <div className="min-w-0 space-y-2 rounded-2xl border border-border/20 bg-background/55 p-3 dark:bg-background/40">
                           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                             About
                           </p>
@@ -3952,7 +3958,7 @@ export default async function Page({
                       <div>
                         {normalizedBusinessSnapshot.businessSummaryShort ||
                         normalizedBusinessSnapshot.businessSummaryLong ? (
-                          <div className={`${elevatedBlockClass} p-4 space-y-2`}>
+                          <div className={`${businessSnapshotBlockClass} p-4 space-y-2`}>
                             {normalizedBusinessSnapshot.businessSummaryShort && (
                               <p className="text-sm sm:text-base font-semibold text-foreground leading-relaxed">
                                 {normalizedBusinessSnapshot.businessSummaryShort}
@@ -4061,7 +4067,7 @@ export default async function Page({
                     )}
 
                     {normalizedBusinessSnapshot.mixShiftSummary && (
-                      <div className="rounded-xl border border-sky-200/35 bg-sky-50/30 p-3 space-y-0.5 dark:border-sky-700/30 dark:bg-sky-950/10">
+                      <div className="rounded-2xl border border-sky-200/35 bg-gradient-to-br from-sky-50/45 via-background/92 to-background/78 p-3 space-y-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] dark:border-sky-700/30 dark:from-sky-950/16 dark:via-background/84 dark:to-background/70">
                         <p className="text-[10px] uppercase tracking-wide text-sky-700 dark:text-sky-300 font-semibold">
                           Mix Shift
                         </p>
@@ -4078,7 +4084,8 @@ export default async function Page({
                     "We have not generated a usable business snapshot for this company yet.",
                   )
                 )}
-              </>
+                </div>
+              </div>
             ) : (
               renderMissingSectionState(
                 "business-overview",

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ExpandableTextProps {
   text: string;
@@ -26,13 +28,26 @@ export function ExpandableText({
 
   return (
     <div className="max-w-4xl">
-      <p className={`${className} ${isExpanded ? "" : clampClass}`.trim()}>{text}</p>
+      <p
+        className={cn(
+          "text-sm leading-relaxed text-foreground/88",
+          className,
+          isExpanded ? "" : clampClass,
+        )}
+      >
+        {text}
+      </p>
       <button
         type="button"
+        aria-expanded={isExpanded}
         onClick={() => setIsExpanded((current) => !current)}
-        className={`mt-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground ${buttonClassName}`.trim()}
+        className={cn(
+          "mt-2 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-border hover:bg-accent hover:text-foreground",
+          buttonClassName,
+        )}
       >
-        {isExpanded ? "Show less" : "Show more"}
+        <span>{isExpanded ? "Show less" : "Show more"}</span>
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", isExpanded && "rotate-180")} />
       </button>
     </div>
   );

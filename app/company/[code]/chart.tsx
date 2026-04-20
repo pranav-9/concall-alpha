@@ -282,15 +282,15 @@ export function ChartLineLabel({
   return (
     <Card className="w-full bg-transparent border-0 shadow-none">
       <CardContent className="pt-0 px-0">
-        <ChartContainer config={chartConfig}>
+        <ChartContainer config={chartConfig} className="!aspect-[2.15/1]">
           <LineChart
             accessibilityLayer
             data={chartData}
             margin={{
-              top: isMobile ? 18 : 24,
-              left: isMobile ? 8 : 28,
-              right: isMobile ? 8 : 28,
-              bottom: 16,
+              top: isMobile ? 14 : 18,
+              left: isMobile ? 8 : 22,
+              right: isMobile ? 8 : 22,
+              bottom: 12,
             }}
           >
             <CartesianGrid vertical={false} stroke={gridStroke} />

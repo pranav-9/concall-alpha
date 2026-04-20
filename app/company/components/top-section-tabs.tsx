@@ -31,7 +31,7 @@ const renderMeta = (meta: CompanySidebarSectionMeta) => {
     return typeof meta.score === "number" ? (
       <ConcallScore score={meta.score} size="sm" className="h-7 w-7 text-[11px] ring-2" />
     ) : (
-      <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
+      <span className="inline-flex items-center rounded-full border border-border/60 bg-background/85 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
         —
       </span>
     );
@@ -39,7 +39,7 @@ const renderMeta = (meta: CompanySidebarSectionMeta) => {
 
   if (meta.kind === "count") {
     return (
-      <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
+      <span className="inline-flex items-center rounded-full border border-border/60 bg-background/85 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
         {meta.count}
         {meta.suffix ? ` ${meta.suffix}` : ""}
       </span>
@@ -47,7 +47,7 @@ const renderMeta = (meta: CompanySidebarSectionMeta) => {
   }
 
   return (
-    <span className="inline-flex max-w-[7rem] items-center truncate rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
+    <span className="inline-flex max-w-[7rem] items-center truncate rounded-full border border-border/60 bg-background/85 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
       {meta.text}
     </span>
   );
@@ -131,9 +131,12 @@ export function TopSectionTabs({
           width: floatingFrame.width,
         }}
       >
-        <div className="relative rounded-[1.4rem] border border-border/70 bg-background/88 px-2 py-2 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:bg-slate-950/84 sm:px-3">
+        <div className="relative rounded-[1.5rem] border border-border/70 bg-background/88 px-2 py-2 shadow-[0_18px_45px_-34px_rgba(15,23,42,0.42)] backdrop-blur-xl dark:bg-slate-950/82 sm:px-3">
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-10 rounded-l-[1.5rem] bg-gradient-to-r from-background/96 via-background/60 to-transparent dark:from-slate-950/96 dark:via-slate-950/50" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-[1.5rem] bg-gradient-to-l from-background/96 via-background/60 to-transparent dark:from-slate-950/96 dark:via-slate-950/50" />
+
           <div className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <nav className="flex min-w-full items-center gap-2 whitespace-nowrap pr-2">
+            <nav className="flex min-w-full items-center gap-2 whitespace-nowrap pr-2" aria-label="Company sections">
               {sections.map((section) => {
                 const isActive = activeSectionId === section.id;
                 const shortLabel = SHORT_LABELS[section.id] ?? section.label;
@@ -145,16 +148,17 @@ export function TopSectionTabs({
                       tabRefs.current[section.id] = element;
                     }}
                     type="button"
-                  aria-pressed={isActive}
-                  onClick={() => onSectionChange(section.id)}
-                  className={cn(
-                    "inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-[11px] font-medium tracking-[0.01em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
-                    isActive
-                      ? "border-white/70 bg-white text-slate-950 shadow-[0_10px_28px_-16px_rgba(255,255,255,0.75)] dark:border-white/20 dark:bg-white dark:text-slate-950"
-                      : "border-transparent bg-background/30 text-zinc-500 hover:border-white/10 hover:bg-white/[0.08] hover:text-zinc-100 dark:text-zinc-300 dark:hover:border-white/10 dark:hover:bg-white/10 dark:hover:text-white",
-                  )}
-                >
-                  <span>{shortLabel}</span>
+                    aria-pressed={isActive}
+                    aria-current={isActive ? "true" : undefined}
+                    onClick={() => onSectionChange(section.id)}
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-[11px] font-medium tracking-[0.01em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+                      isActive
+                        ? "border-border/60 bg-foreground text-background shadow-[0_12px_28px_-18px_rgba(15,23,42,0.55)] dark:bg-white dark:text-slate-950"
+                        : "border-transparent bg-transparent text-muted-foreground hover:border-border/60 hover:bg-background/70 hover:text-foreground",
+                    )}
+                  >
+                    <span>{shortLabel}</span>
                     {isActive && section.meta ? (
                       <span className="hidden lg:inline-flex">{renderMeta(section.meta)}</span>
                     ) : null}
@@ -163,9 +167,6 @@ export function TopSectionTabs({
               })}
             </nav>
           </div>
-
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-10 rounded-l-[1.4rem] bg-gradient-to-r from-background/95 via-background/55 to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-[1.4rem] bg-gradient-to-l from-background/95 via-background/55 to-transparent" />
         </div>
       </div>
     </div>

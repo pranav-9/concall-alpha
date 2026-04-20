@@ -48,7 +48,7 @@ export function OverviewCard({
   watchlist = null,
 }: OverviewCardProps) {
   const previewToneClass = () =>
-    "border-border/95 bg-gradient-to-b from-background/98 via-background/94 to-muted/24 shadow-[inset_0_1px_0_rgba(255,255,255,0.62),0_18px_28px_-24px_rgba(15,23,42,0.42)] ring-1 ring-border/30 dark:from-background/94 dark:via-background/90 dark:to-background/80 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_28px_-24px_rgba(0,0,0,0.50)] dark:ring-border/40";
+    "border-border/90 bg-gradient-to-b from-background/98 via-background/94 to-muted/26 shadow-[inset_0_1px_0_rgba(255,255,255,0.62),0_18px_30px_-24px_rgba(15,23,42,0.42)] ring-1 ring-border/30 backdrop-blur-sm dark:from-background/94 dark:via-background/90 dark:to-background/80 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_30px_-24px_rgba(0,0,0,0.50)] dark:ring-border/40";
   const previewAccentClass = (tone?: OverviewSectionPreview["tone"]) => {
     switch (tone ?? "slate") {
       case "emerald":
@@ -82,6 +82,56 @@ export function OverviewCard({
     }
   };
   const navigation = useCompanyPageNavigation();
+  const companyMetaPills = [
+    companyInfo?.code
+      ? {
+          label: companyInfo.code,
+          tone: "slate" as const,
+        }
+      : null,
+    companyInfo?.sector
+      ? {
+          label: companyInfo.sector,
+          tone: "sky" as const,
+        }
+      : null,
+    companyInfo?.subSector
+      ? {
+          label: companyInfo.subSector,
+          tone: "emerald" as const,
+        }
+      : null,
+    companyInfo?.exchange
+      ? {
+          label: companyInfo.exchange,
+          tone: "amber" as const,
+        }
+      : null,
+    companyInfo?.country
+      ? {
+          label: companyInfo.country,
+          tone: "rose" as const,
+        }
+      : null,
+  ].filter((pill): pill is { label: string; tone: "emerald" | "sky" | "amber" | "rose" | "slate" } =>
+    Boolean(pill),
+  );
+
+  const companyMetaClass = (tone: "emerald" | "sky" | "amber" | "rose" | "slate") => {
+    switch (tone) {
+      case "emerald":
+        return "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200";
+      case "sky":
+        return "border-sky-200 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200";
+      case "amber":
+        return "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200";
+      case "rose":
+        return "border-rose-200 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200";
+      case "slate":
+      default:
+        return "border-border/60 bg-background/75 text-muted-foreground";
+    }
+  };
   const renderIndicator = (indicator?: OverviewSectionPreview["indicator"]) => {
     if (!indicator) return null;
 
@@ -129,17 +179,17 @@ export function OverviewCard({
   return (
     <div
       id="overview"
-      className="scroll-mt-40 overflow-hidden rounded-[1.6rem] border border-border/70 bg-card p-6 shadow-[0_14px_36px_-30px_rgba(15,23,42,0.38)]"
+      className="scroll-mt-40 overflow-hidden rounded-[1.8rem] border border-border/70 bg-card/95 p-5 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.42)] backdrop-blur-sm sm:p-6 lg:p-7"
       style={{
         scrollMarginTop:
           "calc(var(--global-navbar-height, 84px) + var(--company-tabs-height, 56px) + 1rem)",
       }}
     >
       <div className="relative">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.07),_transparent_46%),radial-gradient(circle_at_top_right,_rgba(34,197,94,0.05),_transparent_34%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.10),_transparent_46%),radial-gradient(circle_at_top_right,_rgba(34,197,94,0.07),_transparent_34%)]" />
-        <div className="relative flex flex-col gap-4">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.08),_transparent_44%),radial-gradient(circle_at_top_right,_rgba(34,197,94,0.06),_transparent_32%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.04),_transparent_28%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_44%),radial-gradient(circle_at_top_right,_rgba(34,197,94,0.08),_transparent_32%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.06),_transparent_28%)]" />
+        <div className="relative flex flex-col gap-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl space-y-3 pl-1 sm:pl-2">
+            <div className="max-w-3xl space-y-4 pl-1 sm:pl-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center rounded-full border border-border/60 bg-muted/50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   Overview
@@ -151,13 +201,35 @@ export function OverviewCard({
                 )}
               </div>
               {companyInfo?.name && (
-                <p className="text-balance text-2xl font-bold leading-tight text-foreground sm:text-3xl">
+                <p className="text-balance text-[1.9rem] font-bold leading-tight tracking-[-0.03em] text-foreground sm:text-[2.35rem] lg:text-[2.7rem]">
                   {companyInfo.name}
                 </p>
               )}
+              {companyMetaPills.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {companyMetaPills.map((pill) => (
+                    <span
+                      key={pill.label}
+                      className={cn(
+                        "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                        companyMetaClass(pill.tone),
+                      )}
+                    >
+                      {pill.label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              <p className="max-w-2xl text-[13px] leading-relaxed text-muted-foreground">
+                A focused view of the company narrative, score drivers, and the sections that matter
+                most for research.
+              </p>
             </div>
             {watchlist && (
-              <div className="shrink-0 self-start lg:ml-auto lg:pt-1">
+              <div className="shrink-0 self-start rounded-2xl border border-border/60 bg-background/70 p-3 shadow-sm backdrop-blur-sm lg:ml-auto lg:pt-1">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Track this name
+                </p>
                 <WatchlistButton
                   companyCode={watchlist.companyCode}
                   loginRedirectPath={watchlist.loginRedirectPath}
@@ -171,14 +243,14 @@ export function OverviewCard({
           </div>
 
           {sectionPreviews.length > 0 && (
-            <div className="space-y-2.5 pt-1">
+            <div className="space-y-3 pt-1">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {sectionPreviews.map((preview) => (
                   (() => {
                     const isLocked = preview.indicator?.kind === "pill" && preview.indicator.label === "Soon";
                     const sectionId = getSectionId(preview.href);
                     const requestLabel = "Request this section";
-                    const previewShellClass = "flex h-full flex-col gap-4 pt-1";
+                    const previewShellClass = "flex h-full min-h-[10.5rem] flex-col gap-4 pt-1";
 
                     if (isLocked) {
                       return (
@@ -195,7 +267,9 @@ export function OverviewCard({
                           <div className={previewShellClass}>
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0 space-y-1">
-                              <p className="text-sm font-semibold text-foreground">{preview.title}</p>
+                              <p className="text-sm font-semibold leading-tight text-foreground">
+                                {preview.title}
+                              </p>
                             </div>
                             <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
                                 Not ready
@@ -203,7 +277,7 @@ export function OverviewCard({
                           </div>
 
                             <div className="relative flex flex-1 items-center justify-center rounded-xl border border-border/40 bg-background/60 p-3">
-                              <p className="w-full text-[11px] leading-snug text-muted-foreground/85 blur-[0.8px] opacity-70 select-none">
+                              <p className="w-full select-none text-[11px] leading-snug text-muted-foreground/85 blur-[0.8px] opacity-70">
                                 {preview.summary}
                               </p>
                               {companyInfo?.code && (
@@ -241,7 +315,9 @@ export function OverviewCard({
                         <div className={previewShellClass}>
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0 space-y-2">
-                              <p className="text-sm font-semibold text-foreground">{preview.title}</p>
+                              <p className="text-sm font-semibold leading-tight text-foreground">
+                                {preview.title}
+                              </p>
                               {preview.bodyPills && preview.bodyPills.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
                                   {preview.bodyPills.map((pill) => (

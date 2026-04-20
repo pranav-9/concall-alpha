@@ -167,67 +167,70 @@ export function QuarterlyScoreSection({
   ).padStart(2, "0")}`;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div
-        className={`flex flex-col gap-1.5 rounded-xl px-3 py-2.5 shadow-md shadow-black/15 sm:flex-row sm:items-center sm:justify-between ${
-          trend.direction === "improving"
-            ? "border border-emerald-300/70 bg-emerald-100 dark:border-emerald-500/50 dark:bg-emerald-500/20"
-            : trend.direction === "declining"
-              ? "border border-red-300/70 bg-red-100 dark:border-red-500/50 dark:bg-red-500/20"
-              : "border border-amber-300/70 bg-amber-100 dark:border-amber-500/50 dark:bg-amber-500/20"
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          {trend.direction === "improving" ? (
-            <>
-              <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                Trend: Improving
+    <div className="rounded-[1.35rem] border border-amber-200/20 bg-gradient-to-br from-background/96 via-background/98 to-muted/10 p-2.5 shadow-[0_14px_30px_-28px_rgba(15,23,42,0.28)] dark:border-amber-700/18 dark:from-background/90 dark:via-background/88 dark:to-background/76">
+      <div className="flex flex-col gap-3">
+        <div
+          className={`grid gap-2 rounded-xl border px-2.5 py-2 shadow-sm shadow-black/10 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center ${
+            trend.direction === "improving"
+              ? "border-emerald-300/60 bg-gradient-to-r from-emerald-100/90 via-background/92 to-background/78 dark:border-emerald-500/40 dark:from-emerald-500/18 dark:via-background/82 dark:to-background/70"
+              : trend.direction === "declining"
+                ? "border-red-300/60 bg-gradient-to-r from-red-100/90 via-background/92 to-background/78 dark:border-red-500/40 dark:from-red-500/18 dark:via-background/82 dark:to-background/70"
+                : "border-amber-300/60 bg-gradient-to-r from-amber-100/90 via-background/92 to-background/78 dark:border-amber-500/40 dark:from-amber-500/18 dark:via-background/82 dark:to-background/70"
+          }`}
+        >
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/45 bg-background/90 px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] dark:bg-background/78">
+            {trend.direction === "improving" ? (
+              <>
+                <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                  Trend: Improving
+                </span>
+              </>
+            ) : trend.direction === "declining" ? (
+              <>
+                <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <span className="text-[11px] font-semibold text-red-700 dark:text-red-300">
+                  Trend: Declining
+                </span>
+              </>
+            ) : (
+              <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                ↔ Trend: Stable
               </span>
-            </>
-          ) : trend.direction === "declining" ? (
-            <>
-              <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
-              <span className="text-[11px] font-semibold text-red-700 dark:text-red-300">
-                Trend: Declining
-              </span>
-            </>
-          ) : (
-            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">
-              ↔ Trend: Stable
+            )}
+          </div>
+          <div className="rounded-lg border border-border/20 bg-background/70 px-3 py-1.5">
+            <span className="block text-[11px] leading-snug text-foreground/88">
+              {trend.description}
             </span>
-          )}
+          </div>
         </div>
-        <span className="text-[11px] leading-snug text-foreground/80 sm:text-right">
-          {trend.description}
-        </span>
-      </div>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,0.92fr)_minmax(22rem,1.08fr)] lg:items-start">
-        <div className="flex min-w-0 flex-col gap-2 rounded-2xl border border-border/25 bg-muted/10 p-3 shadow-sm shadow-black/5">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Score trend
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,0.82fr)_minmax(24rem,1.18fr)] lg:items-start">
+          <div className="flex min-w-0 flex-col gap-2 rounded-2xl border border-amber-200/20 bg-background/78 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_20px_-22px_rgba(15,23,42,0.16)] dark:border-amber-700/18 dark:bg-background/80">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Score trend
+              </p>
+              <span className="text-[10px] text-muted-foreground">12 quarters</span>
+            </div>
+            <div className="mx-auto flex w-full max-w-[34rem] justify-center">
+              <ChartLineLabel
+                chartData={chartData}
+                selectedQuarter={selectedQuarterLabel}
+                onQuarterSelect={handleQuarterSelect}
+              />
+            </div>
+            <p className="text-[10px] text-center text-muted-foreground">
+              Latest 12 quarters, oldest to newest. Click a point to inspect that quarter.
             </p>
-            <span className="text-[10px] text-muted-foreground">12 quarters</span>
           </div>
-          <div className="flex justify-center">
-            <ChartLineLabel
-              chartData={chartData}
-              selectedQuarter={selectedQuarterLabel}
-              onQuarterSelect={handleQuarterSelect}
-            />
-          </div>
-          <p className="text-[10px] text-center text-muted-foreground">
-            Latest 12 quarters, oldest to newest. Click a point to inspect that quarter.
-          </p>
-        </div>
 
-        <div className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border/45 border-t-4 border-t-sky-300 bg-card/95 p-4 shadow-lg shadow-black/10">
-          {detailQuarters.length > 0 ? (
-            <Carousel setApi={setCarouselApi} opts={{ align: "start" }} className="min-w-0 w-full">
-              <CarouselContent className="ml-0">
-                {detailQuarters.map((quarter, index) => {
+          <div className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-amber-200/20 bg-background/90 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_16px_26px_-24px_rgba(15,23,42,0.18)] dark:border-amber-700/18 dark:bg-background/84">
+            {detailQuarters.length > 0 ? (
+              <Carousel setApi={setCarouselApi} opts={{ align: "start" }} className="min-w-0 w-full">
+                <CarouselContent className="ml-0">
+                  {detailQuarters.map((quarter, index) => {
                   const quarterContext = buildDetailQuarterContext(quarter);
                   const isLatest = index === 0;
                   const hasVisibleContext =
@@ -453,30 +456,31 @@ export function QuarterlyScoreSection({
                     </CarouselItem>
                   );
                 })}
-              </CarouselContent>
+                </CarouselContent>
 
-              <div className="mt-3 flex items-center justify-between gap-3 border-t border-border/30 pt-2">
-                <p className="text-[10px] text-muted-foreground">
-                  {canBrowseQuarters
-                    ? "Latest quarter shown first. Use arrows or the chart to browse earlier quarters."
-                    : "Latest quarter context."}
-                </p>
-                {canBrowseQuarters && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                      {currentPositionLabel}
-                    </span>
-                    <CarouselPrevious className="static size-8 translate-x-0 translate-y-0 border border-border bg-background text-foreground shadow-sm hover:bg-accent disabled:opacity-40" />
-                    <CarouselNext className="static size-8 translate-x-0 translate-y-0 border border-border bg-background text-foreground shadow-sm hover:bg-accent disabled:opacity-40" />
-                  </div>
-                )}
+                <div className="mt-3 flex items-center justify-between gap-3 border-t border-border/30 pt-2">
+                  <p className="text-[10px] text-muted-foreground">
+                    {canBrowseQuarters
+                      ? "Latest quarter shown first. Use arrows or the chart to browse earlier quarters."
+                      : "Latest quarter context."}
+                  </p>
+                  {canBrowseQuarters && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        {currentPositionLabel}
+                      </span>
+                      <CarouselPrevious className="static size-8 translate-x-0 translate-y-0 border border-border bg-background text-foreground shadow-sm hover:bg-accent disabled:opacity-40" />
+                      <CarouselNext className="static size-8 translate-x-0 translate-y-0 border border-border bg-background text-foreground shadow-sm hover:bg-accent disabled:opacity-40" />
+                    </div>
+                  )}
+                </div>
+              </Carousel>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border/50 bg-muted/30 p-3 text-[11px] text-muted-foreground">
+                No quarterly context available.
               </div>
-            </Carousel>
-          ) : (
-            <div className="rounded-xl border border-dashed border-border/50 bg-muted/30 p-3 text-[11px] text-muted-foreground">
-              No quarterly context available.
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

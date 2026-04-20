@@ -7,7 +7,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Navbar from "./(hero)/navbar";
 import { createClient } from "@/lib/supabase/server";
-import { RequestIntakeFab } from "@/components/request-intake-fab";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -65,7 +64,6 @@ export default async function RootLayout({
               {children}
             </div>
             <SiteFooter />
-            <RequestIntakeFab />
           </div>
         </ThemeProvider>
         <Analytics />

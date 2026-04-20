@@ -116,7 +116,9 @@ export function CompanyPageWorkspace({
           activeSectionId={activeSectionId}
           onSectionChange={handleSectionChange}
         />
-        <div ref={contentRef}>{activePanel}</div>
+        <div ref={contentRef} className="min-w-0">
+          {activePanel}
+        </div>
       </div>
     </CompanyPageNavigationContext.Provider>
   );
