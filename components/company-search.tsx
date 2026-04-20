@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
@@ -18,13 +18,14 @@ type SearchResponse = {
 export function CompanySearch({
   className,
   onNavigate,
+  instanceId,
 }: {
   className?: string;
   onNavigate?: () => void;
+  instanceId?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const listId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const fetchControllerRef = useRef<AbortController | null>(null);
 
@@ -35,6 +36,7 @@ export function CompanySearch({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const listId = `${instanceId ?? "company-search"}-results`;
   const trimmedQuery = query.trim();
 
   useEffect(() => {

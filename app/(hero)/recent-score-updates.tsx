@@ -575,7 +575,7 @@ export default async function RecentScoreUpdates({
   heroPanel?: boolean;
 } = {}) {
   const isCompact = heroPanel;
-  const updates = await getUnifiedUpdates(isCompact ? 8 : 6);
+  const updates = await getUnifiedUpdates(isCompact ? 9 : 6);
   if (updates.length === 0) return null;
 
   const headerClass = isCompact
@@ -606,7 +606,7 @@ export default async function RecentScoreUpdates({
     ? "text-[10px] text-muted-foreground line-clamp-1"
     : "text-[11px] text-muted-foreground line-clamp-1";
   const footerClass = isCompact
-    ? "px-3 pb-2 pt-1 border-t border-border"
+    ? "px-3 pb-2 pt-1 sm:border-t sm:border-border"
     : "px-3 sm:px-4 pb-3 sm:pb-4 pt-2 border-t border-border";
 
   return (
@@ -628,7 +628,8 @@ export default async function RecentScoreUpdates({
         </div>
 
         <div className={heroPanel ? "flex-1 divide-y divide-border overflow-y-auto" : "divide-y divide-border"}>
-          {updates.map((item) => {
+          {updates.map((item, index) => {
+            const mobileOnlyHidden = heroPanel && index === 8 ? "hidden sm:block sm:border-t-0" : "";
             const row = (
               <div className={rowClass}>
                 <div className="min-w-0">
@@ -670,7 +671,11 @@ export default async function RecentScoreUpdates({
             );
 
             if (!item.companyCode) {
-              return <div key={item.id}>{row}</div>;
+              return (
+                <div key={item.id} className={mobileOnlyHidden}>
+                  {row}
+                </div>
+              );
             }
 
             return (
@@ -678,6 +683,7 @@ export default async function RecentScoreUpdates({
                 key={item.id}
                 href={`/company/${item.companyCode}`}
                 prefetch={false}
+                className={mobileOnlyHidden}
               >
                 {row}
               </Link>

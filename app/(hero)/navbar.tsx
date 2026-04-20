@@ -20,6 +20,7 @@ type LogoutButtonProps = {
 type CompanySearchProps = {
   className?: string;
   onNavigate?: () => void;
+  instanceId?: string;
 };
 
 const CompanySearch = dynamic<CompanySearchProps>(
@@ -146,7 +147,7 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-3 lg:gap-4">
               <div className="w-60 lg:w-72">
-                <CompanySearch />
+                <CompanySearch instanceId="navbar-company-search" />
               </div>
               {navItems.map((item) => (
                 <Link
@@ -195,7 +196,11 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
         {isMenuOpen && (
           <div className="md:hidden absolute left-3 right-3 top-[calc(100%+0.5rem)] overflow-hidden rounded-[1.5rem] border border-border/60 bg-background/96 shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl">
             <div className="space-y-2 px-3 py-3">
-              <CompanySearch className="mb-1 w-full" onNavigate={() => setIsMenuOpen(false)} />
+              <CompanySearch
+                className="mb-1 w-full"
+                onNavigate={() => setIsMenuOpen(false)}
+                instanceId="navbar-mobile-company-search"
+              />
               {navItems.map((item) => (
                 <Link
                   key={item.href}
