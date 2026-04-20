@@ -575,35 +575,35 @@ export default async function RecentScoreUpdates({
   heroPanel?: boolean;
 } = {}) {
   const isCompact = heroPanel;
-  const updates = await getUnifiedUpdates(isCompact ? 12 : 6);
+  const updates = await getUnifiedUpdates(isCompact ? 8 : 6);
   if (updates.length === 0) return null;
 
   const headerClass = isCompact
     ? "px-3 py-2.5 border-b border-border"
     : "p-3 sm:p-4 border-b border-border";
   const titleClass = isCompact
-    ? "text-[15px] font-bold tracking-[-0.01em] text-foreground"
+    ? "text-base font-bold tracking-[-0.01em] text-foreground"
     : "text-base sm:text-lg font-bold text-foreground";
   const subtitleClass = isCompact
     ? "text-[11px] text-muted-foreground leading-tight"
     : "text-xs text-muted-foreground leading-relaxed";
   const rowClass = isCompact
-    ? "flex items-center justify-between gap-1.5 px-3 py-1.5 hover:bg-accent/70 transition-colors"
+    ? "flex items-start justify-between gap-2 px-3 py-2 hover:bg-accent/70 transition-colors"
     : "flex items-center justify-between gap-2.5 px-3 py-2.5 hover:bg-accent/70 transition-colors";
   const companyNameClass = isCompact
     ? "text-[13px] font-semibold leading-tight text-foreground truncate"
     : "text-sm font-semibold text-foreground truncate";
   const metaRowClass = isCompact
-    ? "mt-0.5 flex flex-wrap items-center gap-1 text-[10px]"
+    ? "mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px]"
     : "mt-0.5 flex flex-wrap items-center gap-2 text-xs";
   const chipClass = isCompact
-    ? "text-[9px] px-1.5 py-[1px] rounded-full border font-medium leading-none"
+    ? "text-[10px] px-2 py-0.5 rounded-full border font-medium leading-none"
     : "text-[11px] px-2.5 py-0.5 rounded-full border font-medium";
   const dateClass = isCompact
-    ? "text-[9px] text-muted-foreground"
+    ? "text-[10px] text-muted-foreground"
     : "text-[11px] text-muted-foreground";
   const detailClass = isCompact
-    ? "text-[9px] text-muted-foreground line-clamp-1"
+    ? "text-[10px] text-muted-foreground line-clamp-1"
     : "text-[11px] text-muted-foreground line-clamp-1";
   const footerClass = isCompact
     ? "px-3 pb-2 pt-1 border-t border-border"
@@ -635,7 +635,7 @@ export default async function RecentScoreUpdates({
                   <p className={companyNameClass}>
                     {item.companyName}
                     {item.companyIsNew && (
-                      <span className="ml-2 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 align-middle text-[9px] font-medium leading-none text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                      <span className="ml-2 inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 align-middle text-[10px] font-medium leading-none text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
                         New
                       </span>
                     )}

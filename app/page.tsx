@@ -199,11 +199,11 @@ export default async function Home() {
     <main className="relative min-h-screen overflow-hidden">
       <div className="absolute inset-x-0 -top-28 -z-10 h-[42rem] bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.12),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.14),_transparent_36%),linear-gradient(180deg,_rgba(15,23,42,0.03),_transparent_58%)]" />
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-4 py-6 sm:px-6 sm:py-8 lg:gap-10 lg:px-10 lg:py-10">
-        <section className="grid grid-cols-1 gap-6 lg:min-h-[80vh] supports-[height:100dvh]:lg:min-h-[80dvh] lg:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)] lg:items-stretch">
-          <div className="rounded-[2rem] border border-border/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92),rgba(240,249,255,0.88))] p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.35)] sm:p-8 lg:h-full lg:p-8 dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(17,24,39,0.94),rgba(8,47,73,0.72))]">
-            <div className="flex h-full flex-col justify-between gap-6">
+        <section className="grid grid-cols-1 gap-4 lg:min-h-[80vh] supports-[height:100dvh]:lg:min-h-[80dvh] lg:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)] lg:items-stretch">
+          <div className="rounded-[2rem] border border-border/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92),rgba(240,249,255,0.88))] p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.35)] sm:p-6 lg:h-full lg:p-8 dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(17,24,39,0.94),rgba(8,47,73,0.72))]">
+            <div className="flex h-full flex-col gap-5 lg:justify-between">
               <div className="space-y-5">
-                <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:gap-2 sm:text-[11px]">
                   <span className="rounded-full border border-emerald-300/60 bg-emerald-100/80 px-3 py-1 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/25 dark:text-emerald-200">
                     Business Analysis portal
                   </span>
@@ -214,7 +214,7 @@ export default async function Home() {
 
                 <div className="max-w-4xl space-y-3">
                   <h1 className="max-w-4xl text-4xl font-black leading-[0.95] tracking-[-0.04em] text-foreground sm:text-5xl lg:text-6xl">
-                    India&apos;s first fudamental screener
+                    India&apos;s first fundamental screener
                   </h1>
                   <p className="max-w-2xl text-sm leading-7 text-foreground/78 sm:text-base">
                     We turn commentary, guidance, and business context into a structured research
@@ -222,30 +222,30 @@ export default async function Home() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-border/45 bg-background/72 px-5 py-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-border/45 bg-background/72 px-4 py-3.5 last:col-span-2 sm:px-5 sm:py-4 sm:last:col-span-1">
                     <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                       Companies
                     </p>
-                    <p className="mt-2 text-[2rem] font-black leading-none text-foreground">
+                    <p className="mt-2 text-[1.75rem] font-black leading-none text-foreground sm:text-[2rem]">
                       {coverageData.totalCompanies}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">In active coverage</p>
                   </div>
-                  <div className="rounded-2xl border border-border/45 bg-background/72 px-5 py-4">
+                  <div className="rounded-2xl border border-border/45 bg-background/72 px-4 py-3.5 last:col-span-2 sm:px-5 sm:py-4 sm:last:col-span-1">
                     <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                       Sectors
                     </p>
-                    <p className="mt-2 text-[2rem] font-black leading-none text-foreground">
+                    <p className="mt-2 text-[1.75rem] font-black leading-none text-foreground sm:text-[2rem]">
                       {coverageData.totalSectors}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">Across the universe</p>
                   </div>
-                  <div className="rounded-2xl border border-border/45 bg-background/72 px-5 py-4">
+                  <div className="rounded-2xl border border-border/45 bg-background/72 px-4 py-3.5 last:col-span-2 sm:px-5 sm:py-4 sm:last:col-span-1">
                     <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                       Fresh adds
                     </p>
-                    <p className="mt-2 text-[2rem] font-black leading-none text-foreground">
+                    <p className="mt-2 text-[1.75rem] font-black leading-none text-foreground sm:text-[2rem]">
                       {coverageData.newCompanyCount}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">Recently added</p>
@@ -330,7 +330,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 lg:h-full">
+          <div className="grid grid-cols-1 gap-4 lg:h-full">
             <RecentScoreUpdates heroPanel />
           </div>
         </section>
@@ -347,7 +347,7 @@ export default async function Home() {
             </Suspense>
           </div>
 
-          <div className="rounded-[2rem] border border-border/60 bg-[linear-gradient(180deg,rgba(248,250,252,0.92),rgba(241,245,249,0.92),rgba(255,255,255,0.98))] p-6 shadow-[0_18px_70px_-42px_rgba(15,23,42,0.4)] dark:bg-[linear-gradient(180deg,rgba(17,24,39,0.95),rgba(15,23,42,0.95),rgba(2,6,23,0.95))] sm:p-6 lg:p-8">
+          <div className="rounded-[2rem] border border-border/60 bg-[linear-gradient(180deg,rgba(248,250,252,0.92),rgba(241,245,249,0.92),rgba(255,255,255,0.98))] p-4 shadow-[0_18px_70px_-42px_rgba(15,23,42,0.4)] dark:bg-[linear-gradient(180deg,rgba(17,24,39,0.95),rgba(15,23,42,0.95),rgba(2,6,23,0.95))] sm:p-6 lg:p-8">
             <div className="max-w-4xl">
               <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
                 Analysis framework
@@ -357,11 +357,11 @@ export default async function Home() {
               </h2>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4 sm:mt-8">
               {analysisFramework.map((item) => (
                 <div
                   key={item.title}
-                  className={`group min-h-48 rounded-[1.65rem] border p-4 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.35)] transition-transform transition-colors hover:-translate-y-0.5 sm:p-5 ${item.borderClass}`}
+                  className={`group rounded-[1.65rem] border p-4 shadow-[0_18px_60px_-42px_rgba(15,23,42,0.35)] transition-transform transition-colors hover:-translate-y-0.5 sm:min-h-48 sm:p-5 ${item.borderClass}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -392,7 +392,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-[2rem] border border-border/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.94))] p-6 shadow-[0_18px_70px_-46px_rgba(15,23,42,0.42)] dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(2,6,23,0.96))] sm:p-7 lg:p-8">
+          <div className="overflow-hidden rounded-[2rem] border border-border/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.94))] p-4 shadow-[0_18px_70px_-46px_rgba(15,23,42,0.42)] dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.96),rgba(2,6,23,0.96))] sm:p-7 lg:p-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-3xl">
                 <div className="flex flex-wrap items-center gap-2">
@@ -415,7 +415,7 @@ export default async function Home() {
                 href="https://www.youtube.com/@pranavyadav6958"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex w-fit items-center justify-center rounded-full border border-border bg-foreground px-5 py-3 text-sm font-semibold text-background shadow-[0_18px_45px_-30px_rgba(15,23,42,0.7)] transition-transform hover:-translate-y-0.5"
+                className="inline-flex w-full items-center justify-center rounded-full border border-border bg-foreground px-5 py-3 text-sm font-semibold text-background shadow-[0_18px_45px_-30px_rgba(15,23,42,0.7)] transition-transform hover:-translate-y-0.5 sm:w-fit"
               >
                 Watch on YouTube →
               </a>

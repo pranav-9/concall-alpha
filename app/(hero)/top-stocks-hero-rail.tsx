@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowLeftRight } from "lucide-react";
 
 import ConcallScore from "@/components/concall-score";
 import { Badge } from "@/components/ui/badge";
@@ -70,15 +71,26 @@ type HeroRailSlide =
     };
 
 export default function TopStocksHeroRail({ slides }: { slides: HeroRailSlide[] }) {
+  const slideCount = slides.length;
+
   return (
     <section className="w-full">
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
+      <div className="mb-3 flex items-center justify-between gap-3 sm:hidden">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <ArrowLeftRight className="h-3.5 w-3.5 shrink-0" />
+          <span>Swipe to browse</span>
+        </div>
+        <span className="rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          {slideCount} cards
+        </span>
+      </div>
+      <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 xl:grid-cols-4">
         {slides.map((slide) => (
           <div
             key={slide.key}
-            className="overflow-hidden rounded-[1.5rem] border border-border/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94),rgba(255,255,255,0.98))] shadow-[0_20px_60px_-42px_rgba(15,23,42,0.35)] dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(15,23,42,0.98))]"
+            className="w-[82vw] min-w-[82vw] max-w-[26rem] shrink-0 snap-start overflow-hidden rounded-[1.5rem] border border-border/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94),rgba(255,255,255,0.98))] shadow-[0_20px_60px_-42px_rgba(15,23,42,0.35)] sm:w-auto sm:min-w-0 sm:max-w-none dark:bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(17,24,39,0.96),rgba(15,23,42,0.98))]"
           >
-            <div className="border-b border-border/60 px-4 py-3.5">
+            <div className="border-b border-border/60 px-3 py-3 sm:px-4 sm:py-3.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   {slide.railLabel}
@@ -92,14 +104,14 @@ export default function TopStocksHeroRail({ slides }: { slides: HeroRailSlide[] 
                   </Badge>
                 ) : null}
               </div>
-              <h3 className="mt-2 text-xl font-bold leading-tight text-foreground">
+              <h3 className="mt-2 text-lg font-bold leading-tight text-foreground sm:text-xl">
                 {slide.type === "growth"
                   ? "Top Growth Outlook"
                   : slide.type === "moat"
                     ? slide.title
                     : slide.list.title}
               </h3>
-              <p className="mt-1 text-[13px] leading-5 text-muted-foreground">
+              <p className="mt-1 text-[12px] leading-5 text-muted-foreground sm:text-[13px]">
                 {slide.type === "growth"
                   ? slide.subtitle ??
                     "Companies with the strongest forward growth outlook based on the latest available growth score."
@@ -109,7 +121,7 @@ export default function TopStocksHeroRail({ slides }: { slides: HeroRailSlide[] 
               </p>
             </div>
 
-            <div className="p-3.5">
+            <div className="p-3">
               {slide.type === "growth" ? (
                 <GrowthListCard items={slide.items} />
               ) : slide.type === "moat" ? (
