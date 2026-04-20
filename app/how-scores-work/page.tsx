@@ -101,82 +101,150 @@ const growthReturnedFields = [
   "Step-by-step breakdown",
 ];
 
+const PAGE_BACKGROUND_CLASS =
+  "pointer-events-none absolute inset-x-0 top-0 -z-10 h-[30rem] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.10),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.78),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(15,23,42,0.34),_transparent_62%)]";
+
+const PAGE_SHELL_CLASS =
+  "mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-8";
+
+const HERO_CARD_CLASS =
+  "rounded-[1.6rem] border border-sky-200/35 bg-gradient-to-br from-background/97 via-background/92 to-sky-50/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_18px_36px_-30px_rgba(15,23,42,0.26)] backdrop-blur-sm dark:border-sky-700/25 dark:from-background/90 dark:via-background/84 dark:to-sky-950/12";
+
+const PANEL_CARD_CLASS =
+  "rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_28px_-26px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
+
+const CARD_CLASS =
+  "rounded-2xl border border-border/25 bg-gradient-to-br from-background/96 via-background/92 to-muted/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm";
+
+const CHIP_CLASS =
+  "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors";
+
+const CHIP_PRIMARY_CLASS =
+  "border-sky-200/60 bg-sky-100/70 text-sky-800 dark:border-sky-700/35 dark:bg-sky-900/30 dark:text-sky-200";
+
+const CHIP_NEUTRAL_CLASS =
+  "border-border/60 bg-background/80 text-foreground";
+
+const TABS_LIST_CLASS =
+  "inline-flex h-auto w-fit rounded-full border border-sky-200/35 bg-background/80 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm dark:border-sky-700/20";
+
+const TABS_TRIGGER_CLASS =
+  "rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors data-[state=active]:bg-sky-100 data-[state=active]:text-sky-800 data-[state=active]:shadow-sm dark:data-[state=active]:bg-sky-900/30 dark:data-[state=active]:text-sky-200";
+
 export default function HowScoresWorkPage() {
+  const overviewMetrics = [
+    {
+      label: "Score models",
+      value: "2",
+      note: "Forward outlook and execution read",
+    },
+    {
+      label: "Scale",
+      value: "0-10",
+      note: "Comparable across companies and time",
+    },
+    {
+      label: "Read order",
+      value: "Growth → Quarterly",
+      note: "Start with outlook, then check delivery",
+    },
+  ];
+
   return (
-    <main className="min-h-screen px-4 py-8 sm:py-10 flex justify-center">
-      <div className="w-full max-w-5xl space-y-6 sm:space-y-7">
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-7">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            How Scores Work
-          </p>
-          <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-foreground leading-tight">
-            Two separate scoring models, explained clearly
-          </h1>
-          <p className="mt-3 max-w-3xl text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Start with Growth Score (forward outlook), then read Quarterly Score
-            (execution). These are separate models and should be read independently.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {microChips.map((chip) => (
-              <span
-                key={chip}
-                className="rounded-full border border-border bg-muted px-2.5 py-1 text-xs text-foreground"
-              >
-                {chip}
-              </span>
-            ))}
+    <main className="relative isolate overflow-hidden">
+      <div className={PAGE_BACKGROUND_CLASS} />
+      <div className={PAGE_SHELL_CLASS}>
+        <section className={HERO_CARD_CLASS}>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {microChips.map((chip) => (
+                  <span key={chip} className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+                    {chip}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-200">
+                Score framework
+              </p>
+              <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
+                How scores are calculated
+              </h1>
+              <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                Growth Score looks forward. Quarterly Score measures execution. Read them as two
+                separate lenses inside the same research workflow.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {overviewMetrics.map((metric) => (
+                <div key={metric.label} className={CARD_CLASS}>
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                    {metric.label}
+                  </p>
+                  <p className="mt-2 text-xl font-black leading-none text-foreground">
+                    {metric.value}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{metric.note}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-7">
+        <section className={PANEL_CARD_CLASS}>
           <Tabs defaultValue="growth" className="space-y-5">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="growth">Growth Score</TabsTrigger>
-              <TabsTrigger value="quarterly">Quarterly Score</TabsTrigger>
+            <TabsList className={TABS_LIST_CLASS}>
+              <TabsTrigger value="growth" className={TABS_TRIGGER_CLASS}>
+                Growth Score
+              </TabsTrigger>
+              <TabsTrigger value="quarterly" className={TABS_TRIGGER_CLASS}>
+                Quarterly Score
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="growth" className="space-y-5">
-              <div>
+              <div className={PANEL_CARD_CLASS}>
                 <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                  Growth Score Model
+                  Growth score model
                 </p>
-                <h2 className="mt-1 text-lg sm:text-xl font-bold text-foreground">
+                <h2 className="mt-1 text-xl font-bold text-foreground">
                   How the Growth Score is built
                 </h2>
-                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   Growth Score is a weighted blend of business catalysts, scenario outcomes,
-                  guidance quality, execution confidence, and market context. The final output
-                  is a comparable 0-10 score for forward outlook.
+                  guidance quality, execution confidence, and market context. The output is a
+                  comparable 0-10 score for forward outlook.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {growthCards.map((card) => (
-                  <div key={card.title} className="rounded-xl border border-border bg-muted/30 p-4">
+                  <div key={card.title} className={CARD_CLASS}>
                     <p className="text-sm font-semibold text-foreground">{card.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{card.body}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{card.body}</p>
                   </div>
                 ))}
               </div>
 
-              <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-2">
+              <div className={PANEL_CARD_CLASS}>
                 <p className="text-sm font-semibold text-foreground">How scenarios are read</p>
-                <ul className="list-disc pl-5 space-y-1 marker:text-muted-foreground">
+                <ul className="mt-2 list-disc space-y-1 pl-5 marker:text-muted-foreground">
                   {growthScenarioReadPoints.map((point) => (
-                    <li key={point} className="text-sm text-foreground/90 leading-relaxed">
+                    <li key={point} className="text-sm leading-relaxed text-foreground/90">
                       {point}
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <p className="text-sm font-semibold text-foreground">What gets returned</p>
                 <div className="flex flex-wrap gap-2">
                   {growthReturnedFields.map((field) => (
                     <span
                       key={field}
-                      className="rounded-full border border-border bg-muted px-2 py-1 text-[11px] text-muted-foreground"
+                      className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}
                     >
                       {field}
                     </span>
@@ -184,50 +252,64 @@ export default function HowScoresWorkPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2">
-                <p className="text-sm font-semibold text-foreground">How to read this score</p>
-                <p className="text-sm text-muted-foreground">
-                  Base 18%, Upside 26%, Downside 10%, Growth score 8.4
-                </p>
-                <ul className="list-disc pl-5 space-y-1 marker:text-muted-foreground">
-                  <li className="text-sm text-foreground/90">What supports this: strong catalyst pipeline and clearer execution milestones.</li>
-                  <li className="text-sm text-foreground/90">What could pull it lower: weaker adoption pace or demand volatility in key segments.</li>
-                </ul>
+              <div className={PANEL_CARD_CLASS}>
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+                  <div className={CARD_CLASS}>
+                    <p className="text-sm font-semibold text-foreground">How to read this score</p>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      Base 18%, Upside 26%, Downside 10%, Growth score 8.4
+                    </p>
+                  </div>
+                  <div className={CARD_CLASS}>
+                    <ul className="space-y-1.5">
+                      <li className="text-sm leading-relaxed text-foreground/90">
+                        What supports this: strong catalyst pipeline and clearer execution
+                        milestones.
+                      </li>
+                      <li className="text-sm leading-relaxed text-foreground/90">
+                        What could pull it lower: weaker adoption pace or demand volatility in key
+                        segments.
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 If some optional context inputs are unavailable, the score still computes from
                 available components and stays on the same 0-10 scale.
               </p>
             </TabsContent>
 
             <TabsContent value="quarterly" className="space-y-5">
-              <div>
+              <div className={PANEL_CARD_CLASS}>
                 <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                  Quarterly Score Model
+                  Quarterly score model
                 </p>
-                <h2 className="mt-1 text-lg sm:text-xl font-bold text-foreground">
+                <h2 className="mt-1 text-xl font-bold text-foreground">
                   From raw quarter data to a usable score
                 </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Quarterly scores turn dense management commentary into a comparable signal,
-                  so you can quickly see what improved, what weakened, and what deserves deeper work.
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Quarterly scores turn dense management commentary into a comparable signal, so
+                  you can quickly see what improved, what weakened, and what deserves deeper work.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {scoreSteps.map((step) => (
-                  <div key={step.index} className="rounded-xl border border-border bg-muted/30 p-4 space-y-2">
+                  <div key={step.index} className={CARD_CLASS + " space-y-2"}>
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background text-xs font-bold">
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-sky-200/60 bg-sky-100/70 text-xs font-black text-sky-800 dark:border-sky-700/35 dark:bg-sky-900/30 dark:text-sky-200">
                         {step.index}
                       </span>
-                      <h3 className="text-sm sm:text-base font-semibold text-foreground">{step.title}</h3>
+                      <h3 className="text-sm font-semibold text-foreground">{step.title}</h3>
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
-                    <ul className="list-disc pl-5 space-y-1 marker:text-muted-foreground">
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {step.description}
+                    </p>
+                    <ul className="list-disc space-y-1 pl-5 marker:text-muted-foreground">
                       {step.bullets.map((bullet) => (
-                        <li key={bullet} className="text-sm text-foreground/90 leading-relaxed">
+                        <li key={bullet} className="text-sm leading-relaxed text-foreground/90">
                           {bullet}
                         </li>
                       ))}
@@ -236,55 +318,75 @@ export default function HowScoresWorkPage() {
                 ))}
               </div>
 
-              <div className="space-y-3">
+              <div className={PANEL_CARD_CLASS}>
                 <p className="text-sm font-semibold text-foreground">What gets returned</p>
-                {returnedFieldGroups.map((group) => (
-                  <div key={group.title} className="space-y-1.5">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
-                      {group.title}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {group.fields.map((field) => (
-                        <span
-                          key={field}
-                          className="rounded-full border border-border bg-muted px-2 py-1 text-[11px] text-muted-foreground"
-                        >
-                          {field}
-                        </span>
-                      ))}
+                <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
+                  {returnedFieldGroups.map((group) => (
+                    <div key={group.title} className={CARD_CLASS + " space-y-2"}>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        {group.title}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {group.fields.map((field) => (
+                          <span
+                            key={field}
+                            className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}
+                          >
+                            {field}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
-              <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2">
+              <div className={PANEL_CARD_CLASS}>
                 <p className="text-sm font-semibold text-foreground">Quarterly example</p>
-                <p className="text-sm text-muted-foreground">
-                  Score 8.8, Mildly Bullish, Confidence 82%
-                </p>
-                <ul className="list-disc pl-5 space-y-1 marker:text-muted-foreground">
-                  <li className="text-sm text-foreground/90">Driven by margin expansion and guidance consistency.</li>
-                  <li className="text-sm text-foreground/90">Watch for working-capital slippage in the next quarter.</li>
-                </ul>
+                <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                  <div className={CARD_CLASS}>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      Score 8.8, Mildly Bullish, Confidence 82%
+                    </p>
+                  </div>
+                  <div className={CARD_CLASS}>
+                    <ul className="space-y-1.5">
+                      <li className="text-sm leading-relaxed text-foreground/90">
+                        Driven by margin expansion and guidance consistency.
+                      </li>
+                      <li className="text-sm leading-relaxed text-foreground/90">
+                        Watch for working-capital slippage in the next quarter.
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
         </section>
 
-        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Read Growth first, then Quarterly. Both models stay on the same 0-10 scale but answer
+            different questions.
+          </p>
           <div className="flex flex-wrap items-center gap-2">
-            <Button asChild>
+            <Button asChild className="rounded-full bg-sky-600 text-white hover:bg-sky-700 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400">
               <Link href="/leaderboards" prefetch={false}>
                 View Leaderboards
               </Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button
+              asChild
+              variant="outline"
+              className="rounded-full border-sky-200/50 bg-background/80 text-foreground hover:bg-sky-50 dark:border-sky-700/30 dark:bg-background/70 dark:hover:bg-sky-950/20"
+            >
               <Link href="/" prefetch={false}>
                 Back to Home
               </Link>
             </Button>
           </div>
-        </section>
+        </div>
       </div>
     </main>
   );

@@ -45,7 +45,9 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
     id: "rank",
     header: "#",
     cell: ({ row }) => (
-      <span className="text-muted-foreground text-sm">{row.original.leaderboardRank}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        {row.original.leaderboardRank}
+      </span>
     ),
   },
   {
@@ -59,12 +61,12 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
           <Link
             href={`/company/${code}`}
             prefetch={false}
-            className="hover:underline font-semibold text-foreground"
+            className="font-semibold text-foreground hover:underline"
           >
             {name}
           </Link>
           {row.original.isNew && (
-            <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+            <span className="inline-flex items-center rounded-full border border-emerald-200/70 bg-emerald-100/80 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
               New
             </span>
           )}
@@ -82,7 +84,7 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
           {typeof score === "number" ? (
             <ConcallScore score={score} />
           ) : (
-            <div className="h-10 w-10 rounded-full border border-border bg-muted flex items-center justify-center text-sm text-muted-foreground">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted text-sm text-muted-foreground">
               -
             </div>
           )}

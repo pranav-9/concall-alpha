@@ -87,6 +87,45 @@ const renderEvidenceLine = (evidence: NormalizedSectorEvidence | undefined) => {
   );
 };
 
+const PAGE_BACKGROUND_CLASS =
+  "pointer-events-none absolute inset-x-0 top-0 -z-10 h-[36rem] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.11),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.09),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.78),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(15,23,42,0.34),_transparent_62%)]";
+
+const PAGE_SHELL_CLASS =
+  "mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-8";
+
+const HERO_CARD_CLASS =
+  "rounded-[1.6rem] border border-sky-200/35 bg-gradient-to-br from-background/97 via-background/92 to-sky-50/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_18px_36px_-30px_rgba(15,23,42,0.26)] backdrop-blur-sm dark:border-sky-700/25 dark:from-background/90 dark:via-background/84 dark:to-sky-950/12";
+
+const METRIC_CARD_CLASS =
+  "rounded-2xl border border-border/35 bg-background/72 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]";
+
+const PANEL_CARD_CLASS =
+  "rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_28px_-26px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
+
+const TABLE_CARD_CLASS =
+  "overflow-hidden rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 shadow-[0_18px_38px_-32px_rgba(15,23,42,0.24)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
+
+const INLINE_SUBCARD_CLASS =
+  "rounded-xl border border-border/25 bg-gradient-to-br from-background/96 via-background/92 to-muted/12 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm";
+
+const SMALL_SUBCARD_CLASS =
+  "rounded-lg border border-border/20 bg-background/55 p-3";
+
+const CHIP_CLASS =
+  "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors";
+
+const CHIP_PRIMARY_CLASS =
+  "border-sky-200/60 bg-sky-100/70 text-sky-800 dark:border-sky-700/35 dark:bg-sky-900/30 dark:text-sky-200";
+
+const CHIP_NEUTRAL_CLASS =
+  "border-border/60 bg-background/80 text-foreground";
+
+const SORT_PILL_ACTIVE_CLASS =
+  "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200";
+
+const SORT_PILL_INACTIVE_CLASS =
+  "border-border/60 bg-background/80 text-muted-foreground";
+
 function ThemeColumn({
   title,
   items,
@@ -140,13 +179,13 @@ function ThemeColumn({
   );
 
   return (
-    <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-3">
-      <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{title}</p>
+    <div className={INLINE_SUBCARD_CLASS + " space-y-3"}>
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{title}</p>
       <div className="space-y-3">
         {visible.map((item, index) => renderItem(item, index))}
       </div>
       {hidden.length > 0 && (
-        <details className="rounded-md border border-border/30 bg-background/50 p-2.5">
+        <details className="rounded-md border border-border/30 bg-background/45 p-2.5">
           <summary className="cursor-pointer text-[11px] font-medium text-foreground">
             Show all {title.toLowerCase()} ({hidden.length})
           </summary>
@@ -187,7 +226,7 @@ function CatalystPolicyColumn({
         : (item as NormalizedSectorPolicy).policyName;
 
     return (
-      <div key={key} className="space-y-2 rounded-md border border-border/30 bg-background/60 p-2.5">
+      <div key={key} className="space-y-2 rounded-md border border-border/30 bg-background/60 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
         <p className="text-sm font-medium text-foreground">{titleText}</p>
         {kind === "catalyst" ? (
           <div className="flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
@@ -254,13 +293,13 @@ function CatalystPolicyColumn({
   };
 
   return (
-    <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-3">
-      <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">{title}</p>
+    <div className={INLINE_SUBCARD_CLASS + " space-y-3"}>
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{title}</p>
       <div className="space-y-3">
         {visible.map((item, index) => renderItem(item, index))}
       </div>
       {hidden.length > 0 && (
-        <details className="rounded-md border border-border/30 bg-background/50 p-2.5">
+        <details className="rounded-md border border-border/30 bg-background/45 p-2.5">
           <summary className="cursor-pointer text-[11px] font-medium text-foreground">
             Show more ({hidden.length})
           </summary>
@@ -331,12 +370,26 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
   const companies = (companyRows ?? []) as CompanyRow[];
   if (!companies.length) {
     return (
-      <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-10 space-y-5">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">{sectorName}</h1>
-        <div className="rounded-lg border border-border bg-muted/30 p-6 text-sm text-muted-foreground">
-          No companies found for this sector yet.
+      <main className="relative isolate overflow-hidden">
+        <div className={PAGE_BACKGROUND_CLASS} />
+        <div className={PAGE_SHELL_CLASS}>
+          <section className={HERO_CARD_CLASS}>
+            <div className="space-y-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-200">
+                Sector detail
+              </p>
+              <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
+                {sectorName}
+              </h1>
+            </div>
+          </section>
+          <div className={PANEL_CARD_CLASS}>
+            <p className="text-sm text-muted-foreground">
+              No companies found for this sector yet.
+            </p>
+          </div>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -489,39 +542,49 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     sortBy === "growth" ? "Growth score" : sortBy === "latest_qtr" ? "Latest qtr" : "Avg score";
 
   return (
-    <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-10 space-y-5 sm:space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">{sectorName}</h1>
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="px-2 py-1 rounded-full border border-border bg-muted text-foreground">
-            Companies: {allRows.length}
-          </span>
-          <span className="px-2 py-1 rounded-full border border-border bg-muted text-foreground">
-            Sub-sectors: {subSectorCounts.size}
-          </span>
-          {latestQuarterLabel && (
-            <span className="px-2 py-1 rounded-full border border-border bg-muted text-foreground">
-              Latest quarter: {latestQuarterLabel}
-            </span>
-          )}
-        </div>
-      </div>
+    <main className="relative isolate overflow-hidden">
+      <div className={PAGE_BACKGROUND_CLASS} />
+      <div className={PAGE_SHELL_CLASS}>
+        <section className={HERO_CARD_CLASS}>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
+                {sectorName}
+              </h1>
+              <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                A sector intelligence view that combines coverage breadth, latest quarter strength,
+                and growth context inside one research shell.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className={`${CHIP_CLASS} ${CHIP_PRIMARY_CLASS}`}>Companies: {allRows.length}</span>
+              <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+                Sub-sectors: {subSectorCounts.size}
+              </span>
+              {latestQuarterLabel && (
+                <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+                  Latest quarter: {latestQuarterLabel}
+                </span>
+              )}
+            </div>
+          </div>
+        </section>
 
-      <div className="rounded-lg border border-border bg-card p-4 sm:p-5 space-y-4">
+        <section className={PANEL_CARD_CLASS}>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-bold text-foreground">Sector Intelligence</h2>
-              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-foreground">
+              <span className={`${CHIP_CLASS} border-border/60 bg-background/75 text-foreground`}>
                 {usingSubSectorView ? "Sub-sector view" : "Sector view"}
               </span>
               {usingSubSectorView && normalizedSectorIntelligence?.subSector && (
-                <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[11px] text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
+                <span className={`${CHIP_CLASS} ${CHIP_PRIMARY_CLASS}`}>
                   Sub-sector: {normalizedSectorIntelligence.subSector}
                 </span>
               )}
               {usingSectorFallback && (
-                <span className="rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[11px] text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200">
+                <span className={`${CHIP_CLASS} border-amber-200/70 bg-amber-100/80 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200`}>
                   Using sector-level view
                 </span>
               )}
@@ -538,13 +601,13 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
         </div>
 
         {!normalizedSectorIntelligence ? (
-          <div className="rounded-lg border border-border/50 bg-muted/20 p-4 text-sm text-muted-foreground">
+          <div className={`${SMALL_SUBCARD_CLASS} text-sm text-muted-foreground`}>
             Sector intelligence data not available yet.
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 xl:grid-cols-5 gap-3">
-              <div className="xl:col-span-3 rounded-lg border border-border/40 bg-muted/15 p-4 space-y-3">
+              <div className="xl:col-span-3 rounded-[1.35rem] border border-border/25 bg-gradient-to-br from-background/96 via-background/92 to-sky-50/10 p-4 space-y-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
                 {sectorSummaryMissing ? (
                   <p className="text-sm text-muted-foreground">Sector intelligence data not available yet.</p>
                 ) : (
@@ -607,7 +670,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
               </div>
 
               {(topWhatMatters.length > 0 || nextWatchlist.length > 0) && (
-                <div className="xl:col-span-2 rounded-lg border border-border/40 bg-muted/15 p-4 space-y-3">
+                <div className="xl:col-span-2 rounded-[1.35rem] border border-border/25 bg-gradient-to-br from-background/96 via-background/92 to-muted/12 p-4 space-y-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
                   <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
                     What Matters Now
                   </p>
@@ -645,7 +708,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
                 <ThemeColumn title="Tailwinds" items={normalizedSectorIntelligence.tailwinds} />
                 <ThemeColumn title="Headwinds" items={normalizedSectorIntelligence.headwinds} />
                 {hasCycleData && (
-                  <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-3">
+                  <div className={INLINE_SUBCARD_CLASS + " space-y-3"}>
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Cycle</p>
                       {normalizedSectorIntelligence.cyclePosition && (
@@ -695,7 +758,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
 
             {(normalizedSectorIntelligence.growthCatalysts.length > 0 ||
               normalizedSectorIntelligence.policyWatch.length > 0) && (
-              <details className="rounded-lg border border-border/40 bg-muted/15 p-3">
+              <details className={INLINE_SUBCARD_CLASS}>
                 <summary className="cursor-pointer">
                   <span className="block space-y-1">
                     <span className="block text-xs uppercase tracking-[0.16em] text-muted-foreground">
@@ -722,7 +785,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
             )}
 
             {visibleCoveredCompanies.length > 0 && (
-              <div className="rounded-lg border border-border/40 bg-muted/15 p-3 space-y-3">
+              <div className={INLINE_SUBCARD_CLASS + " space-y-3"}>
                 <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
                   Internal Coverage Snapshot
                 </p>
@@ -730,7 +793,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
                   {visibleCoveredCompanies.map((company) => (
                     <div
                       key={company.companyCode}
-                      className="rounded-md border border-border/30 bg-background/60 px-3 py-2"
+                      className={SMALL_SUBCARD_CLASS + " px-3 py-2"}
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <Link
@@ -765,16 +828,13 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
                   ))}
                 </div>
                 {hiddenCoveredCompanies.length > 0 && (
-                  <details className="rounded-md border border-border/30 bg-background/50 p-2.5">
+                  <details className="rounded-md border border-border/30 bg-background/45 p-2.5">
                     <summary className="cursor-pointer text-[11px] font-medium text-foreground">
                       Show all covered companies ({hiddenCoveredCompanies.length})
                     </summary>
                     <div className="mt-3 space-y-2">
                       {hiddenCoveredCompanies.map((company) => (
-                        <div
-                          key={company.companyCode}
-                          className="rounded-md border border-border/30 bg-background/60 px-3 py-2"
-                        >
+                        <div key={company.companyCode} className={SMALL_SUBCARD_CLASS + " px-3 py-2"}>
                           <div className="flex flex-wrap items-center gap-2">
                             <Link
                               href={`/company/${company.companyCode}`}
@@ -803,7 +863,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
             )}
 
             {normalizedSectorIntelligence.sourceUrls.length > 0 && (
-              <details className="rounded-md border border-border/30 bg-background/40 p-2.5">
+              <details className={INLINE_SUBCARD_CLASS}>
                 <summary className="cursor-pointer text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                   Sources
                 </summary>
@@ -824,15 +884,30 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
             )}
           </>
         )}
-      </div>
+        </section>
 
-      <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
-        <div className="flex flex-wrap items-center gap-2 text-xs">
+      <div className={`${TABLE_CARD_CLASS} mt-4`}>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
+          <div className="space-y-1">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Sector table
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Sort by the sector-level metrics most relevant to browsing.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+              Current: {sortLabel} {sortOrder}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 border-b border-border/30 px-4 py-3 text-xs">
           <span className="text-muted-foreground">Sort:</span>
           <Link
             href={buildSortHref("avg", sortBy === "avg" && sortOrder === "desc" ? "asc" : "desc")}
-            className={`underline-offset-2 hover:underline ${
-              sortBy === "avg" ? "font-semibold text-foreground" : "text-muted-foreground"
+            className={`${CHIP_CLASS} ${
+              sortBy === "avg" ? SORT_PILL_ACTIVE_CLASS : SORT_PILL_INACTIVE_CLASS
             }`}
             prefetch={false}
           >
@@ -840,8 +915,8 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
           </Link>
           <Link
             href={buildSortHref("latest_qtr", sortBy === "latest_qtr" && sortOrder === "desc" ? "asc" : "desc")}
-            className={`underline-offset-2 hover:underline ${
-              sortBy === "latest_qtr" ? "font-semibold text-foreground" : "text-muted-foreground"
+            className={`${CHIP_CLASS} ${
+              sortBy === "latest_qtr" ? SORT_PILL_ACTIVE_CLASS : SORT_PILL_INACTIVE_CLASS
             }`}
             prefetch={false}
           >
@@ -849,26 +924,23 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
           </Link>
           <Link
             href={buildSortHref("growth", sortBy === "growth" && sortOrder === "desc" ? "asc" : "desc")}
-            className={`underline-offset-2 hover:underline ${
-              sortBy === "growth" ? "font-semibold text-foreground" : "text-muted-foreground"
+            className={`${CHIP_CLASS} ${
+              sortBy === "growth" ? SORT_PILL_ACTIVE_CLASS : SORT_PILL_INACTIVE_CLASS
             }`}
             prefetch={false}
           >
             Growth ({sortBy === "growth" ? sortOrder : "desc"})
           </Link>
-          <span className="text-muted-foreground">
-            Current: {sortLabel} {sortOrder}
-          </span>
         </div>
 
         {sortedRows.length === 0 ? (
-          <div className="rounded-md border border-border bg-card p-4 text-sm text-muted-foreground">
+          <div className={SMALL_SUBCARD_CLASS + " text-sm text-muted-foreground"}>
             No companies available for this sector.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-md border border-border bg-card">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-muted/40 border-b border-border">
+              <thead className="bg-background/70 border-b border-border/35">
                 <tr className="text-left">
                   <th className="px-3 py-2 font-semibold text-foreground">Company</th>
                   <th className="px-3 py-2 font-semibold text-foreground">Sub-sector</th>
@@ -887,7 +959,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
               </thead>
               <tbody>
                 {sortedRows.map((row) => (
-                  <tr key={row.code} className="border-b border-border/60 last:border-b-0">
+                  <tr key={row.code} className="border-b border-border/45 transition-colors last:border-b-0 hover:bg-sky-50/30 dark:hover:bg-sky-950/10">
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-1.5">
                         <Link href={`/company/${row.code}`} className="underline text-foreground" prefetch={false}>
@@ -927,7 +999,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
                     </td>
                     <td className="border-l border-border/70 px-3 py-2">
                       {row.avgScore != null ? (
-                        <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-200/80 bg-emerald-50 px-2.5 py-1 dark:border-emerald-700/40 dark:bg-emerald-950/20">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/80 px-2.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:border-emerald-700/40 dark:bg-emerald-950/20">
                           <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
                             Blend
                           </span>
@@ -944,6 +1016,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </main>
   );
 }

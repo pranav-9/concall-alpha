@@ -50,6 +50,27 @@ export const metadata: Metadata = {
   description: "Concall sentiment and growth outlook leaderboards.",
 };
 
+const PAGE_BACKGROUND_CLASS =
+  "pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.10),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.78),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(15,23,42,0.34),_transparent_62%)]";
+
+const PAGE_SHELL_CLASS =
+  "mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-8";
+
+const HERO_CARD_CLASS =
+  "rounded-[1.6rem] border border-sky-200/35 bg-gradient-to-br from-background/97 via-background/92 to-sky-50/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_18px_36px_-30px_rgba(15,23,42,0.26)] backdrop-blur-sm dark:border-sky-700/25 dark:from-background/90 dark:via-background/84 dark:to-sky-950/12";
+
+const PANEL_CARD_CLASS =
+  "rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_28px_-26px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
+
+const CHIP_CLASS =
+  "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors";
+
+const CHIP_PRIMARY_CLASS =
+  "border-sky-200/60 bg-sky-100/70 text-sky-800 dark:border-sky-700/35 dark:bg-sky-900/30 dark:text-sky-200";
+
+const CHIP_NEUTRAL_CLASS =
+  "border-border/60 bg-background/80 text-foreground";
+
 const parsePct = (val: string | number | null | undefined): number | null => {
   if (val == null) return null;
   if (typeof val === "number") return val;
@@ -213,37 +234,120 @@ export default async function LeaderboardsPage({
     fetchGrowthLeaders(),
   ]);
 
+  const latestQuarterLabel = quarterLabels[0] ?? null;
+
   return (
-    <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-10 space-y-5 sm:space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">Leaderboards</h1>
-        <p className="text-sm text-muted-foreground">
-          Switch between concall sentiment and growth outlook rankings.
-        </p>
+    <main className="relative isolate overflow-hidden">
+      <div className={PAGE_BACKGROUND_CLASS} />
+      <div className={PAGE_SHELL_CLASS}>
+        <section className={HERO_CARD_CLASS}>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`${CHIP_CLASS} ${CHIP_PRIMARY_CLASS}`}>Leaderboards</span>
+                <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+                  Sentiment rows: {rows.length}
+                </span>
+                <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+                  Growth rows: {growthEntries.length}
+                </span>
+                {latestQuarterLabel && (
+                  <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+                    Latest quarter: {latestQuarterLabel}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
+                Leaderboards
+              </h1>
+              <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                Switch between concall sentiment and growth outlook rankings in a single research
+                shell.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className={PANEL_CARD_CLASS}>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Sentiment rows
+                </p>
+                <p className="mt-2 text-2xl font-black leading-none text-foreground">
+                  {rows.length}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Rank by quarter coverage and 4Q average.
+                </p>
+              </div>
+              <div className={PANEL_CARD_CLASS}>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Growth rows
+                </p>
+                <p className="mt-2 text-2xl font-black leading-none text-foreground">
+                  {growthEntries.length}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Growth outlook ranking and percentage spread.
+                </p>
+              </div>
+              <div className={PANEL_CARD_CLASS}>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Latest quarter
+                </p>
+                <p className="mt-2 text-2xl font-black leading-none text-foreground">
+                  {latestQuarterLabel ?? "—"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Current sentiment lens for the company board.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <Tabs defaultValue={defaultTab} className="w-full space-y-4">
+          <TabsList className="inline-flex h-auto w-fit rounded-full border border-sky-200/35 bg-background/80 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm dark:border-sky-700/20">
+            <TabsTrigger
+              value="sentiment"
+              className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors data-[state=active]:bg-sky-100 data-[state=active]:text-sky-800 data-[state=active]:shadow-sm dark:data-[state=active]:bg-sky-900/30 dark:data-[state=active]:text-sky-200"
+            >
+              Sentiment
+            </TabsTrigger>
+            <TabsTrigger
+              value="growth"
+              className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors data-[state=active]:bg-sky-100 data-[state=active]:text-sky-800 data-[state=active]:shadow-sm dark:data-[state=active]:bg-sky-900/30 dark:data-[state=active]:text-sky-200"
+            >
+              Growth
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="sentiment" className="mt-4">
+            <LeaderboardTable quarterLabels={quarterLabels} data={rows} />
+          </TabsContent>
+
+          <TabsContent value="growth" className="mt-4">
+            {growthEntries.length === 0 ? (
+              <div className={PANEL_CARD_CLASS}>
+                <p className="text-muted-foreground">No growth outlook data available yet.</p>
+              </div>
+            ) : (
+              <GrowthTable data={growthEntries} />
+            )}
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            Tables use the same layered shell language as the company pages.
+          </p>
+          <Link
+            href="/"
+            prefetch={false}
+            className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            Back to home
+          </Link>
+        </div>
       </div>
-
-      <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList className="w-full sm:w-auto overflow-x-auto border border-border bg-muted/70">
-          <TabsTrigger value="sentiment">Sentiment</TabsTrigger>
-          <TabsTrigger value="growth">Growth</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="sentiment" className="mt-4">
-          <LeaderboardTable quarterLabels={quarterLabels} data={rows} />
-        </TabsContent>
-
-        <TabsContent value="growth" className="mt-4">
-          {growthEntries.length === 0 ? (
-            <p className="text-muted-foreground">No growth outlook data available yet.</p>
-          ) : (
-            <GrowthTable data={growthEntries} />
-          )}
-        </TabsContent>
-      </Tabs>
-
-      <Link href="/" prefetch={false} className="text-sm text-emerald-700 dark:text-emerald-300 underline">
-        Back to home
-      </Link>
-    </div>
+    </main>
   );
 }

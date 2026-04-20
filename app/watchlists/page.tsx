@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
 import ConcallScore from "@/components/concall-score";
 import { WatchlistCreateButton } from "@/components/watchlist-create-button";
 import {
@@ -43,6 +44,65 @@ export const metadata: Metadata = {
   description: "Track the companies in your watchlist.",
 };
 
+const PAGE_BACKGROUND_CLASS =
+  "pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.10),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.78),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(15,23,42,0.34),_transparent_62%)]";
+
+const PAGE_SHELL_CLASS =
+  "mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-8";
+
+const HERO_CARD_CLASS =
+  "rounded-[1.6rem] border border-sky-200/35 bg-gradient-to-br from-background/97 via-background/92 to-sky-50/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_18px_36px_-30px_rgba(15,23,42,0.26)] backdrop-blur-sm dark:border-sky-700/25 dark:from-background/90 dark:via-background/84 dark:to-sky-950/12";
+
+const PANEL_CARD_CLASS =
+  "rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_28px_-26px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
+
+const TABLE_CARD_CLASS =
+  "overflow-hidden rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 shadow-[0_18px_38px_-32px_rgba(15,23,42,0.24)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
+
+const CHIP_CLASS =
+  "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors";
+
+const CHIP_PRIMARY_CLASS =
+  "border-sky-200/60 bg-sky-100/70 text-sky-800 dark:border-sky-700/35 dark:bg-sky-900/30 dark:text-sky-200";
+
+const CHIP_NEUTRAL_CLASS =
+  "border-border/60 bg-background/80 text-foreground";
+
+function WatchlistShell({
+  title,
+  description,
+  chips,
+  children,
+}: {
+  title: string;
+  description: string;
+  chips?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <main className="relative isolate overflow-hidden">
+      <div className={PAGE_BACKGROUND_CLASS} />
+      <div className={PAGE_SHELL_CLASS}>
+        <section className={HERO_CARD_CLASS}>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {chips ? <div className="flex flex-wrap items-center gap-2">{chips}</div> : null}
+              <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
+                {title}
+              </h1>
+              <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+                {description}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {children}
+      </div>
+    </main>
+  );
+}
+
 const toNumeric = (value: unknown): number | null => {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string") {
@@ -77,11 +137,17 @@ export default async function WatchlistsPage() {
 
   if (watchlistError) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
-          Unable to load your watchlists right now.
+      <WatchlistShell
+        title="Watchlists"
+        description="Unable to load your watchlists right now."
+        chips={<span className={`${CHIP_CLASS} ${CHIP_PRIMARY_CLASS}`}>Watchlists</span>}
+      >
+        <div className={PANEL_CARD_CLASS}>
+          <p className="text-sm text-muted-foreground">
+            Please refresh the page or try again in a moment.
+          </p>
         </div>
-      </div>
+      </WatchlistShell>
     );
   }
 
@@ -91,17 +157,18 @@ export default async function WatchlistsPage() {
 
   if (!firstWatchlist) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="rounded-lg border border-border bg-card p-6 space-y-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-extrabold text-foreground">Your watchlist</h1>
-            <p className="text-sm text-muted-foreground">
-              You haven&apos;t created a watchlist yet.
-            </p>
-          </div>
+      <WatchlistShell
+        title="Your watchlist"
+        description="You haven't created a watchlist yet."
+        chips={<span className={`${CHIP_CLASS} ${CHIP_PRIMARY_CLASS}`}>Private list</span>}
+      >
+        <div className={PANEL_CARD_CLASS + " space-y-4"}>
+          <p className="text-sm text-muted-foreground">
+            Create one watchlist to start saving companies and tracking blended scores.
+          </p>
           <WatchlistCreateButton />
         </div>
-      </div>
+      </WatchlistShell>
     );
   }
 
@@ -113,11 +180,17 @@ export default async function WatchlistsPage() {
 
   if (watchlistItemsError) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
-          Unable to load your watchlist companies right now.
+      <WatchlistShell
+        title={firstWatchlist.name}
+        description="Unable to load your watchlist companies right now."
+        chips={<span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>Watchlist</span>}
+      >
+        <div className={PANEL_CARD_CLASS}>
+          <p className="text-sm text-muted-foreground">
+            Please refresh the page or try again in a moment.
+          </p>
         </div>
-      </div>
+      </WatchlistShell>
     );
   }
 
@@ -127,17 +200,29 @@ export default async function WatchlistsPage() {
 
   if (watchlistCodes.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="rounded-lg border border-border bg-card p-6 space-y-2">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-extrabold text-foreground">{firstWatchlist.name}</h1>
-            <p className="text-sm text-muted-foreground">Your first watchlist</p>
-          </div>
+      <WatchlistShell
+        title={firstWatchlist.name}
+        description="No companies added yet. Add a company from its detail page."
+        chips={
+          <>
+            <span className={`${CHIP_CLASS} ${CHIP_PRIMARY_CLASS}`}>Watchlist</span>
+            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>0 companies</span>
+          </>
+        }
+      >
+        <div className={PANEL_CARD_CLASS + " space-y-3"}>
           <p className="text-sm text-muted-foreground">
-            No companies added yet. Add a company from its detail page.
+            Open a company detail page and use the watchlist button to start populating this list.
           </p>
+          <Link
+            href="/sectors"
+            prefetch={false}
+            className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            Browse sectors
+          </Link>
         </div>
-      </div>
+      </WatchlistShell>
     );
   }
 
@@ -236,24 +321,96 @@ export default async function WatchlistsPage() {
       return a.companyName.localeCompare(b.companyName);
     });
 
+  const latestQuarterLabel = latestLabel ?? null;
+  const averageBlendedScore = computeAverageScore(tableRows.map((row) => row.blendedScore));
+  const averageLatestQuarterScore = computeAverageScore(
+    tableRows.map((row) => row.latestQuarterScore),
+  );
+  const averageGrowthScore = computeAverageScore(tableRows.map((row) => row.growthScore));
+
   return (
-    <div className="container mx-auto px-4 py-8 space-y-5">
-      <div className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">{firstWatchlist.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          Your first watchlist · {tableRows.length} {tableRows.length === 1 ? "company" : "companies"}
-        </p>
+    <WatchlistShell
+      title={firstWatchlist.name}
+      description={`Your first watchlist · ${tableRows.length} ${
+        tableRows.length === 1 ? "company" : "companies"
+      }`}
+      chips={
+        <>
+          <span className={`${CHIP_CLASS} ${CHIP_PRIMARY_CLASS}`}>Watchlist</span>
+          <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+            {tableRows.length} companies
+          </span>
+          {latestQuarterLabel && (
+            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+              Latest quarter: {latestQuarterLabel}
+            </span>
+          )}
+        </>
+      }
+    >
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className={PANEL_CARD_CLASS}>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            Companies tracked
+          </p>
+          <p className="mt-2 text-2xl font-black leading-none text-foreground">
+            {tableRows.length}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Saved companies in the active watchlist.
+          </p>
+        </div>
+        <div className={PANEL_CARD_CLASS}>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            Avg blended score
+          </p>
+          <p className="mt-2 text-2xl font-black leading-none text-foreground">
+            {averageBlendedScore != null ? averageBlendedScore.toFixed(1) : "—"}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Blends quarter, growth, and 4Q average scores.
+          </p>
+        </div>
+        <div className={PANEL_CARD_CLASS}>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            Latest quarter
+          </p>
+          <p className="mt-2 text-2xl font-black leading-none text-foreground">
+            {latestQuarterLabel ?? "—"}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Current quarter coverage used for the watchlist view.
+          </p>
+        </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-4">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Company</TableHead>
-              <TableHead>Qtr Score</TableHead>
-              <TableHead>Growth Score</TableHead>
-              <TableHead>4Q Avg Score</TableHead>
-              <TableHead className="border-l border-border/70 pl-4">
+      <div className={TABLE_CARD_CLASS}>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
+          <div className="space-y-1">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Watchlist ranking
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Ranked by blended score, then latest quarter and growth context.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+              Avg latest qtr: {averageLatestQuarterScore != null ? averageLatestQuarterScore.toFixed(1) : "—"}
+            </span>
+            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+              Avg growth: {averageGrowthScore != null ? averageGrowthScore.toFixed(1) : "—"}
+            </span>
+          </div>
+        </div>
+        <Table className="w-full text-sm">
+          <TableHeader className="bg-background/70">
+            <TableRow className="border-b border-border/35 bg-background/70">
+              <TableHead className="px-3 py-3 text-foreground">Company</TableHead>
+              <TableHead className="px-3 py-3 text-foreground">Qtr Score</TableHead>
+              <TableHead className="px-3 py-3 text-foreground">Growth Score</TableHead>
+              <TableHead className="px-3 py-3 text-foreground">4Q Avg Score</TableHead>
+              <TableHead className="border-l border-border/70 px-3 py-3 text-foreground">
                 <div className="flex flex-col gap-0.5">
                   <span>Avg Score</span>
                   <span className="text-[10px] font-medium text-muted-foreground normal-case">
@@ -265,29 +422,44 @@ export default async function WatchlistsPage() {
           </TableHeader>
           <TableBody>
             {tableRows.map((row) => (
-              <TableRow key={row.companyCode}>
-                <TableCell>
+              <TableRow
+                key={row.companyCode}
+                className="border-b border-border/45 transition-colors last:border-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
+              >
+                <TableCell className="px-3 py-3">
                   <Link
                     href={`/company/${row.companyCode}`}
                     prefetch={false}
-                    className="font-medium text-foreground hover:underline"
+                    className="font-semibold text-foreground hover:underline"
                   >
                     {row.companyName}
                   </Link>
                 </TableCell>
-                <TableCell>
-                  {row.latestQuarterScore != null ? <ConcallScore score={row.latestQuarterScore} size="sm" /> : "—"}
+                <TableCell className="px-3 py-3">
+                  {row.latestQuarterScore != null ? (
+                    <ConcallScore score={row.latestQuarterScore} size="sm" />
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
-                <TableCell>
-                  {row.growthScore != null ? <ConcallScore score={row.growthScore} size="sm" /> : "—"}
+                <TableCell className="px-3 py-3">
+                  {row.growthScore != null ? (
+                    <ConcallScore score={row.growthScore} size="sm" />
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
-                <TableCell>
-                  {row.avg4QuarterScore != null ? <ConcallScore score={row.avg4QuarterScore} size="sm" /> : "—"}
+                <TableCell className="px-3 py-3">
+                  {row.avg4QuarterScore != null ? (
+                    <ConcallScore score={row.avg4QuarterScore} size="sm" />
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
-                <TableCell className="border-l border-border/70 pl-4">
+                <TableCell className="border-l border-border/70 px-3 py-3">
                   {row.blendedScore != null ? (
-                    <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-200/80 bg-emerald-50 px-2.5 py-1 dark:border-emerald-700/40 dark:bg-emerald-950/20">
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/80 px-2.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-emerald-700/40 dark:bg-emerald-950/20">
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
                         Blend
                       </span>
                       <ConcallScore score={row.blendedScore} size="sm" />
@@ -301,6 +473,6 @@ export default async function WatchlistsPage() {
           </TableBody>
         </Table>
       </div>
-    </div>
+    </WatchlistShell>
   );
 }

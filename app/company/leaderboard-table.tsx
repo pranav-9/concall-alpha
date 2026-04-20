@@ -10,9 +10,9 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "./data-table";
 
 const AverageScoreChip = ({ value, label }: { value: number; label: string }) => (
-  <div className="inline-flex items-center gap-2 rounded-md border border-sky-300 bg-sky-50 px-2 py-1 dark:border-sky-700/40 dark:bg-sky-950/40">
+  <div className="inline-flex items-center gap-2 rounded-full border border-sky-200/60 bg-sky-100/70 px-2.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-sky-700/35 dark:bg-sky-900/30">
     <span className="text-xs font-semibold tabular-nums text-sky-800 dark:text-sky-200">{value.toFixed(2)}</span>
-    <span className="text-[10px] uppercase tracking-wide text-sky-700/80 dark:text-sky-300/80">{label}</span>
+    <span className="text-[10px] uppercase tracking-[0.16em] text-sky-700/80 dark:text-sky-300/80">{label}</span>
   </div>
 );
 
@@ -35,7 +35,9 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
       id: "rank",
       header: "#",
       cell: ({ row }) => (
-        <span className="text-muted-foreground text-xs">{row.original.leaderboardRank ?? row.index + 1}.</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          {row.original.leaderboardRank ?? row.index + 1}.
+        </span>
       ),
     },
     {
@@ -43,6 +45,7 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
       header: ({ column }) => (
         <Button
           variant="ghost"
+          className="h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none hover:bg-transparent hover:text-foreground"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Company
@@ -69,13 +72,11 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
 
         return (
           <div className="flex items-center gap-2">
-            <div className="underline">
-              <Link href={`/company/${name}`}>
-                <p>{name}</p>
-              </Link>
-            </div>
+            <Link href={`/company/${name}`} className="font-semibold text-foreground hover:underline">
+              {name}
+            </Link>
             {row.original.isNew && (
-              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+              <span className="inline-flex items-center rounded-full border border-emerald-200/70 bg-emerald-100/80 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
                 New
               </span>
             )}
@@ -97,6 +98,7 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
       header: ({ column }) => (
         <Button
           variant="ghost"
+          className="h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none hover:bg-transparent hover:text-foreground"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           {label}
@@ -122,6 +124,7 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
     header: ({ column }) => (
       <Button
         variant="ghost"
+        className="h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none hover:bg-transparent hover:text-foreground"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Latest 4Q Avg
