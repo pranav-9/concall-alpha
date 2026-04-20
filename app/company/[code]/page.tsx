@@ -953,6 +953,39 @@ export default async function Page({
   const firstVariableName = normalizedKeyVariablesSnapshot?.deepTreatment[0]?.variable ?? null;
   const firstGrowthCatalyst = normalizedGrowthOutlook?.catalysts[0]?.catalyst ?? null;
   const firstGuidanceItem = guidanceItems[0];
+  const guidanceSnapshotUpdatedAtShort = (() => {
+    const raw = normalizedGuidanceSnapshot?.updatedAtRaw ?? normalizedGuidanceSnapshot?.generatedAtRaw;
+    if (!raw) return null;
+
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return null;
+
+    return new Intl.DateTimeFormat("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(date);
+  })();
+  const guidanceSnapshotAnalysisWindowLabel =
+    normalizedGuidanceSnapshot?.analysisWindowQuarters != null
+      ? `${normalizedGuidanceSnapshot.analysisWindowQuarters} qtr${
+          normalizedGuidanceSnapshot.analysisWindowQuarters === 1 ? "" : "s"
+        }`
+      : null;
+  const guidanceSnapshotSourceFilesLabel =
+    normalizedGuidanceSnapshot?.sourceFiles.length
+      ? `${normalizedGuidanceSnapshot.sourceFiles.length} source file${
+          normalizedGuidanceSnapshot.sourceFiles.length === 1 ? "" : "s"
+        }`
+      : null;
+  const guidanceCurrentGuidanceLabel =
+    normalizedGuidanceSnapshot?.currentYearRevenueGuidance?.officialCurrentGuidancePercent != null
+      ? `Current guidance ${formatPctLabel(
+          normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidancePercent,
+        )}`
+      : normalizedGuidanceSnapshot?.currentYearRevenueGuidance
+        ? "Current guidance"
+        : null;
   const industryPositioning = normalizedCompanyIndustryAnalysis?.industryPositioning;
   const businessSummaryLine =
     aboutHeading ?? normalizedBusinessSnapshot?.businessSummaryShort ?? null;
@@ -1055,10 +1088,13 @@ export default async function Page({
     : [];
   const guidanceHeaderPills = normalizedGuidanceSnapshot
     ? [
-        normalizedGuidanceSnapshot.currentYearRevenueGuidance ? "Current guidance" : null,
+        guidanceSnapshotAnalysisWindowLabel,
+        guidanceSnapshotUpdatedAtShort ? `Updated ${guidanceSnapshotUpdatedAtShort}` : null,
+        guidanceSnapshotSourceFilesLabel,
+        guidanceCurrentGuidanceLabel,
         normalizedGuidanceSnapshot.currentYearRevenueGuidance?.sourceQuarterTimeline.length
           ? "Guidance evolution"
-          : null,
+        : null,
         normalizedGuidanceSnapshot.priorTwoYearAccuracy.length > 0 ? "Accuracy" : null,
         normalizedGuidanceSnapshot.credibilityVerdict ? "Credibility verdict" : null,
       ].filter((value): value is string => Boolean(value))
@@ -1895,127 +1931,6 @@ export default async function Page({
       )}
     </div>
   );
-  const renderGuidanceSnapshotContextDrawer = () => {
-    if (!normalizedGuidanceSnapshot) return null;
-
-    const styleCard = normalizedGuidanceSnapshot.guidanceStyleClassification;
-    const bigPicture = normalizedGuidanceSnapshot.bigPictureGrowthGuidance;
-
-    if (!styleCard && !bigPicture) return null;
-
-    return (
-      <Drawer direction="right">
-        <DrawerTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
-          >
-            <span>Guidance Style</span>
-            {(() => {
-              const styleDisplay = getGuidanceSnapshotStyleDisplay(styleCard?.style ?? null);
-              return styleDisplay ? (
-                <span
-                  className={`ml-2 rounded-full border px-2 py-0.5 text-[10px] ${styleDisplay.className}`}
-                >
-                  {styleDisplay.label}
-                </span>
-              ) : null;
-            })()}
-          </Button>
-        </DrawerTrigger>
-        <DrawerContent className="w-full max-w-xl">
-          <DrawerHeader className="border-b border-border">
-            <DrawerTitle>Guidance Style & Big Picture</DrawerTitle>
-            <DrawerDescription>
-              How management tends to frame guidance and the long-term growth statement they are anchoring to.
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="space-y-4 overflow-y-auto px-4 py-4">
-            {styleCard && (
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                    Style
-                  </p>
-                  {(() => {
-                    const styleDisplay = getGuidanceSnapshotStyleDisplay(styleCard.style);
-                    return styleDisplay ? (
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-[10px] ${styleDisplay.className}`}
-                      >
-                        {styleDisplay.label}
-                      </span>
-                    ) : null;
-                  })()}
-                </div>
-                {styleCard.rationale && (
-                  <p className="text-[12px] leading-relaxed text-foreground">
-                    {styleCard.rationale}
-                  </p>
-                )}
-                {styleCard.evidenceQuarters.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                      Evidence Quarters
-                    </p>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {styleCard.evidenceQuarters.map((quarter) => (
-                        <span
-                          key={quarter}
-                          className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground"
-                        >
-                          {quarter}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {bigPicture && (
-              <div className="space-y-2 rounded-lg border border-border/30 bg-background/70 px-3 py-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                    Big Picture Growth Guidance
-                  </p>
-                  {(() => {
-                    const statusDisplay = getGuidanceSignalTrendDisplay(bigPicture.statusSinceFirst);
-                    return statusDisplay ? (
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-[10px] ${statusDisplay.className}`}
-                      >
-                        {statusDisplay.label}
-                      </span>
-                    ) : null;
-                  })()}
-                </div>
-                {bigPicture.headlineStatement && (
-                  <p className="text-[12px] font-semibold leading-relaxed text-foreground">
-                    {bigPicture.headlineStatement}
-                  </p>
-                )}
-                {bigPicture.currentStatement && (
-                  <p className="text-[11px] leading-relaxed text-muted-foreground">
-                    {bigPicture.currentStatement}
-                  </p>
-                )}
-                {bigPicture.source && (
-                  <p className="text-[10px] text-muted-foreground">Source: {bigPicture.source}</p>
-                )}
-              </div>
-            )}
-          </div>
-          <DrawerFooter className="border-t border-border">
-            <DrawerClose asChild>
-              <Button variant="outline">Close</Button>
-            </DrawerClose>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-    );
-  };
   const renderGuidanceSnapshotSummary = () => {
     if (!normalizedGuidanceSnapshot) return null;
 
@@ -2024,12 +1939,30 @@ export default async function Page({
     const currentYear = normalizedGuidanceSnapshot.currentYearRevenueGuidance;
     const priorAccuracy = normalizedGuidanceSnapshot.priorTwoYearAccuracy;
     const credibilityVerdict = normalizedGuidanceSnapshot.credibilityVerdict;
+    const styleDisplay = styleCard ? getGuidanceSnapshotStyleDisplay(styleCard.style) : null;
+    const bigPictureTrendDisplay = bigPicture
+      ? getGuidanceSignalTrendDisplay(bigPicture.statusSinceFirst)
+      : null;
+    const currentYearTrendDisplay = currentYear
+      ? getGuidanceSignalTrendDisplay(currentYear.signalTrend)
+      : null;
+    const credibilityVerdictDisplay = credibilityVerdict
+      ? getGuidanceCredibilityVerdictDisplay(credibilityVerdict.verdict)
+      : null;
 
-    const hasSummaryCards =
-      Boolean(styleCard || bigPicture || currentYear || credibilityVerdict) ||
-      priorAccuracy.length > 0;
+    if (
+      !styleCard &&
+      !bigPicture &&
+      !currentYear &&
+      !credibilityVerdict &&
+      priorAccuracy.length === 0
+    )
+      return null;
 
-    if (!hasSummaryCards) return null;
+    const snapshotPanelClass =
+      "rounded-[1.45rem] border border-border/30 bg-gradient-to-br from-background/96 via-background/92 to-background/82 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_14px_26px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:from-background/88 dark:via-background/82 dark:to-background/70";
+    const snapshotNestedClass =
+      "rounded-xl border border-border/25 bg-gradient-to-br from-background/96 via-background/92 to-muted/12 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.44)] backdrop-blur-sm dark:from-background/86 dark:via-background/80 dark:to-background/68";
 
     const renderAccuracyRow = (row: NormalizedPriorTwoYearAccuracyRow, index: number) => {
       const verdictDisplay = getGuidanceAccuracyVerdictDisplay(row.verdict);
@@ -2037,7 +1970,7 @@ export default async function Page({
       return (
         <div
           key={`${row.fiscalYear ?? "year"}-${index}`}
-          className={`${nestedDetailClass} px-3 py-2.5 space-y-1.5`}
+          className={`${snapshotNestedClass} space-y-1.5`}
         >
           <div className="flex flex-wrap items-start justify-between gap-1.5">
             <div>
@@ -2061,7 +1994,7 @@ export default async function Page({
           {row.actualOutcome && (
             <div className="space-y-0.5">
               <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                Actual Outcome
+                Actual outcome
               </p>
               <p className="text-[10px] leading-relaxed text-foreground">{row.actualOutcome}</p>
             </div>
@@ -2069,7 +2002,7 @@ export default async function Page({
           {row.signalSummary && (
             <div className="space-y-0.5">
               <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                Guidance Given
+                Guidance given
               </p>
               <p className="text-[10px] leading-relaxed text-muted-foreground">
                 {row.signalSummary}
@@ -2081,9 +2014,7 @@ export default async function Page({
               <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
                 Why
               </p>
-              <p className="text-[10px] leading-relaxed text-muted-foreground/90">
-                {row.reason}
-              </p>
+              <p className="text-[10px] leading-relaxed text-muted-foreground/90">{row.reason}</p>
             </div>
           )}
         </div>
@@ -2091,69 +2022,172 @@ export default async function Page({
     };
 
     return (
-      <div className="space-y-2.5">
-        {currentYear && (
-          <div className="grid grid-cols-1 gap-3">
+      <div className="space-y-4">
+        <div className="grid gap-3 lg:grid-cols-3">
+          <section className={snapshotPanelClass}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 space-y-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Direction style
+                </p>
+              </div>
+
+              {styleDisplay && (
+                <span
+                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${styleDisplay.className}`}
+                >
+                  {styleDisplay.label}
+                </span>
+              )}
+            </div>
+
+            <div className="mt-3 space-y-3">
+              {styleCard?.rationale ? (
+                <p className="text-[12px] leading-relaxed text-foreground">{styleCard.rationale}</p>
+              ) : null}
+            </div>
+          </section>
+
+          <section className={snapshotPanelClass}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 space-y-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Big picture growth
+                </p>
+              </div>
+
+              {bigPictureTrendDisplay && (
+                <span
+                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${bigPictureTrendDisplay.className}`}
+                >
+                  {bigPictureTrendDisplay.label}
+                </span>
+              )}
+            </div>
+
+            {(bigPicture?.headlineStatement || bigPicture?.currentStatement) && (
+              <p className="mt-3 text-[12.5px] font-semibold leading-relaxed text-foreground">
+                {bigPicture.headlineStatement ?? bigPicture.currentStatement}
+              </p>
+            )}
+          </section>
+
+          <section className={snapshotPanelClass}>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 space-y-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Credibility verdict
+                </p>
+              </div>
+
+              {credibilityVerdictDisplay && (
+                <span
+                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${credibilityVerdictDisplay.className}`}
+                >
+                  {credibilityVerdictDisplay.label}
+                </span>
+              )}
+            </div>
+
+            {credibilityVerdict?.supportingLine ? (
+              <p className="mt-3 text-[12px] leading-relaxed text-foreground">
+                {credibilityVerdict.supportingLine}
+              </p>
+            ) : null}
+          </section>
+        </div>
+
+        {(currentYear || priorAccuracy.length > 0) && (
+          <div className="grid gap-3 lg:grid-cols-2">
             {currentYear && (
-              <div className={`${elevatedBlockClass} p-3.5 space-y-2.5`}>
-                <div className="space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-[9px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                      Current Year Revenue Guidance
+              <section className={snapshotPanelClass}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-1.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      This year guidance
                     </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {currentYear.fiscalYear && (
-                      <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                      <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
                         {currentYear.fiscalYear}
                       </span>
                     )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
                     {currentYear.officialCurrentGuidancePercent != null && (
-                      <span className="rounded-full border border-emerald-200/70 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-200">
+                      <span className="inline-flex items-center rounded-full border border-emerald-200/80 bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
                         {formatPctLabel(currentYear.officialCurrentGuidancePercent)}
                       </span>
                     )}
-                    {(() => {
-                      const trendDisplay = getGuidanceSignalTrendDisplay(currentYear.signalTrend);
-                      return trendDisplay ? (
-                        <span
-                          className={`rounded-full border px-2 py-0.5 text-[9px] ${trendDisplay.className}`}
-                        >
-                          {trendDisplay.label}
-                        </span>
-                      ) : null;
-                    })()}
+                    {currentYearTrendDisplay && (
+                      <span
+                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${currentYearTrendDisplay.className}`}
+                      >
+                        {currentYearTrendDisplay.label}
+                      </span>
+                    )}
+                    {currentYear.officialCurrentGuidanceSourceQuarter && (
+                      <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+                        Anchored {currentYear.officialCurrentGuidanceSourceQuarter}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:items-start">
-                  <div className="space-y-2">
+                <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.12fr)_minmax(16rem,0.88fr)] lg:items-start">
+                  <div className="space-y-3">
                     {(currentYear.officialCurrentGuidanceText ||
                       currentYear.consolidatedStatement) && (
-                      <p className="text-[12px] font-semibold leading-snug text-foreground">
-                        {currentYear.officialCurrentGuidanceText ?? currentYear.consolidatedStatement}
-                      </p>
+                      <div className={snapshotNestedClass}>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Guidance line
+                        </p>
+                        <p className="mt-2 text-[12.5px] font-semibold leading-relaxed text-foreground">
+                          {currentYear.officialCurrentGuidanceText ??
+                            currentYear.consolidatedStatement}
+                        </p>
+                        {currentYear.consolidatedStatement &&
+                          currentYear.consolidatedStatement !==
+                            currentYear.officialCurrentGuidanceText && (
+                            <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+                              {currentYear.consolidatedStatement}
+                            </p>
+                          )}
+                      </div>
                     )}
-                    {currentYear.consolidatedStatement &&
-                      currentYear.consolidatedStatement !== currentYear.officialCurrentGuidanceText && (
-                        <p className="text-[10px] leading-relaxed text-muted-foreground">
-                          {currentYear.consolidatedStatement}
-                        </p>
-                      )}
+
                     {currentYear.inYearRevisionNote && (
-                      <div className="space-y-0.5">
-                        <p className="text-[9px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                          Revision Note
+                      <div className="rounded-xl border border-amber-200/35 bg-amber-50/45 px-3 py-2 dark:border-amber-700/25 dark:bg-amber-950/15">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-200">
+                          Revision note
                         </p>
-                        <p className="text-[10px] leading-relaxed text-muted-foreground">
+                        <p className="mt-1 text-[10px] leading-relaxed text-foreground">
                           {currentYear.inYearRevisionNote}
                         </p>
                       </div>
                     )}
+
+                    {currentYear.sourceQuarters.length > 0 && (
+                      <div className="space-y-1.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Evidence quarters
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {currentYear.sourceQuarters.map((quarter) => (
+                            <span
+                              key={quarter}
+                              className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground"
+                            >
+                              {quarter}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {currentYear.sourceQuarterTimeline.length > 0 && (
-                    <div className="self-start rounded-lg border border-border/25 bg-background/30 p-2">
+                  {currentYear.sourceQuarterTimeline.length > 0 ? (
+                    <div className={snapshotNestedClass}>
                       <div className="flex flex-wrap items-center justify-between gap-1.5">
                         <span className="inline-flex items-center gap-2 rounded-full border border-border/45 bg-muted/15 px-2.5 py-1 text-[9px] font-medium text-muted-foreground">
                           <span>Guidance evolution</span>
@@ -2162,11 +2196,11 @@ export default async function Page({
                           </span>
                         </span>
                       </div>
-                      <div className="mt-1.5 space-y-1.5">
+                      <div className="mt-3 space-y-2">
                         {currentYear.sourceQuarterTimeline.map((entry, index) => (
                           <div
                             key={`${entry.quarter ?? "quarter"}-${index}`}
-                            className="space-y-1 rounded-lg border border-border/25 bg-background/65 px-2.5 py-1.5"
+                            className="space-y-1.5 rounded-xl border border-border/25 bg-background/70 px-3 py-2.5"
                           >
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <div className="flex flex-wrap items-center gap-2">
@@ -2203,52 +2237,27 @@ export default async function Page({
                         ))}
                       </div>
                     </div>
-                  )}
+                  ) : null}
                 </div>
-              </div>
+              </section>
             )}
-          </div>
-        )}
 
-        {priorAccuracy.length > 0 && (
-          <div className={`${elevatedBlockClass} p-3.5 space-y-2.5`}>
-            <div className="flex flex-wrap items-center justify-between gap-1.5">
-              <p className="text-[9px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                Prior Two-Year Accuracy
-              </p>
-              <span className="text-[9px] text-muted-foreground">
-                {priorAccuracy.length} year{priorAccuracy.length === 1 ? "" : "s"} tracked
-              </span>
-            </div>
-            <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-2">
-              {priorAccuracy.map(renderAccuracyRow)}
-            </div>
-          </div>
-        )}
-
-        {credibilityVerdict && (
-          <div className={`${elevatedBlockClass} p-3.5 space-y-2.5`}>
-            <div className="flex flex-wrap items-center justify-between gap-1.5">
-              <p className="text-[9px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                Credibility Verdict
-              </p>
-              {(() => {
-                const verdictDisplay = getGuidanceCredibilityVerdictDisplay(
-                  credibilityVerdict.verdict,
-                );
-                return verdictDisplay ? (
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-[9px] ${verdictDisplay.className}`}
-                  >
-                    {verdictDisplay.label}
+            {priorAccuracy.length > 0 && (
+              <section className={snapshotPanelClass}>
+                <div className="flex flex-wrap items-center justify-between gap-1.5">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      Previous two-year guidance data
+                    </p>
+                  </div>
+                  <span className="text-[9px] text-muted-foreground">
+                    {priorAccuracy.length} year{priorAccuracy.length === 1 ? "" : "s"} tracked
                   </span>
-                ) : null;
-              })()}
-            </div>
-            {credibilityVerdict.supportingLine && (
-              <p className="text-[10px] leading-relaxed text-muted-foreground">
-                {credibilityVerdict.supportingLine}
-              </p>
+                </div>
+                <div className="mt-3 grid grid-cols-1 gap-2.5 xl:grid-cols-2">
+                  {priorAccuracy.map(renderAccuracyRow)}
+                </div>
+              </section>
             )}
           </div>
         )}
@@ -4632,35 +4641,20 @@ export default async function Page({
           id="guidance-history"
           title="Guidance History"
           headerPills={guidanceHeaderPills}
-          headerDescription="Current management stance and quarter-by-quarter evolution."
           headerAction={
-            renderGuidanceSnapshotContextDrawer() ?? (
-              <span className="text-[11px] text-muted-foreground">
-                {guidanceItems.length > 0
-                  ? `${guidanceItems.length} tracked`
-                  : normalizedGuidanceSnapshot
-                    ? "Live"
-                    : "Not ready"}
-              </span>
-            )
+            <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+              {guidanceItems.length > 0
+                ? `${guidanceItems.length} tracked`
+                : normalizedGuidanceSnapshot
+                  ? "Live snapshot"
+                  : "Not ready"}
+            </span>
           }
         >
           {normalizedGuidanceSnapshot ? (
             <div className="space-y-4">
               {renderGuidanceSnapshotSummary()}
-              {guidanceItems.length > 0 ? (
-                <div className={`${elevatedMutedBlockClass} p-3 space-y-3`}>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                      Guidance Tracker
-                    </p>
-                    <span className="text-[10px] text-muted-foreground">
-                      {guidanceItems.length} thread{guidanceItems.length === 1 ? "" : "s"}
-                    </span>
-                  </div>
-                  <GuidanceHistorySection items={guidanceItems} />
-                </div>
-              ) : null}
+              {guidanceItems.length > 0 ? <GuidanceHistorySection items={guidanceItems} /> : null}
             </div>
           ) : guidanceItems.length > 0 ? (
             <GuidanceHistorySection items={guidanceItems} />

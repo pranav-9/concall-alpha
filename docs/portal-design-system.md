@@ -143,6 +143,27 @@ Tone should be consistent across a section:
 - chip highlights
 - nested card emphasis
 
+### Guidance tracker layout
+
+The guidance history section should read like a tracker dashboard, not a plain list.
+
+Use:
+
+- section header chips that surface the analysis window, refresh time, source depth, and current guidance
+- keep style rationale and big-picture guidance in the main snapshot panels, not a drawer
+- a three-column summary grid for direction style, big-picture growth, and credibility verdict
+- a second two-column row for this year guidance data and the prior two years of guidance calibration
+- keep style, growth trend, current guidance, and credibility as compact badges inside the summary cards, not as a separate hero strip
+- keep the top summary cards sparse; do not add evidence-quarter, source, or calibration sub-panels back into them
+- keep the big-picture growth card to one primary statement; do not add a nested subheading or supporting subtext block
+- keep the top summary cards flat; use plain text and badges instead of nested inner panels
+- an amber summary band with thread counts, source depth, and the latest tracked period
+- status-group cards arranged in a responsive grid
+- individual thread cards that surface type, status, target period, and mention span first
+- collapsible quarter-by-quarter trails for the supporting evidence
+- keep the existing guidance tracker underneath the snapshot and data cards
+- avoid unnecessary explanatory copy; keep text light because the dashboard already carries a lot of text
+
 ## Surface Grammar
 
 The portal uses a consistent surface grammar across most pages.
@@ -567,4 +588,3 @@ Useful files to inspect when extending the system:
 - [`components/ui/button.tsx`](/Users/pranavyadav/Documents/tech/concall-alpha-1/concall-alpha-1/components/ui/button.tsx)
 - [`components/ui/badge.tsx`](/Users/pranavyadav/Documents/tech/concall-alpha-1/concall-alpha-1/components/ui/badge.tsx)
 - [`components/site-footer.tsx`](/Users/pranavyadav/Documents/tech/concall-alpha-1/concall-alpha-1/components/site-footer.tsx)
-
