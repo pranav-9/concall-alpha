@@ -2,6 +2,7 @@ import Link from "next/link";
 import ConcallScore from "@/components/concall-score";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { createClient } from "@/lib/supabase/server";
+import { collapseConsecutiveSameCompanyUpdates } from "./recent-score-updates-utils";
 
 export const revalidate = 120;
 
@@ -559,14 +560,14 @@ async function getUnifiedUpdates(limit: number) {
     guidance_monitor: 5,
   };
 
-  return updates
-    .sort((a, b) => {
-      if (b.atMs !== a.atMs) return b.atMs - a.atMs;
-      const typeDiff = typePriority[a.type] - typePriority[b.type];
-      if (typeDiff !== 0) return typeDiff;
-      return a.id.localeCompare(b.id);
-    })
-    .slice(0, limit);
+  const sortedUpdates = [...updates].sort((a, b) => {
+    if (b.atMs !== a.atMs) return b.atMs - a.atMs;
+    const typeDiff = typePriority[a.type] - typePriority[b.type];
+    if (typeDiff !== 0) return typeDiff;
+    return a.id.localeCompare(b.id);
+  });
+
+  return collapseConsecutiveSameCompanyUpdates(sortedUpdates).slice(0, limit);
 }
 
 export default async function RecentScoreUpdates({

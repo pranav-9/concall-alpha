@@ -199,7 +199,7 @@ export default async function Home() {
     <main className="relative min-h-screen overflow-hidden">
       <div className="absolute inset-x-0 -top-28 -z-10 h-[42rem] bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.12),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.14),_transparent_36%),linear-gradient(180deg,_rgba(15,23,42,0.03),_transparent_58%)]" />
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-4 py-6 sm:px-6 sm:py-8 lg:gap-10 lg:px-10 lg:py-10">
-        <section className="grid grid-cols-1 gap-4 lg:min-h-[80vh] supports-[height:100dvh]:lg:min-h-[80dvh] lg:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)] lg:items-stretch">
+        <section className="grid grid-cols-1 gap-4 lg:min-h-[80vh] supports-[height:100dvh]:lg:min-h-[80dvh] lg:grid-cols-[minmax(0,7fr)_minmax(20rem,3fr)] lg:items-stretch">
           <div className="rounded-[2rem] border border-border/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(248,250,252,0.92),rgba(240,249,255,0.88))] p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.35)] sm:p-6 lg:h-full lg:p-8 dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(17,24,39,0.94),rgba(8,47,73,0.72))]">
             <div className="flex h-full flex-col gap-5 lg:justify-between">
               <div className="space-y-5">
