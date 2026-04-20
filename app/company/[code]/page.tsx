@@ -2513,6 +2513,25 @@ export default async function Page({
   const renderTypesOfPlayers = () => {
     if (!normalizedCompanyIndustryAnalysis?.typesOfPlayers) return null;
 
+    const playerCategoryAccentClasses = [
+      "bg-gradient-to-r from-transparent via-sky-500/70 to-transparent dark:via-sky-400/55",
+      "bg-gradient-to-r from-transparent via-emerald-500/70 to-transparent dark:via-emerald-400/55",
+      "bg-gradient-to-r from-transparent via-violet-500/70 to-transparent dark:via-violet-400/55",
+      "bg-gradient-to-r from-transparent via-amber-500/70 to-transparent dark:via-amber-400/55",
+      "bg-gradient-to-r from-transparent via-rose-500/70 to-transparent dark:via-rose-400/55",
+      "bg-gradient-to-r from-transparent via-slate-500/70 to-transparent dark:via-slate-400/55",
+    ];
+    const getPlayerCategoryAccentClass = (dimensionName: string, categoryName: string) => {
+      const seed = `${dimensionName}-${categoryName}`;
+      let hash = 0;
+
+      for (let index = 0; index < seed.length; index += 1) {
+        hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+      }
+
+      return playerCategoryAccentClasses[hash % playerCategoryAccentClasses.length];
+    };
+
     return (
       <div className="space-y-2">
         {normalizedCompanyIndustryAnalysis.typesOfPlayers.dimensions.map(
@@ -2526,57 +2545,62 @@ export default async function Page({
                   <p className="text-[12px] font-semibold leading-snug text-foreground">
                     {`By ${dimension.dimensionName.toLowerCase()}`}
                   </p>
-                  {dimension.dimensionExplanation && (
-                    <p className="text-[11px] leading-relaxed text-muted-foreground">
-                      {dimension.dimensionExplanation}
-                    </p>
-                  )}
                 </div>
 
                 {dimension.categories.length > 0 && (
                   <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
                     {dimension.categories.map((category) => {
+                      const categoryAccentClass = getPlayerCategoryAccentClass(
+                        dimension.dimensionName,
+                        category.categoryName,
+                      );
+
                       return (
                         <div
                           key={`${dimension.dimensionName}-${category.categoryName}`}
-                          className={`${nestedDetailClass} space-y-2 px-3 py-3`}
+                          className={`${nestedDetailClass} relative overflow-hidden px-3 py-3 pt-4`}
                         >
-                          <p className="text-[11px] font-semibold leading-snug text-foreground">
-                            {category.categoryName}
-                          </p>
-                          {category.categoryDescription && (
-                            <p className="text-[10px] leading-relaxed text-muted-foreground">
-                              {category.categoryDescription}
+                          <div
+                            className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 ${categoryAccentClass}`}
+                          />
+                          <div className="relative space-y-2">
+                            <p className="text-[11px] font-semibold leading-snug text-foreground">
+                              {category.categoryName}
                             </p>
-                          )}
-                          {category.playerExamples.length > 0 && (
-                            <div className="space-y-1">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                Player examples
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {category.playerExamples.slice(0, 3).map((example) => (
-                                  <span
-                                    key={`${dimension.dimensionName}-${category.categoryName}-${example}`}
-                                    className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground"
-                                  >
-                                    {example}
-                                  </span>
-                                ))}
-                                {category.playerExamples.length > 3 && (
-                                  <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                    +{category.playerExamples.length - 3} more
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          {category.categoryDescription == null &&
-                            category.playerExamples.length === 0 && (
+                            {category.categoryDescription && (
                               <p className="text-[10px] leading-relaxed text-muted-foreground">
-                                Player type tracked in this market map
+                                {category.categoryDescription}
                               </p>
                             )}
+                            {category.playerExamples.length > 0 && (
+                              <div className="space-y-1">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                  Player examples
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {category.playerExamples.slice(0, 3).map((example) => (
+                                    <span
+                                      key={`${dimension.dimensionName}-${category.categoryName}-${example}`}
+                                      className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground"
+                                    >
+                                      {example}
+                                    </span>
+                                  ))}
+                                  {category.playerExamples.length > 3 && (
+                                    <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                      +{category.playerExamples.length - 3} more
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {category.categoryDescription == null &&
+                              category.playerExamples.length === 0 && (
+                                <p className="text-[10px] leading-relaxed text-muted-foreground">
+                                  Player type tracked in this market map
+                                </p>
+                              )}
+                          </div>
                         </div>
                       );
                     })}
@@ -2967,6 +2991,15 @@ export default async function Page({
   const renderValueChainMapContent = () => {
     if (!normalizedCompanyIndustryAnalysis?.valueChainMap) return null;
 
+    const valueChainLayerAccentClasses = [
+      "bg-gradient-to-r from-transparent via-sky-500/70 to-transparent dark:via-sky-400/55",
+      "bg-gradient-to-r from-transparent via-emerald-500/70 to-transparent dark:via-emerald-400/55",
+      "bg-gradient-to-r from-transparent via-violet-500/70 to-transparent dark:via-violet-400/55",
+      "bg-gradient-to-r from-transparent via-amber-500/70 to-transparent dark:via-amber-400/55",
+      "bg-gradient-to-r from-transparent via-rose-500/70 to-transparent dark:via-rose-400/55",
+      "bg-gradient-to-r from-transparent via-slate-500/70 to-transparent dark:via-slate-400/55",
+    ];
+
     return (
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -2991,31 +3024,38 @@ export default async function Page({
             {normalizedCompanyIndustryAnalysis.valueChainMap.layers.map((layer, index) => (
               <div
                 key={`${layer.layerName}-${index}`}
-                className="rounded-xl border border-border/20 bg-background/45 px-4 py-3 border-l-2 border-l-sky-400/70"
+                className="relative overflow-hidden rounded-xl border border-border/20 bg-background/45 px-4 py-3 pt-4"
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                    Layer {index + 1}
-                  </span>
-                  <p className="text-[12px] font-semibold leading-snug text-foreground">
-                    {layer.layerName}
-                  </p>
-                </div>
-                {layer.layerDescription && (
-                  <p className="mt-2 text-[11px] leading-relaxed text-foreground/90">
-                    {layer.layerDescription}
-                  </p>
-                )}
+                <div
+                  className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 ${
+                    valueChainLayerAccentClasses[index % valueChainLayerAccentClasses.length]
+                  }`}
+                />
+                <div className="relative">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
+                      Layer {index + 1}
+                    </span>
+                    <p className="text-[12px] font-semibold leading-snug text-foreground">
+                      {layer.layerName}
+                    </p>
+                  </div>
+                  {layer.layerDescription && (
+                    <p className="mt-2 text-[11px] leading-relaxed text-foreground/90">
+                      {layer.layerDescription}
+                    </p>
+                  )}
                   {layer.connectionToCompany && (
                     <div className="mt-2 space-y-0.5">
-                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                         {(companyRow?.name ?? code).trim()}&apos;s role
                       </p>
                       <p className="text-[11px] leading-relaxed text-muted-foreground">
                         {layer.connectionToCompany}
                       </p>
                     </div>
-                )}
+                  )}
+                </div>
               </div>
             ))}
           </div>
