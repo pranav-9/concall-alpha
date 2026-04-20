@@ -257,7 +257,7 @@ function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
 
             {trailItem.excerpt ? (
               <p className="mt-2 border-l-2 border-border/45 pl-2.5 text-[11px] italic leading-relaxed text-foreground/85">
-                "{trailItem.excerpt}"
+                &ldquo;{trailItem.excerpt}&rdquo;
               </p>
             ) : null}
           </li>

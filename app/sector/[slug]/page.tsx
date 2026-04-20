@@ -96,9 +96,6 @@ const PAGE_SHELL_CLASS =
 const HERO_CARD_CLASS =
   "rounded-[1.6rem] border border-sky-200/35 bg-gradient-to-br from-background/97 via-background/92 to-sky-50/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_18px_36px_-30px_rgba(15,23,42,0.26)] backdrop-blur-sm dark:border-sky-700/25 dark:from-background/90 dark:via-background/84 dark:to-sky-950/12";
 
-const METRIC_CARD_CLASS =
-  "rounded-2xl border border-border/35 bg-background/72 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]";
-
 const PANEL_CARD_CLASS =
   "rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_28px_-26px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
 

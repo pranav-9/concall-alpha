@@ -119,9 +119,6 @@ const CARD_CLASS =
 const CHIP_CLASS =
   "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors";
 
-const CHIP_PRIMARY_CLASS =
-  "border-sky-200/60 bg-sky-100/70 text-sky-800 dark:border-sky-700/35 dark:bg-sky-900/30 dark:text-sky-200";
-
 const CHIP_NEUTRAL_CLASS =
   "border-border/60 bg-background/80 text-foreground";
 
