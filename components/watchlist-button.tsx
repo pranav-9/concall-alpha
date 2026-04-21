@@ -27,7 +27,7 @@ export function WatchlistButton({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleClick = async () => {
-    if (isInWatchlist || isSubmitting) return;
+    if (isSubmitting) return;
 
     setIsSubmitting(true);
     const supabase = createClient();
@@ -44,6 +44,35 @@ export function WatchlistButton({
       }
 
       setIsAuthenticated(true);
+
+      if (isInWatchlist) {
+        const removeResponse = await fetch("/api/watchlists/items", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ companyCode }),
+        });
+
+        const removePayload = (await removeResponse.json().catch(() => null)) as
+          | { ok?: boolean; removed?: boolean; notFound?: boolean; error?: string; code?: string }
+          | null;
+
+        if (!removeResponse.ok) {
+          if (removePayload?.code === "watchlist_missing") {
+            window.alert("Create a watchlist first.");
+            return;
+          }
+          window.alert(removePayload?.error ?? "Unable to remove company from watchlist.");
+          return;
+        }
+
+        if (removePayload?.removed || removePayload?.notFound) {
+          setIsInWatchlist(false);
+          router.refresh();
+        }
+        return;
+      }
 
       if (!hasWatchlist) {
         const watchlistName = window.prompt(
@@ -117,12 +146,12 @@ export function WatchlistButton({
   return (
     <Button
       type="button"
-      variant={isInWatchlist ? "secondary" : "outline"}
+      variant={isInWatchlist ? "destructive" : "outline"}
       size="sm"
       onClick={handleClick}
-      disabled={isSubmitting || isInWatchlist}
+      disabled={isSubmitting}
     >
-      {isInWatchlist ? "In Watchlist" : isSubmitting ? "Saving..." : "Add to Watchlist"}
+      {isInWatchlist ? (isSubmitting ? "Removing..." : "Remove from Watchlist") : isSubmitting ? "Saving..." : "Add to Watchlist"}
     </Button>
   );
 }

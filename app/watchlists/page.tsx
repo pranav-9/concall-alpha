@@ -2,18 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import ConcallScore from "@/components/concall-score";
 import { WatchlistCreateButton } from "@/components/watchlist-create-button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { getConcallData } from "@/app/company/get-concall-data";
+import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
+import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import { createClient } from "@/lib/supabase/server";
+import { WatchlistTable, type WatchlistTableRow } from "./watchlist-table";
 
 type WatchlistItemRow = {
   company_code?: string | null;
@@ -30,14 +24,7 @@ type GrowthRankRow = {
   run_timestamp?: string | null;
 };
 
-type WatchlistTableRow = {
-  companyCode: string;
-  companyName: string;
-  latestQuarterScore: number | null;
-  growthScore: number | null;
-  avg4QuarterScore: number | null;
-  blendedScore: number | null;
-};
+type MoatSummaryRow = Pick<WatchlistTableRow, "moatScore" | "moatLabel" | "moatRating">;
 
 export const metadata: Metadata = {
   title: "Watchlists – Story of a Stock",
@@ -226,14 +213,24 @@ export default async function WatchlistsPage() {
     );
   }
 
-  const [{ rows, latestLabel }, { data: companyNameRows }, { data: growthRows }] = await Promise.all([
-    getConcallData(),
-    supabase.from("company").select("code, name"),
-    supabase
-      .from("growth_outlook")
-      .select("company, growth_score, run_timestamp")
-      .order("run_timestamp", { ascending: false }),
-  ]);
+  const [{ rows, latestLabel }, { data: companyNameRows }, { data: growthRows }, { data: moatRows }] =
+    await Promise.all([
+      getConcallData(),
+      supabase.from("company").select("code, name"),
+      supabase
+        .from("growth_outlook")
+        .select("company, growth_score, run_timestamp")
+        .order("run_timestamp", { ascending: false }),
+      supabase
+        .from("moat_analysis")
+        .select(
+          "id, company_code, company_name, industry, rating, trajectory, trajectory_direction, porter_summary, porter_verdict, moats, quantitative, durability, risks, assessment_payload, assessment_version, moat_score, strength_score, durability_score, created_at, updated_at",
+        )
+        .in("company_code", watchlistCodes)
+        .order("updated_at", { ascending: false })
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false }),
+    ]);
 
   const quarterScoreByCode = new Map<string, { latestScore: number | null; avg4: number | null }>();
   rows.forEach((row) => {
@@ -255,6 +252,19 @@ export default async function WatchlistsPage() {
     growthScoreByCode.set(companyCode, toNumeric(row.growth_score));
   });
 
+  const latestMoatByCompany = new Map<string, MoatSummaryRow>();
+  ((moatRows ?? []) as MoatAnalysisRow[]).forEach((row) => {
+    const normalized = normalizeMoatAnalysis(row);
+    if (!normalized) return;
+    const companyCode = normalized.companyCode.trim().toUpperCase();
+    if (!companyCode || latestMoatByCompany.has(companyCode)) return;
+    latestMoatByCompany.set(companyCode, {
+      moatScore: normalized.moatScore,
+      moatLabel: normalized.moatRatingLabel,
+      moatRating: normalized.moatRating,
+    });
+  });
+
   const companyNameByCode = new Map<string, string>();
   ((companyNameRows ?? []) as CompanyNameRow[]).forEach((row) => {
     companyNameByCode.set(row.code.toUpperCase(), row.name?.trim() || row.code);
@@ -264,6 +274,7 @@ export default async function WatchlistsPage() {
     .map((companyCode) => {
       const quarterData = quarterScoreByCode.get(companyCode);
       const growthScore = growthScoreByCode.get(companyCode) ?? null;
+      const moatData = latestMoatByCompany.get(companyCode) ?? null;
       const latestQuarterScore = quarterData?.latestScore ?? null;
       const avg4QuarterScore = quarterData?.avg4 ?? null;
       const blendedScore = computeAverageScore([
@@ -279,6 +290,9 @@ export default async function WatchlistsPage() {
         growthScore,
         avg4QuarterScore,
         blendedScore,
+        moatScore: moatData?.moatScore ?? null,
+        moatLabel: moatData?.moatLabel ?? null,
+        moatRating: moatData?.moatRating ?? null,
       };
     })
     .sort((a, b) => {
@@ -327,6 +341,7 @@ export default async function WatchlistsPage() {
     tableRows.map((row) => row.latestQuarterScore),
   );
   const averageGrowthScore = computeAverageScore(tableRows.map((row) => row.growthScore));
+  const averageMoatScore = computeAverageScore(tableRows.map((row) => row.moatScore));
 
   return (
     <WatchlistShell
@@ -391,7 +406,7 @@ export default async function WatchlistsPage() {
               Watchlist ranking
             </p>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Ranked by blended score, then latest quarter and growth context.
+              Ranked by blended score, then latest quarter, growth, and moat context.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -401,77 +416,12 @@ export default async function WatchlistsPage() {
             <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
               Avg growth: {averageGrowthScore != null ? averageGrowthScore.toFixed(1) : "—"}
             </span>
+            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+              Avg moat: {averageMoatScore != null ? `${averageMoatScore.toFixed(1)} / 100` : "—"}
+            </span>
           </div>
         </div>
-        <Table className="w-full text-sm">
-          <TableHeader className="bg-background/70">
-            <TableRow className="border-b border-border/35 bg-background/70">
-              <TableHead className="px-3 py-3 text-foreground">Company</TableHead>
-              <TableHead className="px-3 py-3 text-foreground">Qtr Score</TableHead>
-              <TableHead className="px-3 py-3 text-foreground">Growth Score</TableHead>
-              <TableHead className="px-3 py-3 text-foreground">4Q Avg Score</TableHead>
-              <TableHead className="border-l border-border/70 px-3 py-3 text-foreground">
-                <div className="flex flex-col gap-0.5">
-                  <span>Avg Score</span>
-                  <span className="text-[10px] font-medium text-muted-foreground normal-case">
-                    Derived from first 3
-                  </span>
-                </div>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tableRows.map((row) => (
-              <TableRow
-                key={row.companyCode}
-                className="border-b border-border/45 transition-colors last:border-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
-              >
-                <TableCell className="px-3 py-3">
-                  <Link
-                    href={`/company/${row.companyCode}`}
-                    prefetch={false}
-                    className="font-semibold text-foreground hover:underline"
-                  >
-                    {row.companyName}
-                  </Link>
-                </TableCell>
-                <TableCell className="px-3 py-3">
-                  {row.latestQuarterScore != null ? (
-                    <ConcallScore score={row.latestQuarterScore} size="sm" />
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell className="px-3 py-3">
-                  {row.growthScore != null ? (
-                    <ConcallScore score={row.growthScore} size="sm" />
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell className="px-3 py-3">
-                  {row.avg4QuarterScore != null ? (
-                    <ConcallScore score={row.avg4QuarterScore} size="sm" />
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell className="border-l border-border/70 px-3 py-3">
-                  {row.blendedScore != null ? (
-                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/80 px-2.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-emerald-700/40 dark:bg-emerald-950/20">
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
-                        Blend
-                      </span>
-                      <ConcallScore score={row.blendedScore} size="sm" />
-                    </div>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <WatchlistTable rows={tableRows} />
       </div>
     </WatchlistShell>
   );
