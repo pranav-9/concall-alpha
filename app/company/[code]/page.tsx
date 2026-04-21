@@ -1,5 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
+import { Info } from "lucide-react";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { createClient } from "@/lib/supabase/server";
@@ -1121,6 +1122,61 @@ export default async function Page({
     </details>
   );
 
+  const renderAboutBlock = () => {
+    const aboutMainText = aboutHeading ?? aboutSupportingText ?? null;
+    const aboutDrawerText = aboutHeading && aboutSupportingText ? aboutSupportingText : null;
+    const aboutMainTextClass = aboutHeading
+      ? "text-[17px] sm:text-[19px] font-semibold leading-snug text-foreground"
+      : "text-[13px] leading-relaxed text-foreground";
+
+    if (!aboutMainText) return null;
+
+    return (
+      <div className="min-w-0 rounded-2xl border border-border/20 bg-background/55 p-3 dark:bg-background/40">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-2">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+              About
+            </p>
+            <p className={aboutMainTextClass}>{aboutMainText}</p>
+          </div>
+
+          {aboutDrawerText ? (
+            <Drawer direction="right">
+              <DrawerTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-0.5 h-8 shrink-0 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
+                >
+                  Know more
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent className="w-full max-w-xl">
+                <DrawerHeader className="border-b border-border">
+                  <DrawerTitle>About</DrawerTitle>
+                  <DrawerDescription>
+                    Additional context behind the short business summary.
+                  </DrawerDescription>
+                </DrawerHeader>
+
+                <div className="flex-1 space-y-3 overflow-y-auto p-4">
+                  <p className="text-[13px] leading-relaxed text-foreground">{aboutDrawerText}</p>
+                </div>
+
+                <DrawerFooter className="border-t border-border">
+                  <DrawerClose asChild>
+                    <Button variant="outline">Close</Button>
+                  </DrawerClose>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer>
+          ) : null}
+        </div>
+      </div>
+    );
+  };
+
   const renderRevenueBreakdownCard = ({
     title,
     entries,
@@ -1148,6 +1204,62 @@ export default async function Page({
       const marginProfileDisplay = getMarginProfileDisplay(entry.marginProfile);
       const roleDisplay = getSegmentRoleDisplay(entry.rolePill);
       const growthDirectionDisplay = getGrowthDirectionDisplay(entry.growthDirectionPill);
+      const detailBlocks = [
+        entry.description
+          ? { label: "Description", value: entry.description }
+          : null,
+        entry.marginProfileNote
+          ? { label: "Margin profile note", value: entry.marginProfileNote }
+          : null,
+      ].filter((item): item is { label: string; value: string } => Boolean(item));
+      const detailSummary = [
+        roleDisplay?.label ?? null,
+        growthDirectionDisplay?.label ?? null,
+        marginProfileDisplay?.label ?? null,
+        entry.revenueSharePercent != null ? `${formatPctLabel(entry.revenueSharePercent)} share` : null,
+      ]
+        .filter((value): value is string => Boolean(value))
+        .join(" · ");
+      const segmentInfoDrawer =
+        detailBlocks.length > 0 ? (
+          <Drawer direction="right">
+            <DrawerTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Open details for ${entry.name}`}
+                className="h-7 w-7 shrink-0 rounded-full p-0 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              >
+                <Info className="h-3.5 w-3.5" />
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent className="w-full max-w-xl">
+              <DrawerHeader className="border-b border-border">
+                <DrawerTitle>{entry.name}</DrawerTitle>
+                <DrawerDescription>
+                  {detailSummary || "Supporting detail for this business segment."}
+                </DrawerDescription>
+              </DrawerHeader>
+
+              <div className="flex-1 space-y-4 overflow-y-auto p-4">
+                {detailBlocks.map((block) => (
+                  <div key={block.label} className="space-y-1.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      {block.label}
+                    </p>
+                    <p className="text-[13px] leading-relaxed text-foreground">{block.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <DrawerFooter className="border-t border-border">
+                <DrawerClose asChild>
+                  <Button variant="outline">Close</Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
+        ) : null;
       const isVisible = variant === "visible";
 
       if (useGrid) {
@@ -1166,6 +1278,7 @@ export default async function Page({
                   <p className="text-[13px] font-medium text-foreground leading-snug">
                     {entry.name}
                   </p>
+                  {segmentInfoDrawer}
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
                   {roleDisplay && (
@@ -1190,28 +1303,20 @@ export default async function Page({
                     </span>
                   )}
                 </div>
-                {entry.description && (
-                  <p className="text-[12px] text-muted-foreground leading-relaxed">
-                    {entry.description}
-                  </p>
-                )}
-                {entry.marginProfileNote && (
-                  <p className="text-[11px] text-muted-foreground/90 leading-relaxed">
-                    {entry.marginProfileNote}
-                  </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1.5">
+                {entry.revenueSharePercent != null && (
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-[10px] ${
+                      idx === 0 && isVisible
+                        ? "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
+                        : "border-border/60 bg-muted/60 text-foreground"
+                    }`}
+                  >
+                    {formatPctLabel(entry.revenueSharePercent)}
+                  </span>
                 )}
               </div>
-              {entry.revenueSharePercent != null && (
-                <span
-                  className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${
-                    idx === 0 && isVisible
-                      ? "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
-                      : "border-border/60 bg-muted/60 text-foreground"
-                  }`}
-                >
-                  {formatPctLabel(entry.revenueSharePercent)}
-                </span>
-              )}
             </div>
           </div>
         );
@@ -1238,6 +1343,7 @@ export default async function Page({
                 >
                   {entry.name}
                 </p>
+                {segmentInfoDrawer}
                 {roleDisplay && (
                   <span
                     className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${roleDisplay.className}`}
@@ -1306,7 +1412,13 @@ export default async function Page({
             </div>
           </div>
         ) : null}
-        <div className={useGrid ? "mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2" : "mt-1.5 space-y-0"}>
+        <div
+          className={
+            useGrid
+              ? "mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4"
+              : "mt-1.5 space-y-0"
+          }
+        >
           {visibleEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "visible"))}
         </div>
         {extraEntries.length > 0 && (
@@ -1317,7 +1429,13 @@ export default async function Page({
                 <span className="text-muted-foreground">({extraEntries.length})</span>
               </div>
             </summary>
-            <div className={useGrid ? "mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2" : "mt-2 space-y-2"}>
+            <div
+              className={
+                useGrid
+                  ? "mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4"
+                  : "mt-2 space-y-2"
+              }
+            >
               {extraEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "extra"))}
             </div>
           </details>
@@ -1330,12 +1448,9 @@ export default async function Page({
     if (!hasBusinessSegments) return null;
     return (
       <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
-        <div className="space-y-1">
+        <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
             Business Segments
-          </p>
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            Segment mix, positioning, and margin profile shown inline.
           </p>
         </div>
         {renderRevenueBreakdownCard({
@@ -4022,23 +4137,7 @@ export default async function Page({
                 {hasStructuredBusinessSnapshot ? (
                   <>
                     <div className="space-y-3">
-                      {(aboutHeading || aboutSupportingText) && (
-                        <div className="min-w-0 space-y-2 rounded-2xl border border-border/20 bg-background/55 p-3 dark:bg-background/40">
-                          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                            About
-                          </p>
-                          {aboutHeading && (
-                            <p className="text-[17px] sm:text-[19px] font-semibold text-foreground leading-snug">
-                              {aboutHeading}
-                            </p>
-                          )}
-                          {aboutSupportingText && (
-                            <p className="text-[13px] text-muted-foreground leading-relaxed">
-                              {aboutSupportingText}
-                            </p>
-                          )}
-                        </div>
-                      )}
+                      {renderAboutBlock()}
 
                       {renderBusinessSegmentsInline()}
                       {historicalEconomics
