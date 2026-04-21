@@ -9,6 +9,7 @@ import {
 } from "../types";
 import { CompanyPageWorkspace } from "../components/company-page-workspace";
 import { OverviewCard } from "../components/overview-card";
+import { MoatAnalysisSection } from "../components/moat-analysis-section";
 import { SectionCard } from "../components/section-card";
 import { parseSummary, transformToChartData, calculateTrend } from "../utils";
 import ConcallScore from "@/components/concall-score";
@@ -759,7 +760,7 @@ export default async function Page({
   const { data: moatAnalysisData } = await supabase
     .from("moat_analysis")
     .select(
-      "id, company_code, company_name, industry, rating, trajectory, trajectory_direction, porter_summary, porter_verdict, moats, quantitative, durability, risks, created_at, updated_at",
+      "id, company_code, company_name, industry, rating, trajectory, trajectory_direction, porter_summary, porter_verdict, moats, quantitative, durability, risks, assessment_payload, assessment_version, moat_score, strength_score, durability_score, created_at, updated_at",
     )
     .eq("company_code", code)
     .limit(1);
@@ -844,13 +845,6 @@ export default async function Page({
   const normalizedMoatAnalysis = normalizeMoatAnalysis(
     (moatAnalysisData?.[0] as MoatAnalysisRow | undefined) ?? null,
   );
-  const moatThesis =
-    normalizedMoatAnalysis?.porterVerdict ??
-    normalizedMoatAnalysis?.durability ??
-    normalizedMoatAnalysis?.moatPillars.find(
-      (pillar) => pillar.present && pillar.evidence,
-    )?.evidence ??
-    null;
   const moatGeneratedAtShort = normalizedMoatAnalysis?.updatedAtRaw
     ? (() => {
         const date = new Date(normalizedMoatAnalysis.updatedAtRaw);
@@ -861,11 +855,6 @@ export default async function Page({
         }).format(date);
       })()
     : null;
-  const moatPresentPillars =
-    normalizedMoatAnalysis?.moatPillars.filter((pillar) => pillar.present) ?? [];
-  const moatAbsentPillars =
-    normalizedMoatAnalysis?.moatPillars.filter((pillar) => !pillar.present) ?? [];
-  const moatTotalPillars = normalizedMoatAnalysis?.moatPillars.length ?? 0;
   const growthUpdatedAtRaw = normalizedGrowthOutlook?.updatedAtRaw ?? null;
   const growthUpdatedDate = growthUpdatedAtRaw ? new Date(growthUpdatedAtRaw) : null;
   const growthUpdatedAt =
@@ -1653,7 +1642,23 @@ export default async function Page({
       </div>
     </div>
   );
-  const renderBusinessMoatAnalysisInline = () => (
+  const renderBusinessMoatAnalysisInline = () => {
+    if (!normalizedMoatAnalysis) {
+      return renderMissingSectionState(
+        "moat-analysis",
+        "Moat Analysis",
+        "We have not generated a competitive moat analysis for this company yet.",
+      );
+    }
+
+    return (
+      <MoatAnalysisSection
+        analysis={normalizedMoatAnalysis}
+        generatedAtShort={moatGeneratedAtShort}
+      />
+    );
+  };
+  /*
     <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="space-y-1">
@@ -1933,6 +1938,7 @@ export default async function Page({
       )}
     </div>
   );
+  */
   const renderGuidanceSnapshotSummary = () => {
     if (!normalizedGuidanceSnapshot) return null;
 

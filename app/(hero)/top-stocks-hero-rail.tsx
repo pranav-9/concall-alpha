@@ -35,6 +35,7 @@ type MoatItem = {
   code: string;
   name: string;
   moatLabel: string;
+  moatScore: number | null;
   presentPillarCount: number;
   trajectoryLabel: string;
   trajectoryRank: number;
@@ -259,10 +260,13 @@ function MoatListCard({ items }: { items: MoatItem[] }) {
                   {item.name}
                 </p>
                 <p className="line-clamp-1 text-[10px] leading-tight text-muted-foreground">
-                  {item.presentPillarCount} pillars · {item.trajectoryLabel.toLowerCase()}
+                  {item.presentPillarCount} sources · {item.trajectoryLabel.toLowerCase()}
                 </p>
               </div>
               <div className="flex shrink-0 min-w-[84px] flex-col items-end gap-0.5">
+                {typeof item.moatScore === "number" ? (
+                  <ConcallScore score={item.moatScore} size="sm" />
+                ) : null}
                 <span
                   className={`inline-flex max-w-[84px] items-center justify-center rounded-full border px-2.5 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.12em] ${moatBadgeClass(
                     item.moatLabel,
