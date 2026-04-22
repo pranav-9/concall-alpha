@@ -10,13 +10,9 @@ type MoatAnalysisSectionProps = {
 
 type ChipTone = "emerald" | "sky" | "amber" | "rose" | "violet" | "slate";
 
-const outerCardClass =
-  "rounded-[1.45rem] border border-border/25 bg-gradient-to-br from-background/96 via-background/91 to-muted/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.44),0_14px_24px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:from-background/88 dark:via-background/82 dark:to-background/70";
+const outerCardClass = "rounded-2xl border border-border/30 bg-background/55";
 
 const nestedCardClass = "rounded-xl border border-border/30 bg-background/62";
-
-const watchCardClass =
-  "rounded-xl border border-amber-300/50 bg-amber-50/40 dark:border-amber-600/30 dark:bg-amber-950/20";
 
 const chipBaseClass =
   "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none";
@@ -35,13 +31,13 @@ const toneClasses: Record<ChipTone, string> = {
 
 const chipClass = (tone: ChipTone) => cn(chipBaseClass, toneClasses[tone]);
 
-const sectionLabelClass =
-  "text-[12px] font-semibold uppercase tracking-[0.12em] text-foreground/90";
+const sectionTitleClass = "text-[13px] font-semibold leading-tight text-foreground";
 const sectionSubtitleClass = "text-[12px] leading-snug text-muted-foreground";
 const bodyTextClass = "text-[13px] leading-relaxed text-foreground/90";
 const mutedBodyClass = "text-[12px] leading-relaxed text-muted-foreground";
-const miniLabelClass =
-  "text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground";
+const miniLabelClass = "text-[12px] font-semibold leading-tight text-foreground/90";
+const metadataClass =
+  "text-[10px] uppercase tracking-[0.14em] text-muted-foreground";
 
 const formatVersionLabel = (value: string | null) => {
   if (!value) return null;
@@ -110,13 +106,15 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
     analysis.cycleTested == null
       ? null
       : analysis.cycleTested
-        ? { label: "Proven through a downturn", tone: "emerald" as const }
-        : { label: "Not yet downturn-tested", tone: "amber" as const };
+        ? { label: "Cycle-proven", tone: "emerald" as const }
+        : { label: "Cycle-untested", tone: "amber" as const };
 
   const emptySourcesCopy =
     analysis.moatRating === "no_moat"
       ? "All moat sources were considered and ruled out — this is a genuinely undifferentiated business."
       : "No qualifying moat sources found.";
+
+  const triggerCount = analysis.whatWouldChangeTheCall.length;
 
   const footerBits = [
     generatedAtShort ? `Generated ${generatedAtShort}` : null,
@@ -125,20 +123,31 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
 
   return (
     <div className={`${outerCardClass} space-y-4 p-4`}>
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+            <h3 className="text-base font-semibold leading-tight text-foreground">
+              Competitive Moat
+            </h3>
+          </div>
           <span
             className={cn(
               chipBaseClass,
               ratingClass(analysis.moatRating),
-              "px-4 py-1.5 text-[13px] font-semibold uppercase tracking-[0.12em]",
+              "px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.1em]",
             )}
           >
             {analysis.moatRatingLabel}
           </span>
-          {analysis.industry && <span className={chipClass("slate")}>{analysis.industry}</span>}
-          {cycleChip && <span className={chipClass(cycleChip.tone)}>{cycleChip.label}</span>}
         </div>
+
+        {(analysis.industry || cycleChip) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {analysis.industry && <span className={chipClass("slate")}>{analysis.industry}</span>}
+            {cycleChip && <span className={chipClass(cycleChip.tone)}>{cycleChip.label}</span>}
+          </div>
+        )}
 
         {(lead || rest) && (
           <p className="max-w-4xl text-[14px] leading-relaxed text-foreground">
@@ -152,8 +161,8 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
       <div className="space-y-3">
         <div className={`${nestedCardClass} p-3 space-y-3`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="space-y-1">
-              <p className={sectionLabelClass}>Moat Sources</p>
+            <div className="space-y-0.5">
+              <p className={sectionTitleClass}>Moat sources</p>
               <p className={sectionSubtitleClass}>
                 {appliesSources.length} applies
                 {ruledOutSources.length > 0 ? ` · ${ruledOutSources.length} ruled out` : ""}
@@ -166,7 +175,7 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
               {appliesSources.map((source, index) => (
                 <div
                   key={`${source.sourceType}-${index}`}
-                  className="rounded-lg border border-border/35 bg-background/70 p-3"
+                  className="rounded-xl border border-border/35 bg-background/70 p-3"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0 space-y-1">
@@ -175,7 +184,12 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
                           {source.sourceType}
                         </p>
                         {index === 0 && appliesSources.length > 1 && (
-                          <span className={chipClass(sourceTypeTone(source.sourceType))}>
+                          <span
+                            className={cn(
+                              chipBaseClass,
+                              "border-border/60 bg-foreground/5 text-foreground/80",
+                            )}
+                          >
                             Primary
                           </span>
                         )}
@@ -210,13 +224,13 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
               ))}
             </div>
           ) : (
-            <div className="rounded-lg border border-dashed border-border/50 bg-background/45 p-3 text-[12px] text-muted-foreground">
+            <div className="rounded-xl border border-dashed border-border/50 bg-background/45 p-3 text-[12px] text-muted-foreground">
               {emptySourcesCopy}
             </div>
           )}
 
           {ruledOutSources.length > 0 && (
-            <p className="text-[11px] leading-snug text-muted-foreground">
+            <p className="text-[12px] leading-snug text-muted-foreground">
               Also considered:{" "}
               <span className="text-foreground/80">
                 {ruledOutSources.map((s) => s.sourceType).join(" · ")}
@@ -228,10 +242,10 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
           <div className={`${nestedCardClass} p-3 space-y-3`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="space-y-1">
-                <p className={sectionLabelClass}>Barrier Strength</p>
+              <div className="space-y-0.5">
+                <p className={sectionTitleClass}>Barrier strength</p>
                 <p className={sectionSubtitleClass}>
-                  How well protected is this moat from a well-funded competitor?
+                  How well protected from a well-funded competitor?
                 </p>
               </div>
               {barrierVerdict && (
@@ -246,8 +260,8 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
           </div>
 
           <div className={`${nestedCardClass} p-3 space-y-3`}>
-            <div className="space-y-1">
-              <p className={sectionLabelClass}>Economic Proof</p>
+            <div className="space-y-0.5">
+              <p className={sectionTitleClass}>Economic proof</p>
               <p className={sectionSubtitleClass}>
                 Returns vs. cost of capital, and resilience through cycles.
               </p>
@@ -259,25 +273,28 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
             )}
           </div>
 
-          <div className={`${watchCardClass} p-3 space-y-3`}>
+          <div className={`${nestedCardClass} p-3 space-y-3`}>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                <div className="space-y-1">
-                  <p className={sectionLabelClass}>Watch For</p>
-                  <p className={sectionSubtitleClass}>
-                    Signals that would break this thesis.
-                  </p>
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <div className="space-y-0.5">
+                  <p className={sectionTitleClass}>Watch for</p>
+                  <p className={sectionSubtitleClass}>Signals that would break this thesis.</p>
                 </div>
               </div>
+              {triggerCount > 0 && (
+                <span className={chipClass("amber")}>
+                  {triggerCount} trigger{triggerCount === 1 ? "" : "s"}
+                </span>
+              )}
             </div>
 
-            {analysis.whatWouldChangeTheCall.length > 0 ? (
+            {triggerCount > 0 ? (
               <ul className="space-y-2">
                 {analysis.whatWouldChangeTheCall.map((trigger, index) => (
                   <li
                     key={`${trigger.slice(0, 32)}-${index}`}
-                    className="rounded-lg border border-amber-200/60 bg-background/70 p-3 text-[13px] leading-relaxed text-foreground/90 dark:border-amber-700/30"
+                    className="rounded-xl border border-border/35 bg-background/70 p-3 text-[13px] leading-relaxed text-foreground/90"
                   >
                     {trigger}
                   </li>
@@ -290,9 +307,7 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
         </div>
 
         {footerBits.length > 0 && (
-          <p className="pt-1 text-[11px] leading-snug text-muted-foreground">
-            {footerBits.join(" · ")}
-          </p>
+          <p className={cn(metadataClass, "pt-1")}>{footerBits.join(" · ")}</p>
         )}
       </div>
     </div>
