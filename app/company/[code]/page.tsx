@@ -1,6 +1,5 @@
 import React from "react";
 import type { Metadata } from "next";
-import { Info } from "lucide-react";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { createClient } from "@/lib/supabase/server";
@@ -43,6 +42,7 @@ import {
   HistoricalEconomicsDataPack,
   QuarterlyScoreSection,
 } from "../components/deferred-company-sections";
+import { BusinessSegmentsMosaic } from "../components/business-segments-mosaic";
 import { KeyVariablesSection } from "../components/key-variables-section";
 import { MissingSectionRequestButton } from "../components/missing-section-request-button";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
@@ -99,6 +99,17 @@ const formatPctLabel = (value: number) => `${pctFormatter.format(value)}%`;
 
 const formatCompactLabel = (value: string) => value.replace(/_/g, " ").trim();
 
+const formatShortDate = (raw: string | null | undefined, includeYear = false): string | null => {
+  if (!raw) return null;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    ...(includeYear ? { year: "numeric" as const } : {}),
+  }).format(date);
+};
+
 const formatRangeLabel = (start: string | null, end: string | null) => {
   if (start && end) return `${start} -> ${end}`;
   return start ?? end ?? null;
@@ -111,109 +122,6 @@ const extractSortNumber = (value: string | null | undefined) => {
   const raw = matches[matches.length - 1];
   const parsed = Number.parseInt(raw, 10);
   return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
-};
-
-const getMarginProfileDisplay = (value: string | null) => {
-  const normalized = value?.trim().toLowerCase();
-  switch (normalized) {
-    case "higher":
-      return {
-        label: "Higher margin",
-        className:
-          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
-      };
-    case "medium":
-      return {
-        label: "Medium margin",
-        className:
-          "border-amber-200/80 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200",
-      };
-    case "lower":
-      return {
-        label: "Lower margin",
-        className:
-          "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
-      };
-    case "unknown":
-      return {
-        label: "Margin unknown",
-        className: "border-border/60 bg-muted/60 text-foreground",
-      };
-    default:
-      return normalized
-        ? {
-            label: formatCompactLabel(normalized),
-            className: "border-border/60 bg-muted/60 text-foreground",
-          }
-        : null;
-  }
-};
-
-const getSegmentRoleDisplay = (value: string | null) => {
-  const normalized = value?.trim().toLowerCase();
-  switch (normalized) {
-    case "core_engine":
-    case "core engine":
-      return {
-        label: "Core engine",
-        className:
-          "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
-      };
-    case "emerging":
-      return {
-        label: "Emerging",
-        className:
-          "border-violet-200/80 bg-violet-100 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/30 dark:text-violet-200",
-      };
-    case "supporting":
-      return {
-        label: "Supporting",
-        className: "border-border/60 bg-muted/60 text-foreground",
-      };
-    default:
-      return normalized
-        ? {
-            label: formatCompactLabel(normalized),
-            className: "border-border/60 bg-muted/60 text-foreground",
-          }
-        : null;
-  }
-};
-
-const getGrowthDirectionDisplay = (value: string | null) => {
-  const normalized = value?.trim().toLowerCase();
-  switch (normalized) {
-    case "accelerating":
-    case "gaining_share":
-    case "gaining share":
-      return {
-        label: "Accelerating",
-        className:
-          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
-      };
-    case "stable":
-    case "steady":
-      return {
-        label: "Stable",
-        className:
-          "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
-      };
-    case "declining":
-    case "losing_share":
-    case "losing share":
-      return {
-        label: "Declining",
-        className:
-          "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
-      };
-    default:
-      return normalized
-        ? {
-            label: formatCompactLabel(normalized),
-            className: "border-border/60 bg-muted/60 text-foreground",
-          }
-        : null;
-  }
 };
 
 const getImpactDirectionDisplay = (value: string | null) => {
@@ -846,57 +754,12 @@ export default async function Page({
   const normalizedMoatAnalysis = normalizeMoatAnalysis(
     (moatAnalysisData?.[0] as MoatAnalysisRow | undefined) ?? null,
   );
-  const moatGeneratedAtShort = normalizedMoatAnalysis?.updatedAtRaw
-    ? (() => {
-        const date = new Date(normalizedMoatAnalysis.updatedAtRaw);
-        if (Number.isNaN(date.getTime())) return null;
-        return new Intl.DateTimeFormat("en-IN", {
-          day: "2-digit",
-          month: "short",
-        }).format(date);
-      })()
-    : null;
-  const growthUpdatedAtRaw = normalizedGrowthOutlook?.updatedAtRaw ?? null;
-  const growthUpdatedDate = growthUpdatedAtRaw ? new Date(growthUpdatedAtRaw) : null;
-  const growthUpdatedAt =
-    growthUpdatedDate && !Number.isNaN(growthUpdatedDate.getTime())
-      ? new Intl.DateTimeFormat("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }).format(growthUpdatedDate)
-      : null;
+  const moatGeneratedAtShort = formatShortDate(normalizedMoatAnalysis?.updatedAtRaw);
+  const growthUpdatedAt = formatShortDate(normalizedGrowthOutlook?.updatedAtRaw, true);
   const growthScore = normalizedGrowthOutlook?.growthScore ?? null;
-  const businessSnapshotGeneratedAtShort = normalizedBusinessSnapshot?.generatedAtRaw
-    ? (() => {
-        const date = new Date(normalizedBusinessSnapshot.generatedAtRaw);
-        if (Number.isNaN(date.getTime())) return null;
-        return new Intl.DateTimeFormat("en-IN", {
-          day: "2-digit",
-          month: "short",
-        }).format(date);
-      })()
-    : null;
-  const companyIndustryGeneratedAtShort = normalizedCompanyIndustryAnalysis?.generatedAtRaw
-    ? (() => {
-        const date = new Date(normalizedCompanyIndustryAnalysis.generatedAtRaw);
-        if (Number.isNaN(date.getTime())) return null;
-        return new Intl.DateTimeFormat("en-IN", {
-          day: "2-digit",
-          month: "short",
-        }).format(date);
-      })()
-    : null;
-  const keyVariablesGeneratedAtShort = normalizedKeyVariablesSnapshot?.generatedAtRaw
-    ? (() => {
-        const date = new Date(normalizedKeyVariablesSnapshot.generatedAtRaw);
-        if (Number.isNaN(date.getTime())) return null;
-        return new Intl.DateTimeFormat("en-IN", {
-          day: "2-digit",
-          month: "short",
-        }).format(date);
-      })()
-    : null;
+  const businessSnapshotGeneratedAtShort = formatShortDate(normalizedBusinessSnapshot?.generatedAtRaw);
+  const companyIndustryGeneratedAtShort = formatShortDate(normalizedCompanyIndustryAnalysis?.generatedAtRaw);
+  const keyVariablesGeneratedAtShort = formatShortDate(normalizedKeyVariablesSnapshot?.generatedAtRaw);
   const aboutCompany = normalizedBusinessSnapshot?.aboutCompany ?? null;
   const revenueBreakdown = normalizedBusinessSnapshot?.revenueBreakdown ?? null;
   const historicalEconomics = normalizedBusinessSnapshot?.historicalEconomics ?? null;
@@ -945,19 +808,10 @@ export default async function Page({
   const firstVariableName = normalizedKeyVariablesSnapshot?.deepTreatment[0]?.variable ?? null;
   const firstGrowthCatalyst = normalizedGrowthOutlook?.catalysts[0]?.catalyst ?? null;
   const firstGuidanceItem = guidanceItems[0];
-  const guidanceSnapshotUpdatedAtShort = (() => {
-    const raw = normalizedGuidanceSnapshot?.updatedAtRaw ?? normalizedGuidanceSnapshot?.generatedAtRaw;
-    if (!raw) return null;
-
-    const date = new Date(raw);
-    if (Number.isNaN(date.getTime())) return null;
-
-    return new Intl.DateTimeFormat("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }).format(date);
-  })();
+  const guidanceSnapshotUpdatedAtShort = formatShortDate(
+    normalizedGuidanceSnapshot?.updatedAtRaw ?? normalizedGuidanceSnapshot?.generatedAtRaw,
+    true,
+  );
   const guidanceSnapshotAnalysisWindowLabel =
     normalizedGuidanceSnapshot?.analysisWindowQuarters != null
       ? `${normalizedGuidanceSnapshot.analysisWindowQuarters} qtr${
@@ -998,17 +852,9 @@ export default async function Page({
       normalizedGrowthOutlook?.scenarios?.upside ||
       normalizedGrowthOutlook?.scenarios?.downside,
   );
-  const sortRevenueEntries = (
-    entries: NormalizedRevenueBreakdownItem[],
-  ) =>
-    [...entries].sort((a, b) => {
-      if (a.revenueSharePercent == null && b.revenueSharePercent == null) return 0;
-      if (a.revenueSharePercent == null) return 1;
-      if (b.revenueSharePercent == null) return -1;
-      return b.revenueSharePercent - a.revenueSharePercent;
-    });
 
-  const hasBusinessSegments = (revenueBreakdown?.bySegment.length ?? 0) > 0;
+  const segmentEntries = revenueBreakdown?.bySegment ?? [];
+  const hasBusinessSegments = segmentEntries.length > 0;
   const industryHeaderPills = [
     (industryPositioning?.customerNeed || industryPositioning?.industryEconomicsForCompany)
       ? "Industry overview"
@@ -1173,293 +1019,6 @@ export default async function Page({
             </Drawer>
           ) : null}
         </div>
-      </div>
-    );
-  };
-
-  const renderRevenueBreakdownCard = ({
-    title,
-    entries,
-    className,
-    useGrid = false,
-    hideTitle = false,
-  }: {
-    title: string;
-    entries: NormalizedRevenueBreakdownItem[];
-    className?: string;
-    useGrid?: boolean;
-    hideTitle?: boolean;
-  }) => {
-    if (entries.length === 0) return null;
-    const sortedEntries = sortRevenueEntries(entries);
-    const visibleLimit = useGrid ? 4 : 2;
-    const visibleEntries = sortedEntries.slice(0, visibleLimit);
-    const extraEntries = sortedEntries.slice(visibleLimit);
-
-    const renderRevenueEntry = (
-      entry: NormalizedRevenueBreakdownItem,
-      idx: number,
-      variant: "visible" | "extra",
-    ) => {
-      const marginProfileDisplay = getMarginProfileDisplay(entry.marginProfile);
-      const roleDisplay = getSegmentRoleDisplay(entry.rolePill);
-      const growthDirectionDisplay = getGrowthDirectionDisplay(entry.growthDirectionPill);
-      const detailBlocks = [
-        entry.description
-          ? { label: "Description", value: entry.description }
-          : null,
-        entry.marginProfileNote
-          ? { label: "Margin profile note", value: entry.marginProfileNote }
-          : null,
-      ].filter((item): item is { label: string; value: string } => Boolean(item));
-      const detailSummary = [
-        roleDisplay?.label ?? null,
-        growthDirectionDisplay?.label ?? null,
-        marginProfileDisplay?.label ?? null,
-        entry.revenueSharePercent != null ? `${formatPctLabel(entry.revenueSharePercent)} share` : null,
-      ]
-        .filter((value): value is string => Boolean(value))
-        .join(" · ");
-      const segmentInfoDrawer =
-        detailBlocks.length > 0 ? (
-          <Drawer direction="right">
-            <DrawerTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={`Open details for ${entry.name}`}
-                className="h-7 w-7 shrink-0 rounded-full p-0 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              >
-                <Info className="h-3.5 w-3.5" />
-              </Button>
-            </DrawerTrigger>
-            <DrawerContent className="w-full max-w-xl">
-              <DrawerHeader className="border-b border-border">
-                <DrawerTitle>{entry.name}</DrawerTitle>
-                <DrawerDescription>
-                  {detailSummary || "Supporting detail for this business segment."}
-                </DrawerDescription>
-              </DrawerHeader>
-
-              <div className="flex-1 space-y-4 overflow-y-auto p-4">
-                {detailBlocks.map((block) => (
-                  <div key={block.label} className="space-y-1.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      {block.label}
-                    </p>
-                    <p className="text-[13px] leading-relaxed text-foreground">{block.value}</p>
-                  </div>
-                ))}
-              </div>
-
-              <DrawerFooter className="border-t border-border">
-                <DrawerClose asChild>
-                  <Button variant="outline">Close</Button>
-                </DrawerClose>
-              </DrawerFooter>
-            </DrawerContent>
-          </Drawer>
-        ) : null;
-      const isVisible = variant === "visible";
-
-      if (useGrid) {
-        return (
-          <div
-            key={`${entry.name}-${variant}-${idx}`}
-            className={`h-full p-3 ${
-              idx === 0 && isVisible
-                ? "rounded-xl border border-sky-200/70 bg-sky-50/60 shadow-sm shadow-sky-950/5 dark:border-sky-700/30 dark:bg-sky-950/15"
-                : snapshotSubsectionClass
-            }`}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 space-y-1.5">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="text-[13px] font-medium text-foreground leading-snug">
-                    {entry.name}
-                  </p>
-                  {segmentInfoDrawer}
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {roleDisplay && (
-                    <span
-                      className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${roleDisplay.className}`}
-                    >
-                      {roleDisplay.label}
-                    </span>
-                  )}
-                  {growthDirectionDisplay && (
-                    <span
-                      className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${growthDirectionDisplay.className}`}
-                    >
-                      {growthDirectionDisplay.label}
-                    </span>
-                  )}
-                  {marginProfileDisplay && (
-                    <span
-                      className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${marginProfileDisplay.className}`}
-                    >
-                      {marginProfileDisplay.label}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1.5">
-                {entry.revenueSharePercent != null && (
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] ${
-                      idx === 0 && isVisible
-                        ? "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
-                        : "border-border/60 bg-muted/60 text-foreground"
-                    }`}
-                  >
-                    {formatPctLabel(entry.revenueSharePercent)}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      }
-
-      return (
-        <div
-          key={`${entry.name}-${variant}-${idx}`}
-          className={
-            isVisible
-              ? idx === 0
-                ? "py-2"
-                : "border-t border-border/40 py-2"
-              : "border-l border-border/60 pl-2"
-          }
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 space-y-1">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <p
-                  className={`${
-                    isVisible ? (idx === 0 ? "text-[15px]" : "text-sm") : "text-[11px]"
-                  } font-medium text-foreground leading-snug`}
-                >
-                  {entry.name}
-                </p>
-                {segmentInfoDrawer}
-                {roleDisplay && (
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${roleDisplay.className}`}
-                  >
-                    {roleDisplay.label}
-                  </span>
-                )}
-                {growthDirectionDisplay && (
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${growthDirectionDisplay.className}`}
-                  >
-                    {growthDirectionDisplay.label}
-                  </span>
-                )}
-                {marginProfileDisplay && (
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${marginProfileDisplay.className}`}
-                  >
-                    {marginProfileDisplay.label}
-                  </span>
-                )}
-              </div>
-              {entry.description && (
-                <p
-                  className={`${
-                    isVisible ? (idx === 0 ? "text-[13px]" : "text-xs") : "text-[11px]"
-                  } text-muted-foreground leading-relaxed`}
-                >
-                  {entry.description}
-                </p>
-              )}
-              {entry.marginProfileNote && (
-                <p
-                  className={`${
-                    isVisible ? "text-[11px]" : "text-[10px]"
-                  } text-muted-foreground/90 leading-relaxed`}
-                >
-                  {entry.marginProfileNote}
-                </p>
-              )}
-            </div>
-            {entry.revenueSharePercent != null && (
-              <span
-                className={`${
-                  isVisible
-                    ? "rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground"
-                    : "text-[10px] text-muted-foreground"
-                } shrink-0`}
-              >
-                {formatPctLabel(entry.revenueSharePercent)}
-              </span>
-            )}
-          </div>
-        </div>
-      );
-    };
-
-    return (
-      <div className={`${snapshotSubsectionClass} min-w-0 p-3 ${className ?? ""}`}>
-        {!hideTitle ? (
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="space-y-1">
-              <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                {title}
-              </p>
-            </div>
-          </div>
-        ) : null}
-        <div
-          className={
-            useGrid
-              ? "mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4"
-              : "mt-1.5 space-y-0"
-          }
-        >
-          {visibleEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "visible"))}
-        </div>
-        {extraEntries.length > 0 && (
-          <details className="mt-3">
-            <summary className="list-none cursor-pointer">
-              <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-[10px] font-medium text-foreground transition-colors hover:bg-muted/60">
-                <span>Show more</span>
-                <span className="text-muted-foreground">({extraEntries.length})</span>
-              </div>
-            </summary>
-            <div
-              className={
-                useGrid
-                  ? "mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4"
-                  : "mt-2 space-y-2"
-              }
-            >
-              {extraEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "extra"))}
-            </div>
-          </details>
-        )}
-      </div>
-    );
-  };
-
-  const renderBusinessSegmentsInline = () => {
-    if (!hasBusinessSegments) return null;
-    return (
-      <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-            Business Segments
-          </p>
-        </div>
-        {renderRevenueBreakdownCard({
-          title: "By Segment",
-          entries: revenueBreakdown?.bySegment ?? [],
-          className: "",
-          useGrid: true,
-          hideTitle: true,
-        })}
       </div>
     );
   };
@@ -4139,7 +3698,7 @@ export default async function Page({
                     <div className="space-y-3">
                       {renderAboutBlock()}
 
-                      {renderBusinessSegmentsInline()}
+                      <BusinessSegmentsMosaic segments={segmentEntries} />
                       {historicalEconomics
                         ? renderHistoricalEconomicsCard(historicalEconomics)
                         : hasHistoricalEconomicsSource

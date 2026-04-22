@@ -400,6 +400,7 @@ Good traits:
 - emerald-tinted outer plane
 - stronger summary block
 - nested blocks for segments, momentum, moat, and exceptions
+- on desktop, use a 3-column mosaic with the donut in the rightmost rail and the segment cards filling the left 2x2 field when share data is available
 - mix-shift callout treated as a distinct sub-surface
 
 ### Quarterly Score

@@ -143,7 +143,6 @@ const buildMixSegmentChartData = (
     return row;
   });
 
-const getDisplayPeriods = (periods: string[]) => periods;
 
 const getCagrDisplayClassName = (value: number | null | undefined) => {
   if (value == null) {
@@ -396,7 +395,7 @@ function RevenueHistoryModule({
 }) {
   const [activeView, setActiveView] = useState<"table" | "graph">("table");
   if (module.rows.length === 0 || module.periods.length === 0) return null;
-  const displayPeriods = getDisplayPeriods(module.periods);
+  const displayPeriods = module.periods;
 
   const chartRows =
     orderedRows.filter((row) => !row.isConsolidated).length > 0
@@ -546,7 +545,7 @@ function RevenueMixHistoryModule({
 }) {
   const [activeView, setActiveView] = useState<"table" | "graph">("table");
   if (module.rows.length === 0 || module.periods.length === 0) return null;
-  const displayPeriods = getDisplayPeriods(module.periods);
+  const displayPeriods = module.periods;
 
   const chartConfig = buildSeriesConfig(
     orderedRows.map((row) => row.unit),
@@ -660,7 +659,7 @@ function RevenueMixHistoryModule({
                   dataKey={`series_${index}`}
                   stackId="mix"
                   fill={unitColors[row.unit] ?? unitPalette[index % unitPalette.length]}
-                  radius={index === module.rows.length - 1 ? [4, 4, 0, 0] : 0}
+                  radius={index === orderedRows.length - 1 ? [4, 4, 0, 0] : 0}
                 />
               ))}
             </BarChart>
