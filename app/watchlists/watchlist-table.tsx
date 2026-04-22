@@ -25,7 +25,6 @@ export type WatchlistTableRow = {
   growthScore: number | null;
   avg4QuarterScore: number | null;
   blendedScore: number | null;
-  moatScore: number | null;
   moatLabel: string | null;
   moatRating: MoatRatingKey | null;
 };
@@ -36,7 +35,6 @@ type SortKey =
   | "growthScore"
   | "avg4QuarterScore"
   | "blendedScore"
-  | "moatScore"
   | "moatTag";
 
 type SortDirection = "asc" | "desc";
@@ -51,9 +49,6 @@ const DEFAULT_SORT: SortState = {
   direction: "desc",
 };
 
-const MOAT_SCORE_CLASS =
-  "border-sky-200/60 bg-sky-100/70 text-sky-800 dark:border-sky-700/35 dark:bg-sky-900/30 dark:text-sky-200";
-
 const MOAT_RATING_ORDER: Record<Exclude<MoatRatingKey, "unknown"> | "unknown", number> = {
   wide_moat: 0,
   narrow_moat: 1,
@@ -61,9 +56,6 @@ const MOAT_RATING_ORDER: Record<Exclude<MoatRatingKey, "unknown"> | "unknown", n
   moat_at_risk: 3,
   unknown: 4,
 };
-
-const formatMoatScore = (value: number | null) =>
-  value != null ? `${value.toFixed(1)} / 100` : "—";
 
 const moatTagClass = (rating: MoatRatingKey | null) => {
   switch (rating) {
@@ -215,15 +207,6 @@ function sortRows(rows: WatchlistTableRow[], sort: SortState) {
         if (avg4Diff !== 0) return avg4Diff;
         return compareText(a.companyName, b.companyName, "asc");
       }
-      case "moatScore": {
-        const diff = compareNumber(a.moatScore, b.moatScore, sort.direction);
-        if (diff !== 0) return diff;
-        const ratingDiff = compareMoatTag(a.moatRating, b.moatRating, "desc");
-        if (ratingDiff !== 0) return ratingDiff;
-        const labelDiff = compareText(a.moatLabel, b.moatLabel, "asc");
-        if (labelDiff !== 0) return labelDiff;
-        return compareText(a.companyName, b.companyName, "asc");
-      }
       case "moatTag": {
         const diff = compareMoatTag(a.moatRating, b.moatRating, sort.direction);
         if (diff !== 0) return diff;
@@ -305,18 +288,6 @@ export function WatchlistTable({ rows }: { rows: WatchlistTableRow[] }) {
               onSort: handleSort,
             })}
           </TableHead>
-          <TableHead
-            aria-sort={sortDirectionLabel("moatScore")}
-            className="px-3 py-3 text-foreground"
-          >
-            {renderSortHead({
-              label: "Moat Score",
-              columnKey: "moatScore",
-              sort,
-              onSort: handleSort,
-              subtitle: "0 to 100 scale",
-            })}
-          </TableHead>
           <TableHead aria-sort={sortDirectionLabel("moatTag")} className="px-3 py-3 text-foreground">
             {renderSortHead({
               label: "Moat Tag",
@@ -383,18 +354,6 @@ export function WatchlistTable({ rows }: { rows: WatchlistTableRow[] }) {
                 >
                   {row.companyName}
                 </Link>
-              </TableCell>
-              <TableCell className="px-3 py-3">
-                {row.moatScore != null ? (
-                  <span
-                    className={`${MOAT_SCORE_CLASS} inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold tabular-nums`}
-                    title="Moat score"
-                  >
-                    {formatMoatScore(row.moatScore)}
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
               </TableCell>
               <TableCell className="px-3 py-3">
                 {row.moatLabel ? (

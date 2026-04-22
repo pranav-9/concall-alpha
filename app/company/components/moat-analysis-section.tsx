@@ -8,13 +8,6 @@ type MoatAnalysisSectionProps = {
 
 type ChipTone = "emerald" | "sky" | "amber" | "rose" | "violet" | "slate";
 
-type ScoreBreakdownItem = {
-  key: "strength" | "durability";
-  label: string;
-  value: number;
-  tone: ChipTone;
-};
-
 const outerCardClass =
   "rounded-[1.45rem] border border-border/25 bg-gradient-to-br from-background/96 via-background/91 to-muted/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.44),0_14px_24px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:from-background/88 dark:via-background/82 dark:to-background/70";
 
@@ -94,17 +87,6 @@ const verdictTone = (value: string | null): ChipTone => {
     return "rose";
   }
   return "amber";
-};
-
-const scoreTone = (label: "Moat" | "Strength" | "Durability"): ChipTone => {
-  switch (label) {
-    case "Moat":
-      return "sky";
-    case "Strength":
-      return "emerald";
-    case "Durability":
-      return "violet";
-  }
 };
 
 const ratingClass = (rating: MoatRatingKey) => {
@@ -199,33 +181,6 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
   const industryStructure = analysis.industryStructure;
   const durability = analysis.durabilityDetails;
   const versionLabel = formatVersionLabel(analysis.assessmentVersion ?? analysis.schemaVersion);
-  const scoreBreakdownItems = [
-    analysis.strengthScore != null
-      ? {
-          key: "strength",
-          label: "Strength",
-          value: analysis.strengthScore,
-          tone: scoreTone("Strength"),
-        }
-      : null,
-    analysis.durabilityScore != null
-      ? {
-          key: "durability",
-          label: "Durability",
-          value: analysis.durabilityScore,
-          tone: scoreTone("Durability"),
-        }
-      : null,
-  ].filter((item): item is ScoreBreakdownItem => item !== null);
-  const scoreScaleMax = 100;
-  const scoreTotal =
-    analysis.moatScore ??
-    (scoreBreakdownItems.length > 0
-      ? scoreBreakdownItems.reduce((sum, item) => sum + item.value, 0)
-      : null);
-  const scoreTotalDisplay =
-    scoreTotal != null ? Math.max(0, Math.min(scoreTotal, scoreScaleMax)) : null;
-  const hasScoreCard = scoreTotal != null || scoreBreakdownItems.length > 0;
 
   return (
     <div className={`${outerCardClass} space-y-4 p-4`}>
@@ -254,70 +209,6 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
         </div>
 
       </div>
-
-      {hasScoreCard && (
-        <div className={`${nestedCardClass} p-3 space-y-3`}>
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0 space-y-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                Moat Score
-              </p>
-              <p className="text-[11px] leading-snug text-muted-foreground">
-                Strength and durability contribution to a fixed 100-point moat score.
-              </p>
-            </div>
-            <span className={chipClass(scoreTone("Moat"))}>
-              {scoreTotalDisplay != null ? `${scoreTotalDisplay} / 100` : "Score unavailable"}
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            <div
-              className="h-3 overflow-hidden rounded-full border border-border/35 bg-muted/70"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={scoreTotalDisplay ?? undefined}
-              aria-valuetext={
-                scoreTotalDisplay != null ? `${scoreTotalDisplay} out of 100` : "Score unavailable"
-              }
-            >
-              <div className="flex h-full w-full">
-                {scoreBreakdownItems.length > 0 ? (
-                  scoreBreakdownItems.map((item) => {
-                    const share = Math.max(0, Math.min(item.value, scoreScaleMax));
-                    return (
-                      <div
-                        key={item.key}
-                        className={cn(
-                          "h-full transition-[width] duration-300",
-                          item.tone === "emerald"
-                            ? "bg-gradient-to-r from-emerald-500 to-emerald-400"
-                            : "bg-gradient-to-r from-violet-500 to-violet-400",
-                        )}
-                        style={{ width: `${share}%` }}
-                        aria-hidden="true"
-                      />
-                    );
-                  })
-                ) : (
-                  <div className="h-full w-full bg-muted/60" aria-hidden="true" />
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5">
-              {scoreBreakdownItems.map((item) => {
-                return (
-                  <span key={item.key} className={chipClass(item.tone)}>
-                    {item.label} {item.value} / 100
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="space-y-3">
         <div className={`${nestedCardClass} p-3 space-y-3`}>

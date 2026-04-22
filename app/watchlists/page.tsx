@@ -24,7 +24,7 @@ type GrowthRankRow = {
   run_timestamp?: string | null;
 };
 
-type MoatSummaryRow = Pick<WatchlistTableRow, "moatScore" | "moatLabel" | "moatRating">;
+type MoatSummaryRow = Pick<WatchlistTableRow, "moatLabel" | "moatRating">;
 
 export const metadata: Metadata = {
   title: "Watchlists – Story of a Stock",
@@ -259,7 +259,6 @@ export default async function WatchlistsPage() {
     const companyCode = normalized.companyCode.trim().toUpperCase();
     if (!companyCode || latestMoatByCompany.has(companyCode)) return;
     latestMoatByCompany.set(companyCode, {
-      moatScore: normalized.moatScore,
       moatLabel: normalized.moatRatingLabel,
       moatRating: normalized.moatRating,
     });
@@ -290,7 +289,6 @@ export default async function WatchlistsPage() {
         growthScore,
         avg4QuarterScore,
         blendedScore,
-        moatScore: moatData?.moatScore ?? null,
         moatLabel: moatData?.moatLabel ?? null,
         moatRating: moatData?.moatRating ?? null,
       };
@@ -341,7 +339,6 @@ export default async function WatchlistsPage() {
     tableRows.map((row) => row.latestQuarterScore),
   );
   const averageGrowthScore = computeAverageScore(tableRows.map((row) => row.growthScore));
-  const averageMoatScore = computeAverageScore(tableRows.map((row) => row.moatScore));
 
   return (
     <WatchlistShell
@@ -415,9 +412,6 @@ export default async function WatchlistsPage() {
             </span>
             <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
               Avg growth: {averageGrowthScore != null ? averageGrowthScore.toFixed(1) : "—"}
-            </span>
-            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
-              Avg moat: {averageMoatScore != null ? `${averageMoatScore.toFixed(1)} / 100` : "—"}
             </span>
           </div>
         </div>

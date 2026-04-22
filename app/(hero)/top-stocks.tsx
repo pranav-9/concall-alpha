@@ -100,7 +100,6 @@ type MoatItem = {
   name: string;
   moatRating: MoatRatingKey;
   moatLabel: string;
-  moatScore: number | null;
   presentPillarCount: number;
   trajectoryLabel: string;
   trajectoryRank: number;
@@ -197,7 +196,6 @@ const fetchMoatLeaders = async (supabase: SupabaseServerClient) => {
         name: item.companyName ?? item.companyCode,
         moatRating: item.moatRating,
         moatLabel: item.moatRatingLabel,
-        moatScore: item.moatScore,
         presentPillarCount,
         trajectoryLabel: formatTrajectoryLabel(directionRaw),
         trajectoryRank: directionRank,
