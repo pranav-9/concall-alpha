@@ -54,16 +54,6 @@ const splitLeadSentence = (text: string | null): { lead: string | null; rest: st
   return { lead: match[1], rest: match[3] };
 };
 
-const sourceTypeTone = (sourceType: string | null): ChipTone => {
-  const normalized = (sourceType ?? "").toLowerCase();
-  if (normalized.includes("intangible")) return "sky";
-  if (normalized.includes("switch")) return "violet";
-  if (normalized.includes("cost")) return "emerald";
-  if (normalized.includes("network")) return "amber";
-  if (normalized.includes("efficient")) return "rose";
-  return "slate";
-};
-
 type BarrierVerdict = { label: string; tone: ChipTone };
 
 const gatekeeperToBarrier = (answer: string | null): BarrierVerdict | null => {
