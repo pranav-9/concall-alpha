@@ -85,23 +85,10 @@ const STATUS_STYLES: Record<
   },
 };
 
-const STATUS_SUMMARY_BY_KEY: Record<NormalizedGuidanceStatusKey, string> = {
-  revised: "Management has already reframed this thread.",
-  delayed: "The original timing moved later than expected.",
-  active: "Still open and being monitored.",
-  not_yet_clear: "Direction remains ambiguous.",
-  met: "The thread appears to have resolved as expected.",
-  dropped: "Guidance was withdrawn or reset.",
-  unknown: "The status could not be classified cleanly.",
-};
-
 const TRACKER_OVERVIEW_CLASS =
-  "rounded-[1.45rem] border border-amber-200/35 bg-gradient-to-br from-amber-50/24 via-background/96 to-background/82 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_18px_34px_-30px_rgba(15,23,42,0.22)] backdrop-blur-sm dark:border-amber-700/20 dark:from-amber-950/16 dark:via-background/88 dark:to-background/74";
+  "rounded-[1.45rem] border border-border/30 bg-gradient-to-br from-background/96 via-background/92 to-background/82 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_14px_26px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:from-background/88 dark:via-background/82 dark:to-background/70";
 
 const TRACKER_ROOT_CLASS = "space-y-4";
-
-const TRACKER_METRIC_CLASS =
-  "rounded-2xl border border-border/30 bg-background/78 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.48)] backdrop-blur-sm dark:bg-background/70";
 
 const TRACKER_GROUP_CLASS =
   "relative overflow-hidden rounded-[1.45rem] border border-border/30 bg-gradient-to-br from-background/97 via-background/92 to-background/82 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_14px_26px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm";
@@ -176,28 +163,6 @@ const getTrailMentionBadgeClass = (mentionType: string | null) => {
   }
 };
 
-function GuidanceMetricCard({
-  label,
-  value,
-  helper,
-}: {
-  label: string;
-  value: React.ReactNode;
-  helper?: string;
-}) {
-  return (
-    <div className={TRACKER_METRIC_CLASS}>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1 text-[18px] font-semibold leading-tight text-foreground">{value}</p>
-      {helper ? (
-        <p className="mt-1 text-[11px] leading-snug text-foreground/70">{helper}</p>
-      ) : null}
-    </div>
-  );
-}
-
 function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
   if (item.trail.length === 0) {
     return (
@@ -267,13 +232,7 @@ function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
   );
 }
 
-function GuidanceThreadCard({
-  item,
-  index,
-}: {
-  item: NormalizedGuidanceItem;
-  index: number;
-}) {
+function GuidanceThreadCard({ item }: { item: NormalizedGuidanceItem }) {
   const statusStyle = STATUS_STYLES[item.statusKey];
   const supportText = getGuidanceSupportText(item);
   const mentionSummaryText = getGuidanceMentionSummaryText(item);
@@ -282,31 +241,24 @@ function GuidanceThreadCard({
 
   return (
     <article className="relative overflow-hidden rounded-2xl border border-border/25 bg-gradient-to-br from-background/96 via-background/92 to-muted/14 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.48),0_14px_24px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:from-background/88 dark:via-background/82 dark:to-background/70">
-      <div className={cn("absolute inset-x-0 top-0 h-1", statusStyle.accentClass)} />
-
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/30 text-[10px] font-semibold text-muted-foreground">
-          {index + 1}
-        </span>
-
-        <div className="min-w-0 flex-1 space-y-3">
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+      <div className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
             <div className="min-w-0 space-y-2">
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   {item.guidanceTypeLabel ?? "Guidance"}
                 </span>
                 <Badge
                   variant="outline"
                   className={cn(
-                    "h-fit shrink-0 px-2 py-0.5 text-[9px] font-semibold",
+                    "h-fit shrink-0 px-2 py-0.5 text-[10px] font-semibold",
                     statusStyle.badgeClass,
                   )}
                 >
                   {item.statusLabel}
                 </Badge>
                 {item.targetPeriod ? (
-                  <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
+                  <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                     Target {item.targetPeriod}
                   </span>
                 ) : null}
@@ -316,25 +268,25 @@ function GuidanceThreadCard({
                 <p className="text-[13px] font-semibold leading-[1.35] text-foreground">
                   {item.guidanceText}
                 </p>
-                <p className="text-[11px] leading-snug text-foreground/70">
-                  {supportText ?? "Open the trail to inspect the quarterly revisions."}
-                </p>
+                {supportText ? (
+                  <p className="text-[11px] leading-snug text-foreground/70">{supportText}</p>
+                ) : null}
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
               {mentionSummaryText ? (
-                <span className="rounded-full border border-border/50 bg-background/85 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
+                <span className="rounded-full border border-border/50 bg-background/85 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                   {mentionSummaryText}
                 </span>
               ) : null}
               {typeof item.confidence === "number" ? (
-                <span className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-[9px] text-muted-foreground">
+                <span className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground">
                   {(item.confidence * 100).toFixed(0)}% conf
                 </span>
               ) : null}
               {item.trail.length > 0 ? (
-                <span className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-[9px] text-muted-foreground">
+                <span className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground">
                   {item.trail.length} trail{item.trail.length === 1 ? "" : "s"}
                 </span>
               ) : null}
@@ -366,7 +318,6 @@ function GuidanceThreadCard({
           ) : (
             <GuidanceTrailContent item={item} />
           )}
-        </div>
       </div>
     </article>
   );
@@ -405,16 +356,13 @@ function GuidanceStatusGroup({
               <Badge
                 variant="outline"
                 className={cn(
-                  "h-fit px-2 py-0.5 text-[9px] font-semibold",
+                  "h-fit px-2 py-0.5 text-[10px] font-semibold",
                   statusStyle.badgeClass,
                 )}
               >
                 {threads.length} tracked
               </Badge>
             </div>
-            <p className="max-w-3xl text-[11px] leading-snug text-foreground/70">
-              {STATUS_SUMMARY_BY_KEY[statusKey]}
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
@@ -430,12 +378,8 @@ function GuidanceStatusGroup({
         </div>
 
         <div className="space-y-3">
-          {visibleThreads.map((item, index) => (
-            <GuidanceThreadCard
-              key={`${item.guidanceKey}-summary`}
-              item={item}
-              index={index}
-            />
+          {visibleThreads.map((item) => (
+            <GuidanceThreadCard key={`${item.guidanceKey}-summary`} item={item} />
           ))}
         </div>
 
@@ -443,20 +387,15 @@ function GuidanceStatusGroup({
           <details className="group rounded-2xl border border-border/25 bg-background/60 p-2.5">
             <summary className="list-none cursor-pointer">
               <div className="flex items-center justify-between gap-3 rounded-lg border border-border/40 bg-background/75 px-3 py-2 transition-colors hover:bg-muted/35">
-                <div>
-                  <p className="text-[12px] font-medium leading-tight text-foreground">
-                    <span className="group-open:hidden">
-                      Show remaining {extraThreads.length} thread
-                      {extraThreads.length === 1 ? "" : "s"}
-                    </span>
-                    <span className="hidden group-open:inline">
-                      Hide remaining thread{extraThreads.length === 1 ? "" : "s"}
-                    </span>
-                  </p>
-                  <p className="text-[11px] leading-snug text-muted-foreground">
-                    Expand to view the rest of the tracked management guidance.
-                  </p>
-                </div>
+                <p className="text-[12px] font-medium leading-tight text-foreground">
+                  <span className="group-open:hidden">
+                    Show remaining {extraThreads.length} thread
+                    {extraThreads.length === 1 ? "" : "s"}
+                  </span>
+                  <span className="hidden group-open:inline">
+                    Hide remaining thread{extraThreads.length === 1 ? "" : "s"}
+                  </span>
+                </p>
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/85 text-muted-foreground transition-colors group-open:bg-accent/70 group-open:text-foreground">
                   <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
                 </span>
@@ -464,12 +403,8 @@ function GuidanceStatusGroup({
             </summary>
 
             <div className="mt-3 space-y-3">
-              {extraThreads.map((item, index) => (
-                <GuidanceThreadCard
-                  key={`${item.guidanceKey}-extra`}
-                  item={item}
-                  index={visibleThreads.length + index}
-                />
+              {extraThreads.map((item) => (
+                <GuidanceThreadCard key={`${item.guidanceKey}-extra`} item={item} />
               ))}
             </div>
           </details>
@@ -544,13 +479,15 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
     return (
       <div className={TRACKER_EMPTY_CLASS}>
         <p className="text-sm font-medium text-foreground">
-          No non-revenue guidance threads are tracked yet.
-        </p>
-        <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
           {revenueItems.length > 0
-            ? "Revenue guidance is summarized in the snapshot panel above, so this tracker stays focused on management threads with a quarter-by-quarter trail."
-            : "We have not tracked meaningful management guidance for this company yet."}
+            ? "No qualitative guidance threads tracked yet."
+            : "No guidance threads tracked yet."}
         </p>
+        {revenueItems.length > 0 ? (
+          <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+            Revenue guidance is covered in the snapshot panel above.
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -558,20 +495,37 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
   return (
     <div className={TRACKER_ROOT_CLASS}>
       <div className={TRACKER_OVERVIEW_CLASS}>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-1.5">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Guidance tracker
             </p>
-            <p className="max-w-3xl text-[13px] leading-snug text-foreground/80">
-              Management guidance grouped by outcome, with the latest language, the revision trail,
-              and the source depth all in one place.
-            </p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              {statusGroups.map((group) => {
+                const statusStyle = STATUS_STYLES[group.statusKey];
+                return (
+                  <span
+                    key={group.statusKey}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-medium text-foreground"
+                  >
+                    <span className={cn("h-1.5 w-1.5 rounded-full", statusStyle.accentClass)} />
+                    <span>{group.title}</span>
+                    <span className="text-muted-foreground">{group.threads.length}</span>
+                  </span>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 border-t border-border/30 pt-3">
             <span className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
-              {summaryItems.length} tracked
+              {summaryItems.length} thread{summaryItems.length === 1 ? "" : "s"}
+            </span>
+            <span className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+              {trackerStats.totalSourceMentions} mention{trackerStats.totalSourceMentions === 1 ? "" : "s"}
+            </span>
+            <span className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+              {trackerStats.totalTrailPoints} trail point{trackerStats.totalTrailPoints === 1 ? "" : "s"}
             </span>
             {trackerStats.latestPeriod ? (
               <span className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
@@ -580,54 +534,10 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
             ) : null}
             {revenueItems.length > 0 ? (
               <span className="rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-[10px] font-medium text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200">
-                {revenueItems.length} revenue item{revenueItems.length === 1 ? "" : "s"} separate
+                {revenueItems.length} revenue separate
               </span>
             ) : null}
           </div>
-        </div>
-
-        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <GuidanceMetricCard
-            label="Tracked threads"
-            value={summaryItems.length}
-            helper="Non-revenue guidance threads"
-          />
-          <GuidanceMetricCard
-            label="Source mentions"
-            value={trackerStats.totalSourceMentions}
-            helper="Mentions across filings and transcripts"
-          />
-          <GuidanceMetricCard
-            label="Trail points"
-            value={trackerStats.totalTrailPoints}
-            helper="Quarter-level updates in the trail"
-          />
-          <GuidanceMetricCard
-            label="Latest period"
-            value={trackerStats.latestPeriod ?? "—"}
-            helper="Most recent tracked window"
-          />
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {statusGroups.map((group) => {
-            const statusStyle = STATUS_STYLES[group.statusKey];
-
-            return (
-              <Badge
-                key={group.statusKey}
-                variant="outline"
-                className={cn(
-                  "h-fit gap-1.5 px-2.5 py-1 text-[10px] font-semibold",
-                  statusStyle.badgeClass,
-                )}
-              >
-                <span className={cn("h-1.5 w-1.5 rounded-full", statusStyle.accentClass)} />
-                <span>{group.title}</span>
-                <span className="opacity-70">{group.threads.length}</span>
-              </Badge>
-            );
-          })}
         </div>
       </div>
 
