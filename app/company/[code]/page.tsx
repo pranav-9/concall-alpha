@@ -57,7 +57,6 @@ import type {
   NormalizedIndustryTheme,
 } from "@/lib/company-industry-analysis/types";
 import type {
-  NormalizedRevenueBreakdownItem,
   NormalizedRevenueSplitHistoryRow,
   NormalizedSegmentGrowthCagr3yRow,
 } from "@/lib/business-snapshot/types";
