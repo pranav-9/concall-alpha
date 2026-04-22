@@ -5,6 +5,7 @@ import type {
   NormalizedKeyVariablesSnapshot,
 } from "@/lib/key-variables-snapshot/types";
 import { Button } from "@/components/ui/button";
+import { KpiSparkline } from "./kpi-sparkline";
 import {
   Drawer,
   DrawerClose,
@@ -236,6 +237,9 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
               <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Metric
               </th>
+              <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Trend
+              </th>
               {periods.map((period) => (
                 <th
                   key={period}
@@ -251,6 +255,15 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
               <tr key={row.metric} className="border-b border-border/20 last:border-b-0">
                 <td className="px-3 py-2.5 text-[12px] font-medium text-foreground">
                   {row.metric}
+                </td>
+                <td className="px-3 py-2.5">
+                  <KpiSparkline
+                    ariaLabel={`${row.metric} trend across ${periods.length} periods`}
+                    points={periods.map((period) => ({
+                      period,
+                      value: asNumericValue(row.valuesByPeriod[period]),
+                    }))}
+                  />
                 </td>
                 {periods.map((period) => {
                   const yoyValue = getPeriodOverPeriodGrowth(
