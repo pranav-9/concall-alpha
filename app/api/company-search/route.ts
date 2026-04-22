@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 type Result = {
   code: string;
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
     .limit(30);
 
   if (error) {
+    logger.error("supabase: company search failed", { q, error });
     return NextResponse.json(
       { ok: false, error: "Unable to fetch company search results.", results: [] as Result[] },
       { status: 500 },

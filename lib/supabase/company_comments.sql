@@ -197,3 +197,95 @@ begin
       with check (true);
   end if;
 end $$;
+
+-- Atomic like toggle. Returns the new state and authoritative counter.
+-- Single statement per branch so the update happens inside the same
+-- transaction as the insert/delete against company_comment_likes.
+create or replace function public.toggle_company_comment_like(
+  p_comment_id uuid,
+  p_visitor_id text
+)
+returns table(liked boolean, likes_count integer)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_deleted int;
+  v_count int;
+begin
+  if not exists (
+    select 1 from public.company_comments
+    where id = p_comment_id and status = 'visible'
+  ) then
+    raise exception 'comment_not_found' using errcode = 'P0002';
+  end if;
+
+  delete from public.company_comment_likes
+  where comment_id = p_comment_id and visitor_id = p_visitor_id;
+  get diagnostics v_deleted = row_count;
+
+  if v_deleted > 0 then
+    update public.company_comments
+    set likes_count = greatest(likes_count - 1, 0)
+    where id = p_comment_id
+    returning public.company_comments.likes_count into v_count;
+    return query select false, v_count;
+  else
+    insert into public.company_comment_likes(comment_id, visitor_id)
+    values (p_comment_id, p_visitor_id)
+    on conflict (comment_id, visitor_id) do nothing;
+
+    update public.company_comments
+    set likes_count = likes_count + 1
+    where id = p_comment_id
+    returning public.company_comments.likes_count into v_count;
+    return query select true, v_count;
+  end if;
+end;
+$$;
+
+-- Atomic report insert + counter bump; idempotent per (comment, visitor).
+create or replace function public.report_company_comment(
+  p_comment_id uuid,
+  p_visitor_id text,
+  p_reason text
+)
+returns table(reports_count integer, already_reported boolean)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_inserted int;
+  v_count int;
+begin
+  if not exists (
+    select 1 from public.company_comments
+    where id = p_comment_id and status = 'visible'
+  ) then
+    raise exception 'comment_not_found' using errcode = 'P0002';
+  end if;
+
+  insert into public.company_comment_reports(comment_id, visitor_id, reason)
+  values (p_comment_id, p_visitor_id, p_reason)
+  on conflict (comment_id, visitor_id) do nothing;
+  get diagnostics v_inserted = row_count;
+
+  if v_inserted > 0 then
+    update public.company_comments
+    set reports_count = reports_count + 1
+    where id = p_comment_id
+    returning public.company_comments.reports_count into v_count;
+    return query select v_count, false;
+  else
+    select c.reports_count into v_count
+    from public.company_comments c
+    where c.id = p_comment_id;
+    return query select v_count, true;
+  end if;
+end;
+$$;
+
+grant execute on function public.toggle_company_comment_like(uuid, text) to anon, authenticated;
+grant execute on function public.report_company_comment(uuid, text, text) to anon, authenticated;

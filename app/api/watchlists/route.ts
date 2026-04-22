@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
 
 type Payload = {
   name?: string;
@@ -29,6 +35,17 @@ export async function POST(request: Request) {
       );
     }
 
+    const ip = await getClientIp();
+    const limit = await checkRateLimit(supabase, {
+      scope: "watchlists:post",
+      identifier: `user:${userId}|ip:${ip}`,
+      limit: 10,
+      windowSeconds: 60 * 60,
+    });
+    if (!limit.allowed) {
+      return rateLimitResponse(limit);
+    }
+
     const { data: existingRows, error: existingError } = await supabase
       .from("watchlists")
       .select("id, name")
@@ -37,6 +54,10 @@ export async function POST(request: Request) {
       .limit(1);
 
     if (existingError) {
+      logger.error("supabase: failed to load watchlists", {
+        userId,
+        error: existingError,
+      });
       return NextResponse.json(
         { ok: false, error: "Unable to load watchlists." },
         { status: 500 },
@@ -63,6 +84,10 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError || !insertedRow) {
+      logger.error("supabase: failed to create watchlist", {
+        userId,
+        error: insertError,
+      });
       return NextResponse.json(
         { ok: false, error: "Unable to create watchlist." },
         { status: 500 },
@@ -75,7 +100,8 @@ export async function POST(request: Request) {
       name: insertedRow.name,
       existing: false,
     });
-  } catch {
+  } catch (err) {
+    logger.warn("watchlists: invalid POST payload", { error: err });
     return NextResponse.json(
       { ok: false, error: "Invalid payload." },
       { status: 400 },

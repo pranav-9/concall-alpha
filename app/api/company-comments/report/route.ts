@@ -1,10 +1,21 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
 import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
 
 type Payload = {
   commentId?: string;
   reason?: string;
+};
+
+type ReportRow = {
+  reports_count: number | null;
+  already_reported: boolean;
 };
 
 const UUID_REGEX =
@@ -33,46 +44,46 @@ export async function POST(request: Request) {
     const { visitorId, isNew } = await getOrCreateVisitorId();
     const supabase = await createClient();
 
-    const { data: commentRow } = await supabase
-      .from("company_comments")
-      .select("id, reports_count, status")
-      .eq("id", commentId)
-      .maybeSingle();
+    const ip = await getClientIp();
+    const limit = await checkRateLimit(supabase, {
+      scope: "comments:report",
+      identifier: `ip:${ip}|v:${visitorId}`,
+      limit: 10,
+      windowSeconds: 60 * 60,
+    });
+    if (!limit.allowed) {
+      return rateLimitResponse(limit);
+    }
 
-    if (!commentRow || commentRow.status !== "visible") {
+    const { data, error } = await supabase.rpc("report_company_comment", {
+      p_comment_id: commentId,
+      p_visitor_id: visitorId,
+      p_reason: reason,
+    });
+
+    if (error) {
+      if (error.code === "P0002") {
+        return NextResponse.json(
+          { ok: false, error: "Comment not found." },
+          { status: 404 },
+        );
+      }
+      logger.error("supabase rpc: report_company_comment failed", {
+        commentId,
+        error,
+      });
       return NextResponse.json(
-        { ok: false, error: "Comment not found." },
-        { status: 404 },
+        { ok: false, error: "Unable to record report." },
+        { status: 500 },
       );
     }
 
-    const { data: existingReport } = await supabase
-      .from("company_comment_reports")
-      .select("id")
-      .eq("comment_id", commentId)
-      .eq("visitor_id", visitorId)
-      .maybeSingle();
-
-    if (!existingReport) {
-      const { error: insertError } = await supabase.from("company_comment_reports").insert({
-        comment_id: commentId,
-        visitor_id: visitorId,
-        reason,
-      });
-
-      if (!insertError) {
-        await supabase
-          .from("company_comments")
-          .update({
-            reports_count: Number(commentRow.reports_count ?? 0) + 1,
-          })
-          .eq("id", commentId);
-      }
-    }
-
+    const row = Array.isArray(data) ? (data[0] as ReportRow | undefined) : (data as ReportRow | null);
     const response = NextResponse.json({
       ok: true,
       reported: true,
+      alreadyReported: Boolean(row?.already_reported),
+      reportsCount: Number(row?.reports_count ?? 0),
     });
 
     if (isNew) {
@@ -80,7 +91,8 @@ export async function POST(request: Request) {
     }
 
     return response;
-  } catch {
+  } catch (err) {
+    logger.warn("company-comments/report: invalid POST payload", { error: err });
     return NextResponse.json(
       { ok: false, error: "Invalid payload." },
       { status: 400 },

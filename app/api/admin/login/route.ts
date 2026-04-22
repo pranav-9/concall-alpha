@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
+
 import {
   ADMIN_ACCESS_COOKIE,
   ADMIN_ACCESS_COOKIE_VALUE,
   isValidAdminPasscode,
 } from "@/lib/admin-auth";
+import { logger } from "@/lib/logger";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
+import { createClient } from "@/lib/supabase/server";
 
 type Payload = {
   passcode?: string;
@@ -11,6 +19,18 @@ type Payload = {
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+    const ip = await getClientIp();
+    const limit = await checkRateLimit(supabase, {
+      scope: "admin:login",
+      identifier: `ip:${ip}`,
+      limit: 10,
+      windowSeconds: 15 * 60,
+    });
+    if (!limit.allowed) {
+      return rateLimitResponse(limit);
+    }
+
     const body = (await request.json()) as Payload;
     const passcode = (body.passcode ?? "").trim();
 
@@ -30,7 +50,8 @@ export async function POST(request: Request) {
       path: "/",
     });
     return response;
-  } catch {
+  } catch (err) {
+    logger.warn("admin/login: invalid POST payload", { error: err });
     return NextResponse.json(
       { ok: false, error: "Invalid payload." },
       { status: 400 }

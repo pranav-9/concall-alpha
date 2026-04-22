@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
 
 type RequestType =
   | "feedback"
@@ -59,6 +65,18 @@ export async function POST(request: Request) {
     const requestId = crypto.randomUUID();
 
     const supabase = await createClient();
+
+    const ip = await getClientIp();
+    const limit = await checkRateLimit(supabase, {
+      scope: "user-requests:post",
+      identifier: `ip:${ip}`,
+      limit: 5,
+      windowSeconds: 60 * 60,
+    });
+    if (!limit.allowed) {
+      return rateLimitResponse(limit);
+    }
+
     const { error } = await supabase
       .from("user_requests")
       .insert({
@@ -71,6 +89,10 @@ export async function POST(request: Request) {
       });
 
     if (error) {
+      logger.error("supabase: failed to store user_request", {
+        requestType: parsed.requestType,
+        error,
+      });
       return NextResponse.json(
         { ok: false, error: "Unable to store request." },
         { status: 500 }
@@ -78,7 +100,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ ok: true, id: requestId });
-  } catch {
+  } catch (err) {
+    logger.warn("user-requests: invalid POST payload", { error: err });
     return NextResponse.json(
       { ok: false, error: "Invalid payload." },
       { status: 400 }
