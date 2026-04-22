@@ -117,64 +117,105 @@ export default async function Page({
 
   const supabase = await createClient();
 
-  const { data: companyRow } = await supabase
-    .from("company")
-    .select("name, sector, sub_sector, exchange, country, code, website, created_at")
-    .eq("code", code)
-    .limit(1)
-    .maybeSingle();
+  // Round 1: queries that depend only on `code` — run in parallel.
+  const [
+    { data: companyRow },
+    { data: authClaimsData },
+    concallResult,
+    { data: businessSnapshotData },
+    { data: companyIndustryAnalysisData },
+    guidanceTrackingResult,
+    guidanceSnapshotResult,
+    { data: moatAnalysisData },
+    { data: keyVariablesSnapshotData },
+    { data: latestQuarterKey },
+    { data: growthRankRows },
+  ] = await Promise.all([
+    supabase
+      .from("company")
+      .select("name, sector, sub_sector, exchange, country, code, website, created_at")
+      .eq("code", code)
+      .limit(1)
+      .maybeSingle(),
+    supabase.auth.getClaims(),
+    supabase
+      .from("concall_analysis")
+      .select()
+      .eq("company_code", code)
+      .order("fy", { ascending: false })
+      .order("qtr", { ascending: false }),
+    supabase
+      .from("business_snapshot")
+      .select(
+        "company, generated_at, segment_profiles, business_snapshot, historical_economics, about_company, revenue_breakdown, revenue_engine, details, snapshot_phase, snapshot_source, source_urls",
+      )
+      .eq("company", code)
+      .order("generated_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("company_industry_analysis")
+      .select(
+        "company, generated_at, sector, sub_sector, industry_positioning, value_chain, sub_sector_identification, types_of_players, sub_sector_cards, profit_pools, company_fit, competition, regulatory_changes, tailwinds, headwinds, sources, details",
+      )
+      .eq("company", code)
+      .limit(1),
+    supabase
+      .from("guidance_tracking")
+      .select(
+        "id, company_code, guidance_key, guidance_text, guidance_type, first_mentioned_in, target_period, source_mentions, trail, status, status_reason, latest_view, confidence, generated_at, details",
+      )
+      .eq("company_code", code)
+      .order("generated_at", { ascending: false })
+      .order("id", { ascending: false }),
+    supabase
+      .from("guidance_snapshot")
+      .select(
+        "company_code, generated_at, analysis_window_quarters, guidance_style_classification, big_picture_growth_guidance, current_year_revenue_guidance, prior_two_year_accuracy, credibility_verdict, guidance_items, source_files, details, updated_at",
+      )
+      .eq("company_code", code)
+      .order("generated_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("moat_analysis")
+      .select(
+        "id, company_code, company_name, industry, rating, trajectory, trajectory_direction, porter_summary, porter_verdict, moats, quantitative, durability, risks, assessment_payload, assessment_version, moat_score, strength_score, durability_score, created_at, updated_at",
+      )
+      .eq("company_code", code)
+      .limit(1),
+    supabase
+      .from("key_variables_snapshot")
+      .select(
+        "company_code, generated_at, analysis_window_quarters, discovery_summary, full_variable_list, deep_treatment, section_synthesis, source_files, details, updated_at",
+      )
+      .eq("company_code", code)
+      .order("generated_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("concall_analysis")
+      .select("fy, qtr")
+      .order("fy", { ascending: false })
+      .order("qtr", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("growth_outlook")
+      .select("company, growth_score, base_growth_pct, run_timestamp")
+      .order("run_timestamp", { ascending: false }),
+  ]);
+
+  const { data, error } = concallResult;
+  const { data: guidanceTrackingRows, error: guidanceTrackingError } = guidanceTrackingResult;
+  const { data: guidanceSnapshotData, error: guidanceSnapshotError } = guidanceSnapshotResult;
+
   const companyName = companyRow?.name as string | undefined;
   const companyIsNew = isCompanyNew(companyRow?.created_at ?? null);
   const companySector = companyRow?.sector?.trim() || undefined;
   const companySubSector = companyRow?.sub_sector?.trim() || undefined;
-  const { data: authClaimsData } = await supabase.auth.getClaims();
   const authenticatedUserId =
     typeof authClaimsData?.claims?.sub === "string" ? authClaimsData.claims.sub : null;
 
-  let firstWatchlist: { id: number; name: string } | null = null;
-  let isInFirstWatchlist = false;
-
-  if (authenticatedUserId) {
-    const { data: watchlistRows } = await supabase
-      .from("watchlists")
-      .select("id, name")
-      .eq("user_id", authenticatedUserId)
-      .order("created_at", { ascending: true })
-      .limit(1);
-
-    firstWatchlist = (watchlistRows?.[0] as { id: number; name: string } | undefined) ?? null;
-
-    if (firstWatchlist) {
-      const { data: watchlistItemRows } = await supabase
-        .from("watchlist_items")
-        .select("id")
-        .eq("watchlist_id", firstWatchlist.id)
-        .eq("company_code", code)
-        .limit(1);
-
-      isInFirstWatchlist = (watchlistItemRows?.length ?? 0) > 0;
-    }
-  }
-
-  // Fetch concall analysis data
-  const { data, error } = await supabase
-    .from("concall_analysis")
-    .select()
-    .eq("company_code", code)
-    .order("fy", { ascending: false })
-    .order("qtr", { ascending: false });
-
-  // Fetch latest top strategies data
-  const { data: businessSnapshotData } = await supabase
-    .from("business_snapshot")
-    .select(
-      "company, generated_at, segment_profiles, business_snapshot, historical_economics, about_company, revenue_breakdown, revenue_engine, details, snapshot_phase, snapshot_source, source_urls",
-    )
-    .eq("company", code)
-    .order("generated_at", { ascending: false })
-    .limit(1);
-
-  const { data: growthData } = await supabase
+  // Round 2: queries that depend on round-1 results but not on each other.
+  const growthOutlookDetailPromise = supabase
     .from("growth_outlook")
     .select("*")
     .or(
@@ -185,48 +226,61 @@ export default async function Page({
     .order("run_timestamp", { ascending: false })
     .limit(1);
 
-  const { data: companyIndustryAnalysisData } = await supabase
-    .from("company_industry_analysis")
-    .select(
-      "company, generated_at, sector, sub_sector, industry_positioning, value_chain, sub_sector_identification, types_of_players, sub_sector_cards, profit_pools, company_fit, competition, regulatory_changes, tailwinds, headwinds, sources, details",
-    )
-    .eq("company", code)
-    .limit(1);
+  const watchlistPromise = authenticatedUserId
+    ? supabase
+        .from("watchlists")
+        .select("id, name")
+        .eq("user_id", authenticatedUserId)
+        .order("created_at", { ascending: true })
+        .limit(1)
+    : null;
 
-  const { data: guidanceTrackingRows, error: guidanceTrackingError } = await supabase
-    .from("guidance_tracking")
-    .select(
-      "id, company_code, guidance_key, guidance_text, guidance_type, first_mentioned_in, target_period, source_mentions, trail, status, status_reason, latest_view, confidence, generated_at, details",
-    )
-    .eq("company_code", code)
-    .order("generated_at", { ascending: false })
-    .order("id", { ascending: false });
+  const latestQuarterRowsPromise =
+    latestQuarterKey?.fy != null && latestQuarterKey?.qtr != null
+      ? supabase
+          .from("concall_analysis")
+          .select("company_code, score")
+          .eq("fy", latestQuarterKey.fy)
+          .eq("qtr", latestQuarterKey.qtr)
+      : null;
 
-  const { data: guidanceSnapshotData, error: guidanceSnapshotError } = await supabase
-    .from("guidance_snapshot")
-    .select(
-      "company_code, generated_at, analysis_window_quarters, guidance_style_classification, big_picture_growth_guidance, current_year_revenue_guidance, prior_two_year_accuracy, credibility_verdict, guidance_items, source_files, details, updated_at",
-    )
-    .eq("company_code", code)
-    .order("generated_at", { ascending: false })
-    .limit(1);
+  const sectorPeerPromise = companySector
+    ? supabase.from("company").select("code, name").eq("sector", companySector)
+    : null;
 
-  const { data: moatAnalysisData } = await supabase
-    .from("moat_analysis")
-    .select(
-      "id, company_code, company_name, industry, rating, trajectory, trajectory_direction, porter_summary, porter_verdict, moats, quantitative, durability, risks, assessment_payload, assessment_version, moat_score, strength_score, durability_score, created_at, updated_at",
-    )
-    .eq("company_code", code)
-    .limit(1);
+  const [
+    growthDetailResult,
+    watchlistResult,
+    latestQuarterRowsResult,
+    sectorPeerResult,
+  ] = await Promise.all([
+    growthOutlookDetailPromise,
+    watchlistPromise,
+    latestQuarterRowsPromise,
+    sectorPeerPromise,
+  ]);
 
-  const { data: keyVariablesSnapshotData } = await supabase
-    .from("key_variables_snapshot")
-    .select(
-      "company_code, generated_at, analysis_window_quarters, discovery_summary, full_variable_list, deep_treatment, section_synthesis, source_files, details, updated_at",
-    )
-    .eq("company_code", code)
-    .order("generated_at", { ascending: false })
-    .limit(1);
+  const growthData = growthDetailResult.data;
+  const watchlistRows = watchlistResult?.data ?? null;
+  const latestQuarterRowsGlobal = (latestQuarterRowsResult?.data ?? []) as Array<{
+    company_code?: unknown;
+    score?: unknown;
+  }>;
+  const sectorPeerRows = sectorPeerResult?.data ?? null;
+
+  // Round 3: watchlistItemRows depends on firstWatchlist (from round 2).
+  const firstWatchlist =
+    (watchlistRows?.[0] as { id: number; name: string } | undefined) ?? null;
+  let isInFirstWatchlist = false;
+  if (firstWatchlist) {
+    const { data: watchlistItemRows } = await supabase
+      .from("watchlist_items")
+      .select("id")
+      .eq("watchlist_id", firstWatchlist.id)
+      .eq("company_code", code)
+      .limit(1);
+    isInFirstWatchlist = (watchlistItemRows?.length ?? 0) > 0;
+  }
 
   if (error) {
     throw error;
@@ -2420,34 +2474,6 @@ export default async function Page({
   };
 
   let sectorRankInfo: SectorRankInfo = null;
-  let latestQuarterRowsGlobal: Array<{ company_code?: unknown; score?: unknown }> = [];
-
-  const { data: latestQuarterKey } = await supabase
-    .from("concall_analysis")
-    .select("fy, qtr")
-    .order("fy", { ascending: false })
-    .order("qtr", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (latestQuarterKey?.fy != null && latestQuarterKey?.qtr != null) {
-    const { data: latestQuarterRows } = await supabase
-      .from("concall_analysis")
-      .select("company_code, score")
-      .eq("fy", latestQuarterKey.fy)
-      .eq("qtr", latestQuarterKey.qtr);
-
-    latestQuarterRowsGlobal = (latestQuarterRows ?? []) as Array<{
-      company_code?: unknown;
-      score?: unknown;
-    }>;
-
-  }
-
-  const { data: growthRankRows } = await supabase
-    .from("growth_outlook")
-    .select("company, growth_score, base_growth_pct, run_timestamp")
-    .order("run_timestamp", { ascending: false });
 
   const latestGrowthByCompany = new Map<
     string,
@@ -2466,11 +2492,6 @@ export default async function Page({
   });
 
   if (companySector) {
-    const { data: sectorPeerRows } = await supabase
-      .from("company")
-      .select("code, name")
-      .eq("sector", companySector);
-
     const sectorPeers = (sectorPeerRows ?? []) as Array<{ code?: string | null; name?: string | null }>;
     const sectorTotal = sectorPeers.length;
 
