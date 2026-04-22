@@ -100,9 +100,8 @@ type MoatItem = {
   name: string;
   moatRating: MoatRatingKey;
   moatLabel: string;
-  presentPillarCount: number;
-  trajectoryLabel: string;
-  trajectoryRank: number;
+  appliesSourceCount: number;
+  cycleTested: boolean | null;
   updatedAtSort: number;
 };
 
@@ -112,22 +111,6 @@ const MOAT_RATING_ORDER: Record<MoatRatingKey, number> = {
   no_moat: 2,
   moat_at_risk: 3,
   unknown: 4,
-};
-
-const MOAT_TRAJECTORY_ORDER: Record<string, number> = {
-  improving: 0,
-  stable: 1,
-  declining: 2,
-  unknown: 3,
-};
-
-const normalizeSortText = (value: string | null | undefined) =>
-  (value ?? "Unknown").trim().toLowerCase();
-
-const formatTrajectoryLabel = (value: string | null | undefined) => {
-  const normalized = (value ?? "").trim();
-  if (!normalized) return "Unknown";
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
 };
 
 const sortTimestamp = (value: string | null | undefined) => {
@@ -164,7 +147,7 @@ const fetchMoatLeaders = async (supabase: SupabaseServerClient) => {
   const { data, error } = await supabase
     .from("moat_analysis")
     .select(
-      "id, company_code, company_name, industry, rating, trajectory, trajectory_direction, porter_summary, porter_verdict, moats, quantitative, durability, risks, assessment_payload, assessment_version, moat_score, strength_score, durability_score, created_at, updated_at",
+      "id, company_code, company_name, industry, rating, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
     )
     .order("updated_at", { ascending: false })
     .order("created_at", { ascending: false })
@@ -186,27 +169,25 @@ const fetchMoatLeaders = async (supabase: SupabaseServerClient) => {
 
   return Array.from(latestByCompany.values())
     .map((item) => {
-      const directionRaw = item.trajectoryDirection ?? item.trajectory ?? null;
-      const directionSortKey = normalizeSortText(directionRaw);
-      const directionRank = MOAT_TRAJECTORY_ORDER[directionSortKey] ?? MOAT_TRAJECTORY_ORDER.unknown;
-      const presentPillarCount = item.moatPillars.filter((pillar) => pillar.present).length;
+      const appliesSourceCount = item.sources.filter((source) => source.applies).length;
 
       return {
         code: item.companyCode,
         name: item.companyName ?? item.companyCode,
         moatRating: item.moatRating,
         moatLabel: item.moatRatingLabel,
-        presentPillarCount,
-        trajectoryLabel: formatTrajectoryLabel(directionRaw),
-        trajectoryRank: directionRank,
+        appliesSourceCount,
+        cycleTested: item.cycleTested,
         updatedAtSort: sortTimestamp(item.updatedAtRaw),
       } satisfies MoatItem;
     })
     .sort((a, b) => {
       const ratingDiff = MOAT_RATING_ORDER[a.moatRating] - MOAT_RATING_ORDER[b.moatRating];
       if (ratingDiff !== 0) return ratingDiff;
-      if (b.presentPillarCount !== a.presentPillarCount) return b.presentPillarCount - a.presentPillarCount;
-      if (a.trajectoryRank !== b.trajectoryRank) return a.trajectoryRank - b.trajectoryRank;
+      if (b.appliesSourceCount !== a.appliesSourceCount) return b.appliesSourceCount - a.appliesSourceCount;
+      const aCycle = a.cycleTested === true ? 0 : a.cycleTested === false ? 1 : 2;
+      const bCycle = b.cycleTested === true ? 0 : b.cycleTested === false ? 1 : 2;
+      if (aCycle !== bCycle) return aCycle - bCycle;
       if (b.updatedAtSort !== a.updatedAtSort) return b.updatedAtSort - a.updatedAtSort;
       return a.name.localeCompare(b.name);
     })

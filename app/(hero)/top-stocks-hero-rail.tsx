@@ -35,9 +35,8 @@ type MoatItem = {
   code: string;
   name: string;
   moatLabel: string;
-  presentPillarCount: number;
-  trajectoryLabel: string;
-  trajectoryRank: number;
+  appliesSourceCount: number;
+  cycleTested: boolean | null;
   updatedAtSort: number;
 };
 
@@ -259,7 +258,12 @@ function MoatListCard({ items }: { items: MoatItem[] }) {
                   {item.name}
                 </p>
                 <p className="line-clamp-1 text-[10px] leading-tight text-muted-foreground">
-                  {item.presentPillarCount} sources · {item.trajectoryLabel.toLowerCase()}
+                  {item.appliesSourceCount} source{item.appliesSourceCount === 1 ? "" : "s"}
+                  {item.cycleTested === true
+                    ? " · cycle-tested"
+                    : item.cycleTested === false
+                      ? " · not cycle-tested"
+                      : ""}
                 </p>
               </div>
               <div className="flex shrink-0 min-w-[84px] flex-col items-end gap-0.5">

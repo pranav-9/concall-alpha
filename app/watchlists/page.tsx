@@ -224,7 +224,7 @@ export default async function WatchlistsPage() {
       supabase
         .from("moat_analysis")
         .select(
-          "id, company_code, company_name, industry, rating, trajectory, trajectory_direction, porter_summary, porter_verdict, moats, quantitative, durability, risks, assessment_payload, assessment_version, moat_score, strength_score, durability_score, created_at, updated_at",
+          "id, company_code, company_name, industry, rating, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
         )
         .in("company_code", watchlistCodes)
         .order("updated_at", { ascending: false })

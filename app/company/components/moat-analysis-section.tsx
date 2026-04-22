@@ -1,3 +1,5 @@
+import { AlertTriangle, Clock, ShieldCheck } from "lucide-react";
+
 import type { MoatRatingKey, NormalizedMoatAnalysis } from "@/lib/moat-analysis/types";
 import { cn } from "@/lib/utils";
 
@@ -13,8 +15,11 @@ const outerCardClass =
 
 const nestedCardClass = "rounded-xl border border-border/30 bg-background/62";
 
+const watchCardClass =
+  "rounded-xl border border-amber-300/50 bg-amber-50/40 dark:border-amber-600/30 dark:bg-amber-950/20";
+
 const chipBaseClass =
-  "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium leading-none";
+  "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none";
 
 const toneClasses: Record<ChipTone, string> = {
   emerald:
@@ -28,7 +33,15 @@ const toneClasses: Record<ChipTone, string> = {
   slate: "border-border/60 bg-muted/60 text-foreground",
 };
 
-const formatCompactLabel = (value: string) => value.replace(/_/g, " ").trim();
+const chipClass = (tone: ChipTone) => cn(chipBaseClass, toneClasses[tone]);
+
+const sectionLabelClass =
+  "text-[12px] font-semibold uppercase tracking-[0.12em] text-foreground/90";
+const sectionSubtitleClass = "text-[12px] leading-snug text-muted-foreground";
+const bodyTextClass = "text-[13px] leading-relaxed text-foreground/90";
+const mutedBodyClass = "text-[12px] leading-relaxed text-muted-foreground";
+const miniLabelClass =
+  "text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground";
 
 const formatVersionLabel = (value: string | null) => {
   if (!value) return null;
@@ -37,56 +50,34 @@ const formatVersionLabel = (value: string | null) => {
   return trimmed.replace(/^moat_assessment_/i, "").replace(/_/g, ".");
 };
 
-const chipClass = (tone: ChipTone) => cn(chipBaseClass, toneClasses[tone]);
-
-const statusTone = (status: string | null, present: boolean): ChipTone => {
-  const normalized = (status ?? "").trim().toUpperCase();
-  if (normalized === "PRESENT" || present) return "emerald";
-  if (normalized === "PARTIAL") return "amber";
-  if (normalized === "ABSENT") return "rose";
-  return "slate";
+const splitLeadSentence = (text: string | null): { lead: string | null; rest: string | null } => {
+  if (!text) return { lead: null, rest: null };
+  const trimmed = text.trim();
+  const match = /^([\s\S]*?[.!?])(\s+)([\s\S]+)$/.exec(trimmed);
+  if (!match) return { lead: trimmed, rest: null };
+  return { lead: match[1], rest: match[3] };
 };
-
-const statusLabel = (status: string | null, present: boolean) => {
-  const normalized = (status ?? "").trim().toUpperCase();
-  if (normalized) return formatCompactLabel(normalized);
-  return present ? "PRESENT" : "ABSENT";
-};
-
-const pillarTone = (pillarStatus: string | null, present: boolean) => statusTone(pillarStatus, present);
 
 const sourceTypeTone = (sourceType: string | null): ChipTone => {
   const normalized = (sourceType ?? "").toLowerCase();
-  if (normalized.includes("intangible") || normalized.includes("demand")) return "sky";
-  if (normalized.includes("cost") || normalized.includes("supply")) return "emerald";
+  if (normalized.includes("intangible")) return "sky";
   if (normalized.includes("switch")) return "violet";
+  if (normalized.includes("cost")) return "emerald";
   if (normalized.includes("network")) return "amber";
+  if (normalized.includes("efficient")) return "rose";
   return "slate";
 };
 
-const verdictTone = (value: string | null): ChipTone => {
-  const normalized = (value ?? "").toLowerCase();
-  if (!normalized) return "slate";
-  if (
-    normalized.includes("confirm") ||
-    normalized.includes("favour") ||
-    normalized.includes("favor") ||
-    normalized.includes("positive") ||
-    normalized.includes("included")
-  ) {
-    return "emerald";
-  }
-  if (
-    normalized.includes("not") ||
-    normalized.includes("negative") ||
-    normalized.includes("weak") ||
-    normalized.includes("absent") ||
-    normalized.includes("unfavour") ||
-    normalized.includes("unfavor")
-  ) {
-    return "rose";
-  }
-  return "amber";
+type BarrierVerdict = { label: string; tone: ChipTone };
+
+const gatekeeperToBarrier = (answer: string | null): BarrierVerdict | null => {
+  const normalized = (answer ?? "").toLowerCase().trim();
+  if (!normalized) return null;
+  if (normalized === "clearly_no") return { label: "Strong", tone: "emerald" };
+  if (normalized.startsWith("probably_not")) return { label: "Moderate", tone: "sky" };
+  if (normalized.startsWith("probably_yes")) return { label: "Weak", tone: "amber" };
+  if (normalized === "clearly_yes") return { label: "None", tone: "rose" };
+  return { label: normalized.replace(/_/g, " "), tone: "slate" };
 };
 
 const ratingClass = (rating: MoatRatingKey) => {
@@ -104,467 +95,205 @@ const ratingClass = (rating: MoatRatingKey) => {
   }
 };
 
-const verdictBadgeClass = (value: string | null) => cn(chipBaseClass, toneClasses[verdictTone(value)]);
-
-const sourceGroupToneClass = (tone: ChipTone) => {
-  switch (tone) {
-    case "emerald":
-      return "border-emerald-200/55 bg-emerald-50/20 dark:border-emerald-700/30 dark:bg-emerald-950/18";
-    case "amber":
-      return "border-amber-200/55 bg-amber-50/20 dark:border-amber-700/30 dark:bg-amber-950/18";
-    case "rose":
-      return "border-rose-200/55 bg-rose-50/20 dark:border-rose-700/30 dark:bg-rose-950/18";
-    case "sky":
-      return "border-sky-200/55 bg-sky-50/20 dark:border-sky-700/30 dark:bg-sky-950/18";
-    case "violet":
-      return "border-violet-200/55 bg-violet-50/20 dark:border-violet-700/30 dark:bg-violet-950/18";
-    default:
-      return "border-border/55 bg-background/35";
-  }
-};
-
-const formatRiskSummary = (risk: { trigger: string | null; mechanism: string | null; sourceType: string | null }) => {
-  const parts = [risk.trigger, risk.mechanism].filter((item): item is string => Boolean(item));
-  if (parts.length > 0) return parts.join(" · ");
-  return risk.sourceType ?? "Risk captured";
-};
-
 export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysisSectionProps) {
-  const summary =
-    analysis.assessmentSummary ??
-    analysis.porterSummary ??
-    analysis.durability ??
-    analysis.porterVerdict ??
-    null;
+  const appliesSources = analysis.sources.filter((source) => source.applies);
+  const ruledOutSources = analysis.sources.filter((source) => !source.applies);
 
-  const presentPillars = analysis.moatPillars.filter(
-    (pillar) => (pillar.status ?? "").toUpperCase() === "PRESENT" || pillar.present,
-  );
-  const partialPillars = analysis.moatPillars.filter(
-    (pillar) => (pillar.status ?? "").toUpperCase() === "PARTIAL",
-  );
-  const absentPillars = analysis.moatPillars.filter((pillar) => {
-    const normalized = (pillar.status ?? "").toUpperCase();
-    return normalized === "ABSENT" || (!pillar.present && normalized !== "PARTIAL" && normalized !== "PRESENT");
-  });
-
-  const sourceGroups = [
-    {
-      key: "present",
-      title: "Present",
-      tone: "emerald" as const,
-      description: "Evidence captured and marked as present.",
-      pillars: presentPillars,
-    },
-    {
-      key: "partial",
-      title: "Partial",
-      tone: "amber" as const,
-      description: "Evidence exists, but the moat is not fully closed yet.",
-      pillars: partialPillars,
-    },
-    {
-      key: "absent",
-      title: "Absent / weak",
-      tone: "rose" as const,
-      description: "No durable evidence or the signal is weak.",
-      pillars: absentPillars,
-    },
-  ].filter((group) => group.pillars.length > 0);
-
-  const structuredRisks =
-    analysis.moatRisks.length > 0
-      ? analysis.moatRisks
-      : analysis.risks.map((risk) => ({ trigger: risk, mechanism: null, sourceType: null }));
-
-  const quantitative = analysis.quantitativeCheck;
-  const industryStructure = analysis.industryStructure;
-  const durability = analysis.durabilityDetails;
   const versionLabel = formatVersionLabel(analysis.assessmentVersion ?? analysis.schemaVersion);
+  const gatekeeper = analysis.gatekeeper;
+  const barrierVerdict = gatekeeperToBarrier(gatekeeper?.answer ?? null);
+  const financial = analysis.financialCheck;
+
+  const { lead, rest } = splitLeadSentence(analysis.reasoning);
+
+  const cycleChip =
+    analysis.cycleTested == null
+      ? null
+      : analysis.cycleTested
+        ? { label: "Proven through a downturn", tone: "emerald" as const }
+        : { label: "Not yet downturn-tested", tone: "amber" as const };
+
+  const emptySourcesCopy =
+    analysis.moatRating === "no_moat"
+      ? "All moat sources were considered and ruled out — this is a genuinely undifferentiated business."
+      : "No qualifying moat sources found.";
+
+  const footerBits = [
+    generatedAtShort ? `Generated ${generatedAtShort}` : null,
+    versionLabel ? `v${versionLabel}` : null,
+  ].filter(Boolean);
 
   return (
     <div className={`${outerCardClass} space-y-4 p-4`}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={cn(chipBaseClass, ratingClass(analysis.moatRating), "px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.12em]")}>
-              {analysis.moatRatingLabel}
-            </span>
-            {analysis.trajectory && (
-              <span className={chipClass("slate")}>
-                {analysis.trajectoryDirection
-                  ? `${analysis.trajectory} ${analysis.trajectoryDirection}`
-                  : analysis.trajectory}
-              </span>
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={cn(
+              chipBaseClass,
+              ratingClass(analysis.moatRating),
+              "px-4 py-1.5 text-[13px] font-semibold uppercase tracking-[0.12em]",
             )}
-            {analysis.industry && <span className={chipClass("slate")}>{analysis.industry}</span>}
-            {versionLabel && <span className={chipClass("slate")}>{versionLabel}</span>}
-            {generatedAtShort && <span className={chipClass("slate")}>{generatedAtShort}</span>}
-          </div>
-          {summary && (
-            <p className="max-w-4xl text-[13px] leading-relaxed text-foreground">
-              {summary}
-            </p>
-          )}
+          >
+            {analysis.moatRatingLabel}
+          </span>
+          {analysis.industry && <span className={chipClass("slate")}>{analysis.industry}</span>}
+          {cycleChip && <span className={chipClass(cycleChip.tone)}>{cycleChip.label}</span>}
         </div>
 
+        {(lead || rest) && (
+          <p className="max-w-4xl text-[14px] leading-relaxed text-foreground">
+            {lead && <span className="font-semibold">{lead}</span>}
+            {lead && rest ? " " : null}
+            {rest && <span className="text-foreground/85">{rest}</span>}
+          </p>
+        )}
       </div>
 
       <div className="space-y-3">
         <div className={`${nestedCardClass} p-3 space-y-3`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="space-y-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                Moat Sources
-              </p>
-              <p className="text-[11px] leading-snug text-muted-foreground">
-                {analysis.moatPillars.length} source{analysis.moatPillars.length === 1 ? "" : "s"} captured
-                {presentPillars.length || partialPillars.length || absentPillars.length
-                  ? ` · ${presentPillars.length} present${partialPillars.length ? ` · ${partialPillars.length} partial` : ""}${absentPillars.length ? ` · ${absentPillars.length} absent` : ""}`
-                  : ""}
+              <p className={sectionLabelClass}>Moat Sources</p>
+              <p className={sectionSubtitleClass}>
+                {appliesSources.length} applies
+                {ruledOutSources.length > 0 ? ` · ${ruledOutSources.length} ruled out` : ""}
               </p>
             </div>
-            <span className={chipClass("slate")}>{analysis.moatPillars.length} total</span>
           </div>
 
-          {sourceGroups.length > 0 ? (
+          {appliesSources.length > 0 ? (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {sourceGroups.map((group) => (
-                <div key={group.key} className={`${sourceGroupToneClass(group.tone)} rounded-xl border p-3`}>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="space-y-0.5">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                        {group.title}
-                      </p>
-                      <p className="text-[11px] leading-snug text-muted-foreground">
-                        {group.description}
-                      </p>
+              {appliesSources.map((source, index) => (
+                <div
+                  key={`${source.sourceType}-${index}`}
+                  className="rounded-lg border border-border/35 bg-background/70 p-3"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="text-[13px] font-semibold text-foreground">
+                          {source.sourceType}
+                        </p>
+                        {index === 0 && appliesSources.length > 1 && (
+                          <span className={chipClass(sourceTypeTone(source.sourceType))}>
+                            Primary
+                          </span>
+                        )}
+                      </div>
+                      {source.subcategory && (
+                        <span className={chipClass("slate")}>{source.subcategory}</span>
+                      )}
                     </div>
-                    <span className={chipClass(group.tone)}>{group.pillars.length}</span>
                   </div>
 
-                  <div className="mt-3 space-y-2">
-                    {group.pillars.map((pillar, index) => {
-                      const sourceLabel = pillar.sourceType && pillar.sourceType !== pillar.type ? pillar.sourceType : null;
-                      const displayStatus = statusLabel(pillar.status, pillar.present);
-                      const pillarChipTone = pillarTone(pillar.status, pillar.present);
-
-                      return (
-                        <div
-                          key={`${pillar.type}-${group.key}-${index}`}
-                          className="rounded-lg border border-border/35 bg-background/70 p-3"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 space-y-1">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <p className="text-[12px] font-semibold text-foreground">{pillar.type}</p>
-                                {sourceLabel && <span className={chipClass(sourceTypeTone(sourceLabel))}>{sourceLabel}</span>}
-                                {pillar.greenwaldLabel && (
-                                  <span className={chipClass(
-                                    pillar.greenwaldLabel.toLowerCase().includes("supply")
-                                      ? "emerald"
-                                      : pillar.greenwaldLabel.toLowerCase().includes("demand")
-                                        ? "sky"
-                                        : "slate",
-                                  )}>
-                                    {pillar.greenwaldLabel}
-                                  </span>
-                                )}
-                              </div>
-                              {pillar.subcategory && pillar.subcategory !== pillar.type && (
-                                <p className="text-[11px] leading-snug text-muted-foreground">
-                                  Subcategory: {pillar.subcategory}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="flex shrink-0 flex-col items-end gap-1">
-                              <span className={chipClass(pillarChipTone)}>{displayStatus}</span>
-                              {pillar.score != null && (
-                                <span className={chipClass("slate")}>Score {pillar.score}</span>
-                              )}
-                            </div>
-                          </div>
-
-                          {pillar.evidence ? (
-                            <p className="mt-2 text-[11px] leading-relaxed text-foreground/90">
-                              {pillar.evidence}
-                            </p>
-                          ) : (
-                            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                              Evidence not captured.
-                            </p>
-                          )}
+                  <div className="mt-2.5 space-y-2.5">
+                    {source.presenceStrength && (
+                      <div className="flex items-start gap-2">
+                        <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <div className="min-w-0 space-y-1">
+                          <p className={miniLabelClass}>Presence &amp; strength</p>
+                          <p className={bodyTextClass}>{source.presenceStrength}</p>
                         </div>
-                      );
-                    })}
+                      </div>
+                    )}
+                    {source.durability && (
+                      <div className="flex items-start gap-2">
+                        <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
+                        <div className="min-w-0 space-y-1">
+                          <p className={miniLabelClass}>Durability</p>
+                          <p className={bodyTextClass}>{source.durability}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-lg border border-dashed border-border/50 bg-background/45 p-3 text-[11px] text-muted-foreground">
-              No moat sources were captured in the current payload.
+            <div className="rounded-lg border border-dashed border-border/50 bg-background/45 p-3 text-[12px] text-muted-foreground">
+              {emptySourcesCopy}
             </div>
+          )}
+
+          {ruledOutSources.length > 0 && (
+            <p className="text-[11px] leading-snug text-muted-foreground">
+              Also considered:{" "}
+              <span className="text-foreground/80">
+                {ruledOutSources.map((s) => s.sourceType).join(" · ")}
+              </span>
+            </p>
           )}
         </div>
 
-        <div className={`${nestedCardClass} p-3 space-y-3`}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="space-y-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                Durability
-              </p>
-              <p className="text-[11px] leading-snug text-muted-foreground">
-                {durability?.synthesis ?? analysis.durability ?? "Durability narrative not captured."}
-              </p>
-            </div>
-            <span className={chipClass("slate")}>
-              {durability?.sourceStability.length ?? 0} source stability signal
-              {(durability?.sourceStability.length ?? 0) === 1 ? "" : "s"}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div className="rounded-lg border border-border/35 bg-background/70 p-3 space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Source Stability
-                </p>
-                <span className={chipClass("slate")}>
-                  {durability?.sourceStability.length ?? 0}
-                </span>
-              </div>
-
-              {durability?.sourceStability.length ? (
-                <div className="grid grid-cols-1 gap-2">
-                  {durability.sourceStability.map((item, index) => (
-                    <div key={`${item.stability ?? "stability"}-${index}`} className="rounded-lg border border-border/35 bg-background/70 p-3">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {item.stability && <span className={chipClass("emerald")}>{item.stability}</span>}
-                        {item.sourceType && <span className={chipClass(sourceTypeTone(item.sourceType))}>{item.sourceType}</span>}
-                        {item.compounding && <span className={chipClass("violet")}>{item.compounding}</span>}
-                      </div>
-                      {item.assessment && (
-                        <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                          {item.assessment}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  No source stability signals captured.
-                </p>
-              )}
-            </div>
-
-            <div className="rounded-lg border border-border/35 bg-background/70 p-3 space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Trajectory Evidence
-                </p>
-                <span className={chipClass("slate")}>
-                  {durability?.trajectoryEvidence.length ?? 0}
-                </span>
-              </div>
-
-              {durability?.trajectoryEvidence.length ? (
-                <div className="space-y-2">
-                  {durability.trajectoryEvidence.map((item, index) => (
-                    <div key={`${item.signal ?? "signal"}-${index}`} className="rounded-lg border border-border/35 bg-background/70 p-3">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {item.direction && <span className={chipClass("sky")}>{item.direction}</span>}
-                        {item.dateHint && <span className={chipClass("slate")}>{item.dateHint}</span>}
-                      </div>
-                      {item.signal && (
-                        <p className="mt-2 text-[11px] leading-relaxed text-foreground/90">{item.signal}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  No trajectory evidence captured.
-                </p>
-              )}
-            </div>
-
-            {durability?.competitiveThreatIntensity && (
-              <div className="rounded-lg border border-amber-200/50 bg-amber-50/45 p-3 dark:border-amber-700/25 dark:bg-amber-900/15 md:col-span-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                    Competitive Threat
-                  </p>
-                  {durability.competitiveThreatIntensity.level && (
-                    <span className={chipClass(verdictTone(durability.competitiveThreatIntensity.level))}>
-                      {durability.competitiveThreatIntensity.level}
-                    </span>
-                  )}
-                </div>
-                {durability.competitiveThreatIntensity.paragraph && (
-                  <p className="mt-2 text-[11px] leading-relaxed text-foreground/90">
-                    {durability.competitiveThreatIntensity.paragraph}
-                  </p>
-                )}
-                {durability.competitiveThreatIntensity.attackers.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {durability.competitiveThreatIntensity.attackers.map((attacker, index) => (
-                      <div key={`${attacker.name ?? "attacker"}-${index}`} className="rounded-lg border border-border/35 bg-background/70 p-3">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {attacker.name && <span className={chipClass("slate")}>{attacker.name}</span>}
-                          {attacker.credibility && <span className={chipClass("amber")}>{attacker.credibility}</span>}
-                        </div>
-                        <div className="mt-2 space-y-1">
-                          {attacker.capability && (
-                            <p className="text-[11px] leading-relaxed text-foreground/90">
-                              Capability: {attacker.capability}
-                            </p>
-                          )}
-                          {attacker.motivation && (
-                            <p className="text-[11px] leading-relaxed text-foreground/90">
-                              Motivation: {attacker.motivation}
-                            </p>
-                          )}
-                          {attacker.capitalPosition && (
-                            <p className="text-[11px] leading-relaxed text-muted-foreground">
-                              Capital position: {attacker.capitalPosition}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
-          <div className={`${nestedCardClass} p-3 space-y-2`}>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="space-y-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                  Industry Structure
-                </p>
-                <p className="text-[11px] leading-snug text-muted-foreground">
-                  Porter framing from the moat run.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {(industryStructure?.verdict ?? analysis.porterVerdict) && (
-                  <span
-                    className={verdictBadgeClass(
-                      industryStructure?.verdict ?? analysis.porterVerdict,
-                    )}
-                  >
-                    {industryStructure?.verdict ?? analysis.porterVerdict}
-                  </span>
-                )}
-                {industryStructure?.included != null && (
-                  <span className={chipClass(industryStructure.included ? "emerald" : "rose")}>
-                    {industryStructure.included ? "Included" : "Not included"}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {(industryStructure?.summary ?? analysis.porterSummary) && (
-              <p className="text-[12px] leading-relaxed text-foreground/90">
-                {industryStructure?.summary ?? analysis.porterSummary}
-              </p>
-            )}
-          </div>
-
           <div className={`${nestedCardClass} p-3 space-y-3`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="space-y-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                  Quantitative Test
-                </p>
-                <p className="text-[11px] leading-snug text-muted-foreground">
-                  Capital efficiency and margin signal.
+                <p className={sectionLabelClass}>Barrier Strength</p>
+                <p className={sectionSubtitleClass}>
+                  How well protected is this moat from a well-funded competitor?
                 </p>
               </div>
-              {quantitative?.overallVerdict && (
-                <span className={verdictBadgeClass(quantitative.overallVerdict)}>
-                  {quantitative.overallVerdict}
-                </span>
+              {barrierVerdict && (
+                <span className={chipClass(barrierVerdict.tone)}>{barrierVerdict.label}</span>
               )}
             </div>
-
-            {quantitative?.basis && (
-              <p className="text-[12px] leading-relaxed text-foreground/90">{quantitative.basis}</p>
-            )}
-
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {quantitative?.roic && (
-                <div className="rounded-lg border border-border/35 bg-background/70 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    ROIC / ROCE
-                  </p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-foreground/90">{quantitative.roic}</p>
-                </div>
-              )}
-              {quantitative?.marginCharacter && (
-                <div className="rounded-lg border border-border/35 bg-background/70 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    Margin character
-                  </p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-foreground/90">
-                    {quantitative.marginCharacter}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-1.5">
-              {quantitative?.margins && (
-                <span className={chipClass("slate")}>{quantitative.margins}</span>
-              )}
-              {quantitative?.marketShare && (
-                <span className={chipClass("sky")}>{quantitative.marketShare}</span>
-              )}
-              {quantitative?.pricingPower && (
-                <span className={chipClass("violet")}>{quantitative.pricingPower}</span>
-              )}
-            </div>
-          </div>
-
-          <div className={`${nestedCardClass} p-3 space-y-3`}>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="space-y-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                  Moat Risks
-                </p>
-                <p className="text-[11px] leading-snug text-muted-foreground">
-                  {structuredRisks.length} risk{structuredRisks.length === 1 ? "" : "s"} captured.
-                </p>
-              </div>
-            </div>
-
-            {structuredRisks.length > 0 ? (
-              <div className="space-y-2">
-                {structuredRisks.map((risk, index) => (
-                  <div key={`${risk.trigger ?? "risk"}-${index}`} className="rounded-lg border border-border/35 bg-background/70 p-3">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {risk.sourceType && <span className={chipClass(sourceTypeTone(risk.sourceType))}>{risk.sourceType}</span>}
-                    </div>
-                    <p className="mt-2 text-[11px] leading-relaxed text-foreground/90">
-                      {formatRiskSummary(risk)}
-                    </p>
-                  </div>
-                ))}
-              </div>
+            {gatekeeper?.note ? (
+              <p className={bodyTextClass}>{gatekeeper.note}</p>
             ) : (
-              <div className="rounded-lg border border-dashed border-border/50 bg-background/45 p-3 text-[11px] text-muted-foreground">
-                No moat risks captured yet.
+              <p className={mutedBodyClass}>No barrier rationale captured.</p>
+            )}
+          </div>
+
+          <div className={`${nestedCardClass} p-3 space-y-3`}>
+            <div className="space-y-1">
+              <p className={sectionLabelClass}>Economic Proof</p>
+              <p className={sectionSubtitleClass}>
+                Returns vs. cost of capital, and resilience through cycles.
+              </p>
+            </div>
+            {financial?.roicVsWacc && <p className={bodyTextClass}>{financial.roicVsWacc}</p>}
+            {financial?.note && <p className={mutedBodyClass}>{financial.note}</p>}
+            {!financial?.roicVsWacc && !financial?.note && (
+              <p className={mutedBodyClass}>No economic proof captured.</p>
+            )}
+          </div>
+
+          <div className={`${watchCardClass} p-3 space-y-3`}>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <div className="space-y-1">
+                  <p className={sectionLabelClass}>Watch For</p>
+                  <p className={sectionSubtitleClass}>
+                    Signals that would break this thesis.
+                  </p>
+                </div>
               </div>
+            </div>
+
+            {analysis.whatWouldChangeTheCall.length > 0 ? (
+              <ul className="space-y-2">
+                {analysis.whatWouldChangeTheCall.map((trigger, index) => (
+                  <li
+                    key={`${trigger.slice(0, 32)}-${index}`}
+                    className="rounded-lg border border-amber-200/60 bg-background/70 p-3 text-[13px] leading-relaxed text-foreground/90 dark:border-amber-700/30"
+                  >
+                    {trigger}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className={mutedBodyClass}>No change-triggers captured yet.</p>
             )}
           </div>
         </div>
+
+        {footerBits.length > 0 && (
+          <p className="pt-1 text-[11px] leading-snug text-muted-foreground">
+            {footerBits.join(" · ")}
+          </p>
+        )}
       </div>
     </div>
   );
