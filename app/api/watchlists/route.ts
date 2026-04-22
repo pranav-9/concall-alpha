@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
-import {
-  checkRateLimit,
-  getClientIp,
-  rateLimitResponse,
-} from "@/lib/rate-limit";
 
 type Payload = {
   name?: string;
@@ -33,17 +28,6 @@ export async function POST(request: Request) {
         { ok: false, error: "Authentication required." },
         { status: 401 },
       );
-    }
-
-    const ip = await getClientIp();
-    const limit = await checkRateLimit(supabase, {
-      scope: "watchlists:post",
-      identifier: `user:${userId}|ip:${ip}`,
-      limit: 10,
-      windowSeconds: 60 * 60,
-    });
-    if (!limit.allowed) {
-      return rateLimitResponse(limit);
     }
 
     const { data: existingRows, error: existingError } = await supabase

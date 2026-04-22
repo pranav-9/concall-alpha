@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
-import {
-  checkRateLimit,
-  getClientIp,
-  rateLimitResponse,
-} from "@/lib/rate-limit";
 import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
 
 type CommentRow = {
@@ -172,18 +167,6 @@ export async function POST(request: Request) {
 
     const { visitorId, isNew } = await getOrCreateVisitorId();
     const supabase = await createClient();
-
-    const ip = await getClientIp();
-    const limit = await checkRateLimit(supabase, {
-      scope: "comments:post",
-      identifier: `ip:${ip}|v:${visitorId}`,
-      limit: 5,
-      windowSeconds: 60,
-    });
-    if (!limit.allowed) {
-      return rateLimitResponse(limit);
-    }
-
     const { data, error } = await supabase
       .from("company_comments")
       .insert({

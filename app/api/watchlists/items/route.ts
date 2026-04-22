@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
-import {
-  checkRateLimit,
-  getClientIp,
-  rateLimitResponse,
-} from "@/lib/rate-limit";
 
 type Payload = {
   companyCode?: string;
@@ -59,19 +54,6 @@ async function resolveWatchlistContext(request: Request) {
         { ok: false, error: "Authentication required." },
         { status: 401 },
       ),
-    } as const;
-  }
-
-  const ip = await getClientIp();
-  const limit = await checkRateLimit(supabase, {
-    scope: "watchlist-items",
-    identifier: `user:${userId}|ip:${ip}`,
-    limit: 30,
-    windowSeconds: 60,
-  });
-  if (!limit.allowed) {
-    return {
-      errorResponse: rateLimitResponse(limit),
     } as const;
   }
 

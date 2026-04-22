@@ -2,11 +2,6 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
-import {
-  checkRateLimit,
-  getClientIp,
-  rateLimitResponse,
-} from "@/lib/rate-limit";
 
 type RequestType =
   | "feedback"
@@ -65,18 +60,6 @@ export async function POST(request: Request) {
     const requestId = crypto.randomUUID();
 
     const supabase = await createClient();
-
-    const ip = await getClientIp();
-    const limit = await checkRateLimit(supabase, {
-      scope: "user-requests:post",
-      identifier: `ip:${ip}`,
-      limit: 5,
-      windowSeconds: 60 * 60,
-    });
-    if (!limit.allowed) {
-      return rateLimitResponse(limit);
-    }
-
     const { error } = await supabase
       .from("user_requests")
       .insert({

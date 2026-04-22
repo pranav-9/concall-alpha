@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
 
 type Payload = {
@@ -43,32 +42,20 @@ export async function POST(request: Request) {
     const referrer = h.get("referer");
 
     const supabase = await createClient();
-
-    const ip = await getClientIp();
-    const limit = await checkRateLimit(supabase, {
-      scope: "track:page-view",
-      identifier: `ip:${ip}|v:${visitorId}`,
-      limit: 60,
-      windowSeconds: 60,
+    const { error: insertError } = await supabase.from("page_view_events").insert({
+      visitor_id: visitorId,
+      path: parsed.path,
+      company_code: parsed.companyCode,
+      user_agent: userAgent,
+      referrer,
     });
-    // Drop silently when over the limit — the client doesn't need to know
-    // and shouldn't retry for telemetry.
-    if (limit.allowed) {
-      const { error: insertError } = await supabase.from("page_view_events").insert({
-        visitor_id: visitorId,
-        path: parsed.path,
-        company_code: parsed.companyCode,
-        user_agent: userAgent,
-        referrer,
-      });
 
-      if (insertError) {
-        logger.error("supabase: failed to insert page_view_event", {
-          path: parsed.path,
-          companyCode: parsed.companyCode,
-          error: insertError,
-        });
-      }
+    if (insertError) {
+      logger.error("supabase: failed to insert page_view_event", {
+        path: parsed.path,
+        companyCode: parsed.companyCode,
+        error: insertError,
+      });
     }
 
     const response = NextResponse.json({ ok: true });

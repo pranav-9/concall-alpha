@@ -1,20 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
-import {
-  checkRateLimit,
-  getClientIp,
-  rateLimitResponse,
-} from "@/lib/rate-limit";
 import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
 
 type Payload = {
   commentId?: string;
-};
-
-type ToggleRow = {
-  liked: boolean;
-  likes_count: number | null;
 };
 
 const UUID_REGEX =
@@ -34,44 +24,81 @@ export async function POST(request: Request) {
     const { visitorId, isNew } = await getOrCreateVisitorId();
     const supabase = await createClient();
 
-    const ip = await getClientIp();
-    const limit = await checkRateLimit(supabase, {
-      scope: "comments:like",
-      identifier: `ip:${ip}|v:${visitorId}`,
-      limit: 30,
-      windowSeconds: 60,
-    });
-    if (!limit.allowed) {
-      return rateLimitResponse(limit);
+    const { data: commentRow, error: commentError } = await supabase
+      .from("company_comments")
+      .select("id, likes_count, status")
+      .eq("id", commentId)
+      .maybeSingle();
+
+    if (commentError) {
+      logger.error("supabase: failed to load comment for like", {
+        commentId,
+        error: commentError,
+      });
     }
 
-    const { data, error } = await supabase.rpc("toggle_company_comment_like", {
-      p_comment_id: commentId,
-      p_visitor_id: visitorId,
-    });
-
-    if (error) {
-      if (error.code === "P0002") {
-        return NextResponse.json(
-          { ok: false, error: "Comment not found." },
-          { status: 404 },
-        );
-      }
-      logger.error("supabase rpc: toggle_company_comment_like failed", {
-        commentId,
-        error,
-      });
+    if (commentError || !commentRow || commentRow.status !== "visible") {
       return NextResponse.json(
-        { ok: false, error: "Unable to toggle like." },
-        { status: 500 },
+        { ok: false, error: "Comment not found." },
+        { status: 404 },
       );
     }
 
-    const row = Array.isArray(data) ? (data[0] as ToggleRow | undefined) : (data as ToggleRow | null);
+    const { data: existingLike } = await supabase
+      .from("company_comment_likes")
+      .select("comment_id")
+      .eq("comment_id", commentId)
+      .eq("visitor_id", visitorId)
+      .maybeSingle();
+
+    let liked = false;
+    if (existingLike) {
+      await supabase
+        .from("company_comment_likes")
+        .delete()
+        .eq("comment_id", commentId)
+        .eq("visitor_id", visitorId);
+
+      await supabase
+        .from("company_comments")
+        .update({
+          likes_count: Math.max(Number(commentRow.likes_count ?? 0) - 1, 0),
+        })
+        .eq("id", commentId);
+    } else {
+      const { error: insertLikeError } = await supabase
+        .from("company_comment_likes")
+        .insert({
+          comment_id: commentId,
+          visitor_id: visitorId,
+        });
+
+      if (insertLikeError) {
+        logger.error("supabase: failed to insert comment like", {
+          commentId,
+          error: insertLikeError,
+        });
+      } else {
+        await supabase
+          .from("company_comments")
+          .update({
+            likes_count: Number(commentRow.likes_count ?? 0) + 1,
+          })
+          .eq("id", commentId);
+        liked = true;
+      }
+    }
+
+    const { data: refreshedRow } = await supabase
+      .from("company_comments")
+      .select("likes_count")
+      .eq("id", commentId)
+      .single();
+
     const response = NextResponse.json({
       ok: true,
-      liked: Boolean(row?.liked),
-      likesCount: Number(row?.likes_count ?? 0),
+      liked,
+      likesCount: Number(refreshedRow?.likes_count ?? 0),
     });
 
     if (isNew) {

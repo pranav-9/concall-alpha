@@ -32,7 +32,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
-import type { NormalizedGrowthCatalyst, NormalizedGrowthScenario } from "@/lib/growth-outlook/types";
+import type { NormalizedGrowthScenario } from "@/lib/growth-outlook/types";
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
 import { normalizeCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/normalize";
 import { normalizeKeyVariablesSnapshot } from "@/lib/key-variables-snapshot/normalize";
@@ -44,7 +44,6 @@ import {
 } from "../components/deferred-company-sections";
 import { BusinessSegmentsMosaic } from "../components/business-segments-mosaic";
 import { KeyVariablesSection } from "../components/key-variables-section";
-import { MissingSectionRequestButton } from "../components/missing-section-request-button";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
@@ -54,7 +53,6 @@ import type {
   NormalizedIndustryRegulatoryChange,
   CompanyIndustryAnalysisRow,
   NormalizedIndustrySubSectorCard,
-  NormalizedIndustryTheme,
 } from "@/lib/company-industry-analysis/types";
 import type {
   NormalizedRevenueSplitHistoryRow,
@@ -93,9 +91,7 @@ import {
   getTimeHorizonDisplay,
   getTimelineStageDisplay,
   splitCatalystQuantifiedLabel,
-  timelineStageConfig,
   toDisplayLabel,
-  type OverviewBodyPillTone,
 } from "./display-tokens";
 import { MissingSectionState } from "../components/missing-section-state";
 
