@@ -1,118 +1,41 @@
-export type ChangelogHighlightKind = "added" | "improved" | "fixed";
+export type ChangelogCategory =
+  | "Company analysis"
+  | "Score framework"
+  | "Portal";
 
-export type ChangelogHighlight = {
-  kind: ChangelogHighlightKind;
-  text: string;
-};
+export type ChangelogStatus = "new" | "updated";
 
 export type ChangelogEntry = {
-  version: string;
-  releasedAt: string;
-  releasedLabel: string;
+  date: string;
+  dateLabel: string;
   title: string;
-  summary: string;
-  scope: string;
-  accent: "violet" | "sky" | "emerald" | "amber";
-  highlights: ChangelogHighlight[];
+  category: ChangelogCategory;
+  status: ChangelogStatus;
 };
 
+// Newest first. Dates are derived from git history of the user-visible Portal UI
+// work, cross-referenced with the activity log. "new" = brand new capability,
+// "updated" = significant enhancement to a capability that already existed.
 export const changelogEntries: ChangelogEntry[] = [
-  {
-    version: "v0.9.0",
-    releasedAt: "2026-04-20",
-    releasedLabel: "20 Apr 2026",
-    title: "Changelog now lives in the portal",
-    summary:
-      "Release notes are now visible inside the product so product updates can be scanned without leaving the research workflow.",
-    scope: "Portal shell",
-    accent: "violet",
-    highlights: [
-      {
-        kind: "added",
-        text: "A dedicated changelog page with version chips, date chips, and reverse-chronological release cards.",
-      },
-      {
-        kind: "added",
-        text: "A homepage teaser and footer entry so the latest update is reachable from the main portal surfaces.",
-      },
-      {
-        kind: "improved",
-        text: "The changelog follows the same layered surface grammar as the rest of the research portal.",
-      },
-    ],
-  },
-  {
-    version: "v0.8.0",
-    releasedAt: "2026-03-18",
-    releasedLabel: "18 Mar 2026",
-    title: "Requests became easier to scan",
-    summary:
-      "The request intake flow now shows recent demand and the latest request date alongside the submission form.",
-    scope: "Requests",
-    accent: "sky",
-    highlights: [
-      {
-        kind: "added",
-        text: "A demand visibility panel for the latest stock requests users have submitted.",
-      },
-      {
-        kind: "improved",
-        text: "Cleaner request labeling so feedback, stock additions, and bug reports read as distinct paths.",
-      },
-      {
-        kind: "fixed",
-        text: "The latest-request summary now carries a clearer date readout for fast triage.",
-      },
-    ],
-  },
-  {
-    version: "v0.7.0",
-    releasedAt: "2026-02-11",
-    releasedLabel: "11 Feb 2026",
-    title: "How Scores Work got a cleaner read order",
-    summary:
-      "The score explainer was reorganized so growth and quarterly lenses are easier to compare at a glance.",
-    scope: "Score framework",
-    accent: "amber",
-    highlights: [
-      {
-        kind: "improved",
-        text: "Tabbed growth and quarterly sections now carry the main scoring logic with less visual clutter.",
-      },
-      {
-        kind: "added",
-        text: "More compact metric cards and summary panels for the score framework overview.",
-      },
-      {
-        kind: "fixed",
-        text: "Excess explanatory text was trimmed so the page reads more like a research guide and less like a product essay.",
-      },
-    ],
-  },
-  {
-    version: "v0.6.0",
-    releasedAt: "2026-01-15",
-    releasedLabel: "15 Jan 2026",
-    title: "Homepage research rails were tightened",
-    summary:
-      "The homepage gained denser research context without sacrificing scan speed in the hero area.",
-    scope: "Homepage",
-    accent: "emerald",
-    highlights: [
-      {
-        kind: "added",
-        text: "A recent score updates rail for the latest company-level movements.",
-      },
-      {
-        kind: "improved",
-        text: "Coverage metrics and analysis cards now share the same airy portal rhythm.",
-      },
-      {
-        kind: "fixed",
-        text: "Spacing around the hero coverage summary was tightened for smaller desktop widths.",
-      },
-    ],
-  },
+  { date: "2026-04-24", dateLabel: "24 Apr 2026", title: "Value chain on company pages", category: "Company analysis", status: "new" },
+  { date: "2026-04-24", dateLabel: "24 Apr 2026", title: "Changelog inside the portal", category: "Portal", status: "new" },
+  { date: "2026-04-21", dateLabel: "21 Apr 2026", title: "Moat analysis on company pages", category: "Company analysis", status: "new" },
+  { date: "2026-04-20", dateLabel: "20 Apr 2026", title: "Portal redesign", category: "Portal", status: "updated" },
+  { date: "2026-04-16", dateLabel: "16 Apr 2026", title: "Deeper industry context on company pages", category: "Company analysis", status: "updated" },
+  { date: "2026-04-07", dateLabel: "7 Apr 2026", title: "Key variables on company pages", category: "Company analysis", status: "new" },
+  { date: "2026-03-11", dateLabel: "11 Mar 2026", title: "Guidance tracking", category: "Company analysis", status: "new" },
+  { date: "2026-03-11", dateLabel: "11 Mar 2026", title: "Stock request intake", category: "Portal", status: "new" },
+  { date: "2026-03-07", dateLabel: "7 Mar 2026", title: "Industry analysis on company pages", category: "Company analysis", status: "new" },
+  { date: "2026-03-03", dateLabel: "3 Mar 2026", title: "Watchlists for authenticated users", category: "Portal", status: "new" },
+  { date: "2026-03-03", dateLabel: "3 Mar 2026", title: "Business snapshot on company pages", category: "Company analysis", status: "new" },
+  { date: "2026-02-26", dateLabel: "26 Feb 2026", title: "Sectors view", category: "Portal", status: "new" },
+  { date: "2026-02-24", dateLabel: "24 Feb 2026", title: "Company comments", category: "Company analysis", status: "new" },
+  { date: "2026-02-20", dateLabel: "20 Feb 2026", title: "Trend twist (momentum signal)", category: "Score framework", status: "new" },
+  { date: "2026-02-10", dateLabel: "10 Feb 2026", title: "How Scores Work explainer", category: "Score framework", status: "new" },
+  { date: "2026-01-19", dateLabel: "19 Jan 2026", title: "Growth score and growth leaderboard", category: "Score framework", status: "new" },
+  { date: "2026-01-09", dateLabel: "9 Jan 2026", title: "Score reasoning", category: "Score framework", status: "updated" },
+  { date: "2025-10-09", dateLabel: "9 Oct 2025", title: "Quarterly score on every company page", category: "Score framework", status: "new" },
+  { date: "2025-10-06", dateLabel: "6 Oct 2025", title: "Portal launched", category: "Portal", status: "new" },
 ];
 
 export const latestChangelogEntry = changelogEntries[0];

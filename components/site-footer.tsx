@@ -1,5 +1,9 @@
 import Link from "next/link";
 
+import { latestChangelogEntry } from "@/app/changelog/changelog-data";
+
+import { ChangelogNewIndicator } from "./changelog-new-indicator";
+
 type FooterLinkItem = {
   href: string;
   label: string;
@@ -79,7 +83,14 @@ export function SiteFooter() {
             </p>
             <div className="flex flex-col items-start gap-2.5">
               {exploreLinks.map((item) => (
-                <FooterLink key={item.href} item={item} />
+                <div key={item.href} className="inline-flex items-center gap-1.5">
+                  <FooterLink item={item} />
+                  {item.href === "/changelog" ? (
+                    <ChangelogNewIndicator
+                      latestKey={latestChangelogEntry.date}
+                    />
+                  ) : null}
+                </div>
               ))}
             </div>
           </nav>
