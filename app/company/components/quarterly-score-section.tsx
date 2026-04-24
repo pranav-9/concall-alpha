@@ -23,6 +23,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { ChartLineLabel } from "../[code]/chart";
+import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 import type { ChartDataPoint, QuarterData } from "../types";
 
 type TrendInfo = {
@@ -167,7 +168,7 @@ export function QuarterlyScoreSection({
   ).padStart(2, "0")}`;
 
   return (
-    <div className="rounded-[1.35rem] border border-amber-200/20 bg-gradient-to-br from-background/96 via-background/98 to-muted/10 p-2.5 shadow-[0_14px_30px_-28px_rgba(15,23,42,0.28)] dark:border-amber-700/18 dark:from-background/90 dark:via-background/88 dark:to-background/76">
+    <div className={`${elevatedBlockClass} p-2.5`}>
       <div className="flex flex-col gap-3">
         <div
           className={`grid gap-2 rounded-xl border px-2.5 py-2 shadow-sm shadow-black/10 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center ${
@@ -207,7 +208,7 @@ export function QuarterlyScoreSection({
         </div>
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,0.82fr)_minmax(24rem,1.18fr)] lg:items-start">
-          <div className="flex min-w-0 flex-col gap-2 rounded-2xl border border-amber-200/20 bg-background/78 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_20px_-22px_rgba(15,23,42,0.16)] dark:border-amber-700/18 dark:bg-background/80">
+          <div className={`${nestedDetailClass} flex min-w-0 flex-col gap-2 p-2.5`}>
             <div className="flex items-center justify-between gap-2">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Score trend
@@ -226,7 +227,7 @@ export function QuarterlyScoreSection({
             </p>
           </div>
 
-          <div className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-amber-200/20 bg-background/90 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_16px_26px_-24px_rgba(15,23,42,0.18)] dark:border-amber-700/18 dark:bg-background/84">
+          <div className={`${nestedDetailClass} flex min-w-0 flex-col overflow-hidden p-3.5`}>
             {detailQuarters.length > 0 ? (
               <Carousel setApi={setCarouselApi} opts={{ align: "start" }} className="min-w-0 w-full">
                 <CarouselContent className="ml-0">

@@ -4,6 +4,7 @@ import * as React from "react";
 import { ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 import type {
   NormalizedGuidanceItem,
   NormalizedGuidanceStatusKey,
@@ -39,65 +40,54 @@ const STATUS_STYLES: Record<
     badgeClass:
       "border-sky-200 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
     accentClass: "bg-sky-500",
-    shellClass:
-      "border-sky-200/40 bg-gradient-to-br from-sky-50/16 via-background/96 to-background/82 dark:border-sky-700/28 dark:from-sky-950/18 dark:via-background/88 dark:to-background/72",
+    shellClass: "border-sky-200/40 dark:border-sky-700/28",
   },
   delayed: {
     badgeClass:
       "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200",
     accentClass: "bg-amber-500",
-    shellClass:
-      "border-amber-200/40 bg-gradient-to-br from-amber-50/16 via-background/96 to-background/82 dark:border-amber-700/28 dark:from-amber-950/18 dark:via-background/88 dark:to-background/72",
+    shellClass: "border-amber-200/40 dark:border-amber-700/28",
   },
   active: {
     badgeClass:
       "border-slate-200 bg-slate-100 text-slate-800 dark:border-slate-700/40 dark:bg-slate-900/30 dark:text-slate-200",
     accentClass: "bg-slate-500",
-    shellClass:
-      "border-slate-200/35 bg-gradient-to-br from-slate-50/14 via-background/96 to-background/82 dark:border-slate-700/28 dark:from-slate-950/18 dark:via-background/88 dark:to-background/72",
+    shellClass: "border-slate-200/35 dark:border-slate-700/28",
   },
   not_yet_clear: {
     badgeClass:
       "border-zinc-200 bg-zinc-100 text-zinc-800 dark:border-zinc-700/40 dark:bg-zinc-900/30 dark:text-zinc-200",
     accentClass: "bg-zinc-500",
-    shellClass:
-      "border-zinc-200/35 bg-gradient-to-br from-zinc-50/14 via-background/96 to-background/82 dark:border-zinc-700/28 dark:from-zinc-950/18 dark:via-background/88 dark:to-background/72",
+    shellClass: "border-zinc-200/35 dark:border-zinc-700/28",
   },
   met: {
     badgeClass:
       "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
     accentClass: "bg-emerald-500",
-    shellClass:
-      "border-emerald-200/40 bg-gradient-to-br from-emerald-50/16 via-background/96 to-background/82 dark:border-emerald-700/28 dark:from-emerald-950/18 dark:via-background/88 dark:to-background/72",
+    shellClass: "border-emerald-200/40 dark:border-emerald-700/28",
   },
   dropped: {
     badgeClass:
       "border-rose-200 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
     accentClass: "bg-rose-500",
-    shellClass:
-      "border-rose-200/40 bg-gradient-to-br from-rose-50/16 via-background/96 to-background/82 dark:border-rose-700/28 dark:from-rose-950/18 dark:via-background/88 dark:to-background/72",
+    shellClass: "border-rose-200/40 dark:border-rose-700/28",
   },
   unknown: {
     badgeClass: "border-border bg-muted text-foreground",
     accentClass: "bg-muted-foreground",
-    shellClass:
-      "border-border/35 bg-gradient-to-br from-background/96 via-background/92 to-muted/18",
+    shellClass: "border-border/35",
   },
 };
 
-const TRACKER_OVERVIEW_CLASS =
-  "rounded-[1.45rem] border border-border/30 bg-gradient-to-br from-background/96 via-background/92 to-background/82 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_14px_26px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:from-background/88 dark:via-background/82 dark:to-background/70";
+const TRACKER_OVERVIEW_CLASS = `${elevatedBlockClass} p-4`;
 
 const TRACKER_ROOT_CLASS = "space-y-4";
 
-const TRACKER_GROUP_CLASS =
-  "relative overflow-hidden rounded-[1.45rem] border border-border/30 bg-gradient-to-br from-background/97 via-background/92 to-background/82 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_14px_26px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm";
+const TRACKER_GROUP_CLASS = `relative overflow-hidden ${elevatedBlockClass} p-3`;
 
-const TRACKER_TRAIL_CLASS =
-  "rounded-xl border border-border/30 bg-gradient-to-br from-background/96 via-background/92 to-muted/16 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.42)] dark:from-background/88 dark:via-background/82 dark:to-background/70";
+const TRACKER_TRAIL_CLASS = `${nestedDetailClass} px-3 py-2.5`;
 
-const TRACKER_EMPTY_CLASS =
-  "rounded-[1.45rem] border border-border/30 bg-gradient-to-br from-background/96 via-background/92 to-amber-50/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.48),0_18px_34px_-30px_rgba(15,23,42,0.2)] backdrop-blur-sm dark:from-background/88 dark:via-background/84 dark:to-amber-950/12";
+const TRACKER_EMPTY_CLASS = `${elevatedBlockClass} p-4`;
 
 const isRevenueGuidanceType = (value: string | null) => {
   const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
@@ -240,7 +230,7 @@ function GuidanceThreadCard({ item }: { item: NormalizedGuidanceItem }) {
   const showTrail = item.trail.length > 0;
 
   return (
-    <article className="relative overflow-hidden rounded-2xl border border-border/25 bg-gradient-to-br from-background/96 via-background/92 to-muted/14 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.48),0_14px_24px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:from-background/88 dark:via-background/82 dark:to-background/70">
+    <article className={`${nestedDetailClass} relative overflow-hidden p-3`}>
       <div className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
             <div className="min-w-0 space-y-2">
@@ -294,7 +284,7 @@ function GuidanceThreadCard({ item }: { item: NormalizedGuidanceItem }) {
           </div>
 
           {showTrail ? (
-            <details className="group rounded-xl border border-border/25 bg-gradient-to-br from-background/94 via-background/90 to-background/74 p-2.5 dark:from-background/86 dark:via-background/80 dark:to-background/68">
+            <details className={`group ${nestedDetailClass} p-2.5`}>
               <summary className="list-none cursor-pointer">
                 <div className="flex items-center justify-between gap-3 rounded-lg border border-border/35 bg-background/72 px-3 py-2 transition-colors hover:bg-background/82 dark:bg-background/55 dark:hover:bg-background/65">
                   <div className="space-y-0.5">

@@ -11,6 +11,11 @@ import { CompanyPageWorkspace } from "../components/company-page-workspace";
 import { OverviewCard } from "../components/overview-card";
 import { MoatAnalysisSection } from "../components/moat-analysis-section";
 import { SectionCard } from "../components/section-card";
+import {
+  elevatedBlockClass,
+  nestedDetailClass,
+  snapshotSubsectionClass,
+} from "../components/surface-tokens";
 import { parseSummary, transformToChartData, calculateTrend } from "../utils";
 import ConcallScore from "@/components/concall-score";
 import {
@@ -436,18 +441,8 @@ export default async function Page({
   const industryPositioning = normalizedCompanyIndustryAnalysis?.industryPositioning;
   const businessSummaryLine =
     aboutHeading ?? normalizedBusinessSnapshot?.businessSummaryShort ?? null;
-  const elevatedBlockClass =
-    "rounded-xl border border-border/35 bg-background/75 shadow-md shadow-black/20";
-  const elevatedMutedBlockClass =
-    "rounded-xl border border-border/35 bg-muted/35 shadow-md shadow-black/20";
-  const nestedDetailClass =
-    "rounded-md border border-border/25 bg-background/45";
-  const snapshotSubsectionClass =
-    "rounded-xl border border-border/20 bg-background/25";
-  const businessSnapshotSurfaceClass =
-    "rounded-[1.45rem] border border-emerald-200/35 bg-gradient-to-br from-background/96 via-background/92 to-emerald-50/14 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.48),0_18px_32px_-28px_rgba(15,23,42,0.2)] backdrop-blur-sm dark:border-emerald-700/25 dark:from-background/90 dark:via-background/84 dark:to-emerald-950/14";
-  const businessSnapshotBlockClass =
-    "rounded-xl border border-border/25 bg-gradient-to-br from-background/96 via-background/91 to-muted/12 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_14px_24px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:from-background/88 dark:via-background/82 dark:to-background/70";
+  const businessSnapshotSurfaceClass = `${elevatedBlockClass} p-4`;
+  const businessSnapshotBlockClass = elevatedBlockClass;
   const hasFutureGrowthDeepDive = Boolean(
       normalizedGrowthOutlook?.scenarios?.base ||
       normalizedGrowthOutlook?.scenarios?.upside ||
@@ -1242,18 +1237,13 @@ export default async function Page({
     )
       return null;
 
-    const snapshotPanelClass =
-      "rounded-[1.45rem] border border-border/30 bg-gradient-to-br from-background/96 via-background/92 to-background/82 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_14px_26px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:from-background/88 dark:via-background/82 dark:to-background/70";
-    const snapshotNestedClass =
-      "rounded-xl border border-border/25 bg-gradient-to-br from-background/96 via-background/92 to-muted/12 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.44)] backdrop-blur-sm dark:from-background/86 dark:via-background/80 dark:to-background/68";
-
     const renderAccuracyRow = (row: NormalizedPriorTwoYearAccuracyRow, index: number) => {
       const verdictDisplay = getGuidanceAccuracyVerdictDisplay(row.verdict);
 
       return (
         <div
           key={`${row.fiscalYear ?? "year"}-${index}`}
-          className={`${snapshotNestedClass} space-y-1.5`}
+          className={`${nestedDetailClass} p-3 space-y-1.5`}
         >
           <div className="flex flex-wrap items-start justify-between gap-1.5">
             <div>
@@ -1307,7 +1297,7 @@ export default async function Page({
     return (
       <div className="space-y-4">
         <div className="grid gap-3 lg:grid-cols-3">
-          <section className={snapshotPanelClass}>
+          <section className={`${elevatedBlockClass} p-4`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 space-y-1.5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -1331,7 +1321,7 @@ export default async function Page({
             </div>
           </section>
 
-          <section className={snapshotPanelClass}>
+          <section className={`${elevatedBlockClass} p-4`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 space-y-1.5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -1355,7 +1345,7 @@ export default async function Page({
             )}
           </section>
 
-          <section className={snapshotPanelClass}>
+          <section className={`${elevatedBlockClass} p-4`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 space-y-1.5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -1383,7 +1373,7 @@ export default async function Page({
         {(currentYear || priorAccuracy.length > 0) && (
           <div className="grid gap-3 lg:grid-cols-2">
             {currentYear && (
-              <section className={snapshotPanelClass}>
+              <section className={`${elevatedBlockClass} p-4`}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 space-y-1.5">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -1421,7 +1411,7 @@ export default async function Page({
                   <div className="space-y-3">
                     {(currentYear.officialCurrentGuidanceText ||
                       currentYear.consolidatedStatement) && (
-                      <div className={snapshotNestedClass}>
+                      <div className={`${nestedDetailClass} p-3`}>
                         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Guidance line
                         </p>
@@ -1470,7 +1460,7 @@ export default async function Page({
                   </div>
 
                   {currentYear.sourceQuarterTimeline.length > 0 ? (
-                    <div className={snapshotNestedClass}>
+                    <div className={`${nestedDetailClass} p-3`}>
                       <div className="flex flex-wrap items-center justify-between gap-1.5">
                         <span className="inline-flex items-center gap-2 rounded-full border border-border/45 bg-muted/15 px-2.5 py-1 text-[9px] font-medium text-muted-foreground">
                           <span>Guidance evolution</span>
@@ -1526,7 +1516,7 @@ export default async function Page({
             )}
 
             {priorAccuracy.length > 0 && (
-              <section className={snapshotPanelClass}>
+              <section className={`${elevatedBlockClass} p-4`}>
                 <div className="flex flex-wrap items-center justify-between gap-1.5">
                   <div className="space-y-1">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -3026,7 +3016,7 @@ export default async function Page({
                 </div>
 
                 {normalizedCompanyIndustryAnalysis.industryPositioning?.customerNeed && (
-                  <div className="space-y-1.5">
+                  <div className={`${elevatedBlockClass} p-4 space-y-1.5`}>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       Industry overview
                     </p>
@@ -3039,8 +3029,6 @@ export default async function Page({
                 {(normalizedCompanyIndustryAnalysis.valueChainMap ||
                   normalizedCompanyIndustryAnalysis.typesOfPlayers) && (
                   <>
-                    <div className="border-t border-border/30" />
-
                     <div className="grid grid-cols-1 gap-3">
                       {renderIndustryContextDrawerCard({
                         title: "Value Chain Map",
@@ -3087,7 +3075,7 @@ export default async function Page({
                                   {normalizedCompanyIndustryAnalysis.valueChainMap.layers.map(
                                     (layer, index) => (
                                       <React.Fragment key={`${layer.layerName}-${index}`}>
-                                        <div className="rounded-xl border border-border/70 bg-card px-3.5 py-3 shadow-md shadow-black/20 lg:flex-1 lg:min-w-0">
+                                        <div className={`${nestedDetailClass} px-3.5 py-3 lg:flex-1 lg:min-w-0`}>
                                           <div className="flex items-start gap-2">
                                             <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-muted/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground">
                                               {index + 1}
@@ -3235,6 +3223,7 @@ export default async function Page({
                         inline: true,
                         hideCount: true,
                         hideAccentDot: true,
+                        showAccentStrip: true,
                       })}
 
                       {renderIndustryContextDrawerCard({
@@ -3253,6 +3242,7 @@ export default async function Page({
                         inline: true,
                         hideCount: true,
                         hideAccentDot: true,
+                        showAccentStrip: true,
                       })}
                     </div>
                   </>
@@ -3275,6 +3265,7 @@ export default async function Page({
                     inline: true,
                     hideCount: true,
                     hideAccentDot: true,
+                    showAccentStrip: true,
                   })}
                   {renderTailwindsHeadwindsSection()}
                 </div>
@@ -3537,7 +3528,7 @@ export default async function Page({
             <div className="flex flex-col gap-4">
               {(normalizedGrowthOutlook.summaryBullets.length > 0 ||
                 normalizedGrowthOutlook.growthScoreComponents.length > 0) && (
-                <div className={`${elevatedMutedBlockClass} p-3 space-y-2`}>
+                <div className={`${elevatedBlockClass} p-3 space-y-2`}>
                   {normalizedGrowthOutlook.summaryBullets.length > 0 && (
                     <div className="space-y-1.5">
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -3612,7 +3603,7 @@ export default async function Page({
               )}
 
               {normalizedGrowthOutlook.catalysts.length > 0 && (
-                <div className={`${elevatedMutedBlockClass} p-3 space-y-3`}>
+                <div className={`${elevatedBlockClass} p-3 space-y-3`}>
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
@@ -3788,7 +3779,7 @@ export default async function Page({
                         return (
                           <CarouselItem key={idx} className="basis-full md:basis-1/2 xl:basis-1/3">
                             <article
-                              className={`relative flex h-full flex-col overflow-hidden rounded-xl border border-border/25 bg-background/85 p-4 shadow-sm before:absolute before:inset-x-0 before:top-0 before:h-1 ${catalystAccentClass}`}
+                              className={`${nestedDetailClass} relative flex h-full flex-col overflow-hidden p-4 before:absolute before:inset-x-0 before:top-0 before:h-1.5 ${catalystAccentClass}`}
                             >
                               <div className="flex h-full flex-1 flex-col gap-4">
                                 <div className="space-y-3">

@@ -322,6 +322,69 @@ Example progression:
 - nested detail block: quieter
 - chip: quietest
 
+## Unified Card Tokens
+
+The surface grammar above (L1 shell → L2 summary → L3 nested → L4 subsection) is enforced by a fixed set of Tailwind class tokens. Every card on the company page and its siblings should resolve to one of these. Do not invent new `bg-background/XX` opacities, gradient washes, or one-off `bg-card` / `bg-muted/XX` variants without updating this table first.
+
+The canonical tokens live at the top of [`app/company/[code]/page.tsx`](/Users/pranavyadav/Documents/tech/concall-alpha-1/concall-alpha-1/app/company/[code]/page.tsx) (search for `elevatedBlockClass`). They should be imported, not re-declared, when building new sections.
+
+### The four card levels
+
+| Level | Purpose | Token | Exact classes |
+|---|---|---|---|
+| **L1** | Section shell | `SectionCard` | Rendered by [`section-card.tsx`](/Users/pranavyadav/Documents/tech/concall-alpha-1/concall-alpha-1/app/company/components/section-card.tsx). Outer `rounded-[1.55rem]` shell with tone-tinted border + background, radial tone glow, and a **`h-1` tone accent bar** on top. Always use `SectionCard` for a new section — never hand-roll the shell. |
+| **L2** | Summary / primary block | `elevatedBlockClass` | `rounded-xl border border-border/35 bg-background/75 shadow-md shadow-black/20` |
+| **L3** | Nested detail / mini-card | `nestedDetailClass` | `rounded-md border border-border/25 bg-background/45` |
+| **L4** | Quietest subsection wrapper | `snapshotSubsectionClass` | `rounded-xl border border-border/20 bg-background/25` |
+
+**Dark summary variant.** `elevatedMutedBlockClass` (`bg-muted/35` instead of `bg-background/75`) exists for summary blocks that intentionally sit one step *darker* than L2 (e.g., a dashboard-style band inside a lighter section). Use it sparingly — it is not a lighter alternative to L2, and it should never be mixed with L2 in the same section unless the hierarchy is deliberate.
+
+### Accent strip rule (mini-cards)
+
+A **mini-card accent strip** is an `h-1.5` bar at the top of an L3 card, used to reinforce that a row of mini-cards are parallel categorical items (e.g., the three subsector dimensions).
+
+- **On or off must be consistent within a section.** If the Subsector Analysis mini-cards have a strip, the Value Chain mini-cards and Regulations mini-cards must match — either all on or all off.
+- **Strip color uses the parent section's tone**, not a hard-coded one-off. The section's tone comes from `SECTION_TONE_BY_ID` in [`section-card.tsx`](/Users/pranavyadav/Documents/tech/concall-alpha-1/concall-alpha-1/app/company/components/section-card.tsx). Pick `{tone}-500/80` for solid strips and `from-transparent via-{tone}-500/70 to-transparent` for gradient strips. Do not paint a violet strip inside a sky section.
+- **Default is off.** Add the strip only when the mini-cards represent *parallel categorical siblings* that benefit from a categorical marker. Time-series cards, drawer cards, and single-purpose summary panels should stay unaccented.
+- The strip is `h-1.5` on L3 and `h-1` on L1. Do not mix these heights.
+
+### L2 background is non-negotiable
+
+Every section's primary prose or summary content must be wrapped in an `elevatedBlockClass` block — the solid `bg-background/75` token. Content may not float bare on the section shell when it is prose or text. (Bare is fine when the only content is a row of drawer cards that are themselves L2-level — e.g., the Value Chain / Types of Players / Regulations row inside Industry Context.)
+
+Section tone comes from the `SectionCard` shell (border, accent bar, radial glow) — never from tinting an inner card. This is strict.
+
+The following are forbidden on L2 cards:
+
+- Gradient backgrounds like `bg-gradient-to-br from-background/96 via-background/92 to-…`. These produce a "milky glass" finish that reads as a different family of surface.
+- Inset highlight shadows such as `shadow-[inset_0_1px_0_rgba(255,255,255,…)]`. These simulate translucent glass and are reserved for the global nav shell, not section content.
+- `backdrop-blur-sm` on inner cards. Reserved for nav / overlay / drawer chrome.
+- Color-tinted card backgrounds like `to-emerald-50/14`, `to-amber-50/14`, `from-sky-50/16`. Tone is the shell's job. Do not repaint it onto inner cards.
+
+If a section wants visual emphasis beyond L2 — for example, a prominent hero panel inside a section — promote the content to its own `SectionCard`-style sub-surface rather than tinting or softening the inner L2 card.
+
+### Forbidden surfaces
+
+These patterns exist in the current codebase and should be migrated to the tokens above:
+
+- `bg-card` as a nested-card background — use `nestedDetailClass`.
+- `bg-background/70`, `bg-background/85`, or any other ad-hoc opacity on L3 cards — use `nestedDetailClass` (`/45`).
+- Per-section gradient washes like `from-background/96 via-background/92 to-background/82` for nested panels (Guidance snapshot) — use L2/L3 tokens with the section tone applied via border/accent, not via a custom background gradient.
+- Tone-colored mini-card strips that don't match the parent section's tone (e.g., violet strip inside a sky section).
+- Drawer cards inside one section using a different nested-card background than mini-cards in a neighboring section.
+
+### Decision tree for a new card
+
+When adding a new surface, walk the checklist top-down and stop at the first match:
+
+1. **Is this the outermost container of a new page section?** → Use `SectionCard` with a tone from `SECTION_TONE_BY_ID`. Done.
+2. **Is this the single primary summary block inside a section?** → Use `elevatedBlockClass`. Use `elevatedMutedBlockClass` only if the section brief explicitly calls for a darker band.
+3. **Is this one card inside a grid / drawer / breakdown row?** → Use `nestedDetailClass`. Decide accent-strip on/off *for the whole grid at once*, using the section's tone.
+4. **Is this a quiet grouping wrapper that itself contains L3 cards?** → Use `snapshotSubsectionClass`.
+5. **None of the above?** → It is probably a chip/badge, not a card. Use the chip patterns in the "Chips and badges" section, not a new card token.
+
+If none of the above fit, update this document *before* shipping the new surface.
+
 ## Navigation
 
 ### Top navigation
