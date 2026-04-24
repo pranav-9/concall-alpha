@@ -17,6 +17,30 @@ export const getPercentileTone = (percentile: number): OverviewBodyPillTone => {
 
 export const formatCompactLabel = (value: string) => value.replace(/_/g, " ").trim();
 
+export type MarginQualityTone = "emerald" | "amber" | "rose" | "neutral";
+
+export const getMarginQualityTone = (rangeOrLabel: string | null): MarginQualityTone => {
+  if (!rangeOrLabel) return "neutral";
+  const lower = rangeOrLabel.toLowerCase();
+  if (/\b(thin|weak|poor|low|compressed|squeezed|negative|loss|depressed)\b/.test(lower)) {
+    return "rose";
+  }
+  if (/\b(strong|healthy|high|robust|rich|attractive|premium|excellent|superior)\b/.test(lower)) {
+    return "emerald";
+  }
+  return "amber";
+};
+
+export const marginQualityPillClass: Record<MarginQualityTone, string> = {
+  emerald:
+    "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-300",
+  amber:
+    "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300",
+  rose:
+    "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:border-rose-400/40 dark:bg-rose-400/10 dark:text-rose-300",
+  neutral: "border-border/60 bg-muted/50 text-foreground",
+};
+
 export const toDisplayLabel = (value: string | null) => {
   const compact = value ? formatCompactLabel(value) : "";
   if (!compact) return null;

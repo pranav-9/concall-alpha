@@ -17,8 +17,12 @@ import type {
   NormalizedIndustrySubSectorCard,
   NormalizedIndustryTheme,
   NormalizedIndustryTypesOfPlayers,
+  NormalizedIndustryValueChainEvidence,
   NormalizedIndustryValueChainLayer,
   NormalizedIndustryValueChainMap,
+  NormalizedIndustryValueChainMarginProfile,
+  NormalizedIndustryValueChainPinchPoint,
+  NormalizedIndustryValueChainTopParticipant,
 } from "@/lib/company-industry-analysis/types";
 
 type JsonRecord = Record<string, unknown>;
@@ -122,6 +126,70 @@ const normalizePlayerTypeCategory = (
   };
 };
 
+const normalizeValueChainEvidenceItem = (
+  value: unknown,
+): NormalizedIndustryValueChainEvidence | null => {
+  const record = parseJsonObjectLike(value);
+  if (!record) return null;
+
+  const note = asString(record.note);
+  const sourceTitle = asString(record.source_title);
+  const sourceUrl = asString(record.source_url);
+  const sourceDate = asString(record.source_date);
+  const retrievalType = asString(record.retrieval_type);
+
+  if (!note && !sourceTitle && !sourceUrl && !sourceDate && !retrievalType) {
+    return null;
+  }
+
+  return { note, sourceTitle, sourceUrl, sourceDate, retrievalType };
+};
+
+const normalizeValueChainTopParticipant = (
+  value: unknown,
+): NormalizedIndustryValueChainTopParticipant | null => {
+  const record = parseJsonObjectLike(value);
+  const name = asString(record?.name);
+  if (!name) return null;
+
+  return {
+    name,
+    listedStatus: asString(record?.listed_status),
+    identifierClause: asString(record?.identifier_clause),
+  };
+};
+
+const normalizeValueChainMarginProfile = (
+  value: unknown,
+): NormalizedIndustryValueChainMarginProfile | null => {
+  const record = parseJsonObjectLike(value);
+  if (!record) return null;
+
+  const basis = asString(record.basis);
+  const rangeOrLabel = asString(record.range_or_label);
+  const dispersionNote = asString(record.dispersion_note);
+  const sourcingRationale = asString(record.sourcing_rationale);
+
+  if (!basis && !rangeOrLabel && !dispersionNote && !sourcingRationale) {
+    return null;
+  }
+
+  return { basis, rangeOrLabel, dispersionNote, sourcingRationale };
+};
+
+const normalizeValueChainPinchPoint = (
+  value: unknown,
+): NormalizedIndustryValueChainPinchPoint | null => {
+  const record = parseJsonObjectLike(value);
+  const name = asString(record?.name);
+  if (!name) return null;
+
+  return {
+    name,
+    mechanism: asString(record?.mechanism),
+  };
+};
+
 const normalizeValueChainLayer = (value: unknown): NormalizedIndustryValueChainLayer | null => {
   const record = parseJsonObjectLike(value);
   const layerName = asString(record?.layer_name);
@@ -129,6 +197,14 @@ const normalizeValueChainLayer = (value: unknown): NormalizedIndustryValueChainL
 
   return {
     layerName,
+    revenueModel: asString(record?.revenue_model),
+    topParticipants: parseJsonArrayLike(record?.top_participants)
+      .map((item) => normalizeValueChainTopParticipant(item))
+      .filter((item): item is NormalizedIndustryValueChainTopParticipant => Boolean(item)),
+    marginReturnProfile: normalizeValueChainMarginProfile(record?.margin_return_profile),
+    evidence: parseJsonArrayLike(record?.evidence)
+      .map((item) => normalizeValueChainEvidenceItem(item))
+      .filter((item): item is NormalizedIndustryValueChainEvidence => Boolean(item)),
     layerDescription: asString(record?.layer_description),
     connectionToCompany:
       asString(record?.connection_to_company) ?? asString(record?.sub_sector_linkage),
@@ -176,15 +252,27 @@ const normalizeValueChainMap = (
   const structureType =
     asString(record?.structure_type) ??
     asString(positioningRecord?.value_chain_structure_type);
+  const chainTypeRationale = asString(record?.chain_type_rationale);
   const synthesis = asString(record?.synthesis) ?? fallbackSummary;
+  const pinchPoints = parseJsonArrayLike(record?.pinch_points)
+    .map((item) => normalizeValueChainPinchPoint(item))
+    .filter((item): item is NormalizedIndustryValueChainPinchPoint => Boolean(item));
 
-  if (!structureType && !synthesis && layers.length === 0) {
+  if (
+    !structureType &&
+    !chainTypeRationale &&
+    !synthesis &&
+    layers.length === 0 &&
+    pinchPoints.length === 0
+  ) {
     return null;
   }
 
   return {
     structureType,
+    chainTypeRationale,
     synthesis,
+    pinchPoints,
     layers,
   };
 };

@@ -37,16 +37,48 @@ export type NormalizedIndustryPositioning = {
   whereThisCompanyFits: string | null;
 };
 
+export type NormalizedIndustryValueChainEvidence = {
+  note: string | null;
+  sourceTitle: string | null;
+  sourceUrl: string | null;
+  sourceDate: string | null;
+  retrievalType: string | null;
+};
+
+export type NormalizedIndustryValueChainTopParticipant = {
+  name: string;
+  listedStatus: string | null;
+  identifierClause: string | null;
+};
+
+export type NormalizedIndustryValueChainMarginProfile = {
+  basis: string | null;
+  rangeOrLabel: string | null;
+  dispersionNote: string | null;
+  sourcingRationale: string | null;
+};
+
 export type NormalizedIndustryValueChainLayer = {
   layerName: string;
+  revenueModel: string | null;
+  topParticipants: NormalizedIndustryValueChainTopParticipant[];
+  marginReturnProfile: NormalizedIndustryValueChainMarginProfile | null;
+  evidence: NormalizedIndustryValueChainEvidence[];
   layerDescription: string | null;
   connectionToCompany: string | null;
   structuralCharacteristic: string | null;
 };
 
+export type NormalizedIndustryValueChainPinchPoint = {
+  name: string;
+  mechanism: string | null;
+};
+
 export type NormalizedIndustryValueChainMap = {
   structureType: string | null;
+  chainTypeRationale: string | null;
   synthesis: string | null;
+  pinchPoints: NormalizedIndustryValueChainPinchPoint[];
   layers: NormalizedIndustryValueChainLayer[];
 };
 

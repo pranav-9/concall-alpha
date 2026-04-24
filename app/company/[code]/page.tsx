@@ -78,6 +78,8 @@ import {
 import {
   formatCatalystQuantifiedLabel,
   formatCompactLabel,
+  getMarginQualityTone,
+  marginQualityPillClass,
   getCatalystConfidenceDisplay,
   getCatalystImpactPillDisplay,
   getCatalystStatusDisplay,
@@ -2314,73 +2316,6 @@ export default async function Page({
       </Drawer>
     );
   };
-  const renderValueChainMapContent = () => {
-    if (!normalizedCompanyIndustryAnalysis?.valueChainMap) return null;
-
-    const valueChainLayerAccentClass =
-      "bg-gradient-to-r from-transparent via-sky-500/70 to-transparent dark:via-sky-400/55";
-
-    return (
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/70">
-            Value Chain Map
-          </p>
-          {normalizedCompanyIndustryAnalysis.valueChainMap.structureType && (
-            <span className="rounded-full border border-border/60 bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground">
-              {formatCompactLabel(normalizedCompanyIndustryAnalysis.valueChainMap.structureType)}
-            </span>
-          )}
-        </div>
-
-        {normalizedCompanyIndustryAnalysis.valueChainMap.synthesis && (
-          <p className="text-[12px] leading-relaxed text-muted-foreground">
-            {normalizedCompanyIndustryAnalysis.valueChainMap.synthesis}
-          </p>
-        )}
-
-        {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length > 0 && (
-          <div className="space-y-2.5">
-            {normalizedCompanyIndustryAnalysis.valueChainMap.layers.map((layer, index) => (
-              <div
-                key={`${layer.layerName}-${index}`}
-                className="relative overflow-hidden rounded-xl border border-border/20 bg-background/45 px-4 py-3 pt-4"
-              >
-                <div
-                  className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 ${valueChainLayerAccentClass}`}
-                />
-                <div className="relative">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                      Layer {index + 1}
-                    </span>
-                    <p className="text-[12px] font-semibold leading-snug text-foreground">
-                      {layer.layerName}
-                    </p>
-                  </div>
-                  {layer.layerDescription && (
-                    <p className="mt-2 text-[11px] leading-relaxed text-foreground/90">
-                      {layer.layerDescription}
-                    </p>
-                  )}
-                  {layer.connectionToCompany && (
-                    <div className="mt-2 space-y-0.5">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                        {(companyRow?.name ?? code).trim()}&apos;s role
-                      </p>
-                      <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        {layer.connectionToCompany}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
   const renderMissingSectionState = (
     sectionId: string,
     sectionTitle: string,
@@ -3118,43 +3053,184 @@ export default async function Page({
                         description:
                           normalizedCompanyIndustryAnalysis.valueChainMap ? (
                             <div className="space-y-3">
-                              <div className="grid gap-3 lg:flex lg:items-stretch lg:gap-1.5">
-                                {normalizedCompanyIndustryAnalysis.valueChainMap.layers.map(
-                                  (layer, index) => (
-                                    <React.Fragment key={`${layer.layerName}-${index}`}>
-                                      <div className="rounded-xl border border-border/30 bg-background/68 px-3 py-2.5 lg:flex-1 lg:min-w-0">
-                                        <div className="flex items-start gap-2">
-                                          <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-muted/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground">
-                                            {index + 1}
-                                          </span>
-                                          <p className="text-[12px] font-semibold leading-snug text-foreground">
-                                            {layer.layerName}
-                                          </p>
+                              {(normalizedCompanyIndustryAnalysis.valueChainMap.structureType ||
+                                normalizedCompanyIndustryAnalysis.valueChainMap
+                                  .chainTypeRationale ||
+                                normalizedCompanyIndustryAnalysis.valueChainMap.synthesis) && (
+                                <p className="text-[12px] leading-relaxed text-foreground/80">
+                                  {normalizedCompanyIndustryAnalysis.valueChainMap
+                                    .structureType && (
+                                    <span className="mr-1.5 font-semibold uppercase tracking-[0.14em] text-foreground">
+                                      {formatCompactLabel(
+                                        normalizedCompanyIndustryAnalysis.valueChainMap
+                                          .structureType,
+                                      )}
+                                    </span>
+                                  )}
+                                  {normalizedCompanyIndustryAnalysis.valueChainMap
+                                    .structureType &&
+                                    (normalizedCompanyIndustryAnalysis.valueChainMap
+                                      .chainTypeRationale ??
+                                      normalizedCompanyIndustryAnalysis.valueChainMap
+                                        .synthesis) && (
+                                      <span className="mr-1.5 text-muted-foreground">—</span>
+                                    )}
+                                  {normalizedCompanyIndustryAnalysis.valueChainMap
+                                    .chainTypeRationale ??
+                                    normalizedCompanyIndustryAnalysis.valueChainMap.synthesis}
+                                </p>
+                              )}
+
+                              {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length >
+                                0 && (
+                                <div className="grid gap-3 lg:flex lg:items-stretch lg:gap-1.5">
+                                  {normalizedCompanyIndustryAnalysis.valueChainMap.layers.map(
+                                    (layer, index) => (
+                                      <React.Fragment key={`${layer.layerName}-${index}`}>
+                                        <div className="rounded-xl border border-border/70 bg-card px-3.5 py-3 shadow-md shadow-black/20 lg:flex-1 lg:min-w-0">
+                                          <div className="flex items-start gap-2">
+                                            <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-muted/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground">
+                                              {index + 1}
+                                            </span>
+                                            <p className="text-[12px] font-semibold leading-snug text-foreground">
+                                              {layer.layerName}
+                                            </p>
+                                          </div>
+
+                                          {(layer.revenueModel ?? layer.layerDescription) && (
+                                            <div className="mt-2.5 border-t border-border/40 pt-2.5">
+                                              <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                                Overview
+                                              </p>
+                                              <p className="text-[10px] leading-relaxed text-foreground/90">
+                                                {layer.revenueModel ?? layer.layerDescription}
+                                              </p>
+                                            </div>
+                                          )}
+
+                                          {layer.marginReturnProfile &&
+                                            (layer.marginReturnProfile.rangeOrLabel ||
+                                              layer.marginReturnProfile.sourcingRationale ||
+                                              layer.marginReturnProfile.dispersionNote) && (
+                                              <div className="mt-2.5 space-y-1 border-t border-border/40 pt-2.5">
+                                                <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                                  Margin
+                                                </p>
+                                                <div className="flex flex-wrap items-center gap-1">
+                                                  {layer.marginReturnProfile.rangeOrLabel && (
+                                                    <span
+                                                      className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${
+                                                        marginQualityPillClass[
+                                                          getMarginQualityTone(
+                                                            layer.marginReturnProfile.rangeOrLabel,
+                                                          )
+                                                        ]
+                                                      }`}
+                                                    >
+                                                      {layer.marginReturnProfile.rangeOrLabel}
+                                                    </span>
+                                                  )}
+                                                  {layer.marginReturnProfile.basis && (
+                                                    <span className="rounded-full border border-border/40 bg-muted/30 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.1em] text-muted-foreground">
+                                                      {layer.marginReturnProfile.basis}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                {layer.marginReturnProfile.sourcingRationale && (
+                                                  <p className="text-[10px] leading-relaxed text-muted-foreground">
+                                                    {layer.marginReturnProfile.sourcingRationale}
+                                                  </p>
+                                                )}
+                                                {layer.marginReturnProfile.dispersionNote && (
+                                                  <p className="text-[10px] leading-relaxed text-muted-foreground/80">
+                                                    {layer.marginReturnProfile.dispersionNote}
+                                                  </p>
+                                                )}
+                                              </div>
+                                            )}
+
+                                          {layer.topParticipants.length > 0 && (
+                                            <div className="mt-2.5 space-y-1 border-t border-border/40 pt-2.5">
+                                              <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                                Top participants
+                                              </p>
+                                              <div className="flex flex-wrap gap-1">
+                                                {layer.topParticipants.map((participant, pIdx) => (
+                                                  <span
+                                                    key={`${participant.name}-${pIdx}`}
+                                                    className="inline-flex items-center gap-1 rounded-md border border-border/50 bg-background/70 px-1.5 py-0.5 text-[10px] text-foreground"
+                                                  >
+                                                    <span className="font-medium">
+                                                      {participant.name}
+                                                    </span>
+                                                    {participant.listedStatus && (
+                                                      <span className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground">
+                                                        {formatCompactLabel(participant.listedStatus)}
+                                                      </span>
+                                                    )}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {layer.connectionToCompany && (
+                                            <div className="mt-2.5 space-y-1 border-t border-border/40 pt-2.5">
+                                              <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                                {(companyRow?.name ?? code).trim()}&apos;s role
+                                              </p>
+                                              <p className="text-[10px] leading-relaxed text-muted-foreground">
+                                                {layer.connectionToCompany}
+                                              </p>
+                                            </div>
+                                          )}
                                         </div>
-                                        {layer.layerDescription && (
-                                          <p className="mt-1.5 text-[10px] leading-relaxed text-foreground/90">
-                                            {layer.layerDescription}
+                                        {index <
+                                        (normalizedCompanyIndustryAnalysis.valueChainMap?.layers
+                                          .length ?? 0) -
+                                          1 ? (
+                                          <div className="hidden lg:flex items-start justify-center px-0.5 pt-3 text-foreground/55">
+                                            <span className="text-sm leading-none">→</span>
+                                          </div>
+                                        ) : null}
+                                      </React.Fragment>
+                                    ),
+                                  )}
+                                </div>
+                              )}
+
+                              {normalizedCompanyIndustryAnalysis.valueChainMap.pinchPoints.length >
+                                0 && (
+                                <div className="space-y-1.5 rounded-xl border border-amber-500/25 bg-amber-500/5 px-3 py-2.5 dark:border-amber-400/25 dark:bg-amber-400/5">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">
+                                    Pinch points
+                                  </p>
+                                  <ul className="space-y-1.5">
+                                    {normalizedCompanyIndustryAnalysis.valueChainMap.pinchPoints.map(
+                                      (pinch, idx) => (
+                                        <li
+                                          key={`${pinch.name}-${idx}`}
+                                          className="space-y-0.5"
+                                        >
+                                          <p className="text-[11px] font-semibold leading-snug text-foreground">
+                                            {pinch.name}
                                           </p>
-                                        )}
-                                      </div>
-                                      {index <
-                                      (normalizedCompanyIndustryAnalysis.valueChainMap?.layers
-                                        .length ?? 0) -
-                                        1 ? (
-                                        <div className="hidden lg:flex items-center justify-center px-0.5 text-foreground/55">
-                                          <span className="text-sm leading-none">→</span>
-                                        </div>
-                                      ) : null}
-                                    </React.Fragment>
-                                  ),
-                                )}
-                              </div>
+                                          {pinch.mechanism && (
+                                            <p className="text-[10px] leading-relaxed text-muted-foreground">
+                                              {pinch.mechanism}
+                                            </p>
+                                          )}
+                                        </li>
+                                      ),
+                                    )}
+                                  </ul>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             "No value chain map tracked yet for this company."
                           ),
                         accentClass: "bg-sky-500/80",
-                        children: renderValueChainMapContent(),
                         disabled: !normalizedCompanyIndustryAnalysis.valueChainMap,
                         inline: true,
                         hideCount: true,
