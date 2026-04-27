@@ -324,13 +324,10 @@ async function getUnifiedUpdates(limit: number) {
     if (!companyCode) return;
     const atRaw = row.generated_at ?? null;
     const atMs = eventTimeMs(atRaw);
-    const phaseLabel =
-      row.snapshot_phase != null ? `Snapshot updated` : "Snapshot refreshed";
-    const sourceLabel = "Biz Snapshot";
-    const contextLabel =
+    const detail =
       row.snapshot_phase != null
-        ? `${row.snapshot_phase} updated`
-        : formatFeedLabel(row.snapshot_source) || "Updated";
+        ? `Phase ${row.snapshot_phase}`
+        : formatFeedLabel(row.snapshot_source) || "Refreshed";
     const candidate: UnifiedUpdate = {
       id: `snapshot-${companyCode}`,
       type: "business_snapshot",
@@ -338,9 +335,9 @@ async function getUnifiedUpdates(limit: number) {
       companyCode,
       companyIsNew: false,
       score: null,
-      detail: phaseLabel,
-      sourceLabel,
-      contextLabel,
+      detail,
+      sourceLabel: "Biz Snapshot",
+      contextLabel: null,
       atRaw,
       atMs,
     };
@@ -366,7 +363,7 @@ async function getUnifiedUpdates(limit: number) {
       score: null,
       detail: "",
       sourceLabel: "Industry Context",
-      contextLabel: null,
+      contextLabel: "Refreshed",
       atRaw,
       atMs,
     };
@@ -396,7 +393,7 @@ async function getUnifiedUpdates(limit: number) {
           ? `${variableCount} variable${variableCount === 1 ? "" : "s"} tracked`
           : "Variables refreshed",
       sourceLabel: "Key Variables",
-      contextLabel: "Updated",
+      contextLabel: null,
       atRaw,
       atMs,
     };
@@ -422,7 +419,7 @@ async function getUnifiedUpdates(limit: number) {
       score: null,
       detail: "",
       sourceLabel: "Guidance Monitor",
-      contextLabel: "Updated",
+      contextLabel: "Refreshed",
       atRaw,
       atMs,
     };
@@ -612,19 +609,13 @@ export default async function RecentScoreUpdates({
 
   return (
     <section className={heroPanel ? "h-full w-full" : "w-[95%] sm:w-[90%] pt-6 sm:pt-8"}>
-      {!heroPanel && (
-        <div className="mb-2">
-          <h2 className="text-base font-bold text-foreground">Latest Updates</h2>
-        </div>
-      )}
-
       <div className={heroPanel ? "flex h-full flex-col rounded-xl border border-border bg-card" : "rounded-xl border border-border bg-card"}>
         <div className={headerClass}>
           <h2 className={titleClass}>
             Latest Updates
           </h2>
           <p className={subtitleClass}>
-            Time-ordered feed: score updates, snapshot refreshes, industry context, key variable updates, and guidance monitoring
+            Recent activity across covered companies
           </p>
         </div>
 
