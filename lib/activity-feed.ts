@@ -27,11 +27,6 @@ type RawBusinessSnapshotRow = {
   snapshot_source?: string | null;
 };
 
-type RawIndustryContextRow = {
-  company: string;
-  generated_at?: string | null;
-};
-
 type RawKeyVariablesRow = {
   company_code: string;
   generated_at?: string | null;
@@ -49,16 +44,10 @@ type RawGuidanceRow = {
   status_reason?: string | null;
 };
 
-type RawGuidanceSnapshotRow = {
-  company_code: string;
-  generated_at?: string | null;
-};
-
 export type UpdateType =
   | "quarter"
   | "growth"
   | "business_snapshot"
-  | "industry_context"
   | "key_variables"
   | "guidance_monitor";
 
@@ -76,19 +65,22 @@ export type UnifiedUpdate = {
   companyCode: string | null;
   companyIsNew: boolean;
   score: number | null;
+  priorScore: number | null;
   detail: string;
   sourceLabel: string;
   contextLabel: string | null;
   atRaw: string | null;
   atMs: number;
+  fy?: number;
+  qtr?: number;
   guidanceThreads?: GuidanceBatchThread[];
+  artifactHref: string | null;
 };
 
 export const UPDATE_TYPE_LABELS: Record<UpdateType, string> = {
   quarter: "Quarter Score",
   growth: "Growth Update",
   business_snapshot: "Biz Snapshot",
-  industry_context: "Industry Context",
   key_variables: "Key Variables",
   guidance_monitor: "Guidance Monitor",
 };
@@ -113,8 +105,37 @@ export const formatActivityDate = (value: string | null) => {
     day: "2-digit",
     month: "short",
     year: "numeric",
-    timeZone: "UTC",
+    timeZone: "Asia/Kolkata",
   }).format(date);
+};
+
+export const formatRelativeActivityTime = (value: string | null) => {
+  const date = parseDate(value);
+  if (!date) return "Date unavailable";
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 60_000) return "just now";
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `${weeks}w ago`;
+  return formatActivityDate(value);
+};
+
+const ARTIFACT_ANCHOR: Record<UpdateType, string> = {
+  quarter: "sentiment-score",
+  growth: "future-growth",
+  business_snapshot: "business-overview",
+  key_variables: "key-variables",
+  guidance_monitor: "guidance-history",
+};
+
+const buildArtifactHref = (type: UpdateType, companyCode: string | null) => {
+  if (!companyCode) return null;
+  return `/company/${companyCode}#${ARTIFACT_ANCHOR[type]}`;
 };
 
 const eventTimeMs = (value: string | null | undefined) =>
@@ -158,14 +179,8 @@ export const typeChipClass = (type: UpdateType) => {
   if (type === "growth") {
     return "bg-emerald-100 border-emerald-300 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-700/40 dark:text-emerald-200";
   }
-  if (type === "business_snapshot") {
-    return "bg-violet-100 border-violet-300 text-violet-700 dark:bg-violet-900/30 dark:border-violet-700/40 dark:text-violet-200";
-  }
-  if (type === "industry_context") {
+  if (type === "business_snapshot" || type === "key_variables") {
     return "bg-slate-100 border-slate-300 text-slate-700 dark:bg-slate-900/30 dark:border-slate-700/40 dark:text-slate-200";
-  }
-  if (type === "key_variables") {
-    return "bg-cyan-100 border-cyan-300 text-cyan-700 dark:bg-cyan-900/30 dark:border-cyan-700/40 dark:text-cyan-200";
   }
   return "bg-amber-100 border-amber-300 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700/40 dark:text-amber-200";
 };
@@ -238,9 +253,7 @@ export async function getUnifiedUpdates({
 
   const [
     { data: businessSnapshotRows },
-    { data: industryContextRows },
     { data: keyVariablesRows },
-    { data: guidanceSnapshotRows },
     { data: guidanceRows },
   ] = await Promise.all([
     supabase
@@ -249,18 +262,8 @@ export async function getUnifiedUpdates({
       .order("generated_at", { ascending: false })
       .limit(160),
     supabase
-      .from("company_industry_analysis")
-      .select("company, generated_at")
-      .order("generated_at", { ascending: false })
-      .limit(160),
-    supabase
       .from("key_variables_snapshot")
       .select("company_code, generated_at, deep_treatment")
-      .order("generated_at", { ascending: false })
-      .limit(160),
-    supabase
-      .from("guidance_snapshot")
-      .select("company_code, generated_at")
       .order("generated_at", { ascending: false })
       .limit(160),
     supabase
@@ -275,7 +278,7 @@ export async function getUnifiedUpdates({
 
   const updates: UnifiedUpdate[] = [];
   const allQuarterRows = (quarterRows ?? []) as RawQuarterRow[];
-  const latestQuarterPerCompany = new Map<string, UnifiedUpdate>();
+  const quarterCandidatesPerCompany = new Map<string, UnifiedUpdate[]>();
   allQuarterRows.forEach((row) => {
     const atRaw = row.updated_at ?? row.created_at ?? null;
     const atMs = eventTimeMs(atRaw);
@@ -289,20 +292,39 @@ export async function getUnifiedUpdates({
       companyCode: row.company_code ?? null,
       companyIsNew: false,
       score: parseScore(row.score),
+      priorScore: null,
       detail: quarterLabel,
       sourceLabel: "Quarter Score",
       contextLabel: null,
       atRaw,
       atMs,
+      fy: typeof row.fy === "number" ? row.fy : undefined,
+      qtr: typeof row.qtr === "number" ? row.qtr : undefined,
+      artifactHref: buildArtifactHref("quarter", row.company_code ?? null),
     };
-    const existing = latestQuarterPerCompany.get(companyKey);
-    if (!existing || candidate.atMs > existing.atMs) {
-      latestQuarterPerCompany.set(companyKey, candidate);
-    }
+    const arr = quarterCandidatesPerCompany.get(companyKey) ?? [];
+    arr.push(candidate);
+    quarterCandidatesPerCompany.set(companyKey, arr);
   });
-  updates.push(...latestQuarterPerCompany.values());
+  quarterCandidatesPerCompany.forEach((arr) => {
+    arr.sort((a, b) => {
+      const fyDiff = (b.fy ?? -Infinity) - (a.fy ?? -Infinity);
+      if (fyDiff !== 0) return fyDiff;
+      const qtrDiff = (b.qtr ?? -Infinity) - (a.qtr ?? -Infinity);
+      if (qtrDiff !== 0) return qtrDiff;
+      return b.atMs - a.atMs;
+    });
+    const latest = arr[0];
+    const prior = arr.find(
+      (item) => item.fy !== latest.fy || item.qtr !== latest.qtr,
+    );
+    if (prior && prior.score != null) {
+      latest.priorScore = prior.score;
+    }
+    updates.push(latest);
+  });
 
-  const latestGrowthPerCompany = new Map<string, UnifiedUpdate>();
+  const growthCandidatesPerCompany = new Map<string, UnifiedUpdate[]>();
   ((growthRows ?? []) as RawGrowthRow[]).forEach((row) => {
     const key = row.company?.toUpperCase();
     if (!key) return;
@@ -318,18 +340,27 @@ export async function getUnifiedUpdates({
       companyCode,
       companyIsNew: false,
       score: parseScore(row.growth_score),
+      priorScore: null,
       detail: fy ? `${fy} outlook` : "Growth outlook",
       sourceLabel: "Growth Update",
       contextLabel: null,
       atRaw,
       atMs,
+      artifactHref: buildArtifactHref("growth", companyCode),
     };
-    const existing = latestGrowthPerCompany.get(key);
-    if (!existing || candidate.atMs > existing.atMs) {
-      latestGrowthPerCompany.set(key, candidate);
-    }
+    const arr = growthCandidatesPerCompany.get(key) ?? [];
+    arr.push(candidate);
+    growthCandidatesPerCompany.set(key, arr);
   });
-  updates.push(...latestGrowthPerCompany.values());
+  growthCandidatesPerCompany.forEach((arr) => {
+    arr.sort((a, b) => b.atMs - a.atMs);
+    const latest = arr[0];
+    const prior = arr[1];
+    if (prior && prior.score != null) {
+      latest.priorScore = prior.score;
+    }
+    updates.push(latest);
+  });
 
   const latestSnapshotPerCompany = new Map<string, UnifiedUpdate>();
   ((businessSnapshotRows ?? []) as RawBusinessSnapshotRow[]).forEach((row) => {
@@ -348,11 +379,13 @@ export async function getUnifiedUpdates({
       companyCode,
       companyIsNew: false,
       score: null,
+      priorScore: null,
       detail,
       sourceLabel: "Biz Snapshot",
       contextLabel: null,
       atRaw,
       atMs,
+      artifactHref: buildArtifactHref("business_snapshot", companyCode),
     };
     const existing = latestSnapshotPerCompany.get(companyCode);
     if (!existing || candidate.atMs > existing.atMs) {
@@ -361,31 +394,9 @@ export async function getUnifiedUpdates({
   });
   updates.push(...latestSnapshotPerCompany.values());
 
-  const latestIndustryContextPerCompany = new Map<string, UnifiedUpdate>();
-  ((industryContextRows ?? []) as RawIndustryContextRow[]).forEach((row) => {
-    const companyCode = row.company?.trim();
-    if (!companyCode) return;
-    const atRaw = row.generated_at ?? null;
-    const atMs = eventTimeMs(atRaw);
-    const candidate: UnifiedUpdate = {
-      id: `industry-context-${companyCode}`,
-      type: "industry_context",
-      companyName: companyCode,
-      companyCode,
-      companyIsNew: false,
-      score: null,
-      detail: "",
-      sourceLabel: "Industry Context",
-      contextLabel: "Refreshed",
-      atRaw,
-      atMs,
-    };
-    const existing = latestIndustryContextPerCompany.get(companyCode);
-    if (!existing || candidate.atMs > existing.atMs) {
-      latestIndustryContextPerCompany.set(companyCode, candidate);
-    }
-  });
-  updates.push(...latestIndustryContextPerCompany.values());
+  // industry_context rows carry no change content (always "Refreshed" pings),
+  // so they are intentionally not added to the unified feed. Re-introduce only
+  // when the upstream table starts emitting a meaningful per-row signal.
 
   const latestKeyVariablesPerCompany = new Map<string, UnifiedUpdate>();
   ((keyVariablesRows ?? []) as RawKeyVariablesRow[]).forEach((row) => {
@@ -401,6 +412,7 @@ export async function getUnifiedUpdates({
       companyCode,
       companyIsNew: false,
       score: null,
+      priorScore: null,
       detail:
         variableCount != null
           ? `${variableCount} variable${variableCount === 1 ? "" : "s"} tracked`
@@ -409,6 +421,7 @@ export async function getUnifiedUpdates({
       contextLabel: null,
       atRaw,
       atMs,
+      artifactHref: buildArtifactHref("key_variables", companyCode),
     };
     const existing = latestKeyVariablesPerCompany.get(companyCode);
     if (!existing || candidate.atMs > existing.atMs) {
@@ -417,38 +430,12 @@ export async function getUnifiedUpdates({
   });
   updates.push(...latestKeyVariablesPerCompany.values());
 
-  const latestGuidanceSnapshots = new Map<string, UnifiedUpdate>();
-  ((guidanceSnapshotRows ?? []) as RawGuidanceSnapshotRow[]).forEach((row) => {
-    const companyCode = row.company_code?.trim();
-    if (!companyCode) return;
-    const atRaw = row.generated_at ?? null;
-    const atMs = eventTimeMs(atRaw);
-    const candidate: UnifiedUpdate = {
-      id: `guidance-snapshot-${companyCode}`,
-      type: "guidance_monitor",
-      companyName: companyCode,
-      companyCode,
-      companyIsNew: false,
-      score: null,
-      detail: "",
-      sourceLabel: "Guidance Monitor",
-      contextLabel: "Refreshed",
-      atRaw,
-      atMs,
-    };
-    const existing = latestGuidanceSnapshots.get(companyCode);
-    if (!existing || candidate.atMs > existing.atMs) {
-      latestGuidanceSnapshots.set(companyCode, candidate);
-    }
-  });
-  updates.push(...latestGuidanceSnapshots.values());
 
   const latestGuidanceBatches = new Map<string, UnifiedUpdate>();
   ((guidanceRows ?? []) as RawGuidanceRow[]).forEach((row) => {
     const companyCode = row.company_code?.trim();
     const guidanceKey = row.guidance_key?.trim();
     if (!companyCode || !guidanceKey) return;
-    if (latestGuidanceSnapshots.has(companyCode)) return;
     const atRaw = row.generated_at ?? null;
     const atMs = eventTimeMs(atRaw);
     const threadLabel = buildGuidanceThreadLabel(row);
@@ -469,11 +456,13 @@ export async function getUnifiedUpdates({
         companyCode,
         companyIsNew: false,
         score: null,
+        priorScore: null,
         detail: threadContext ? `${threadLabel} · ${threadContext}` : threadLabel,
         sourceLabel: "Guidance Monitor",
         contextLabel: threadStatus ? `${threadStatus} update` : "Guidance",
         atRaw,
         atMs,
+        artifactHref: buildArtifactHref("guidance_monitor", companyCode),
       };
       const existing = latestGuidanceBatches.get(candidate.id);
       if (!existing || candidate.atMs > existing.atMs) {
@@ -492,12 +481,14 @@ export async function getUnifiedUpdates({
         companyCode,
         companyIsNew: false,
         score: null,
+        priorScore: null,
         detail: "",
         sourceLabel: "Guidance Monitor",
         contextLabel: null,
         atRaw,
         atMs,
         guidanceThreads: [thread],
+        artifactHref: buildArtifactHref("guidance_monitor", companyCode),
       });
       return;
     }
@@ -565,9 +556,8 @@ export async function getUnifiedUpdates({
     quarter: 0,
     growth: 1,
     business_snapshot: 2,
-    industry_context: 3,
-    key_variables: 4,
-    guidance_monitor: 5,
+    key_variables: 3,
+    guidance_monitor: 4,
   };
 
   const sortedUpdates = [...updates].sort((a, b) => {

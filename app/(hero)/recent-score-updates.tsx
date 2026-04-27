@@ -1,7 +1,8 @@
 import Link from "next/link";
 import ConcallScore from "@/components/concall-score";
+import { ScoreDelta } from "@/components/score-delta";
 import {
-  formatActivityDate,
+  formatRelativeActivityTime,
   getUnifiedUpdates,
   typeChipClass,
 } from "@/lib/activity-feed";
@@ -86,12 +87,21 @@ export default async function RecentScoreUpdates({
                         {item.detail}
                       </span>
                     )}
-                    <span className={dateClass}>{formatActivityDate(item.atRaw)}</span>
+                    <span className={dateClass} title={item.atRaw ?? undefined}>
+                      {formatRelativeActivityTime(item.atRaw)}
+                    </span>
                   </div>
                 </div>
-                <div className="shrink-0">
+                <div className="flex shrink-0 flex-col items-end gap-0.5">
                   {typeof item.score === "number" ? (
-                    <ConcallScore score={item.score} size="sm" />
+                    <>
+                      <ConcallScore score={item.score} size="sm" />
+                      <ScoreDelta
+                        score={item.score}
+                        priorScore={item.priorScore}
+                        className={isCompact ? "text-[9px]" : "text-[10px]"}
+                      />
+                    </>
                   ) : item.contextLabel ? (
                     <span
                       className={`${chipClass} ${typeChipClass(item.type)}`}
@@ -103,7 +113,10 @@ export default async function RecentScoreUpdates({
               </div>
             );
 
-            if (!item.companyCode) {
+            const href =
+              item.artifactHref ??
+              (item.companyCode ? `/company/${item.companyCode}` : null);
+            if (!href) {
               return (
                 <div key={item.id} className={mobileOnlyHidden}>
                   {row}
@@ -114,7 +127,7 @@ export default async function RecentScoreUpdates({
             return (
               <Link
                 key={item.id}
-                href={`/company/${item.companyCode}`}
+                href={href}
                 prefetch={false}
                 className={mobileOnlyHidden}
               >
