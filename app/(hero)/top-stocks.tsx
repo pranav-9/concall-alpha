@@ -5,6 +5,7 @@ import ConcallScore from "@/components/concall-score";
 import { Badge } from "@/components/ui/badge";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
+import { MOAT_RATING_ORDER } from "@/lib/moat-analysis/rank";
 import type { MoatAnalysisRow, MoatRatingKey, NormalizedMoatAnalysis } from "@/lib/moat-analysis/types";
 import { createClient } from "@/lib/supabase/server";
 import TopStocksHeroRail from "@/app/(hero)/top-stocks-hero-rail";
@@ -103,14 +104,6 @@ type MoatItem = {
   appliesSourceCount: number;
   cycleTested: boolean | null;
   updatedAtSort: number;
-};
-
-const MOAT_RATING_ORDER: Record<MoatRatingKey, number> = {
-  wide_moat: 0,
-  narrow_moat: 1,
-  no_moat: 2,
-  moat_at_risk: 3,
-  unknown: 4,
 };
 
 const sortTimestamp = (value: string | null | undefined) => {

@@ -5,6 +5,14 @@ import { notFound } from "next/navigation";
 import ConcallScore from "@/components/concall-score";
 import { getConcallData } from "@/app/company/get-concall-data";
 import { isCompanyNew } from "@/lib/company-freshness";
+import {
+  CHIP_BASE,
+  CHIP_NEUTRAL,
+  CHIP_PRIMARY,
+  HERO_CARD,
+  PAGE_SHELL,
+  PANEL_CARD_SKY,
+} from "@/lib/design/shell";
 import { normalizeSectorIntelligence } from "@/lib/sector-intelligence/normalize";
 import type {
   NormalizedSectorCatalyst,
@@ -90,15 +98,6 @@ const renderEvidenceLine = (evidence: NormalizedSectorEvidence | undefined) => {
 const PAGE_BACKGROUND_CLASS =
   "pointer-events-none absolute inset-x-0 top-0 -z-10 h-[36rem] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.11),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.09),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.78),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(15,23,42,0.34),_transparent_62%)]";
 
-const PAGE_SHELL_CLASS =
-  "mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-8";
-
-const HERO_CARD_CLASS =
-  "rounded-[1.6rem] border border-sky-200/35 bg-gradient-to-br from-background/97 via-background/92 to-sky-50/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_18px_36px_-30px_rgba(15,23,42,0.26)] backdrop-blur-sm dark:border-sky-700/25 dark:from-background/90 dark:via-background/84 dark:to-sky-950/12";
-
-const PANEL_CARD_CLASS =
-  "rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_28px_-26px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
-
 const TABLE_CARD_CLASS =
   "overflow-hidden rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 shadow-[0_18px_38px_-32px_rgba(15,23,42,0.24)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
 
@@ -107,15 +106,6 @@ const INLINE_SUBCARD_CLASS =
 
 const SMALL_SUBCARD_CLASS =
   "rounded-lg border border-border/20 bg-background/55 p-3";
-
-const CHIP_CLASS =
-  "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors";
-
-const CHIP_PRIMARY_CLASS =
-  "border-sky-200/60 bg-sky-100/70 text-sky-800 dark:border-sky-700/35 dark:bg-sky-900/30 dark:text-sky-200";
-
-const CHIP_NEUTRAL_CLASS =
-  "border-border/60 bg-background/80 text-foreground";
 
 const SORT_PILL_ACTIVE_CLASS =
   "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200";
@@ -369,8 +359,8 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     return (
       <main className="relative isolate overflow-hidden">
         <div className={PAGE_BACKGROUND_CLASS} />
-        <div className={PAGE_SHELL_CLASS}>
-          <section className={HERO_CARD_CLASS}>
+        <div className={PAGE_SHELL}>
+          <section className={HERO_CARD}>
             <div className="space-y-2">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-200">
                 Sector detail
@@ -380,7 +370,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
               </h1>
             </div>
           </section>
-          <div className={PANEL_CARD_CLASS}>
+          <div className={PANEL_CARD_SKY}>
             <p className="text-sm text-muted-foreground">
               No companies found for this sector yet.
             </p>
@@ -541,8 +531,8 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
   return (
     <main className="relative isolate overflow-hidden">
       <div className={PAGE_BACKGROUND_CLASS} />
-      <div className={PAGE_SHELL_CLASS}>
-        <section className={HERO_CARD_CLASS}>
+      <div className={PAGE_SHELL}>
+        <section className={HERO_CARD}>
           <div className="space-y-4">
             <div className="space-y-2">
               <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
@@ -554,12 +544,12 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className={`${CHIP_CLASS} ${CHIP_PRIMARY_CLASS}`}>Companies: {allRows.length}</span>
-              <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+              <span className={`${CHIP_BASE} ${CHIP_PRIMARY}`}>Companies: {allRows.length}</span>
+              <span className={`${CHIP_BASE} ${CHIP_NEUTRAL}`}>
                 Sub-sectors: {subSectorCounts.size}
               </span>
               {latestQuarterLabel && (
-                <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+                <span className={`${CHIP_BASE} ${CHIP_NEUTRAL}`}>
                   Latest quarter: {latestQuarterLabel}
                 </span>
               )}
@@ -567,21 +557,21 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
           </div>
         </section>
 
-        <section className={PANEL_CARD_CLASS}>
+        <section className={PANEL_CARD_SKY}>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-bold text-foreground">Sector Intelligence</h2>
-              <span className={`${CHIP_CLASS} border-border/60 bg-background/75 text-foreground`}>
+              <span className={`${CHIP_BASE} border-border/60 bg-background/75 text-foreground`}>
                 {usingSubSectorView ? "Sub-sector view" : "Sector view"}
               </span>
               {usingSubSectorView && normalizedSectorIntelligence?.subSector && (
-                <span className={`${CHIP_CLASS} ${CHIP_PRIMARY_CLASS}`}>
+                <span className={`${CHIP_BASE} ${CHIP_PRIMARY}`}>
                   Sub-sector: {normalizedSectorIntelligence.subSector}
                 </span>
               )}
               {usingSectorFallback && (
-                <span className={`${CHIP_CLASS} border-amber-200/70 bg-amber-100/80 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200`}>
+                <span className={`${CHIP_BASE} border-amber-200/70 bg-amber-100/80 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200`}>
                   Using sector-level view
                 </span>
               )}
@@ -894,7 +884,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+            <span className={`${CHIP_BASE} ${CHIP_NEUTRAL}`}>
               Current: {sortLabel} {sortOrder}
             </span>
           </div>
@@ -903,7 +893,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
           <span className="text-muted-foreground">Sort:</span>
           <Link
             href={buildSortHref("avg", sortBy === "avg" && sortOrder === "desc" ? "asc" : "desc")}
-            className={`${CHIP_CLASS} ${
+            className={`${CHIP_BASE} ${
               sortBy === "avg" ? SORT_PILL_ACTIVE_CLASS : SORT_PILL_INACTIVE_CLASS
             }`}
             prefetch={false}
@@ -912,7 +902,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
           </Link>
           <Link
             href={buildSortHref("latest_qtr", sortBy === "latest_qtr" && sortOrder === "desc" ? "asc" : "desc")}
-            className={`${CHIP_CLASS} ${
+            className={`${CHIP_BASE} ${
               sortBy === "latest_qtr" ? SORT_PILL_ACTIVE_CLASS : SORT_PILL_INACTIVE_CLASS
             }`}
             prefetch={false}
@@ -921,7 +911,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
           </Link>
           <Link
             href={buildSortHref("growth", sortBy === "growth" && sortOrder === "desc" ? "asc" : "desc")}
-            className={`${CHIP_CLASS} ${
+            className={`${CHIP_BASE} ${
               sortBy === "growth" ? SORT_PILL_ACTIVE_CLASS : SORT_PILL_INACTIVE_CLASS
             }`}
             prefetch={false}

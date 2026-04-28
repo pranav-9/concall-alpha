@@ -931,35 +931,11 @@ export default async function Page({
         <div className="space-y-4">
           <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
             <div className="flex flex-wrap items-center gap-2">
-              {(() => {
-                const ratingConfig: Record<string, { className: string }> = {
-                  wide_moat: {
-                    className:
-                      "border-emerald-300 bg-emerald-100 text-emerald-900 dark:border-emerald-600/50 dark:bg-emerald-900/35 dark:text-emerald-200",
-                  },
-                  narrow_moat: {
-                    className:
-                      "border-sky-300 bg-sky-100 text-sky-900 dark:border-sky-600/50 dark:bg-sky-900/35 dark:text-sky-200",
-                  },
-                  no_moat: {
-                    className:
-                      "border-rose-300 bg-rose-100 text-rose-900 dark:border-rose-600/50 dark:bg-rose-900/35 dark:text-rose-200",
-                  },
-                  moat_at_risk: {
-                    className:
-                      "border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-600/50 dark:bg-amber-900/35 dark:text-amber-200",
-                  },
-                };
-                const cfg = ratingConfig[normalizedMoatAnalysis.moatRating];
-                const cls = cfg?.className ?? "border-border/60 bg-muted/60 text-foreground";
-                return (
-                  <span
-                    className={`rounded-full border px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.12em] ${cls}`}
-                  >
-                    {normalizedMoatAnalysis.moatRatingLabel}
-                  </span>
-                );
-              })()}
+              <span
+                className={`rounded-full border px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.12em] ${moatTierClass(normalizedMoatAnalysis.moatRating)}`}
+              >
+                {normalizedMoatAnalysis.moatRatingLabel}
+              </span>
               {normalizedMoatAnalysis.trajectory && (
                 <span className="rounded-full border border-border/60 bg-muted/50 px-2.5 py-0.5 text-[10px] font-medium text-foreground">
                   {normalizedMoatAnalysis.trajectoryDirection

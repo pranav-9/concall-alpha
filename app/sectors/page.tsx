@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import ConcallScore from "@/components/concall-score";
 import { slugifySector } from "@/app/sector/utils";
+import { HERO_CARD, PAGE_SHELL } from "@/lib/design/shell";
 
 type CompanyRow = {
   code: string;
@@ -63,9 +64,6 @@ const avg = (values: number[]) => {
 const PAGE_BACKGROUND_CLASS =
   "pointer-events-none absolute inset-x-0 top-0 -z-10 h-[30rem] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.10),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.78),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(15,23,42,0.34),_transparent_62%)]";
 
-const HERO_CARD_CLASS =
-  "rounded-[1.6rem] border border-sky-200/35 bg-gradient-to-br from-background/97 via-background/92 to-sky-50/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_18px_36px_-30px_rgba(15,23,42,0.26)] backdrop-blur-sm dark:border-sky-700/25 dark:from-background/90 dark:via-background/84 dark:to-sky-950/12";
-
 const METRIC_CARD_CLASS =
   "rounded-2xl border border-border/35 bg-background/72 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]";
 
@@ -115,8 +113,8 @@ export default async function SectorsPage({
     return (
       <main className="relative isolate overflow-hidden">
         <div className={PAGE_BACKGROUND_CLASS} />
-        <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-8">
-          <section className={HERO_CARD_CLASS}>
+        <div className={PAGE_SHELL}>
+          <section className={HERO_CARD}>
             <div className="space-y-2">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-200">
                 Sector overview
@@ -321,8 +319,8 @@ export default async function SectorsPage({
   return (
     <main className="relative isolate overflow-hidden">
       <div className={PAGE_BACKGROUND_CLASS} />
-      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-8">
-        <section className={HERO_CARD_CLASS}>
+      <div className={PAGE_SHELL}>
+        <section className={HERO_CARD}>
           <div className="space-y-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-3xl space-y-2">
