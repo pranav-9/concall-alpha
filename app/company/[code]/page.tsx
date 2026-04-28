@@ -99,6 +99,7 @@ import {
   getTimelineStageDisplay,
   splitCatalystQuantifiedLabel,
   toDisplayLabel,
+  type OverviewBodyPillTone,
 } from "./display-tokens";
 import { MissingSectionState } from "../components/missing-section-state";
 
@@ -135,7 +136,6 @@ export default async function Page({
     guidanceSnapshotResult,
     { data: moatAnalysisData },
     { data: keyVariablesSnapshotData },
-    { data: latestQuarterKey },
     { data: growthRankRows },
   ] = await Promise.all([
     supabase
@@ -198,13 +198,6 @@ export default async function Page({
       .order("generated_at", { ascending: false })
       .limit(1),
     supabase
-      .from("concall_analysis")
-      .select("fy, qtr")
-      .order("fy", { ascending: false })
-      .order("qtr", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
       .from("growth_outlook")
       .select("company, growth_score, base_growth_pct, run_timestamp")
       .order("run_timestamp", { ascending: false }),
@@ -242,13 +235,15 @@ export default async function Page({
         .limit(1)
     : null;
 
+  const companyLatestFy = data?.[0]?.fy ?? null;
+  const companyLatestQtr = data?.[0]?.qtr ?? null;
   const latestQuarterRowsPromise =
-    latestQuarterKey?.fy != null && latestQuarterKey?.qtr != null
+    companyLatestFy != null && companyLatestQtr != null
       ? supabase
           .from("concall_analysis")
           .select("company_code, score")
-          .eq("fy", latestQuarterKey.fy)
-          .eq("qtr", latestQuarterKey.qtr)
+          .eq("fy", companyLatestFy)
+          .eq("qtr", companyLatestQtr)
       : null;
 
   const sectorPeerPromise = companySector
@@ -405,15 +400,6 @@ export default async function Page({
     );
   const hasBusinessSnapshotContent =
     hasStructuredBusinessSnapshot || hasLegacyBusinessSnapshot;
-  const companyLabel = companyRow?.name ?? code;
-  const oneLine = (value: string | null | undefined, fallback: string, maxLength = 92) => {
-    const text = (value ?? "").replace(/\s+/g, " ").trim();
-    const source = text || fallback;
-    return source.length > maxLength ? `${source.slice(0, maxLength - 1).trimEnd()}…` : source;
-  };
-  const firstVariableName = normalizedKeyVariablesSnapshot?.deepTreatment[0]?.variable ?? null;
-  const firstGrowthCatalyst = normalizedGrowthOutlook?.catalysts[0]?.catalyst ?? null;
-  const firstGuidanceItem = guidanceItems[0];
   const guidanceSnapshotUpdatedAtShort = formatShortDate(
     normalizedGuidanceSnapshot?.updatedAtRaw ?? normalizedGuidanceSnapshot?.generatedAtRaw,
     true,
@@ -439,8 +425,6 @@ export default async function Page({
         ? "Current guidance"
         : null;
   const industryPositioning = normalizedCompanyIndustryAnalysis?.industryPositioning;
-  const businessSummaryLine =
-    aboutHeading ?? normalizedBusinessSnapshot?.businessSummaryShort ?? null;
   const businessSnapshotSurfaceClass = `${elevatedBlockClass} p-4`;
   const businessSnapshotBlockClass = elevatedBlockClass;
   const hasFutureGrowthDeepDive = Boolean(
@@ -2539,68 +2523,176 @@ export default async function Page({
     };
   })();
 
+  const credibilityVerdictKey = normalizedGuidanceSnapshot?.credibilityVerdict?.verdict ?? null;
+  const credibilityDisplay = getGuidanceCredibilityVerdictDisplay(credibilityVerdictKey);
+  const credibilityTone: OverviewBodyPillTone | undefined = (() => {
+    const normalized = credibilityVerdictKey?.trim().toLowerCase().replace(/[\s-]+/g, "_") ?? null;
+    switch (normalized) {
+      case "high_trust":
+        return "emerald";
+      case "credible":
+        return "sky";
+      case "mixed":
+        return "amber";
+      case "low_trust":
+        return "rose";
+      case "not_assessable":
+        return "slate";
+      default:
+        return undefined;
+    }
+  })();
+  const revenueGuidance = normalizedGuidanceSnapshot?.currentYearRevenueGuidance ?? null;
+  const revenueGuidanceLabel = (() => {
+    if (!revenueGuidance) return null;
+    const fyPart = revenueGuidance.fiscalYear ? `${revenueGuidance.fiscalYear} ` : "";
+    if (revenueGuidance.officialCurrentGuidancePercent != null) {
+      return `${fyPart}Rev: ${revenueGuidance.officialCurrentGuidancePercent}%`;
+    }
+    if (revenueGuidance.officialCurrentGuidanceText) {
+      return `${fyPart}Rev: ${revenueGuidance.officialCurrentGuidanceText}`;
+    }
+    return null;
+  })();
+
+  const moatRatingTone: OverviewBodyPillTone | undefined = (() => {
+    switch (normalizedMoatAnalysis?.moatRating) {
+      case "wide_moat":
+        return "emerald";
+      case "narrow_moat":
+        return "sky";
+      case "moat_at_risk":
+        return "amber";
+      case "no_moat":
+        return "rose";
+      default:
+        return undefined;
+    }
+  })();
+  const subSectorCardCount =
+    normalizedCompanyIndustryAnalysis?.subSectorCards.length ?? 0;
+  const qualifyingSubSectorCount =
+    normalizedCompanyIndustryAnalysis?.companyFit?.qualifyingSubSectors.length ?? 0;
+  const sectorRankPercentile =
+    sectorRankInfo?.rank != null && sectorRankInfo.total > 0
+      ? ((sectorRankInfo.total - sectorRankInfo.rank + 1) / sectorRankInfo.total) * 100
+      : null;
+  const businessSegmentMix = (() => {
+    const sorted = segmentEntries
+      .filter(
+        (s): s is typeof s & { revenueSharePercent: number } =>
+          typeof s.revenueSharePercent === "number" && s.revenueSharePercent > 0,
+      )
+      .sort((a, b) => b.revenueSharePercent - a.revenueSharePercent);
+    if (sorted.length < 2) return null;
+    return sorted.map((s) => ({ name: s.name, sharePct: s.revenueSharePercent }));
+  })();
+  const companyMarketShare = (() => {
+    const cards = normalizedCompanyIndustryAnalysis?.subSectorCards ?? [];
+    if (cards.length === 0) return null;
+    const stripSuffixes = (s: string) =>
+      s.replace(/\b(LIMITED|LTD|INC|CORP|CORPORATION|PLC|CO)\b\.?/g, "").trim();
+    const companyNameNormalized = stripSuffixes((companyRow?.name ?? "").toUpperCase().trim());
+    if (!companyNameNormalized) return null;
+    for (const card of cards) {
+      const players = card.marketShareSnapshot?.players ?? [];
+      for (const player of players) {
+        if (!player.shareValue) continue;
+        const playerNormalized = stripSuffixes(player.playerName.toUpperCase().trim());
+        if (
+          playerNormalized === companyNameNormalized ||
+          playerNormalized.includes(companyNameNormalized) ||
+          companyNameNormalized.includes(playerNormalized)
+        ) {
+          return {
+            shareValue: player.shareValue,
+            shareIsEstimated: player.shareIsEstimated,
+          };
+        }
+      }
+    }
+    return null;
+  })();
+
   const overviewSectionPreviews = [
     {
       title: "Industry Context",
       href: "#industry-context",
-      summary: oneLine(
-        [
-          companySector ? `Sector: ${companySector}` : null,
-          companySubSector ? `Sub-sector: ${companySubSector}` : null,
-          industryPositioning?.whereThisCompanyFits ??
-            industryPositioning?.industryEconomicsForCompany ??
-          industryPositioning?.customerNeed,
-        ]
-          .filter((value): value is string => Boolean(value))
-          .join(" · "),
-        `${companyLabel}’s operating backdrop and where it fits in the value chain.`,
-      ),
+      bodyPills: (() => {
+        const pills: Array<{ label: string; tone: OverviewBodyPillTone }> = [];
+        if (companySector) {
+          pills.push({ label: companySector, tone: "sky" });
+        }
+        if (sectorRankInfo?.rank != null && sectorRankPercentile != null) {
+          const tone = getPercentileTone(sectorRankPercentile);
+          pills.push({
+            label: `Sector Rank ${sectorRankInfo.rank}/${sectorRankInfo.total}`,
+            tone,
+          });
+          pills.push({ label: `Top ${Math.round(sectorRankPercentile)}%`, tone });
+        }
+        return pills.length > 0 ? pills : undefined;
+      })(),
+      indicator: normalizedCompanyIndustryAnalysis
+        ? undefined
+        : { kind: "pill" as const, label: "Soon" },
+    },
+    {
+      title: "Sub-sector Analysis",
+      href: "#sub-sector",
+      bodyPills: (() => {
+        const pills: Array<{ label: string; tone: OverviewBodyPillTone }> = [];
+        if (companySubSector) {
+          pills.push({ label: companySubSector, tone: "emerald" });
+        }
+        if (companyMarketShare) {
+          pills.push({
+            label: `Mkt share: ${companyMarketShare.shareValue}${companyMarketShare.shareIsEstimated ? " (est.)" : ""}`,
+            tone: "sky",
+          });
+        }
+        return pills.length > 0 ? pills : undefined;
+      })(),
       indicator:
-        sectorRankInfo?.rank != null
+        subSectorCardCount > 0
           ? {
               kind: "pill" as const,
-              label: `Sector #${sectorRankInfo.rank}/${sectorRankInfo.total}`,
+              label: `${subSectorCardCount} ${subSectorCardCount === 1 ? "profile" : "profiles"}`,
             }
-          : normalizedCompanyIndustryAnalysis
-            ? { kind: "pill" as const, label: "Live" }
+          : qualifyingSubSectorCount > 0
+            ? undefined
             : { kind: "pill" as const, label: "Soon" },
-      tone: "slate" as const,
     },
     {
       title: "Business Snapshot",
       href: "#business-overview",
-      summary: oneLine(
-        businessSummaryLine ??
-          aboutSupportingText ??
-          normalizedBusinessSnapshot?.mixShiftSummary,
-        `How ${companyLabel} makes money and where the mix is shifting.`,
-      ),
+      media: businessSegmentMix
+        ? { kind: "segment-bar" as const, segments: businessSegmentMix }
+        : undefined,
+      indicator: hasBusinessSnapshotContent
+        ? undefined
+        : { kind: "pill" as const, label: "Soon" },
+    },
+    {
+      title: "Moat Analysis",
+      href: "#moat-analysis",
       indicator: normalizedMoatAnalysis?.moatRatingLabel
         ? {
             kind: "pill" as const,
-            label: `Moat: ${normalizedMoatAnalysis.moatRatingLabel}`,
+            label: normalizedMoatAnalysis.moatRatingLabel,
+            tone: moatRatingTone,
           }
-        : hasBusinessSnapshotContent
-          ? { kind: "pill" as const, label: "Live" }
-          : { kind: "pill" as const, label: "Soon" },
-      tone: "slate" as const,
+        : { kind: "pill" as const, label: "Soon" },
     },
     {
       title: "Key Variables",
       href: "#key-variables",
-      summary: oneLine(
-        firstVariableName
-          ? `Top tracked variable: ${firstVariableName}`
-          : null,
-        `${companyLabel}’s non-financial drivers that explain quality and direction.`,
-      ),
       indicator: normalizedKeyVariablesSnapshot
         ? {
             kind: "pill" as const,
             label: `${normalizedKeyVariablesSnapshot.deepTreatment.length} vars`,
           }
         : { kind: "pill" as const, label: "Soon" },
-      tone: "slate" as const,
     },
     {
       title: "Quarterly Score",
@@ -2618,19 +2710,10 @@ export default async function Page({
               },
             ]
           : undefined,
-      summary: oneLine(
-        latestQuarterData?.summary?.[0]
-          ? `${latestQuarterData.summary[0].topic}: ${
-              latestQuarterData.summary[0].detail || latestQuarterData.summary[0].text
-            }`
-          : null,
-        `The latest quarter signal for ${companyLabel}.`,
-      ),
       indicator:
         latestQuarterData?.score != null
           ? { kind: "score" as const, score: latestQuarterData.score }
           : { kind: "pill" as const, label: "Soon" },
-      tone: "slate" as const,
     },
     {
       title: "Growth Prospects",
@@ -2648,43 +2731,31 @@ export default async function Page({
               },
             ]
           : undefined,
-      summary: oneLine(
-        normalizedGrowthOutlook?.baseGrowthPct
-          ? `Base case growth: ${normalizedGrowthOutlook.baseGrowthPct}`
-          : firstGrowthCatalyst ??
-            normalizedGrowthOutlook?.summaryBullets[0] ??
-            normalizedGrowthOutlook?.visibilityRationale,
-        `${companyLabel}’s next catalysts and scenario path.`,
-      ),
       indicator:
         growthScore != null
           ? { kind: "score" as const, score: growthScore }
           : { kind: "pill" as const, label: "Soon" },
-      tone: "slate" as const,
     },
     {
       title: "Guidance Tracker",
       href: "#guidance-history",
-      summary: oneLine(
-        normalizedGuidanceSnapshot?.currentYearRevenueGuidance?.officialCurrentGuidanceText
-          ? normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidancePercent != null
-            ? `${normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidanceText} (${normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidancePercent}%)`
-            : normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidanceText
-          : firstGuidanceItem?.guidanceText ??
-            firstGuidanceItem?.statusReason ??
-            firstGuidanceItem?.latestView,
-        `How ${companyLabel}’s management guidance is moving over time.`,
-      ),
-      indicator:
-        guidanceItems.length > 0
+      bodyPills: revenueGuidanceLabel
+        ? [{ label: revenueGuidanceLabel, tone: "sky" as const }]
+        : undefined,
+      indicator: credibilityDisplay
+        ? {
+            kind: "pill" as const,
+            label: credibilityDisplay.label,
+            tone: credibilityTone,
+          }
+        : guidanceItems.length > 0
           ? {
               kind: "pill" as const,
               label: `${guidanceItems.length} items`,
             }
           : normalizedGuidanceSnapshot
-            ? { kind: "pill" as const, label: "Live" }
+            ? undefined
             : { kind: "pill" as const, label: "Soon" },
-      tone: "slate" as const,
     },
   ];
 
@@ -2970,10 +3041,6 @@ export default async function Page({
               companyInfo={{
                 code: companyRow?.code ?? code,
                 name: companyRow?.name ?? undefined,
-                sector: companySector,
-                subSector: companySubSector,
-                exchange: companyRow?.exchange ?? undefined,
-                country: companyRow?.country ?? undefined,
                 isNew: companyIsNew,
               }}
               sectionPreviews={overviewSectionPreviews}

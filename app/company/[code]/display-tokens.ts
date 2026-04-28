@@ -15,6 +15,22 @@ export const getPercentileTone = (percentile: number): OverviewBodyPillTone => {
   return "rose";
 };
 
+export const overviewBodyPillClass = (tone: OverviewBodyPillTone | undefined): string => {
+  switch (tone ?? "slate") {
+    case "emerald":
+      return "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200";
+    case "sky":
+      return "border-sky-200 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200";
+    case "amber":
+      return "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200";
+    case "rose":
+      return "border-rose-200 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200";
+    case "slate":
+    default:
+      return "border-border/60 bg-background/75 text-muted-foreground";
+  }
+};
+
 export const formatCompactLabel = (value: string) => value.replace(/_/g, " ").trim();
 
 export type MarginQualityTone = "emerald" | "amber" | "rose" | "neutral";
