@@ -131,7 +131,10 @@ function ThemeColumn({
         <p className="text-sm font-medium text-foreground">{item.theme}</p>
         <div className="flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
           {item.confidence != null && (
-            <span className="rounded-full border border-border bg-muted px-2 py-0.5">
+            <span
+              title="Confidence in this signal (1 = weak, 5 = strong)"
+              className="rounded-full border border-border bg-muted px-2 py-0.5"
+            >
               Confidence {item.confidence}/5
             </span>
           )}
@@ -174,7 +177,7 @@ function ThemeColumn({
       {hidden.length > 0 && (
         <details className="rounded-md border border-border/30 bg-background/45 p-2.5">
           <summary className="cursor-pointer text-[11px] font-medium text-foreground">
-            Show all {title.toLowerCase()} ({hidden.length})
+            Show {hidden.length} more
           </summary>
           <div className="mt-3 space-y-3">
             {hidden.map((item, index) => renderItem(item, index + visible.length))}
@@ -288,7 +291,7 @@ function CatalystPolicyColumn({
       {hidden.length > 0 && (
         <details className="rounded-md border border-border/30 bg-background/45 p-2.5">
           <summary className="cursor-pointer text-[11px] font-medium text-foreground">
-            Show more ({hidden.length})
+            Show {hidden.length} more
           </summary>
           <div className="mt-3 space-y-3">
             {hidden.map((item, index) => renderItem(item, index + visible.length))}
@@ -445,8 +448,23 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     acc.set(key, (acc.get(key) ?? 0) + 1);
     return acc;
   }, new Map());
+  const sortedSubSectorEntries = Array.from(subSectorCounts.entries()).sort(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+  );
+  const activeSubSectorRaw = resolvedSearchParams?.subSector?.trim() || null;
+  const activeSubSectorDisplay =
+    sortedSubSectorEntries.find(
+      ([name]) => normalizeFilterKey(name) === normalizeFilterKey(activeSubSectorRaw),
+    )?.[0] ?? activeSubSectorRaw;
 
-  const sortedRows = [...allRows].sort((a, b) => {
+  const filteredRows = activeSubSectorRaw
+    ? allRows.filter(
+        (row) =>
+          normalizeFilterKey(row.subSector) === normalizeFilterKey(activeSubSectorRaw),
+      )
+    : allRows;
+
+  const sortedRows = [...filteredRows].sort((a, b) => {
     if (sortBy === "growth") {
       const primary = compareNullableNumbers(a.growthScore, b.growthScore, sortOrder);
       if (primary !== 0) return primary;
@@ -521,6 +539,16 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     const query = new URLSearchParams();
     if (nextSort !== "avg") query.set("sort", nextSort);
     if (nextOrder !== "desc") query.set("order", nextOrder);
+    if (activeSubSectorRaw) query.set("subSector", activeSubSectorRaw);
+    const qs = query.toString();
+    return qs ? `/sector/${slugifySector(sectorName)}?${qs}` : `/sector/${slugifySector(sectorName)}`;
+  };
+
+  const buildSubSectorHref = (nextSubSector: string | null) => {
+    const query = new URLSearchParams();
+    if (sortBy !== "avg") query.set("sort", sortBy);
+    if (sortOrder !== "desc") query.set("order", sortOrder);
+    if (nextSubSector) query.set("subSector", nextSubSector);
     const qs = query.toString();
     return qs ? `/sector/${slugifySector(sectorName)}?${qs}` : `/sector/${slugifySector(sectorName)}`;
   };
@@ -572,7 +600,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
               )}
               {usingSectorFallback && (
                 <span className={`${CHIP_BASE} border-amber-200/70 bg-amber-100/80 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200`}>
-                  Using sector-level view
+                  No sub-sector data yet — showing the full sector instead
                 </span>
               )}
             </div>
@@ -586,6 +614,37 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
             </div>
           </div>
         </div>
+
+        {sortedSubSectorEntries.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-border/30 pt-3 text-xs">
+            <span className="text-muted-foreground">Filter by sub-sector:</span>
+            <Link
+              href={buildSubSectorHref(null)}
+              className={`${CHIP_BASE} ${
+                activeSubSectorRaw ? SORT_PILL_INACTIVE_CLASS : SORT_PILL_ACTIVE_CLASS
+              }`}
+              prefetch={false}
+            >
+              All ({allRows.length})
+            </Link>
+            {sortedSubSectorEntries.map(([name, count]) => {
+              const isActive =
+                normalizeFilterKey(name) === normalizeFilterKey(activeSubSectorRaw);
+              return (
+                <Link
+                  key={name}
+                  href={buildSubSectorHref(isActive ? null : name)}
+                  className={`${CHIP_BASE} ${
+                    isActive ? SORT_PILL_ACTIVE_CLASS : SORT_PILL_INACTIVE_CLASS
+                  }`}
+                  prefetch={false}
+                >
+                  {name} ({count})
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
         {!normalizedSectorIntelligence ? (
           <div className={`${SMALL_SUBCARD_CLASS} text-sm text-muted-foreground`}>
@@ -774,7 +833,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
             {visibleCoveredCompanies.length > 0 && (
               <div className={INLINE_SUBCARD_CLASS + " space-y-3"}>
                 <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                  Internal Coverage Snapshot
+                  Companies we cover in this sub-sector
                 </p>
                 <div className="space-y-2">
                   {visibleCoveredCompanies.map((company) => (
@@ -796,13 +855,19 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
                           </span>
                         )}
                         {company.latestSentimentScore != null && (
-                          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
-                            S {company.latestSentimentScore.toFixed(1)}
+                          <span
+                            title="Latest quarterly sentiment score (1-10)"
+                            className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground"
+                          >
+                            Sentiment {company.latestSentimentScore.toFixed(1)}
                           </span>
                         )}
                         {company.latestGrowthScore != null && (
-                          <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground">
-                            G {company.latestGrowthScore.toFixed(1)}
+                          <span
+                            title="Forward growth score (1-10)"
+                            className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-foreground"
+                          >
+                            Growth {company.latestGrowthScore.toFixed(1)}
                           </span>
                         )}
                       </div>
@@ -817,7 +882,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
                 {hiddenCoveredCompanies.length > 0 && (
                   <details className="rounded-md border border-border/30 bg-background/45 p-2.5">
                     <summary className="cursor-pointer text-[11px] font-medium text-foreground">
-                      Show all covered companies ({hiddenCoveredCompanies.length})
+                      Show {hiddenCoveredCompanies.length} more
                     </summary>
                     <div className="mt-3 space-y-2">
                       {hiddenCoveredCompanies.map((company) => (
@@ -880,10 +945,21 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
               Sector table
             </p>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Sort by the sector-level metrics most relevant to browsing.
+              {activeSubSectorDisplay
+                ? `Showing companies in ${activeSubSectorDisplay}.`
+                : "Sort by the sector-level metrics most relevant to browsing."}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs">
+            {activeSubSectorDisplay && (
+              <Link
+                href={buildSubSectorHref(null)}
+                className={`${CHIP_BASE} ${SORT_PILL_INACTIVE_CLASS} hover:bg-accent`}
+                prefetch={false}
+              >
+                Clear sub-sector filter
+              </Link>
+            )}
             <span className={`${CHIP_BASE} ${CHIP_NEUTRAL}`}>
               Current: {sortLabel} {sortOrder}
             </span>
@@ -922,7 +998,9 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
 
         {sortedRows.length === 0 ? (
           <div className={SMALL_SUBCARD_CLASS + " text-sm text-muted-foreground"}>
-            No companies available for this sector.
+            {activeSubSectorDisplay
+              ? `No companies in ${activeSubSectorDisplay} yet.`
+              : "No companies available for this sector."}
           </div>
         ) : (
           <div className="overflow-x-auto">

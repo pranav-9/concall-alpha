@@ -49,6 +49,10 @@ import {
 } from "../components/deferred-company-sections";
 import { BusinessSegmentsMosaic } from "../components/business-segments-mosaic";
 import { KeyVariablesSection } from "../components/key-variables-section";
+import {
+  SubSectorTabs,
+  type SubSectorTabEntry,
+} from "../components/sub-sector-tabs";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
@@ -466,19 +470,6 @@ export default async function Page({
         normalizedBusinessSnapshot?.mixShiftSummary ? "Mix shift" : null,
         normalizedMoatAnalysis ? "Moat analysis" : null,
       ].filter((value): value is string => Boolean(value));
-  const subSectorHeaderPills = [
-    (normalizedCompanyIndustryAnalysis?.companyFit?.qualifyingSubSectors.length ?? 0) > 0
-      ? "Relevant sub-sectors"
-      : null,
-    (normalizedCompanyIndustryAnalysis?.subSectorCards.length ?? 0) > 0
-      ? "Supply-side analysis"
-      : null,
-    normalizedCompanyIndustryAnalysis?.subSectorCards.some(
-      (card) => Boolean(card.supplySideEvidencePack),
-    )
-      ? "Supply-side evidence pack"
-      : null,
-  ].filter((value): value is string => Boolean(value));
   const quarterlyHeaderPills = [
     chartData.length > 0 ? "Score trend" : null,
     detailQuarters.length > 0 ? "Quarter detail" : null,
@@ -1709,38 +1700,68 @@ export default async function Page({
     );
   };
   const renderSubSectorSection = () => {
-    const hasRelevantSubSectors =
-      (normalizedCompanyIndustryAnalysis?.companyFit?.qualifyingSubSectors.length ?? 0) > 0;
-    const hasSubSectorCards =
-      (normalizedCompanyIndustryAnalysis?.subSectorCards.length ?? 0) > 0;
+    const qualifying =
+      normalizedCompanyIndustryAnalysis?.companyFit?.qualifyingSubSectors ?? [];
+    const cards = normalizedCompanyIndustryAnalysis?.subSectorCards ?? [];
 
-    if (!hasRelevantSubSectors && !hasSubSectorCards) {
+    if (qualifying.length === 0 && cards.length === 0) {
       return renderMissingSectionState(
         "sub-sector",
-        "Sub-sector Analysis",
+        "Sub-sectors",
         "We have not generated sub-sector-specific cards for this company yet.",
       );
     }
 
-    return (
-      <div className="space-y-3">
-        {hasRelevantSubSectors ? renderQualifiedSubSectors() : null}
-        {hasSubSectorCards
-          ? renderIndustryContextDrawerCard({
-              title: "Sub-sector Supply Side Analysis",
-              count: normalizedCompanyIndustryAnalysis?.subSectorCards.length ?? 0,
-              description: renderRelevantSubSectors(
-                normalizedCompanyIndustryAnalysis?.subSectorCards ?? [],
-              ),
-              accentClass: "bg-sky-500/80",
-              inline: true,
-              hideCount: true,
-              hideAccentDot: true,
-              showAccentStrip: true,
-            })
-          : null}
-      </div>
-    );
+    const normalizeKey = (value: string) => value.trim().toLowerCase();
+    const order: string[] = [];
+    const byKey = new Map<string, SubSectorTabEntry>();
+
+    qualifying.forEach((item) => {
+      const key = normalizeKey(item.subSector);
+      if (!key || byKey.has(key)) return;
+      order.push(key);
+      byKey.set(key, {
+        subSector: item.subSector,
+        description: item.description ?? null,
+        relevanceRationale: item.relevanceRationale ?? null,
+        capitalCycle: null,
+        marketShareSnapshot: null,
+        supplySideEvidencePack: null,
+      });
+    });
+
+    cards.forEach((card) => {
+      const key = normalizeKey(card.subSector);
+      if (!key) return;
+      const existing = byKey.get(key);
+      if (existing) {
+        byKey.set(key, {
+          ...existing,
+          description: existing.description ?? card.subSectorDescription ?? null,
+          relevanceRationale:
+            existing.relevanceRationale ?? card.relevanceRationale ?? null,
+          capitalCycle: card.capitalCycle,
+          marketShareSnapshot: card.marketShareSnapshot,
+          supplySideEvidencePack: card.supplySideEvidencePack,
+        });
+      } else {
+        order.push(key);
+        byKey.set(key, {
+          subSector: card.subSector,
+          description: card.subSectorDescription ?? null,
+          relevanceRationale: card.relevanceRationale ?? null,
+          capitalCycle: card.capitalCycle,
+          marketShareSnapshot: card.marketShareSnapshot,
+          supplySideEvidencePack: card.supplySideEvidencePack,
+        });
+      }
+    });
+
+    const entries = order
+      .map((key) => byKey.get(key))
+      .filter((entry): entry is SubSectorTabEntry => Boolean(entry));
+
+    return <SubSectorTabs entries={entries} />;
   };
   const renderTypesOfPlayers = () => {
     if (!normalizedCompanyIndustryAnalysis?.typesOfPlayers) return null;
@@ -1822,317 +1843,6 @@ export default async function Page({
             );
           },
         )}
-      </div>
-    );
-  };
-  const renderQualifiedSubSectors = () => {
-    const qualifyingSubSectors =
-      normalizedCompanyIndustryAnalysis?.companyFit?.qualifyingSubSectors ?? [];
-    if (qualifyingSubSectors.length === 0) return null;
-
-    const subSectorAccentClass =
-      "bg-gradient-to-r from-transparent via-sky-500/70 to-transparent dark:via-sky-400/55";
-
-    return (
-      renderIndustryContextDrawerCard({
-        title: "Relevant Sub-sectors",
-        count: qualifyingSubSectors.length,
-        accentClass: "bg-sky-500/80",
-        inline: true,
-        hideCount: true,
-        hideAccentDot: true,
-        showAccentStrip: true,
-        description: (
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            {qualifyingSubSectors.map((item, index) => {
-              return (
-                <div
-                  key={`${item.subSector}-${index}`}
-                  className={`${nestedDetailClass} relative overflow-hidden px-3 py-3 pt-4`}
-                >
-                  <div
-                    className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 ${subSectorAccentClass}`}
-                  />
-                  <div className="relative space-y-2">
-                    <p className="text-[12px] font-semibold leading-snug text-foreground">
-                      {item.subSector}
-                    </p>
-                    {item.description && (
-                      <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        {item.description}
-                      </p>
-                    )}
-                    {item.relevanceRationale && (
-                      <div className="space-y-0.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                          Why relevant
-                        </p>
-                        <p className="text-[11px] leading-relaxed text-foreground/90">
-                          {item.relevanceRationale}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ),
-      })
-    );
-  };
-  const renderRelevantSubSectors = (
-    cards: NormalizedIndustrySubSectorCard[],
-  ) => {
-    if (cards.length === 0) return null;
-
-    const subSectorAccentClass =
-      "bg-gradient-to-r from-transparent via-sky-500/70 to-transparent dark:via-sky-400/55";
-    const capitalCycleReadClass =
-      "rounded-xl border border-border/20 border-l-2 border-l-sky-400/30 bg-background/55 p-3 dark:border-border/20 dark:border-l-sky-400/25 dark:bg-background/45";
-    const parseMarketShareValue = (value: string | null) => {
-      if (!value) return null;
-
-      const normalizedValue = value.trim().replace(/,/g, "");
-      const numericMatch = normalizedValue.match(/-?\d+(?:\.\d+)?/);
-      if (!numericMatch) return null;
-
-      const parsed = Number(numericMatch[0]);
-      if (!Number.isFinite(parsed)) return null;
-
-      if (normalizedValue.includes("%")) {
-        return Math.max(0, parsed);
-      }
-
-      if (parsed >= 0 && parsed <= 1) {
-        return parsed * 100;
-      }
-
-      return Math.max(0, parsed);
-    };
-    const formatMarketShareValue = (value: string | null) => {
-      if (!value) return null;
-
-      const trimmedValue = value.trim();
-      const normalizedValue = trimmedValue.replace(/,/g, "");
-      const parsed = parseMarketShareValue(trimmedValue);
-      if (parsed == null) return trimmedValue;
-
-      if (normalizedValue.includes("%")) {
-        return trimmedValue;
-      }
-
-      const formattedValue = Number.isInteger(parsed)
-        ? `${Math.round(parsed)}`
-        : `${parsed.toFixed(1).replace(/\.0$/, "")}`;
-
-      return `${formattedValue}%`;
-    };
-
-    return (
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-        {cards.map((card, index) => {
-          const capitalCycleStage = toDisplayLabel(card.capitalCycle?.stage ?? null);
-          const capitalCycleDirection = toDisplayLabel(card.capitalCycle?.direction ?? null);
-          const marketSharePlayers = card.marketShareSnapshot?.players ?? [];
-          const rankedMarketSharePlayers = marketSharePlayers
-            .map((player, playerIndex) => ({
-              ...player,
-              playerIndex,
-              parsedShare: parseMarketShareValue(player.shareValue),
-            }))
-            .sort((left, right) => {
-              if (left.parsedShare != null && right.parsedShare != null) {
-                return right.parsedShare - left.parsedShare;
-              }
-
-              if (left.parsedShare != null) return -1;
-              if (right.parsedShare != null) return 1;
-
-              return left.playerIndex - right.playerIndex;
-            }) ?? [];
-          const topMarketSharePlayers = rankedMarketSharePlayers.slice(0, 3);
-          const maxMarketShareValue = rankedMarketSharePlayers.reduce(
-            (max, player) => Math.max(max, player.parsedShare ?? 0),
-            0,
-          );
-
-          return (
-            <div
-              key={`${card.subSector}-${index}`}
-              className={`${elevatedBlockClass} relative overflow-hidden p-4 pt-5 space-y-3`}
-            >
-              <div
-                className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 ${subSectorAccentClass}`}
-              />
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-[14px] font-semibold leading-snug text-foreground">
-                    {card.subSector}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {capitalCycleStage && (
-                    <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-foreground">
-                      {capitalCycleStage}
-                    </span>
-                  )}
-                  {capitalCycleDirection && (
-                    <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground">
-                      {capitalCycleDirection}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {card.capitalCycle?.supplySideRead && (
-                <div className={capitalCycleReadClass}>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Capital cycle read
-                  </p>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-foreground/90">
-                    {card.capitalCycle.supplySideRead}
-                  </p>
-                </div>
-              )}
-
-              {card.marketShareSnapshot && (
-                <div className="space-y-1.5">
-                  <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                    Market share snapshot
-                  </p>
-                  <div className={`${nestedDetailClass} px-3 py-3 space-y-3`}>
-                    {(card.marketShareSnapshot.shareBasis || card.marketShareSnapshot.dataVintage) && (
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {card.marketShareSnapshot.shareBasis && (
-                          <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground">
-                            {card.marketShareSnapshot.shareBasis}
-                          </span>
-                        )}
-                        {card.marketShareSnapshot.dataVintage && (
-                          <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                            {card.marketShareSnapshot.dataVintage}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {topMarketSharePlayers.length > 0 && (
-                      <div className="space-y-2">
-                        {topMarketSharePlayers.map((player) => {
-                          const shareLabel = formatMarketShareValue(player.shareValue);
-                          const shareRatio =
-                            player.parsedShare != null && maxMarketShareValue > 0
-                              ? Math.max(0, (player.parsedShare / maxMarketShareValue) * 100)
-                              : null;
-
-                          return (
-                            <div
-                              key={`${card.subSector}-${player.playerName}-${player.playerIndex}`}
-                              className="space-y-1.5 rounded-xl border border-border/20 bg-background/70 px-3 py-2.5"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0 space-y-0.5">
-                                  <p className="text-[12px] font-semibold leading-snug text-foreground">
-                                    {player.playerName}
-                                  </p>
-                                  {player.playerStatus && (
-                                    <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                                      {toDisplayLabel(player.playerStatus)}
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="flex shrink-0 items-center gap-1.5">
-                                  {player.shareIsEstimated && (
-                                    <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                      est.
-                                    </span>
-                                  )}
-                                  <span
-                                    className={`text-[11px] font-semibold tabular-nums ${
-                                      player.shareIsEstimated
-                                        ? "text-muted-foreground"
-                                        : "text-foreground"
-                                    }`}
-                                  >
-                                    {shareLabel ?? "—"}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {shareRatio != null && (
-                                <div className="h-1.5 overflow-hidden rounded-full bg-muted/60">
-                                  <div
-                                    className={`h-full rounded-full ${
-                                      player.shareIsEstimated
-                                        ? "bg-sky-500/40"
-                                        : "bg-sky-500/75"
-                                    }`}
-                                    style={{ width: `${shareRatio}%` }}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {card.supplySideEvidencePack && (
-                (() => {
-                  const supplySideEvidenceRows = card.supplySideEvidencePack.rows;
-                  const totalEvidenceItems = supplySideEvidenceRows.reduce(
-                    (count, row) => count + row.evidence.length,
-                    0,
-                  );
-
-                  return (
-                    <div className="space-y-3 rounded-xl border border-border/25 bg-background/55 p-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                          Supply Side Evidence Pack
-                        </p>
-                        {card.supplySideEvidencePack.evidenceWindowYears != null && (
-                          <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-foreground">
-                            {card.supplySideEvidencePack.evidenceWindowYears}-year window
-                          </span>
-                        )}
-                        {card.supplySideEvidencePack.evidenceConfidence && (
-                          <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-muted-foreground">
-                            Confidence: {formatCompactLabel(card.supplySideEvidencePack.evidenceConfidence)}
-                          </span>
-                        )}
-                        <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-muted-foreground">
-                          {supplySideEvidenceRows.length} rows
-                        </span>
-                        <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-muted-foreground">
-                          {totalEvidenceItems} sources
-                        </span>
-                      </div>
-
-                      {card.supplySideEvidencePack.interpretation && (
-                        <div className="rounded-xl border border-border/20 border-l-2 border-l-amber-400/25 bg-background/70 p-3 dark:border-border/20 dark:border-l-amber-400/20 dark:bg-background/50">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">
-                            Interpretation
-                          </p>
-                          <p className="mt-1.5 text-[11px] leading-relaxed text-foreground/90">
-                            {card.supplySideEvidencePack.interpretation}
-                          </p>
-                        </div>
-                      )}
-
-                      <p className="text-[10px] text-muted-foreground">
-                        Row details are hidden for now.
-                      </p>
-                    </div>
-                  );
-                })()
-              )}
-            </div>
-          );
-        })}
       </div>
     );
   };
@@ -3328,8 +3038,7 @@ export default async function Page({
           <div data-section-id="sub-sector">
         <SectionCard
           id="sub-sector"
-          title="Sub-sector Analysis"
-          headerPills={subSectorHeaderPills}
+          title="Sub-sectors"
           headerAction={
             companyIndustryGeneratedAtShort ? (
               <span className="text-[11px] text-muted-foreground">
