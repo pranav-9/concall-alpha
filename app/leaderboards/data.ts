@@ -2,8 +2,8 @@ import { buildNewCompanySet } from "@/lib/company-freshness";
 import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
-import { MOAT_RATING_ORDER } from "@/lib/moat-analysis/rank";
-import type { MoatAnalysisRow, MoatRatingKey } from "@/lib/moat-analysis/types";
+import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
+import type { MoatAnalysisRow, MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
 import { createClient } from "@/lib/supabase/server";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -57,6 +57,7 @@ export type MoatRowTable = {
   isNew: boolean;
   moatRating: MoatRatingKey;
   moatLabel: string;
+  moatTier: MoatTier | null;
   appliesSourceCount: number;
   totalSourceCount: number;
   cycleTested: boolean | null;
@@ -211,7 +212,7 @@ async function fetchMoatLeaders(ctx: LeaderboardContext): Promise<MoatRowTable[]
   const { data: moatData, error: moatError } = await supabase
     .from("moat_analysis")
     .select(
-      "id, company_code, company_name, industry, rating, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
+      "id, company_code, company_name, industry, rating, tier, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
     )
     .order("updated_at", { ascending: false })
     .order("created_at", { ascending: false })
@@ -238,6 +239,7 @@ async function fetchMoatLeaders(ctx: LeaderboardContext): Promise<MoatRowTable[]
           isNew: newCompanySet.has(normalized.companyCode.toUpperCase()),
           moatRating: normalized.moatRating,
           moatLabel: normalized.moatRatingLabel,
+          moatTier: normalized.moatTier,
           appliesSourceCount: normalized.sources.filter((s) => s.applies).length,
           totalSourceCount: normalized.sources.length,
           cycleTested: normalized.cycleTested,
@@ -251,6 +253,7 @@ async function fetchMoatLeaders(ctx: LeaderboardContext): Promise<MoatRowTable[]
         isNew: newCompanySet.has(company.code.toUpperCase()),
         moatRating: "unknown" as const,
         moatLabel: "Unknown",
+        moatTier: null,
         appliesSourceCount: 0,
         totalSourceCount: 0,
         cycleTested: null,
@@ -259,7 +262,9 @@ async function fetchMoatLeaders(ctx: LeaderboardContext): Promise<MoatRowTable[]
       };
     })
     .sort((a, b) => {
-      const tierDiff = MOAT_RATING_ORDER[a.moatRating] - MOAT_RATING_ORDER[b.moatRating];
+      const ratingDiff = MOAT_RATING_ORDER[a.moatRating] - MOAT_RATING_ORDER[b.moatRating];
+      if (ratingDiff !== 0) return ratingDiff;
+      const tierDiff = moatTierRank(a.moatTier) - moatTierRank(b.moatTier);
       if (tierDiff !== 0) return tierDiff;
       if (b.appliesSourceCount !== a.appliesSourceCount) return b.appliesSourceCount - a.appliesSourceCount;
       const aCycle = a.cycleTested === true ? 0 : a.cycleTested === false ? 1 : 2;

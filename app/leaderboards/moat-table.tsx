@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowDown, ArrowUp, Minus, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { Fragment } from "react";
 import {
@@ -10,9 +11,39 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { moatTierClass } from "@/lib/moat-analysis/tier-class";
-import type { MoatRatingKey } from "@/lib/moat-analysis/types";
+import {
+  moatTierClass,
+  moatTierGradeClass,
+  moatTierGradeIconClass,
+  moatTierGradeLabel,
+} from "@/lib/moat-analysis/tier-class";
+import type { MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
 import type { MoatRowTable } from "./data";
+
+const tierIcon = (tier: MoatTier | null): LucideIcon | null => {
+  switch (tier) {
+    case "strong":
+      return ArrowUp;
+    case "mid":
+      return Minus;
+    case "weak":
+      return ArrowDown;
+    default:
+      return null;
+  }
+};
+
+function TierChip({ tier }: { tier: MoatTier }) {
+  const Icon = tierIcon(tier);
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] ${moatTierGradeClass()}`}
+    >
+      {Icon && <Icon className={`h-3 w-3 ${moatTierGradeIconClass(tier)}`} />}
+      {moatTierGradeLabel(tier)}
+    </span>
+  );
+}
 
 export type { MoatRowTable };
 
@@ -39,10 +70,13 @@ const formatDate = (value: string | null | undefined) => {
 };
 
 export function MoatTable({ data }: { data: MoatRowTable[] }) {
-  const tierGroups = TIER_SECTIONS.map((tier) => ({
-    tier,
-    rows: data.filter((r) => r.moatRating === tier.key),
-  })).filter((g) => g.rows.length > 0);
+  const tierGroups = TIER_SECTIONS.map((tier) => {
+    const rows = data.filter((r) => r.moatRating === tier.key);
+    const tierKeys = new Set(rows.map((r) => r.moatTier ?? "__none__"));
+    const sharedTier =
+      tierKeys.size === 1 && rows[0].moatTier ? rows[0].moatTier : null;
+    return { tier, rows, sharedTier };
+  }).filter((g) => g.rows.length > 0);
 
   return (
     <div className={TABLE_CARD_CLASS}>
@@ -51,6 +85,11 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
           <TableRow className="border-b border-border/35 bg-background/70">
             <TableHead className="w-12 px-3 py-3 text-foreground">#</TableHead>
             <TableHead className="px-3 py-3 text-foreground">Company</TableHead>
+            <TableHead className="w-24 px-3 py-3 text-foreground">
+              <span title="Sub-grade within the moat rating (Strong / Mid / Weak)">
+                Strength
+              </span>
+            </TableHead>
             <TableHead className="w-40 px-3 py-3 text-foreground">
               <span title="Moat sources where the company shows presence (out of total assessed)">
                 Active sources
@@ -61,19 +100,26 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {tierGroups.map(({ tier, rows }) => (
+          {tierGroups.map(({ tier, rows, sharedTier }) => (
             <Fragment key={tier.key}>
               <TableRow className="border-b border-border/35 bg-background/40 hover:bg-background/40">
-                <TableCell colSpan={5} className="px-3 py-2">
+                <TableCell colSpan={6} className="px-3 py-2">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none ${moatTierClass(tier.key)}`}
+                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold leading-none ${moatTierClass(tier.key)}`}
                     >
                       {tier.label}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {rows.length} {rows.length === 1 ? "company" : "companies"}
                     </span>
+                    {sharedTier && (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span aria-hidden>·</span>
+                        <span>all</span>
+                        <TierChip tier={sharedTier} />
+                      </span>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -104,6 +150,15 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
                     </div>
                   </TableCell>
                   <TableCell className="px-3 py-3 align-middle">
+                    {sharedTier ? (
+                      <span className="text-muted-foreground/60">—</span>
+                    ) : row.moatTier ? (
+                      <TierChip tier={row.moatTier} />
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="px-3 py-3 align-middle">
                     {row.totalSourceCount === 0 ? (
                       <span className="text-muted-foreground">—</span>
                     ) : (
@@ -120,7 +175,7 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
                       </span>
                     )}
                     {row.cycleTested === false && (
-                      <span className="inline-flex items-center rounded-full border border-rose-200/60 bg-rose-50/70 px-2 py-0.5 text-[10px] font-medium text-rose-800 dark:border-rose-700/30 dark:bg-rose-900/20 dark:text-rose-200">
+                      <span className="inline-flex items-center rounded-full border border-rose-200/60 bg-rose-50/70 px-2 py-0.5 text-[10px] font-medium text-rose-800 dark:border-rose-600/40 dark:bg-rose-900/35 dark:text-white">
                         No
                       </span>
                     )}

@@ -4,6 +4,7 @@ export type MoatAnalysisRow = {
   company_name?: string | null;
   industry?: string | null;
   rating?: string | null;
+  tier?: string | null;
   gatekeeper_answer?: string | null;
   cycle_tested?: boolean | null;
   assessment_payload?: unknown;
@@ -18,6 +19,8 @@ export type MoatRatingKey =
   | "no_moat"
   | "moat_at_risk"
   | "unknown";
+
+export type MoatTier = "strong" | "mid" | "weak";
 
 export type NormalizedMoatSource = {
   sourceType: string;
@@ -49,6 +52,7 @@ export type NormalizedMoatAnalysis = {
   schemaVersion: string | null;
   moatRating: MoatRatingKey;
   moatRatingLabel: string;
+  moatTier: MoatTier | null;
   call: string | null;
   reasoning: string | null;
   sources: NormalizedMoatSource[];

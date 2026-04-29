@@ -1,7 +1,12 @@
-import { AlertTriangle, Clock, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Clock, Minus, ShieldCheck } from "lucide-react";
 
-import { moatTierClass } from "@/lib/moat-analysis/tier-class";
-import type { NormalizedMoatAnalysis } from "@/lib/moat-analysis/types";
+import {
+  moatTierClass,
+  moatTierGradeClass,
+  moatTierGradeIconClass,
+  moatTierGradeLabel,
+} from "@/lib/moat-analysis/tier-class";
+import type { MoatTier, NormalizedMoatAnalysis } from "@/lib/moat-analysis/types";
 import { cn } from "@/lib/utils";
 
 type MoatAnalysisSectionProps = {
@@ -57,6 +62,17 @@ const splitLeadSentence = (text: string | null): { lead: string | null; rest: st
 
 type BarrierVerdict = { label: string; tone: ChipTone };
 
+const tierIconFor = (tier: MoatTier) => {
+  switch (tier) {
+    case "strong":
+      return ArrowUp;
+    case "mid":
+      return Minus;
+    case "weak":
+      return ArrowDown;
+  }
+};
+
 const gatekeeperToBarrier = (answer: string | null): BarrierVerdict | null => {
   const normalized = (answer ?? "").toLowerCase().trim();
   if (!normalized) return null;
@@ -107,15 +123,34 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
               Competitive Moat
             </h3>
           </div>
-          <span
-            className={cn(
-              chipBaseClass,
-              moatTierClass(analysis.moatRating),
-              "px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.1em]",
-            )}
-          >
-            {analysis.moatRatingLabel}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                chipBaseClass,
+                moatTierClass(analysis.moatRating),
+                "px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.1em]",
+              )}
+            >
+              {analysis.moatRatingLabel}
+            </span>
+            {analysis.moatTier && (() => {
+              const TierIcon = tierIconFor(analysis.moatTier);
+              return (
+                <span
+                  className={cn(
+                    chipBaseClass,
+                    moatTierGradeClass(),
+                    "gap-1 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.1em]",
+                  )}
+                >
+                  <TierIcon
+                    className={cn("h-3 w-3", moatTierGradeIconClass(analysis.moatTier))}
+                  />
+                  {moatTierGradeLabel(analysis.moatTier)}
+                </span>
+              );
+            })()}
+          </div>
         </div>
 
         {(analysis.industry || cycleChip) && (

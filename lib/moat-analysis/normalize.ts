@@ -1,6 +1,7 @@
 import type {
   MoatAnalysisRow,
   MoatRatingKey,
+  MoatTier,
   NormalizedMoatAnalysis,
   NormalizedMoatFinancialCheck,
   NormalizedMoatGatekeeper,
@@ -71,6 +72,19 @@ const asMoatRating = (value: unknown): { key: MoatRatingKey; label: string } => 
   return { key: "unknown", label: asString(value) ?? "Unknown" };
 };
 
+const TIER_MAP: Record<string, MoatTier> = {
+  strong: "strong",
+  mid: "mid",
+  medium: "mid",
+  weak: "weak",
+};
+
+const asMoatTier = (value: unknown): MoatTier | null => {
+  const raw = asString(value)?.toLowerCase().trim();
+  if (!raw) return null;
+  return TIER_MAP[raw] ?? null;
+};
+
 const GATEKEEPER_LABELS: Record<string, string> = {
   clearly_no: "Clearly No",
   clearly_yes: "Clearly Yes",
@@ -132,6 +146,7 @@ export function normalizeMoatAnalysis(
 
   const ratingSource = row.rating ?? payload?.rating ?? payload?.call ?? null;
   const { key: moatRating, label: moatRatingLabel } = asMoatRating(ratingSource);
+  const moatTier = asMoatTier(row.tier ?? payload?.tier);
 
   const sources = parseJsonArray(payload?.sources)
     .map(normalizeSource)
@@ -190,6 +205,7 @@ export function normalizeMoatAnalysis(
     schemaVersion,
     moatRating,
     moatRatingLabel,
+    moatTier,
     call,
     reasoning,
     sources,
