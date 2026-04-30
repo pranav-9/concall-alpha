@@ -6,6 +6,7 @@ import ConcallScore from "@/components/concall-score";
 import { slugifySector } from "@/app/sector/utils";
 import TopStocks from "./(hero)/top-stocks";
 import RecentScoreUpdates from "./(hero)/recent-score-updates";
+import { Q4FY26Banner } from "@/components/q4fy26-banner";
 
 function TopStocksHeroFallback() {
   return (
@@ -197,6 +198,7 @@ export default async function Home() {
 
   return (
     <main className="relative min-h-screen overflow-hidden">
+      <Q4FY26Banner />
       <div className="absolute inset-x-0 -top-28 -z-10 h-[42rem] bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.12),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.14),_transparent_36%),linear-gradient(180deg,_rgba(15,23,42,0.03),_transparent_58%)]" />
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-4 py-6 sm:px-6 sm:py-8 lg:gap-10 lg:px-10 lg:py-10">
         <section className="grid grid-cols-1 gap-4 lg:min-h-[80vh] supports-[height:100dvh]:lg:min-h-[80dvh] lg:grid-cols-[minmax(0,7fr)_minmax(20rem,3fr)] lg:items-stretch">

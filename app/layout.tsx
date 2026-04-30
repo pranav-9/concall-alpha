@@ -8,7 +8,6 @@ import "./globals.css";
 import Navbar from "./(hero)/navbar";
 import { createClient } from "@/lib/supabase/server";
 import { PageViewTracker } from "@/components/page-view-tracker";
-import { Q4FY26Banner } from "@/components/q4fy26-banner";
 import { SiteFooter } from "@/components/site-footer";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -47,7 +46,6 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <div className="flex min-h-screen flex-col">
-            <Q4FY26Banner />
             <Navbar
               initialUser={
                 user
