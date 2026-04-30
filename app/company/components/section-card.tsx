@@ -20,6 +20,7 @@ const SECTION_TONE_BY_ID: Record<string, SectionTone> = {
   "industry-context": "sky",
   "sub-sector": "sky",
   "business-overview": "emerald",
+  "moat-analysis": "emerald",
   "key-variables": "violet",
   "sentiment-score": "amber",
   "future-growth": "sky",

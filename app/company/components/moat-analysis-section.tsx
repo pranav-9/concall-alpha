@@ -60,6 +60,27 @@ const splitLeadSentence = (text: string | null): { lead: string | null; rest: st
   return { lead: match[1], rest: match[3] };
 };
 
+const renderBulletedProse = (text: string, className: string) => {
+  const trimmed = text.trim();
+  if (/^[-•*]\s/.test(trimmed)) {
+    const parts = trimmed
+      .replace(/^[-•*]\s+/, "")
+      .split(/\s*\n\s*[-•*]\s+|\s+[-•*]\s+/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    if (parts.length >= 2) {
+      return (
+        <ul className={cn(className, "list-disc space-y-1 pl-5")}>
+          {parts.map((b, i) => (
+            <li key={i}>{b}</li>
+          ))}
+        </ul>
+      );
+    }
+  }
+  return <p className={className}>{text}</p>;
+};
+
 type BarrierVerdict = { label: string; tone: ChipTone };
 
 const tierIconFor = (tier: MoatTier) => {
@@ -217,7 +238,7 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
                         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                         <div className="min-w-0 space-y-1">
                           <p className={miniLabelClass}>Presence &amp; strength</p>
-                          <p className={bodyTextClass}>{source.presenceStrength}</p>
+                          {renderBulletedProse(source.presenceStrength, bodyTextClass)}
                         </div>
                       </div>
                     )}
@@ -226,7 +247,7 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
                         <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
                         <div className="min-w-0 space-y-1">
                           <p className={miniLabelClass}>Durability</p>
-                          <p className={bodyTextClass}>{source.durability}</p>
+                          {renderBulletedProse(source.durability, bodyTextClass)}
                         </div>
                       </div>
                     )}
@@ -264,7 +285,7 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
               )}
             </div>
             {gatekeeper?.note ? (
-              <p className={bodyTextClass}>{gatekeeper.note}</p>
+              renderBulletedProse(gatekeeper.note, bodyTextClass)
             ) : (
               <p className={mutedBodyClass}>No barrier rationale captured.</p>
             )}
@@ -277,8 +298,8 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
                 Returns vs. cost of capital, and resilience through cycles.
               </p>
             </div>
-            {financial?.roicVsWacc && <p className={bodyTextClass}>{financial.roicVsWacc}</p>}
-            {financial?.note && <p className={mutedBodyClass}>{financial.note}</p>}
+            {financial?.roicVsWacc && renderBulletedProse(financial.roicVsWacc, bodyTextClass)}
+            {financial?.note && renderBulletedProse(financial.note, mutedBodyClass)}
             {!financial?.roicVsWacc && !financial?.note && (
               <p className={mutedBodyClass}>No economic proof captured.</p>
             )}

@@ -56,6 +56,7 @@ import {
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
+import { moatTierGradeLabel } from "@/lib/moat-analysis/tier-class";
 import type { KeyVariablesSnapshotRow } from "@/lib/key-variables-snapshot/types";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import type {
@@ -189,7 +190,7 @@ export default async function Page({
     supabase
       .from("moat_analysis")
       .select(
-        "id, company_code, company_name, industry, rating, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
+        "id, company_code, company_name, industry, rating, tier, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
       )
       .eq("company_code", code)
       .limit(1),
@@ -2022,6 +2023,12 @@ export default async function Page({
           : { kind: "text" as const, text: "Soon" },
     },
     {
+      ...SECTION_MAP.moatAnalysis,
+      meta: normalizedMoatAnalysis?.moatRatingLabel
+        ? { kind: "text" as const, text: normalizedMoatAnalysis.moatRatingLabel }
+        : { kind: "text" as const, text: "Soon" },
+    },
+    {
       ...SECTION_MAP.quarterlyScore,
       meta: { kind: "score" as const, score: latestQuarterData?.score ?? null },
     },
@@ -2365,7 +2372,9 @@ export default async function Page({
       indicator: normalizedMoatAnalysis?.moatRatingLabel
         ? {
             kind: "pill" as const,
-            label: normalizedMoatAnalysis.moatRatingLabel,
+            label: normalizedMoatAnalysis.moatTier
+              ? `${normalizedMoatAnalysis.moatRatingLabel} · ${moatTierGradeLabel(normalizedMoatAnalysis.moatTier)}`
+              : normalizedMoatAnalysis.moatRatingLabel,
             tone: moatRatingTone,
           }
         : { kind: "pill" as const, label: "Soon" },
@@ -3222,8 +3231,21 @@ export default async function Page({
                 "We have not generated a usable business snapshot for this company yet.",
               )
             )}
-            {renderBusinessMoatAnalysisInline()}
           </div>
+        </SectionCard>
+          </div>
+
+          <div data-section-id="moat-analysis">
+        <SectionCard
+          id="moat-analysis"
+          title="Moat Analysis"
+          headerAction={
+            moatGeneratedAtShort ? (
+              <span className="text-[11px] text-muted-foreground">{moatGeneratedAtShort}</span>
+            ) : null
+          }
+        >
+          {renderBusinessMoatAnalysisInline()}
         </SectionCard>
           </div>
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp, Minus } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 
@@ -16,9 +16,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { MOAT_RATING_ORDER } from "@/lib/moat-analysis/rank";
-import { moatTierClass } from "@/lib/moat-analysis/tier-class";
-import type { MoatRatingKey } from "@/lib/moat-analysis/types";
+import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
+import {
+  moatTierClass,
+  moatTierGradeClass,
+  moatTierGradeIconClass,
+  moatTierGradeLabel,
+} from "@/lib/moat-analysis/tier-class";
+import type { MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
 
 export type WatchlistTableRow = {
   companyCode: string;
@@ -29,6 +34,18 @@ export type WatchlistTableRow = {
   blendedScore: number | null;
   moatLabel: string | null;
   moatRating: MoatRatingKey | null;
+  moatTier: MoatTier | null;
+};
+
+const tierIconFor = (tier: MoatTier) => {
+  switch (tier) {
+    case "strong":
+      return ArrowUp;
+    case "mid":
+      return Minus;
+    case "weak":
+      return ArrowDown;
+  }
 };
 
 type SortKey =
@@ -189,8 +206,11 @@ function sortRows(rows: WatchlistTableRow[], sort: SortState) {
       case "moatTag": {
         const diff = compareMoatTag(a.moatRating, b.moatRating, sort.direction);
         if (diff !== 0) return diff;
-        const labelDiff = compareText(a.moatLabel, b.moatLabel, "asc");
-        if (labelDiff !== 0) return labelDiff;
+        const tierDiff =
+          sort.direction === "desc"
+            ? moatTierRank(a.moatTier) - moatTierRank(b.moatTier)
+            : moatTierRank(b.moatTier) - moatTierRank(a.moatTier);
+        if (tierDiff !== 0) return tierDiff;
         return compareText(a.companyName, b.companyName, "asc");
       }
     }
@@ -336,12 +356,25 @@ export function WatchlistTable({ rows }: { rows: WatchlistTableRow[] }) {
               </TableCell>
               <TableCell className="px-3 py-3">
                 {row.moatLabel ? (
-                  <span
-                    className={`${moatTierClass(row.moatRating)} inline-flex w-fit max-w-[11rem] items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]`}
-                    title={row.moatLabel}
-                  >
-                    {row.moatLabel}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span
+                      className={`${moatTierClass(row.moatRating)} inline-flex w-fit max-w-[11rem] items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]`}
+                      title={row.moatLabel}
+                    >
+                      {row.moatLabel}
+                    </span>
+                    {row.moatTier && (() => {
+                      const TierIcon = tierIconFor(row.moatTier);
+                      return (
+                        <span
+                          className={`${moatTierGradeClass()} inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em]`}
+                        >
+                          <TierIcon className={`h-3 w-3 ${moatTierGradeIconClass(row.moatTier)}`} />
+                          {moatTierGradeLabel(row.moatTier)}
+                        </span>
+                      );
+                    })()}
+                  </div>
                 ) : (
                   <span className="text-muted-foreground">—</span>
                 )}

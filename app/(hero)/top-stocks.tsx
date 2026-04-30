@@ -5,8 +5,13 @@ import ConcallScore from "@/components/concall-score";
 import { Badge } from "@/components/ui/badge";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
-import { MOAT_RATING_ORDER } from "@/lib/moat-analysis/rank";
-import type { MoatAnalysisRow, MoatRatingKey, NormalizedMoatAnalysis } from "@/lib/moat-analysis/types";
+import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
+import type {
+  MoatAnalysisRow,
+  MoatRatingKey,
+  MoatTier,
+  NormalizedMoatAnalysis,
+} from "@/lib/moat-analysis/types";
 import { createClient } from "@/lib/supabase/server";
 import TopStocksHeroRail from "@/app/(hero)/top-stocks-hero-rail";
 
@@ -101,6 +106,7 @@ type MoatItem = {
   name: string;
   moatRating: MoatRatingKey;
   moatLabel: string;
+  moatTier: MoatTier | null;
   appliesSourceCount: number;
   cycleTested: boolean | null;
   updatedAtSort: number;
@@ -140,7 +146,7 @@ const fetchMoatLeaders = async (supabase: SupabaseServerClient) => {
   const { data, error } = await supabase
     .from("moat_analysis")
     .select(
-      "id, company_code, company_name, industry, rating, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
+      "id, company_code, company_name, industry, rating, tier, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
     )
     .order("updated_at", { ascending: false })
     .order("created_at", { ascending: false })
@@ -169,6 +175,7 @@ const fetchMoatLeaders = async (supabase: SupabaseServerClient) => {
         name: item.companyName ?? item.companyCode,
         moatRating: item.moatRating,
         moatLabel: item.moatRatingLabel,
+        moatTier: item.moatTier,
         appliesSourceCount,
         cycleTested: item.cycleTested,
         updatedAtSort: sortTimestamp(item.updatedAtRaw),
@@ -177,6 +184,8 @@ const fetchMoatLeaders = async (supabase: SupabaseServerClient) => {
     .sort((a, b) => {
       const ratingDiff = MOAT_RATING_ORDER[a.moatRating] - MOAT_RATING_ORDER[b.moatRating];
       if (ratingDiff !== 0) return ratingDiff;
+      const tierDiff = moatTierRank(a.moatTier) - moatTierRank(b.moatTier);
+      if (tierDiff !== 0) return tierDiff;
       if (b.appliesSourceCount !== a.appliesSourceCount) return b.appliesSourceCount - a.appliesSourceCount;
       const aCycle = a.cycleTested === true ? 0 : a.cycleTested === false ? 1 : 2;
       const bCycle = b.cycleTested === true ? 0 : b.cycleTested === false ? 1 : 2;

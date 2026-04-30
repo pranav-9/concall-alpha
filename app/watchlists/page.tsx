@@ -24,7 +24,7 @@ type GrowthRankRow = {
   run_timestamp?: string | null;
 };
 
-type MoatSummaryRow = Pick<WatchlistTableRow, "moatLabel" | "moatRating">;
+type MoatSummaryRow = Pick<WatchlistTableRow, "moatLabel" | "moatRating" | "moatTier">;
 
 export const metadata: Metadata = {
   title: "Watchlists – Story of a Stock",
@@ -224,7 +224,7 @@ export default async function WatchlistsPage() {
       supabase
         .from("moat_analysis")
         .select(
-          "id, company_code, company_name, industry, rating, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
+          "id, company_code, company_name, industry, rating, tier, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
         )
         .in("company_code", watchlistCodes)
         .order("updated_at", { ascending: false })
@@ -261,6 +261,7 @@ export default async function WatchlistsPage() {
     latestMoatByCompany.set(companyCode, {
       moatLabel: normalized.moatRatingLabel,
       moatRating: normalized.moatRating,
+      moatTier: normalized.moatTier,
     });
   });
 
@@ -291,6 +292,7 @@ export default async function WatchlistsPage() {
         blendedScore,
         moatLabel: moatData?.moatLabel ?? null,
         moatRating: moatData?.moatRating ?? null,
+        moatTier: moatData?.moatTier ?? null,
       };
     })
     .sort((a, b) => {
