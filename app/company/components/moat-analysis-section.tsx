@@ -1,5 +1,6 @@
 import { AlertTriangle, ArrowDown, ArrowUp, Clock, Minus, ShieldCheck } from "lucide-react";
 
+import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 import {
   moatTierClass,
   moatTierGradeClass,
@@ -16,9 +17,7 @@ type MoatAnalysisSectionProps = {
 
 type ChipTone = "emerald" | "sky" | "amber" | "rose" | "violet" | "slate";
 
-const outerCardClass = "rounded-2xl border border-border/30 bg-background/55";
-
-const nestedCardClass = "rounded-xl border border-border/30 bg-background/62";
+const dashedDetailClass = cn(nestedDetailClass, "border-dashed border-border/50");
 
 const chipBaseClass =
   "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none";
@@ -135,51 +134,38 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
   ].filter(Boolean);
 
   return (
-    <div className={`${outerCardClass} space-y-4 p-4`}>
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
-            <h3 className="text-base font-semibold leading-tight text-foreground">
-              Competitive Moat
-            </h3>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span
-              className={cn(
-                chipBaseClass,
-                moatTierClass(analysis.moatRating),
-                "px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.1em]",
-              )}
-            >
-              {analysis.moatRatingLabel}
-            </span>
-            {analysis.moatTier && (() => {
-              const TierIcon = tierIconFor(analysis.moatTier);
-              return (
-                <span
-                  className={cn(
-                    chipBaseClass,
-                    moatTierGradeClass(),
-                    "gap-1 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.1em]",
-                  )}
-                >
-                  <TierIcon
-                    className={cn("h-3 w-3", moatTierGradeIconClass(analysis.moatTier))}
-                  />
-                  {moatTierGradeLabel(analysis.moatTier)}
-                </span>
-              );
-            })()}
-          </div>
+    <div className="space-y-4">
+      <div className={`${elevatedBlockClass} space-y-2 p-4`}>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span
+            className={cn(
+              chipBaseClass,
+              moatTierClass(analysis.moatRating),
+              "px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.1em]",
+            )}
+          >
+            {analysis.moatRatingLabel}
+          </span>
+          {analysis.moatTier && (() => {
+            const TierIcon = tierIconFor(analysis.moatTier);
+            return (
+              <span
+                className={cn(
+                  chipBaseClass,
+                  moatTierGradeClass(),
+                  "gap-1 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.1em]",
+                )}
+              >
+                <TierIcon
+                  className={cn("h-3 w-3", moatTierGradeIconClass(analysis.moatTier))}
+                />
+                {moatTierGradeLabel(analysis.moatTier)}
+              </span>
+            );
+          })()}
+          {analysis.industry && <span className={chipClass("slate")}>{analysis.industry}</span>}
+          {cycleChip && <span className={chipClass(cycleChip.tone)}>{cycleChip.label}</span>}
         </div>
-
-        {(analysis.industry || cycleChip) && (
-          <div className="flex flex-wrap items-center gap-2">
-            {analysis.industry && <span className={chipClass("slate")}>{analysis.industry}</span>}
-            {cycleChip && <span className={chipClass(cycleChip.tone)}>{cycleChip.label}</span>}
-          </div>
-        )}
 
         {(lead || rest) && (
           <p className="max-w-4xl text-[14px] leading-relaxed text-foreground">
@@ -191,7 +177,7 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
       </div>
 
       <div className="space-y-3">
-        <div className={`${nestedCardClass} p-3 space-y-3`}>
+        <div className={`${elevatedBlockClass} p-3 space-y-3`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="space-y-0.5">
               <p className={sectionTitleClass}>Moat sources</p>
@@ -207,7 +193,7 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
               {appliesSources.map((source, index) => (
                 <div
                   key={`${source.sourceType}-${index}`}
-                  className="rounded-xl border border-border/35 bg-background/70 p-3"
+                  className={`${nestedDetailClass} p-3`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0 space-y-1">
@@ -216,14 +202,7 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
                           {source.sourceType}
                         </p>
                         {index === 0 && appliesSources.length > 1 && (
-                          <span
-                            className={cn(
-                              chipBaseClass,
-                              "border-border/60 bg-foreground/5 text-foreground/80",
-                            )}
-                          >
-                            Primary
-                          </span>
+                          <span className={chipClass("slate")}>Primary</span>
                         )}
                       </div>
                       {source.subcategory && (
@@ -256,23 +235,51 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-border/50 bg-background/45 p-3 text-[12px] text-muted-foreground">
+            <div className={`${dashedDetailClass} p-3 text-[12px] text-muted-foreground`}>
               {emptySourcesCopy}
             </div>
           )}
 
           {ruledOutSources.length > 0 && (
-            <p className="text-[12px] leading-snug text-muted-foreground">
-              Also considered:{" "}
-              <span className="text-foreground/80">
-                {ruledOutSources.map((s) => s.sourceType).join(" · ")}
-              </span>
-            </p>
+            <div className="space-y-2">
+              <p className={miniLabelClass}>
+                Also considered{" "}
+                <span className="font-normal text-muted-foreground">
+                  ({ruledOutSources.length} ruled out)
+                </span>
+              </p>
+              <ul className="space-y-2">
+                {ruledOutSources.map((source, index) => (
+                  <li
+                    key={`ruled-out-${source.sourceType}-${index}`}
+                    className={`${dashedDetailClass} p-2.5`}
+                  >
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <p className="text-[12px] font-semibold text-foreground/85">
+                        {source.sourceType}
+                      </p>
+                      {source.subcategory && (
+                        <span className={chipClass("slate")}>{source.subcategory}</span>
+                      )}
+                    </div>
+                    {source.doesNotApplyReason ? (
+                      <div className="mt-1.5">
+                        {renderBulletedProse(source.doesNotApplyReason, mutedBodyClass)}
+                      </div>
+                    ) : (
+                      <p className={cn(mutedBodyClass, "mt-1.5 italic")}>
+                        No rationale captured.
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
 
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
-          <div className={`${nestedCardClass} p-3 space-y-3`}>
+          <div className={`${elevatedBlockClass} p-3 space-y-3`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="space-y-0.5">
                 <p className={sectionTitleClass}>Barrier strength</p>
@@ -291,7 +298,7 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
             )}
           </div>
 
-          <div className={`${nestedCardClass} p-3 space-y-3`}>
+          <div className={`${elevatedBlockClass} p-3 space-y-3`}>
             <div className="space-y-0.5">
               <p className={sectionTitleClass}>Economic proof</p>
               <p className={sectionSubtitleClass}>
@@ -305,7 +312,7 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
             )}
           </div>
 
-          <div className={`${nestedCardClass} p-3 space-y-3`}>
+          <div className={`${elevatedBlockClass} p-3 space-y-3`}>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
@@ -326,7 +333,7 @@ export function MoatAnalysisSection({ analysis, generatedAtShort }: MoatAnalysis
                 {analysis.whatWouldChangeTheCall.map((trigger, index) => (
                   <li
                     key={`${trigger.slice(0, 32)}-${index}`}
-                    className="rounded-xl border border-border/35 bg-background/70 p-3 text-[13px] leading-relaxed text-foreground/90"
+                    className={`${nestedDetailClass} p-3 text-[13px] leading-relaxed text-foreground/90`}
                   >
                     {trigger}
                   </li>
