@@ -7,8 +7,6 @@ import {
   typeChipClass,
 } from "@/lib/activity-feed";
 
-export const revalidate = 120;
-
 export default async function RecentScoreUpdates({
   heroPanel = false,
 }: {

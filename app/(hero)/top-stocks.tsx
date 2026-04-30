@@ -15,8 +15,6 @@ import type {
 import { createClient } from "@/lib/supabase/server";
 import TopStocksHeroRail from "@/app/(hero)/top-stocks-hero-rail";
 
-export const revalidate = 300;
-
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 type CompanyRecord = {
