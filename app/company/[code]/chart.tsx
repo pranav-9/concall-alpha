@@ -324,6 +324,7 @@ export function ChartLineLabel({
               tickLine={false}
               axisLine={false}
               domain={[0, 10]}
+              ticks={isMobile ? [0, 5, 10] : [0, 2, 4, 6, 8, 10]}
               width={isMobile ? 28 : 40}
               label={
                 isMobile

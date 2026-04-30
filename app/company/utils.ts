@@ -79,9 +79,9 @@ export function calculateTrend(data: QuarterData[]): {
       change,
       recentAvg,
       historicalAvg,
-      description: `Sentiment stable - Recent avg: ${recentAvg.toFixed(
-        2
-      )}, Historical avg: ${historicalAvg.toFixed(2)}`,
+      description: `Recent quarters averaging ${recentAvg.toFixed(
+        2,
+      )}, holding near the prior ${historicalAvg.toFixed(2)} baseline.`,
     };
   }
 
@@ -91,11 +91,9 @@ export function calculateTrend(data: QuarterData[]): {
       change,
       recentAvg,
       historicalAvg,
-      description: `Strong improvement - Recent 3Q avg ${recentAvg.toFixed(
-        2
-      )} vs ${historicalCount}Q avg ${historicalAvg.toFixed(
-        2
-      )} (+${change.toFixed(2)})`,
+      description: `Recent quarters averaging ${recentAvg.toFixed(
+        2,
+      )}, up from ${historicalAvg.toFixed(2)} over the prior ${historicalCount} quarters.`,
     };
   }
 
@@ -104,10 +102,8 @@ export function calculateTrend(data: QuarterData[]): {
     change,
     recentAvg,
     historicalAvg,
-    description: `Concerning decline - Recent 3Q avg ${recentAvg.toFixed(
-      2
-    )} vs ${historicalCount}Q avg ${historicalAvg.toFixed(2)} (${change.toFixed(
-      2
-    )})`,
+    description: `Recent quarters averaging ${recentAvg.toFixed(
+      2,
+    )}, down from ${historicalAvg.toFixed(2)} over the prior ${historicalCount} quarters.`,
   };
 }
