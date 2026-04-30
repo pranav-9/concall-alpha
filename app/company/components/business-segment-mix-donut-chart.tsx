@@ -3,6 +3,7 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { cn } from "@/lib/utils";
 import type { NormalizedRevenueBreakdownItem } from "@/lib/business-snapshot/types";
+import { colorPalette, maxSlices } from "./business-segment-mix-constants";
 
 type SegmentMixDatum = {
   name: string;
@@ -17,24 +18,11 @@ type BusinessSegmentMixDonutChartProps = {
   className?: string;
 };
 
-export const colorPalette = [
-  "#10b981",
-  "#3b82f6",
-  "#f59e0b",
-  "#8b5cf6",
-  "#ef4444",
-  "#14b8a6",
-  "#f97316",
-  "#ec4899",
-];
-
 const pctFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 1,
 });
 
 const formatPct = (value: number) => `${pctFormatter.format(value)}%`;
-
-export const maxSlices = 5;
 
 const buildChartData = (segments: NormalizedRevenueBreakdownItem[]) => {
   const sortedSegments = [...segments]

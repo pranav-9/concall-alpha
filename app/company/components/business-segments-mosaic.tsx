@@ -1,5 +1,6 @@
 import type { NormalizedRevenueBreakdownItem } from "@/lib/business-snapshot/types";
-import { BusinessSegmentMixDonutChart, colorPalette, maxSlices } from "./business-segment-mix-donut-chart";
+import { BusinessSegmentMixDonutChart } from "./business-segment-mix-donut-chart-lazy";
+import { colorPalette, maxSlices } from "./business-segment-mix-constants";
 
 type BadgeDisplay = {
   label: string;

@@ -7,7 +7,7 @@ import {
   overviewBodyPillClass,
   type OverviewBodyPillTone,
 } from "../[code]/display-tokens";
-import { colorPalette as segmentColorPalette } from "./business-segment-mix-donut-chart";
+import { colorPalette as segmentColorPalette } from "./business-segment-mix-constants";
 import { useCompanyPageNavigation } from "./company-page-workspace";
 import { MissingSectionRequestButton } from "./missing-section-request-button";
 

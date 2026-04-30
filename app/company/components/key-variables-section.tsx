@@ -5,7 +5,7 @@ import type {
   NormalizedKeyVariablesSnapshot,
 } from "@/lib/key-variables-snapshot/types";
 import { Button } from "@/components/ui/button";
-import { KpiSparkline } from "./kpi-sparkline";
+import { KpiSparkline } from "./kpi-sparkline-lazy";
 import {
   Drawer,
   DrawerClose,

@@ -1,13 +1,11 @@
-import { LeaderboardTable } from "@/app/company/leaderboard-table";
 import { getConcallData } from "@/app/company/get-concall-data";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HERO_CARD, PAGE_SHELL, PANEL_CARD_SKY } from "@/lib/design/shell";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { fetchLeaderboardData } from "./data";
-import { GrowthTable } from "./growth-table";
 import { LeaderboardTabs } from "./leaderboard-tabs";
-import { MoatTable } from "./moat-table";
+import { GrowthTable, LeaderboardTable, MoatTable } from "./tables-lazy";
 
 export const metadata: Metadata = {
   title: "Leaderboards – Story of a Stock",
