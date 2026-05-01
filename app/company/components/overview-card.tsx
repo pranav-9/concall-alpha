@@ -1,6 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import type { ReactNode } from "react";
 import ConcallScore from "@/components/concall-score";
 import { cn } from "@/lib/utils";
 import {
@@ -10,19 +10,6 @@ import {
 import { colorPalette as segmentColorPalette } from "./business-segment-mix-constants";
 import { useCompanyPageNavigation } from "./company-page-workspace";
 import { MissingSectionRequestButton } from "./missing-section-request-button";
-
-type WatchlistButtonProps = {
-  companyCode: string;
-  loginRedirectPath: string;
-  initialIsAuthenticated: boolean;
-  initialHasWatchlist: boolean;
-  initialIsInWatchlist: boolean;
-  initialWatchlistName?: string | null;
-};
-
-const WatchlistButton = dynamic<WatchlistButtonProps>(
-  () => import("@/components/watchlist-button").then((mod) => mod.WatchlistButton),
-);
 
 type OverviewSectionPreview = {
   title: string;
@@ -47,20 +34,13 @@ interface OverviewCardProps {
     isNew?: boolean;
   };
   sectionPreviews?: OverviewSectionPreview[];
-  watchlist?: {
-    companyCode: string;
-    loginRedirectPath: string;
-    initialIsAuthenticated: boolean;
-    initialHasWatchlist: boolean;
-    initialIsInWatchlist: boolean;
-    initialWatchlistName?: string | null;
-  } | null;
+  watchlistSlot?: ReactNode;
 }
 
 export function OverviewCard({
   companyInfo,
   sectionPreviews = [],
-  watchlist = null,
+  watchlistSlot = null,
 }: OverviewCardProps) {
   const previewShellSurfaceClass =
     "border-border/90 bg-gradient-to-b from-background/98 via-background/94 to-muted/26 shadow-[inset_0_1px_0_rgba(255,255,255,0.62),0_18px_30px_-24px_rgba(15,23,42,0.42)] ring-1 ring-border/30 backdrop-blur-sm dark:from-background/94 dark:via-background/90 dark:to-background/80 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_30px_-24px_rgba(0,0,0,0.50)] dark:ring-border/40";
@@ -153,21 +133,7 @@ export function OverviewCard({
                 </p>
               )}
             </div>
-            {watchlist && (
-              <div className="shrink-0 self-start rounded-2xl border border-border/60 bg-background/70 p-3 shadow-sm backdrop-blur-sm lg:ml-auto lg:pt-1">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Track this name
-                </p>
-                <WatchlistButton
-                  companyCode={watchlist.companyCode}
-                  loginRedirectPath={watchlist.loginRedirectPath}
-                  initialIsAuthenticated={watchlist.initialIsAuthenticated}
-                  initialHasWatchlist={watchlist.initialHasWatchlist}
-                  initialIsInWatchlist={watchlist.initialIsInWatchlist}
-                  initialWatchlistName={watchlist.initialWatchlistName ?? null}
-                />
-              </div>
-            )}
+            {watchlistSlot}
           </div>
 
           {sectionPreviews.length > 0 && (

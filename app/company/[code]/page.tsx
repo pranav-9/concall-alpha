@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
@@ -9,101 +9,46 @@ import {
 } from "../types";
 import { CompanyPageWorkspace } from "../components/company-page-workspace";
 import { OverviewCard } from "../components/overview-card";
+import CompanyWatchlistSlot, {
+  WatchlistSlotFallback,
+} from "../components/company-watchlist-slot";
+import { IndustryContextSection } from "../components/industry-context-section";
+import { BusinessSnapshotSection } from "../components/business-snapshot-section";
+import { SubSectorSection } from "../components/sub-sector-section";
+import { SectionLoading } from "../components/section-loading";
+import { FutureGrowthSection } from "../components/future-growth-section";
+import { GuidanceSnapshotSummary } from "../components/guidance-snapshot-summary";
 import { MoatAnalysisSection } from "../components/moat-analysis-section";
 import { SectionCard } from "../components/section-card";
-import {
-  elevatedBlockClass,
-  nestedDetailClass,
-  snapshotSubsectionClass,
-} from "../components/surface-tokens";
 import { parseSummary, transformToChartData, calculateTrend } from "../utils";
-import ConcallScore from "@/components/concall-score";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { Button } from "@/components/ui/button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
-import type { NormalizedGrowthScenario } from "@/lib/growth-outlook/types";
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
-import { normalizeCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/normalize";
 import { normalizeKeyVariablesSnapshot } from "@/lib/key-variables-snapshot/normalize";
 import {
   CompanyCommentsSection,
   GuidanceHistorySection,
-  HistoricalEconomicsDataPack,
   QuarterlyScoreSection,
 } from "../components/deferred-company-sections";
-import { BusinessSegmentsMosaic } from "../components/business-segments-mosaic";
 import { KeyVariablesSection } from "../components/key-variables-section";
-import {
-  SubSectorTabs,
-  type SubSectorTabEntry,
-} from "../components/sub-sector-tabs";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import { moatTierGradeLabel } from "@/lib/moat-analysis/tier-class";
 import type { KeyVariablesSnapshotRow } from "@/lib/key-variables-snapshot/types";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
-import type {
-  NormalizedIndustryRegulatoryChange,
-  CompanyIndustryAnalysisRow,
-  NormalizedIndustrySubSectorCard,
-} from "@/lib/company-industry-analysis/types";
-import type {
-  NormalizedRevenueSplitHistoryRow,
-  NormalizedSegmentGrowthCagr3yRow,
-} from "@/lib/business-snapshot/types";
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
-import type {
-  GuidanceSnapshotRow,
-  NormalizedPriorTwoYearAccuracyRow,
-} from "@/lib/guidance-snapshot/types";
+import type { GuidanceSnapshotRow } from "@/lib/guidance-snapshot/types";
 
 import {
   computeAvgScore,
   compareNullableNumbers,
-  extractSortNumber,
   formatPctLabel,
-  formatRangeLabel,
   formatShortDate,
-  pctFormatter,
   type SectorRankInfo,
-  type ThemeItemWithSource,
 } from "./page-helpers";
 import {
-  formatCatalystQuantifiedLabel,
-  formatCompactLabel,
-  getMarginQualityTone,
-  marginQualityPillClass,
-  getCatalystConfidenceDisplay,
-  getCatalystImpactPillDisplay,
-  getCatalystStatusDisplay,
-  getGrowthScoreComponentLabel,
-  getGuidanceAccuracyVerdictDisplay,
   getGuidanceCredibilityVerdictDisplay,
-  getGuidanceSignalTrendDisplay,
-  getGuidanceSnapshotStyleDisplay,
-  getImpactDirectionDisplay,
   getPercentileTone,
-  getTimeHorizonDisplay,
-  getTimelineStageDisplay,
-  splitCatalystQuantifiedLabel,
-  toDisplayLabel,
   type OverviewBodyPillTone,
 } from "./display-tokens";
 import { MissingSectionState } from "../components/missing-section-state";
@@ -133,10 +78,9 @@ export default async function Page({
   // Round 1: queries that depend only on `code` — run in parallel.
   const [
     { data: companyRow },
-    { data: authClaimsData },
     concallResult,
     { data: businessSnapshotData },
-    { data: companyIndustryAnalysisData },
+    { data: industryPreviewRows },
     guidanceTrackingResult,
     guidanceSnapshotResult,
     { data: moatAnalysisData },
@@ -149,13 +93,13 @@ export default async function Page({
       .eq("code", code)
       .limit(1)
       .maybeSingle(),
-    supabase.auth.getClaims(),
     supabase
       .from("concall_analysis")
       .select()
       .eq("company_code", code)
       .order("fy", { ascending: false })
-      .order("qtr", { ascending: false }),
+      .order("qtr", { ascending: false })
+      .limit(12),
     supabase
       .from("business_snapshot")
       .select(
@@ -164,11 +108,12 @@ export default async function Page({
       .eq("company", code)
       .order("generated_at", { ascending: false })
       .limit(1),
+    // Lightweight existence + sub_sector probe for sidebar/preview indicators.
+    // The full industry analysis JSONB is fetched lazily inside the streaming
+    // <IndustryContextSection /> and <SubSectorSection />.
     supabase
       .from("company_industry_analysis")
-      .select(
-        "company, generated_at, sector, sub_sector, industry_positioning, value_chain, sub_sector_identification, types_of_players, sub_sector_cards, profit_pools, company_fit, competition, regulatory_changes, tailwinds, headwinds, sources, details",
-      )
+      .select("sub_sector")
       .eq("company", code)
       .limit(1),
     supabase
@@ -216,10 +161,10 @@ export default async function Page({
   const companyIsNew = isCompanyNew(companyRow?.created_at ?? null);
   const companySector = companyRow?.sector?.trim() || undefined;
   const companySubSector = companyRow?.sub_sector?.trim() || undefined;
-  const authenticatedUserId =
-    typeof authClaimsData?.claims?.sub === "string" ? authClaimsData.claims.sub : null;
 
   // Round 2: queries that depend on round-1 results but not on each other.
+  // Watchlist queries are deferred into <CompanyWatchlistSlot /> so they don't
+  // block the page shell.
   const growthOutlookDetailPromise = supabase
     .from("growth_outlook")
     .select("*")
@@ -230,15 +175,6 @@ export default async function Page({
     )
     .order("run_timestamp", { ascending: false })
     .limit(1);
-
-  const watchlistPromise = authenticatedUserId
-    ? supabase
-        .from("watchlists")
-        .select("id, name")
-        .eq("user_id", authenticatedUserId)
-        .order("created_at", { ascending: true })
-        .limit(1)
-    : null;
 
   const companyLatestFy = data?.[0]?.fy ?? null;
   const companyLatestQtr = data?.[0]?.qtr ?? null;
@@ -257,37 +193,20 @@ export default async function Page({
 
   const [
     growthDetailResult,
-    watchlistResult,
     latestQuarterRowsResult,
     sectorPeerResult,
   ] = await Promise.all([
     growthOutlookDetailPromise,
-    watchlistPromise,
     latestQuarterRowsPromise,
     sectorPeerPromise,
   ]);
 
   const growthData = growthDetailResult.data;
-  const watchlistRows = watchlistResult?.data ?? null;
   const latestQuarterRowsGlobal = (latestQuarterRowsResult?.data ?? []) as Array<{
     company_code?: unknown;
     score?: unknown;
   }>;
   const sectorPeerRows = sectorPeerResult?.data ?? null;
-
-  // Round 3: watchlistItemRows depends on firstWatchlist (from round 2).
-  const firstWatchlist =
-    (watchlistRows?.[0] as { id: number; name: string } | undefined) ?? null;
-  let isInFirstWatchlist = false;
-  if (firstWatchlist) {
-    const { data: watchlistItemRows } = await supabase
-      .from("watchlist_items")
-      .select("id")
-      .eq("watchlist_id", firstWatchlist.id)
-      .eq("company_code", code)
-      .limit(1);
-    isInFirstWatchlist = (watchlistItemRows?.length ?? 0) > 0;
-  }
 
   if (error) {
     throw error;
@@ -334,9 +253,9 @@ export default async function Page({
     companyWebsite: companyRow?.website ?? null,
     snapshotRow: businessSnapshotData?.[0] ?? null,
   });
-  const normalizedCompanyIndustryAnalysis = normalizeCompanyIndustryAnalysis(
-    (companyIndustryAnalysisData?.[0] as CompanyIndustryAnalysisRow | undefined) ?? null,
-  );
+  const industryPreview = (industryPreviewRows?.[0] as { sub_sector?: string | null } | undefined) ?? null;
+  const hasIndustryAnalysis = industryPreview != null;
+  const industrySubSectorLabel = industryPreview?.sub_sector?.trim() || null;
   const normalizedKeyVariablesSnapshot = normalizeKeyVariablesSnapshot(
     (keyVariablesSnapshotData?.[0] as KeyVariablesSnapshotRow | undefined) ?? null,
   );
@@ -361,13 +280,10 @@ export default async function Page({
     (moatAnalysisData?.[0] as MoatAnalysisRow | undefined) ?? null,
   );
   const moatGeneratedAtShort = formatShortDate(normalizedMoatAnalysis?.updatedAtRaw);
-  const growthUpdatedAt = formatShortDate(normalizedGrowthOutlook?.updatedAtRaw, true);
   const growthScore = normalizedGrowthOutlook?.growthScore ?? null;
   const businessSnapshotGeneratedAtShort = formatShortDate(normalizedBusinessSnapshot?.generatedAtRaw);
-  const companyIndustryGeneratedAtShort = formatShortDate(normalizedCompanyIndustryAnalysis?.generatedAtRaw);
   const keyVariablesGeneratedAtShort = formatShortDate(normalizedKeyVariablesSnapshot?.generatedAtRaw);
   const aboutCompany = normalizedBusinessSnapshot?.aboutCompany ?? null;
-  const revenueBreakdown = normalizedBusinessSnapshot?.revenueBreakdown ?? null;
   const historicalEconomics = normalizedBusinessSnapshot?.historicalEconomics ?? null;
   const hasHistoricalEconomicsSource =
     normalizedBusinessSnapshot?.hasHistoricalEconomicsSource ?? false;
@@ -391,8 +307,8 @@ export default async function Page({
       aboutHeading ||
         aboutSupportingText ||
         hasHistoricalEconomics ||
-        (revenueBreakdown?.bySegment.length ?? 0) > 0 ||
-        (revenueBreakdown?.byProductOrService.length ?? 0) > 0,
+        (normalizedBusinessSnapshot?.revenueBreakdown?.bySegment.length ?? 0) > 0 ||
+        (normalizedBusinessSnapshot?.revenueBreakdown?.byProductOrService.length ?? 0) > 0,
     );
   const hasLegacyBusinessSnapshot =
     Boolean(
@@ -429,48 +345,8 @@ export default async function Page({
       : normalizedGuidanceSnapshot?.currentYearRevenueGuidance
         ? "Current guidance"
         : null;
-  const industryPositioning = normalizedCompanyIndustryAnalysis?.industryPositioning;
-  const businessSnapshotSurfaceClass = `${elevatedBlockClass} p-4`;
-  const businessSnapshotBlockClass = elevatedBlockClass;
-  const hasFutureGrowthDeepDive = Boolean(
-      normalizedGrowthOutlook?.scenarios?.base ||
-      normalizedGrowthOutlook?.scenarios?.upside ||
-      normalizedGrowthOutlook?.scenarios?.downside,
-  );
 
-  const segmentEntries = revenueBreakdown?.bySegment ?? [];
-  const hasBusinessSegments = segmentEntries.length > 0;
-  const industryHeaderPills = [
-    (industryPositioning?.customerNeed || industryPositioning?.industryEconomicsForCompany)
-      ? "Industry overview"
-      : null,
-    normalizedCompanyIndustryAnalysis?.valueChainMap ? "Value chain" : null,
-    normalizedCompanyIndustryAnalysis?.typesOfPlayers ? "Players" : null,
-    normalizedCompanyIndustryAnalysis?.regulatoryChanges.length ? "Regulations" : null,
-    normalizedCompanyIndustryAnalysis?.tailwinds.length ? "Tailwinds" : null,
-    normalizedCompanyIndustryAnalysis?.headwinds.length ? "Headwinds" : null,
-  ].filter((value): value is string => Boolean(value));
-  const businessHeaderPills = hasStructuredBusinessSnapshot
-    ? [
-        aboutHeading || aboutSupportingText ? "About" : null,
-        hasBusinessSegments ? "Business segments" : null,
-        hasHistoricalEconomics ? "Business Momentum" : null,
-        normalizedBusinessSnapshot?.mixShiftSummary ? "Mix shift" : null,
-        normalizedMoatAnalysis ? "Moat analysis" : null,
-      ].filter((value): value is string => Boolean(value))
-    : [
-        normalizedBusinessSnapshot?.businessSummaryShort ||
-        normalizedBusinessSnapshot?.businessSummaryLong
-          ? "Summary"
-          : null,
-        normalizedBusinessSnapshot?.topRevenueDrivers.length ? "Revenue drivers" : null,
-        (normalizedBusinessSnapshot?.keyDependencies.length ?? 0) > 0 ||
-        (normalizedBusinessSnapshot?.keyRisksToModel.length ?? 0) > 0
-          ? "Model watchpoints"
-          : null,
-        normalizedBusinessSnapshot?.mixShiftSummary ? "Mix shift" : null,
-        normalizedMoatAnalysis ? "Moat analysis" : null,
-      ].filter((value): value is string => Boolean(value));
+  const segmentEntries = normalizedBusinessSnapshot?.revenueBreakdown?.bySegment ?? [];
   const quarterlyHeaderPills = [
     chartData.length > 0 ? "Score trend" : null,
     detailQuarters.length > 0 ? "Quarter detail" : null,
@@ -483,17 +359,6 @@ export default async function Page({
         normalizedKeyVariablesSnapshot.deepTreatment.some((item) => Boolean(item.kpiHistory))
           ? "KPI history"
           : null,
-      ].filter((value): value is string => Boolean(value))
-    : [];
-  const futureGrowthHeaderPills = normalizedGrowthOutlook
-    ? [
-        normalizedGrowthOutlook.summaryBullets.length > 0 ||
-        normalizedGrowthOutlook.growthScoreComponents.length > 0 ||
-        normalizedGrowthOutlook.baseGrowthPct
-          ? "Summary"
-          : null,
-        normalizedGrowthOutlook.catalysts.length > 0 ? "Top catalysts" : null,
-        hasFutureGrowthDeepDive ? "Scenarios" : null,
       ].filter((value): value is string => Boolean(value))
     : [];
   const guidanceHeaderPills = normalizedGuidanceSnapshot
@@ -510,1473 +375,9 @@ export default async function Page({
       ].filter((value): value is string => Boolean(value))
     : [];
 
-  const renderBusinessSnapshotDrawer = ({
-    title,
-    preview,
-    children,
-  }: {
-    title: string;
-    preview: string;
-    children: React.ReactNode;
-  }) => (
-    <details className={`group/business-snapshot-drawer ${businessSnapshotBlockClass}`}>
-      <summary className="list-none cursor-pointer px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-              {title}
-            </p>
-            <p className="text-[11px] leading-snug text-muted-foreground">{preview}</p>
-          </div>
-          <span className="inline-flex shrink-0 items-center rounded-full border border-sky-200 bg-sky-100 px-2.5 py-1 text-[10px] font-medium text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
-            <span className="group-open/business-snapshot-drawer:hidden">Show more</span>
-            <span className="hidden group-open/business-snapshot-drawer:inline">
-              Hide details
-            </span>
-          </span>
-        </div>
-      </summary>
-      <div className="border-t border-border/35 px-4 py-3">{children}</div>
-    </details>
-  );
 
-  const renderAboutBlock = () => {
-    const aboutMainText = aboutHeading ?? aboutSupportingText ?? null;
-    const aboutDrawerText = aboutHeading && aboutSupportingText ? aboutSupportingText : null;
-    const aboutMainTextClass = aboutHeading
-      ? "text-[17px] sm:text-[19px] font-semibold leading-snug text-foreground"
-      : "text-[13px] leading-relaxed text-foreground";
 
-    if (!aboutMainText) return null;
 
-    return (
-      <div className="min-w-0 rounded-2xl border border-border/20 bg-background/55 p-3 dark:bg-background/40">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-2">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-              About
-            </p>
-            <p className={aboutMainTextClass}>{aboutMainText}</p>
-          </div>
-
-          {aboutDrawerText ? (
-            <Drawer direction="right">
-              <DrawerTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-0.5 h-8 shrink-0 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
-                >
-                  Know more
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent className="w-full max-w-xl">
-                <DrawerHeader className="border-b border-border">
-                  <DrawerTitle>About</DrawerTitle>
-                  <DrawerDescription>
-                    Additional context behind the short business summary.
-                  </DrawerDescription>
-                </DrawerHeader>
-
-                <div className="flex-1 space-y-3 overflow-y-auto p-4">
-                  <p className="text-[13px] leading-relaxed text-foreground">{aboutDrawerText}</p>
-                </div>
-
-                <DrawerFooter className="border-t border-border">
-                  <DrawerClose asChild>
-                    <Button variant="outline">Close</Button>
-                  </DrawerClose>
-                </DrawerFooter>
-              </DrawerContent>
-            </Drawer>
-          ) : null}
-        </div>
-      </div>
-    );
-  };
-
-  const renderHistoricalEconomicsCard = (
-    history: NonNullable<typeof historicalEconomics>,
-  ) => {
-    const hasRichHistoricalEconomics =
-      Boolean(history.summary) ||
-      (history.revenueHistoryBySegment?.rows.length ?? 0) > 0 ||
-      (history.revenueMixHistoryBySegment?.rows.length ?? 0) > 0 ||
-      (history.revenueHistoryByUnit?.rows.length ?? 0) > 0 ||
-      (history.revenueMixHistoryByUnit?.rows.length ?? 0) > 0;
-    const companyRevenueCagr = history.companyRevenueCagr3y;
-    const hasCompanyRevenueCagr = Boolean(
-      companyRevenueCagr &&
-        (companyRevenueCagr.cagrPercent != null ||
-          companyRevenueCagr.startYear ||
-          companyRevenueCagr.endYear ||
-          companyRevenueCagr.scope ||
-          companyRevenueCagr.basis),
-    );
-    const revenueSplitRows = [...history.revenueSplitHistory].sort(
-      (a, b) => extractSortNumber(b.year) - extractSortNumber(a.year),
-    );
-    const visibleRevenueSplitRows = revenueSplitRows.slice(0, 2);
-    const extraRevenueSplitRows = revenueSplitRows.slice(2);
-    const segmentGrowthRows = [...history.segmentGrowthCagr3y].sort((a, b) =>
-      compareNullableNumbers(a.cagrPercent, b.cagrPercent, "desc"),
-    );
-    const hasSegmentGrowth = segmentGrowthRows.length > 0;
-    const hasRevenueSplitHistory = revenueSplitRows.length > 0;
-    const historicalMetaColumn = hasCompanyRevenueCagr || hasSegmentGrowth;
-    const richSummaryCagr = history.summary?.companyRevenueCagr ?? history.companyRevenueCagr3y;
-    const richSegmentRowCount =
-      history.revenueHistoryBySegment?.rows.length ??
-      history.revenueMixHistoryBySegment?.rows.length ??
-      0;
-    const richUnitRowCount =
-      history.revenueHistoryByUnit?.rows.length ?? history.revenueMixHistoryByUnit?.rows.length ?? 0;
-    const richEntityLabel = richSegmentRowCount > 0 ? "segment" : "unit";
-    const richPeriods =
-      (history.summary?.periods.length ?? 0) > 0
-        ? history.summary?.periods ?? []
-        : (history.revenueHistoryBySegment?.years.length ?? 0) > 0
-          ? history.revenueHistoryBySegment?.years ?? []
-        : (history.revenueHistoryByUnit?.periods.length ?? 0) > 0
-          ? history.revenueHistoryByUnit?.periods ?? []
-          : (history.revenueMixHistoryBySegment?.years.length ?? 0) > 0
-            ? history.revenueMixHistoryBySegment?.years ?? []
-            : history.revenueMixHistoryByUnit?.periods ?? [];
-    const richPeriodCount = richPeriods.length;
-    const preview =
-      hasRichHistoricalEconomics
-        ? [
-            richSummaryCagr?.cagrPercent != null
-              ? `${formatPctLabel(richSummaryCagr.cagrPercent)} company CAGR`
-              : richSummaryCagr
-                ? "Company CAGR tracked"
-                : null,
-            richPeriodCount > 0
-              ? `${richPeriodCount} period${richPeriodCount === 1 ? "" : "s"}`
-              : null,
-            richSegmentRowCount > 0
-              ? `${richSegmentRowCount} ${richEntityLabel}${richSegmentRowCount === 1 ? "" : "s"}`
-              : richUnitRowCount > 0
-                ? `${richUnitRowCount} ${richEntityLabel}${richUnitRowCount === 1 ? "" : "s"}`
-                : null,
-            history.summary?.overallConfidence
-              ? `${formatCompactLabel(history.summary.overallConfidence)} confidence`
-              : null,
-          ]
-            .filter((value): value is string => Boolean(value))
-            .join(" · ") || "Open business momentum data pack."
-        : [
-            companyRevenueCagr?.cagrPercent != null
-              ? `${formatPctLabel(companyRevenueCagr.cagrPercent)} company CAGR`
-              : hasCompanyRevenueCagr
-                ? "Company CAGR tracked"
-                : null,
-            hasRevenueSplitHistory
-              ? `${revenueSplitRows.length} split year${revenueSplitRows.length === 1 ? "" : "s"}`
-              : null,
-            hasSegmentGrowth
-              ? `${segmentGrowthRows.length} segment CAGR row${segmentGrowthRows.length === 1 ? "" : "s"}`
-              : null,
-          ]
-            .filter((value): value is string => Boolean(value))
-            .join(" · ") || "Open business momentum history.";
-
-    if (hasRichHistoricalEconomics) {
-      return (
-        <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
-          <div className="space-y-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-              Business Momentum
-            </p>
-            <p className="text-[11px] leading-snug text-muted-foreground">{preview}</p>
-          </div>
-          <HistoricalEconomicsDataPack history={history} />
-        </div>
-      );
-    }
-
-    if (!historicalMetaColumn && !hasRevenueSplitHistory) return null;
-
-    const renderRevenueSplitRow = (
-      row: NormalizedRevenueSplitHistoryRow,
-      key: string,
-    ) => (
-      <div key={key} className={`${snapshotSubsectionClass} p-3`}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[11px] font-semibold text-foreground">
-              {row.year ?? "Period"}
-            </p>
-            {row.basis && (
-              <span className="text-[10px] text-muted-foreground">
-                {formatCompactLabel(row.basis)}
-              </span>
-            )}
-          </div>
-        </div>
-        {row.buckets.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {row.buckets.map((bucket) => (
-              <span
-                key={`${key}-${bucket.name}`}
-                className="rounded-full border border-border/55 bg-background/70 px-2 py-0.5 text-[10px] text-foreground"
-              >
-                {bucket.name}
-                {bucket.revenueSharePercent != null
-                  ? ` ${formatPctLabel(bucket.revenueSharePercent)}`
-                  : ""}
-              </span>
-            ))}
-          </div>
-        )}
-        {row.comparabilityNote && (
-          <p className="mt-2 text-[10px] text-muted-foreground leading-relaxed">
-            {row.comparabilityNote}
-          </p>
-        )}
-      </div>
-    );
-
-    return (
-      <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
-        <div className="space-y-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-            Business Momentum
-          </p>
-          <p className="text-[11px] leading-snug text-muted-foreground">{preview}</p>
-        </div>
-        <div
-          className={`grid grid-cols-1 gap-3 ${
-            historicalMetaColumn && hasRevenueSplitHistory
-              ? "xl:grid-cols-[minmax(17rem,0.9fr)_minmax(0,1.1fr)]"
-              : ""
-          }`}
-        >
-          {historicalMetaColumn && (
-            <div className="space-y-3">
-              {hasCompanyRevenueCagr && companyRevenueCagr && (
-                <div className={`${snapshotSubsectionClass} p-3`}>
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                    Company Revenue CAGR (3Y)
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-end gap-2">
-                    {companyRevenueCagr.cagrPercent != null && (
-                      <p className="text-[22px] font-semibold leading-none text-foreground">
-                        {formatPctLabel(companyRevenueCagr.cagrPercent)}
-                      </p>
-                    )}
-                    {formatRangeLabel(
-                      companyRevenueCagr.startYear,
-                      companyRevenueCagr.endYear,
-                    ) && (
-                      <span className="text-[11px] text-muted-foreground">
-                        {formatRangeLabel(
-                          companyRevenueCagr.startYear,
-                          companyRevenueCagr.endYear,
-                        )}
-                      </span>
-                    )}
-                  </div>
-                  {(companyRevenueCagr.scope || companyRevenueCagr.basis) && (
-                    <p className="mt-1.5 text-[10px] text-muted-foreground">
-                      {[companyRevenueCagr.scope, companyRevenueCagr.basis]
-                        .filter((value): value is string => Boolean(value))
-                        .map((value) => formatCompactLabel(value))
-                        .join(" · ")}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {hasSegmentGrowth && (
-                <div className={`${snapshotSubsectionClass} p-3`}>
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                    Segment Growth CAGR (3Y)
-                  </p>
-                  <div className="mt-2 space-y-2">
-                    {segmentGrowthRows.map((row: NormalizedSegmentGrowthCagr3yRow, idx) => (
-                      <div
-                        key={`${row.segment}-${idx}`}
-                        className={idx === 0 ? "space-y-1" : "space-y-1 border-t border-border/35 pt-2"}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-[12px] font-medium text-foreground leading-snug">
-                            {row.segment}
-                          </p>
-                          {row.cagrPercent != null && (
-                            <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground shrink-0">
-                              {formatPctLabel(row.cagrPercent)}
-                            </span>
-                          )}
-                        </div>
-                        {(formatRangeLabel(row.startYear, row.endYear) ||
-                          row.comparability ||
-                          row.basis) && (
-                          <p className="text-[10px] text-muted-foreground leading-relaxed">
-                            {[
-                              formatRangeLabel(row.startYear, row.endYear),
-                              row.comparability
-                                ? `${formatCompactLabel(row.comparability)} comparability`
-                                : null,
-                              row.basis ? formatCompactLabel(row.basis) : null,
-                            ]
-                              .filter((value): value is string => Boolean(value))
-                              .join(" · ")}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {hasRevenueSplitHistory && (
-            <div className={`${snapshotSubsectionClass} p-3`}>
-              <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                Revenue Split History
-              </p>
-              <div className="mt-2 space-y-2">
-                {visibleRevenueSplitRows.map((row, idx) =>
-                  renderRevenueSplitRow(row, `${row.year ?? "period"}-${idx}`),
-                )}
-              </div>
-              {extraRevenueSplitRows.length > 0 && (
-                <details className="mt-2 border-t border-border/35 pt-2">
-                  <summary className="cursor-pointer text-[10px] text-muted-foreground hover:text-foreground">
-                    Show more ({extraRevenueSplitRows.length})
-                  </summary>
-                  <div className="mt-2 space-y-2">
-                    {extraRevenueSplitRows.map((row, idx) =>
-                      renderRevenueSplitRow(
-                        row,
-                        `${row.year ?? "period"}-extra-${idx}`,
-                      ),
-                    )}
-                  </div>
-                </details>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const renderHistoricalEconomicsUnavailableCard = () => (
-    <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
-      <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-          Business Momentum
-        </p>
-        <p className="text-[11px] leading-snug text-muted-foreground">
-          Data exists, but the current payload is not display-ready yet.
-        </p>
-      </div>
-      <div className={`${snapshotSubsectionClass} p-3 space-y-1.5`}>
-        <p className="text-[12px] font-medium text-foreground">
-          Business momentum data is available for this company, but the stored
-          structure does not match the current display format yet.
-        </p>
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          Once this company&apos;s payload is refreshed to the richer
-          segment-history
-          schema, this section will show the full data pack with tables, charts,
-          and insights.
-        </p>
-      </div>
-    </div>
-  );
-  const renderBusinessMoatAnalysisInline = () => {
-    if (!normalizedMoatAnalysis) {
-      return renderMissingSectionState(
-        "moat-analysis",
-        "Moat Analysis",
-        "We have not generated a competitive moat analysis for this company yet.",
-      );
-    }
-
-    return (
-      <MoatAnalysisSection
-        analysis={normalizedMoatAnalysis}
-        generatedAtShort={moatGeneratedAtShort}
-      />
-    );
-  };
-  /*
-    <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="space-y-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-            Moat Analysis
-          </p>
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            Competitive position, defensibility, and moat risks integrated into the business view.
-          </p>
-        </div>
-        {moatGeneratedAtShort ? (
-          <span className="text-[11px] text-muted-foreground">{moatGeneratedAtShort}</span>
-        ) : null}
-      </div>
-      {normalizedMoatAnalysis ? (
-        <div className="space-y-4">
-          <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={`rounded-full border px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.12em] ${moatTierClass(normalizedMoatAnalysis.moatRating)}`}
-              >
-                {normalizedMoatAnalysis.moatRatingLabel}
-              </span>
-              {normalizedMoatAnalysis.trajectory && (
-                <span className="rounded-full border border-border/60 bg-muted/50 px-2.5 py-0.5 text-[10px] font-medium text-foreground">
-                  {normalizedMoatAnalysis.trajectoryDirection
-                    ? `${normalizedMoatAnalysis.trajectory} ${normalizedMoatAnalysis.trajectoryDirection}`
-                    : normalizedMoatAnalysis.trajectory}
-                </span>
-              )}
-              {normalizedMoatAnalysis.industry && (
-                <span className="rounded-full border border-border/50 bg-muted/35 px-2 py-0.5 text-[10px] text-muted-foreground">
-                  {normalizedMoatAnalysis.industry}
-                </span>
-              )}
-            </div>
-            {moatThesis && (
-              <p className="max-w-4xl text-[13px] font-medium leading-relaxed text-foreground">
-                {moatThesis}
-              </p>
-            )}
-          </div>
-          {(moatTotalPillars > 0 ||
-            normalizedMoatAnalysis.porterVerdict ||
-            normalizedMoatAnalysis.porterSummary ||
-            normalizedMoatAnalysis.durability ||
-            normalizedMoatAnalysis.risks.length > 0) && (
-            <div className="space-y-2">
-              {moatTotalPillars > 0 && (
-                <details className={`group ${elevatedBlockClass}`}>
-                  <summary className="list-none cursor-pointer px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                            Competitive Advantages
-                          </p>
-                          <span className="rounded-full border border-emerald-200/80 bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
-                            {moatPresentPillars.length} / {moatTotalPillars} present
-                          </span>
-                        </div>
-                        <p className="text-[11px] leading-snug text-muted-foreground">
-                          {moatPresentPillars.length > 0
-                            ? `${moatPresentPillars.length} identified strengths${
-                                moatAbsentPillars.length > 0
-                                  ? `, ${moatAbsentPillars.length} weaker dimensions`
-                                  : ""
-                              }.`
-                            : "No durable advantages identified yet."}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-[11px] text-muted-foreground">
-                        <span className="group-open:hidden">Open</span>
-                        <span className="hidden group-open:inline">Hide</span>
-                      </span>
-                    </div>
-                  </summary>
-                  <div className="space-y-3 border-t border-border/40 px-4 py-3">
-                    {moatPresentPillars.length > 0 && (
-                      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                        {moatPresentPillars.map((pillar, idx) => (
-                          <div
-                            key={`${pillar.type}-present-${idx}`}
-                            className={`${elevatedBlockClass} border-l-2 border-l-emerald-500/70 p-3 space-y-2`}
-                          >
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded-full border border-emerald-200/80 bg-emerald-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
-                                Present
-                              </span>
-                              <p className="text-[12px] font-semibold text-foreground">
-                                {pillar.type}
-                              </p>
-                              {pillar.greenwaldLabel && (
-                                <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                  {pillar.greenwaldLabel}
-                                </span>
-                              )}
-                            </div>
-                            {pillar.evidence ? (
-                              <p className="text-[12px] leading-relaxed text-foreground">
-                                {pillar.evidence}
-                              </p>
-                            ) : (
-                              <p className="text-[11px] leading-relaxed text-muted-foreground">
-                                Evidence not captured.
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {moatAbsentPillars.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                          Missing / weak moat dimensions
-                        </p>
-                        <div className="space-y-2">
-                          {moatAbsentPillars.map((pillar, idx) => (
-                            <div
-                              key={`${pillar.type}-absent-${idx}`}
-                              className={`${elevatedBlockClass} border-l-2 border-l-border/70 p-3 space-y-1.5`}
-                            >
-                              <div className="flex flex-wrap items-center gap-2">
-                                <p className="text-[12px] font-medium text-foreground">
-                                  {pillar.type}
-                                </p>
-                                {pillar.greenwaldLabel && (
-                                  <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                    {pillar.greenwaldLabel}
-                                  </span>
-                                )}
-                              </div>
-                              {pillar.evidence ? (
-                                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                                  {pillar.evidence}
-                                </p>
-                              ) : (
-                                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                                  No supporting moat evidence captured.
-                                </p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </details>
-              )}
-
-              {(normalizedMoatAnalysis.porterVerdict ||
-                normalizedMoatAnalysis.porterSummary ||
-                normalizedMoatAnalysis.durability) && (
-                <details className={`group ${elevatedBlockClass}`}>
-                  <summary className="list-none cursor-pointer px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0 space-y-1">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                          Defensibility
-                        </p>
-                        <p className="text-[11px] leading-snug text-muted-foreground">
-                          {normalizedMoatAnalysis.porterVerdict ??
-                            normalizedMoatAnalysis.durability ??
-                            "Industry structure and moat durability."}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-[11px] text-muted-foreground">
-                        <span className="group-open:hidden">Open</span>
-                        <span className="hidden group-open:inline">Hide</span>
-                      </span>
-                    </div>
-                  </summary>
-                  <div className="border-t border-border/40 px-4 py-3">
-                    <div className={`${elevatedBlockClass} p-3 space-y-2`}>
-                      {normalizedMoatAnalysis.porterVerdict && (
-                        <div className="space-y-1">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                            Porter verdict
-                          </p>
-                          <p className="text-[12px] leading-relaxed text-foreground">
-                            {normalizedMoatAnalysis.porterVerdict}
-                          </p>
-                        </div>
-                      )}
-                      {normalizedMoatAnalysis.porterSummary && (
-                        <div className="space-y-1">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                            Industry structure
-                          </p>
-                          <p className="text-[12px] leading-relaxed text-muted-foreground">
-                            {normalizedMoatAnalysis.porterSummary}
-                          </p>
-                        </div>
-                      )}
-                      {normalizedMoatAnalysis.durability && (
-                        <div className="space-y-1">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                            Durability
-                          </p>
-                          <p className="text-[12px] leading-relaxed text-muted-foreground">
-                            {normalizedMoatAnalysis.durability}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </details>
-              )}
-
-              {normalizedMoatAnalysis.risks.length > 0 && (
-                <details className={`group ${elevatedBlockClass}`}>
-                  <summary className="list-none cursor-pointer px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0 space-y-1">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-                          Key Risks to the Moat
-                        </p>
-                        <p className="text-[11px] leading-snug text-muted-foreground">
-                          {normalizedMoatAnalysis.risks.length} risk
-                          {normalizedMoatAnalysis.risks.length === 1 ? "" : "s"} flagged.
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-[11px] text-muted-foreground">
-                        <span className="group-open:hidden">Open</span>
-                        <span className="hidden group-open:inline">Hide</span>
-                      </span>
-                    </div>
-                  </summary>
-                  <div className="border-t border-border/40 px-4 py-3">
-                    <div className="space-y-2">
-                      {normalizedMoatAnalysis.risks.map((risk, idx) => (
-                        <div
-                          key={`${risk}-${idx}`}
-                          className={`${elevatedBlockClass} border-l-2 border-l-rose-400/70 p-3`}
-                        >
-                          <p className="text-[12px] leading-relaxed text-foreground">{risk}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </details>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        renderMissingSectionState(
-          "moat-analysis",
-          "Moat Analysis",
-          "We have not generated a competitive moat analysis for this company yet.",
-        )
-      )}
-    </div>
-  );
-  */
-  const renderGuidanceSnapshotSummary = () => {
-    if (!normalizedGuidanceSnapshot) return null;
-
-    const styleCard = normalizedGuidanceSnapshot.guidanceStyleClassification;
-    const bigPicture = normalizedGuidanceSnapshot.bigPictureGrowthGuidance;
-    const currentYear = normalizedGuidanceSnapshot.currentYearRevenueGuidance;
-    const priorAccuracy = normalizedGuidanceSnapshot.priorTwoYearAccuracy;
-    const credibilityVerdict = normalizedGuidanceSnapshot.credibilityVerdict;
-    const styleDisplay = styleCard ? getGuidanceSnapshotStyleDisplay(styleCard.style) : null;
-    const bigPictureTrendDisplay = bigPicture
-      ? getGuidanceSignalTrendDisplay(bigPicture.statusSinceFirst)
-      : null;
-    const currentYearTrendDisplay = currentYear
-      ? getGuidanceSignalTrendDisplay(currentYear.signalTrend)
-      : null;
-    const credibilityVerdictDisplay = credibilityVerdict
-      ? getGuidanceCredibilityVerdictDisplay(credibilityVerdict.verdict)
-      : null;
-
-    if (
-      !styleCard &&
-      !bigPicture &&
-      !currentYear &&
-      !credibilityVerdict &&
-      priorAccuracy.length === 0
-    )
-      return null;
-
-    const renderAccuracyRow = (row: NormalizedPriorTwoYearAccuracyRow, index: number) => {
-      const verdictDisplay = getGuidanceAccuracyVerdictDisplay(row.verdict);
-
-      return (
-        <div
-          key={`${row.fiscalYear ?? "year"}-${index}`}
-          className={`${nestedDetailClass} p-3 space-y-1.5`}
-        >
-          <div className="flex flex-wrap items-start justify-between gap-1.5">
-            <div>
-              <p className="text-[11px] font-semibold text-foreground">
-                {row.fiscalYear ?? "Prior year"}
-              </p>
-              {row.finalSignalAfterRevisions && (
-                <p className="mt-0.5 text-[9px] text-muted-foreground">
-                  Final signal: {row.finalSignalAfterRevisions}
-                </p>
-              )}
-            </div>
-            {verdictDisplay && (
-              <span
-                className={`rounded-full border px-2 py-0.5 text-[9px] ${verdictDisplay.className}`}
-              >
-                {verdictDisplay.label}
-              </span>
-            )}
-          </div>
-          {row.actualOutcome && (
-            <div className="space-y-0.5">
-              <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                Actual outcome
-              </p>
-              <p className="text-[10px] leading-relaxed text-foreground">{row.actualOutcome}</p>
-            </div>
-          )}
-          {row.signalSummary && (
-            <div className="space-y-0.5">
-              <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                Guidance given
-              </p>
-              <p className="text-[10px] leading-relaxed text-muted-foreground">
-                {row.signalSummary}
-              </p>
-            </div>
-          )}
-          {row.reason && (
-            <div className="space-y-0.5">
-              <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                Why
-              </p>
-              <p className="text-[10px] leading-relaxed text-muted-foreground/90">{row.reason}</p>
-            </div>
-          )}
-        </div>
-      );
-    };
-
-    return (
-      <div className="space-y-4">
-        <div className="grid gap-3 lg:grid-cols-3">
-          <section className={`${elevatedBlockClass} p-4`}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 space-y-1.5">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Direction style
-                </p>
-              </div>
-
-              {styleDisplay && (
-                <span
-                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${styleDisplay.className}`}
-                >
-                  {styleDisplay.label}
-                </span>
-              )}
-            </div>
-
-            <div className="mt-3 space-y-3">
-              {styleCard?.rationale ? (
-                <p className="text-[12px] leading-relaxed text-foreground">{styleCard.rationale}</p>
-              ) : null}
-            </div>
-          </section>
-
-          <section className={`${elevatedBlockClass} p-4`}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 space-y-1.5">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Big picture growth
-                </p>
-              </div>
-
-              {bigPictureTrendDisplay && (
-                <span
-                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${bigPictureTrendDisplay.className}`}
-                >
-                  {bigPictureTrendDisplay.label}
-                </span>
-              )}
-            </div>
-
-            {(bigPicture?.headlineStatement || bigPicture?.currentStatement) && (
-              <p className="mt-3 text-[12.5px] font-semibold leading-relaxed text-foreground">
-                {bigPicture.headlineStatement ?? bigPicture.currentStatement}
-              </p>
-            )}
-          </section>
-
-          <section className={`${elevatedBlockClass} p-4`}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 space-y-1.5">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Credibility verdict
-                </p>
-              </div>
-
-              {credibilityVerdictDisplay && (
-                <span
-                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${credibilityVerdictDisplay.className}`}
-                >
-                  {credibilityVerdictDisplay.label}
-                </span>
-              )}
-            </div>
-
-            {credibilityVerdict?.supportingLine ? (
-              <p className="mt-3 text-[12px] leading-relaxed text-foreground">
-                {credibilityVerdict.supportingLine}
-              </p>
-            ) : null}
-          </section>
-        </div>
-
-        {(currentYear || priorAccuracy.length > 0) && (
-          <div className="grid gap-3 lg:grid-cols-2">
-            {currentYear && (
-              <section className={`${elevatedBlockClass} p-4`}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 space-y-1.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      This year guidance
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {currentYear.fiscalYear && (
-                      <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
-                        {currentYear.fiscalYear}
-                      </span>
-                    )}
-                    {currentYear.officialCurrentGuidancePercent != null && (
-                      <span className="inline-flex items-center rounded-full border border-emerald-200/80 bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
-                        {formatPctLabel(currentYear.officialCurrentGuidancePercent)}
-                      </span>
-                    )}
-                    {currentYearTrendDisplay && (
-                      <span
-                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold ${currentYearTrendDisplay.className}`}
-                      >
-                        {currentYearTrendDisplay.label}
-                      </span>
-                    )}
-                    {currentYear.officialCurrentGuidanceSourceQuarter && (
-                      <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
-                        Anchored {currentYear.officialCurrentGuidanceSourceQuarter}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.12fr)_minmax(16rem,0.88fr)] lg:items-start">
-                  <div className="space-y-3">
-                    {(currentYear.officialCurrentGuidanceText ||
-                      currentYear.consolidatedStatement) && (
-                      <div className={`${nestedDetailClass} p-3`}>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Guidance line
-                        </p>
-                        <p className="mt-2 text-[12.5px] font-semibold leading-relaxed text-foreground">
-                          {currentYear.officialCurrentGuidanceText ??
-                            currentYear.consolidatedStatement}
-                        </p>
-                        {currentYear.consolidatedStatement &&
-                          currentYear.consolidatedStatement !==
-                            currentYear.officialCurrentGuidanceText && (
-                            <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
-                              {currentYear.consolidatedStatement}
-                            </p>
-                          )}
-                      </div>
-                    )}
-
-                    {currentYear.inYearRevisionNote && (
-                      <div className="rounded-xl border border-amber-200/35 bg-amber-50/45 px-3 py-2 dark:border-amber-700/25 dark:bg-amber-950/15">
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-200">
-                          Revision note
-                        </p>
-                        <p className="mt-1 text-[10px] leading-relaxed text-foreground">
-                          {currentYear.inYearRevisionNote}
-                        </p>
-                      </div>
-                    )}
-
-                    {currentYear.sourceQuarters.length > 0 && (
-                      <div className="space-y-1.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Evidence quarters
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {currentYear.sourceQuarters.map((quarter) => (
-                            <span
-                              key={quarter}
-                              className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground"
-                            >
-                              {quarter}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {currentYear.sourceQuarterTimeline.length > 0 ? (
-                    <div className={`${nestedDetailClass} p-3`}>
-                      <div className="flex flex-wrap items-center justify-between gap-1.5">
-                        <span className="inline-flex items-center gap-2 rounded-full border border-border/45 bg-muted/15 px-2.5 py-1 text-[9px] font-medium text-muted-foreground">
-                          <span>Guidance evolution</span>
-                          <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[9px] text-muted-foreground">
-                            {currentYear.sourceQuarterTimeline.length} qtrs
-                          </span>
-                        </span>
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        {currentYear.sourceQuarterTimeline.map((entry, index) => (
-                          <div
-                            key={`${entry.quarter ?? "quarter"}-${index}`}
-                            className="space-y-1.5 rounded-xl border border-border/25 bg-background/70 px-3 py-2.5"
-                          >
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <div className="flex flex-wrap items-center gap-2">
-                                {entry.quarter && (
-                                  <p className="text-[10px] font-semibold text-foreground">
-                                    {entry.quarter}
-                                  </p>
-                                )}
-                                {entry.guidanceType && (
-                                  <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[9px] text-muted-foreground">
-                                    {formatCompactLabel(entry.guidanceType)}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2">
-                                {entry.guidancePercent != null && (
-                                  <span className="rounded-full border border-emerald-200/70 bg-emerald-50 px-2 py-0.5 text-[9px] font-medium text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-200">
-                                    {formatPctLabel(entry.guidancePercent)}
-                                  </span>
-                                )}
-                                {entry.sourceReference && (
-                                  <span className="text-[9px] text-muted-foreground">
-                                    {entry.sourceReference}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            {entry.whatWasSaid && (
-                              <p className="text-[10px] leading-relaxed text-muted-foreground">
-                                {entry.whatWasSaid}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              </section>
-            )}
-
-            {priorAccuracy.length > 0 && (
-              <section className={`${elevatedBlockClass} p-4`}>
-                <div className="flex flex-wrap items-center justify-between gap-1.5">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Previous two-year guidance data
-                    </p>
-                  </div>
-                  <span className="text-[9px] text-muted-foreground">
-                    {priorAccuracy.length} year{priorAccuracy.length === 1 ? "" : "s"} tracked
-                  </span>
-                </div>
-                <div className="mt-3 grid grid-cols-1 gap-2.5 xl:grid-cols-2">
-                  {priorAccuracy.map(renderAccuracyRow)}
-                </div>
-              </section>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-  const renderIndustryThemes = (
-    title: string,
-    items: ThemeItemWithSource[],
-    accentClass: string,
-    showTitle = true,
-    showAll = false,
-  ) => {
-    if (items.length === 0) return null;
-    const visibleItems = showAll ? items : items.slice(0, 2);
-    const extraItems = showAll ? [] : items.slice(2);
-
-    return (
-      <div className="min-w-0 rounded-xl border border-border/25 bg-background/55 p-3">
-        {showTitle ? (
-          <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-            {title}
-          </p>
-        ) : null}
-        <div className="mt-2 space-y-2.5">
-          <div className="space-y-2">
-            {visibleItems.map((item, idx) => {
-              const timeHorizonDisplay = getTimeHorizonDisplay(item.timeHorizon);
-
-              return (
-                <div
-                  key={`${title}-${item.theme}-visible-${idx}`}
-                  className={`space-y-1.5 rounded-xl border border-border/20 bg-background/70 px-3 py-2.5 border-l-2 ${accentClass}`}
-                >
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <p className="text-[12px] font-medium text-foreground leading-snug">
-                      {item.theme}
-                    </p>
-                    {timeHorizonDisplay && (
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-[10px] ${timeHorizonDisplay.className}`}
-                      >
-                        {timeHorizonDisplay.label}
-                      </span>
-                    )}
-                    {item.sourceSubSector && (
-                      <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-muted-foreground">
-                        Source: {item.sourceSubSector}
-                      </span>
-                    )}
-                  </div>
-                  {item.companyMechanism && (
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      {item.companyMechanism}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {extraItems.length > 0 && (
-            <details className="border-t border-border/35 pt-2">
-              <summary className="cursor-pointer list-none text-[10px] text-muted-foreground hover:text-foreground">
-                Show more ({extraItems.length})
-              </summary>
-              <div className="mt-2 space-y-2">
-                {extraItems.map((item, idx) => {
-                  const timeHorizonDisplay = getTimeHorizonDisplay(item.timeHorizon);
-
-                  return (
-                    <div
-                      key={`${title}-${item.theme}-extra-${idx}`}
-                      className={`space-y-1.5 rounded-xl border border-border/20 bg-background/65 px-3 py-2.5 border-l-2 ${accentClass}`}
-                    >
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <p className="text-[12px] font-medium text-foreground leading-snug">
-                          {item.theme}
-                        </p>
-                        {timeHorizonDisplay && (
-                          <span
-                            className={`rounded-full border px-2 py-0.5 text-[10px] ${timeHorizonDisplay.className}`}
-                          >
-                            {timeHorizonDisplay.label}
-                          </span>
-                        )}
-                        {item.sourceSubSector && (
-                          <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-muted-foreground">
-                            Source: {item.sourceSubSector}
-                          </span>
-                        )}
-                      </div>
-                      {item.companyMechanism && (
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">
-                          {item.companyMechanism}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </details>
-          )}
-        </div>
-      </div>
-    );
-  };
-  const renderRegulatoryChanges = (
-    items: NormalizedIndustryRegulatoryChange[],
-  ) => {
-    if (items.length === 0) return null;
-
-    return (
-      <div className={`${elevatedBlockClass} p-4 space-y-3`}>
-        <div className="space-y-3">
-          {items.map((item, idx) => {
-            const impactDirectionDisplay = getImpactDirectionDisplay(item.impactDirection);
-
-            return (
-              <div
-                key={`${item.change}-${idx}`}
-                className={`${nestedDetailClass} px-3.5 py-3 space-y-2`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-semibold text-foreground leading-snug">
-                      {item.change}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {item.period && (
-                      <span className="rounded-full border border-border/60 bg-muted/50 px-2 py-0.5 text-[10px] text-foreground">
-                        {item.period}
-                      </span>
-                    )}
-                    {item.subSectorScope && (
-                      <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground">
-                        {item.subSectorScope === "industry_wide"
-                          ? "Industry-wide"
-                          : item.subSectorScope}
-                      </span>
-                    )}
-                    {impactDirectionDisplay && (
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-[10px] shrink-0 ${impactDirectionDisplay.className}`}
-                      >
-                        {impactDirectionDisplay.label}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {item.whatChanged && (
-                  <div className="space-y-0.5">
-                    <p className="text-[11px] text-foreground/90 leading-relaxed">
-                      {item.whatChanged}
-                    </p>
-                  </div>
-                )}
-                {(item.industrySubSectorImpact ?? item.companyImpactMechanism) && (
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                      Why it matters
-                    </p>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      {item.industrySubSectorImpact ?? item.companyImpactMechanism}
-                    </p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-  const collectSubSectorThemes = (
-    cards: NormalizedIndustrySubSectorCard[],
-    themeKey: "tailwinds" | "headwinds",
-  ): ThemeItemWithSource[] =>
-    cards.flatMap((card) =>
-      (card[themeKey] ?? []).map((item) => ({
-        ...item,
-        sourceSubSector: card.subSector,
-      })),
-    );
-  const renderTailwindsHeadwindsSection = () => {
-    if (!normalizedCompanyIndustryAnalysis) return null;
-    const analysis = normalizedCompanyIndustryAnalysis;
-    const hasSubSectorCards = analysis.subSectorCards.length > 0;
-    const tailwinds = hasSubSectorCards
-      ? collectSubSectorThemes(analysis.subSectorCards, "tailwinds")
-      : (analysis.tailwinds as ThemeItemWithSource[]);
-    const headwinds = hasSubSectorCards
-      ? collectSubSectorThemes(analysis.subSectorCards, "headwinds")
-      : (analysis.headwinds as ThemeItemWithSource[]);
-
-    if (tailwinds.length === 0 && headwinds.length === 0) return null;
-
-    return (
-      <div className={`${elevatedBlockClass} p-4 space-y-3`}>
-        <div className="space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Tailwinds & Headwinds
-          </p>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Themes pulled up from the sub-sector cards and grouped here for easier scanning.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-          {tailwinds.length > 0 &&
-            renderIndustryThemes("Tailwinds", tailwinds, "border-l-emerald-500/70", true, true)}
-          {headwinds.length > 0 &&
-            renderIndustryThemes("Headwinds", headwinds, "border-l-red-500/70", true, true)}
-        </div>
-      </div>
-    );
-  };
-  const renderSubSectorSection = () => {
-    const qualifying =
-      normalizedCompanyIndustryAnalysis?.companyFit?.qualifyingSubSectors ?? [];
-    const cards = normalizedCompanyIndustryAnalysis?.subSectorCards ?? [];
-
-    if (qualifying.length === 0 && cards.length === 0) {
-      return renderMissingSectionState(
-        "sub-sector",
-        "Sub-sectors",
-        "We have not generated sub-sector-specific cards for this company yet.",
-      );
-    }
-
-    const normalizeKey = (value: string) => value.trim().toLowerCase();
-    const order: string[] = [];
-    const byKey = new Map<string, SubSectorTabEntry>();
-
-    qualifying.forEach((item) => {
-      const key = normalizeKey(item.subSector);
-      if (!key || byKey.has(key)) return;
-      order.push(key);
-      byKey.set(key, {
-        subSector: item.subSector,
-        description: item.description ?? null,
-        relevanceRationale: item.relevanceRationale ?? null,
-        capitalCycle: null,
-        marketShareSnapshot: null,
-        supplySideEvidencePack: null,
-      });
-    });
-
-    cards.forEach((card) => {
-      const key = normalizeKey(card.subSector);
-      if (!key) return;
-      const existing = byKey.get(key);
-      if (existing) {
-        byKey.set(key, {
-          ...existing,
-          description: existing.description ?? card.subSectorDescription ?? null,
-          relevanceRationale:
-            existing.relevanceRationale ?? card.relevanceRationale ?? null,
-          capitalCycle: card.capitalCycle,
-          marketShareSnapshot: card.marketShareSnapshot,
-          supplySideEvidencePack: card.supplySideEvidencePack,
-        });
-      } else {
-        order.push(key);
-        byKey.set(key, {
-          subSector: card.subSector,
-          description: card.subSectorDescription ?? null,
-          relevanceRationale: card.relevanceRationale ?? null,
-          capitalCycle: card.capitalCycle,
-          marketShareSnapshot: card.marketShareSnapshot,
-          supplySideEvidencePack: card.supplySideEvidencePack,
-        });
-      }
-    });
-
-    const entries = order
-      .map((key) => byKey.get(key))
-      .filter((entry): entry is SubSectorTabEntry => Boolean(entry));
-
-    return <SubSectorTabs entries={entries} />;
-  };
-  const renderTypesOfPlayers = () => {
-    if (!normalizedCompanyIndustryAnalysis?.typesOfPlayers) return null;
-
-    const playerCategoryAccentClass =
-      "bg-gradient-to-r from-transparent via-violet-500/70 to-transparent dark:via-violet-400/55";
-
-    return (
-      <div className="space-y-2">
-        {normalizedCompanyIndustryAnalysis.typesOfPlayers.dimensions.map(
-          (dimension) => {
-            return (
-              <div
-                key={dimension.dimensionName}
-                className={`${elevatedBlockClass} p-3.5 space-y-3`}
-              >
-                <div className="space-y-1.5">
-                  <p className="text-[12px] font-semibold leading-snug text-foreground">
-                    {`By ${dimension.dimensionName.toLowerCase()}`}
-                  </p>
-                </div>
-
-                {dimension.categories.length > 0 && (
-                  <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-                    {dimension.categories.map((category) => {
-                      return (
-                        <div
-                          key={`${dimension.dimensionName}-${category.categoryName}`}
-                          className={`${nestedDetailClass} relative overflow-hidden px-3 py-3 pt-4`}
-                        >
-                          <div
-                            className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 ${playerCategoryAccentClass}`}
-                          />
-                          <div className="relative space-y-2">
-                            <p className="text-[11px] font-semibold leading-snug text-foreground">
-                              {category.categoryName}
-                            </p>
-                            {category.categoryDescription && (
-                              <p className="text-[10px] leading-relaxed text-muted-foreground">
-                                {category.categoryDescription}
-                              </p>
-                            )}
-                            {category.playerExamples.length > 0 && (
-                              <div className="space-y-1">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                                  Player examples
-                                </p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {category.playerExamples.slice(0, 3).map((example) => (
-                                    <span
-                                      key={`${dimension.dimensionName}-${category.categoryName}-${example}`}
-                                      className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground"
-                                    >
-                                      {example}
-                                    </span>
-                                  ))}
-                                  {category.playerExamples.length > 3 && (
-                                    <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                      +{category.playerExamples.length - 3} more
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                            {category.categoryDescription == null &&
-                              category.playerExamples.length === 0 && (
-                                <p className="text-[10px] leading-relaxed text-muted-foreground">
-                                  Player type tracked in this market map
-                                </p>
-                              )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-              </div>
-            );
-          },
-        )}
-      </div>
-    );
-  };
-  const renderIndustryContextDrawerCard = ({
-    title,
-    count,
-    countLabel = "items",
-    subtitle,
-    description,
-    previewItems,
-    accentClass,
-    drawerTitle,
-    drawerDescription,
-    children,
-    disabled = false,
-    hideDrawerHeader = false,
-    inline = false,
-    hideCount = false,
-    hideAccentDot = false,
-    showAccentStrip = false,
-  }: {
-    title: string;
-    count: number;
-    countLabel?: string;
-    subtitle?: string;
-    description: React.ReactNode;
-    previewItems?: string[];
-    accentClass: string;
-    drawerTitle?: string;
-    drawerDescription?: string;
-    children?: React.ReactNode;
-    disabled?: boolean;
-    hideDrawerHeader?: boolean;
-    inline?: boolean;
-    hideCount?: boolean;
-    hideAccentDot?: boolean;
-    showAccentStrip?: boolean;
-  }) => {
-    const cardBody = (
-      <div
-        className={`group relative flex h-full min-h-[9.5rem] w-full flex-col justify-between rounded-2xl border border-border/30 bg-background/70 p-3.5 text-left shadow-md shadow-black/10 transition-colors ${
-          disabled ? "cursor-default opacity-60" : inline ? "cursor-default" : "hover:bg-accent/45"
-        } ${showAccentStrip ? "overflow-hidden pt-4" : ""}`}
-      >
-        {showAccentStrip ? (
-          <div className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 ${accentClass}`} />
-        ) : null}
-        <div className="space-y-2.5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-0.5">
-              <p
-                className={`font-semibold uppercase tracking-[0.16em] ${
-                  inline ? "text-[10px] text-foreground" : "text-[10px] text-muted-foreground"
-                }`}
-              >
-                {title}
-              </p>
-              {!hideCount ? (
-                <p className="text-sm font-semibold leading-snug text-foreground">
-                  {count} {countLabel}
-                </p>
-              ) : null}
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-2">
-              {!hideAccentDot ? <span className={`h-2.5 w-2.5 rounded-full ${accentClass}`} /> : null}
-              {!inline ? (
-                <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-foreground">
-                  {disabled ? "Unavailable" : "Open details"}
-                </span>
-              ) : null}
-            </div>
-          </div>
-          {subtitle ? (
-            <p className="text-[11px] font-medium leading-snug text-foreground/90">
-              {subtitle}
-            </p>
-          ) : null}
-          <div
-            className={`text-[11px] leading-snug ${
-              inline ? "text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            {description}
-          </div>
-          {previewItems && previewItems.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {previewItems.slice(0, 3).map((item, index) => (
-                <span
-                  key={`${title}-preview-${index}`}
-                  className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] text-foreground"
-                >
-                  {item}
-                </span>
-              ))}
-              {previewItems.length > 3 ? (
-                <span className="rounded-full border border-border/60 bg-muted/55 px-2 py-0.5 text-[10px] text-muted-foreground">
-                  +{previewItems.length - 3} more
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </div>
-    );
-
-    if (disabled || inline) {
-      return cardBody;
-    }
-
-    return (
-      <Drawer direction="right">
-        <DrawerTrigger asChild>
-          <button type="button" className="h-full w-full">
-            {cardBody}
-          </button>
-        </DrawerTrigger>
-        <DrawerContent className="w-full max-w-2xl">
-          {!hideDrawerHeader ? (
-            <DrawerHeader className="border-b border-border">
-              <DrawerTitle>{drawerTitle}</DrawerTitle>
-              <DrawerDescription>{drawerDescription}</DrawerDescription>
-            </DrawerHeader>
-          ) : null}
-          <div className="overflow-y-auto p-4">{children}</div>
-          <DrawerFooter className="border-t border-border">
-            <DrawerClose asChild>
-              <Button variant="outline">Close</Button>
-            </DrawerClose>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-    );
-  };
   const renderMissingSectionState = (
     sectionId: string,
     sectionTitle: string,
@@ -2001,19 +402,17 @@ export default async function Page({
     {
       ...SECTION_MAP.industryContext,
       meta:
-        normalizedCompanyIndustryAnalysis?.subSector
-          ? { kind: "text" as const, text: normalizedCompanyIndustryAnalysis.subSector }
-          : normalizedCompanyIndustryAnalysis
+        industrySubSectorLabel
+          ? { kind: "text" as const, text: industrySubSectorLabel }
+          : hasIndustryAnalysis
             ? { kind: "text" as const, text: "Live" }
             : { kind: "text" as const, text: "Soon" },
     },
     {
       ...SECTION_MAP.subSector,
-      meta:
-        (normalizedCompanyIndustryAnalysis?.companyFit?.qualifyingSubSectors.length ?? 0) > 0 ||
-        (normalizedCompanyIndustryAnalysis?.subSectorCards.length ?? 0) > 0
-          ? { kind: "text" as const, text: "Live" }
-          : { kind: "text" as const, text: "Soon" },
+      meta: hasIndustryAnalysis
+        ? { kind: "text" as const, text: "Live" }
+        : { kind: "text" as const, text: "Soon" },
     },
     {
       ...SECTION_MAP.businessSnapshot,
@@ -2262,10 +661,6 @@ export default async function Page({
         return undefined;
     }
   })();
-  const subSectorCardCount =
-    normalizedCompanyIndustryAnalysis?.subSectorCards.length ?? 0;
-  const qualifyingSubSectorCount =
-    normalizedCompanyIndustryAnalysis?.companyFit?.qualifyingSubSectors.length ?? 0;
   const sectorRankPercentile =
     sectorRankInfo?.rank != null && sectorRankInfo.total > 0
       ? ((sectorRankInfo.total - sectorRankInfo.rank + 1) / sectorRankInfo.total) * 100
@@ -2279,32 +674,6 @@ export default async function Page({
       .sort((a, b) => b.revenueSharePercent - a.revenueSharePercent);
     if (sorted.length < 2) return null;
     return sorted.map((s) => ({ name: s.name, sharePct: s.revenueSharePercent }));
-  })();
-  const companyMarketShare = (() => {
-    const cards = normalizedCompanyIndustryAnalysis?.subSectorCards ?? [];
-    if (cards.length === 0) return null;
-    const stripSuffixes = (s: string) =>
-      s.replace(/\b(LIMITED|LTD|INC|CORP|CORPORATION|PLC|CO)\b\.?/g, "").trim();
-    const companyNameNormalized = stripSuffixes((companyRow?.name ?? "").toUpperCase().trim());
-    if (!companyNameNormalized) return null;
-    for (const card of cards) {
-      const players = card.marketShareSnapshot?.players ?? [];
-      for (const player of players) {
-        if (!player.shareValue) continue;
-        const playerNormalized = stripSuffixes(player.playerName.toUpperCase().trim());
-        if (
-          playerNormalized === companyNameNormalized ||
-          playerNormalized.includes(companyNameNormalized) ||
-          companyNameNormalized.includes(playerNormalized)
-        ) {
-          return {
-            shareValue: player.shareValue,
-            shareIsEstimated: player.shareIsEstimated,
-          };
-        }
-      }
-    }
-    return null;
   })();
 
   const overviewSectionPreviews = [
@@ -2326,35 +695,19 @@ export default async function Page({
         }
         return pills.length > 0 ? pills : undefined;
       })(),
-      indicator: normalizedCompanyIndustryAnalysis
+      indicator: hasIndustryAnalysis
         ? undefined
         : { kind: "pill" as const, label: "Soon" },
     },
     {
       title: "Sub-sector Analysis",
       href: "#sub-sector",
-      bodyPills: (() => {
-        const pills: Array<{ label: string; tone: OverviewBodyPillTone }> = [];
-        if (companySubSector) {
-          pills.push({ label: companySubSector, tone: "emerald" });
-        }
-        if (companyMarketShare) {
-          pills.push({
-            label: `Mkt share: ${companyMarketShare.shareValue}${companyMarketShare.shareIsEstimated ? " (est.)" : ""}`,
-            tone: "sky",
-          });
-        }
-        return pills.length > 0 ? pills : undefined;
-      })(),
-      indicator:
-        subSectorCardCount > 0
-          ? {
-              kind: "pill" as const,
-              label: `${subSectorCardCount} ${subSectorCardCount === 1 ? "profile" : "profiles"}`,
-            }
-          : qualifyingSubSectorCount > 0
-            ? undefined
-            : { kind: "pill" as const, label: "Soon" },
+      bodyPills: companySubSector
+        ? [{ label: companySubSector, tone: "emerald" as const }]
+        : undefined,
+      indicator: hasIndustryAnalysis
+        ? undefined
+        : { kind: "pill" as const, label: "Soon" },
     },
     {
       title: "Business Snapshot",
@@ -2454,274 +807,8 @@ export default async function Page({
     },
   ];
 
-  const getScenarioTone = (scenarioKey: "base" | "upside" | "downside") =>
-    scenarioKey === "base"
-      ? {
-          accentClass: "border-l-emerald-500/70",
-          growthBadgeClass:
-            "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/35 dark:text-emerald-100",
-        }
-      : scenarioKey === "upside"
-        ? {
-            accentClass: "border-l-sky-500/70",
-            growthBadgeClass:
-              "border-sky-200 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/35 dark:text-sky-100",
-          }
-        : {
-            accentClass: "border-l-amber-500/70",
-            growthBadgeClass:
-              "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/35 dark:text-amber-100",
-          };
 
-  const renderBaseScenarioCard = () => {
-    const scenario = normalizedGrowthOutlook?.scenarios?.base as
-      | NormalizedGrowthScenario
-      | null
-      | undefined;
-    if (!scenario) return null;
 
-    const drivers = scenario.drivers.slice(0, 3);
-    const risks = scenario.risks.slice(0, 3);
-    const fallbackDescription = (scenario.summary ?? "").trim();
-    const primaryRisk = (scenario.risks[0] ?? "").trim();
-    const riskWatch = (scenario.riskWatch ?? "").trim();
-    const riskWatchValue = riskWatch || primaryRisk;
-    const growthValue = scenario.growth;
-    const marginValue = scenario.ebitdaMargin;
-    const tone = getScenarioTone("base");
-
-    return (
-      <div className={`${elevatedBlockClass} flex flex-col p-3 space-y-3 border-l-2 ${tone.accentClass}`}>
-        <div className="flex items-start justify-between gap-3">
-          <span className="px-2 py-0.5 rounded-full bg-muted text-foreground font-semibold uppercase tracking-wide">
-            Base case
-          </span>
-          <div className="flex shrink-0 flex-col items-end gap-1">
-            {growthValue && (
-              <span className={`rounded-full border px-3 py-1 text-[18px] font-bold leading-none ${tone.growthBadgeClass}`}>
-                {String(growthValue)}
-              </span>
-            )}
-            {typeof scenario.confidence === "number" && (
-              <span className="rounded-full border border-border/60 bg-muted/80 px-2.5 py-0.5 text-[10px] font-medium text-foreground">
-                Confidence {(scenario.confidence * 100).toFixed(0)}%
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-          {marginValue && (
-            <span className="px-2 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/35 dark:text-sky-100 dark:border-sky-700/40">
-              EBITDA margin: {String(marginValue)}
-            </span>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-            Quick takeaway
-          </p>
-          {fallbackDescription ? (
-            <p className="text-[11px] text-foreground leading-snug line-clamp-2">
-              {fallbackDescription}
-            </p>
-          ) : (
-            <p className="text-[11px] text-muted-foreground leading-snug">
-              No quick takeaway provided.
-            </p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-          <div className="space-y-1.5 rounded-lg border border-emerald-200/50 bg-emerald-50/55 p-2.5 dark:border-emerald-700/25 dark:bg-emerald-900/15">
-            <p className="text-[10px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300 font-semibold">
-              Drivers
-            </p>
-            <ul className="space-y-1">
-              {drivers.length > 0 ? (
-                drivers.map((driver, idx) => (
-                  <li
-                    key={idx}
-                    className="rounded-sm border-l border-emerald-400/60 pl-2 text-[11px] leading-snug text-foreground"
-                  >
-                    {driver}
-                  </li>
-                ))
-              ) : (
-                <li className="text-[11px] leading-snug text-muted-foreground">
-                  No driver details provided.
-                </li>
-              )}
-            </ul>
-          </div>
-
-          <div className="space-y-1.5 rounded-lg border border-rose-200/50 bg-rose-50/55 p-2.5 dark:border-rose-700/25 dark:bg-rose-900/15">
-            <p className="text-[10px] uppercase tracking-wide text-rose-700 dark:text-rose-300 font-semibold">
-              Risks
-            </p>
-            <ul className="space-y-1">
-              {risks.length > 0 ? (
-                risks.map((risk, idx) => (
-                  <li
-                    key={idx}
-                    className="rounded-sm border-l border-rose-400/60 pl-2 text-[11px] leading-snug text-foreground"
-                  >
-                    {risk}
-                  </li>
-                ))
-              ) : (
-                <li className="text-[11px] leading-snug text-muted-foreground">
-                  No risk details provided.
-                </li>
-              )}
-            </ul>
-          </div>
-        </div>
-
-        {riskWatchValue && (
-          <div className="rounded-lg border border-amber-200/50 bg-amber-50/55 px-2.5 py-2 dark:border-amber-700/25 dark:bg-amber-900/15">
-            <p className="text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-300 font-semibold">
-              Risk watch
-            </p>
-            <p className="mt-1 text-[11px] leading-snug text-foreground">
-              {riskWatchValue}
-            </p>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderCompactScenarioCard = (scenarioKey: "upside" | "downside") => {
-    const scenario = normalizedGrowthOutlook?.scenarios?.[scenarioKey] as NormalizedGrowthScenario | null | undefined;
-    if (!scenario) return null;
-    const drivers = scenario.drivers;
-    const risks = scenario.risks;
-    const visibleDrivers = drivers.slice(0, 2);
-    const visibleRisks = risks.slice(0, 2);
-    const primaryRisk = (risks[0] ?? "").trim();
-    const fallbackDescription = (scenario.summary ?? "").trim();
-    const riskWatch = (scenario.riskWatch ?? "").trim();
-    const riskWatchValue = riskWatch || primaryRisk;
-    const growthValue = scenario.growth;
-    const marginValue = scenario.ebitdaMargin;
-    const tone = getScenarioTone(scenarioKey);
-    const hasDetailContent =
-      visibleDrivers.length > 0 || visibleRisks.length > 0 || Boolean(riskWatchValue);
-    const detailsLabel =
-      visibleDrivers.length > 0 || visibleRisks.length > 0
-        ? `Show details (${visibleDrivers.length} drivers, ${visibleRisks.length} risks)`
-        : "Show details";
-
-    return (
-      <div
-        key={scenarioKey}
-        className={`${elevatedBlockClass} flex h-full flex-col p-3 space-y-3 border-l-2 ${tone.accentClass}`}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <span className="px-2 py-0.5 rounded-full bg-muted text-foreground font-semibold uppercase tracking-wide">
-            {scenarioKey} case
-          </span>
-          <div className="flex shrink-0 flex-col items-end gap-1">
-            {growthValue && (
-              <span className={`rounded-full border px-3 py-1 text-[18px] font-bold leading-none ${tone.growthBadgeClass}`}>
-                {String(growthValue)}
-              </span>
-            )}
-            {typeof scenario.confidence === "number" && (
-              <span className="rounded-full border border-border/60 bg-muted/80 px-2.5 py-0.5 text-[10px] font-medium text-foreground">
-                Confidence {(scenario.confidence * 100).toFixed(0)}%
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-          {marginValue && (
-            <span className="px-2 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/35 dark:text-sky-100 dark:border-sky-700/40">
-              EBITDA margin: {String(marginValue)}
-            </span>
-          )}
-        </div>
-        <div className="space-y-1.5">
-          <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-            Quick takeaway
-          </p>
-          <div className="space-y-1">
-            {fallbackDescription ? (
-              <p className="text-[11px] text-foreground leading-snug line-clamp-2">
-                {fallbackDescription}
-              </p>
-            ) : (
-              <p className="text-[11px] text-muted-foreground leading-snug">
-                No quick takeaway provided.
-              </p>
-            )}
-            {!fallbackDescription && !riskWatchValue ? (
-              <p className="text-[11px] text-muted-foreground leading-snug">
-                No primary risk provided.
-              </p>
-            ) : null}
-          </div>
-        </div>
-
-        {hasDetailContent && (
-          <details className={`group ${nestedDetailClass} px-2 py-1.5`}>
-            <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground list-none">
-              <span className="group-open:hidden">{detailsLabel}</span>
-              <span className="hidden group-open:inline">Hide details</span>
-            </summary>
-            <div className="mt-2 space-y-2">
-              {visibleDrivers.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300 font-semibold">
-                    Drivers
-                  </p>
-                  <ul className="space-y-1">
-                    {visibleDrivers.map((driver, idx) => (
-                      <li
-                        key={idx}
-                        className="text-[11px] text-foreground leading-snug rounded-sm border-l border-emerald-400/60 pl-2"
-                      >
-                        {driver}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {visibleRisks.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-wide text-red-700 dark:text-red-300 font-semibold">
-                    Risks
-                  </p>
-                  <ul className="space-y-1">
-                    {visibleRisks.map((risk, idx) => (
-                      <li
-                        key={idx}
-                        className="text-[11px] text-foreground leading-snug rounded-sm border-l border-red-400/60 pl-2"
-                      >
-                        {risk}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {riskWatchValue && (
-                <div className="rounded-lg border border-amber-200/50 bg-amber-50/55 px-2.5 py-2 dark:border-amber-700/25 dark:bg-amber-900/15">
-                  <p className="text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-300 font-semibold">
-                    Risk watch
-                  </p>
-                  <p className="mt-1 text-[11px] leading-snug text-foreground">
-                    {riskWatchValue}
-                  </p>
-                </div>
-              )}
-            </div>
-          </details>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div className="relative isolate w-full overflow-hidden px-3 py-3 pb-24 sm:px-4 sm:py-4 sm:pb-28 lg:px-8">
@@ -2739,500 +826,40 @@ export default async function Page({
                 isNew: companyIsNew,
               }}
               sectionPreviews={overviewSectionPreviews}
-              watchlist={{
-                companyCode: code,
-                loginRedirectPath: `/company/${code}`,
-                initialIsAuthenticated: Boolean(authenticatedUserId),
-                initialHasWatchlist: Boolean(firstWatchlist),
-                initialIsInWatchlist: isInFirstWatchlist,
-                initialWatchlistName: firstWatchlist?.name ?? null,
-              }}
+              watchlistSlot={
+                <Suspense fallback={<WatchlistSlotFallback />}>
+                  <CompanyWatchlistSlot companyCode={code} />
+                </Suspense>
+              }
             />
           </div>
 
           <div data-section-id="industry-context">
-        <SectionCard
-          id="industry-context"
-          title="Industry Context"
-          headerPills={industryHeaderPills}
-          headerAction={
-            companyIndustryGeneratedAtShort ? (
-              <span className="text-[11px] text-muted-foreground">
-                {companyIndustryGeneratedAtShort}
-              </span>
-            ) : undefined
-          }
-        >
-          {normalizedCompanyIndustryAnalysis ? (
-            <div className="space-y-3">
-              <div className="space-y-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-border/50 bg-muted/45 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                    {companyRow?.code ?? code}
-                  </span>
-                  {normalizedCompanyIndustryAnalysis.subSector && (
-                    <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
-                      {normalizedCompanyIndustryAnalysis.subSector}
-                    </span>
-                  )}
-                </div>
-
-                {normalizedCompanyIndustryAnalysis.industryPositioning?.customerNeed && (
-                  <div className={`${elevatedBlockClass} p-4 space-y-1.5`}>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Industry overview
-                    </p>
-                    <p className="text-[14px] sm:text-[15px] font-semibold leading-snug tracking-[-0.01em] text-foreground">
-                      {normalizedCompanyIndustryAnalysis.industryPositioning.customerNeed}
-                    </p>
-                  </div>
-                )}
-
-                {(normalizedCompanyIndustryAnalysis.valueChainMap ||
-                  normalizedCompanyIndustryAnalysis.typesOfPlayers) && (
-                  <>
-                    <div className="grid grid-cols-1 gap-3">
-                      {renderIndustryContextDrawerCard({
-                        title: "Value Chain Map",
-                        count:
-                          normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length ?? 0,
-                        countLabel:
-                          normalizedCompanyIndustryAnalysis.valueChainMap?.layers.length === 1
-                            ? "layer"
-                            : "layers",
-                        description:
-                          normalizedCompanyIndustryAnalysis.valueChainMap ? (
-                            <div className="space-y-3">
-                              {(normalizedCompanyIndustryAnalysis.valueChainMap.structureType ||
-                                normalizedCompanyIndustryAnalysis.valueChainMap
-                                  .chainTypeRationale ||
-                                normalizedCompanyIndustryAnalysis.valueChainMap.synthesis) && (
-                                <p className="text-[12px] leading-relaxed text-foreground/80">
-                                  {normalizedCompanyIndustryAnalysis.valueChainMap
-                                    .structureType && (
-                                    <span className="mr-1.5 font-semibold uppercase tracking-[0.14em] text-foreground">
-                                      {formatCompactLabel(
-                                        normalizedCompanyIndustryAnalysis.valueChainMap
-                                          .structureType,
-                                      )}
-                                    </span>
-                                  )}
-                                  {normalizedCompanyIndustryAnalysis.valueChainMap
-                                    .structureType &&
-                                    (normalizedCompanyIndustryAnalysis.valueChainMap
-                                      .chainTypeRationale ??
-                                      normalizedCompanyIndustryAnalysis.valueChainMap
-                                        .synthesis) && (
-                                      <span className="mr-1.5 text-muted-foreground">—</span>
-                                    )}
-                                  {normalizedCompanyIndustryAnalysis.valueChainMap
-                                    .chainTypeRationale ??
-                                    normalizedCompanyIndustryAnalysis.valueChainMap.synthesis}
-                                </p>
-                              )}
-
-                              {normalizedCompanyIndustryAnalysis.valueChainMap.layers.length >
-                                0 && (
-                                <div className="grid gap-3 lg:flex lg:items-stretch lg:gap-1.5">
-                                  {normalizedCompanyIndustryAnalysis.valueChainMap.layers.map(
-                                    (layer, index) => (
-                                      <React.Fragment key={`${layer.layerName}-${index}`}>
-                                        <div className={`${nestedDetailClass} px-3.5 py-3 lg:flex-1 lg:min-w-0`}>
-                                          <div className="flex items-start gap-2">
-                                            <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-muted/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-foreground">
-                                              {index + 1}
-                                            </span>
-                                            <p className="text-[12px] font-semibold leading-snug text-foreground">
-                                              {layer.layerName}
-                                            </p>
-                                          </div>
-
-                                          {(layer.revenueModel ?? layer.layerDescription) && (
-                                            <div className="mt-2.5 border-t border-border/40 pt-2.5">
-                                              <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                                                Overview
-                                              </p>
-                                              <p className="text-[10px] leading-relaxed text-foreground/90">
-                                                {layer.revenueModel ?? layer.layerDescription}
-                                              </p>
-                                            </div>
-                                          )}
-
-                                          {layer.marginReturnProfile &&
-                                            (layer.marginReturnProfile.rangeOrLabel ||
-                                              layer.marginReturnProfile.sourcingRationale ||
-                                              layer.marginReturnProfile.dispersionNote) && (
-                                              <div className="mt-2.5 space-y-1 border-t border-border/40 pt-2.5">
-                                                <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                                                  Margin
-                                                </p>
-                                                <div className="flex flex-wrap items-center gap-1">
-                                                  {layer.marginReturnProfile.rangeOrLabel && (
-                                                    <span
-                                                      className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${
-                                                        marginQualityPillClass[
-                                                          getMarginQualityTone(
-                                                            layer.marginReturnProfile.rangeOrLabel,
-                                                          )
-                                                        ]
-                                                      }`}
-                                                    >
-                                                      {layer.marginReturnProfile.rangeOrLabel}
-                                                    </span>
-                                                  )}
-                                                  {layer.marginReturnProfile.basis && (
-                                                    <span className="rounded-full border border-border/40 bg-muted/30 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.1em] text-muted-foreground">
-                                                      {layer.marginReturnProfile.basis}
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                {layer.marginReturnProfile.sourcingRationale && (
-                                                  <p className="text-[10px] leading-relaxed text-muted-foreground">
-                                                    {layer.marginReturnProfile.sourcingRationale}
-                                                  </p>
-                                                )}
-                                                {layer.marginReturnProfile.dispersionNote && (
-                                                  <p className="text-[10px] leading-relaxed text-muted-foreground/80">
-                                                    {layer.marginReturnProfile.dispersionNote}
-                                                  </p>
-                                                )}
-                                              </div>
-                                            )}
-
-                                          {layer.topParticipants.length > 0 && (
-                                            <div className="mt-2.5 space-y-1 border-t border-border/40 pt-2.5">
-                                              <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                                                Top participants
-                                              </p>
-                                              <div className="flex flex-wrap gap-1">
-                                                {layer.topParticipants.map((participant, pIdx) => (
-                                                  <span
-                                                    key={`${participant.name}-${pIdx}`}
-                                                    className="inline-flex items-center gap-1 rounded-md border border-border/50 bg-background/70 px-1.5 py-0.5 text-[10px] text-foreground"
-                                                  >
-                                                    <span className="font-medium">
-                                                      {participant.name}
-                                                    </span>
-                                                    {participant.listedStatus && (
-                                                      <span className="text-[9px] uppercase tracking-[0.1em] text-muted-foreground">
-                                                        {formatCompactLabel(participant.listedStatus)}
-                                                      </span>
-                                                    )}
-                                                  </span>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
-
-                                          {layer.connectionToCompany && (
-                                            <div className="mt-2.5 space-y-1 border-t border-border/40 pt-2.5">
-                                              <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                                                {(companyRow?.name ?? code).trim()}&apos;s role
-                                              </p>
-                                              <p className="text-[10px] leading-relaxed text-muted-foreground">
-                                                {layer.connectionToCompany}
-                                              </p>
-                                            </div>
-                                          )}
-                                        </div>
-                                        {index <
-                                        (normalizedCompanyIndustryAnalysis.valueChainMap?.layers
-                                          .length ?? 0) -
-                                          1 ? (
-                                          <div className="hidden lg:flex items-start justify-center px-0.5 pt-3 text-foreground/55">
-                                            <span className="text-sm leading-none">→</span>
-                                          </div>
-                                        ) : null}
-                                      </React.Fragment>
-                                    ),
-                                  )}
-                                </div>
-                              )}
-
-                              {normalizedCompanyIndustryAnalysis.valueChainMap.pinchPoints.length >
-                                0 && (
-                                <div className="space-y-1.5 rounded-xl border border-amber-500/25 bg-amber-500/5 px-3 py-2.5 dark:border-amber-400/25 dark:bg-amber-400/5">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">
-                                    Pinch points
-                                  </p>
-                                  <ul className="space-y-1.5">
-                                    {normalizedCompanyIndustryAnalysis.valueChainMap.pinchPoints.map(
-                                      (pinch, idx) => (
-                                        <li
-                                          key={`${pinch.name}-${idx}`}
-                                          className="space-y-0.5"
-                                        >
-                                          <p className="text-[11px] font-semibold leading-snug text-foreground">
-                                            {pinch.name}
-                                          </p>
-                                          {pinch.mechanism && (
-                                            <p className="text-[10px] leading-relaxed text-muted-foreground">
-                                              {pinch.mechanism}
-                                            </p>
-                                          )}
-                                        </li>
-                                      ),
-                                    )}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            "No value chain map tracked yet for this company."
-                          ),
-                        accentClass: "bg-sky-500/80",
-                        disabled: !normalizedCompanyIndustryAnalysis.valueChainMap,
-                        inline: true,
-                        hideCount: true,
-                        hideAccentDot: true,
-                        showAccentStrip: true,
-                      })}
-
-                      {renderIndustryContextDrawerCard({
-                        title: "Types of Players",
-                        count:
-                          normalizedCompanyIndustryAnalysis.typesOfPlayers?.dimensions.length ?? 0,
-                        countLabel:
-                          normalizedCompanyIndustryAnalysis.typesOfPlayers?.dimensions.length === 1
-                            ? "dimension"
-                            : "dimensions",
-                        description: normalizedCompanyIndustryAnalysis.typesOfPlayers
-                          ? renderTypesOfPlayers()
-                          : "No player map tracked yet for this company.",
-                        accentClass: "bg-violet-500/80",
-                        disabled: !normalizedCompanyIndustryAnalysis.typesOfPlayers,
-                        inline: true,
-                        hideCount: true,
-                        hideAccentDot: true,
-                        showAccentStrip: true,
-                      })}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {(normalizedCompanyIndustryAnalysis.regulatoryChanges.length > 0 ||
-                normalizedCompanyIndustryAnalysis.tailwinds.length > 0 ||
-                normalizedCompanyIndustryAnalysis.headwinds.length > 0) && (
-                <div className="space-y-3">
-                  {renderIndustryContextDrawerCard({
-                    title: "Industry Regulations",
-                    count: normalizedCompanyIndustryAnalysis.regulatoryChanges.length,
-                    description: renderRegulatoryChanges(
-                      normalizedCompanyIndustryAnalysis.regulatoryChanges,
-                    ),
-                    accentClass: "bg-amber-500/80",
-                    disabled:
-                      normalizedCompanyIndustryAnalysis.regulatoryChanges.length === 0,
-                    inline: true,
-                    hideCount: true,
-                    hideAccentDot: true,
-                    showAccentStrip: true,
-                  })}
-                  {renderTailwindsHeadwindsSection()}
-                </div>
-              )}
-
-            </div>
-          ) : (
-            renderMissingSectionState(
-              "industry-context",
-              "Industry Context",
-              "We have not generated company-specific industry context for this company yet.",
-            )
-          )}
-        </SectionCard>
+            <Suspense fallback={<SectionLoading id="industry-context" title="Industry Context" />}>
+              <IndustryContextSection
+                companyCode={companyRow?.code ?? code}
+                companyName={companyRow?.name ?? null}
+              />
+            </Suspense>
           </div>
 
           <div data-section-id="sub-sector">
-        <SectionCard
-          id="sub-sector"
-          title="Sub-sectors"
-          headerAction={
-            companyIndustryGeneratedAtShort ? (
-              <span className="text-[11px] text-muted-foreground">
-                {companyIndustryGeneratedAtShort}
-              </span>
-                ) : undefined
-              }
-            >
-              {renderSubSectorSection()}
-            </SectionCard>
+            <Suspense fallback={<SectionLoading id="sub-sector" title="Sub-sectors" />}>
+              <SubSectorSection
+                companyCode={companyRow?.code ?? code}
+                companyName={companyRow?.name ?? null}
+              />
+            </Suspense>
           </div>
 
           <div data-section-id="business-overview">
-        <SectionCard
-          id="business-overview"
-          title="Business Snapshot"
-          headerPills={businessHeaderPills}
-          headerAction={
-            businessSnapshotGeneratedAtShort ? (
-              <span className="text-[11px] text-muted-foreground">
-                {businessSnapshotGeneratedAtShort}
-              </span>
-            ) : undefined
-          }
-        >
-          <div className="flex flex-col gap-4">
-            {normalizedBusinessSnapshot ? (
-              <div className={businessSnapshotSurfaceClass}>
-                <div className="space-y-4">
-                {hasStructuredBusinessSnapshot ? (
-                  <>
-                    <div className="space-y-3">
-                      {renderAboutBlock()}
-
-                      <BusinessSegmentsMosaic segments={segmentEntries} />
-                      {historicalEconomics
-                        ? renderHistoricalEconomicsCard(historicalEconomics)
-                        : hasHistoricalEconomicsSource
-                          ? renderHistoricalEconomicsUnavailableCard()
-                          : null}
-                    </div>
-                  </>
-                ) : hasLegacyBusinessSnapshot ? (
-                  <>
-                    <div className="grid grid-cols-1 gap-3">
-                      <div>
-                        {normalizedBusinessSnapshot.businessSummaryShort ||
-                        normalizedBusinessSnapshot.businessSummaryLong ? (
-                          <div className={`${businessSnapshotBlockClass} p-4 space-y-2`}>
-                            {normalizedBusinessSnapshot.businessSummaryShort && (
-                              <p className="text-sm sm:text-base font-semibold text-foreground leading-relaxed">
-                                {normalizedBusinessSnapshot.businessSummaryShort}
-                              </p>
-                            )}
-                            {normalizedBusinessSnapshot.businessSummaryLong && (
-                              <p className="text-sm text-muted-foreground leading-relaxed">
-                                {normalizedBusinessSnapshot.businessSummaryLong}
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No business snapshot summary available yet.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {(normalizedBusinessSnapshot.topRevenueDrivers.length > 0 ||
-                      normalizedBusinessSnapshot.keyDependencies.length > 0 ||
-                      normalizedBusinessSnapshot.keyRisksToModel.length > 0) && (
-                      <div className="space-y-2.5">
-                        {normalizedBusinessSnapshot.topRevenueDrivers.length > 0 && (
-                          renderBusinessSnapshotDrawer({
-                            title: "Top Revenue Drivers",
-                            preview: `${normalizedBusinessSnapshot.topRevenueDrivers.length} driver${
-                              normalizedBusinessSnapshot.topRevenueDrivers.length === 1 ? "" : "s"
-                            } tracked.`,
-                            children: (
-                              <div className={`${snapshotSubsectionClass} p-3`}>
-                                <ul className="space-y-1">
-                                  {normalizedBusinessSnapshot.topRevenueDrivers.map((driver, idx) => (
-                                    <li
-                                      key={idx}
-                                      className="text-xs text-foreground leading-snug border-l border-border/70 pl-2"
-                                    >
-                                      {driver}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ),
-                          })
-                        )}
-
-                        {(normalizedBusinessSnapshot.keyDependencies.length > 0 ||
-                          normalizedBusinessSnapshot.keyRisksToModel.length > 0) && (
-                          renderBusinessSnapshotDrawer({
-                            title: "Model Watchpoints",
-                            preview: [
-                              normalizedBusinessSnapshot.keyDependencies.length > 0
-                                ? `${normalizedBusinessSnapshot.keyDependencies.length} dependenc${
-                                    normalizedBusinessSnapshot.keyDependencies.length === 1 ? "y" : "ies"
-                                  }`
-                                : null,
-                              normalizedBusinessSnapshot.keyRisksToModel.length > 0
-                                ? `${normalizedBusinessSnapshot.keyRisksToModel.length} risk${
-                                    normalizedBusinessSnapshot.keyRisksToModel.length === 1 ? "" : "s"
-                                  }`
-                                : null,
-                            ]
-                              .filter((value): value is string => Boolean(value))
-                              .join(" · "),
-                            children: (
-                              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                {normalizedBusinessSnapshot.keyDependencies.length > 0 && (
-                                  <div className={`${snapshotSubsectionClass} p-3`}>
-                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                                      Dependencies
-                                    </p>
-                                    <ul className="mt-1.5 space-y-0.5">
-                                      {normalizedBusinessSnapshot.keyDependencies.map((dependency, idx) => (
-                                        <li
-                                          key={idx}
-                                          className="text-xs text-foreground leading-snug border-l border-amber-400/50 pl-1.5"
-                                        >
-                                          {dependency}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {normalizedBusinessSnapshot.keyRisksToModel.length > 0 && (
-                                  <div className={`${snapshotSubsectionClass} p-3`}>
-                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                                      Risks
-                                    </p>
-                                    <ul className="mt-1.5 space-y-0.5">
-                                      {normalizedBusinessSnapshot.keyRisksToModel.map((risk, idx) => (
-                                        <li
-                                          key={idx}
-                                          className="text-xs text-foreground leading-snug border-l border-red-400/50 pl-1.5"
-                                        >
-                                          {risk}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
-                            ),
-                          })
-                        )}
-                      </div>
-                    )}
-
-                    {normalizedBusinessSnapshot.mixShiftSummary && (
-                      <div className="rounded-2xl border border-sky-200/35 bg-gradient-to-br from-sky-50/45 via-background/92 to-background/78 p-3 space-y-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] dark:border-sky-700/30 dark:from-sky-950/16 dark:via-background/84 dark:to-background/70">
-                        <p className="text-[10px] uppercase tracking-wide text-sky-700 dark:text-sky-300 font-semibold">
-                          Mix Shift
-                        </p>
-                        <p className="text-xs text-foreground/90 leading-relaxed">
-                          {normalizedBusinessSnapshot.mixShiftSummary}
-                        </p>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  renderMissingSectionState(
-                    "business-overview",
-                    "Business Snapshot",
-                    "We have not generated a usable business snapshot for this company yet.",
-                  )
-                )}
-                </div>
-              </div>
-            ) : (
-              renderMissingSectionState(
-                "business-overview",
-                "Business Snapshot",
-                "We have not generated a usable business snapshot for this company yet.",
-              )
-            )}
-          </div>
-        </SectionCard>
+            <BusinessSnapshotSection
+              snapshot={normalizedBusinessSnapshot}
+              companyCode={companyRow?.code ?? code}
+              companyName={companyRow?.name ?? null}
+              generatedAtShort={businessSnapshotGeneratedAtShort}
+              hasMoatAnalysis={Boolean(normalizedMoatAnalysis)}
+            />
           </div>
 
           <div data-section-id="moat-analysis">
@@ -3245,7 +872,20 @@ export default async function Page({
             ) : null
           }
         >
-          {renderBusinessMoatAnalysisInline()}
+          {normalizedMoatAnalysis ? (
+            <MoatAnalysisSection
+              analysis={normalizedMoatAnalysis}
+              generatedAtShort={moatGeneratedAtShort}
+            />
+          ) : (
+            <MissingSectionState
+              companyCode={code}
+              companyName={companyRow?.name ?? null}
+              sectionId="moat-analysis"
+              sectionTitle="Moat Analysis"
+              description="We have not generated a competitive moat analysis for this company yet."
+            />
+          )}
         </SectionCard>
           </div>
 
@@ -3290,492 +930,11 @@ export default async function Page({
           </div>
 
           <div data-section-id="future-growth">
-        <SectionCard
-          id="future-growth"
-          title="Future Growth Prospects"
-          headerPills={futureGrowthHeaderPills}
-          headerAction={
-            typeof growthScore === "number" ? <ConcallScore score={growthScore} size="sm" /> : undefined
-          }
-        >
-          {normalizedGrowthOutlook ? (
-            <div className="flex flex-col gap-4">
-              {(normalizedGrowthOutlook.summaryBullets.length > 0 ||
-                normalizedGrowthOutlook.growthScoreComponents.length > 0) && (
-                <div className={`${elevatedBlockClass} p-3 space-y-2`}>
-                  {normalizedGrowthOutlook.summaryBullets.length > 0 && (
-                    <div className="space-y-1.5">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
-                          Summary
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {normalizedGrowthOutlook.growthScoreComponents.length > 0 && (
-                            <Drawer direction="right">
-                              <DrawerTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-7 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
-                                >
-                                  View score breakdown
-                                </Button>
-                              </DrawerTrigger>
-                              <DrawerContent className="w-full max-w-xl">
-                                <DrawerHeader className="border-b border-border">
-                                  <DrawerTitle>Growth score breakdown</DrawerTitle>
-                                  <DrawerDescription>
-                                    Component-level view of what is currently driving the forward growth score.
-                                  </DrawerDescription>
-                                </DrawerHeader>
-                                <div className="space-y-3 overflow-y-auto px-4 py-4">
-                                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                    {normalizedGrowthOutlook.growthScoreComponents.map((component) => (
-                                      <div
-                                        key={component.key}
-                                        className="rounded-lg border border-border/30 bg-background/70 px-3 py-2.5"
-                                      >
-                                        <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                                          {getGrowthScoreComponentLabel(component.key)}
-                                        </p>
-                                        <p className="mt-1 text-[18px] font-semibold leading-none text-foreground">
-                                          {pctFormatter.format(component.score)}
-                                          <span className="ml-1 text-[10px] font-medium text-muted-foreground">
-                                            /10
-                                          </span>
-                                        </p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                                <DrawerFooter className="border-t border-border">
-                                  <DrawerClose asChild>
-                                    <Button variant="outline">Close</Button>
-                                  </DrawerClose>
-                                </DrawerFooter>
-                              </DrawerContent>
-                            </Drawer>
-                          )}
-                          {growthUpdatedAt && (
-                            <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border/60 text-[10px]">
-                              Updated: {growthUpdatedAt}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <ul className="space-y-1">
-                        {normalizedGrowthOutlook.summaryBullets.slice(0, 5).map((bullet, idx) => (
-                          <li key={idx} className="text-[11px] text-foreground leading-snug">
-                            • {bullet}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                </div>
-              )}
-
-              {normalizedGrowthOutlook.catalysts.length > 0 && (
-                <div className={`${elevatedBlockClass} p-3 space-y-3`}>
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
-                        Top 3 Growth Catalysts
-                      </p>
-                      {normalizedGrowthOutlook.alsoConsidered.length > 0 && (
-                        <Drawer direction="right">
-                          <DrawerTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
-                            >
-                              View also considered
-                            </Button>
-                          </DrawerTrigger>
-                          <DrawerContent className="w-full max-w-xl">
-                            <DrawerHeader className="border-b border-border">
-                              <DrawerTitle>Also considered</DrawerTitle>
-                              <DrawerDescription>
-                                Secondary growth candidates screened but not included in the top catalyst set.
-                              </DrawerDescription>
-                            </DrawerHeader>
-                            <div className="space-y-3 overflow-y-auto px-4 py-4">
-                              {normalizedGrowthOutlook.alsoConsideredNote && (
-                                <div className="rounded-lg border border-border/30 bg-muted/25 px-3 py-2.5">
-                                  <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
-                                    Note
-                                  </p>
-                                  <p className="mt-1 text-[11px] leading-relaxed text-foreground">
-                                    {normalizedGrowthOutlook.alsoConsideredNote}
-                                  </p>
-                                </div>
-                              )}
-                              {normalizedGrowthOutlook.alsoConsidered
-                                .slice(0, 2)
-                                .map((item, idx) => (
-                                  <div
-                                    key={`also-considered-drawer-visible-${idx}`}
-                                    className="rounded-lg border border-border/30 bg-background/70 px-3 py-2.5 space-y-1.5"
-                                  >
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      {item.catalyst && (
-                                        <p className="text-[12px] font-medium leading-snug text-foreground">
-                                          {item.catalyst}
-                                        </p>
-                                      )}
-                                      {item.currentStage && (
-                                        <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                          {toDisplayLabel(item.currentStage) ?? formatCompactLabel(item.currentStage)}
-                                        </span>
-                                      )}
-                                    </div>
-                                    {item.whyNotTop3 && (
-                                      <p className="text-[11px] leading-relaxed text-muted-foreground">
-                                        {item.whyNotTop3}
-                                      </p>
-                                    )}
-                                  </div>
-                                ))}
-                              {normalizedGrowthOutlook.alsoConsidered.length > 2 && (
-                                <details className="border-t border-border/35 pt-2">
-                                  <summary className="cursor-pointer list-none text-[10px] text-muted-foreground hover:text-foreground">
-                                    Show more ({normalizedGrowthOutlook.alsoConsidered.length - 2})
-                                  </summary>
-                                  <div className="mt-2 space-y-3">
-                                    {normalizedGrowthOutlook.alsoConsidered
-                                      .slice(2)
-                                      .map((item, idx) => (
-                                        <div
-                                          key={`also-considered-drawer-extra-${idx}`}
-                                          className="rounded-lg border border-border/30 bg-background/70 px-3 py-2.5 space-y-1.5"
-                                        >
-                                          <div className="flex flex-wrap items-center gap-2">
-                                            {item.catalyst && (
-                                              <p className="text-[12px] font-medium leading-snug text-foreground">
-                                                {item.catalyst}
-                                              </p>
-                                            )}
-                                            {item.currentStage && (
-                                              <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                                {toDisplayLabel(item.currentStage) ?? formatCompactLabel(item.currentStage)}
-                                              </span>
-                                            )}
-                                          </div>
-                                          {item.whyNotTop3 && (
-                                            <p className="text-[11px] leading-relaxed text-muted-foreground">
-                                              {item.whyNotTop3}
-                                            </p>
-                                          )}
-                                        </div>
-                                      ))}
-                                  </div>
-                                </details>
-                              )}
-                            </div>
-                            <DrawerFooter className="border-t border-border">
-                              <DrawerClose asChild>
-                                <Button variant="outline">Close</Button>
-                              </DrawerClose>
-                            </DrawerFooter>
-                          </DrawerContent>
-                        </Drawer>
-                      )}
-                    </div>
-                    {normalizedGrowthOutlook.discoverySummary &&
-                      (normalizedGrowthOutlook.discoverySummary.selectedCount != null ||
-                        normalizedGrowthOutlook.discoverySummary.totalCandidatesConsidered != null ||
-                        normalizedGrowthOutlook.discoverySummary.selectionPriorityStack) && (
-                        <p className="text-[11px] leading-relaxed text-muted-foreground">
-                          {[
-                            normalizedGrowthOutlook.discoverySummary.selectedCount != null &&
-                            normalizedGrowthOutlook.discoverySummary.totalCandidatesConsidered != null
-                              ? `${normalizedGrowthOutlook.discoverySummary.selectedCount} selected from ${normalizedGrowthOutlook.discoverySummary.totalCandidatesConsidered} candidates`
-                              : null,
-                            normalizedGrowthOutlook.discoverySummary.selectionPriorityStack
-                              ? formatCompactLabel(
-                                  normalizedGrowthOutlook.discoverySummary.selectionPriorityStack,
-                                ).replace(/>/g, " > ")
-                              : null,
-                          ]
-                            .filter((value): value is string => Boolean(value))
-                            .join(" · ")}
-                        </p>
-                      )}
-                  </div>
-                  <Carousel opts={{ align: "start" }} className="w-full">
-                    <CarouselContent className="items-stretch">
-                      {[...normalizedGrowthOutlook.catalysts]
-                        .sort((a, b) => {
-                          const aPriority = a.priority?.weightedPriority;
-                          const bPriority = b.priority?.weightedPriority;
-
-                          if (aPriority == null && bPriority == null) return 0;
-                          if (aPriority == null) return 1;
-                          if (bPriority == null) return -1;
-                          return bPriority - aPriority;
-                        })
-                        .slice(0, 3)
-                        .map((c, idx) => {
-                        const timelineItems = c.timelineItems;
-                        const hasTimelineDetails = timelineItems.length > 0;
-                        const statusDisplay = getCatalystStatusDisplay(c.statusTag);
-                        const confidenceDisplay = getCatalystConfidenceDisplay(c.pillConfidence);
-                        const impactDisplay = getCatalystImpactPillDisplay(c);
-                        const quantifiedLabel = formatCatalystQuantifiedLabel(c);
-                        const quantifiedDisplay = splitCatalystQuantifiedLabel(quantifiedLabel);
-                        const priorityLabel =
-                          c.priority?.weightedPriority != null
-                            ? `Priority ${pctFormatter.format(c.priority.weightedPriority)}/5`
-                            : null;
-                        const whatIsChanging =
-                          c.whatIsChanging ??
-                          c.evidenceLines.map((line) => line.text).find((line) => Boolean(line)) ??
-                          null;
-                        const whyItMatters =
-                          c.whyItMatters ??
-                          c.evidenceLines.map((line) => line.text).find((line) => line !== whatIsChanging) ??
-                          null;
-                        const catalystAccentClass =
-                          c.expectedImpact === "revenue"
-                            ? "before:bg-emerald-400/90"
-                            : c.expectedImpact === "margin"
-                              ? "before:bg-sky-400/90"
-                              : "before:bg-amber-400/90";
-                        const catalystDotClass =
-                          c.expectedImpact === "revenue"
-                            ? "bg-emerald-500"
-                            : c.expectedImpact === "margin"
-                              ? "bg-sky-500"
-                              : "bg-amber-500";
-
-                        return (
-                          <CarouselItem key={idx} className="basis-full md:basis-1/2 xl:basis-1/3">
-                            <article
-                              className={`${nestedDetailClass} relative flex h-full flex-col overflow-hidden p-4 before:absolute before:inset-x-0 before:top-0 before:h-1.5 ${catalystAccentClass}`}
-                            >
-                              <div className="flex h-full flex-1 flex-col gap-4">
-                                <div className="space-y-3">
-                                  {c.catalyst && (
-                                    <p className="min-h-[2.6rem] line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
-                                      {c.catalyst}
-                                    </p>
-                                  )}
-                                  <div className="flex flex-wrap items-center gap-2 text-[10px]">
-                                    {statusDisplay && (
-                                      <span className={`rounded-full border px-2.5 py-0.5 ${statusDisplay.className}`}>
-                                        {statusDisplay.label}
-                                      </span>
-                                    )}
-                                    {c.timing && (
-                                      <span className="rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-foreground">
-                                        {c.timing}
-                                      </span>
-                                    )}
-                                    {c.type && (
-                                      <span className="rounded-full border border-blue-200 bg-blue-100 px-2.5 py-0.5 text-blue-700 dark:border-blue-700/40 dark:bg-blue-900/35 dark:text-blue-200">
-                                        {toDisplayLabel(c.type) ?? c.type}
-                                      </span>
-                                    )}
-                                    {impactDisplay && (
-                                      <span className={`rounded-full border px-2.5 py-0.5 ${impactDisplay.className}`}>
-                                        {impactDisplay.label}
-                                      </span>
-                                    )}
-                                    {confidenceDisplay && (
-                                      <span className={`rounded-full border px-2.5 py-0.5 ${confidenceDisplay.className}`}>
-                                        {confidenceDisplay.label}
-                                      </span>
-                                    )}
-                                    {priorityLabel && (
-                                      <span className="rounded-full border border-violet-200 bg-violet-100 px-2.5 py-0.5 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/35 dark:text-violet-200">
-                                        {priorityLabel}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {quantifiedLabel && (
-                                  <div className="rounded-xl border border-border/35 bg-muted/15 p-3">
-                                    <div className="space-y-2">
-                                      <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                                        Quantified change
-                                      </p>
-                                      <div className="space-y-1">
-                                        <p className="text-[18px] font-semibold leading-[1.02] tracking-tight text-foreground sm:text-[20px]">
-                                          {quantifiedDisplay.headline ?? quantifiedLabel ?? "Unquantified"}
-                                        </p>
-                                        {quantifiedDisplay.subline && (
-                                          <p className="max-w-[28rem] text-[11px] leading-relaxed text-muted-foreground">
-                                            {quantifiedDisplay.subline}
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {(whatIsChanging || whyItMatters) && (
-                                  <div className="space-y-2">
-                                    {whatIsChanging && (
-                                      <div className="rounded-lg border border-border/35 bg-background/70 p-3 space-y-1">
-                                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                                          What Is Changing
-                                        </p>
-                                        <p className="text-[12px] leading-relaxed text-foreground">
-                                          {whatIsChanging}
-                                        </p>
-                                      </div>
-                                    )}
-                                    {whyItMatters && (
-                                      <div className="rounded-lg border border-emerald-200/35 bg-emerald-50/35 p-3 space-y-1 dark:border-emerald-700/25 dark:bg-emerald-900/10">
-                                        <p className="text-[10px] uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300 font-semibold">
-                                          Why It Matters
-                                        </p>
-                                        <p className="text-[12px] leading-relaxed text-foreground">
-                                          {whyItMatters}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {c.pillDependency && (
-                                  <div className="rounded-lg border border-amber-200/35 bg-amber-50/35 px-3 py-2 dark:border-amber-700/25 dark:bg-amber-900/10">
-                                    <p className="text-[10px] uppercase tracking-[0.16em] text-amber-700 dark:text-amber-300 font-semibold">
-                                      Key dependency
-                                    </p>
-                                    <p className="mt-1 text-[11px] leading-relaxed text-foreground">
-                                      {c.pillDependency}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {timelineItems.length > 0 && (
-                                  <div className="space-y-2.5">
-                                    <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                                      Timeline
-                                    </p>
-                                  </div>
-                                )}
-
-                                {hasTimelineDetails && (
-                                  <details className="group mt-auto border-t border-border/30 pt-3">
-                                    <summary className="list-none cursor-pointer">
-                                      <div className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/25 px-3 py-2.5 transition-colors hover:border-border hover:bg-muted/35">
-                                        <div className="space-y-0.5">
-                                          <span className="block text-[11px] font-medium text-foreground">
-                                            Open full timeline
-                                          </span>
-                                          <span className="block text-[10px] text-muted-foreground">
-                                            {timelineItems.length} updates across the full catalyst trail
-                                          </span>
-                                        </div>
-                                        <span className="text-[11px] font-medium text-muted-foreground">
-                                          <span className="group-open:hidden">Open</span>
-                                          <span className="hidden group-open:inline">Hide</span>
-                                        </span>
-                                      </div>
-                                    </summary>
-                                    <div className="mt-3 relative pl-6 before:absolute before:left-[8px] before:top-1 before:bottom-1 before:w-px before:bg-border/60">
-                                      <ul className="space-y-3">
-                                        {timelineItems.map((t, tIdx) => {
-                                          const stageMeta = getTimelineStageDisplay(t.stage);
-                                          const period = t.period ?? "";
-                                          const source = t.source ?? "";
-                                          const quote = t.quote ?? "";
-                                          const delta = t.delta ?? "";
-
-                                          return (
-                                            <li
-                                              key={`${idx}-timeline-extra-${tIdx}`}
-                                              className="relative space-y-1.5 pl-4"
-                                            >
-                                              <span className={`absolute left-0 top-2 h-2.5 w-2.5 rounded-full border-2 border-background ${catalystDotClass}`} />
-                                              <div className="flex flex-wrap items-center gap-1.5">
-                                                <span
-                                                  className={`px-2 py-0.5 rounded-full uppercase tracking-wide text-[10px] ${stageMeta.className}`}
-                                                >
-                                                  {stageMeta.label}
-                                                </span>
-                                                {(period || source) && (
-                                                  <span className="text-[11px] text-muted-foreground">
-                                                    {period}
-                                                    {period && source ? " · " : ""}
-                                                    {source}
-                                                  </span>
-                                                )}
-                                              </div>
-                                              {quote && (
-                                                <p className="text-[12px] leading-relaxed text-foreground">
-                                                  {quote}
-                                                </p>
-                                              )}
-                                              {delta && (
-                                                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                                                  {delta}
-                                                </p>
-                                              )}
-                                            </li>
-                                          );
-                                        })}
-                                      </ul>
-                                    </div>
-                                  </details>
-                                )}
-                              </div>
-                            </article>
-                          </CarouselItem>
-                        );
-                      })}
-                    </CarouselContent>
-
-                    <div className="mt-2 flex justify-center gap-2 xl:hidden">
-                      <div className="flex items-center gap-2">
-                        <CarouselPrevious className="static size-9 translate-x-0 translate-y-0 border border-border bg-background/80 text-foreground hover:bg-accent" />
-                        <CarouselNext className="static size-9 translate-x-0 translate-y-0 border border-border bg-background/80 text-foreground hover:bg-accent" />
-                      </div>
-                    </div>
-                  </Carousel>
-                </div>
-              )}
-              {hasFutureGrowthDeepDive && (
-                <div className={`${nestedDetailClass} px-3 py-2.5 space-y-3`}>
-                  <div className="space-y-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-foreground/90">
-                      Scenario Analysis
-                    </p>
-                    <p className="text-[11px] leading-snug text-muted-foreground">
-                      Base case spans the left column; upside and downside stack on the right.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:items-stretch">
-                    <div>
-                      {renderBaseScenarioCard()}
-                    </div>
-                    <div className="grid gap-3 md:h-full md:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
-                      <div className="h-full">
-                        {renderCompactScenarioCard("upside")}
-                      </div>
-                      <div className="h-full">
-                        {renderCompactScenarioCard("downside")}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          ) : (
-            renderMissingSectionState(
-              "future-growth",
-              "Future Growth Prospects",
-              "We have not generated forward growth outlook analysis for this company yet.",
-            )
-          )}
-        </SectionCard>
+            <FutureGrowthSection
+              outlook={normalizedGrowthOutlook}
+              companyCode={companyRow?.code ?? code}
+              companyName={companyRow?.name ?? null}
+            />
           </div>
 
           <div data-section-id="guidance-history">
@@ -3795,7 +954,7 @@ export default async function Page({
         >
           {normalizedGuidanceSnapshot ? (
             <div className="space-y-4">
-              {renderGuidanceSnapshotSummary()}
+              <GuidanceSnapshotSummary snapshot={normalizedGuidanceSnapshot} />
               {guidanceItems.length > 0 ? <GuidanceHistorySection items={guidanceItems} /> : null}
             </div>
           ) : guidanceItems.length > 0 ? (
