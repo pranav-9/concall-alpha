@@ -4,6 +4,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { cn } from "@/lib/utils";
 import type { NormalizedRevenueBreakdownItem } from "@/lib/business-snapshot/types";
 import { colorPalette, maxSlices } from "./business-segment-mix-constants";
+import { snapshotSubsectionClass } from "./surface-tokens";
 
 type SegmentMixDatum = {
   name: string;
@@ -106,7 +107,8 @@ export function BusinessSegmentMixDonutChart({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col rounded-xl border border-border/20 bg-background/25 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_10px_18px_-18px_rgba(15,23,42,0.18)]",
+        snapshotSubsectionClass,
+        "flex h-full min-h-0 flex-col p-3",
         className,
       )}
     >

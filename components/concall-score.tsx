@@ -3,6 +3,28 @@ import { Badge } from "@/components/ui/badge"; // adjust path if needed
 
 type Size = "sm" | "md" | "lg";
 
+/**
+ * Chart-friendly hex value for a score. Used by chart visualizations that need
+ * a continuous color gradient with finer granularity than `categoryFor`'s 7
+ * badge tiers. Both helpers live in this file so the score → color mapping
+ * has a single home.
+ */
+export const chartColorFor = (score: number): string => {
+  if (score >= 9.5) return "#065f46";
+  if (score >= 9.0) return "#047857";
+  if (score >= 8.5) return "#059669";
+  if (score >= 8.0) return "#10b981";
+  if (score >= 7.5) return "#34d399";
+  if (score >= 7.0) return "#6ee7b7";
+  if (score >= 6.5) return "#a7f3d0";
+  if (score >= 6.0) return "#fbbf24";
+  if (score >= 5.5) return "#f59e0b";
+  if (score >= 5.0) return "#f97316";
+  if (score >= 4.5) return "#ea580c";
+  if (score >= 4.0) return "#dc2626";
+  return "#7f1d1d";
+};
+
 export const categoryFor = (score: number) => {
   if (score >= 9.5)
     return {

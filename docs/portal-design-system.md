@@ -413,8 +413,8 @@ Neutrals come from the semantic tokens in [`app/globals.css`](../app/globals.css
 Color carries meaning. The legal sources of color are:
 
 - **Section tones**, applied via `SectionCard` and `SECTION_TONE_BY_ID` (research) or `HERO_CARD` / `PANEL_CARD_*` (atmospheric).
-- **Score colors**, applied only via [`components/concall-score.tsx`](../components/concall-score.tsx) — the single source of truth for score → color mapping.
-- **Chart palette**, via `--chart-1` … `--chart-5` CSS variables. Hex literals like `#10b981` or `#94a3b8` in chart code are forbidden; use `hsl(var(--chart-N))`.
+- **Score colors**, applied only via [`components/concall-score.tsx`](../components/concall-score.tsx) — the single source of truth for score → color mapping. The file exposes `categoryFor(score)` for badge displays (7 tiers: label + bg + ring) and `chartColorFor(score)` for chart visualizations that need finer granularity (13-tier hex gradient). Both helpers live in this file because the score → color *concept* has one home, even when two visualizations call for different palettes.
+- **Chart configs**, which legitimately need raw color values for Recharts / SVG attributes. Prefer `hsl(var(--chart-1))` … `hsl(var(--chart-5))` where the 5-color categorical palette fits. When the chart needs more colors (e.g., the 8-segment business breakdown) or semantic encoding (up/down/flat indicators in a sparkline), hex literals are allowed inside the chart-config file — but the palette must be defined as a single shared constant (e.g., [`business-segment-mix-constants.ts`](../app/company/components/business-segment-mix-constants.ts)), not duplicated across chart components.
 
 Raw palette utilities (`bg-emerald-100`, `border-sky-700/35`, `text-amber-200`) are allowed *only* inside the four legal sources above. They may not be sprinkled onto inner cards, chips, or text outside that scope.
 
@@ -424,8 +424,8 @@ The atmospheric family uses translucent tone washes by definition (the `to-{tone
 
 ### Forbidden literals
 
-- Hex color literals in `.tsx` / `.ts` files outside chart configs.
-- `rgba(...)` literals outside the inset-highlight and drop-shadow recipes documented in this file. These two recipes are tokens; everything else should be a Tailwind utility or a CSS variable.
+- Hex color literals in `.tsx` / `.ts` files outside chart configs. (Chart configs are the documented exception; see "Semantic accents" above.)
+- `rgba(...)` literals outside the inset-highlight and drop-shadow recipes documented in this file, the `PAGE_BACKGROUND_ATMOSPHERIC` radial-wash recipe, and chart configs. These recipes are tokens; everything else should be a Tailwind utility or a CSS variable.
 - HSL literals outside `globals.css`.
 
 ---
@@ -473,15 +473,16 @@ Borders and shadows support the content; they are not the content.
 
 ### Shadows
 
-The portal uses three shadow tokens. Hand-rolled `shadow-[…]` strings outside this list are deprecated.
+The portal uses four shadow tokens. Hand-rolled `shadow-[…]` strings outside this list are deprecated.
 
 | Token | Recipe | Use |
 |---|---|---|
 | `shadow-md shadow-black/20` | Tailwind default | L2 / L3 cards on research surfaces |
 | `shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_18px_36px_-30px_rgba(15,23,42,0.26)]` | Inset highlight + far drop, A1 weight | A1 atmospheric shells |
 | `shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_28px_-26px_rgba(15,23,42,0.18)]` | Inset highlight + far drop, A2 weight | A2 atmospheric panels |
+| `shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]` | Inset highlight only, no drop | Tone status pills, segmented control / TabsList chrome, glass-style standalone buttons. A subtle glass top edge on a single chip-shaped element. **Forbidden on cards** (where it would compound). |
 
-Inset highlights and atmospheric drop shadows belong only to the atmospheric family and chrome. Research L2/L3 cards never carry them.
+Inset+drop atmospheric shadows belong only to the atmospheric card family. Research L2/L3 cards carry only `shadow-md shadow-black/20`. The chip-glass token is reserved for single rounded-full chip / pill / tab elements — it cannot be applied to any rectangular card surface.
 
 ### Radii
 
@@ -872,7 +873,12 @@ The following are *known violations* that should be migrated to the rules above.
 - ✅ `sector/[slug]/page.tsx` inline panel recipes (`PAGE_BACKGROUND_CLASS`, `INLINE_SUBCARD_CLASS`, `SMALL_SUBCARD_CLASS`, two inline JSX panels) migrated to `PAGE_BACKGROUND_ATMOSPHERIC` and `INNER_CARD`.
 - ✅ "Hero name" typography tier added to the type scale to formally cover the company-name headline in `overview-card.tsx`.
 - ✅ "Overview / identity" section added to Per-Section Patterns documenting `overview-card.tsx` as the single sanctioned hand-rolled L1 hero on the company page.
+- ✅ Homepage (`app/page.tsx`) migrated to canonical atmospheric tokens: `PAGE_BACKGROUND_ATMOSPHERIC` for the radial wash, `HERO_CARD` for the lead block, `PANEL_CARD_NEUTRAL` for the three content panels (Fundamental Screeners, 7-step framework, Watch the research). The 7 framework cards converted from per-tone tinted-glass cards to flat `INNER_CARD` (A3) cards with tone accent strips at the top, with strip tones aligned to `SECTION_TONE_BY_ID` so the homepage teaches the same tone-section mapping the company page uses.
+- ✅ Color Discipline reconciled: chart configs are now an explicit exempted zone for hex literals (Recharts / SVG attributes need raw values), with the requirement that palettes be defined as shared constants. The duplicated 8-color segment palette in `segment-revenue-display.tsx` removed — it now imports from [`business-segment-mix-constants.ts`](../app/company/components/business-segment-mix-constants.ts), the single source of truth.
+- ✅ Card-shaped inset-highlight shadow violations cleaned up: `requests/page.tsx` `METRIC_CARD_CLASS` and `LIST_CARD_CLASS` migrated to `INNER_CARD`, an inline subcard in `sector/[slug]/page.tsx` migrated to `INNER_CARD`, and the donut-chart subsection wrapper in `business-segment-mix-donut-chart.tsx` migrated to `snapshotSubsectionClass` (L4) with the non-canonical inset+drop shadow removed.
+- ✅ Chip-glass shadow recognized as a fourth canonical token: `shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]` for tone status pills, segmented controls / TabsList chrome, and standalone glass-style buttons. The doc's shadow-tokens table now lists it explicitly with the constraint that it is forbidden on rectangular card surfaces.
+- ✅ Score-color mapping consolidated: `chartColorFor(score)` moved from `app/company/[code]/chart.tsx` into [`components/concall-score.tsx`](../components/concall-score.tsx), now living alongside `categoryFor`. Both helpers expose the same `score → color` concept; `categoryFor` returns 7-tier badge styling, `chartColorFor` returns 13-tier hex for chart visualizations. The doc's Color Discipline section names both helpers.
 
 ### Open
 
-- 132 instances of arbitrary `tracking-[…]` values, 478 instances of arbitrary `text-[Npx]` values, 33 instances of arbitrary `rounded-[…]` values, and 62 instances of arbitrary `shadow-[…]` values exist outside the canonical scales. This is a sweep, not a single change — migrate per scale, in focused passes, with screenshot diffs. The largest concentration is in `app/company/[code]/page.tsx`, the company-section components, and the homepage `app/page.tsx`.
+- A tracking sweep (still long-running): non-canonical `tracking-[…]`, `text-[Npx]`, `rounded-[…]`, and `shadow-[…]` values across the codebase. The largest concentration is in `app/company/[code]/page.tsx` and the company-section components. Migrate per scale, in focused passes, with screenshot diffs.

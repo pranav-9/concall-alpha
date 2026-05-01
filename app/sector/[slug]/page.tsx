@@ -215,7 +215,7 @@ function CatalystPolicyColumn({
         : (item as NormalizedSectorPolicy).policyName;
 
     return (
-      <div key={key} className="space-y-2 rounded-md border border-border/30 bg-background/60 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
+      <div key={key} className={`${INNER_CARD} space-y-2 p-2.5`}>
         <p className="text-sm font-medium text-foreground">{titleText}</p>
         {kind === "catalyst" ? (
           <div className="flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">

@@ -6,6 +6,7 @@ import {
   CHIP_NEUTRAL,
   CHIP_PRIMARY,
   HERO_CARD,
+  INNER_CARD,
   PAGE_BACKGROUND_ATMOSPHERIC,
   PAGE_SHELL,
   PANEL_CARD_SKY,
@@ -25,8 +26,7 @@ const HERO_CARD_CLASS = HERO_CARD;
 
 const PANEL_CARD_CLASS = PANEL_CARD_SKY;
 
-const METRIC_CARD_CLASS =
-  "rounded-2xl border border-border/35 bg-background/72 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]";
+const METRIC_CARD_CLASS = `${INNER_CARD} px-4 py-3`;
 
 const CHIP_CLASS = CHIP_BASE;
 
@@ -34,8 +34,7 @@ const CHIP_PRIMARY_CLASS = CHIP_PRIMARY;
 
 const CHIP_NEUTRAL_CLASS = CHIP_NEUTRAL;
 
-const LIST_CARD_CLASS =
-  "rounded-2xl border border-border/25 bg-background/60 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm";
+const LIST_CARD_CLASS = `${INNER_CARD} px-4 py-3`;
 
 type RecentStockRequest = {
   subjectTarget: string;

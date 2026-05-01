@@ -11,6 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { colorPalette } from "./business-segment-mix-constants";
 
 interface SegmentRevenueDisplayProps {
   revenues: SegmentRevenue[];
@@ -57,18 +58,6 @@ export function SegmentRevenueDisplay({
   // Get unique segment names
   const segmentNames = Array.from(new Set(revenues.map((r) => r.segment_name)));
 
-  // Color palette for different segments
-  const colors = [
-    "#10B981",
-    "#3B82F6",
-    "#F59E0B",
-    "#EF4444",
-    "#8B5CF6",
-    "#EC4899",
-    "#14B8A6",
-    "#F97316",
-  ];
-
   return (
     <ResponsiveContainer width="100%" height={280}>
       <LineChart
@@ -109,9 +98,9 @@ export function SegmentRevenueDisplay({
             key={segment}
             type="monotone"
             dataKey={segment}
-            stroke={colors[idx % colors.length]}
+            stroke={colorPalette[idx % colorPalette.length]}
             strokeWidth={1.75}
-            dot={{ fill: colors[idx % colors.length], r: 3 }}
+            dot={{ fill: colorPalette[idx % colorPalette.length], r: 3 }}
             activeDot={{ r: 5 }}
             isAnimationActive={true}
             connectNulls

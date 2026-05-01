@@ -18,6 +18,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { chartColorFor } from "@/components/concall-score";
 
 const chartConfig = {
   score: {
@@ -36,27 +37,6 @@ type ChartLineLabelProps = {
   selectedQuarter?: string | null;
   onQuarterSelect?: (quarterLabel: string) => void;
 };
-
-/**
- * Get dot color based on score value - granular 5-10 spectrum
- * More sensitive to changes in the typical range where most scores concentrate
- */
-function getScoreColor(score: number): string {
-  // Granular scoring from 5 to 10
-  if (score >= 9.5) return "#065f46"; // Dark Emerald - Extremely Bullish
-  if (score >= 9.0) return "#047857"; // Deep Emerald - Very Strongly Bullish
-  if (score >= 8.5) return "#059669"; // Emerald - Strongly Bullish
-  if (score >= 8.0) return "#10b981"; // Light Emerald - Bullish
-  if (score >= 7.5) return "#34d399"; // Mint Green - Mildly Bullish Strong
-  if (score >= 7.0) return "#6ee7b7"; // Cyan Green - Mildly Bullish
-  if (score >= 6.5) return "#a7f3d0"; // Light Cyan - Neutral Positive
-  if (score >= 6.0) return "#fbbf24"; // Amber - Neutral
-  if (score >= 5.5) return "#f59e0b"; // Dark Amber - Neutral Negative
-  if (score >= 5.0) return "#f97316"; // Orange - Mildly Bearish
-  if (score >= 4.5) return "#ea580c"; // Dark Orange - Bearish
-  if (score >= 4.0) return "#dc2626"; // Red - Strongly Bearish
-  return "#7f1d1d"; // Dark Red - Extremely Bearish
-}
 
 /**
  * Custom label component that shows score and star for high scores
@@ -150,7 +130,7 @@ const CustomDot = (props: {
   onQuarterSelect?: (quarterLabel: string) => void;
 }) => {
   const { cx, cy, payload, mobile, selectedQuarter, onQuarterSelect } = props;
-  const color = getScoreColor(payload.score);
+  const color = chartColorFor(payload.score);
   const isSelected = payload.qtr === selectedQuarter;
   const quarterLabel = typeof payload.qtr === "string" ? payload.qtr : null;
 
@@ -232,7 +212,7 @@ const CustomActiveDot = (props: {
   mobile?: boolean;
 }) => {
   const { cx, cy, payload, mobile } = props;
-  const color = getScoreColor(payload.score);
+  const color = chartColorFor(payload.score);
   return (
     <g key={`active-dot-${cx}-${cy}`}>
       <circle
