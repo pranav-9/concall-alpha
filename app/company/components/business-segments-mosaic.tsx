@@ -1,6 +1,7 @@
 import type { NormalizedRevenueBreakdownItem } from "@/lib/business-snapshot/types";
 import { BusinessSegmentMixDonutChart } from "./business-segment-mix-donut-chart-lazy";
 import { colorPalette, maxSlices } from "./business-segment-mix-constants";
+import { elevatedBlockClass } from "./surface-tokens";
 
 type BadgeDisplay = {
   label: string;
@@ -346,7 +347,7 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
   );
 
   return (
-    <div className="rounded-xl border border-border/25 bg-gradient-to-br from-background/96 via-background/91 to-muted/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_14px_24px_-24px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:from-background/88 dark:via-background/82 dark:to-background/70">
+    <div className={`${elevatedBlockClass} p-4`}>
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
           Business Segments

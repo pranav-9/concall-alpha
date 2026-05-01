@@ -3,6 +3,7 @@
 import { TopStrategyLatest } from "../types";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Sparkles, Target, ChevronDown } from "lucide-react";
+import { nestedDetailClass } from "./surface-tokens";
 
 interface TopStrategiesDisplayProps {
   strategies: TopStrategyLatest[];
@@ -81,12 +82,11 @@ export function TopStrategiesDisplay({ strategies }: TopStrategiesDisplayProps) 
           const strategiesForYear = sorted
             .filter((s) => s.latest_fiscal_year === year)
             .sort((a, b) => a.strategy_rank - b.strategy_rank);
-          const blockBg = "bg-card border border-border";
 
           return (
             <div
               key={year}
-              className={`space-y-3 rounded-xl p-3 ${blockBg}`}
+              className={`${nestedDetailClass} space-y-3 p-3`}
             >
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 border border-emerald-500/30 shadow-sm shadow-emerald-900/20">

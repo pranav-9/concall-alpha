@@ -2,6 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  CHIP_BASE,
+  CHIP_NEUTRAL,
+  HERO_CARD,
+  INNER_CARD,
+  PAGE_BACKGROUND_ATMOSPHERIC,
+  PAGE_SHELL,
+  PANEL_CARD_SKY,
+} from "@/lib/design/shell";
 
 export const metadata: Metadata = {
   title: "How Scores Are Calculated – Story of a Stock",
@@ -101,26 +110,19 @@ const growthReturnedFields = [
   "Step-by-step breakdown",
 ];
 
-const PAGE_BACKGROUND_CLASS =
-  "pointer-events-none absolute inset-x-0 top-0 -z-10 h-[30rem] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.10),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.78),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(15,23,42,0.34),_transparent_62%)]";
+const PAGE_BACKGROUND_CLASS = `h-[30rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 
-const PAGE_SHELL_CLASS =
-  "mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-8";
+const PAGE_SHELL_CLASS = PAGE_SHELL;
 
-const HERO_CARD_CLASS =
-  "rounded-[1.6rem] border border-sky-200/35 bg-gradient-to-br from-background/97 via-background/92 to-sky-50/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_18px_36px_-30px_rgba(15,23,42,0.26)] backdrop-blur-sm dark:border-sky-700/25 dark:from-background/90 dark:via-background/84 dark:to-sky-950/12";
+const HERO_CARD_CLASS = HERO_CARD;
 
-const PANEL_CARD_CLASS =
-  "rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_28px_-26px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
+const PANEL_CARD_CLASS = PANEL_CARD_SKY;
 
-const CARD_CLASS =
-  "rounded-2xl border border-border/25 bg-gradient-to-br from-background/96 via-background/92 to-muted/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm";
+const CARD_CLASS = `${INNER_CARD} p-4`;
 
-const CHIP_CLASS =
-  "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors";
+const CHIP_CLASS = CHIP_BASE;
 
-const CHIP_NEUTRAL_CLASS =
-  "border-border/60 bg-background/80 text-foreground";
+const CHIP_NEUTRAL_CLASS = CHIP_NEUTRAL;
 
 const TABS_LIST_CLASS =
   "inline-flex h-auto w-fit rounded-full border border-sky-200/35 bg-background/80 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm dark:border-sky-700/20";
@@ -201,8 +203,8 @@ export default function HowScoresWorkPage() {
             </TabsList>
 
             <TabsContent value="growth" className="space-y-5">
-              <div className={PANEL_CARD_CLASS}>
-                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              <div className={`${INNER_CARD} p-4`}>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   Growth score model
                 </p>
                 <h2 className="mt-1 text-xl font-bold text-foreground">
@@ -224,7 +226,7 @@ export default function HowScoresWorkPage() {
                 ))}
               </div>
 
-              <div className={PANEL_CARD_CLASS}>
+              <div className={`${INNER_CARD} p-4`}>
                 <p className="text-sm font-semibold text-foreground">How scenarios are read</p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 marker:text-muted-foreground">
                   {growthScenarioReadPoints.map((point) => (
@@ -249,11 +251,11 @@ export default function HowScoresWorkPage() {
                 </div>
               </div>
 
-              <div className={PANEL_CARD_CLASS}>
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-foreground">How to read this score</p>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
                   <div className={CARD_CLASS}>
-                    <p className="text-sm font-semibold text-foreground">How to read this score</p>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    <p className="text-sm leading-relaxed text-muted-foreground">
                       Base 18%, Upside 26%, Downside 10%, Growth score 8.4
                     </p>
                   </div>
@@ -279,8 +281,8 @@ export default function HowScoresWorkPage() {
             </TabsContent>
 
             <TabsContent value="quarterly" className="space-y-5">
-              <div className={PANEL_CARD_CLASS}>
-                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              <div className={`${INNER_CARD} p-4`}>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   Quarterly score model
                 </p>
                 <h2 className="mt-1 text-xl font-bold text-foreground">
@@ -315,12 +317,12 @@ export default function HowScoresWorkPage() {
                 ))}
               </div>
 
-              <div className={PANEL_CARD_CLASS}>
+              <div className="space-y-3">
                 <p className="text-sm font-semibold text-foreground">What gets returned</p>
-                <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
                   {returnedFieldGroups.map((group) => (
                     <div key={group.title} className={CARD_CLASS + " space-y-2"}>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                         {group.title}
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -338,9 +340,9 @@ export default function HowScoresWorkPage() {
                 </div>
               </div>
 
-              <div className={PANEL_CARD_CLASS}>
+              <div className="space-y-3">
                 <p className="text-sm font-semibold text-foreground">Quarterly example</p>
-                <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                   <div className={CARD_CLASS}>
                     <p className="text-sm leading-relaxed text-muted-foreground">
                       Score 8.8, Mildly Bullish, Confidence 82%

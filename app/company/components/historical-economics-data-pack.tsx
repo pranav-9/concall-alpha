@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { nestedDetailClass } from "./surface-tokens";
 import type {
   NormalizedHistoricalEconomics,
   NormalizedRevenueHistoryBySegment,
@@ -426,7 +427,7 @@ function RevenueHistoryModule({
       </div>
 
       {activeView === "table" || !hasGraphView ? (
-        <div className="rounded-xl border border-border/20 bg-background/70 p-2">
+        <div className={`${nestedDetailClass} p-2`}>
           <Table>
             <TableHeader className="bg-muted/45">
               <TableRow>
@@ -577,7 +578,7 @@ function RevenueMixHistoryModule({
       </div>
 
       {activeView === "table" || !hasGraphView ? (
-        <div className="rounded-xl border border-border/20 bg-background/70 p-2">
+        <div className={`${nestedDetailClass} p-2`}>
           <Table>
             <TableHeader className="bg-muted/45">
               <TableRow>
@@ -711,7 +712,7 @@ function RevenueHistorySegmentModule({
       </div>
 
       {activeView === "table" || !hasGraphView ? (
-        <div className="rounded-xl border border-border/20 bg-background/70 p-2">
+        <div className={`${nestedDetailClass} p-2`}>
           <Table>
             <TableHeader className="bg-muted/45">
               <TableRow>
@@ -899,7 +900,7 @@ function RevenueMixHistorySegmentModule({
       </div>
 
       {activeView === "table" || !hasGraphView ? (
-        <div className="rounded-xl border border-border/20 bg-background/70 p-2">
+        <div className={`${nestedDetailClass} p-2`}>
           <Table>
             <TableHeader className="bg-muted/45">
               <TableRow>

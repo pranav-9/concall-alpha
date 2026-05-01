@@ -31,6 +31,11 @@ const LogoutButton = dynamic<LogoutButtonProps>(
   () => import("@/components/logout-button").then((mod) => mod.LogoutButton),
 );
 
+const ThemeSwitcher = dynamic(
+  () => import("@/components/theme-switcher").then((mod) => mod.ThemeSwitcher),
+  { ssr: false },
+);
+
 const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -164,6 +169,7 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
                   {item.label}
                   </Link>
               ))}
+              <ThemeSwitcher />
               {renderAuthControls(true)}
             </div>
 
@@ -217,7 +223,10 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
                   {item.label}
                 </Link>
               ))}
-              <div className="pt-1">{renderAuthControls(true)}</div>
+              <div className="flex items-center justify-between pt-1">
+                {renderAuthControls(true)}
+                <ThemeSwitcher />
+              </div>
               {!hasEnvVars ? (
                 <div className="pt-1">
                   <EnvVarWarning />

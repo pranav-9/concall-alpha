@@ -288,7 +288,7 @@ export function GuidanceSnapshotSummary({
                       {currentYear.sourceQuarterTimeline.map((entry, index) => (
                         <div
                           key={`${entry.quarter ?? "quarter"}-${index}`}
-                          className="space-y-1.5 rounded-xl border border-border/25 bg-background/70 px-3 py-2.5"
+                          className={`${nestedDetailClass} space-y-1.5 px-3 py-2.5`}
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-2">

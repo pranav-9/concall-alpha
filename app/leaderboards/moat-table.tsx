@@ -18,6 +18,7 @@ import {
   moatTierGradeLabel,
 } from "@/lib/moat-analysis/tier-class";
 import type { MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
+import { TABLE_CARD_SKY } from "@/lib/design/shell";
 import type { MoatRowTable } from "./data";
 
 const tierIcon = (tier: MoatTier | null): LucideIcon | null => {
@@ -46,9 +47,6 @@ function TierChip({ tier }: { tier: MoatTier }) {
 }
 
 export type { MoatRowTable };
-
-const TABLE_CARD_CLASS =
-  "overflow-hidden rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 shadow-[0_18px_38px_-32px_rgba(15,23,42,0.24)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
 
 const TIER_SECTIONS: { key: MoatRatingKey; label: string }[] = [
   { key: "wide_moat", label: "Wide Moat" },
@@ -79,7 +77,7 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
   }).filter((g) => g.rows.length > 0);
 
   return (
-    <div className={TABLE_CARD_CLASS}>
+    <div className={TABLE_CARD_SKY}>
       <Table className="w-full text-sm">
         <TableHeader className="bg-background/70">
           <TableRow className="border-b border-border/35 bg-background/70">

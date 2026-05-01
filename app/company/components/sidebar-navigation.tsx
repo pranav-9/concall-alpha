@@ -167,7 +167,7 @@ export function SidebarNavigation({ sections }: SidebarNavigationProps) {
     >
       <nav
         className={cn(
-          "rounded-2xl border border-border/70 bg-card/95 p-3 shadow-lg shadow-black/10",
+          "rounded-2xl border border-border/70 bg-background p-3 shadow-lg shadow-black/10",
           VIEWPORT_RAIL_MAX_HEIGHT_CLASS,
         )}
       >

@@ -10,6 +10,7 @@ import {
 import { colorPalette as segmentColorPalette } from "./business-segment-mix-constants";
 import { useCompanyPageNavigation } from "./company-page-workspace";
 import { MissingSectionRequestButton } from "./missing-section-request-button";
+import { nestedDetailClass } from "./surface-tokens";
 
 type OverviewSectionPreview = {
   title: string;
@@ -42,10 +43,9 @@ export function OverviewCard({
   sectionPreviews = [],
   watchlistSlot = null,
 }: OverviewCardProps) {
-  const previewShellSurfaceClass =
-    "border-border/90 bg-gradient-to-b from-background/98 via-background/94 to-muted/26 shadow-[inset_0_1px_0_rgba(255,255,255,0.62),0_18px_30px_-24px_rgba(15,23,42,0.42)] ring-1 ring-border/30 backdrop-blur-sm dark:from-background/94 dark:via-background/90 dark:to-background/80 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_30px_-24px_rgba(0,0,0,0.50)] dark:ring-border/40";
+  const previewShellSurfaceClass = nestedDetailClass;
   const previewAccentClass =
-    "bg-gradient-to-r from-transparent via-slate-500/70 to-transparent shadow-[0_0_0_1px_rgba(100,116,139,0.16)] dark:via-slate-400/55 dark:shadow-[0_0_0_1px_rgba(100,116,139,0.18)]";
+    "bg-gradient-to-r from-transparent via-slate-500/70 to-transparent dark:via-slate-400/55";
   const navigation = useCompanyPageNavigation();
   const renderIndicator = (indicator?: OverviewSectionPreview["indicator"]) => {
     if (!indicator) return null;
@@ -101,7 +101,7 @@ export function OverviewCard({
   return (
     <div
       id="overview"
-      className="scroll-mt-40 overflow-hidden rounded-[1.8rem] border border-border/70 bg-card/95 p-5 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.42)] backdrop-blur-sm sm:p-6 lg:p-7"
+      className="scroll-mt-40 overflow-hidden rounded-[1.55rem] border border-border/70 bg-card/95 p-5 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.42)] backdrop-blur-sm sm:p-6 lg:p-7"
       style={{
         scrollMarginTop:
           "calc(var(--global-navbar-height, 84px) + var(--company-tabs-height, 56px) + 1rem)",
@@ -151,7 +151,7 @@ export function OverviewCard({
                         <div
                           key={preview.title}
                           className={cn(
-                            "group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200",
+                            "group relative overflow-hidden p-4 text-left transition-all duration-200",
                             previewShellSurfaceClass,
                           )}
                         >
@@ -192,7 +192,7 @@ export function OverviewCard({
                         type="button"
                         onClick={() => navigateToSection(preview.href)}
                         className={cn(
-                          "group relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-border/85 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_12px_24px_-20px_rgba(15,23,42,0.30)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_12px_24px_-20px_rgba(0,0,0,0.36)]",
+                          "group relative overflow-hidden p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-border/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
                           previewShellSurfaceClass,
                         )}
                       >

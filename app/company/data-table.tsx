@@ -17,15 +17,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TABLE_CARD_SKY } from "@/lib/design/shell";
 import React from "react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
-
-const TABLE_CARD_CLASS =
-  "overflow-hidden rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 shadow-[0_18px_38px_-32px_rgba(15,23,42,0.24)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
 
 export function DataTable<TData, TValue>({
   columns,
@@ -45,7 +43,7 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className={TABLE_CARD_CLASS}>
+    <div className={TABLE_CARD_SKY}>
       <Table className="w-full text-sm">
         <TableHeader className="bg-background/70">
           {table.getHeaderGroups().map((headerGroup) => (

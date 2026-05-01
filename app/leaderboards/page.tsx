@@ -1,6 +1,11 @@
 import { getConcallData } from "@/app/company/get-concall-data";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { HERO_CARD, PAGE_SHELL, PANEL_CARD_SKY } from "@/lib/design/shell";
+import {
+  HERO_CARD,
+  PAGE_BACKGROUND_ATMOSPHERIC,
+  PAGE_SHELL,
+  PANEL_CARD_SKY,
+} from "@/lib/design/shell";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { fetchLeaderboardData } from "./data";
@@ -12,8 +17,7 @@ export const metadata: Metadata = {
   description: "Concall sentiment, growth outlook, and moat tier leaderboards.",
 };
 
-const PAGE_BACKGROUND_CLASS =
-  "pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.10),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.78),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(15,23,42,0.34),_transparent_62%)]";
+const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 
 const TAB_TRIGGER_CLASS =
   "min-w-[6rem] justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors data-[state=active]:bg-sky-100 data-[state=active]:text-sky-800 data-[state=active]:shadow-sm dark:data-[state=active]:bg-sky-900/30 dark:data-[state=active]:text-sky-200";

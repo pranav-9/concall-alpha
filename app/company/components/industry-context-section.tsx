@@ -381,7 +381,7 @@ function renderTypesOfPlayers(
   if (!analysis.typesOfPlayers) return null;
 
   const playerCategoryAccentClass =
-    "bg-gradient-to-r from-transparent via-violet-500/70 to-transparent dark:via-violet-400/55";
+    "bg-gradient-to-r from-transparent via-sky-500/70 to-transparent dark:via-sky-400/55";
 
   return (
     <div className="space-y-2">

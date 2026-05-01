@@ -4,7 +4,14 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import ConcallScore from "@/components/concall-score";
 import { slugifySector } from "@/app/sector/utils";
-import { HERO_CARD, PAGE_SHELL } from "@/lib/design/shell";
+import {
+  HERO_CARD,
+  INNER_CARD,
+  PAGE_BACKGROUND_ATMOSPHERIC,
+  PAGE_SHELL,
+  PANEL_CARD_NEUTRAL,
+  TABLE_CARD_SKY,
+} from "@/lib/design/shell";
 
 type CompanyRow = {
   code: string;
@@ -61,17 +68,13 @@ const avg = (values: number[]) => {
   return values.reduce((sum, v) => sum + v, 0) / values.length;
 };
 
-const PAGE_BACKGROUND_CLASS =
-  "pointer-events-none absolute inset-x-0 top-0 -z-10 h-[30rem] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.10),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.78),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(15,23,42,0.34),_transparent_62%)]";
+const PAGE_BACKGROUND_CLASS = `h-[30rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 
-const METRIC_CARD_CLASS =
-  "rounded-2xl border border-border/35 bg-background/72 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]";
+const METRIC_CARD_CLASS = `${INNER_CARD} px-4 py-3`;
 
-const PANEL_CARD_CLASS =
-  "rounded-[1.45rem] border border-border/25 bg-gradient-to-br from-background/96 via-background/92 to-muted/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_28px_-26px_rgba(15,23,42,0.18)] backdrop-blur-sm";
+const PANEL_CARD_CLASS = PANEL_CARD_NEUTRAL;
 
-const TABLE_CARD_CLASS =
-  "overflow-hidden rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 shadow-[0_18px_38px_-32px_rgba(15,23,42,0.24)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
+const TABLE_CARD_CLASS = TABLE_CARD_SKY;
 
 export default async function SectorsPage({
   searchParams,

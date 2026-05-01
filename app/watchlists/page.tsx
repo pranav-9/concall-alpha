@@ -7,6 +7,16 @@ import { getConcallData } from "@/app/company/get-concall-data";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import { createClient } from "@/lib/supabase/server";
+import {
+  CHIP_BASE,
+  CHIP_NEUTRAL,
+  CHIP_PRIMARY,
+  HERO_CARD,
+  PAGE_BACKGROUND_ATMOSPHERIC,
+  PAGE_SHELL,
+  PANEL_CARD_SKY,
+  TABLE_CARD_SKY,
+} from "@/lib/design/shell";
 import { WatchlistTable, type WatchlistTableRow } from "./watchlist-table";
 
 type WatchlistItemRow = {
@@ -31,29 +41,21 @@ export const metadata: Metadata = {
   description: "Track the companies in your watchlist.",
 };
 
-const PAGE_BACKGROUND_CLASS =
-  "pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.10),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.78),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(15,23,42,0.34),_transparent_62%)]";
+const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 
-const PAGE_SHELL_CLASS =
-  "mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-8";
+const PAGE_SHELL_CLASS = PAGE_SHELL;
 
-const HERO_CARD_CLASS =
-  "rounded-[1.6rem] border border-sky-200/35 bg-gradient-to-br from-background/97 via-background/92 to-sky-50/12 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_18px_36px_-30px_rgba(15,23,42,0.26)] backdrop-blur-sm dark:border-sky-700/25 dark:from-background/90 dark:via-background/84 dark:to-sky-950/12";
+const HERO_CARD_CLASS = HERO_CARD;
 
-const PANEL_CARD_CLASS =
-  "rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_16px_28px_-26px_rgba(15,23,42,0.18)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
+const PANEL_CARD_CLASS = PANEL_CARD_SKY;
 
-const TABLE_CARD_CLASS =
-  "overflow-hidden rounded-[1.45rem] border border-sky-200/25 bg-gradient-to-br from-background/97 via-background/93 to-sky-50/10 shadow-[0_18px_38px_-32px_rgba(15,23,42,0.24)] backdrop-blur-sm dark:border-sky-700/20 dark:from-background/90 dark:via-background/84 dark:to-sky-950/10";
+const TABLE_CARD_CLASS = TABLE_CARD_SKY;
 
-const CHIP_CLASS =
-  "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors";
+const CHIP_CLASS = CHIP_BASE;
 
-const CHIP_PRIMARY_CLASS =
-  "border-sky-200/60 bg-sky-100/70 text-sky-800 dark:border-sky-700/35 dark:bg-sky-900/30 dark:text-sky-200";
+const CHIP_PRIMARY_CLASS = CHIP_PRIMARY;
 
-const CHIP_NEUTRAL_CLASS =
-  "border-border/60 bg-background/80 text-foreground";
+const CHIP_NEUTRAL_CLASS = CHIP_NEUTRAL;
 
 function WatchlistShell({
   title,

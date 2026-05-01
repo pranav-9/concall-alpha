@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { INNER_CARD } from "@/lib/design/shell";
 
 type RequestType = "feedback" | "stock_addition" | "bug_report";
 
@@ -21,8 +22,7 @@ const subjectLabelByType: Record<RequestType, string> = {
   bug_report: "Page / Module",
 };
 
-const FIELD_CARD_CLASS =
-  "rounded-2xl border border-border/25 bg-gradient-to-br from-background/96 via-background/92 to-muted/12 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm";
+const FIELD_CARD_CLASS = `${INNER_CARD} p-3`;
 
 const LABEL_CLASS =
   "text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground";

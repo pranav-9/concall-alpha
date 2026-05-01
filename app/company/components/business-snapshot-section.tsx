@@ -26,7 +26,11 @@ import { SectionCard } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
 import { BusinessSegmentsMosaic } from "./business-segments-mosaic";
 import { HistoricalEconomicsDataPack } from "./deferred-company-sections";
-import { elevatedBlockClass, snapshotSubsectionClass } from "./surface-tokens";
+import {
+  elevatedBlockClass,
+  nestedDetailClass,
+  snapshotSubsectionClass,
+} from "./surface-tokens";
 
 const businessSnapshotSurfaceClass = `${elevatedBlockClass} p-4`;
 const businessSnapshotBlockClass = elevatedBlockClass;
@@ -689,8 +693,8 @@ export function BusinessSnapshotSection({
                     )}
 
                     {snapshot.mixShiftSummary && (
-                      <div className="rounded-2xl border border-sky-200/35 bg-gradient-to-br from-sky-50/45 via-background/92 to-background/78 p-3 space-y-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] dark:border-sky-700/30 dark:from-sky-950/16 dark:via-background/84 dark:to-background/70">
-                        <p className="text-[10px] uppercase tracking-wide text-sky-700 dark:text-sky-300 font-semibold">
+                      <div className={`${nestedDetailClass} p-3 space-y-0.5`}>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Mix Shift
                         </p>
                         <p className="text-xs text-foreground/90 leading-relaxed">
