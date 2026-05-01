@@ -1,7 +1,18 @@
+import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  overviewBodyPillClass,
+  type OverviewBodyPillTone,
+} from "../[code]/display-tokens";
 
 type SectionTone = "sky" | "emerald" | "amber" | "violet" | "rose" | "slate";
+
+export type SectionHeaderRankPill = {
+  label: string;
+  tone?: OverviewBodyPillTone;
+  href?: string;
+};
 
 interface SectionCardProps {
   id: string;
@@ -11,6 +22,7 @@ interface SectionCardProps {
   headerAction?: React.ReactNode;
   headerDescription?: React.ReactNode;
   headerPills?: string[];
+  headerRankPills?: SectionHeaderRankPill[];
   collapsible?: boolean;
   defaultOpen?: boolean;
   tone?: SectionTone;
@@ -90,6 +102,7 @@ export function SectionCard({
   headerAction,
   headerDescription,
   headerPills = [],
+  headerRankPills = [],
   collapsible = false,
   defaultOpen = true,
   tone,
@@ -110,8 +123,33 @@ export function SectionCard({
             {headerDescription}
           </p>
         ) : null}
-        {headerPills.length > 0 ? (
+        {headerPills.length > 0 || headerRankPills.length > 0 ? (
           <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {headerRankPills.map((pill) => {
+              const baseClass = cn(
+                "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold",
+                overviewBodyPillClass(pill.tone),
+              );
+              if (pill.href) {
+                return (
+                  <Link
+                    key={`${id}-rank-${pill.label}`}
+                    href={pill.href}
+                    className={cn(
+                      baseClass,
+                      "transition-colors hover:brightness-110 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+                    )}
+                  >
+                    {pill.label}
+                  </Link>
+                );
+              }
+              return (
+                <span key={`${id}-rank-${pill.label}`} className={baseClass}>
+                  {pill.label}
+                </span>
+              );
+            })}
             {headerPills.map((pill) => (
               <span
                 key={`${id}-${pill}`}

@@ -52,6 +52,7 @@ import {
   type OverviewBodyPillTone,
 } from "./display-tokens";
 import { MissingSectionState } from "../components/missing-section-state";
+import { slugifySector } from "@/app/sector/utils";
 
 
 export async function generateMetadata({
@@ -207,6 +208,24 @@ export default async function Page({
     score?: unknown;
   }>;
   const sectorPeerRows = sectorPeerResult?.data ?? null;
+
+  const peerCodesUpper = ((sectorPeerRows ?? []) as Array<{ code?: string | null }>)
+    .map((row) => String(row.code ?? "").toUpperCase())
+    .filter(Boolean);
+
+  const peerConcallRowsResult =
+    peerCodesUpper.length > 0
+      ? await supabase
+          .from("concall_analysis")
+          .select("company_code, fy, qtr, score")
+          .in("company_code", peerCodesUpper)
+      : null;
+  const peerConcallRows = (peerConcallRowsResult?.data ?? []) as Array<{
+    company_code?: unknown;
+    fy?: unknown;
+    qtr?: unknown;
+    score?: unknown;
+  }>;
 
   if (error) {
     throw error;
@@ -504,6 +523,35 @@ export default async function Page({
         latestQuarterByCode.set(companyCode, toNumeric(row.score));
       });
 
+      const peerConcallByCode = new Map<
+        string,
+        Array<{ fy: number; qtr: number; score: number | null }>
+      >();
+      peerConcallRows.forEach((row) => {
+        const key = String(row.company_code ?? "").toUpperCase();
+        if (!key) return;
+        const fy = Number(row.fy);
+        const qtr = Number(row.qtr);
+        if (!Number.isFinite(fy) || !Number.isFinite(qtr)) return;
+        const bucket = peerConcallByCode.get(key) ?? [];
+        bucket.push({ fy, qtr, score: toNumeric(row.score) });
+        peerConcallByCode.set(key, bucket);
+      });
+      const peer4QAvgByCode = new Map<string, number | null>();
+      peerConcallByCode.forEach((rows, key) => {
+        rows.sort((a, b) => b.fy - a.fy || b.qtr - a.qtr);
+        const latest4 = rows.slice(0, 4);
+        const validScores = latest4
+          .map((row) => row.score)
+          .filter((value): value is number => value != null);
+        peer4QAvgByCode.set(
+          key,
+          validScores.length > 0
+            ? validScores.reduce((sum, value) => sum + value, 0) / validScores.length
+            : null,
+        );
+      });
+
       const sectorPeerAvgRows = sectorPeers.map((peer) => {
         const peerCode = String(peer.code ?? "").toUpperCase();
         const peerName = String(peer.name ?? "").toUpperCase();
@@ -512,13 +560,15 @@ export default async function Page({
           latestGrowthByCompany.get(peerCode)?.growthScore ??
           latestGrowthByCompany.get(peerName)?.growthScore ??
           null;
+        const avg4QuarterScore = peer4QAvgByCode.get(peerCode) ?? null;
 
         return {
           code: peerCode,
           name: String(peer.name ?? peer.code ?? "").trim() || peerCode,
           latestQuarterScore,
           growthScore,
-          avgScore: computeAvgScore(latestQuarterScore, growthScore),
+          avg4QuarterScore,
+          avgScore: computeAvgScore(latestQuarterScore, growthScore, avg4QuarterScore),
         };
       });
 
@@ -839,6 +889,18 @@ export default async function Page({
               <IndustryContextSection
                 companyCode={companyRow?.code ?? code}
                 companyName={companyRow?.name ?? null}
+                rankInfo={
+                  sectorRankInfo?.rank != null && sectorRankPercentile != null
+                    ? {
+                        rank: sectorRankInfo.rank,
+                        total: sectorRankInfo.total,
+                        percentile: sectorRankPercentile,
+                        href: companySector
+                          ? `/sector/${slugifySector(companySector)}`
+                          : undefined,
+                      }
+                    : null
+                }
               />
             </Suspense>
           </div>
@@ -894,6 +956,22 @@ export default async function Page({
           id="sentiment-score"
           title="Quarterly Score"
           headerPills={quarterlyHeaderPills}
+          headerRankPills={
+            quarterRankInfo?.rank != null
+              ? [
+                  {
+                    label: `Q Rank ${quarterRankInfo.rank}/${quarterRankInfo.total}`,
+                    tone: getPercentileTone(quarterRankInfo.percentile),
+                    href: "/leaderboards?tab=sentiment",
+                  },
+                  {
+                    label: `Top ${Math.round(quarterRankInfo.percentile)}%`,
+                    tone: getPercentileTone(quarterRankInfo.percentile),
+                    href: "/leaderboards?tab=sentiment",
+                  },
+                ]
+              : undefined
+          }
         >
           <QuarterlyScoreSection
             chartData={chartData}
@@ -934,6 +1012,16 @@ export default async function Page({
               outlook={normalizedGrowthOutlook}
               companyCode={companyRow?.code ?? code}
               companyName={companyRow?.name ?? null}
+              rankInfo={
+                growthRankInfo?.rank != null
+                  ? {
+                      rank: growthRankInfo.rank,
+                      total: growthRankInfo.total,
+                      percentile: growthRankInfo.percentile,
+                      href: "/leaderboards?tab=growth",
+                    }
+                  : null
+              }
             />
           </div>
 

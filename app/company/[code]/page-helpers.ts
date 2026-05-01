@@ -13,9 +13,13 @@ export type CompanyIndustryAnalysisRowMaybe = CompanyIndustryAnalysisRow | null 
 export const computeAvgScore = (
   latestQuarterScore: number | null,
   growthScore: number | null,
+  avg4QuarterScore: number | null = null,
 ) => {
-  if (latestQuarterScore == null || growthScore == null) return null;
-  return (latestQuarterScore + growthScore) / 2;
+  const valid = [latestQuarterScore, growthScore, avg4QuarterScore].filter(
+    (value): value is number => value != null,
+  );
+  if (valid.length === 0) return null;
+  return valid.reduce((sum, value) => sum + value, 0) / valid.length;
 };
 
 export const compareNullableNumbers = (

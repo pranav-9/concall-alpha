@@ -29,11 +29,12 @@ import {
   getCatalystImpactPillDisplay,
   getCatalystStatusDisplay,
   getGrowthScoreComponentLabel,
+  getPercentileTone,
   getTimelineStageDisplay,
   splitCatalystQuantifiedLabel,
   toDisplayLabel,
 } from "../[code]/display-tokens";
-import { SectionCard } from "./section-card";
+import { SectionCard, type SectionHeaderRankPill } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 
@@ -333,12 +334,38 @@ type FutureGrowthSectionProps = {
   outlook: NormalizedGrowthOutlook | null;
   companyCode: string;
   companyName: string | null;
+  rankInfo?: {
+    rank: number;
+    total: number;
+    percentile: number;
+    href?: string;
+  } | null;
 };
+
+function buildGrowthRankPills(
+  rankInfo: FutureGrowthSectionProps["rankInfo"],
+): SectionHeaderRankPill[] {
+  if (!rankInfo || rankInfo.rank == null || rankInfo.total <= 0) return [];
+  const tone = getPercentileTone(rankInfo.percentile);
+  return [
+    {
+      label: `Growth Rank ${rankInfo.rank}/${rankInfo.total}`,
+      tone,
+      href: rankInfo.href,
+    },
+    {
+      label: `Top ${Math.round(rankInfo.percentile)}%`,
+      tone,
+      href: rankInfo.href,
+    },
+  ];
+}
 
 export function FutureGrowthSection({
   outlook,
   companyCode,
   companyName,
+  rankInfo = null,
 }: FutureGrowthSectionProps) {
   const growthScore = outlook?.growthScore ?? null;
   const growthUpdatedAt = formatShortDate(outlook?.updatedAtRaw, true);
@@ -348,12 +375,14 @@ export function FutureGrowthSection({
       outlook?.scenarios?.downside,
   );
   const headerPills = buildHeaderPills(outlook, hasDeepDive);
+  const headerRankPills = buildGrowthRankPills(rankInfo);
 
   return (
     <SectionCard
       id="future-growth"
       title="Future Growth Prospects"
       headerPills={headerPills}
+      headerRankPills={headerRankPills}
       headerAction={
         typeof growthScore === "number" ? <ConcallScore score={growthScore} size="sm" /> : undefined
       }
