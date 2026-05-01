@@ -234,38 +234,45 @@ export async function getUnifiedUpdates({
   collapseSameCompanyRuns = true,
 }: GetUnifiedUpdatesOptions): Promise<UnifiedUpdate[]> {
   const supabase = await createClient();
-  const [{ data: quarterRows }, { data: growthRows }] =
-    await Promise.all([
-      supabase
-        .from("concall_analysis")
-        .select(
-          "company_code,score,fy,qtr,quarter_label,updated_at,created_at",
-        )
-        .order("updated_at", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false })
-        .limit(120),
-      supabase
-        .from("growth_outlook")
-        .select("company,fiscal_year,growth_score,run_timestamp")
-        .order("run_timestamp", { ascending: false })
-        .limit(120),
-    ]);
+
+  const scale = (perItem: number, floor: number, ceiling: number) =>
+    Math.min(Math.max(limit * perItem, floor), ceiling);
+  const quarterCap = scale(3, 24, 120);
+  const growthCap = scale(3, 24, 120);
+  const snapshotCap = scale(4, 32, 160);
+  const keyVarsCap = scale(4, 32, 160);
+  const guidanceCap = scale(10, 60, 400);
 
   const [
+    { data: quarterRows },
+    { data: growthRows },
     { data: businessSnapshotRows },
     { data: keyVariablesRows },
     { data: guidanceRows },
   ] = await Promise.all([
     supabase
+      .from("concall_analysis")
+      .select(
+        "company_code,score,fy,qtr,quarter_label,updated_at,created_at",
+      )
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(quarterCap),
+    supabase
+      .from("growth_outlook")
+      .select("company,fiscal_year,growth_score,run_timestamp")
+      .order("run_timestamp", { ascending: false })
+      .limit(growthCap),
+    supabase
       .from("business_snapshot")
       .select("company, generated_at, snapshot_phase, snapshot_source")
       .order("generated_at", { ascending: false })
-      .limit(160),
+      .limit(snapshotCap),
     supabase
       .from("key_variables_snapshot")
       .select("company_code, generated_at, deep_treatment")
       .order("generated_at", { ascending: false })
-      .limit(160),
+      .limit(keyVarsCap),
     supabase
       .from("guidance_tracking")
       .select(
@@ -273,7 +280,7 @@ export async function getUnifiedUpdates({
       )
       .order("generated_at", { ascending: false })
       .order("id", { ascending: false })
-      .limit(400),
+      .limit(guidanceCap),
   ]);
 
   const updates: UnifiedUpdate[] = [];

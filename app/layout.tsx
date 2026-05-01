@@ -26,16 +26,45 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-export default async function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+async function NavbarWithUser() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  return (
+    <Navbar
+      initialUser={
+        user
+          ? {
+              email: user.email ?? null,
+              name: user.user_metadata?.full_name ?? null,
+              avatar: user.user_metadata?.avatar_url ?? null,
+            }
+          : null
+      }
+    />
+  );
+}
+
+function NavbarFallback() {
+  return (
+    <nav
+      aria-hidden
+      className="sticky top-0 z-50 flex justify-center bg-background/38 backdrop-blur-lg"
+    >
+      <div className="relative w-full max-w-[1440px] px-3 py-2 sm:px-6 lg:px-10">
+        <div className="min-h-[4.25rem] rounded-[1.5rem] border border-border/60 bg-background/82 px-3 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.45)] sm:px-4" />
+      </div>
+    </nav>
+  );
+}
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} min-h-screen bg-background text-foreground antialiased`}>
@@ -46,17 +75,9 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <div className="flex min-h-screen flex-col">
-            <Navbar
-              initialUser={
-                user
-                  ? {
-                      email: user.email ?? null,
-                      name: user.user_metadata?.full_name ?? null,
-                      avatar: user.user_metadata?.avatar_url ?? null,
-                    }
-                  : null
-              }
-            />
+            <Suspense fallback={<NavbarFallback />}>
+              <NavbarWithUser />
+            </Suspense>
             <Suspense fallback={null}>
               <PageViewTracker />
             </Suspense>
