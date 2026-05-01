@@ -6,6 +6,7 @@ import { cn, hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
+import { BrandLogo } from "@/components/brand/logo";
 
 type UserInfo = {
   email: string | null;
@@ -135,17 +136,7 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
         <div className="flex min-h-[4.25rem] items-center justify-between gap-3 rounded-[1.5rem] border border-border/60 bg-background/82 px-3 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.45)] sm:px-4">
           <div className="min-w-0 shrink-0">
             <Link href="/" className="group inline-flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.95),rgba(220,252,231,0.85),rgba(224,242,254,0.85))] text-sm font-black text-foreground shadow-sm dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.95),rgba(6,78,59,0.45),rgba(12,74,110,0.45))]">
-                S
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground transition-colors group-hover:text-foreground/80">
-                  Research platform
-                </span>
-                <span className="block truncate text-sm font-bold text-foreground sm:text-base">
-                  Story of a Stock
-                </span>
-              </span>
+              <BrandLogo size={40} showEyebrow />
             </Link>
           </div>
 

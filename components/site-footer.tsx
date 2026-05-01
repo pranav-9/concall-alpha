@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { latestChangelogEntry } from "@/app/changelog/changelog-data";
 
+import { BrandMark } from "@/components/brand/logo";
 import { ChangelogNewIndicator } from "./changelog-new-indicator";
 
 type FooterLinkItem = {
@@ -68,9 +69,12 @@ export function SiteFooter() {
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1.4fr)_minmax(10rem,0.45fr)_minmax(10rem,0.45fr)] md:items-start">
           <div className="max-w-xl space-y-2">
-            <p className="text-base font-semibold text-foreground">
-              Story of a Stock
-            </p>
+            <div className="flex items-center gap-3">
+              <BrandMark size={36} />
+              <p className="text-base font-semibold text-foreground">
+                Story of a Stock
+              </p>
+            </div>
             <p className="text-sm leading-relaxed text-muted-foreground">
               A fundamental screener that adds business story, management
               commentary, and qualitative context to the numbers.
