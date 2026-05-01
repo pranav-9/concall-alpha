@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
@@ -17,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { nestedDetailClass } from "./surface-tokens";
+import { KpiSparkline } from "./kpi-sparkline-lazy";
 import type {
   NormalizedHistoricalEconomics,
   NormalizedRevenueHistoryBySegment,
@@ -53,8 +59,6 @@ const integerPercentFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
-const formatCompactLabel = (value: string) => value.replace(/_/g, " ").trim();
-
 const formatAbsoluteValue = (value: number | null | undefined) =>
   value == null ? "—" : valueFormatter.format(value);
 
@@ -65,6 +69,13 @@ const formatDeltaPercentValue = (value: number | null | undefined) => {
   if (value == null) return null;
   const formatted = integerPercentFormatter.format(Math.abs(value));
   return `${value > 0 ? "+" : value < 0 ? "-" : ""}${formatted}% YoY`;
+};
+
+const formatMixDeltaLabel = (value: number | null | undefined) => {
+  if (value == null) return "—";
+  const rounded = Math.round(value);
+  const sign = rounded > 0 ? "+" : "";
+  return `${sign}${rounded}pp`;
 };
 
 const getStableSeriesColors = (labels: string[]) => {
@@ -191,6 +202,24 @@ const getPeriodOverPeriodGrowth = (
   }
 
   return ((currentValue - previousValue) / previousValue) * 100;
+};
+
+const getPeriodOverPeriodPpChange = (
+  periods: string[],
+  valuesByPeriod: Record<string, number | null>,
+  period: string,
+) => {
+  const periodIndex = periods.indexOf(period);
+  if (periodIndex <= 0) return null;
+
+  const currentValue = valuesByPeriod[periods[periodIndex]];
+  const previousValue = valuesByPeriod[periods[periodIndex - 1]];
+
+  if (typeof currentValue !== "number" || typeof previousValue !== "number") {
+    return null;
+  }
+
+  return currentValue - previousValue;
 };
 
 const getInlineDeltaClassName = (value: number | null | undefined) => {
@@ -330,7 +359,7 @@ function InsightList({ insights }: { insights: string[] }) {
         Investor takeaways
       </p>
       <ul className="space-y-1.5">
-        {insights.slice(0, 3).map((insight, index) => (
+        {insights.slice(0, 6).map((insight, index) => (
           <li key={index} className="relative pl-3 text-[12px] leading-relaxed text-foreground">
             <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-sky-500/70" />
             {insight}
@@ -408,7 +437,6 @@ function RevenueHistoryModule({
   );
   const chartData = buildRevenueChartData(module, chartRows);
   const hasGraphView = chartData.length > 0;
-  const latestPeriod = module.periods[module.periods.length - 1] ?? null;
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
@@ -418,7 +446,7 @@ function RevenueHistoryModule({
             Revenue Trend by Economic Unit
           </p>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Largest unit first. Latest periods shown left to right{latestPeriod ? ` through ${latestPeriod}` : ""}.
+            Largest unit first.
           </p>
         </div>
         {hasGraphView && (
@@ -427,64 +455,102 @@ function RevenueHistoryModule({
       </div>
 
       {activeView === "table" || !hasGraphView ? (
-        <div className={`${nestedDetailClass} p-2`}>
-          <Table>
-            <TableHeader className="bg-muted/45">
-              <TableRow>
-                <TableHead>Unit</TableHead>
-                {displayPeriods.map((period) => (
-                  <TableHead key={period} className="text-right">
-                    {period}
-                  </TableHead>
-                ))}
-                <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
-                  CAGR
+        <Table>
+          <TableHeader className="bg-muted/45">
+            <TableRow>
+              <TableHead>Unit</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Trend
+              </TableHead>
+              {displayPeriods.map((period) => (
+                <TableHead key={period} className="text-right">
+                  {period}
                 </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orderedRows.map((row) => (
-                <TableRow
-                  key={`revenue-${row.unit}`}
-                  className={
-                    row.isConsolidated
-                      ? "bg-muted/30 font-medium"
-                      : "odd:bg-background/70 even:bg-muted/15"
-                  }
-                >
-                  <TableCell className="font-medium">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <UnitLabel
-                        unit={row.unit}
-                        color={unitColors[row.unit] ?? unitPalette[0]}
-                        muted={false}
-                      />
-                      {row.isConsolidated && (
-                        <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
-                          Consolidated
-                        </span>
-                      )}
+              ))}
+              <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                CAGR
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orderedRows.map((row) => (
+              <TableRow
+                key={`revenue-${row.unit}`}
+                className={
+                  row.isConsolidated
+                    ? "bg-muted/30 font-medium"
+                    : "odd:bg-background/70 even:bg-muted/15"
+                }
+              >
+                <TableCell className="font-medium">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <UnitLabel
+                      unit={row.unit}
+                      color={unitColors[row.unit] ?? unitPalette[0]}
+                      muted={false}
+                    />
+                    {row.isConsolidated && (
+                      <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                        Consolidated
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <KpiSparkline
+                    ariaLabel={`${row.unit} trend across ${displayPeriods.length} periods`}
+                    points={displayPeriods.map((period) => ({
+                      period,
+                      value: row.valuesByPeriod[period] ?? null,
+                    }))}
+                  />
+                </TableCell>
+                {displayPeriods.map((period) => (
+                  <TableCell key={`${row.unit}-${period}`} className="text-right">
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className="text-[12px]">
+                        {formatAbsoluteValue(row.valuesByPeriod[period])}
+                      </span>
+                      {(() => {
+                        const yoyValue = getPeriodOverPeriodGrowth(
+                          displayPeriods,
+                          row.valuesByPeriod,
+                          period,
+                        );
+                        const yoyLabel = formatDeltaPercentValue(yoyValue);
+                        if (!yoyLabel) {
+                          return (
+                            <span className="text-[10px] leading-none text-muted-foreground">
+                              &nbsp;
+                            </span>
+                          );
+                        }
+                        return (
+                          <span
+                            className={`text-[10px] leading-none ${getInlineDeltaClassName(
+                              yoyValue,
+                            )}`}
+                          >
+                            {yoyLabel}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </TableCell>
-                  {displayPeriods.map((period) => (
-                    <TableCell key={`${row.unit}-${period}`} className="text-right text-[12px]">
-                      {formatAbsoluteValue(row.valuesByPeriod[period])}
-                    </TableCell>
-                  ))}
-                  <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
-                    <span
-                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
-                        row.cagrPercent,
-                      )}`}
-                    >
-                      {formatPercentValue(row.cagrPercent)}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                ))}
+                <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                  <span
+                    className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
+                      row.cagrPercent,
+                    )}`}
+                  >
+                    {formatPercentValue(row.cagrPercent)}
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       ) : (
         <div className="rounded-xl border border-sky-200/40 bg-sky-50/35 p-3 space-y-3 dark:border-sky-700/25 dark:bg-sky-950/10">
           <div className="space-y-2">
@@ -500,12 +566,10 @@ function RevenueHistoryModule({
             className="h-[300px] w-full aspect-auto xl:h-[340px]"
             config={chartConfig}
           >
-            <BarChart
+            <LineChart
               accessibilityLayer
               data={chartData}
               margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
-              barCategoryGap="18%"
-              maxBarSize={56}
             >
               <CartesianGrid vertical={false} />
               <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={10} />
@@ -516,16 +580,23 @@ function RevenueHistoryModule({
                 tickFormatter={(value: number) => formatAbsoluteValue(value)}
               />
               <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
-              {chartRows.map((row, index) => (
-                <Bar
-                  key={`series_${index}`}
-                  dataKey={`series_${index}`}
-                  stackId="revenue"
-                  fill={unitColors[row.unit] ?? unitPalette[index % unitPalette.length]}
-                  radius={index === chartRows.length - 1 ? [4, 4, 0, 0] : 0}
-                />
-              ))}
-            </BarChart>
+              {chartRows.map((row, index) => {
+                const color =
+                  unitColors[row.unit] ?? unitPalette[index % unitPalette.length];
+                return (
+                  <Line
+                    key={`series_${index}`}
+                    dataKey={`series_${index}`}
+                    type="monotone"
+                    stroke={color}
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: color, strokeWidth: 0 }}
+                    activeDot={{ r: 5 }}
+                    connectNulls
+                  />
+                );
+              })}
+            </LineChart>
           </ChartContainer>
         </div>
       )}
@@ -554,7 +625,14 @@ function RevenueMixHistoryModule({
   );
   const chartData = buildMixChartData(module, orderedRows);
   const hasGraphView = chartData.length > 0;
-  const latestPeriod = module.periods[module.periods.length - 1] ?? null;
+
+  const computeMixDelta = (row: NormalizedRevenueMixHistoryByUnitRow) => {
+    if (displayPeriods.length === 0) return null;
+    const firstValue = row.mixByPeriod[displayPeriods[0]];
+    const latestValue = row.mixByPeriod[displayPeriods[displayPeriods.length - 1]];
+    if (typeof firstValue !== "number" || typeof latestValue !== "number") return null;
+    return latestValue - firstValue;
+  };
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
@@ -564,7 +642,7 @@ function RevenueMixHistoryModule({
             Mix Shift by Economic Unit
           </p>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Largest unit first. Mix columns read left to right{latestPeriod ? ` through ${latestPeriod}` : ""}.
+            Largest unit first.
           </p>
           {module.methodologyNote && (
             <p className="text-[11px] leading-relaxed text-muted-foreground">
@@ -578,49 +656,102 @@ function RevenueMixHistoryModule({
       </div>
 
       {activeView === "table" || !hasGraphView ? (
-        <div className={`${nestedDetailClass} p-2`}>
-          <Table>
-            <TableHeader className="bg-muted/45">
-              <TableRow>
-                <TableHead>Unit</TableHead>
-                {displayPeriods.map((period) => (
-                  <TableHead key={period} className="text-right">
-                    {period}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orderedRows.map((row) => (
+        <Table>
+          <TableHeader className="bg-muted/45">
+            <TableRow>
+              <TableHead>Unit</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Trend
+              </TableHead>
+              {displayPeriods.map((period) => (
+                <TableHead key={period} className="text-right">
+                  {period}
+                </TableHead>
+              ))}
+              <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                Δ
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orderedRows.map((row) => {
+              const delta = computeMixDelta(row);
+              return (
                 <TableRow
                   key={`mix-${row.unit}`}
                   className="odd:bg-background/70 even:bg-muted/15"
                 >
                   <TableCell className="font-medium">
-                    <div className="space-y-1.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <UnitLabel
-                          unit={row.unit}
-                          color={unitColors[row.unit] ?? unitPalette[0]}
-                        />
-                      </div>
-                      {row.direction && (
-                        <p className="max-w-[16rem] text-[11px] leading-relaxed text-muted-foreground">
-                          {row.direction}
-                        </p>
-                      )}
-                    </div>
+                    <UnitLabel
+                      unit={row.unit}
+                      color={unitColors[row.unit] ?? unitPalette[0]}
+                    />
                   </TableCell>
-                  {displayPeriods.map((period) => (
-                    <TableCell key={`${row.unit}-${period}`} className="text-right text-[12px]">
-                      {formatPercentValue(row.mixByPeriod[period])}
-                    </TableCell>
-                  ))}
+                  <TableCell>
+                    <KpiSparkline
+                      ariaLabel={`${row.unit} mix trend across ${displayPeriods.length} periods`}
+                      points={displayPeriods.map((period) => ({
+                        period,
+                        value: row.mixByPeriod[period] ?? null,
+                      }))}
+                    />
+                  </TableCell>
+                  {displayPeriods.map((period) => {
+                    const ppDelta = getPeriodOverPeriodPpChange(
+                      displayPeriods,
+                      row.mixByPeriod,
+                      period,
+                    );
+                    const rounded = ppDelta == null ? null : Math.round(ppDelta);
+                    return (
+                      <TableCell key={`${row.unit}-${period}`} className="text-right">
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="text-[12px]">
+                            {formatPercentValue(row.mixByPeriod[period])}
+                          </span>
+                          {rounded == null ? (
+                            <span className="text-[10px] leading-none text-muted-foreground">
+                              &nbsp;
+                            </span>
+                          ) : rounded === 0 ? (
+                            <span className="text-[10px] leading-none text-muted-foreground">
+                              0pp
+                            </span>
+                          ) : (
+                            <span
+                              className={`inline-flex items-center gap-0.5 text-[10px] leading-none ${
+                                rounded > 0
+                                  ? "text-emerald-700 dark:text-emerald-300"
+                                  : "text-rose-700 dark:text-rose-300"
+                              }`}
+                            >
+                              <span aria-hidden="true">
+                                {rounded > 0 ? "▲" : "▼"}
+                              </span>
+                              <span>
+                                {rounded > 0 ? "+" : ""}
+                                {rounded}pp
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                    );
+                  })}
+                  <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                    <span
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
+                        delta,
+                      )}`}
+                    >
+                      {formatMixDeltaLabel(delta)}
+                    </span>
+                  </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              );
+            })}
+          </TableBody>
+        </Table>
       ) : (
         <div className="rounded-xl border border-sky-200/40 bg-sky-50/35 p-3 space-y-3 dark:border-sky-700/25 dark:bg-sky-950/10">
           <div className="space-y-2">
@@ -636,12 +767,10 @@ function RevenueMixHistoryModule({
             className="h-[300px] w-full aspect-auto xl:h-[340px]"
             config={chartConfig}
           >
-            <BarChart
+            <LineChart
               accessibilityLayer
               data={chartData}
               margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
-              barCategoryGap="18%"
-              maxBarSize={56}
             >
               <CartesianGrid vertical={false} />
               <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={10} />
@@ -654,16 +783,23 @@ function RevenueMixHistoryModule({
                 tickFormatter={(value: number) => `${value}%`}
               />
               <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
-              {orderedRows.map((row, index) => (
-                <Bar
-                  key={`series_${index}`}
-                  dataKey={`series_${index}`}
-                  stackId="mix"
-                  fill={unitColors[row.unit] ?? unitPalette[index % unitPalette.length]}
-                  radius={index === orderedRows.length - 1 ? [4, 4, 0, 0] : 0}
-                />
-              ))}
-            </BarChart>
+              {orderedRows.map((row, index) => {
+                const color =
+                  unitColors[row.unit] ?? unitPalette[index % unitPalette.length];
+                return (
+                  <Line
+                    key={`series_${index}`}
+                    dataKey={`series_${index}`}
+                    type="monotone"
+                    stroke={color}
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: color, strokeWidth: 0 }}
+                    activeDot={{ r: 5 }}
+                    connectNulls
+                  />
+                );
+              })}
+            </LineChart>
           </ChartContainer>
         </div>
       )}
@@ -692,7 +828,6 @@ function RevenueHistorySegmentModule({
   );
   const chartData = buildRevenueSegmentChartData(displayPeriods, orderedRows);
   const hasGraphView = chartData.length > 0;
-  const latestPeriod = module.latestPeriod ?? module.years[module.years.length - 1] ?? null;
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
@@ -702,8 +837,7 @@ function RevenueHistorySegmentModule({
             Revenue Trend by Segment
           </p>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Largest segment first. Periods shown left to right
-            {latestPeriod ? ` through ${latestPeriod}` : ""}.
+            Largest segment first.
           </p>
         </div>
         {hasGraphView && (
@@ -712,105 +846,92 @@ function RevenueHistorySegmentModule({
       </div>
 
       {activeView === "table" || !hasGraphView ? (
-        <div className={`${nestedDetailClass} p-2`}>
-          <Table>
-            <TableHeader className="bg-muted/45">
-              <TableRow>
-                <TableHead>Segment</TableHead>
-                {displayPeriods.map((period) => (
-                  <TableHead key={period} className="text-right">
-                    {period}
-                  </TableHead>
-                ))}
-                <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
-                  Growth
+        <Table>
+          <TableHeader className="bg-muted/45">
+            <TableRow>
+              <TableHead>Segment</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Trend
+              </TableHead>
+              {displayPeriods.map((period) => (
+                <TableHead key={period} className="text-right">
+                  {period}
                 </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orderedRows.map((row) => (
-                <TableRow
-                  key={`segment-${row.segment}`}
-                  className="odd:bg-background/70 even:bg-muted/15"
-                >
-                  <TableCell className="font-medium">
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <UnitLabel
-                          unit={row.segment}
-                          color={unitColors[row.segment] ?? unitPalette[0]}
-                          muted={false}
-                        />
-                        {row.comparabilityLabel && (
-                          <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
-                            {formatCompactLabel(row.comparabilityLabel)}
-                          </span>
-                        )}
-                      </div>
-                      {(row.growthMetricPeriod || row.latestPeriodRevenue != null) && (
-                        <p className="text-[10px] leading-relaxed text-muted-foreground">
-                          {[
-                            row.growthMetricPeriod
-                              ? formatCompactLabel(row.growthMetricPeriod)
-                              : null,
-                            row.latestPeriodRevenue != null
-                              ? `${formatAbsoluteValue(row.latestPeriodRevenue)} latest`
-                              : null,
-                          ]
-                            .filter((value): value is string => Boolean(value))
-                            .join(" · ")}
-                        </p>
-                      )}
-                    </div>
-                  </TableCell>
-                  {displayPeriods.map((period) => (
-                    <TableCell key={`${row.segment}-${period}`} className="text-right">
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="text-[12px]">
-                          {formatAbsoluteValue(row.revenueByYear[period])}
-                        </span>
-                        {(() => {
-                          const yoyValue = getPeriodOverPeriodGrowth(
-                            displayPeriods,
-                            row.revenueByYear,
-                            period,
-                          );
-                          const yoyLabel = formatDeltaPercentValue(yoyValue);
-                          if (!yoyLabel) {
-                            return (
-                              <span className="text-[10px] leading-none text-muted-foreground">
-                                &nbsp;
-                              </span>
-                            );
-                          }
-
+              ))}
+              <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                Growth
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orderedRows.map((row) => (
+              <TableRow
+                key={`segment-${row.segment}`}
+                className="odd:bg-background/70 even:bg-muted/15"
+              >
+                <TableCell className="font-medium">
+                  <UnitLabel
+                    unit={row.segment}
+                    color={unitColors[row.segment] ?? unitPalette[0]}
+                    muted={false}
+                  />
+                </TableCell>
+                <TableCell>
+                  <KpiSparkline
+                    ariaLabel={`${row.segment} trend across ${displayPeriods.length} periods`}
+                    points={displayPeriods.map((period) => ({
+                      period,
+                      value: row.revenueByYear[period] ?? null,
+                    }))}
+                  />
+                </TableCell>
+                {displayPeriods.map((period) => (
+                  <TableCell key={`${row.segment}-${period}`} className="text-right">
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className="text-[12px]">
+                        {formatAbsoluteValue(row.revenueByYear[period])}
+                      </span>
+                      {(() => {
+                        const yoyValue = getPeriodOverPeriodGrowth(
+                          displayPeriods,
+                          row.revenueByYear,
+                          period,
+                        );
+                        const yoyLabel = formatDeltaPercentValue(yoyValue);
+                        if (!yoyLabel) {
                           return (
-                            <span
-                              className={`text-[10px] leading-none ${getInlineDeltaClassName(
-                                yoyValue,
-                              )}`}
-                            >
-                              {yoyLabel}
+                            <span className="text-[10px] leading-none text-muted-foreground">
+                              &nbsp;
                             </span>
                           );
-                        })()}
-                      </div>
-                    </TableCell>
-                  ))}
-                  <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
-                    <span
-                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
-                        row.growthMetricPercent,
-                      )}`}
-                    >
-                      {formatPercentValue(row.growthMetricPercent)}
-                    </span>
+                        }
+
+                        return (
+                          <span
+                            className={`text-[10px] leading-none ${getInlineDeltaClassName(
+                              yoyValue,
+                            )}`}
+                          >
+                            {yoyLabel}
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                ))}
+                <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                  <span
+                    className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
+                      row.growthMetricPercent,
+                    )}`}
+                  >
+                    {formatPercentValue(row.growthMetricPercent)}
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       ) : (
         <div className="rounded-xl border border-sky-200/40 bg-sky-50/35 p-3 space-y-3 dark:border-sky-700/25 dark:bg-sky-950/10">
           <div className="space-y-2">
@@ -826,12 +947,10 @@ function RevenueHistorySegmentModule({
             className="h-[300px] w-full aspect-auto xl:h-[340px]"
             config={chartConfig}
           >
-            <BarChart
+            <LineChart
               accessibilityLayer
               data={chartData}
               margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
-              barCategoryGap="18%"
-              maxBarSize={56}
             >
               <CartesianGrid vertical={false} />
               <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={10} />
@@ -842,16 +961,23 @@ function RevenueHistorySegmentModule({
                 tickFormatter={(value: number) => formatAbsoluteValue(value)}
               />
               <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
-              {orderedRows.map((row, index) => (
-                <Bar
-                  key={`series_${index}`}
-                  dataKey={`series_${index}`}
-                  stackId="revenue"
-                  fill={unitColors[row.segment] ?? unitPalette[index % unitPalette.length]}
-                  radius={index === orderedRows.length - 1 ? [4, 4, 0, 0] : 0}
-                />
-              ))}
-            </BarChart>
+              {orderedRows.map((row, index) => {
+                const color =
+                  unitColors[row.segment] ?? unitPalette[index % unitPalette.length];
+                return (
+                  <Line
+                    key={`series_${index}`}
+                    dataKey={`series_${index}`}
+                    type="monotone"
+                    stroke={color}
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: color, strokeWidth: 0 }}
+                    activeDot={{ r: 5 }}
+                    connectNulls
+                  />
+                );
+              })}
+            </LineChart>
           </ChartContainer>
         </div>
       )}
@@ -880,7 +1006,16 @@ function RevenueMixHistorySegmentModule({
   );
   const chartData = buildMixSegmentChartData(displayPeriods, orderedRows);
   const hasGraphView = chartData.length > 0;
-  const latestPeriod = module.latestPeriod ?? module.years[module.years.length - 1] ?? null;
+
+  const computeMixDelta = (row: NormalizedRevenueMixHistoryBySegmentRow) => {
+    if (displayPeriods.length === 0) return null;
+    const firstValue = row.mixPercentByYear[displayPeriods[0]];
+    const latestValue =
+      row.mixPercentByYear[displayPeriods[displayPeriods.length - 1]] ??
+      row.latestMixPercent;
+    if (typeof firstValue !== "number" || typeof latestValue !== "number") return null;
+    return latestValue - firstValue;
+  };
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
@@ -890,8 +1025,7 @@ function RevenueMixHistorySegmentModule({
             Mix Shift by Segment
           </p>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Largest segment first. Mix columns read left to right
-            {latestPeriod ? ` through ${latestPeriod}` : ""}.
+            Largest segment first.
           </p>
         </div>
         {hasGraphView && (
@@ -900,65 +1034,103 @@ function RevenueMixHistorySegmentModule({
       </div>
 
       {activeView === "table" || !hasGraphView ? (
-        <div className={`${nestedDetailClass} p-2`}>
-          <Table>
-            <TableHeader className="bg-muted/45">
-              <TableRow>
-                <TableHead>Segment</TableHead>
-                {displayPeriods.map((period) => (
-                  <TableHead key={period} className="text-right">
-                    {period}
-                  </TableHead>
-                ))}
-                <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
-                  Latest Mix
+        <Table>
+          <TableHeader className="bg-muted/45">
+            <TableRow>
+              <TableHead>Segment</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Trend
+              </TableHead>
+              {displayPeriods.map((period) => (
+                <TableHead key={period} className="text-right">
+                  {period}
                 </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orderedRows.map((row) => (
+              ))}
+              <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                Δ
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {orderedRows.map((row) => {
+              const delta = computeMixDelta(row);
+              return (
                 <TableRow
                   key={`mix-${row.segment}`}
                   className="odd:bg-background/70 even:bg-muted/15"
                 >
                   <TableCell className="font-medium">
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <UnitLabel
-                          unit={row.segment}
-                          color={unitColors[row.segment] ?? unitPalette[0]}
-                        />
-                        {row.comparabilityLabel && (
-                          <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
-                            {formatCompactLabel(row.comparabilityLabel)}
-                          </span>
-                        )}
-                      </div>
-                      {row.directionLabel && (
-                        <p className="text-[10px] leading-relaxed text-muted-foreground">
-                          {formatCompactLabel(row.directionLabel)}
-                        </p>
-                      )}
-                    </div>
+                    <UnitLabel
+                      unit={row.segment}
+                      color={unitColors[row.segment] ?? unitPalette[0]}
+                    />
                   </TableCell>
-                  {displayPeriods.map((period) => (
-                    <TableCell key={`${row.segment}-${period}`} className="text-right text-[12px]">
-                      {formatPercentValue(row.mixPercentByYear[period])}
-                    </TableCell>
-                  ))}
+                  <TableCell>
+                    <KpiSparkline
+                      ariaLabel={`${row.segment} mix trend across ${displayPeriods.length} periods`}
+                      points={displayPeriods.map((period) => ({
+                        period,
+                        value: row.mixPercentByYear[period] ?? null,
+                      }))}
+                    />
+                  </TableCell>
+                  {displayPeriods.map((period) => {
+                    const ppDelta = getPeriodOverPeriodPpChange(
+                      displayPeriods,
+                      row.mixPercentByYear,
+                      period,
+                    );
+                    const rounded =
+                      ppDelta == null ? null : Math.round(ppDelta);
+                    return (
+                      <TableCell key={`${row.segment}-${period}`} className="text-right">
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="text-[12px]">
+                            {formatPercentValue(row.mixPercentByYear[period])}
+                          </span>
+                          {rounded == null ? (
+                            <span className="text-[10px] leading-none text-muted-foreground">
+                              &nbsp;
+                            </span>
+                          ) : rounded === 0 ? (
+                            <span className="text-[10px] leading-none text-muted-foreground">
+                              0pp
+                            </span>
+                          ) : (
+                            <span
+                              className={`inline-flex items-center gap-0.5 text-[10px] leading-none ${
+                                rounded > 0
+                                  ? "text-emerald-700 dark:text-emerald-300"
+                                  : "text-rose-700 dark:text-rose-300"
+                              }`}
+                            >
+                              <span aria-hidden="true">
+                                {rounded > 0 ? "▲" : "▼"}
+                              </span>
+                              <span>
+                                {rounded > 0 ? "+" : ""}
+                                {rounded}pp
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                    );
+                  })}
                   <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
-                    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
-                      {formatPercentValue(
-                        row.latestMixPercent ??
-                          getLatestNumericValue(displayPeriods, row.mixPercentByYear),
-                      )}
+                    <span
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
+                        delta,
+                      )}`}
+                    >
+                      {formatMixDeltaLabel(delta)}
                     </span>
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              );
+            })}
+          </TableBody>
+        </Table>
       ) : (
         <div className="rounded-xl border border-sky-200/40 bg-sky-50/35 p-3 space-y-3 dark:border-sky-700/25 dark:bg-sky-950/10">
           <div className="space-y-2">
@@ -974,12 +1146,10 @@ function RevenueMixHistorySegmentModule({
             className="h-[300px] w-full aspect-auto xl:h-[340px]"
             config={chartConfig}
           >
-            <BarChart
+            <LineChart
               accessibilityLayer
               data={chartData}
               margin={{ top: 12, right: 12, left: 0, bottom: 8 }}
-              barCategoryGap="18%"
-              maxBarSize={56}
             >
               <CartesianGrid vertical={false} />
               <XAxis dataKey="period" tickLine={false} axisLine={false} tickMargin={10} />
@@ -992,16 +1162,23 @@ function RevenueMixHistorySegmentModule({
                 tickFormatter={(value: number) => `${value}%`}
               />
               <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
-              {orderedRows.map((row, index) => (
-                <Bar
-                  key={`series_${index}`}
-                  dataKey={`series_${index}`}
-                  stackId="mix"
-                  fill={unitColors[row.segment] ?? unitPalette[index % unitPalette.length]}
-                  radius={index === orderedRows.length - 1 ? [4, 4, 0, 0] : 0}
-                />
-              ))}
-            </BarChart>
+              {orderedRows.map((row, index) => {
+                const color =
+                  unitColors[row.segment] ?? unitPalette[index % unitPalette.length];
+                return (
+                  <Line
+                    key={`series_${index}`}
+                    dataKey={`series_${index}`}
+                    type="monotone"
+                    stroke={color}
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: color, strokeWidth: 0 }}
+                    activeDot={{ r: 5 }}
+                    connectNulls
+                  />
+                );
+              })}
+            </LineChart>
           </ChartContainer>
         </div>
       )}

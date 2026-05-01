@@ -112,16 +112,9 @@ export function BusinessSegmentMixDonutChart({
         className,
       )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
-            Revenue Mix
-          </p>
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            Based on disclosed revenue-share data.
-          </p>
-        </div>
-      </div>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
+        Revenue Mix
+      </p>
 
       <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
         <div className="relative mx-auto w-full max-w-[18rem] flex-1 min-h-[16rem]">
@@ -157,9 +150,6 @@ export function BusinessSegmentMixDonutChart({
             </span>
           </div>
         </div>
-        <p className="text-[10px] leading-relaxed text-muted-foreground">
-          Hover the donut for exact values. Tail segments are grouped into Others after the top five.
-        </p>
       </div>
     </div>
   );

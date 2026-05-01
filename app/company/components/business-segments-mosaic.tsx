@@ -3,11 +3,6 @@ import { BusinessSegmentMixDonutChart } from "./business-segment-mix-donut-chart
 import { colorPalette, maxSlices } from "./business-segment-mix-constants";
 import { elevatedBlockClass } from "./surface-tokens";
 
-type BadgeDisplay = {
-  label: string;
-  className: string;
-};
-
 type BusinessSegmentsMosaicProps = {
   segments: NormalizedRevenueBreakdownItem[];
 };
@@ -17,111 +12,6 @@ const pctFormatter = new Intl.NumberFormat("en-IN", {
 });
 
 const formatPctLabel = (value: number) => `${pctFormatter.format(value)}%`;
-
-const formatCompactLabel = (value: string) => value.replace(/_/g, " ").trim();
-
-const getMarginProfileDisplay = (value: string | null): BadgeDisplay | null => {
-  const normalized = value?.trim().toLowerCase();
-  switch (normalized) {
-    case "higher":
-      return {
-        label: "Higher margin",
-        className:
-          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
-      };
-    case "medium":
-      return {
-        label: "Medium margin",
-        className:
-          "border-amber-200/80 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200",
-      };
-    case "lower":
-      return {
-        label: "Lower margin",
-        className:
-          "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
-      };
-    case "unknown":
-      return {
-        label: "Margin unknown",
-        className: "border-border/60 bg-muted/60 text-foreground",
-      };
-    default:
-      return normalized
-        ? {
-            label: formatCompactLabel(normalized),
-            className: "border-border/60 bg-muted/60 text-foreground",
-          }
-        : null;
-  }
-};
-
-const getSegmentRoleDisplay = (value: string | null): BadgeDisplay | null => {
-  const normalized = value?.trim().toLowerCase();
-  switch (normalized) {
-    case "core_engine":
-    case "core engine":
-      return {
-        label: "Core engine",
-        className:
-          "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
-      };
-    case "emerging":
-      return {
-        label: "Emerging",
-        className:
-          "border-violet-200/80 bg-violet-100 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/30 dark:text-violet-200",
-      };
-    case "supporting":
-      return {
-        label: "Supporting",
-        className: "border-border/60 bg-muted/60 text-foreground",
-      };
-    default:
-      return normalized
-        ? {
-            label: formatCompactLabel(normalized),
-            className: "border-border/60 bg-muted/60 text-foreground",
-          }
-        : null;
-  }
-};
-
-const getGrowthDirectionDisplay = (value: string | null): BadgeDisplay | null => {
-  const normalized = value?.trim().toLowerCase();
-  switch (normalized) {
-    case "accelerating":
-    case "gaining_share":
-    case "gaining share":
-      return {
-        label: "Accelerating",
-        className:
-          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
-      };
-    case "stable":
-    case "steady":
-      return {
-        label: "Stable",
-        className:
-          "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
-      };
-    case "declining":
-    case "losing_share":
-    case "losing share":
-      return {
-        label: "Declining",
-        className:
-          "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
-      };
-    default:
-      return normalized
-        ? {
-            label: formatCompactLabel(normalized),
-            className: "border-border/60 bg-muted/60 text-foreground",
-          }
-        : null;
-  }
-};
 
 const sortRevenueEntries = (entries: NormalizedRevenueBreakdownItem[]) =>
   [...entries].sort((a, b) => {
@@ -154,165 +44,51 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
     idx: number,
     variant: "visible" | "extra",
   ) => {
-    const marginProfileDisplay = getMarginProfileDisplay(entry.marginProfile);
-    const roleDisplay = getSegmentRoleDisplay(entry.rolePill);
-    const growthDirectionDisplay = getGrowthDirectionDisplay(entry.growthDirectionPill);
     const isVisible = variant === "visible";
-
-    if (isVisible) {
-      const accentColor = segmentColorMap[entry.name];
-      return (
-        <div
-          key={`${entry.name}-${variant}-${idx}`}
-          className={`h-full p-3 ${
-            idx === 0
-              ? "rounded-xl border border-sky-200/70 bg-sky-50/60 shadow-sm shadow-sky-950/5 dark:border-sky-700/30 dark:bg-sky-950/15"
-              : "rounded-xl border border-border/20 bg-background/25"
-          }`}
-          style={accentColor ? { boxShadow: `inset 3px 0 0 ${accentColor}` } : undefined}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 space-y-1.5">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {accentColor && (
-                  <span
-                    style={{
-                      display: "inline-block",
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      backgroundColor: accentColor,
-                      flexShrink: 0,
-                    }}
-                  />
-                )}
-                <p className="text-[13px] font-medium leading-snug text-foreground">
-                  {entry.name}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {roleDisplay && (
-                  <span
-                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] ${roleDisplay.className}`}
-                  >
-                    {roleDisplay.label}
-                  </span>
-                )}
-                {growthDirectionDisplay && (
-                  <span
-                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] ${growthDirectionDisplay.className}`}
-                  >
-                    {growthDirectionDisplay.label}
-                  </span>
-                )}
-                {marginProfileDisplay && (
-                  <span
-                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] ${marginProfileDisplay.className}`}
-                  >
-                    {marginProfileDisplay.label}
-                  </span>
-                )}
-              </div>
-              {entry.description && (
-                <p className="text-[12px] leading-relaxed text-muted-foreground">
-                  {entry.description}
-                </p>
-              )}
-              {entry.marginProfileNote && (
-                <p className="text-[11px] leading-relaxed text-muted-foreground/90">
-                  {entry.marginProfileNote}
-                </p>
-              )}
-            </div>
-            {entry.revenueSharePercent != null && (
-              <span
-                className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] ${
-                  idx === 0
-                    ? "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
-                    : "border-border/60 bg-muted/60 text-foreground"
-                }`}
-              >
-                {formatPctLabel(entry.revenueSharePercent)}
-              </span>
-            )}
-          </div>
-        </div>
-      );
-    }
+    const accentColor = segmentColorMap[entry.name];
 
     return (
       <div
         key={`${entry.name}-${variant}-${idx}`}
-        className="rounded-xl border border-border/20 bg-background/25 p-2"
-        style={segmentColorMap[entry.name] ? { boxShadow: `inset 3px 0 0 ${segmentColorMap[entry.name]}` } : undefined}
+        className={`rounded-xl border border-border/20 bg-background/25 ${
+          isVisible ? "h-full p-3" : "p-2"
+        }`}
       >
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 space-y-1">
+          <div className="min-w-0 space-y-1.5">
             <div className="flex flex-wrap items-center gap-1.5">
-              {segmentColorMap[entry.name] && (
+              {accentColor && (
                 <span
                   style={{
                     display: "inline-block",
-                    width: "6px",
-                    height: "6px",
+                    width: isVisible ? "8px" : "6px",
+                    height: isVisible ? "8px" : "6px",
                     borderRadius: "50%",
-                    backgroundColor: segmentColorMap[entry.name],
+                    backgroundColor: accentColor,
                     flexShrink: 0,
                   }}
                 />
               )}
-              <p className="text-[11px] font-medium leading-snug text-foreground">
+              <p
+                className={`${
+                  isVisible ? "text-[13px]" : "text-[11px]"
+                } font-medium leading-snug text-foreground`}
+              >
                 {entry.name}
               </p>
-              {roleDisplay && (
-                <span
-                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] ${roleDisplay.className}`}
-                >
-                  {roleDisplay.label}
-                </span>
-              )}
-              {growthDirectionDisplay && (
-                <span
-                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] ${growthDirectionDisplay.className}`}
-                >
-                  {growthDirectionDisplay.label}
-                </span>
-              )}
-              {marginProfileDisplay && (
-                <span
-                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] ${marginProfileDisplay.className}`}
-                >
-                  {marginProfileDisplay.label}
-                </span>
-              )}
             </div>
             {entry.description && (
               <p
                 className={`${
-                  isVisible ? (idx === 0 ? "text-[13px]" : "text-xs") : "text-[11px]"
+                  isVisible ? "text-[12px]" : "text-[11px]"
                 } leading-relaxed text-muted-foreground`}
               >
                 {entry.description}
               </p>
             )}
-            {entry.marginProfileNote && (
-              <p
-                className={`${
-                  isVisible ? "text-[11px]" : "text-[10px]"
-                } leading-relaxed text-muted-foreground/90`}
-              >
-                {entry.marginProfileNote}
-              </p>
-            )}
           </div>
           {entry.revenueSharePercent != null && (
-            <span
-              className={`shrink-0 ${
-                isVisible
-                  ? "rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground"
-                  : "text-[10px] text-muted-foreground"
-              }`}
-            >
+            <span className="shrink-0 rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
               {formatPctLabel(entry.revenueSharePercent)}
             </span>
           )}
