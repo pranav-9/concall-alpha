@@ -19,21 +19,6 @@ export type ChartDataPoint = {
   score: number;
 };
 
-export type BusinessSegment = {
-  id: number;
-  company: string;
-  canonical_name: string;
-  variations: string[] | null;
-  sub_segments: string[] | null;
-  description: string | null;
-  has_revenue_breakdown: boolean | null;
-  segment_type: string | null;
-  documents_analyzed: number | null;
-  extracted_at: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
 export type SegmentRevenue = {
   id: number;
   company: string;
