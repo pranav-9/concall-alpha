@@ -9,6 +9,12 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { History } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Carousel,
   CarouselContent,
@@ -483,12 +489,12 @@ export function FutureGrowthSection({
                             size="sm"
                             className="h-7 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
                           >
-                            View also considered
+                            Other catalysts
                           </Button>
                         </DrawerTrigger>
                         <DrawerContent className="w-full max-w-xl">
                           <DrawerHeader className="border-b border-border">
-                            <DrawerTitle>Also considered</DrawerTitle>
+                            <DrawerTitle>Other catalysts</DrawerTitle>
                             <DrawerDescription>
                               Secondary growth candidates screened but not included in the top catalyst set.
                             </DrawerDescription>
@@ -575,26 +581,6 @@ export function FutureGrowthSection({
                       </Drawer>
                     )}
                   </div>
-                  {outlook.discoverySummary &&
-                    (outlook.discoverySummary.selectedCount != null ||
-                      outlook.discoverySummary.totalCandidatesConsidered != null ||
-                      outlook.discoverySummary.selectionPriorityStack) && (
-                      <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        {[
-                          outlook.discoverySummary.selectedCount != null &&
-                          outlook.discoverySummary.totalCandidatesConsidered != null
-                            ? `${outlook.discoverySummary.selectedCount} selected from ${outlook.discoverySummary.totalCandidatesConsidered} candidates`
-                            : null,
-                          outlook.discoverySummary.selectionPriorityStack
-                            ? formatCompactLabel(
-                                outlook.discoverySummary.selectionPriorityStack,
-                              ).replace(/>/g, " > ")
-                            : null,
-                        ]
-                          .filter((value): value is string => Boolean(value))
-                          .join(" · ")}
-                      </p>
-                    )}
                 </div>
                 <Carousel opts={{ align: "start" }} className="w-full">
                   <CarouselContent className="items-stretch">
@@ -649,11 +635,99 @@ export function FutureGrowthSection({
                           >
                             <div className="flex h-full flex-1 flex-col gap-4">
                               <div className="space-y-3">
-                                {c.catalyst && (
-                                  <p className="min-h-[2.6rem] line-clamp-2 text-[15px] font-semibold leading-snug text-foreground">
-                                    {c.catalyst}
-                                  </p>
-                                )}
+                                <div className="flex min-h-[2.6rem] items-start gap-2">
+                                  {c.catalyst && (
+                                    <p className="line-clamp-2 flex-1 text-[15px] font-semibold leading-snug text-foreground">
+                                      {c.catalyst}
+                                    </p>
+                                  )}
+                                  {hasTimelineDetails && (
+                                    <Drawer direction="right">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <DrawerTrigger asChild>
+                                            <Button
+                                              type="button"
+                                              variant="outline"
+                                              size="icon-sm"
+                                              aria-label="Open catalyst tracker"
+                                              className="relative size-7 rounded-full border-border/60 bg-background/70 text-muted-foreground shadow-none hover:bg-accent hover:text-foreground"
+                                            >
+                                              <History className="size-3.5" />
+                                              <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full border border-background bg-emerald-500 px-1 text-[9px] font-semibold leading-4 text-white">
+                                                {timelineItems.length}
+                                              </span>
+                                            </Button>
+                                          </DrawerTrigger>
+                                        </TooltipTrigger>
+                                        <TooltipContent sideOffset={6}>
+                                          Open tracker
+                                        </TooltipContent>
+                                      </Tooltip>
+                                      <DrawerContent className="w-full max-w-xl">
+                                        <DrawerHeader className="border-b border-border">
+                                          <DrawerTitle>Catalyst tracker</DrawerTitle>
+                                          <DrawerDescription>
+                                            {c.catalyst
+                                              ? c.catalyst
+                                              : `${timelineItems.length} tracker updates.`}
+                                          </DrawerDescription>
+                                        </DrawerHeader>
+                                        <div className="overflow-y-auto px-4 py-4">
+                                          <div className="relative pl-6 before:absolute before:left-[8px] before:top-1 before:bottom-1 before:w-px before:bg-border/60">
+                                            <ul className="space-y-4">
+                                              {timelineItems.map((t, tIdx) => {
+                                                const stageMeta = getTimelineStageDisplay(t.stage);
+                                                const period = t.period ?? "";
+                                                const source = t.source ?? "";
+                                                const quote = t.quote ?? "";
+                                                const delta = t.delta ?? "";
+
+                                                return (
+                                                  <li
+                                                    key={`${idx}-timeline-drawer-${tIdx}`}
+                                                    className="relative space-y-1.5 pl-4"
+                                                  >
+                                                    <span className={`absolute left-0 top-2 h-2.5 w-2.5 rounded-full border-2 border-background ${catalystDotClass}`} />
+                                                    <div className="flex flex-wrap items-center gap-1.5">
+                                                      <span
+                                                        className={`px-2 py-0.5 rounded-full uppercase tracking-wide text-[10px] ${stageMeta.className}`}
+                                                      >
+                                                        {stageMeta.label}
+                                                      </span>
+                                                      {(period || source) && (
+                                                        <span className="text-[11px] text-muted-foreground">
+                                                          {period}
+                                                          {period && source ? " · " : ""}
+                                                          {source}
+                                                        </span>
+                                                      )}
+                                                    </div>
+                                                    {quote && (
+                                                      <p className="text-[12px] leading-relaxed text-foreground">
+                                                        {quote}
+                                                      </p>
+                                                    )}
+                                                    {delta && (
+                                                      <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                                        {delta}
+                                                      </p>
+                                                    )}
+                                                  </li>
+                                                );
+                                              })}
+                                            </ul>
+                                          </div>
+                                        </div>
+                                        <DrawerFooter className="border-t border-border">
+                                          <DrawerClose asChild>
+                                            <Button variant="outline">Close</Button>
+                                          </DrawerClose>
+                                        </DrawerFooter>
+                                      </DrawerContent>
+                                    </Drawer>
+                                  )}
+                                </div>
                                 <div className="flex flex-wrap items-center gap-2 text-[10px]">
                                   {statusDisplay && (
                                     <span className={`rounded-full border px-2.5 py-0.5 ${statusDisplay.className}`}>
@@ -692,7 +766,7 @@ export function FutureGrowthSection({
                                 <div className="rounded-xl border border-border/35 bg-muted/15 p-3">
                                   <div className="space-y-2">
                                     <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                                      Quantified change
+                                      Growth Impact
                                     </p>
                                     <div className="space-y-1">
                                       <p className="text-[18px] font-semibold leading-[1.02] tracking-tight text-foreground sm:text-[20px]">
@@ -713,7 +787,7 @@ export function FutureGrowthSection({
                                   {whatIsChanging && (
                                     <div className="rounded-lg border border-border/35 bg-background/70 p-3 space-y-1">
                                       <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                                        What Is Changing
+                                        What&apos;s Changing
                                       </p>
                                       <p className="text-[12px] leading-relaxed text-foreground">
                                         {whatIsChanging}
@@ -733,89 +807,6 @@ export function FutureGrowthSection({
                                 </div>
                               )}
 
-                              {c.pillDependency && (
-                                <div className="rounded-lg border border-amber-200/35 bg-amber-50/35 px-3 py-2 dark:border-amber-700/25 dark:bg-amber-900/10">
-                                  <p className="text-[10px] uppercase tracking-[0.16em] text-amber-700 dark:text-amber-300 font-semibold">
-                                    Key dependency
-                                  </p>
-                                  <p className="mt-1 text-[11px] leading-relaxed text-foreground">
-                                    {c.pillDependency}
-                                  </p>
-                                </div>
-                              )}
-
-                              {timelineItems.length > 0 && (
-                                <div className="space-y-2.5">
-                                  <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                                    Timeline
-                                  </p>
-                                </div>
-                              )}
-
-                              {hasTimelineDetails && (
-                                <details className="group mt-auto border-t border-border/30 pt-3">
-                                  <summary className="list-none cursor-pointer">
-                                    <div className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-muted/25 px-3 py-2.5 transition-colors hover:border-border hover:bg-muted/35">
-                                      <div className="space-y-0.5">
-                                        <span className="block text-[11px] font-medium text-foreground">
-                                          Open full timeline
-                                        </span>
-                                        <span className="block text-[10px] text-muted-foreground">
-                                          {timelineItems.length} updates across the full catalyst trail
-                                        </span>
-                                      </div>
-                                      <span className="text-[11px] font-medium text-muted-foreground">
-                                        <span className="group-open:hidden">Open</span>
-                                        <span className="hidden group-open:inline">Hide</span>
-                                      </span>
-                                    </div>
-                                  </summary>
-                                  <div className="mt-3 relative pl-6 before:absolute before:left-[8px] before:top-1 before:bottom-1 before:w-px before:bg-border/60">
-                                    <ul className="space-y-3">
-                                      {timelineItems.map((t, tIdx) => {
-                                        const stageMeta = getTimelineStageDisplay(t.stage);
-                                        const period = t.period ?? "";
-                                        const source = t.source ?? "";
-                                        const quote = t.quote ?? "";
-                                        const delta = t.delta ?? "";
-
-                                        return (
-                                          <li
-                                            key={`${idx}-timeline-extra-${tIdx}`}
-                                            className="relative space-y-1.5 pl-4"
-                                          >
-                                            <span className={`absolute left-0 top-2 h-2.5 w-2.5 rounded-full border-2 border-background ${catalystDotClass}`} />
-                                            <div className="flex flex-wrap items-center gap-1.5">
-                                              <span
-                                                className={`px-2 py-0.5 rounded-full uppercase tracking-wide text-[10px] ${stageMeta.className}`}
-                                              >
-                                                {stageMeta.label}
-                                              </span>
-                                              {(period || source) && (
-                                                <span className="text-[11px] text-muted-foreground">
-                                                  {period}
-                                                  {period && source ? " · " : ""}
-                                                  {source}
-                                                </span>
-                                              )}
-                                            </div>
-                                            {quote && (
-                                              <p className="text-[12px] leading-relaxed text-foreground">
-                                                {quote}
-                                              </p>
-                                            )}
-                                            {delta && (
-                                              <p className="text-[11px] leading-relaxed text-muted-foreground">
-                                                {delta}
-                                              </p>
-                                            )}
-                                          </li>
-                                        );
-                                      })}
-                                    </ul>
-                                  </div>
-                                </details>
-                              )}
                             </div>
                           </article>
                         </CarouselItem>
