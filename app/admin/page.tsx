@@ -247,6 +247,7 @@ function countRequestsByType(rows: FeedbackRequestRow[]) {
       stock_addition: 0,
       bug_report: 0,
       missing_section: 0,
+      section_improvement: 0,
     } as Record<FeedbackRequestRow["request_type"], number>,
   );
 }
@@ -659,6 +660,7 @@ export default async function AdminPage({
         stock_addition: 0,
         bug_report: 0,
         missing_section: 0,
+        section_improvement: 0,
       } as Record<FeedbackRequestRow["request_type"], number>,
       reportedCommentsCount: 0,
     },
@@ -769,6 +771,10 @@ export default async function AdminPage({
                 {
                   label: "Missing Section Requests",
                   value: data.operations.requestTypeCounts.missing_section,
+                },
+                {
+                  label: "Section Improvements",
+                  value: data.operations.requestTypeCounts.section_improvement,
                 },
               ]}
             />

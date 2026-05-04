@@ -5,6 +5,7 @@ import {
   overviewBodyPillClass,
   type OverviewBodyPillTone,
 } from "../[code]/display-tokens";
+import { SectionFeedbackButton } from "./section-feedback-button";
 
 type SectionTone = "sky" | "emerald" | "amber" | "violet" | "rose" | "slate";
 
@@ -23,6 +24,9 @@ interface SectionCardProps {
   headerDescription?: React.ReactNode;
   headerPills?: string[];
   headerRankPills?: SectionHeaderRankPill[];
+  feedbackEnabled?: boolean;
+  feedbackCompanyCode?: string;
+  feedbackCompanyName?: string | null;
   collapsible?: boolean;
   defaultOpen?: boolean;
   tone?: SectionTone;
@@ -103,6 +107,9 @@ export function SectionCard({
   headerDescription,
   headerPills = [],
   headerRankPills = [],
+  feedbackEnabled = false,
+  feedbackCompanyCode,
+  feedbackCompanyName,
   collapsible = false,
   defaultOpen = true,
   tone,
@@ -110,6 +117,15 @@ export function SectionCard({
   const resolvedTone = tone ?? SECTION_TONE_BY_ID[id] ?? "slate";
   const toneClasses = TONE_CLASSES[resolvedTone];
   const shellClassName = cn(CARD_SHELL, toneClasses.shell, className);
+  const feedbackAction =
+    feedbackEnabled && feedbackCompanyCode ? (
+      <SectionFeedbackButton
+        companyCode={feedbackCompanyCode}
+        companyName={feedbackCompanyName}
+        sectionId={id}
+        sectionTitle={title}
+      />
+    ) : null;
 
   const header = (
     <div className="relative flex flex-wrap items-start justify-between gap-3">
@@ -161,7 +177,12 @@ export function SectionCard({
           </div>
         ) : null}
       </div>
-      {headerAction ? <div className="shrink-0 text-[11px] text-muted-foreground">{headerAction}</div> : null}
+      {headerAction || feedbackAction ? (
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-[11px] text-muted-foreground">
+          {headerAction}
+          {feedbackAction}
+        </div>
+      ) : null}
     </div>
   );
 
@@ -189,9 +210,10 @@ export function SectionCard({
                 ) : null}
               </div>
               <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                {headerAction ? (
-                  <div className="hidden text-[11px] text-muted-foreground sm:block group-open:block">
+                {headerAction || feedbackAction ? (
+                  <div className="hidden flex-wrap items-center justify-end gap-2 text-[11px] text-muted-foreground sm:flex group-open:flex">
                     {headerAction}
+                    {feedbackAction}
                   </div>
                 ) : null}
                 <div className="flex items-center gap-2">

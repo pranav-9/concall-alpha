@@ -9,6 +9,7 @@ import Navbar from "./(hero)/navbar";
 import { createClient } from "@/lib/supabase/server";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { SiteFooter } from "@/components/site-footer";
+import { Toaster } from "@/components/ui/sonner";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -85,6 +86,7 @@ export default function RootLayout({
               {children}
             </div>
             <SiteFooter />
+            <Toaster richColors />
           </div>
         </ThemeProvider>
         <Analytics />

@@ -556,6 +556,9 @@ export function BusinessSnapshotSection({
       id="business-overview"
       title="Business Snapshot"
       headerPills={headerPills}
+      feedbackEnabled={Boolean(snapshot && (hasStructuredBusinessSnapshot || hasLegacyBusinessSnapshot))}
+      feedbackCompanyCode={companyCode}
+      feedbackCompanyName={companyName}
       headerAction={
         generatedAtShort ? (
           <span className="text-[11px] text-muted-foreground">

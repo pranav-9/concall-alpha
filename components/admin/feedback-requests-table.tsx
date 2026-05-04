@@ -13,7 +13,12 @@ import { FeedbackDetailDrawer } from "./feedback-detail-drawer";
 
 export type FeedbackRequestRow = {
   id: string;
-  request_type: "feedback" | "stock_addition" | "bug_report" | "missing_section";
+  request_type:
+    | "feedback"
+    | "stock_addition"
+    | "bug_report"
+    | "missing_section"
+    | "section_improvement";
   subject_target: string;
   message: string | null;
   source_path: string | null;

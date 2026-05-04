@@ -521,6 +521,9 @@ export async function IndustryContextSection({
       title="Industry Context"
       headerPills={headerPills}
       headerRankPills={headerRankPills}
+      feedbackEnabled={Boolean(analysis)}
+      feedbackCompanyCode={companyCode}
+      feedbackCompanyName={companyName}
         headerAction={
           generatedAtShort ? (
             <span className="text-[11px] text-muted-foreground">

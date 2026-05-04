@@ -383,6 +383,9 @@ export function FutureGrowthSection({
       title="Future Growth Prospects"
       headerPills={headerPills}
       headerRankPills={headerRankPills}
+      feedbackEnabled={Boolean(outlook)}
+      feedbackCompanyCode={companyCode}
+      feedbackCompanyName={companyName}
       headerAction={
         typeof growthScore === "number" ? <ConcallScore score={growthScore} size="sm" /> : undefined
       }

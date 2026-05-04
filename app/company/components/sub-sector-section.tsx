@@ -81,6 +81,9 @@ export async function SubSectorSection({
     <SectionCard
       id="sub-sector"
       title="Sub-sectors"
+      feedbackEnabled={!isEmpty}
+      feedbackCompanyCode={companyCode}
+      feedbackCompanyName={companyName}
       headerAction={
         generatedAtShort ? (
           <span className="text-[11px] text-muted-foreground">

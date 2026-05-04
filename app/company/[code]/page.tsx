@@ -928,6 +928,9 @@ export default async function Page({
         <SectionCard
           id="moat-analysis"
           title="Moat Analysis"
+          feedbackEnabled={Boolean(normalizedMoatAnalysis)}
+          feedbackCompanyCode={companyRow?.code ?? code}
+          feedbackCompanyName={companyRow?.name ?? null}
           headerAction={
             moatGeneratedAtShort ? (
               <span className="text-[11px] text-muted-foreground">{moatGeneratedAtShort}</span>
@@ -955,6 +958,9 @@ export default async function Page({
         <SectionCard
           id="sentiment-score"
           title="Quarterly Score"
+          feedbackEnabled
+          feedbackCompanyCode={companyRow?.code ?? code}
+          feedbackCompanyName={companyRow?.name ?? null}
           headerPills={quarterlyHeaderPills}
           headerRankPills={
             quarterRankInfo?.rank != null
@@ -985,6 +991,9 @@ export default async function Page({
         <SectionCard
           id="key-variables"
           title="Key Variables"
+          feedbackEnabled={Boolean(normalizedKeyVariablesSnapshot)}
+          feedbackCompanyCode={companyRow?.code ?? code}
+          feedbackCompanyName={companyRow?.name ?? null}
           headerPills={keyVariablesHeaderPills}
           headerDescription="The non-financial variables that best explain whether growth is healthy, sustainable, and improving in quality."
           headerAction={
@@ -1029,6 +1038,9 @@ export default async function Page({
         <SectionCard
           id="guidance-history"
           title="Guidance History"
+          feedbackEnabled={Boolean(normalizedGuidanceSnapshot || guidanceItems.length > 0)}
+          feedbackCompanyCode={companyRow?.code ?? code}
+          feedbackCompanyName={companyRow?.name ?? null}
           headerPills={guidanceHeaderPills}
           headerAction={
             <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
@@ -1058,7 +1070,13 @@ export default async function Page({
           </div>
 
           <div data-section-id="community">
-        <SectionCard id="community" title="Community">
+        <SectionCard
+          id="community"
+          title="Community"
+          feedbackEnabled
+          feedbackCompanyCode={companyRow?.code ?? code}
+          feedbackCompanyName={companyRow?.name ?? null}
+        >
           <CompanyCommentsSection companyCode={code} />
         </SectionCard>
           </div>

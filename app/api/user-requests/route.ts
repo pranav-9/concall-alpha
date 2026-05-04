@@ -7,7 +7,8 @@ type RequestType =
   | "feedback"
   | "stock_addition"
   | "bug_report"
-  | "missing_section";
+  | "missing_section"
+  | "section_improvement";
 
 type Payload = {
   requestType?: string;
@@ -21,6 +22,7 @@ const requestTypes = new Set<RequestType>([
   "stock_addition",
   "bug_report",
   "missing_section",
+  "section_improvement",
 ]);
 
 function validate(payload: Payload) {
