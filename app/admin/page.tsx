@@ -15,13 +15,17 @@ import {
   type RecentAccountRow,
 } from "@/components/admin/recent-accounts-table";
 import {
+  LatestWatchlistActivityTable,
+  type LatestWatchlistActivityRow,
+} from "@/components/admin/latest-watchlist-activity-table";
+import {
   RecentWatchlistsTable,
   type RecentWatchlistRow,
 } from "@/components/admin/recent-watchlists-table";
 import {
-  TopCompaniesTable,
-  type TopCompanyView,
-} from "@/components/admin/top-companies-table";
+  TopSavedCompaniesTable,
+  type TopSavedCompanyRow,
+} from "@/components/admin/top-saved-companies-table";
 import {
   FeedbackRequestsTable,
   type FeedbackRequestRow,
@@ -31,12 +35,6 @@ import {
   type AdminCommentRow,
   type AdminReportedRow,
 } from "@/components/admin/company-comments-table";
-import {
-  CompanyInterestTable,
-  type CompanyInterestRow,
-  TopSectorsTable,
-  type TopSectorInterestRow,
-} from "@/components/admin/company-interest-table";
 import {
   ADMIN_ACCESS_COOKIE,
   hasAdminAccess,
@@ -58,28 +56,43 @@ const RANGE_OPTIONS: { key: RangeKey; label: string }[] = [
   { key: "all", label: "All" },
 ];
 
-type CompanyMetaRow = {
-  code: string;
+type VisitorEventRow = {
+  visitor_id: string | null;
+  created_at: string | null;
+};
+
+type CompanyNameRow = {
+  code: string | null;
   name: string | null;
-  sector: string | null;
-  sub_sector: string | null;
 };
 
 type WatchlistItemRow = {
   id: number;
+  watchlist_id: number | null;
   company_code: string | null;
-  created_at: string;
+  created_at: string | null;
 };
 
-type VisitorEventRow = {
-  visitor_id: string | null;
+type WatchlistLookupRow = {
+  id: number;
+  user_id: string | null;
+  name: string | null;
   created_at: string | null;
+};
+
+type AdminUserSummary = {
+  id: string;
+  email: string | null;
+  displayName: string | null;
 };
 
 const ADMIN_CHART_MAX_DAYS = 90;
 const ACTIVE_VISITOR_LOOKBACK_DAYS = 29;
 const EVENT_PAGE_SIZE = 1000;
 const EVENT_CHART_MAX_ROWS = 20000;
+const WATCHLIST_ITEMS_PAGE_SIZE = 1000;
+const WATCHLIST_ITEMS_MAX_ROWS = 20000;
+const WATCHLIST_ACTIVITY_LIMIT = 100;
 const INDIA_TIME_ZONE = "Asia/Kolkata";
 const localDateFormatter = new Intl.DateTimeFormat("en-IN", {
   timeZone: INDIA_TIME_ZONE,
@@ -123,14 +136,19 @@ function normalizeCompanyCode(value: string | null | undefined): string | null {
   return /^[A-Z0-9._-]+$/.test(normalized) ? normalized : null;
 }
 
-function extractCompanyCodeFromPath(path: string | null | undefined): string | null {
-  const match = path?.match(/\/company\/([^/?#]+)/i);
-  return normalizeCompanyCode(match?.[1]);
-}
-
-function incrementMap(map: Map<string, number>, key: string | null, amount = 1) {
-  if (!key) return;
-  map.set(key, (map.get(key) ?? 0) + amount);
+function getUserDisplayName(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const values = metadata as Record<string, unknown>;
+  const name =
+    typeof values.full_name === "string"
+      ? values.full_name
+      : typeof values.name === "string"
+        ? values.name
+        : typeof values.display_name === "string"
+          ? values.display_name
+          : null;
+  const trimmed = name?.trim();
+  return trimmed || null;
 }
 
 function getLocalDateKey(value: string | Date): string | null {
@@ -236,6 +254,179 @@ async function getActiveVisitors(
   return buildActiveVisitors(rows, chartStartIso);
 }
 
+async function getWatchlistItems(
+  startIso: string | null,
+): Promise<WatchlistItemRow[]> {
+  const supabase = createAdminClient();
+  const rows: WatchlistItemRow[] = [];
+  let from = 0;
+
+  while (rows.length < WATCHLIST_ITEMS_MAX_ROWS) {
+    const to = Math.min(
+      from + WATCHLIST_ITEMS_PAGE_SIZE - 1,
+      WATCHLIST_ITEMS_MAX_ROWS - 1,
+    );
+    let query = supabase
+      .from("watchlist_items")
+      .select("id, watchlist_id, company_code, created_at")
+      .not("company_code", "is", null)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (startIso) {
+      query = query.gte("created_at", startIso);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      throw error;
+    }
+
+    const pageRows = (data ?? []) as WatchlistItemRow[];
+    rows.push(...pageRows);
+
+    if (pageRows.length < WATCHLIST_ITEMS_PAGE_SIZE) {
+      break;
+    }
+
+    from += WATCHLIST_ITEMS_PAGE_SIZE;
+  }
+
+  return rows;
+}
+
+async function getWatchlistsByIds(ids: number[]): Promise<WatchlistLookupRow[]> {
+  if (ids.length === 0) return [];
+
+  const supabase = createAdminClient();
+  const uniqueIds = Array.from(new Set(ids));
+  const rows: WatchlistLookupRow[] = [];
+  const chunkSize = 500;
+
+  for (let index = 0; index < uniqueIds.length; index += chunkSize) {
+    const chunk = uniqueIds.slice(index, index + chunkSize);
+    const { data, error } = await supabase
+      .from("watchlists")
+      .select("id, user_id, name, created_at")
+      .in("id", chunk);
+
+    if (error) {
+      throw error;
+    }
+
+    rows.push(...((data ?? []) as WatchlistLookupRow[]));
+  }
+
+  return rows;
+}
+
+function buildTopSavedCompanies(
+  items: WatchlistItemRow[],
+  companyRows: CompanyNameRow[],
+): TopSavedCompanyRow[] {
+  const companyNames = new Map<string, string>();
+  companyRows.forEach((row) => {
+    const code = normalizeCompanyCode(row.code);
+    if (code && row.name) {
+      companyNames.set(code, row.name);
+    }
+  });
+
+  const savedCounts = new Map<string, number>();
+  items.forEach((row) => {
+    const code = normalizeCompanyCode(row.company_code);
+    if (!code) return;
+    savedCounts.set(code, (savedCounts.get(code) ?? 0) + 1);
+  });
+
+  return Array.from(savedCounts.entries())
+    .map(([companyCode, savedCount]) => ({
+      companyCode,
+      companyName: companyNames.get(companyCode) ?? null,
+      savedCount,
+    }))
+    .sort(
+      (a, b) =>
+        b.savedCount - a.savedCount ||
+        (a.companyName ?? a.companyCode).localeCompare(b.companyName ?? b.companyCode),
+    )
+    .slice(0, 50);
+}
+
+function formatAverageSavesPerWatchlist(
+  savedCompaniesCount: number,
+  watchlistsCreatedCount: number,
+): string {
+  if (watchlistsCreatedCount === 0) return "0";
+  const average = savedCompaniesCount / watchlistsCreatedCount;
+  return Number.isInteger(average) ? String(average) : average.toFixed(1);
+}
+
+function buildLatestWatchlistActivity({
+  watchlistRows,
+  itemRows,
+  watchlistsById,
+  companyRows,
+  usersById,
+}: {
+  watchlistRows: WatchlistLookupRow[];
+  itemRows: WatchlistItemRow[];
+  watchlistsById: Map<number, WatchlistLookupRow>;
+  companyRows: CompanyNameRow[];
+  usersById: Map<string, AdminUserSummary>;
+}): LatestWatchlistActivityRow[] {
+  const companyNames = new Map<string, string>();
+  companyRows.forEach((row) => {
+    const code = normalizeCompanyCode(row.code);
+    if (code && row.name) {
+      companyNames.set(code, row.name);
+    }
+  });
+
+  const createdRows: LatestWatchlistActivityRow[] = watchlistRows
+    .filter((row) => row.created_at)
+    .map((row) => {
+      const user = row.user_id ? usersById.get(row.user_id) : null;
+      return {
+        id: `watchlist-created-${row.id}`,
+        action: "watchlist_created",
+        occurredAt: row.created_at as string,
+        watchlistName: row.name,
+        companyCode: null,
+        companyName: null,
+        userId: row.user_id,
+        userDisplayName: user?.displayName ?? null,
+        userEmail: user?.email ?? null,
+      };
+    });
+
+  const addedRows: LatestWatchlistActivityRow[] = itemRows
+    .filter((row) => row.created_at)
+    .map((row) => {
+      const code = normalizeCompanyCode(row.company_code);
+      const watchlist = row.watchlist_id ? watchlistsById.get(row.watchlist_id) : null;
+      const user = watchlist?.user_id ? usersById.get(watchlist.user_id) : null;
+      return {
+        id: `company-added-${row.id}`,
+        action: "company_added",
+        occurredAt: row.created_at as string,
+        watchlistName: watchlist?.name ?? null,
+        companyCode: code,
+        companyName: code ? companyNames.get(code) ?? null : null,
+        userId: watchlist?.user_id ?? null,
+        userDisplayName: user?.displayName ?? null,
+        userEmail: user?.email ?? null,
+      };
+    });
+
+  return [...createdRows, ...addedRows]
+    .sort(
+      (a, b) =>
+        new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
+    )
+    .slice(0, WATCHLIST_ACTIVITY_LIMIT);
+}
+
 function countRequestsByType(rows: FeedbackRequestRow[]) {
   return rows.reduce(
     (counts, row) => {
@@ -257,11 +448,13 @@ async function getRecentAccounts(
 ): Promise<{
   count: number;
   rows: RecentAccountRow[];
+  usersById: Map<string, AdminUserSummary>;
 }> {
   const supabase = createAdminClient();
   const perPage = 100;
   let page = 1;
   const users: RecentAccountRow[] = [];
+  const usersById = new Map<string, AdminUserSummary>();
 
   while (true) {
     const result = await supabase.auth.admin.listUsers({ page, perPage });
@@ -269,6 +462,14 @@ async function getRecentAccounts(
     if (result.error) {
       throw result.error;
     }
+
+    result.data.users.forEach((user) => {
+      usersById.set(user.id, {
+        id: user.id,
+        email: user.email ?? null,
+        displayName: getUserDisplayName(user.user_metadata),
+      });
+    });
 
     const pageRows = result.data.users
       .filter((user) => {
@@ -298,6 +499,7 @@ async function getRecentAccounts(
   return {
     count: users.length,
     rows: users.slice(0, 50),
+    usersById,
   };
 }
 
@@ -309,14 +511,6 @@ async function getAdminData(range: RangeKey) {
   const uniqueVisitorsPromise = startIso
     ? supabase.rpc("count_unique_visitors", { start_ts: startIso })
     : supabase.rpc("count_unique_visitors", { start_ts: "1970-01-01T00:00:00.000Z" });
-
-  const topCompaniesPromise = startIso
-    ? supabase.rpc("get_top_company_views", { start_ts: startIso, limit_n: 50 })
-    : supabase.rpc("get_top_company_views", { start_ts: "1970-01-01T00:00:00.000Z", limit_n: 50 });
-
-  const companyRowsPromise = supabase
-    .from("company")
-    .select("code, name, sector, sub_sector");
 
   const feedbackBase = supabase
     .from("user_requests")
@@ -335,15 +529,6 @@ async function getAdminData(range: RangeKey) {
   const feedbackCountPromise = startIso
     ? feedbackCountBase.gte("created_at", startIso)
     : feedbackCountBase;
-
-  const companyViewsCountBase = supabase
-    .from("page_view_events")
-    .select("id", { head: true, count: "exact" })
-    .not("company_code", "is", null);
-
-  const companyViewsCountPromise = startIso
-    ? companyViewsCountBase.gte("created_at", startIso)
-    : companyViewsCountBase;
 
   const commentsBase = supabase
     .from("company_comments")
@@ -395,6 +580,17 @@ async function getAdminData(range: RangeKey) {
     ? recentWatchlistsBase.gte("created_at", startIso)
     : recentWatchlistsBase;
 
+  const activityWatchlistsBase = supabase
+    .from("watchlists")
+    .select("id, user_id, name, created_at")
+    .not("created_at", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(WATCHLIST_ACTIVITY_LIMIT);
+
+  const activityWatchlistsPromise = startIso
+    ? activityWatchlistsBase.gte("created_at", startIso)
+    : activityWatchlistsBase;
+
   const watchlistsCountBase = supabase
     .from("watchlists")
     .select("id", { head: true, count: "exact" })
@@ -404,16 +600,7 @@ async function getAdminData(range: RangeKey) {
     ? watchlistsCountBase.gte("created_at", startIso)
     : watchlistsCountBase;
 
-  const watchlistItemsBase = supabase
-    .from("watchlist_items")
-    .select("id, company_code, created_at")
-    .not("company_code", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(1000);
-
-  const watchlistItemsPromise = startIso
-    ? watchlistItemsBase.gte("created_at", startIso)
-    : watchlistItemsBase;
+  const watchlistItemsPromise = getWatchlistItems(startIso);
 
   const watchlistItemsCountBase = supabase
     .from("watchlist_items")
@@ -424,13 +611,14 @@ async function getAdminData(range: RangeKey) {
     ? watchlistItemsCountBase.gte("created_at", startIso)
     : watchlistItemsCountBase;
 
+  const companyRowsPromise = supabase
+    .from("company")
+    .select("code, name");
+
   const [
     uniqueVisitorsResult,
-    topCompaniesResult,
-    companyRowsResult,
     feedbackRowsResult,
     feedbackCountResult,
-    companyViewsCountResult,
     commentsRowsResult,
     commentsCountResult,
     reportsRowsResult,
@@ -438,17 +626,16 @@ async function getAdminData(range: RangeKey) {
     recentAccountsResult,
     activeVisitors,
     recentWatchlistsResult,
+    activityWatchlistsResult,
     watchlistsCountResult,
-    watchlistItemsResult,
+    watchlistItemsRows,
     watchlistItemsCountResult,
+    companyRowsResult,
   ] =
     await Promise.all([
       uniqueVisitorsPromise,
-      topCompaniesPromise,
-      companyRowsPromise,
       feedbackRowsPromise,
       feedbackCountPromise,
-      companyViewsCountPromise,
       commentsRowsPromise,
       commentsCountPromise,
       reportsRowsPromise,
@@ -456,146 +643,84 @@ async function getAdminData(range: RangeKey) {
       recentAccountsPromise,
       activeVisitorsPromise,
       recentWatchlistsPromise,
+      activityWatchlistsPromise,
       watchlistsCountPromise,
       watchlistItemsPromise,
       watchlistItemsCountPromise,
+      companyRowsPromise,
     ]);
 
   const uniqueUsers = Number(uniqueVisitorsResult.data ?? 0);
-  const companyRows = (companyRowsResult.data ?? []) as CompanyMetaRow[];
-  const companyByCode = new Map<string, CompanyMetaRow>();
-  companyRows.forEach((row) => {
-    const code = normalizeCompanyCode(row.code);
-    if (code) companyByCode.set(code, row);
-  });
-  const topCompanies = ((topCompaniesResult.data ?? []) as TopCompanyView[]).map(
-    (row) => {
-      const code = normalizeCompanyCode(row.company_code);
-      const company = code ? companyByCode.get(code) : null;
-      return {
-        ...row,
-        company_code: code ?? row.company_code,
-        company_name: company?.name ?? row.company_name,
-      };
-    },
-  );
   const feedbackRows = (feedbackRowsResult.data ?? []) as FeedbackRequestRow[];
   const feedbackCount = Number(feedbackCountResult.count ?? 0);
-  const companyViews = Number(companyViewsCountResult.count ?? 0);
   const commentsRows = (commentsRowsResult.data ?? []) as AdminCommentRow[];
   const commentsCount = Number(commentsCountResult.count ?? 0);
   const reportsRows = (reportsRowsResult.data ?? []) as AdminReportedRow[];
   const reportsCount = Number(reportsCountResult.count ?? 0);
   const accountsCreatedCount = recentAccountsResult.count;
   const recentAccountsRows = recentAccountsResult.rows;
-  const recentWatchlistsRows = (recentWatchlistsResult.data ??
-    []) as RecentWatchlistRow[];
+  const usersById = recentAccountsResult.usersById;
+  const recentWatchlistsRows = ((recentWatchlistsResult.data ??
+    []) as RecentWatchlistRow[]).map((row) => {
+    const user = usersById.get(row.user_id);
+    return {
+      ...row,
+      user_display_name: user?.displayName ?? null,
+      user_email: user?.email ?? null,
+    };
+  });
+  const activityWatchlistsRows = (activityWatchlistsResult.data ??
+    []) as WatchlistLookupRow[];
   const watchlistsCreatedCount = Number(watchlistsCountResult.count ?? 0);
-  const watchlistItemsRows = (watchlistItemsResult.data ?? []) as WatchlistItemRow[];
-  const watchlistAddsCount = Number(watchlistItemsCountResult.count ?? 0);
+  const savedCompaniesCount = Number(watchlistItemsCountResult.count ?? 0);
+  const companyRows = (companyRowsResult.data ?? []) as CompanyNameRow[];
+  const watchlistsById = new Map<number, WatchlistLookupRow>();
+  [...recentWatchlistsRows, ...activityWatchlistsRows].forEach((row) => {
+    watchlistsById.set(row.id, row);
+  });
+  const missingWatchlistIds = watchlistItemsRows
+    .map((row) => row.watchlist_id)
+    .filter((id): id is number => typeof id === "number" && !watchlistsById.has(id));
+  const referencedWatchlists = await getWatchlistsByIds(missingWatchlistIds);
+  referencedWatchlists.forEach((row) => {
+    watchlistsById.set(row.id, row);
+  });
+  const topSavedCompanies = buildTopSavedCompanies(
+    watchlistItemsRows,
+    companyRows,
+  );
+  const latestActivityRows = buildLatestWatchlistActivity({
+    watchlistRows: activityWatchlistsRows,
+    itemRows: watchlistItemsRows,
+    watchlistsById,
+    companyRows,
+    usersById,
+  });
+  const averageSavesPerWatchlist = formatAverageSavesPerWatchlist(
+    savedCompaniesCount,
+    watchlistsCreatedCount,
+  );
   const requestTypeCounts = countRequestsByType(feedbackRows);
   const reportedCommentsCount = new Set(
     reportsRows.map((row) => row.comment_id).filter(Boolean),
   ).size;
 
-  const viewsByCode = new Map<string, number>();
-  topCompanies.forEach((row) => {
-    incrementMap(viewsByCode, normalizeCompanyCode(row.company_code), Number(row.views) || 0);
-  });
-
-  const watchlistAddsByCode = new Map<string, number>();
-  watchlistItemsRows.forEach((row) => {
-    incrementMap(watchlistAddsByCode, normalizeCompanyCode(row.company_code));
-  });
-
-  const commentsByCode = new Map<string, number>();
-  commentsRows.forEach((row) => {
-    incrementMap(commentsByCode, normalizeCompanyCode(row.company_code));
-  });
-
-  const requestsByCode = new Map<string, number>();
-  feedbackRows.forEach((row) => {
-    const fromPath = extractCompanyCodeFromPath(row.source_path);
-    const fromSubject = normalizeCompanyCode(row.subject_target);
-    incrementMap(requestsByCode, fromPath ?? fromSubject);
-  });
-
-  const companyCodes = new Set([
-    ...viewsByCode.keys(),
-    ...watchlistAddsByCode.keys(),
-    ...commentsByCode.keys(),
-    ...requestsByCode.keys(),
-  ]);
-
-  const companyInterestRows: CompanyInterestRow[] = Array.from(companyCodes)
-    .map((companyCode) => {
-      const company = companyByCode.get(companyCode);
-      const views = viewsByCode.get(companyCode) ?? 0;
-      const watchlistAdds = watchlistAddsByCode.get(companyCode) ?? 0;
-      const comments = commentsByCode.get(companyCode) ?? 0;
-      const requests = requestsByCode.get(companyCode) ?? 0;
-      return {
-        companyCode,
-        companyName: company?.name ?? null,
-        sector: company?.sector ?? null,
-        subSector: company?.sub_sector ?? null,
-        views,
-        watchlistAdds,
-        comments,
-        requests,
-        interestScore: views + watchlistAdds * 5 + comments * 3 + requests * 8,
-      };
-    })
-    .sort(
-      (a, b) =>
-        b.interestScore - a.interestScore ||
-        b.views - a.views ||
-        a.companyCode.localeCompare(b.companyCode),
-    )
-    .slice(0, 50);
-
-  const sectorBuckets = new Map<string, { views: number; companies: Set<string> }>();
-  topCompanies.forEach((row) => {
-    const code = normalizeCompanyCode(row.company_code);
-    if (!code) return;
-    const sector = companyByCode.get(code)?.sector?.trim();
-    if (!sector) return;
-    const bucket = sectorBuckets.get(sector) ?? { views: 0, companies: new Set<string>() };
-    bucket.views += Number(row.views) || 0;
-    bucket.companies.add(code);
-    sectorBuckets.set(sector, bucket);
-  });
-
-  const topSectors: TopSectorInterestRow[] = Array.from(sectorBuckets.entries())
-    .map(([sector, bucket]) => ({
-      sector,
-      views: bucket.views,
-      companies: bucket.companies.size,
-    }))
-    .sort((a, b) => b.views - a.views || a.sector.localeCompare(b.sector))
-    .slice(0, 10);
-
-  const mostViewedCompany = topCompanies[0]?.company_name ?? topCompanies[0]?.company_code ?? "—";
-
   return {
     usage: {
       uniqueUsers,
       accountsCreatedCount,
-      watchlistsCreatedCount,
       commentsCount,
       feedbackCount,
       activeVisitors,
       recentAccountsRows,
-      recentWatchlistsRows,
     },
-    companyInterest: {
-      companyViews,
-      companiesViewedCount: topCompanies.length,
-      watchlistAddsCount,
-      mostViewedCompany,
-      topCompanies,
-      companyInterestRows,
-      topSectors,
+    watchlists: {
+      watchlistsCreatedCount,
+      savedCompaniesCount,
+      averageSavesPerWatchlist,
+      recentWatchlistsRows,
+      topSavedCompanies,
+      latestActivityRows,
     },
     operations: {
       feedbackRows,
@@ -632,21 +757,18 @@ export default async function AdminPage({
     usage: {
       uniqueUsers: 0,
       accountsCreatedCount: 0,
-      watchlistsCreatedCount: 0,
       commentsCount: 0,
       feedbackCount: 0,
       activeVisitors: [] as ActiveVisitorPoint[],
       recentAccountsRows: [] as RecentAccountRow[],
-      recentWatchlistsRows: [] as RecentWatchlistRow[],
     },
-    companyInterest: {
-      companyViews: 0,
-      companiesViewedCount: 0,
-      watchlistAddsCount: 0,
-      mostViewedCompany: "—",
-      topCompanies: [] as TopCompanyView[],
-      companyInterestRows: [] as CompanyInterestRow[],
-      topSectors: [] as TopSectorInterestRow[],
+    watchlists: {
+      watchlistsCreatedCount: 0,
+      savedCompaniesCount: 0,
+      averageSavesPerWatchlist: "0",
+      recentWatchlistsRows: [] as RecentWatchlistRow[],
+      topSavedCompanies: [] as TopSavedCompanyRow[],
+      latestActivityRows: [] as LatestWatchlistActivityRow[],
     },
     operations: {
       feedbackRows: [] as FeedbackRequestRow[],
@@ -720,41 +842,39 @@ export default async function AdminPage({
         usage={
           <AdminSection
             title="User Usage"
-            description="Adoption and engagement signals across visitors, accounts, watchlists, comments, and requests."
+            description="Adoption and engagement signals across visitors, accounts, comments, and requests."
           >
             <AdminMetricGrid
               metrics={[
                 { label: "Unique Visitors", value: data.usage.uniqueUsers },
                 { label: "Accounts Created", value: data.usage.accountsCreatedCount },
-                { label: "Watchlists Created", value: data.usage.watchlistsCreatedCount },
                 { label: "Comments Created", value: data.usage.commentsCount },
                 { label: "Requests Submitted", value: data.usage.feedbackCount },
               ]}
             />
             <AdminDailyVisitorsChart data={data.usage.activeVisitors} />
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-              <RecentAccountsTable rows={data.usage.recentAccountsRows} />
-              <RecentWatchlistsTable rows={data.usage.recentWatchlistsRows} />
-            </div>
+            <RecentAccountsTable rows={data.usage.recentAccountsRows} />
           </AdminSection>
         }
-        companyInterest={
+        watchlists={
           <AdminSection
-            title="Company Interest"
-            description="Demand signals showing which companies and sectors are attracting attention."
+            title="Watchlists"
+            description="Saved-company adoption and current watchlist contents."
           >
             <AdminMetricGrid
               metrics={[
-                { label: "Company Page Views", value: data.companyInterest.companyViews },
-                { label: "Companies Viewed", value: data.companyInterest.companiesViewedCount },
-                { label: "Watchlist Adds", value: data.companyInterest.watchlistAddsCount },
-                { label: "Most Viewed Company", value: data.companyInterest.mostViewedCompany },
+                { label: "Watchlists Created", value: data.watchlists.watchlistsCreatedCount },
+                { label: "Saved Companies", value: data.watchlists.savedCompaniesCount },
+                {
+                  label: "Avg Saves / Watchlist",
+                  value: data.watchlists.averageSavesPerWatchlist,
+                },
               ]}
             />
-            <CompanyInterestTable rows={data.companyInterest.companyInterestRows} />
-            <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.35fr_0.65fr]">
-              <TopCompaniesTable rows={data.companyInterest.topCompanies} />
-              <TopSectorsTable rows={data.companyInterest.topSectors} />
+            <LatestWatchlistActivityTable rows={data.watchlists.latestActivityRows} />
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+              <RecentWatchlistsTable rows={data.watchlists.recentWatchlistsRows} />
+              <TopSavedCompaniesTable rows={data.watchlists.topSavedCompanies} />
             </div>
           </AdminSection>
         }

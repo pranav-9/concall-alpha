@@ -12,6 +12,8 @@ export type RecentWatchlistRow = {
   user_id: string;
   name: string;
   created_at: string;
+  user_display_name?: string | null;
+  user_email?: string | null;
 };
 
 function formatDateTime(value: string) {
@@ -42,7 +44,7 @@ export function RecentWatchlistsTable({
             <TableRow>
               <TableHead>Created</TableHead>
               <TableHead>Watchlist Name</TableHead>
-              <TableHead>User ID</TableHead>
+              <TableHead>User</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -61,8 +63,22 @@ export function RecentWatchlistsTable({
                   <TableCell className="font-medium text-foreground">
                     {row.name}
                   </TableCell>
-                  <TableCell className="max-w-[280px] truncate font-mono text-xs text-muted-foreground">
-                    {row.user_id}
+                  <TableCell className="max-w-[280px]">
+                    <span className="flex flex-col">
+                      <span className="truncate text-sm text-foreground">
+                        {row.user_display_name ?? row.user_email ?? row.user_id}
+                      </span>
+                      {row.user_display_name && row.user_email ? (
+                        <span className="truncate text-xs text-muted-foreground">
+                          {row.user_email}
+                        </span>
+                      ) : null}
+                      {!row.user_email ? (
+                        <span className="truncate font-mono text-xs text-muted-foreground">
+                          {row.user_id}
+                        </span>
+                      ) : null}
+                    </span>
                   </TableCell>
                 </TableRow>
               ))

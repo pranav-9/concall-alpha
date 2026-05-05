@@ -10,11 +10,11 @@ import {
 
 export function AdminAnalyticsTabs({
   usage,
-  companyInterest,
+  watchlists,
   operations,
 }: {
   usage: ReactNode;
-  companyInterest: ReactNode;
+  watchlists: ReactNode;
   operations: ReactNode;
 }) {
   return (
@@ -28,10 +28,10 @@ export function AdminAnalyticsTabs({
             User Usage
           </TabsTrigger>
           <TabsTrigger
-            value="company-interest"
-            className="min-w-[11rem] rounded-xl px-4 py-2.5 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background dark:data-[state=active]:bg-foreground dark:data-[state=active]:text-background"
+            value="watchlists"
+            className="min-w-[9rem] rounded-xl px-4 py-2.5 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background dark:data-[state=active]:bg-foreground dark:data-[state=active]:text-background"
           >
-            Company Interest
+            Watchlists
           </TabsTrigger>
           <TabsTrigger
             value="operations"
@@ -45,8 +45,8 @@ export function AdminAnalyticsTabs({
       <TabsContent value="usage" className="mt-0">
         {usage}
       </TabsContent>
-      <TabsContent value="company-interest" className="mt-0">
-        {companyInterest}
+      <TabsContent value="watchlists" className="mt-0">
+        {watchlists}
       </TabsContent>
       <TabsContent value="operations" className="mt-0">
         {operations}
