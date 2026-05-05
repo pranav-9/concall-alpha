@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import ConcallScore from "@/components/concall-score";
 import { slugifySector } from "@/app/sector/utils";
+import { getConcallData } from "@/app/company/get-concall-data";
+import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import {
   HERO_CARD,
   INNER_CARD,
@@ -18,11 +20,6 @@ type CompanyRow = {
   name: string | null;
   sector: string | null;
   sub_sector: string | null;
-};
-
-type QuarterScoreRow = {
-  company_code: string;
-  score: number | null;
 };
 
 type GrowthOutlookRow = {
@@ -40,14 +37,25 @@ type SectorOverviewRow = {
   latestQuarterEligibleCount: number;
   avgGrowthScore: number | null;
   growthEligibleCount: number;
+  avgAvg4QuarterScore: number | null;
+  avg4QuarterEligibleCount: number;
+  avgBlendedScore: number | null;
+  blendedEligibleCount: number;
+  rank: number | null;
 };
 
 type SectorSortKey =
+  | "rank"
   | "sector"
   | "companies"
   | "subsectors"
+  | "blended"
   | "latest_qtr"
-  | "growth";
+  | "growth"
+  | "avg_4q";
+
+const defaultDirectionForKey = (key: SectorSortKey): "asc" | "desc" =>
+  key === "sector" || key === "rank" ? "asc" : "desc";
 
 export const metadata: Metadata = {
   title: "Sectors – Story of a Stock",
@@ -83,33 +91,36 @@ export default async function SectorsPage({
 }) {
   const resolvedSearchParams = await searchParams;
   const sortBy: SectorSortKey =
+    resolvedSearchParams?.sort === "rank" ||
     resolvedSearchParams?.sort === "sector" ||
     resolvedSearchParams?.sort === "companies" ||
     resolvedSearchParams?.sort === "subsectors" ||
-    resolvedSearchParams?.sort === "growth"
+    resolvedSearchParams?.sort === "growth" ||
+    resolvedSearchParams?.sort === "latest_qtr" ||
+    resolvedSearchParams?.sort === "avg_4q"
       ? resolvedSearchParams.sort
-      : "latest_qtr";
-  const sortOrder: "asc" | "desc" = resolvedSearchParams?.order === "asc" ? "asc" : "desc";
+      : "blended";
+  const sortOrder: "asc" | "desc" =
+    resolvedSearchParams?.order === "asc" || resolvedSearchParams?.order === "desc"
+      ? resolvedSearchParams.order
+      : defaultDirectionForKey(sortBy);
   const supabase = await createClient();
 
-  const [{ data: companiesData }, { data: latestQuarterKey }, { data: growthRowsData }] =
-    await Promise.all([
-      supabase
-        .from("company")
-        .select("code, name, sector, sub_sector")
-        .not("sector", "is", null),
-      supabase
-        .from("concall_analysis")
-        .select("fy, qtr, quarter_label")
-        .order("fy", { ascending: false })
-        .order("qtr", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from("growth_outlook")
-        .select("company, growth_score, run_timestamp")
-        .order("run_timestamp", { ascending: false }),
-    ]);
+  const [
+    { data: companiesData },
+    { rows: concallRows, latestLabel },
+    { data: growthRowsData },
+  ] = await Promise.all([
+    supabase
+      .from("company")
+      .select("code, name, sector, sub_sector")
+      .not("sector", "is", null),
+    getConcallData(),
+    supabase
+      .from("growth_outlook")
+      .select("company, growth_score, run_timestamp")
+      .order("run_timestamp", { ascending: false }),
+  ]);
 
   const companies = (companiesData ?? []) as CompanyRow[];
   if (!companies.length) {
@@ -135,27 +146,16 @@ export default async function SectorsPage({
     );
   }
 
-  const companyCodes = companies
-    .map((company) => company.code)
-    .filter((code): code is string => Boolean(code))
-    .map((code) => code.toUpperCase());
-
-  let latestQuarterScoreMap = new Map<string, number | null>();
-  if (latestQuarterKey?.fy != null && latestQuarterKey?.qtr != null && companyCodes.length > 0) {
-    const { data: latestQuarterScoresData } = await supabase
-      .from("concall_analysis")
-      .select("company_code, score")
-      .eq("fy", latestQuarterKey.fy)
-      .eq("qtr", latestQuarterKey.qtr)
-      .in("company_code", companyCodes);
-
-    latestQuarterScoreMap = new Map(
-      ((latestQuarterScoresData ?? []) as QuarterScoreRow[]).map((row) => [
-        row.company_code.toUpperCase(),
-        toNumberOrNull(row.score),
-      ]),
-    );
-  }
+  const concallScoreByCode = new Map<
+    string,
+    { latestScore: number | null; avg4QuarterScore: number | null }
+  >();
+  concallRows.forEach((row) => {
+    concallScoreByCode.set(row.company.toUpperCase(), {
+      latestScore: latestLabel ? toNumberOrNull(row[latestLabel]) : null,
+      avg4QuarterScore: toNumberOrNull(row["Latest 4Q Avg"]),
+    });
+  });
 
   const latestGrowthByKey = new Map<string, number | null>();
   ((growthRowsData ?? []) as GrowthOutlookRow[]).forEach((row) => {
@@ -164,6 +164,12 @@ export default async function SectorsPage({
     latestGrowthByKey.set(key, toNumberOrNull(row.growth_score));
   });
 
+  const blendCompany = (values: Array<number | null>) => {
+    const valid = values.filter((value): value is number => value != null);
+    if (valid.length === 0) return null;
+    return valid.reduce((sum, value) => sum + value, 0) / valid.length;
+  };
+
   const sectorMap = new Map<
     string,
     {
@@ -171,6 +177,8 @@ export default async function SectorsPage({
       subSectors: Set<string>;
       latestQuarterScores: number[];
       growthScores: number[];
+      avg4QuarterScores: number[];
+      blendedScores: number[];
     }
   >();
 
@@ -180,8 +188,11 @@ export default async function SectorsPage({
 
     const codeKey = company.code.toUpperCase();
     const nameKey = (company.name ?? "").trim().toUpperCase();
-    const quarterScore = latestQuarterScoreMap.get(codeKey) ?? null;
+    const concallScore = concallScoreByCode.get(codeKey);
+    const quarterScore = concallScore?.latestScore ?? null;
+    const avg4QuarterScore = concallScore?.avg4QuarterScore ?? null;
     const growthScore = latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? null;
+    const blendedScore = blendCompany([quarterScore, growthScore, avg4QuarterScore]);
 
     if (!sectorMap.has(sector)) {
       sectorMap.set(sector, {
@@ -189,6 +200,8 @@ export default async function SectorsPage({
         subSectors: new Set<string>(),
         latestQuarterScores: [],
         growthScores: [],
+        avg4QuarterScores: [],
+        blendedScores: [],
       });
     }
 
@@ -197,9 +210,11 @@ export default async function SectorsPage({
     if (company.sub_sector?.trim()) bucket.subSectors.add(company.sub_sector.trim());
     if (quarterScore != null) bucket.latestQuarterScores.push(quarterScore);
     if (growthScore != null) bucket.growthScores.push(growthScore);
+    if (avg4QuarterScore != null) bucket.avg4QuarterScores.push(avg4QuarterScore);
+    if (blendedScore != null) bucket.blendedScores.push(blendedScore);
   });
 
-  const rows: SectorOverviewRow[] = Array.from(sectorMap.entries())
+  const unrankedRows = Array.from(sectorMap.entries())
     .map(([sector, bucket]) => ({
       sector,
       slug: slugifySector(sector),
@@ -209,8 +224,38 @@ export default async function SectorsPage({
       latestQuarterEligibleCount: bucket.latestQuarterScores.length,
       avgGrowthScore: avg(bucket.growthScores),
       growthEligibleCount: bucket.growthScores.length,
+      avgAvg4QuarterScore: avg(bucket.avg4QuarterScores),
+      avg4QuarterEligibleCount: bucket.avg4QuarterScores.length,
+      avgBlendedScore: avg(bucket.blendedScores),
+      blendedEligibleCount: bucket.blendedScores.length,
     }))
     .filter((row) => row.companyCount > 1);
+
+  const rankSorted = [...unrankedRows].sort((a, b) => {
+    const blendDiff =
+      (b.avgBlendedScore ?? Number.NEGATIVE_INFINITY) -
+      (a.avgBlendedScore ?? Number.NEGATIVE_INFINITY);
+    if (blendDiff !== 0) return blendDiff;
+    const qtrDiff =
+      (b.avgLatestQuarterScore ?? Number.NEGATIVE_INFINITY) -
+      (a.avgLatestQuarterScore ?? Number.NEGATIVE_INFINITY);
+    if (qtrDiff !== 0) return qtrDiff;
+    const growthDiff =
+      (b.avgGrowthScore ?? Number.NEGATIVE_INFINITY) -
+      (a.avgGrowthScore ?? Number.NEGATIVE_INFINITY);
+    if (growthDiff !== 0) return growthDiff;
+    return a.sector.localeCompare(b.sector);
+  });
+  const ranked = assignCompetitionRanks(rankSorted, (row) => row.avgBlendedScore);
+  const rankBySector = new Map<string, number>();
+  ranked.forEach((row) => {
+    if (row.avgBlendedScore != null) rankBySector.set(row.sector, row.leaderboardRank);
+  });
+
+  const rows: SectorOverviewRow[] = unrankedRows.map((row) => ({
+    ...row,
+    rank: rankBySector.get(row.sector) ?? null,
+  }));
 
   const compareNullLast = (
     a: number | null,
@@ -224,7 +269,10 @@ export default async function SectorsPage({
   };
 
   const sortedRows = [...rows].sort((a, b) => {
-    if (sortBy === "sector") {
+    if (sortBy === "rank") {
+      const primary = compareNullLast(a.rank, b.rank, sortOrder);
+      if (primary !== 0) return primary;
+    } else if (sortBy === "sector") {
       const primary = sortOrder === "asc"
         ? a.sector.localeCompare(b.sector)
         : b.sector.localeCompare(a.sector);
@@ -242,11 +290,19 @@ export default async function SectorsPage({
     } else if (sortBy === "growth") {
       const primary = compareNullLast(a.avgGrowthScore, b.avgGrowthScore, sortOrder);
       if (primary !== 0) return primary;
-    } else {
+    } else if (sortBy === "latest_qtr") {
       const primary = compareNullLast(a.avgLatestQuarterScore, b.avgLatestQuarterScore, sortOrder);
+      if (primary !== 0) return primary;
+    } else if (sortBy === "avg_4q") {
+      const primary = compareNullLast(a.avgAvg4QuarterScore, b.avgAvg4QuarterScore, sortOrder);
+      if (primary !== 0) return primary;
+    } else {
+      const primary = compareNullLast(a.avgBlendedScore, b.avgBlendedScore, sortOrder);
       if (primary !== 0) return primary;
     }
 
+    const tieB = compareNullLast(a.avgBlendedScore, b.avgBlendedScore, "desc");
+    if (tieB !== 0) return tieB;
     const tieQ = compareNullLast(a.avgLatestQuarterScore, b.avgLatestQuarterScore, "desc");
     if (tieQ !== 0) return tieQ;
     const tieG = compareNullLast(a.avgGrowthScore, b.avgGrowthScore, "desc");
@@ -255,11 +311,7 @@ export default async function SectorsPage({
     return a.sector.localeCompare(b.sector);
   });
 
-  const latestQuarterLabel = latestQuarterKey?.quarter_label
-    ? String(latestQuarterKey.quarter_label)
-    : latestQuarterKey?.fy != null && latestQuarterKey?.qtr != null
-      ? `Q${latestQuarterKey.qtr} FY${latestQuarterKey.fy}`
-      : null;
+  const latestQuarterLabel = latestLabel ?? null;
 
   const averageLatestQuarterScore = avg(
     rows
@@ -294,30 +346,42 @@ export default async function SectorsPage({
   ];
 
   const headerHref = (key: SectorSortKey) => {
-    const nextOrder = sortBy === key && sortOrder === "desc" ? "asc" : "desc";
+    const keyDefault = defaultDirectionForKey(key);
+    const nextOrder: "asc" | "desc" =
+      sortBy === key
+        ? sortOrder === "desc"
+          ? "asc"
+          : "desc"
+        : keyDefault;
     const query = new URLSearchParams();
-    if (key !== "latest_qtr") query.set("sort", key);
-    if (nextOrder !== "desc") query.set("order", nextOrder);
+    if (key !== "blended") query.set("sort", key);
+    if (nextOrder !== keyDefault) query.set("order", nextOrder);
     const qs = query.toString();
     return qs ? `/sectors?${qs}` : "/sectors";
   };
 
   const headerLabel = (key: SectorSortKey, text: string) => {
-    const active = sortBy === key || (key === "latest_qtr" && !resolvedSearchParams?.sort);
+    const active = sortBy === key || (key === "blended" && !resolvedSearchParams?.sort);
     const arrow = active ? (sortOrder === "desc" ? "↓" : "↑") : "↕";
     return `${text} ${arrow}`;
   };
 
   const sortLabel =
-    sortBy === "sector"
-      ? "Sector"
-      : sortBy === "companies"
-        ? "Companies"
-        : sortBy === "subsectors"
-          ? "Sub-sectors"
-          : sortBy === "growth"
-            ? "Growth score"
-            : "Latest qtr";
+    sortBy === "rank"
+      ? "Rank"
+      : sortBy === "sector"
+        ? "Sector"
+        : sortBy === "companies"
+          ? "Companies"
+          : sortBy === "subsectors"
+            ? "Sub-sectors"
+            : sortBy === "growth"
+              ? "Growth score"
+              : sortBy === "latest_qtr"
+                ? "Latest qtr"
+                : sortBy === "avg_4q"
+                  ? "4Q avg"
+                  : "Blended";
 
   return (
     <main className="relative isolate overflow-hidden">
@@ -381,7 +445,7 @@ export default async function SectorsPage({
                   Sector rankings
                 </p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Sort by company breadth, latest quarter score, or growth score.
+                  Ranked by blended score (latest quarter, growth, and 4Q average). Click any column to re-sort.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -393,67 +457,42 @@ export default async function SectorsPage({
 
             <div className="flex flex-wrap items-center gap-2 border-b border-border/30 px-4 py-3 text-xs">
               <span className="text-muted-foreground">Sort:</span>
-              <Link
-                href={headerHref("sector")}
-                className={`rounded-full border px-2.5 py-1 transition-colors hover:bg-accent ${
-                  sortBy === "sector"
-                    ? "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
-                    : "border-border/60 bg-background/80 text-muted-foreground"
-                }`}
-                prefetch={false}
-              >
-                {headerLabel("sector", "Sector")}
-              </Link>
-              <Link
-                href={headerHref("companies")}
-                className={`rounded-full border px-2.5 py-1 transition-colors hover:bg-accent ${
-                  sortBy === "companies"
-                    ? "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
-                    : "border-border/60 bg-background/80 text-muted-foreground"
-                }`}
-                prefetch={false}
-              >
-                {headerLabel("companies", "Companies")}
-              </Link>
-              <Link
-                href={headerHref("subsectors")}
-                className={`rounded-full border px-2.5 py-1 transition-colors hover:bg-accent ${
-                  sortBy === "subsectors"
-                    ? "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
-                    : "border-border/60 bg-background/80 text-muted-foreground"
-                }`}
-                prefetch={false}
-              >
-                {headerLabel("subsectors", "Sub-sectors")}
-              </Link>
-              <Link
-                href={headerHref("latest_qtr")}
-                className={`rounded-full border px-2.5 py-1 transition-colors hover:bg-accent ${
-                  sortBy === "latest_qtr"
-                    ? "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
-                    : "border-border/60 bg-background/80 text-muted-foreground"
-                }`}
-                prefetch={false}
-              >
-                {headerLabel("latest_qtr", "Avg latest qtr score")}
-              </Link>
-              <Link
-                href={headerHref("growth")}
-                className={`rounded-full border px-2.5 py-1 transition-colors hover:bg-accent ${
-                  sortBy === "growth"
-                    ? "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
-                    : "border-border/60 bg-background/80 text-muted-foreground"
-                }`}
-                prefetch={false}
-              >
-                {headerLabel("growth", "Avg growth score")}
-              </Link>
+              {(
+                [
+                  ["rank", "#"],
+                  ["sector", "Sector"],
+                  ["companies", "Companies"],
+                  ["subsectors", "Sub-sectors"],
+                  ["latest_qtr", "Avg latest qtr score"],
+                  ["growth", "Avg growth score"],
+                  ["avg_4q", "Avg 4Q score"],
+                  ["blended", "Avg blended score"],
+                ] as Array<[SectorSortKey, string]>
+              ).map(([key, label]) => (
+                <Link
+                  key={key}
+                  href={headerHref(key)}
+                  className={`rounded-full border px-2.5 py-1 transition-colors hover:bg-accent ${
+                    sortBy === key
+                      ? "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
+                      : "border-border/60 bg-background/80 text-muted-foreground"
+                  }`}
+                  prefetch={false}
+                >
+                  {headerLabel(key, label)}
+                </Link>
+              ))}
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="border-b border-border/35 bg-background/70">
                   <tr className="text-left">
+                    <th className="w-12 px-4 py-3 font-semibold text-foreground">
+                      <Link href={headerHref("rank")} className="hover:underline" prefetch={false}>
+                        {headerLabel("rank", "#")}
+                      </Link>
+                    </th>
                     <th className="px-4 py-3 font-semibold text-foreground">
                       <Link href={headerHref("sector")} className="hover:underline" prefetch={false}>
                         {headerLabel("sector", "Sector")}
@@ -479,6 +518,16 @@ export default async function SectorsPage({
                         {headerLabel("growth", "Avg growth score")}
                       </Link>
                     </th>
+                    <th className="px-4 py-3 font-semibold text-foreground">
+                      <Link href={headerHref("avg_4q")} className="hover:underline" prefetch={false}>
+                        {headerLabel("avg_4q", "Avg 4Q score")}
+                      </Link>
+                    </th>
+                    <th className="border-l border-border/70 px-4 py-3 font-semibold text-foreground">
+                      <Link href={headerHref("blended")} className="hover:underline" prefetch={false}>
+                        {headerLabel("blended", "Avg blended score")}
+                      </Link>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -487,6 +536,11 @@ export default async function SectorsPage({
                       key={row.slug}
                       className="border-b border-border/45 transition-colors last:border-b-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
                     >
+                      <td className="px-4 py-3">
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                          {row.rank ?? "—"}
+                        </span>
+                      </td>
                       <td className="px-4 py-3">
                         <Link
                           href={`/sector/${row.slug}`}
@@ -516,6 +570,35 @@ export default async function SectorsPage({
                             <ConcallScore score={row.avgGrowthScore} size="sm" />
                             <span className="text-xs text-muted-foreground">
                               ({row.growthEligibleCount}/{row.companyCount})
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {row.avgAvg4QuarterScore != null ? (
+                          <div className="flex items-center gap-2">
+                            <ConcallScore score={row.avgAvg4QuarterScore} size="sm" />
+                            <span className="text-xs text-muted-foreground">
+                              ({row.avg4QuarterEligibleCount}/{row.companyCount})
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="border-l border-border/70 px-4 py-3">
+                        {row.avgBlendedScore != null ? (
+                          <div className="flex items-center gap-2">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/80 px-2.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-emerald-700/40 dark:bg-emerald-950/20">
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
+                                Blend
+                              </span>
+                              <ConcallScore score={row.avgBlendedScore} size="sm" />
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              ({row.blendedEligibleCount}/{row.companyCount})
                             </span>
                           </div>
                         ) : (

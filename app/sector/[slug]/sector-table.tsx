@@ -214,10 +214,7 @@ function sortRows(rows: RankedSectorRow[], sort: SortState): RankedSectorRow[] {
       case "moatTag":
         diff = compareMoatTag(a.moatRating, b.moatRating, sort.direction);
         if (diff === 0) {
-          diff =
-            sort.direction === "desc"
-              ? moatTierRank(a.moatTier) - moatTierRank(b.moatTier)
-              : moatTierRank(b.moatTier) - moatTierRank(a.moatTier);
+          diff = moatTierRank(a.moatTier) - moatTierRank(b.moatTier);
         }
         break;
       case "latestQuarterScore":
@@ -232,10 +229,10 @@ function sortRows(rows: RankedSectorRow[], sort: SortState): RankedSectorRow[] {
       case "blendedScore":
         diff = compareNumber(a.blendedScore, b.blendedScore, sort.direction);
         if (diff === 0) {
-          diff = compareNumber(a.latestQuarterScore, b.latestQuarterScore, sort.direction);
+          diff = compareNumber(a.latestQuarterScore, b.latestQuarterScore, "desc");
         }
         if (diff === 0) {
-          diff = compareNumber(a.growthScore, b.growthScore, sort.direction);
+          diff = compareNumber(a.growthScore, b.growthScore, "desc");
         }
         break;
     }
