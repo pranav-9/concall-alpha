@@ -202,25 +202,6 @@ export function MoatAnalysisSection({
             {moatTierGradeLabel(analysis.moatTier)}
           </span>
         )}
-        {payload && (() => {
-          const verdict = barrierStrengthLabel(payload.gatekeeper.barrier_strength);
-          return (
-            <span className={chipClass(verdict.tone)} title="Gatekeeper barrier">
-              Barrier · {verdict.label}
-            </span>
-          );
-        })()}
-        {analysis.cycleTested != null && (
-          <span
-            className={chipClass(analysis.cycleTested ? "emerald" : "amber")}
-            title="Cycle-tested across the evidence window"
-          >
-            {analysis.cycleTested ? "Cycle-proven" : "Cycle-untested"}
-          </span>
-        )}
-        {analysis.industry && (
-          <span className={chipClass("slate")}>{analysis.industry}</span>
-        )}
       </div>
 
       {payload?.headline && (
@@ -249,13 +230,13 @@ export function MoatAnalysisSection({
     <div className="space-y-4">
       {heroCard}
 
-      {/* Step 0 — economic anchor */}
+      {/* Economic proof */}
       <div className={cn(elevatedBlockClass, "p-4 space-y-3")}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="space-y-0.5">
-            <p className={sectionTitleClass}>Step 0 · economic anchor</p>
+            <p className={sectionTitleClass}>Economic Proof</p>
             <p className={sectionSubtitleClass}>
-              Multi-year ROIC vs. WACC posture, before source-level work.
+              Whether multi-year returns support the moat call.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
