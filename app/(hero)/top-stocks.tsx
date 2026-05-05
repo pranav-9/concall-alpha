@@ -166,7 +166,7 @@ const fetchMoatLeaders = async (supabase: SupabaseServerClient) => {
 
   return Array.from(latestByCompany.values())
     .map((item) => {
-      const appliesSourceCount = item.sources.filter((source) => source.applies).length;
+      const appliesSourceCount = item.appliesSourceCount;
 
       return {
         code: item.companyCode,
