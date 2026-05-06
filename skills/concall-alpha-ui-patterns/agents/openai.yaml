@@ -1,0 +1,4 @@
+interface:
+  display_name: "Concall Alpha UI Patterns"
+  short_description: "Concall Alpha company UI conventions"
+  default_prompt: "Use $concall-alpha-ui-patterns to review or change a concall-alpha company-page UI section consistently."
