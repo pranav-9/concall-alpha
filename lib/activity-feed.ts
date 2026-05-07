@@ -3,6 +3,8 @@ import { isCompanyNew } from "@/lib/company-freshness";
 import { createClient } from "@/lib/supabase/server";
 import { collapseConsecutiveSameCompanyUpdates } from "@/app/(hero)/recent-score-updates-utils";
 
+type SupabaseQueryClient = Pick<Awaited<ReturnType<typeof createClient>>, "from">;
+
 type RawQuarterRow = {
   company_code: string;
   score: number;
@@ -227,13 +229,15 @@ const buildGuidanceBatchPreview = (threads: GuidanceBatchThread[]) => {
 export type GetUnifiedUpdatesOptions = {
   limit: number;
   collapseSameCompanyRuns?: boolean;
+  supabaseClient?: SupabaseQueryClient;
 };
 
 export async function getUnifiedUpdates({
   limit,
   collapseSameCompanyRuns = true,
+  supabaseClient,
 }: GetUnifiedUpdatesOptions): Promise<UnifiedUpdate[]> {
-  const supabase = await createClient();
+  const supabase = supabaseClient ?? await createClient();
 
   const scale = (perItem: number, floor: number, ceiling: number) =>
     Math.min(Math.max(limit * perItem, floor), ceiling);

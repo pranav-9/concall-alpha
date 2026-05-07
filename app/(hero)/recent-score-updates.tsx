@@ -3,9 +3,9 @@ import ConcallScore from "@/components/concall-score";
 import { ScoreDelta } from "@/components/score-delta";
 import {
   formatRelativeActivityTime,
-  getUnifiedUpdates,
   typeChipClass,
 } from "@/lib/activity-feed";
+import { getCachedHomepageActivityFeed } from "@/lib/homepage-activity-feed";
 
 export default async function RecentScoreUpdates({
   heroPanel = false,
@@ -13,7 +13,7 @@ export default async function RecentScoreUpdates({
   heroPanel?: boolean;
 } = {}) {
   const isCompact = heroPanel;
-  const updates = await getUnifiedUpdates({ limit: isCompact ? 9 : 6 });
+  const updates = await getCachedHomepageActivityFeed(isCompact ? 9 : 6);
   if (updates.length === 0) return null;
 
   const headerClass = isCompact
