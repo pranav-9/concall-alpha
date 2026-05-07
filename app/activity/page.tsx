@@ -70,7 +70,14 @@ function ActivityRow({ item }: { item: UnifiedUpdate }) {
         {typeof item.score === "number" ? (
           <>
             <ConcallScore score={item.score} size="sm" />
-            <ScoreDelta score={item.score} priorScore={item.priorScore} />
+            <ScoreDelta
+              score={item.score}
+              priorScore={item.priorScore}
+              priorLabel={item.priorLabel}
+              missingLabel={
+                item.type === "quarter" ? "no prior qtr" : "no prior score"
+              }
+            />
           </>
         ) : item.contextLabel ? (
           <span

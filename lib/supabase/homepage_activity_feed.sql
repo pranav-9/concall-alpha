@@ -18,12 +18,16 @@ create table if not exists public.homepage_activity_feed (
   context_label text null,
   score numeric null,
   prior_score numeric null,
+  prior_label text null,
   artifact_href text null,
   event_at timestamptz null,
   sort_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.homepage_activity_feed
+  add column if not exists prior_label text null;
 
 create index if not exists idx_homepage_activity_feed_sort_at_desc
   on public.homepage_activity_feed (sort_at desc);

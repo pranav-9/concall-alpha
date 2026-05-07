@@ -97,6 +97,10 @@ export default async function RecentScoreUpdates({
                       <ScoreDelta
                         score={item.score}
                         priorScore={item.priorScore}
+                        priorLabel={item.priorLabel}
+                        missingLabel={
+                          item.type === "quarter" ? "no prior qtr" : "no prior score"
+                        }
                         className={isCompact ? "text-[9px]" : "text-[10px]"}
                       />
                     </>

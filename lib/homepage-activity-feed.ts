@@ -23,6 +23,7 @@ export type HomepageActivityFeedRecord = {
   context_label: string | null;
   score: number | null;
   prior_score: number | null;
+  prior_label: string | null;
   artifact_href: string | null;
   event_at: string | null;
   sort_at: string;
@@ -63,6 +64,7 @@ export function toHomepageActivityFeedUpsert(
     context_label: update.contextLabel,
     score: update.score,
     prior_score: update.priorScore,
+    prior_label: update.priorLabel,
     artifact_href: update.artifactHref,
     event_at: update.atRaw,
     sort_at: sortAt,
@@ -81,6 +83,7 @@ function toUnifiedUpdate(row: HomepageActivityFeedRecord): UnifiedUpdate | null 
     companyIsNew: row.company_is_new,
     score: row.score,
     priorScore: row.prior_score,
+    priorLabel: row.prior_label,
     detail: row.detail ?? "",
     sourceLabel: row.source_label,
     contextLabel: row.context_label,
@@ -98,7 +101,7 @@ const readHomepageActivityFeed = async (limit: number): Promise<UnifiedUpdate[]>
     const { data, error } = await supabase
       .from("homepage_activity_feed")
       .select(
-        "id,event_type,company_code,company_name,company_is_new,source_label,detail,context_label,score,prior_score,artifact_href,event_at,sort_at",
+        "id,event_type,company_code,company_name,company_is_new,source_label,detail,context_label,score,prior_score,prior_label,artifact_href,event_at,sort_at",
       )
       .order("sort_at", { ascending: false })
       .limit(safeLimit);

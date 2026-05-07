@@ -3,18 +3,35 @@ const DELTA_EPSILON = 0.05;
 export function ScoreDelta({
   score,
   priorScore,
+  priorLabel,
+  missingLabel,
   className = "text-[10px]",
 }: {
   score: number;
   priorScore: number | null;
+  priorLabel?: string | null;
+  missingLabel?: string;
   className?: string;
 }) {
-  if (priorScore == null) return null;
-  const delta = score - priorScore;
-  if (Math.abs(delta) < DELTA_EPSILON) {
+  if (priorScore == null) {
+    if (!missingLabel) return null;
     return (
       <span className={`${className} font-medium text-muted-foreground`}>
-        no change
+        {missingLabel}
+      </span>
+    );
+  }
+  const delta = score - priorScore;
+  const priorTitle = priorLabel
+    ? `Previous (${priorLabel}): ${priorScore.toFixed(1)}`
+    : `Previous: ${priorScore.toFixed(1)}`;
+  if (Math.abs(delta) < DELTA_EPSILON) {
+    return (
+      <span
+        className={`${className} font-medium text-muted-foreground`}
+        title={priorTitle}
+      >
+        no change{priorLabel ? ` vs ${priorLabel}` : ""}
       </span>
     );
   }
@@ -26,9 +43,10 @@ export function ScoreDelta({
   return (
     <span
       className={`${className} font-semibold tabular-nums ${tone}`}
-      title={`Previous: ${priorScore.toFixed(1)}`}
+      title={priorTitle}
     >
       {arrow} {Math.abs(delta).toFixed(1)}
+      {priorLabel ? ` vs ${priorLabel}` : ""}
     </span>
   );
 }

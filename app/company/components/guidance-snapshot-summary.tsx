@@ -1,7 +1,24 @@
+import { History } from "lucide-react";
 import type {
   NormalizedGuidanceSnapshot,
   NormalizedPriorTwoYearAccuracyRow,
 } from "@/lib/guidance-snapshot/types";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { formatPctLabel } from "../[code]/page-helpers";
 import {
   formatCompactLabel,
@@ -20,6 +37,12 @@ function AccuracyRow({
   index: number;
 }) {
   const verdictDisplay = getGuidanceAccuracyVerdictDisplay(row.verdict);
+  // When the verdict is "not_assessable" the producer fills `signalSummary`
+  // and `reason` with placeholder strings ("No tracked guidance targets fall
+  // in this FY." / "No guidance threads with target_period in this FY.").
+  // Suppress those blocks and show a single explanatory line instead so the
+  // card doesn't render half-empty boilerplate.
+  const isNotAssessable = row.verdict === "not_assessable";
 
   return (
     <div
@@ -27,16 +50,9 @@ function AccuracyRow({
       className={`${nestedDetailClass} p-3 space-y-1.5`}
     >
       <div className="flex flex-wrap items-start justify-between gap-1.5">
-        <div>
-          <p className="text-[11px] font-semibold text-foreground">
-            {row.fiscalYear ?? "Prior year"}
-          </p>
-          {row.finalSignalAfterRevisions && (
-            <p className="mt-0.5 text-[9px] text-muted-foreground">
-              Final signal: {row.finalSignalAfterRevisions}
-            </p>
-          )}
-        </div>
+        <p className="text-[11px] font-semibold text-foreground">
+          {row.fiscalYear ?? "Prior year"}
+        </p>
         {verdictDisplay && (
           <span
             className={`rounded-full border px-2 py-0.5 text-[9px] ${verdictDisplay.className}`}
@@ -45,15 +61,14 @@ function AccuracyRow({
           </span>
         )}
       </div>
-      {row.actualOutcome && (
-        <div className="space-y-0.5">
-          <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-            Actual outcome
-          </p>
-          <p className="text-[10px] leading-relaxed text-foreground">{row.actualOutcome}</p>
-        </div>
-      )}
-      {row.signalSummary && (
+
+      {/*
+        Section order: Guidance given → Actual outcome → Why.
+        Reader's question is "did management hit FY?". You need the promise
+        before the result before the explanation. Placing the actual outcome
+        after the guidance keeps the reading flow intuitive.
+      */}
+      {!isNotAssessable && row.signalSummary && (
         <div className="space-y-0.5">
           <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
             Guidance given
@@ -63,13 +78,26 @@ function AccuracyRow({
           </p>
         </div>
       )}
-      {row.reason && (
+      {row.actualOutcome && (
+        <div className="space-y-0.5">
+          <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+            Actual outcome
+          </p>
+          <p className="text-[10px] leading-relaxed text-foreground">{row.actualOutcome}</p>
+        </div>
+      )}
+      {!isNotAssessable && row.reason && (
         <div className="space-y-0.5">
           <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
             Why
           </p>
           <p className="text-[10px] leading-relaxed text-muted-foreground/90">{row.reason}</p>
         </div>
+      )}
+      {isNotAssessable && (
+        <p className="text-[10px] leading-relaxed text-muted-foreground italic">
+          No tracked guidance targets had {row.fiscalYear ?? "this FY"} as their target period — verdict not assessable.
+        </p>
       )}
     </div>
   );
@@ -214,118 +242,149 @@ export function GuidanceSnapshotSummary({
                       {currentYearTrendDisplay.label}
                     </span>
                   )}
-                  {currentYear.officialCurrentGuidanceSourceQuarter && (
-                    <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
-                      Anchored {currentYear.officialCurrentGuidanceSourceQuarter}
-                    </span>
-                  )}
+                  {/*
+                    The previous "Anchored Q4 FY26" chip and the per-quarter
+                    "Guidance evolution" sidebar are now rolled into a single
+                    icon-button drawer trigger — same pattern as the per-thread
+                    trail on the Guidance Tracker. The drawer header surfaces
+                    the anchored quarter; the body shows the per-quarter
+                    timeline.
+                  */}
+                  {currentYear.sourceQuarterTimeline.length > 0 ? (
+                    <Drawer direction="right">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <DrawerTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              aria-label="Open guidance evolution"
+                              className="relative size-7 rounded-full border-border/60 bg-background/70 text-muted-foreground shadow-none hover:bg-accent hover:text-foreground"
+                            >
+                              <History className="size-3.5" />
+                              <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full border border-background bg-emerald-500 px-1 text-[9px] font-semibold leading-4 text-white">
+                                {currentYear.sourceQuarterTimeline.length}
+                              </span>
+                            </Button>
+                          </DrawerTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent sideOffset={6}>
+                          View guidance evolution
+                        </TooltipContent>
+                      </Tooltip>
+                      <DrawerContent className="w-full max-w-xl">
+                        <DrawerHeader className="border-b border-border">
+                          <DrawerTitle className="text-[14px] leading-snug">
+                            Guidance evolution
+                          </DrawerTitle>
+                          <DrawerDescription>
+                            <span className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                              {currentYear.fiscalYear ? (
+                                <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                  {currentYear.fiscalYear}
+                                </span>
+                              ) : null}
+                              {currentYear.officialCurrentGuidanceSourceQuarter ? (
+                                <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                  Anchored {currentYear.officialCurrentGuidanceSourceQuarter}
+                                </span>
+                              ) : null}
+                              <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                {currentYear.sourceQuarterTimeline.length} quarter
+                                {currentYear.sourceQuarterTimeline.length === 1 ? "" : "s"}
+                              </span>
+                            </span>
+                          </DrawerDescription>
+                        </DrawerHeader>
+                        <div className="space-y-2 overflow-y-auto px-4 py-4">
+                          {currentYear.sourceQuarterTimeline.map((entry, index) => (
+                            <div
+                              key={`${entry.quarter ?? "quarter"}-${index}`}
+                              className={`${nestedDetailClass} space-y-1.5 px-3 py-2.5`}
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {entry.quarter && (
+                                    <p className="text-[10px] font-semibold text-foreground">
+                                      {entry.quarter}
+                                    </p>
+                                  )}
+                                  {entry.guidanceType && (
+                                    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[9px] text-muted-foreground">
+                                      {formatCompactLabel(entry.guidanceType)}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {entry.guidancePercent != null && (
+                                    <span className="rounded-full border border-emerald-200/70 bg-emerald-50 px-2 py-0.5 text-[9px] font-medium text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-200">
+                                      {formatPctLabel(entry.guidancePercent)}
+                                    </span>
+                                  )}
+                                  {entry.sourceReference && (
+                                    <span className="text-[9px] text-muted-foreground">
+                                      {entry.sourceReference}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {entry.whatWasSaid && (
+                                <p className="text-[10px] leading-relaxed text-muted-foreground">
+                                  {entry.whatWasSaid}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <DrawerFooter className="border-t border-border">
+                          <DrawerClose asChild>
+                            <Button variant="outline">Close</Button>
+                          </DrawerClose>
+                        </DrawerFooter>
+                      </DrawerContent>
+                    </Drawer>
+                  ) : null}
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.12fr)_minmax(16rem,0.88fr)] lg:items-start">
-                <div className="space-y-3">
-                  {(currentYear.officialCurrentGuidanceText ||
-                    currentYear.consolidatedStatement) && (
-                    <div className={`${nestedDetailClass} p-3`}>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Guidance line
-                      </p>
-                      <p className="mt-2 text-[12.5px] font-semibold leading-relaxed text-foreground">
-                        {currentYear.officialCurrentGuidanceText ??
-                          currentYear.consolidatedStatement}
-                      </p>
-                      {currentYear.consolidatedStatement &&
-                        currentYear.consolidatedStatement !==
-                          currentYear.officialCurrentGuidanceText && (
-                          <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
-                            {currentYear.consolidatedStatement}
-                          </p>
-                        )}
-                    </div>
-                  )}
-
-                  {currentYear.inYearRevisionNote && (
-                    <div className="rounded-xl border border-amber-200/35 bg-amber-50/45 px-3 py-2 dark:border-amber-700/25 dark:bg-amber-950/15">
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-200">
-                        Revision note
-                      </p>
-                      <p className="mt-1 text-[10px] leading-relaxed text-foreground">
-                        {currentYear.inYearRevisionNote}
-                      </p>
-                    </div>
-                  )}
-
-                  {currentYear.sourceQuarters.length > 0 && (
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Evidence quarters
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {currentYear.sourceQuarters.map((quarter) => (
-                          <span
-                            key={quarter}
-                            className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground"
-                          >
-                            {quarter}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {currentYear.sourceQuarterTimeline.length > 0 ? (
+              <div className="mt-4 space-y-3">
+                {(currentYear.officialCurrentGuidanceText ||
+                  currentYear.consolidatedStatement) && (
                   <div className={`${nestedDetailClass} p-3`}>
-                    <div className="flex flex-wrap items-center justify-between gap-1.5">
-                      <span className="inline-flex items-center gap-2 rounded-full border border-border/45 bg-muted/15 px-2.5 py-1 text-[9px] font-medium text-muted-foreground">
-                        <span>Guidance evolution</span>
-                        <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[9px] text-muted-foreground">
-                          {currentYear.sourceQuarterTimeline.length} qtrs
-                        </span>
-                      </span>
-                    </div>
-                    <div className="mt-3 space-y-2">
-                      {currentYear.sourceQuarterTimeline.map((entry, index) => (
-                        <div
-                          key={`${entry.quarter ?? "quarter"}-${index}`}
-                          className={`${nestedDetailClass} space-y-1.5 px-3 py-2.5`}
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {entry.quarter && (
-                                <p className="text-[10px] font-semibold text-foreground">
-                                  {entry.quarter}
-                                </p>
-                              )}
-                              {entry.guidanceType && (
-                                <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[9px] text-muted-foreground">
-                                  {formatCompactLabel(entry.guidanceType)}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              {entry.guidancePercent != null && (
-                                <span className="rounded-full border border-emerald-200/70 bg-emerald-50 px-2 py-0.5 text-[9px] font-medium text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-200">
-                                  {formatPctLabel(entry.guidancePercent)}
-                                </span>
-                              )}
-                              {entry.sourceReference && (
-                                <span className="text-[9px] text-muted-foreground">
-                                  {entry.sourceReference}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {entry.whatWasSaid && (
-                            <p className="text-[10px] leading-relaxed text-muted-foreground">
-                              {entry.whatWasSaid}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      Guidance line
+                    </p>
+                    <p className="mt-2 text-[12.5px] font-semibold leading-relaxed text-foreground">
+                      {currentYear.officialCurrentGuidanceText ??
+                        currentYear.consolidatedStatement}
+                    </p>
+                    {currentYear.consolidatedStatement &&
+                      currentYear.consolidatedStatement !==
+                        currentYear.officialCurrentGuidanceText && (
+                        <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+                          {currentYear.consolidatedStatement}
+                        </p>
+                      )}
                   </div>
-                ) : null}
+                )}
+
+                {currentYear.inYearRevisionNote && (
+                  <div className="rounded-xl border border-amber-200/35 bg-amber-50/45 px-3 py-2 dark:border-amber-700/25 dark:bg-amber-950/15">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-200">
+                      Revision note
+                    </p>
+                    <p className="mt-1 text-[10px] leading-relaxed text-foreground">
+                      {currentYear.inYearRevisionNote}
+                    </p>
+                  </div>
+                )}
+                {/*
+                  The "Evidence quarters" row of bare quarter pills used to
+                  live here. Removed because the per-quarter timeline drawer
+                  (triggered by the History icon button in the card header)
+                  shows the same quarters with richer per-quarter context.
+                */}
               </div>
             </section>
           )}

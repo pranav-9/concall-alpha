@@ -68,6 +68,7 @@ export type UnifiedUpdate = {
   companyIsNew: boolean;
   score: number | null;
   priorScore: number | null;
+  priorLabel: string | null;
   detail: string;
   sourceLabel: string;
   contextLabel: string | null;
@@ -226,6 +227,16 @@ const buildGuidanceBatchPreview = (threads: GuidanceBatchThread[]) => {
   return visibleThreads.join(" · ");
 };
 
+const uniqueCompanyCodes = (rows: RawQuarterRow[]) => {
+  const codes = new Map<string, string>();
+  rows.forEach((row) => {
+    const code = row.company_code?.trim();
+    if (!code) return;
+    codes.set(code.toUpperCase(), code);
+  });
+  return Array.from(codes.values());
+};
+
 export type GetUnifiedUpdatesOptions = {
   limit: number;
   collapseSameCompanyRuns?: boolean;
@@ -241,7 +252,7 @@ export async function getUnifiedUpdates({
 
   const scale = (perItem: number, floor: number, ceiling: number) =>
     Math.min(Math.max(limit * perItem, floor), ceiling);
-  const quarterCap = scale(3, 24, 120);
+  const quarterCap = scale(3, 24, 500);
   const growthCap = scale(3, 24, 120);
   const snapshotCap = scale(4, 32, 160);
   const keyVarsCap = scale(4, 32, 160);
@@ -288,7 +299,27 @@ export async function getUnifiedUpdates({
   ]);
 
   const updates: UnifiedUpdate[] = [];
-  const allQuarterRows = (quarterRows ?? []) as RawQuarterRow[];
+  const quarterSeedRows = (quarterRows ?? []) as RawQuarterRow[];
+  const quarterCompanyCodes = uniqueCompanyCodes(quarterSeedRows);
+  let allQuarterRows = quarterSeedRows;
+
+  if (quarterCompanyCodes.length > 0) {
+    const { data: quarterHistoryRows } = await supabase
+      .from("concall_analysis")
+      .select(
+        "company_code,score,fy,qtr,quarter_label,updated_at,created_at",
+      )
+      .in("company_code", quarterCompanyCodes)
+      .order("fy", { ascending: false })
+      .order("qtr", { ascending: false })
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false });
+
+    if (quarterHistoryRows && quarterHistoryRows.length > 0) {
+      allQuarterRows = quarterHistoryRows as RawQuarterRow[];
+    }
+  }
+
   const quarterCandidatesPerCompany = new Map<string, UnifiedUpdate[]>();
   allQuarterRows.forEach((row) => {
     const atRaw = row.updated_at ?? row.created_at ?? null;
@@ -304,6 +335,7 @@ export async function getUnifiedUpdates({
       companyIsNew: false,
       score: parseScore(row.score),
       priorScore: null,
+      priorLabel: null,
       detail: quarterLabel,
       sourceLabel: "Quarter Score",
       contextLabel: null,
@@ -331,6 +363,7 @@ export async function getUnifiedUpdates({
     );
     if (prior && prior.score != null) {
       latest.priorScore = prior.score;
+      latest.priorLabel = prior.detail;
     }
     updates.push(latest);
   });
@@ -352,6 +385,7 @@ export async function getUnifiedUpdates({
       companyIsNew: false,
       score: parseScore(row.growth_score),
       priorScore: null,
+      priorLabel: null,
       detail: fy ? `${fy} outlook` : "Growth outlook",
       sourceLabel: "Growth Update",
       contextLabel: null,
@@ -369,6 +403,7 @@ export async function getUnifiedUpdates({
     const prior = arr[1];
     if (prior && prior.score != null) {
       latest.priorScore = prior.score;
+      latest.priorLabel = prior.detail;
     }
     updates.push(latest);
   });
@@ -391,6 +426,7 @@ export async function getUnifiedUpdates({
       companyIsNew: false,
       score: null,
       priorScore: null,
+      priorLabel: null,
       detail,
       sourceLabel: "Biz Snapshot",
       contextLabel: null,
@@ -424,6 +460,7 @@ export async function getUnifiedUpdates({
       companyIsNew: false,
       score: null,
       priorScore: null,
+      priorLabel: null,
       detail:
         variableCount != null
           ? `${variableCount} variable${variableCount === 1 ? "" : "s"} tracked`
@@ -468,6 +505,7 @@ export async function getUnifiedUpdates({
         companyIsNew: false,
         score: null,
         priorScore: null,
+        priorLabel: null,
         detail: threadContext ? `${threadLabel} · ${threadContext}` : threadLabel,
         sourceLabel: "Guidance Monitor",
         contextLabel: threadStatus ? `${threadStatus} update` : "Guidance",
@@ -493,6 +531,7 @@ export async function getUnifiedUpdates({
         companyIsNew: false,
         score: null,
         priorScore: null,
+        priorLabel: null,
         detail: "",
         sourceLabel: "Guidance Monitor",
         contextLabel: null,
