@@ -1005,7 +1005,11 @@ export default async function Page({
           }
         >
           {normalizedKeyVariablesSnapshot ? (
-            <KeyVariablesSection snapshot={normalizedKeyVariablesSnapshot} />
+            <KeyVariablesSection
+              snapshot={normalizedKeyVariablesSnapshot}
+              companyCode={companyRow?.code ?? code}
+              companyName={companyRow?.name ?? null}
+            />
           ) : (
             renderMissingSectionState(
               "key-variables",

@@ -6,6 +6,7 @@ import {
   type OverviewBodyPillTone,
 } from "../[code]/display-tokens";
 import { SectionFeedbackButton } from "./section-feedback-button";
+import { SectionHelpfulnessFooter } from "./section-helpfulness-footer";
 
 type SectionTone = "sky" | "emerald" | "amber" | "violet" | "rose" | "slate";
 
@@ -27,6 +28,7 @@ interface SectionCardProps {
   feedbackEnabled?: boolean;
   feedbackCompanyCode?: string;
   feedbackCompanyName?: string | null;
+  helpfulnessEnabled?: boolean;
   collapsible?: boolean;
   defaultOpen?: boolean;
   tone?: SectionTone;
@@ -110,6 +112,7 @@ export function SectionCard({
   feedbackEnabled = false,
   feedbackCompanyCode,
   feedbackCompanyName,
+  helpfulnessEnabled = feedbackEnabled,
   collapsible = false,
   defaultOpen = true,
   tone,
@@ -120,6 +123,15 @@ export function SectionCard({
   const feedbackAction =
     feedbackEnabled && feedbackCompanyCode ? (
       <SectionFeedbackButton
+        companyCode={feedbackCompanyCode}
+        companyName={feedbackCompanyName}
+        sectionId={id}
+        sectionTitle={title}
+      />
+    ) : null;
+  const helpfulnessFooter =
+    helpfulnessEnabled && feedbackCompanyCode && id !== "community" ? (
+      <SectionHelpfulnessFooter
         companyCode={feedbackCompanyCode}
         companyName={feedbackCompanyName}
         sectionId={id}
@@ -232,7 +244,10 @@ export function SectionCard({
         <div className="relative border-t border-border/45 p-4 pt-3 sm:p-5 sm:pt-4">
           <div className={`pointer-events-none absolute inset-0 ${toneClasses.glow}`} />
           <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accent}`} />
-          <div className="relative">{children}</div>
+          <div className="relative flex flex-col gap-4">
+            <div>{children}</div>
+            {helpfulnessFooter}
+          </div>
         </div>
       </details>
     );
@@ -253,6 +268,7 @@ export function SectionCard({
           {header}
           <div className="border-b border-border/70" />
           <div>{children}</div>
+          {helpfulnessFooter}
         </div>
       </div>
     </div>

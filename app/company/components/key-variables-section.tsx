@@ -16,6 +16,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { BlockFeedbackButton } from "./block-feedback-button";
 
 const numberFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 2,
@@ -307,8 +308,12 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
 
 export function KeyVariablesSection({
   snapshot,
+  companyCode,
+  companyName,
 }: {
   snapshot: NormalizedKeyVariablesSnapshot;
+  companyCode: string;
+  companyName?: string | null;
 }) {
   return (
     <div className="space-y-4">
@@ -323,13 +328,23 @@ export function KeyVariablesSection({
                 key={`${item.variable}-${index}`}
                 className="rounded-2xl border border-border/35 bg-background/75 p-4 shadow-md shadow-black/10"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-[15px] font-semibold leading-snug text-foreground">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                  <p className="min-w-0 text-[15px] font-semibold leading-snug text-foreground">
                     {item.variable}
                   </p>
-                  <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
-                    Variable {index + 1}
-                  </span>
+                  <div className="flex flex-wrap items-center justify-start gap-1.5 sm:shrink-0 sm:justify-end">
+                    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                      Variable {index + 1}
+                    </span>
+                    <BlockFeedbackButton
+                      companyCode={companyCode}
+                      companyName={companyName}
+                      sectionId="key-variables"
+                      sectionTitle="Key Variables"
+                      blockId={`key-variable-${index + 1}`}
+                      blockTitle={item.variable}
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-4 space-y-3">
