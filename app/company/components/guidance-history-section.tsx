@@ -139,33 +139,6 @@ const isRevenueGuidanceType = (value: string | null) => {
 const getGuidanceSupportText = (item: NormalizedGuidanceItem) =>
   item.latestView ?? item.statusReason;
 
-const getGuidanceMentionCount = (item: NormalizedGuidanceItem) => {
-  if (item.sourceMentions.length > 0) return item.sourceMentions.length;
-  if (item.trail.length > 0) return item.trail.length;
-  return item.mentionedPeriods.length;
-};
-
-const getGuidanceMentionSummaryText = (item: NormalizedGuidanceItem) => {
-  const mentionCount = getGuidanceMentionCount(item);
-  const mentionCountLabel =
-    mentionCount > 0 ? `${mentionCount} mention${mentionCount === 1 ? "" : "s"}` : null;
-
-  if (item.firstMentionPeriod && item.latestMentionPeriod) {
-    const periodLabel =
-      item.firstMentionPeriod === item.latestMentionPeriod
-        ? item.firstMentionPeriod
-        : `${item.firstMentionPeriod} -> ${item.latestMentionPeriod}`;
-    return mentionCountLabel ? `${periodLabel} | ${mentionCountLabel}` : periodLabel;
-  }
-
-  if (item.firstMentionPeriod || item.latestMentionPeriod) {
-    const periodLabel = item.firstMentionPeriod ?? item.latestMentionPeriod;
-    return mentionCountLabel ? `${periodLabel} | ${mentionCountLabel}` : periodLabel;
-  }
-
-  return mentionCountLabel;
-};
-
 const getGuidanceWindowText = (item: NormalizedGuidanceItem) => {
   if (item.firstMentionPeriod && item.latestMentionPeriod) {
     return item.firstMentionPeriod === item.latestMentionPeriod
