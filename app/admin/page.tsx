@@ -8,6 +8,7 @@ import {
 } from "@/components/admin/admin-daily-visitors-chart";
 import { AdminLoginForm } from "@/components/admin/admin-login-form";
 import { AdminLogoutButton } from "@/components/admin/admin-logout-button";
+import { RefreshHomepageActivityButton } from "@/components/admin/refresh-homepage-activity-button";
 import { AdminMetricGrid } from "@/components/admin/admin-metric-grid";
 import { AdminSection } from "@/components/admin/admin-section";
 import {
@@ -808,6 +809,7 @@ export default async function AdminPage({
           <Link href="/" prefetch={false} className="text-sm underline text-muted-foreground hover:text-foreground">
             Home
           </Link>
+          <RefreshHomepageActivityButton />
           <AdminLogoutButton />
         </div>
       </div>
