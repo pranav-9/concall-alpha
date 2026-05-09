@@ -3,8 +3,11 @@
 What an analyst should walk away with after reading this section, and what
 the section must surface (or hide) to deliver it. Schema lives at
 [`schemas/guidance_lineage_v1.json`](../../../schemas/guidance_lineage_v1.json);
-producer/workflow context lives in [`concallyser/docs/llm_conversational_guidance_lineage/README.md`](../../../concallyser/docs/llm_conversational_guidance_lineage/README.md) and
-[`workflow.md`](../../../concallyser/docs/llm_conversational_guidance_lineage/workflow.md). This doc covers reader-side intent only.
+producers are the Phase 8 lineage builder
+([`concallyser/app/phase8_guidance_lineage/builder.py`](../../../concallyser/app/phase8_guidance_lineage/builder.py))
+and the Phase 10 per-company snapshot
+([`concallyser/app/phase10_guidance_snapshot/runner.py`](../../../concallyser/app/phase10_guidance_snapshot/runner.py)).
+This doc covers reader-side intent only.
 
 The section in `concall-alpha` is rendered as **`guidance-history-section.tsx`**
 (a thread-style trail per commitment, by deliberate design — see
@@ -152,10 +155,10 @@ trail's per-commitment internals are collapsed:
 
 - [`schemas/guidance_lineage_v1.json`](../../../schemas/guidance_lineage_v1.json)
   — storage shape; status enum; slippage semantics.
-- [`concallyser/docs/llm_conversational_guidance_lineage/README.md`](../../../concallyser/docs/llm_conversational_guidance_lineage/README.md)
-  — what the artifact answers; how it differs from Phase 6 guidance narrative.
-- [`concallyser/docs/llm_conversational_guidance_lineage/workflow.md`](../../../concallyser/docs/llm_conversational_guidance_lineage/workflow.md)
-  — how the lineage is produced, including the patterns-file curation step.
+- [`concallyser/app/phase8_guidance_lineage/`](../../../concallyser/app/phase8_guidance_lineage/)
+  — Phase 8 producer: lineage rows from Layer 1 via the YAML pattern curator + LLM synthesis.
+- [`concallyser/app/phase10_guidance_snapshot/`](../../../concallyser/app/phase10_guidance_snapshot/)
+  — Phase 10 producer: one-row-per-company `guidance_snapshot` synthesis.
 - Consumer-side rendering rules (thread-style trail discipline, drawer-vs-details,
   chip tone discipline) — [`skills/concall-alpha-ui-patterns/SKILL.md`](../../skills/concall-alpha-ui-patterns/SKILL.md).
 - "Guidance History uses thread-style trails" gotcha — [`concall-alpha/CLAUDE.md`](../../CLAUDE.md).

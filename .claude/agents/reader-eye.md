@@ -55,10 +55,7 @@ Read all of the following, every run, in roughly this order. The framework / rea
 
 For **`moat-analysis-section.tsx`**:
 - Schema (versioned root wins): [`/schemas/moat_analysis_v15.json`](../../../schemas/moat_analysis_v15.json)
-- Framework / reader-intent docs:
-  - [`concallyser/docs/llm_conversational_moat/writeup_conventions.md`](../../../concallyser/docs/llm_conversational_moat/writeup_conventions.md)
-  - [`concallyser/docs/llm_conversational_moat/pitfalls.md`](../../../concallyser/docs/llm_conversational_moat/pitfalls.md)
-  - [`concallyser/docs/llm_conversational_moat/workflow.md`](../../../concallyser/docs/llm_conversational_moat/workflow.md) (especially §7)
+- No current reader-intent doc for moat. Read the schema's top-level field descriptions together with the moat sections of [`concallyser/data/analysis_framework/Business_Analysis_Framework_v14.md`](../../../concallyser/data/analysis_framework/Business_Analysis_Framework_v14.md) (the framework is content authority).
 
 For **`future-growth-section.tsx`** (growth-outlook):
 - Schema: [`concallyser/schemas/growth_outlook.schema.json`](../../../concallyser/schemas/growth_outlook.schema.json)
