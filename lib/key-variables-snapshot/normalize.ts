@@ -6,7 +6,6 @@ import type {
   NormalizedKeyVariableKpiHistoryRow,
   NormalizedKeyVariableListItem,
   NormalizedKeyVariableSourceBasis,
-  NormalizedKeyVariableSourceFile,
   NormalizedKeyVariablesSnapshot,
 } from "@/lib/key-variables-snapshot/types";
 
@@ -173,25 +172,6 @@ const normalizeDeepTreatmentItem = (
   };
 };
 
-const normalizeSourceFile = (value: unknown): NormalizedKeyVariableSourceFile | null => {
-  const row = parseJsonObjectLike(value);
-  if (!row) return null;
-
-  const normalized: NormalizedKeyVariableSourceFile = {
-    fy: asString(row.fy),
-    kind: asString(row.kind),
-    quarter: asString(row.quarter),
-    pdfName: asString(row.pdf_name),
-    sourceUrl: asString(row.source_url),
-  };
-
-  if (!normalized.fy && !normalized.kind && !normalized.quarter && !normalized.pdfName && !normalized.sourceUrl) {
-    return null;
-  }
-
-  return normalized;
-};
-
 const extractVariablesArray = (value: unknown) => parseJsonArrayLike(parseJsonObjectLike(value)?.variables ?? value);
 
 export function normalizeKeyVariablesSnapshot(
@@ -209,9 +189,6 @@ export function normalizeKeyVariablesSnapshot(
 
   const sectionSynthesis = asString(row.section_synthesis);
   const discoverySummary = normalizeDiscoverySummary(row.discovery_summary);
-  const sourceFiles = parseJsonArrayLike(row.source_files)
-    .map((entry) => normalizeSourceFile(entry))
-    .filter((entry): entry is NormalizedKeyVariableSourceFile => Boolean(entry));
   const details = parseJsonObjectLike(row.details);
 
   if (
@@ -227,12 +204,10 @@ export function normalizeKeyVariablesSnapshot(
     companyCode: row.company_code,
     generatedAtRaw: asString(row.generated_at),
     updatedAtRaw: asString(row.updated_at),
-    analysisWindowQuarters: asNumber(row.analysis_window_quarters),
     discoverySummary,
     fullVariableList,
     deepTreatment,
     sectionSynthesis,
-    sourceFiles,
     details,
   };
 }

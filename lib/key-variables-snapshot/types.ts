@@ -1,12 +1,10 @@
 export type KeyVariablesSnapshotRow = {
   company_code: string;
   generated_at?: string | null;
-  analysis_window_quarters?: number | null;
   discovery_summary?: unknown;
   full_variable_list?: unknown;
   deep_treatment?: unknown;
   section_synthesis?: string | null;
-  source_files?: unknown;
   details?: unknown;
   updated_at?: string | null;
 };
@@ -49,23 +47,13 @@ export type NormalizedKeyVariableDiscoverySummary = {
   selectionPriorityStack: string | null;
 };
 
-export type NormalizedKeyVariableSourceFile = {
-  fy: string | null;
-  kind: string | null;
-  quarter: string | null;
-  pdfName: string | null;
-  sourceUrl: string | null;
-};
-
 export type NormalizedKeyVariablesSnapshot = {
   companyCode: string;
   generatedAtRaw: string | null;
   updatedAtRaw: string | null;
-  analysisWindowQuarters: number | null;
   discoverySummary: NormalizedKeyVariableDiscoverySummary | null;
   fullVariableList: NormalizedKeyVariableListItem[];
   deepTreatment: NormalizedKeyVariableDeepTreatmentItem[];
   sectionSynthesis: string | null;
-  sourceFiles: NormalizedKeyVariableSourceFile[];
   details: Record<string, unknown> | null;
 };

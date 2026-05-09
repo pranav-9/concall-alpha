@@ -235,7 +235,7 @@ export async function KeyVariablesPanel({ overview }: CompanyDetailSectionProps)
   const { data: keyVariablesSnapshotData } = await supabase
     .from("key_variables_snapshot")
     .select(
-      "company_code, generated_at, analysis_window_quarters, discovery_summary, full_variable_list, deep_treatment, section_synthesis, source_files, details, updated_at",
+      "company_code, generated_at, discovery_summary, full_variable_list, deep_treatment, section_synthesis, details, updated_at",
     )
     .eq("company_code", overview.company_code)
     .order("generated_at", { ascending: false })
