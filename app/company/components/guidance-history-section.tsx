@@ -62,7 +62,6 @@ const STATUS_STYLES: Record<
     badgeClass: string;
     cardBadgeClass: string;
     accentClass: string;
-    shellClass: string;
   }
 > = {
   revised: {
@@ -71,7 +70,6 @@ const STATUS_STYLES: Record<
     cardBadgeClass:
       "border-sky-500 bg-sky-500 text-white dark:border-sky-400 dark:bg-sky-500 dark:text-white",
     accentClass: "bg-sky-500",
-    shellClass: "border-sky-200/40 dark:border-sky-700/28",
   },
   delayed: {
     badgeClass:
@@ -79,7 +77,6 @@ const STATUS_STYLES: Record<
     cardBadgeClass:
       "border-amber-500 bg-amber-500 text-white dark:border-amber-400 dark:bg-amber-500 dark:text-white",
     accentClass: "bg-amber-500",
-    shellClass: "border-amber-200/40 dark:border-amber-700/28",
   },
   active: {
     badgeClass:
@@ -87,7 +84,6 @@ const STATUS_STYLES: Record<
     cardBadgeClass:
       "border-slate-300 bg-slate-200 text-slate-800 dark:border-slate-500 dark:bg-slate-600 dark:text-slate-50",
     accentClass: "bg-slate-500",
-    shellClass: "border-slate-200/35 dark:border-slate-700/28",
   },
   not_yet_clear: {
     badgeClass:
@@ -95,7 +91,6 @@ const STATUS_STYLES: Record<
     cardBadgeClass:
       "border-zinc-300 bg-zinc-200 text-zinc-800 dark:border-zinc-500 dark:bg-zinc-600 dark:text-zinc-50",
     accentClass: "bg-zinc-500",
-    shellClass: "border-zinc-200/35 dark:border-zinc-700/28",
   },
   met: {
     badgeClass:
@@ -103,7 +98,6 @@ const STATUS_STYLES: Record<
     cardBadgeClass:
       "border-emerald-500 bg-emerald-500 text-white dark:border-emerald-400 dark:bg-emerald-500 dark:text-white",
     accentClass: "bg-emerald-500",
-    shellClass: "border-emerald-200/40 dark:border-emerald-700/28",
   },
   dropped: {
     badgeClass:
@@ -111,13 +105,11 @@ const STATUS_STYLES: Record<
     cardBadgeClass:
       "border-rose-500 bg-rose-500 text-white dark:border-rose-400 dark:bg-rose-500 dark:text-white",
     accentClass: "bg-rose-500",
-    shellClass: "border-rose-200/40 dark:border-rose-700/28",
   },
   unknown: {
     badgeClass: "border-border bg-muted text-foreground",
     cardBadgeClass: "border-border bg-muted text-foreground",
     accentClass: "bg-muted-foreground",
-    shellClass: "border-border/35",
   },
 };
 
@@ -220,7 +212,7 @@ function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
             </div>
 
             {trailItem.summary ? (
-              <p className="mt-2 text-[11.5px] font-medium leading-relaxed text-foreground">
+              <p className="mt-2 text-[11px] font-medium leading-relaxed text-foreground">
                 {trailItem.summary}
               </p>
             ) : null}
@@ -292,7 +284,7 @@ function GuidanceThreadCard({ item }: { item: NormalizedGuidanceItem }) {
                           className="relative size-7 rounded-full border-border/60 bg-background/70 text-muted-foreground shadow-none hover:bg-accent hover:text-foreground"
                         >
                           <History className="size-3.5" />
-                          <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full border border-background bg-emerald-500 px-1 text-[9px] font-semibold leading-4 text-white">
+                          <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full border border-background bg-emerald-500 px-1 text-[10px] font-semibold leading-4 text-background">
                             {item.trail.length}
                           </span>
                         </Button>
@@ -506,7 +498,7 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
       <div className={TRACKER_OVERVIEW_CLASS}>
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Guidance tracker
             </p>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">

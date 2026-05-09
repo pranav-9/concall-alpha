@@ -55,7 +55,7 @@ function AccuracyRow({
         </p>
         {verdictDisplay && (
           <span
-            className={`rounded-full border px-2 py-0.5 text-[9px] ${verdictDisplay.className}`}
+            className={`rounded-full border px-2 py-0.5 text-[10px] ${verdictDisplay.className}`}
           >
             {verdictDisplay.label}
           </span>
@@ -70,7 +70,7 @@ function AccuracyRow({
       */}
       {!isNotAssessable && row.signalSummary && (
         <div className="space-y-0.5">
-          <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
             Guidance given
           </p>
           <p className="text-[10px] leading-relaxed text-muted-foreground">
@@ -80,7 +80,7 @@ function AccuracyRow({
       )}
       {row.actualOutcome && (
         <div className="space-y-0.5">
-          <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
             Actual outcome
           </p>
           <p className="text-[10px] leading-relaxed text-foreground">{row.actualOutcome}</p>
@@ -88,7 +88,7 @@ function AccuracyRow({
       )}
       {!isNotAssessable && row.reason && (
         <div className="space-y-0.5">
-          <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
             Why
           </p>
           <p className="text-[10px] leading-relaxed text-muted-foreground/90">{row.reason}</p>
@@ -182,7 +182,7 @@ export function GuidanceSnapshotSummary({
           </div>
 
           {(bigPicture?.headlineStatement || bigPicture?.currentStatement) && (
-            <p className="mt-3 text-[12.5px] font-semibold leading-relaxed text-foreground">
+            <p className="mt-3 text-[12px] font-semibold leading-relaxed text-foreground">
               {bigPicture.headlineStatement ?? bigPicture.currentStatement}
             </p>
           )}
@@ -263,7 +263,7 @@ export function GuidanceSnapshotSummary({
                               className="relative size-7 rounded-full border-border/60 bg-background/70 text-muted-foreground shadow-none hover:bg-accent hover:text-foreground"
                             >
                               <History className="size-3.5" />
-                              <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full border border-background bg-emerald-500 px-1 text-[9px] font-semibold leading-4 text-white">
+                              <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full border border-background bg-emerald-500 px-1 text-[10px] font-semibold leading-4 text-background">
                                 {currentYear.sourceQuarterTimeline.length}
                               </span>
                             </Button>
@@ -311,19 +311,19 @@ export function GuidanceSnapshotSummary({
                                     </p>
                                   )}
                                   {entry.guidanceType && (
-                                    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[9px] text-muted-foreground">
+                                    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
                                       {formatCompactLabel(entry.guidanceType)}
                                     </span>
                                   )}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
                                   {entry.guidancePercent != null && (
-                                    <span className="rounded-full border border-emerald-200/70 bg-emerald-50 px-2 py-0.5 text-[9px] font-medium text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-200">
+                                    <span className="rounded-full border border-emerald-200/70 bg-emerald-100/70 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-200">
                                       {formatPctLabel(entry.guidancePercent)}
                                     </span>
                                   )}
                                   {entry.sourceReference && (
-                                    <span className="text-[9px] text-muted-foreground">
+                                    <span className="text-[10px] text-muted-foreground">
                                       {entry.sourceReference}
                                     </span>
                                   )}
@@ -355,7 +355,7 @@ export function GuidanceSnapshotSummary({
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                       Guidance line
                     </p>
-                    <p className="mt-2 text-[12.5px] font-semibold leading-relaxed text-foreground">
+                    <p className="mt-2 text-[12px] font-semibold leading-relaxed text-foreground">
                       {currentYear.officialCurrentGuidanceText ??
                         currentYear.consolidatedStatement}
                     </p>
@@ -370,8 +370,8 @@ export function GuidanceSnapshotSummary({
                 )}
 
                 {currentYear.inYearRevisionNote && (
-                  <div className="rounded-xl border border-amber-200/35 bg-amber-50/45 px-3 py-2 dark:border-amber-700/25 dark:bg-amber-950/15">
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-200">
+                  <div className={`${nestedDetailClass} p-3`}>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-200">
                       Revision note
                     </p>
                     <p className="mt-1 text-[10px] leading-relaxed text-foreground">
@@ -397,7 +397,7 @@ export function GuidanceSnapshotSummary({
                     Previous two-year guidance data
                   </p>
                 </div>
-                <span className="text-[9px] text-muted-foreground">
+                <span className="text-[10px] text-muted-foreground">
                   {priorAccuracy.length} year{priorAccuracy.length === 1 ? "" : "s"} tracked
                 </span>
               </div>
