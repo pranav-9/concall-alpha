@@ -12,6 +12,9 @@ export type KeyVariablesSnapshotRow = {
 export type NormalizedKeyVariableSourceBasis =
   | "industry_standard"
   | "management_tracked"
+  | "concall"
+  | "presentation"
+  | "annual_report"
   | "both"
   | "unknown";
 

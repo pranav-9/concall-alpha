@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { KpiSparkline } from "./kpi-sparkline-lazy";
+import { getDeltaToneClass } from "./delta-tone";
 import type {
   NormalizedHistoricalEconomics,
   NormalizedRevenueHistoryBySegment,
@@ -220,13 +221,6 @@ const getPeriodOverPeriodPpChange = (
   }
 
   return currentValue - previousValue;
-};
-
-const getInlineDeltaClassName = (value: number | null | undefined) => {
-  if (value == null) return "text-muted-foreground";
-  if (value > 0) return "text-emerald-700/80 dark:text-emerald-300/80";
-  if (value < 0) return "text-rose-700/80 dark:text-rose-300/80";
-  return "text-muted-foreground";
 };
 
 const getOrderedRevenueHistoryRows = (
@@ -527,7 +521,7 @@ function RevenueHistoryModule({
                         }
                         return (
                           <span
-                            className={`text-[10px] leading-none ${getInlineDeltaClassName(
+                            className={`text-[10px] leading-none ${getDeltaToneClass(
                               yoyValue,
                             )}`}
                           >
@@ -908,7 +902,7 @@ function RevenueHistorySegmentModule({
 
                         return (
                           <span
-                            className={`text-[10px] leading-none ${getInlineDeltaClassName(
+                            className={`text-[10px] leading-none ${getDeltaToneClass(
                               yoyValue,
                             )}`}
                           >

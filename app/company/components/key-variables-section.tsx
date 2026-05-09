@@ -17,6 +17,13 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { BlockFeedbackButton } from "./block-feedback-button";
+import {
+  elevatedBlockClass,
+  nestedDetailClass,
+  snapshotSubsectionClass,
+} from "./surface-tokens";
+import { getDeltaToneClass } from "./delta-tone";
+import { cn } from "@/lib/utils";
 
 const numberFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 2,
@@ -67,13 +74,6 @@ const formatDeltaPercentValue = (value: number | null | undefined) => {
   return `${value > 0 ? "+" : value < 0 ? "-" : ""}${formatted}%`;
 };
 
-const getInlineDeltaClassName = (value: number | null | undefined) => {
-  if (value == null) return "text-muted-foreground";
-  if (value > 0) return "text-emerald-700/80 dark:text-emerald-300/80";
-  if (value < 0) return "text-rose-700/80 dark:text-rose-300/80";
-  return "text-muted-foreground";
-};
-
 const sourceBasisDisplay: Record<
   NormalizedKeyVariableSourceBasis,
   { label: string; className: string }
@@ -92,6 +92,20 @@ const sourceBasisDisplay: Record<
     label: "Management tracked",
     className:
       "border-amber-200/80 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200",
+  },
+  concall: {
+    label: "Concall",
+    className:
+      "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
+  },
+  presentation: {
+    label: "Presentation",
+    className:
+      "border-amber-200/80 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200",
+  },
+  annual_report: {
+    label: "Annual report",
+    className: "border-border/60 bg-muted/60 text-foreground",
   },
   unknown: {
     label: "Source basis not tagged",
@@ -151,7 +165,7 @@ function KeyVariablesDiscoveryDrawer({
           size="sm"
           className="h-8 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
         >
-          View Discovery
+          Variable selection context
         </Button>
       </DrawerTrigger>
       <DrawerContent className="w-full max-w-xl">
@@ -188,7 +202,7 @@ function KeyVariablesDiscoveryDrawer({
                   return (
                     <div
                       key={item.variable}
-                      className="rounded-xl border border-border/25 bg-background/70 px-3.5 py-3"
+                      className={cn(nestedDetailClass, "px-3 py-3")}
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-[13px] font-semibold leading-snug text-foreground">
@@ -230,11 +244,11 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
   if (periods.length === 0 || history.rows.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border/30 bg-muted/20">
+    <div className={snapshotSubsectionClass}>
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse text-left">
           <thead>
-            <tr className="border-b border-border/30">
+            <tr className="border-b border-border/20">
               <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Metric
               </th>
@@ -254,10 +268,10 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
           <tbody>
             {history.rows.map((row) => (
               <tr key={row.metric} className="border-b border-border/20 last:border-b-0">
-                <td className="px-3 py-2.5 text-[12px] font-medium text-foreground">
+                <td className="px-3 py-2 text-[12px] font-medium text-foreground">
                   {row.metric}
                 </td>
-                <td className="px-3 py-2.5">
+                <td className="px-3 py-2">
                   <KpiSparkline
                     ariaLabel={`${row.metric} trend across ${periods.length} periods`}
                     points={periods.map((period) => ({
@@ -275,14 +289,14 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
                   const yoyLabel = formatDeltaPercentValue(yoyValue);
 
                   return (
-                    <td key={period} className="px-3 py-2.5 text-right">
+                    <td key={period} className="px-3 py-2 text-right">
                       <div className="flex flex-col items-end gap-0.5">
                         <span className="text-[12px] text-muted-foreground">
                           {formatCellValue(row.valuesByPeriod[period])}
                         </span>
                         {yoyLabel ? (
                           <span
-                            className={`text-[10px] leading-none ${getInlineDeltaClassName(
+                            className={`text-[10px] leading-none ${getDeltaToneClass(
                               yoyValue,
                             )}`}
                           >
@@ -315,90 +329,109 @@ export function KeyVariablesSection({
   companyCode: string;
   companyName?: string | null;
 }) {
+  const hasDeepTreatment = snapshot.deepTreatment.length > 0;
+  const hasSynthesis = Boolean(snapshot.sectionSynthesis);
+
   return (
     <div className="space-y-4">
-      {snapshot.deepTreatment.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-end">
-            <KeyVariablesDiscoveryDrawer snapshot={snapshot} />
-          </div>
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-            {snapshot.deepTreatment.map((item, index) => (
-              <div
-                key={`${item.variable}-${index}`}
-                className="rounded-2xl border border-border/35 bg-background/75 p-4 shadow-md shadow-black/10"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-                  <p className="min-w-0 text-[15px] font-semibold leading-snug text-foreground">
-                    {item.variable}
-                  </p>
-                  <div className="flex flex-wrap items-center justify-start gap-1.5 sm:shrink-0 sm:justify-end">
-                    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
-                      Variable {index + 1}
-                    </span>
-                    <BlockFeedbackButton
-                      companyCode={companyCode}
-                      companyName={companyName}
-                      sectionId="key-variables"
-                      sectionTitle="Key Variables"
-                      blockId={`key-variable-${index + 1}`}
-                      blockTitle={item.variable}
-                    />
-                  </div>
-                </div>
+      {hasSynthesis ? (
+        <div className={cn(elevatedBlockClass, "p-4")}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            Synthesis
+          </p>
+          <p className="mt-1.5 text-sm leading-relaxed text-foreground">
+            {snapshot.sectionSynthesis}
+          </p>
+        </div>
+      ) : null}
 
-                <div className="mt-4 space-y-3">
-                  {item.kpiHistory ? <KpiHistoryTable history={item.kpiHistory} /> : null}
+      <div className="flex items-center justify-end">
+        <KeyVariablesDiscoveryDrawer snapshot={snapshot} />
+      </div>
 
-                  {item.currentRead ? (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                        Current Read
-                      </p>
-                      <p className="text-[12px] leading-relaxed text-foreground">
-                        {item.currentRead}
-                      </p>
-                    </div>
-                  ) : null}
-
-                  {item.whatItTracks ? (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                        What It Tracks
-                      </p>
-                      <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        {item.whatItTracks}
-                      </p>
-                    </div>
-                  ) : null}
-
-                  {item.whyItMattersNow ? (
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                        Why It Matters Now
-                      </p>
-                      <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        {item.whyItMattersNow}
-                      </p>
-                    </div>
-                  ) : null}
-
-                  {item.trendInterpretation ? (
-                    <div className="rounded-xl border border-sky-200/35 bg-sky-50/45 px-3 py-3 dark:border-sky-700/30 dark:bg-sky-950/10">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-700 dark:text-sky-300">
-                        Trend Interpretation
-                      </p>
-                      <p className="mt-1.5 text-[12px] leading-relaxed text-foreground">
-                        {item.trendInterpretation}
-                      </p>
-                    </div>
-                  ) : null}
+      {hasDeepTreatment ? (
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          {snapshot.deepTreatment.map((item, index) => (
+            <div
+              key={`${item.variable}-${index}`}
+              className={cn(elevatedBlockClass, "p-4")}
+            >
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                <p className="min-w-0 text-sm font-semibold leading-snug text-foreground">
+                  {item.variable}
+                </p>
+                <div className="flex flex-wrap items-center justify-start gap-1.5 sm:shrink-0 sm:justify-end">
+                  <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
+                    Variable {index + 1}
+                  </span>
+                  <BlockFeedbackButton
+                    companyCode={companyCode}
+                    companyName={companyName}
+                    sectionId="key-variables"
+                    sectionTitle="Key Variables"
+                    blockId={`key-variable-${index + 1}`}
+                    blockTitle={item.variable}
+                  />
                 </div>
               </div>
-            ))}
-          </div>
+
+              <div className="mt-4 space-y-3">
+                {item.kpiHistory ? <KpiHistoryTable history={item.kpiHistory} /> : null}
+
+                {item.currentRead ? (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Current Read
+                    </p>
+                    <p className="text-[12px] leading-relaxed text-foreground">
+                      {item.currentRead}
+                    </p>
+                  </div>
+                ) : null}
+
+                {item.whatItTracks ? (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      What It Tracks
+                    </p>
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      {item.whatItTracks}
+                    </p>
+                  </div>
+                ) : null}
+
+                {item.whyItMattersNow ? (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Why It Matters Now
+                    </p>
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      {item.whyItMattersNow}
+                    </p>
+                  </div>
+                ) : null}
+
+                {item.trendInterpretation ? (
+                  <div className={cn(nestedDetailClass, "px-3 py-3")}>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Trend Interpretation
+                    </p>
+                    <p className="mt-1.5 text-[12px] leading-relaxed text-foreground">
+                      {item.trendInterpretation}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+      ) : !hasSynthesis ? (
+        <div className={cn(snapshotSubsectionClass, "p-4")}>
+          <p className="text-sm text-muted-foreground">
+            No deep-treatment variables surfaced for this company.
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }

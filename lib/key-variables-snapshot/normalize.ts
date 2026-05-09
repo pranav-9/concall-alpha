@@ -63,14 +63,17 @@ const asDisplayValue = (value: unknown): string | number | null => {
 
 const normalizeSourceBasis = (value: unknown): NormalizedKeyVariableSourceBasis => {
   const normalized = asString(value)?.toLowerCase().replace(/[\s-]+/g, "_");
-  if (
-    normalized === "industry_standard" ||
-    normalized === "management_tracked" ||
-    normalized === "both"
-  ) {
-    return normalized;
+  switch (normalized) {
+    case "industry_standard":
+    case "management_tracked":
+    case "concall":
+    case "presentation":
+    case "annual_report":
+    case "both":
+      return normalized;
+    default:
+      return "unknown";
   }
-  return "unknown";
 };
 
 const normalizeDiscoverySummary = (
