@@ -1,3 +1,7 @@
+// L1 SectionCard shell is provided externally by MoatAnalysisPanel in
+// company-detail-sections.tsx. This component renders the section interior
+// only. (Same pattern as KeyVariablesPanel; differs from FutureGrowthSection,
+// which owns its own SectionCard.)
 import {
   AlertCircle,
   AlertTriangle,
@@ -10,6 +14,7 @@ import {
   Target,
 } from "lucide-react";
 
+import { chipBaseClass, chipClass } from "./chip-tone";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 import {
   moatTierClass,
@@ -30,26 +35,11 @@ type MoatAnalysisSectionProps = {
   generatedAtShort: string | null;
 };
 
-type ChipTone = "emerald" | "sky" | "amber" | "rose" | "violet" | "slate";
-
 const dashedDetailClass = cn(nestedDetailClass, "border-dashed border-border/50");
 
-const chipBaseClass =
-  "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none";
-
-const toneClasses: Record<ChipTone, string> = {
-  emerald:
-    "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
-  sky: "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
-  amber:
-    "border-amber-200/80 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200",
-  rose: "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
-  violet:
-    "border-violet-200/80 bg-violet-100 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/30 dark:text-violet-200",
-  slate: "border-border/60 bg-muted/60 text-foreground",
-};
-
-const chipClass = (tone: ChipTone) => cn(chipBaseClass, toneClasses[tone]);
+// Mirrors SECTION_TONE_BY_ID["moat-analysis"] = "emerald" in section-card.tsx.
+// If the section tone changes there, update this too.
+const sourceCardAccentClass = "bg-emerald-500/75";
 
 const sectionTitleClass = "text-[13px] font-semibold leading-tight text-foreground";
 const sectionSubtitleClass = "text-[12px] leading-snug text-muted-foreground";
@@ -134,7 +124,7 @@ const SourceCard = ({ source }: { source: V15Source }) => {
 
   return (
     <div className={cn(nestedDetailClass, "overflow-hidden")}>
-      <div className="h-1.5 bg-emerald-500/75" />
+      <div className={cn("h-1.5", sourceCardAccentClass)} />
       <div className="flex flex-wrap items-start justify-between gap-2 p-3 pb-0">
         <div className="min-w-0 space-y-1">
           <p className="text-[13px] font-semibold leading-snug text-foreground">
@@ -147,7 +137,7 @@ const SourceCard = ({ source }: { source: V15Source }) => {
         <span className={chipClass("emerald")}>Applies</span>
       </div>
 
-      <div className="space-y-2.5 p-3">
+      <div className="space-y-2 p-3">
         <SourceEvidenceRow
           icon={ShieldCheck}
           iconClassName="text-emerald-600 dark:text-emerald-400"
@@ -185,7 +175,7 @@ const SchemaNotice = ({
       : "No assessment payload available. Regenerate with the v15 conversational pipeline to view the full moat breakdown.";
   return (
     <div className={cn(elevatedBlockClass, "p-4")}>
-      <div className="flex items-start gap-2.5">
+      <div className="flex items-start gap-2">
         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
         <div className="min-w-0 space-y-1">
           <p className={sectionTitleClass}>Schema mismatch</p>
@@ -213,13 +203,13 @@ export function MoatAnalysisSection({
 
   // Hero card — always renders with badges.
   const heroCard = (
-    <div className={cn(elevatedBlockClass, "space-y-2.5 p-4")}>
+    <div className={cn(elevatedBlockClass, "space-y-3 p-4")}>
       <div className="flex flex-wrap items-center gap-1.5">
         <span
           className={cn(
             chipBaseClass,
             moatTierClass(analysis.moatRating),
-            "px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.1em]",
+            "px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.14em]",
           )}
         >
           {analysis.moatRatingLabel}
@@ -229,7 +219,7 @@ export function MoatAnalysisSection({
             className={cn(
               chipBaseClass,
               moatTierGradeClass(),
-              "gap-1 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.1em]",
+              "gap-1 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em]",
             )}
           >
             <TierIcon
@@ -241,7 +231,7 @@ export function MoatAnalysisSection({
       </div>
 
       {payload?.headline && (
-        <p className="max-w-4xl text-[15px] font-medium leading-relaxed text-foreground">
+        <p className="max-w-4xl text-base font-medium leading-relaxed text-foreground">
           {payload.headline}
         </p>
       )}
@@ -300,7 +290,7 @@ export function MoatAnalysisSection({
             </div>
           </div>
 
-          <p className="text-[14px] font-medium leading-relaxed text-foreground">
+          <p className="text-sm font-medium leading-relaxed text-foreground">
             {payload.step_0.headline}
           </p>
 
@@ -326,7 +316,7 @@ export function MoatAnalysisSection({
         </div>
 
         {/* Gatekeeper */}
-        <div className={cn(elevatedBlockClass, "p-4 space-y-2.5")}>
+        <div className={cn(elevatedBlockClass, "p-4 space-y-3")}>
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="space-y-0.5">
               <p className={sectionTitleClass}>Gatekeeper</p>
@@ -463,7 +453,7 @@ export function MoatAnalysisSection({
           </summary>
           <div className="space-y-4 border-t border-border/40 p-4 pt-3">
             {payload.why_this_tier.length > 0 && (
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <div className="flex items-start gap-2">
                   <Target className="mt-0.5 h-4 w-4 shrink-0 text-foreground/70" />
                   <div className="space-y-0.5">
@@ -478,7 +468,7 @@ export function MoatAnalysisSection({
             )}
 
             {payload.what_would_change_the_call.length > 0 && (
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <div className="flex items-start gap-2">
                   <Target className="mt-0.5 h-4 w-4 shrink-0 text-foreground/70" />
                   <div className="space-y-0.5">
