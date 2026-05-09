@@ -304,7 +304,6 @@ export async function FutureGrowthPanel({ overview }: CompanyDetailSectionProps)
     fiscalYear: growthData?.[0]?.fiscal_year,
     horizonQuarters: growthData?.[0]?.horizon_quarters,
     horizonYears: growthData?.[0]?.horizon_years,
-    visibilityScore: growthData?.[0]?.visibility_score,
     baseGrowthPct: growthData?.[0]?.base_growth_pct,
     upsideGrowthPct: growthData?.[0]?.upside_growth_pct,
     downsideGrowthPct: growthData?.[0]?.downside_growth_pct,
@@ -312,10 +311,8 @@ export async function FutureGrowthPanel({ overview }: CompanyDetailSectionProps)
     growthScoreSteps: growthData?.[0]?.growth_score_steps,
     factBase: growthData?.[0]?.fact_base,
     summaryBullets: growthData?.[0]?.summary_bullets,
-    visibilityRationale: growthData?.[0]?.visibility_rationale,
     catalysts: growthData?.[0]?.catalysts,
     scenarios: growthData?.[0]?.scenarios,
-    variantPerception: growthData?.[0]?.variant_perception,
   });
 
   return (

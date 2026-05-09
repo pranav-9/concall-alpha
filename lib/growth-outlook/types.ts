@@ -51,16 +51,9 @@ export type NormalizedGrowthCatalyst = {
   } | null;
 };
 
-export type NormalizedGrowthVariantPerception = {
-  consensus: string | null;
-  upside: string[];
-  downside: string[];
-};
-
 export type NormalizedGrowthScenario = {
   confidence: number | null;
   growth: string | null;
-  ebitdaMargin: string | null;
   summary: string | null;
   riskWatch: string | null;
   drivers: string[];
@@ -91,14 +84,12 @@ export type NormalizedGrowthOutlook = {
   horizonQuarters: number | null;
   horizonYears: number | null;
   growthScore: number | null;
-  visibilityPercent: number | null;
   baseGrowthPct: string | null;
   upsideGrowthPct: string | null;
   downsideGrowthPct: string | null;
   summaryBullets: string[];
   growthScoreFormula: string | null;
   growthScoreSteps: string[];
-  visibilityRationale: string | null;
   updatedAtRaw: string | null;
   growthScoreComponents: NormalizedGrowthScoreComponent[];
   discoverySummary: NormalizedGrowthDiscoverySummary | null;
@@ -107,7 +98,6 @@ export type NormalizedGrowthOutlook = {
   factBase: NormalizedGrowthEvidenceLine[];
   sourceFiles: NormalizedGrowthSourceFile[];
   catalysts: NormalizedGrowthCatalyst[];
-  variantPerception: NormalizedGrowthVariantPerception | null;
   scenarios: {
     base: NormalizedGrowthScenario | null;
     upside: NormalizedGrowthScenario | null;

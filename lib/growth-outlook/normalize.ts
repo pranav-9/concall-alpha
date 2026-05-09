@@ -8,7 +8,6 @@ import type {
   NormalizedGrowthScoreComponent,
   NormalizedGrowthSourceFile,
   NormalizedGrowthTimelineItem,
-  NormalizedGrowthVariantPerception,
 } from "@/lib/growth-outlook/types";
 
 type JsonRecord = Record<string, unknown>;
@@ -63,14 +62,6 @@ const asStringArray = (value: unknown) =>
 const isUnknownLike = (value: unknown) => {
   const normalized = asString(value)?.toLowerCase();
   return !normalized || normalized === "unknown" || normalized === "n/a" || normalized === "na";
-};
-
-const normalizeVisibilityPercent = (value: unknown) => {
-  const numeric = asNumber(value);
-  if (numeric == null) return null;
-  if (numeric <= 1) return Math.round(numeric * 100);
-  if (numeric <= 5) return Math.round((numeric / 5) * 100);
-  return Math.round(numeric);
 };
 
 const normalizeScenarioConfidence = (value: unknown) => {
@@ -212,50 +203,6 @@ const normalizeCatalyst = (value: unknown): NormalizedGrowthCatalyst | null => {
   return normalized;
 };
 
-const normalizeVariantPerception = (value: unknown): NormalizedGrowthVariantPerception | null => {
-  const item = parseJsonObject(value);
-  if (!item) return null;
-
-  const consensusView = parseJsonObject(item.consensus_view);
-  const upsideView = parseJsonObject(item.upside_view);
-  const downsideView = parseJsonObject(item.downside_view);
-
-  const nestedConsensus = asString(consensusView?.summary);
-  const nestedUpside = asStringArray(upsideView?.points);
-  const nestedDownside = asStringArray(downsideView?.points);
-
-  const consensus =
-    nestedConsensus ??
-    asString(item.consensus_vs_company) ??
-    asString(item.low) ??
-    asString(item.guided_de_risked);
-  const upside =
-    nestedUpside.length > 0
-      ? nestedUpside
-      : [
-          ...asStringArray(item.upside_nonconsensus),
-          ...(asString(item.high) ? [asString(item.high) as string] : []),
-          ...(asString(item.execution_trajectory)
-            ? [asString(item.execution_trajectory) as string]
-            : []),
-        ];
-  const downside =
-    nestedDownside.length > 0
-      ? nestedDownside
-      : [
-          ...asStringArray(item.downside_nonconsensus),
-          ...(asString(item.catalyst_to_variant_delta)
-            ? [asString(item.catalyst_to_variant_delta) as string]
-            : []),
-        ];
-
-  if (!consensus && upside.length === 0 && downside.length === 0) {
-    return null;
-  }
-
-  return { consensus, upside, downside };
-};
-
 const normalizeScenario = (value: unknown): NormalizedGrowthScenario | null => {
   const item = parseJsonObject(value);
   if (!item) return null;
@@ -278,16 +225,12 @@ const normalizeScenario = (value: unknown): NormalizedGrowthScenario | null => {
     item.growth_pct ?? item.revenue_growth_pct ?? item.revenue_growth ?? item.revenue_impact;
   const growth =
     typeof growthRaw === "string" || typeof growthRaw === "number" ? String(growthRaw) : null;
-  const ebitdaRaw = item.ebitda_margin ?? item.margin_impact;
-  const ebitdaMargin =
-    typeof ebitdaRaw === "string" || typeof ebitdaRaw === "number" ? String(ebitdaRaw) : null;
   const confidence = normalizeScenarioConfidence(item.confidence_pct ?? item.confidence);
 
   if (
     !summary &&
     !riskWatch &&
     !growth &&
-    !ebitdaMargin &&
     confidence == null &&
     drivers.length === 0 &&
     risks.length === 0
@@ -298,7 +241,6 @@ const normalizeScenario = (value: unknown): NormalizedGrowthScenario | null => {
   return {
     confidence,
     growth,
-    ebitdaMargin,
     summary,
     riskWatch,
     drivers,
@@ -391,19 +333,16 @@ export function normalizeGrowthOutlook(input: {
   fiscalYear?: unknown;
   horizonQuarters?: unknown;
   horizonYears?: unknown;
-  visibilityScore?: unknown;
   baseGrowthPct?: unknown;
   upsideGrowthPct?: unknown;
   downsideGrowthPct?: unknown;
   summaryBullets?: unknown;
   growthScoreFormula?: unknown;
   growthScoreSteps?: unknown;
-  visibilityRationale?: unknown;
   factBase?: unknown;
   sourceFiles?: unknown;
   catalysts?: unknown;
   scenarios?: unknown;
-  variantPerception?: unknown;
 }): NormalizedGrowthOutlook | null {
   const details = parseJsonObject(input.details);
   const directGrowthScore = asNumber(input.growthScore);
@@ -453,9 +392,6 @@ export function normalizeGrowthOutlook(input: {
     .map((entry) => normalizeCatalyst(entry))
     .filter((entry): entry is NormalizedGrowthCatalyst => Boolean(entry));
 
-  const variantPerception =
-    normalizeVariantPerception(input.variantPerception) ??
-    (details ? normalizeVariantPerception(details.variant_perception) : null);
   const scenariosRecord =
     parseJsonObject(input.scenarios) ?? (details ? parseJsonObject(details.scenarios) : null);
   const scenarios = scenariosRecord
@@ -473,7 +409,6 @@ export function normalizeGrowthOutlook(input: {
     horizonQuarters: asNumber(input.horizonQuarters) ?? (details ? asNumber(details.horizon_quarters) : null),
     horizonYears: asNumber(input.horizonYears) ?? (details ? asNumber(details.horizon_years) : null),
     growthScore,
-    visibilityPercent: normalizeVisibilityPercent(input.visibilityScore ?? details?.visibility_score),
     baseGrowthPct:
       (input.baseGrowthPct != null ? String(input.baseGrowthPct) : null) ??
       (details?.base_growth_pct != null ? String(details.base_growth_pct) : null),
@@ -487,8 +422,6 @@ export function normalizeGrowthOutlook(input: {
     growthScoreFormula:
       asString(input.growthScoreFormula) ?? (details ? asString(details.growth_score_formula) : null),
     growthScoreSteps,
-    visibilityRationale:
-      asString(input.visibilityRationale) ?? (details ? asString(details.visibility_rationale) : null),
     updatedAtRaw,
     growthScoreComponents: normalizeGrowthScoreComponents(details?.growth_score_components),
     discoverySummary: normalizeDiscoverySummary(details?.discovery_summary),
@@ -497,7 +430,6 @@ export function normalizeGrowthOutlook(input: {
     factBase,
     sourceFiles,
     catalysts,
-    variantPerception,
     scenarios,
   };
 }

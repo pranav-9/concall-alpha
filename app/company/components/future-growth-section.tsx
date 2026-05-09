@@ -78,7 +78,6 @@ function renderBaseScenarioCard(outlook: NormalizedGrowthOutlook) {
   const riskWatch = (scenario.riskWatch ?? "").trim();
   const riskWatchValue = riskWatch || primaryRisk;
   const growthValue = scenario.growth;
-  const marginValue = scenario.ebitdaMargin;
   const tone = getScenarioTone("base");
 
   return (
@@ -99,14 +98,6 @@ function renderBaseScenarioCard(outlook: NormalizedGrowthOutlook) {
             </span>
           )}
         </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-        {marginValue && (
-          <span className="px-2 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/35 dark:text-sky-100 dark:border-sky-700/40">
-            EBITDA margin: {String(marginValue)}
-          </span>
-        )}
       </div>
 
       <div className="space-y-1.5">
@@ -202,7 +193,6 @@ function renderCompactScenarioCard(
   const riskWatch = (scenario.riskWatch ?? "").trim();
   const riskWatchValue = riskWatch || primaryRisk;
   const growthValue = scenario.growth;
-  const marginValue = scenario.ebitdaMargin;
   const tone = getScenarioTone(scenarioKey);
   const hasDetailContent =
     visibleDrivers.length > 0 || visibleRisks.length > 0 || Boolean(riskWatchValue);
@@ -232,13 +222,6 @@ function renderCompactScenarioCard(
             </span>
           )}
         </div>
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-        {marginValue && (
-          <span className="px-2 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/35 dark:text-sky-100 dark:border-sky-700/40">
-            EBITDA margin: {String(marginValue)}
-          </span>
-        )}
       </div>
       <div className="space-y-1.5">
         <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">

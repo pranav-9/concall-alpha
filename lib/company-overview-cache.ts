@@ -316,7 +316,6 @@ export async function buildCompanyPageOverviewCacheRow(
     fiscalYear: growthDetailResult.data?.[0]?.fiscal_year,
     horizonQuarters: growthDetailResult.data?.[0]?.horizon_quarters,
     horizonYears: growthDetailResult.data?.[0]?.horizon_years,
-    visibilityScore: growthDetailResult.data?.[0]?.visibility_score,
     baseGrowthPct: growthDetailResult.data?.[0]?.base_growth_pct,
     upsideGrowthPct: growthDetailResult.data?.[0]?.upside_growth_pct,
     downsideGrowthPct: growthDetailResult.data?.[0]?.downside_growth_pct,
@@ -324,10 +323,8 @@ export async function buildCompanyPageOverviewCacheRow(
     growthScoreSteps: growthDetailResult.data?.[0]?.growth_score_steps,
     factBase: growthDetailResult.data?.[0]?.fact_base,
     summaryBullets: growthDetailResult.data?.[0]?.summary_bullets,
-    visibilityRationale: growthDetailResult.data?.[0]?.visibility_rationale,
     catalysts: growthDetailResult.data?.[0]?.catalysts,
     scenarios: growthDetailResult.data?.[0]?.scenarios,
-    variantPerception: growthDetailResult.data?.[0]?.variant_perception,
   });
   const normalizedBusinessSnapshot = normalizeBusinessSnapshot({
     companyCode: normalizedCode,
