@@ -1,14 +1,3 @@
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
 import type {
   NormalizedBusinessSnapshot,
   NormalizedHistoricalEconomics,
@@ -135,51 +124,26 @@ function renderAboutBlock(
   const aboutMainText = aboutHeading ?? aboutSupportingText ?? null;
   const aboutDrawerText = aboutHeading && aboutSupportingText ? aboutSupportingText : null;
   const aboutMainTextClass = aboutHeading
-    ? "text-[17px] sm:text-[19px] font-semibold leading-snug text-foreground"
+    ? "text-base sm:text-lg font-semibold leading-snug text-foreground"
     : "text-[13px] leading-relaxed text-foreground";
 
   if (!aboutMainText) return null;
 
   return (
-    <div className="min-w-0 rounded-2xl border border-border/20 bg-background/55 p-3 dark:bg-background/40">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-2">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            About
-          </p>
-          <p className={aboutMainTextClass}>{aboutMainText}</p>
-        </div>
-
+    <div className={`${nestedDetailClass} p-3`}>
+      <div className="min-w-0 space-y-2">
+        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          About
+        </p>
+        <p className={aboutMainTextClass}>{aboutMainText}</p>
         {aboutDrawerText ? (
-          <Drawer direction="right">
-            <DrawerTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-0.5 h-8 shrink-0 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
-              >
-                Know more
-              </Button>
-            </DrawerTrigger>
-            <DrawerContent className="w-full max-w-xl">
-              <DrawerHeader className="border-b border-border">
-                <DrawerTitle>About</DrawerTitle>
-                <DrawerDescription>
-                  Additional context behind the short business summary.
-                </DrawerDescription>
-              </DrawerHeader>
-
-              <div className="flex-1 space-y-3 overflow-y-auto p-4">
-                <p className="text-[13px] leading-relaxed text-foreground">{aboutDrawerText}</p>
-              </div>
-
-              <DrawerFooter className="border-t border-border">
-                <DrawerClose asChild>
-                  <Button variant="outline">Close</Button>
-                </DrawerClose>
-              </DrawerFooter>
-            </DrawerContent>
-          </Drawer>
+          <details className="group/about-more">
+            <summary className="list-none cursor-pointer text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground">
+              <span className="group-open/about-more:hidden">Read more</span>
+              <span className="hidden group-open/about-more:inline">Hide</span>
+            </summary>
+            <p className="mt-2 text-[13px] leading-relaxed text-foreground">{aboutDrawerText}</p>
+          </details>
         ) : null}
       </div>
     </div>
@@ -200,12 +164,12 @@ function renderBusinessSnapshotDrawer({
       <summary className="list-none cursor-pointer px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 space-y-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/90">
               {title}
             </p>
             <p className="text-[11px] leading-snug text-muted-foreground">{preview}</p>
           </div>
-          <span className="inline-flex shrink-0 items-center rounded-full border border-sky-200 bg-sky-100 px-2.5 py-1 text-[10px] font-medium text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
+          <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/60 bg-emerald-100/70 px-2.5 py-1 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/35 dark:bg-emerald-900/30 dark:text-emerald-200">
             <span className="group-open/business-snapshot-drawer:hidden">Show more</span>
             <span className="hidden group-open/business-snapshot-drawer:inline">
               Hide details
@@ -348,7 +312,7 @@ function renderHistoricalEconomicsCard(history: NormalizedHistoricalEconomics) {
     return (
       <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
         <div className="space-y-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/90">
             Business Momentum
           </p>
           <p className="text-[11px] leading-snug text-muted-foreground">{preview}</p>
@@ -363,7 +327,7 @@ function renderHistoricalEconomicsCard(history: NormalizedHistoricalEconomics) {
   return (
     <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
       <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/90">
           Business Momentum
         </p>
         <p className="text-[11px] leading-snug text-muted-foreground">{preview}</p>
@@ -491,7 +455,7 @@ function renderHistoricalEconomicsUnavailableCard() {
   return (
     <div className={`${businessSnapshotBlockClass} p-4 space-y-3`}>
       <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground/90">
           Business Momentum
         </p>
         <p className="text-[11px] leading-snug text-muted-foreground">
@@ -610,7 +574,7 @@ export function BusinessSnapshotSection({
                     {(snapshot.topRevenueDrivers.length > 0 ||
                       snapshot.keyDependencies.length > 0 ||
                       snapshot.keyRisksToModel.length > 0) && (
-                      <div className="space-y-2.5">
+                      <div className="space-y-3">
                         {snapshot.topRevenueDrivers.length > 0 && (
                           renderBusinessSnapshotDrawer({
                             title: "Top Revenue Drivers",
@@ -663,7 +627,7 @@ export function BusinessSnapshotSection({
                                       {snapshot.keyDependencies.map((dependency, idx) => (
                                         <li
                                           key={idx}
-                                          className="text-xs text-foreground leading-snug border-l border-amber-400/50 pl-1.5"
+                                          className="text-xs text-foreground leading-snug border-l border-border/70 pl-1.5"
                                         >
                                           {dependency}
                                         </li>
@@ -680,7 +644,7 @@ export function BusinessSnapshotSection({
                                       {snapshot.keyRisksToModel.map((risk, idx) => (
                                         <li
                                           key={idx}
-                                          className="text-xs text-foreground leading-snug border-l border-red-400/50 pl-1.5"
+                                          className="text-xs text-foreground leading-snug border-l border-border/70 pl-1.5"
                                         >
                                           {risk}
                                         </li>
