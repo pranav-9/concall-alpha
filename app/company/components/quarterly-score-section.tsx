@@ -3,7 +3,9 @@
 import * as React from "react";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import ConcallScore from "@/components/concall-score";
+import { cn } from "@/lib/utils";
 import { ChartLineLabel } from "../[code]/chart";
+import { chipClass } from "./chip-tone";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 import type { ChartDataPoint, QuarterData } from "../types";
 
@@ -135,40 +137,28 @@ const renderCard = (card: SectionCard) => {
   );
 };
 
-const renderTrendBanner = (trend: TrendInfo) => (
-  <div
-    className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border px-3 py-1.5 ${
-      trend.direction === "improving"
-        ? "border-emerald-300/50 bg-emerald-50/70 dark:border-emerald-500/30 dark:bg-emerald-500/10"
-        : trend.direction === "declining"
-          ? "border-red-300/50 bg-red-50/70 dark:border-red-500/30 dark:bg-red-500/10"
-          : "border-amber-300/50 bg-amber-50/70 dark:border-amber-500/30 dark:bg-amber-500/10"
-    }`}
-  >
-    <span className="inline-flex shrink-0 items-center gap-1.5">
-      {trend.direction === "improving" ? (
-        <>
-          <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-            Improving
-          </span>
-        </>
-      ) : trend.direction === "declining" ? (
-        <>
-          <TrendingDown className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">
-            Declining
-          </span>
-        </>
-      ) : (
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-          Stable
-        </span>
-      )}
-    </span>
-    <span className="text-[11px] leading-snug text-foreground/85">{trend.description}</span>
-  </div>
-);
+const renderTrendRow = (trend: TrendInfo) => {
+  const tone =
+    trend.direction === "improving" ? "emerald" : trend.direction === "declining" ? "rose" : "amber";
+  const label =
+    trend.direction === "improving"
+      ? "Improving"
+      : trend.direction === "declining"
+        ? "Declining"
+        : "Stable";
+  const Icon =
+    trend.direction === "improving" ? TrendingUp : trend.direction === "declining" ? TrendingDown : null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className={cn(chipClass(tone), "uppercase tracking-[0.14em]")}>
+        {Icon && <Icon className="mr-1 h-3 w-3" />}
+        {label}
+      </span>
+      <span className="text-[12px] leading-snug text-foreground/85">{trend.description}</span>
+    </div>
+  );
+};
 
 const renderChartCard = ({
   chartData,
@@ -223,19 +213,19 @@ export function QuarterlyScoreSection({
         quarterSummary: {
           key: "quarter-summary",
           label: "Quarter summary",
-          accent: "bg-sky-400/80",
+          accent: "bg-amber-400/80",
           items: quarterContext.quarterSummary,
         },
         rationale: {
           key: "rationale",
           label: "Rationale",
-          accent: "bg-emerald-400/80",
+          accent: "bg-amber-400/80",
           items: quarterContext.rationale,
         },
         resultsSummary: {
           key: "results-summary",
           label: "Results summary",
-          accent: "bg-violet-400/80",
+          accent: "bg-amber-400/80",
           items: quarterContext.resultsSummary,
         },
         guidance: {
@@ -247,7 +237,7 @@ export function QuarterlyScoreSection({
         risks: {
           key: "risks",
           label: "Risks",
-          accent: "bg-rose-400/80",
+          accent: "bg-amber-400/80",
           items: quarterContext.risks,
         },
       }
@@ -262,8 +252,7 @@ export function QuarterlyScoreSection({
               Quarter
             </span>
             <div
-              role="tablist"
-              aria-label="Select quarter"
+              aria-label="Quarter selector"
               className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
             >
               {detailQuarters.map((quarter, index) => {
@@ -273,8 +262,8 @@ export function QuarterlyScoreSection({
                   <button
                     key={`${quarter.fy}-${quarter.qtr}-${index}`}
                     type="button"
-                    role="tab"
-                    aria-selected={isActive}
+                    aria-pressed={isActive}
+                    aria-label={`Select ${labelContext.detailQuarterLabel}`}
                     onClick={() => setSelectedIndex(index)}
                     className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors ${
                       isActive
@@ -284,7 +273,12 @@ export function QuarterlyScoreSection({
                   >
                     {labelContext.detailQuarterLabel}
                     {index === 0 && !isActive && (
-                      <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                      <span
+                        className={cn(
+                          chipClass("sky"),
+                          "px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em]",
+                        )}
+                      >
                         Latest
                       </span>
                     )}
@@ -298,7 +292,7 @@ export function QuarterlyScoreSection({
         {quarterContext ? (
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-start">
             <div className="flex min-w-0 flex-col gap-3">
-              {renderTrendBanner(trend)}
+              {renderTrendRow(trend)}
 
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <ConcallScore
@@ -310,11 +304,7 @@ export function QuarterlyScoreSection({
                   {quarterContext.detailQuarterLabel}
                 </h3>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  {isLatest && (
-                    <span className="rounded-full border border-blue-200 bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:border-blue-700/40 dark:bg-blue-900/40 dark:text-blue-300">
-                      Latest
-                    </span>
-                  )}
+                  {isLatest && <span className={chipClass("sky")}>Latest</span>}
                   {quarterContext.category && (
                     <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] font-medium text-foreground/80">
                       {quarterContext.category}
