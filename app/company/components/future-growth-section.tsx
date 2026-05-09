@@ -43,25 +43,14 @@ import {
 import { SectionCard, type SectionHeaderRankPill } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
+import { chipClass, type ChipTone } from "./chip-tone";
 
-function getScenarioTone(scenarioKey: "base" | "upside" | "downside") {
-  return scenarioKey === "base"
-    ? {
-        accentClass: "border-l-emerald-500/70",
-        growthBadgeClass:
-          "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/35 dark:text-emerald-100",
-      }
-    : scenarioKey === "upside"
-      ? {
-          accentClass: "border-l-sky-500/70",
-          growthBadgeClass:
-            "border-sky-200 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/35 dark:text-sky-100",
-        }
-      : {
-          accentClass: "border-l-amber-500/70",
-          growthBadgeClass:
-            "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/35 dark:text-amber-100",
-        };
+function getScenarioChipTone(
+  scenarioKey: "base" | "upside" | "downside",
+): ChipTone {
+  if (scenarioKey === "base") return "emerald";
+  if (scenarioKey === "upside") return "sky";
+  return "amber";
 }
 
 function renderBaseScenarioCard(outlook: NormalizedGrowthOutlook) {
@@ -78,17 +67,15 @@ function renderBaseScenarioCard(outlook: NormalizedGrowthOutlook) {
   const riskWatch = (scenario.riskWatch ?? "").trim();
   const riskWatchValue = riskWatch || primaryRisk;
   const growthValue = scenario.growth;
-  const tone = getScenarioTone("base");
+  const scenarioChipTone = getScenarioChipTone("base");
 
   return (
-    <div className={`${elevatedBlockClass} flex flex-col p-3 space-y-3 border-l-2 ${tone.accentClass}`}>
+    <div className={`${elevatedBlockClass} flex flex-col p-3 space-y-3`}>
       <div className="flex items-start justify-between gap-3">
-        <span className="px-2 py-0.5 rounded-full bg-muted text-foreground font-semibold uppercase tracking-wide">
-          Base case
-        </span>
+        <span className={chipClass("slate")}>Base case</span>
         <div className="flex shrink-0 flex-col items-end gap-1">
           {growthValue && (
-            <span className={`rounded-full border px-3 py-1 text-[18px] font-bold leading-none ${tone.growthBadgeClass}`}>
+            <span className={chipClass(scenarioChipTone)}>
               {String(growthValue)}
             </span>
           )}
@@ -101,7 +88,7 @@ function renderBaseScenarioCard(outlook: NormalizedGrowthOutlook) {
       </div>
 
       <div className="space-y-1.5">
-        <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+        <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/90 font-semibold">
           Quick takeaway
         </p>
         {fallbackDescription ? (
@@ -116,16 +103,21 @@ function renderBaseScenarioCard(outlook: NormalizedGrowthOutlook) {
       </div>
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-        <div className="space-y-1.5 rounded-lg border border-emerald-200/50 bg-emerald-50/55 p-2.5 dark:border-emerald-700/25 dark:bg-emerald-900/15">
-          <p className="text-[10px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300 font-semibold">
-            Drivers
-          </p>
+        <div className={`${nestedDetailClass} space-y-1.5 p-3`}>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300 font-semibold">
+              Drivers
+            </p>
+            {drivers.length > 0 && (
+              <span className={chipClass("emerald")}>{drivers.length}</span>
+            )}
+          </div>
           <ul className="space-y-1">
             {drivers.length > 0 ? (
               drivers.map((driver, idx) => (
                 <li
                   key={idx}
-                  className="rounded-sm border-l border-emerald-400/60 pl-2 text-[11px] leading-snug text-foreground"
+                  className="text-[11px] leading-snug text-foreground"
                 >
                   {driver}
                 </li>
@@ -138,16 +130,21 @@ function renderBaseScenarioCard(outlook: NormalizedGrowthOutlook) {
           </ul>
         </div>
 
-        <div className="space-y-1.5 rounded-lg border border-rose-200/50 bg-rose-50/55 p-2.5 dark:border-rose-700/25 dark:bg-rose-900/15">
-          <p className="text-[10px] uppercase tracking-wide text-rose-700 dark:text-rose-300 font-semibold">
-            Risks
-          </p>
+        <div className={`${nestedDetailClass} space-y-1.5 p-3`}>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-rose-700 dark:text-rose-300 font-semibold">
+              Risks
+            </p>
+            {risks.length > 0 && (
+              <span className={chipClass("rose")}>{risks.length}</span>
+            )}
+          </div>
           <ul className="space-y-1">
             {risks.length > 0 ? (
               risks.map((risk, idx) => (
                 <li
                   key={idx}
-                  className="rounded-sm border-l border-rose-400/60 pl-2 text-[11px] leading-snug text-foreground"
+                  className="text-[11px] leading-snug text-foreground"
                 >
                   {risk}
                 </li>
@@ -162,8 +159,8 @@ function renderBaseScenarioCard(outlook: NormalizedGrowthOutlook) {
       </div>
 
       {riskWatchValue && (
-        <div className="rounded-lg border border-amber-200/50 bg-amber-50/55 px-2.5 py-2 dark:border-amber-700/25 dark:bg-amber-900/15">
-          <p className="text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-300 font-semibold">
+        <div className={`${nestedDetailClass} px-3 py-2`}>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-amber-700 dark:text-amber-300 font-semibold">
             Risk watch
           </p>
           <p className="mt-1 text-[11px] leading-snug text-foreground">
@@ -193,7 +190,7 @@ function renderCompactScenarioCard(
   const riskWatch = (scenario.riskWatch ?? "").trim();
   const riskWatchValue = riskWatch || primaryRisk;
   const growthValue = scenario.growth;
-  const tone = getScenarioTone(scenarioKey);
+  const scenarioChipTone = getScenarioChipTone(scenarioKey);
   const hasDetailContent =
     visibleDrivers.length > 0 || visibleRisks.length > 0 || Boolean(riskWatchValue);
   const detailsLabel =
@@ -204,15 +201,15 @@ function renderCompactScenarioCard(
   return (
     <div
       key={scenarioKey}
-      className={`${elevatedBlockClass} flex h-full flex-col p-3 space-y-3 border-l-2 ${tone.accentClass}`}
+      className={`${elevatedBlockClass} flex h-full flex-col p-3 space-y-3`}
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="px-2 py-0.5 rounded-full bg-muted text-foreground font-semibold uppercase tracking-wide">
+        <span className={`${chipClass("slate")} capitalize`}>
           {scenarioKey} case
         </span>
         <div className="flex shrink-0 flex-col items-end gap-1">
           {growthValue && (
-            <span className={`rounded-full border px-3 py-1 text-[18px] font-bold leading-none ${tone.growthBadgeClass}`}>
+            <span className={chipClass(scenarioChipTone)}>
               {String(growthValue)}
             </span>
           )}
@@ -224,7 +221,7 @@ function renderCompactScenarioCard(
         </div>
       </div>
       <div className="space-y-1.5">
-        <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+        <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/90 font-semibold">
           Quick takeaway
         </p>
         <div className="space-y-1">
@@ -254,14 +251,19 @@ function renderCompactScenarioCard(
           <div className="mt-2 space-y-2">
             {visibleDrivers.length > 0 && (
               <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300 font-semibold">
-                  Drivers
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300 font-semibold">
+                    Drivers
+                  </p>
+                  <span className={chipClass("emerald")}>
+                    {visibleDrivers.length}
+                  </span>
+                </div>
                 <ul className="space-y-1">
                   {visibleDrivers.map((driver, idx) => (
                     <li
                       key={idx}
-                      className="text-[11px] text-foreground leading-snug rounded-sm border-l border-emerald-400/60 pl-2"
+                      className="text-[11px] text-foreground leading-snug"
                     >
                       {driver}
                     </li>
@@ -271,14 +273,19 @@ function renderCompactScenarioCard(
             )}
             {visibleRisks.length > 0 && (
               <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wide text-red-700 dark:text-red-300 font-semibold">
-                  Risks
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-rose-700 dark:text-rose-300 font-semibold">
+                    Risks
+                  </p>
+                  <span className={chipClass("rose")}>
+                    {visibleRisks.length}
+                  </span>
+                </div>
                 <ul className="space-y-1">
                   {visibleRisks.map((risk, idx) => (
                     <li
                       key={idx}
-                      className="text-[11px] text-foreground leading-snug rounded-sm border-l border-red-400/60 pl-2"
+                      className="text-[11px] text-foreground leading-snug"
                     >
                       {risk}
                     </li>
@@ -287,8 +294,8 @@ function renderCompactScenarioCard(
               </div>
             )}
             {riskWatchValue && (
-              <div className="rounded-lg border border-amber-200/50 bg-amber-50/55 px-2.5 py-2 dark:border-amber-700/25 dark:bg-amber-900/15">
-                <p className="text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-300 font-semibold">
+              <div className={`${nestedDetailClass} px-3 py-2`}>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-amber-700 dark:text-amber-300 font-semibold">
                   Risk watch
                 </p>
                 <p className="mt-1 text-[11px] leading-snug text-foreground">
@@ -383,11 +390,11 @@ export function FutureGrowthSection({
           <div className="flex flex-col gap-4">
             {(outlook.summaryBullets.length > 0 ||
               outlook.growthScoreComponents.length > 0) && (
-              <div className={`${elevatedBlockClass} p-3 space-y-2`}>
+              <div className={`${elevatedBlockClass} p-4 space-y-2`}>
                 {outlook.summaryBullets.length > 0 && (
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-[10px] uppercase tracking-wide text-foreground/90 font-semibold">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/90 font-semibold">
                         Summary
                       </p>
                       <div className="flex flex-wrap items-center gap-2">
@@ -397,7 +404,7 @@ export function FutureGrowthSection({
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-7 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
+                                className="h-7 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-none hover:bg-accent"
                               >
                                 View score breakdown
                               </Button>
@@ -414,12 +421,12 @@ export function FutureGrowthSection({
                                   {outlook.growthScoreComponents.map((component) => (
                                     <div
                                       key={component.key}
-                                      className="rounded-lg border border-border/30 bg-background/70 px-3 py-2.5"
+                                      className={`${nestedDetailClass} px-3 py-2.5`}
                                     >
-                                      <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                                      <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
                                         {getGrowthScoreComponentLabel(component.key)}
                                       </p>
-                                      <p className="mt-1 text-[18px] font-semibold leading-none text-foreground">
+                                      <p className="mt-1 text-2xl font-semibold leading-none text-foreground">
                                         {pctFormatter.format(component.score)}
                                         <span className="ml-1 text-[10px] font-medium text-muted-foreground">
                                           /10
@@ -458,10 +465,10 @@ export function FutureGrowthSection({
             )}
 
             {outlook.catalysts.length > 0 && (
-              <div className={`${elevatedBlockClass} p-3 space-y-3`}>
+              <div className={`${elevatedBlockClass} p-4 space-y-3`}>
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[11px] uppercase tracking-wide text-foreground/90 font-semibold">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/90 font-semibold">
                       Top 3 Growth Catalysts
                     </p>
                     {outlook.alsoConsidered.length > 0 && (
@@ -470,7 +477,7 @@ export function FutureGrowthSection({
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
+                            className="h-7 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-none hover:bg-accent"
                           >
                             Other catalysts
                           </Button>
@@ -484,8 +491,8 @@ export function FutureGrowthSection({
                           </DrawerHeader>
                           <div className="space-y-3 overflow-y-auto px-4 py-4">
                             {outlook.alsoConsideredNote && (
-                              <div className="rounded-lg border border-border/30 bg-muted/25 px-3 py-2.5">
-                                <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-semibold">
+                              <div className={`${nestedDetailClass} px-3 py-2.5`}>
+                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
                                   Note
                                 </p>
                                 <p className="mt-1 text-[11px] leading-relaxed text-foreground">
@@ -498,7 +505,7 @@ export function FutureGrowthSection({
                               .map((item, idx) => (
                                 <div
                                   key={`also-considered-drawer-visible-${idx}`}
-                                  className="rounded-lg border border-border/30 bg-background/70 px-3 py-2.5 space-y-1.5"
+                                  className={`${nestedDetailClass} px-3 py-2.5 space-y-1.5`}
                                 >
                                   <div className="flex flex-wrap items-center gap-2">
                                     {item.catalyst && (
@@ -530,7 +537,7 @@ export function FutureGrowthSection({
                                     .map((item, idx) => (
                                       <div
                                         key={`also-considered-drawer-extra-${idx}`}
-                                        className="rounded-lg border border-border/30 bg-background/70 px-3 py-2.5 space-y-1.5"
+                                        className={`${nestedDetailClass} px-3 py-2.5 space-y-1.5`}
                                       >
                                         <div className="flex flex-wrap items-center gap-2">
                                           {item.catalyst && (
@@ -598,29 +605,16 @@ export function FutureGrowthSection({
                         c.whyItMatters ??
                         c.evidenceLines.map((line) => line.text).find((line) => line !== whatIsChanging) ??
                         null;
-                      const catalystAccentClass =
-                        c.expectedImpact === "revenue"
-                          ? "before:bg-emerald-400/90"
-                          : c.expectedImpact === "margin"
-                            ? "before:bg-sky-400/90"
-                            : "before:bg-amber-400/90";
-                      const catalystDotClass =
-                        c.expectedImpact === "revenue"
-                          ? "bg-emerald-500"
-                          : c.expectedImpact === "margin"
-                            ? "bg-sky-500"
-                            : "bg-amber-500";
-
                       return (
                         <CarouselItem key={idx} className="basis-full md:basis-1/2 xl:basis-1/3">
                           <article
-                            className={`${nestedDetailClass} relative flex h-full flex-col overflow-hidden p-4 before:absolute before:inset-x-0 before:top-0 before:h-1.5 ${catalystAccentClass}`}
+                            className={`${nestedDetailClass} relative flex h-full flex-col overflow-hidden p-4 before:absolute before:inset-x-0 before:top-0 before:h-1.5 before:bg-sky-500/80`}
                           >
                             <div className="flex h-full flex-1 flex-col gap-4">
                               <div className="space-y-3">
                                 <div className="flex min-h-[2.6rem] items-start gap-2">
                                   {c.catalyst && (
-                                    <p className="line-clamp-2 flex-1 text-[15px] font-semibold leading-snug text-foreground">
+                                    <p className="line-clamp-2 flex-1 text-base font-semibold leading-snug text-foreground">
                                       {c.catalyst}
                                     </p>
                                   )}
@@ -637,7 +631,7 @@ export function FutureGrowthSection({
                                               className="relative size-7 rounded-full border-border/60 bg-background/70 text-muted-foreground shadow-none hover:bg-accent hover:text-foreground"
                                             >
                                               <History className="size-3.5" />
-                                              <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full border border-background bg-emerald-500 px-1 text-[9px] font-semibold leading-4 text-white">
+                                              <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full border border-background bg-sky-500 px-1 text-[10px] font-semibold leading-4 text-white">
                                                 {timelineItems.length}
                                               </span>
                                             </Button>
@@ -671,10 +665,10 @@ export function FutureGrowthSection({
                                                     key={`${idx}-timeline-drawer-${tIdx}`}
                                                     className="relative space-y-1.5 pl-4"
                                                   >
-                                                    <span className={`absolute left-0 top-2 h-2.5 w-2.5 rounded-full border-2 border-background ${catalystDotClass}`} />
-                                                    <div className="flex flex-wrap items-center gap-1.5">
+                                                    <span className="absolute left-0 top-2 h-2.5 w-2.5 rounded-full border-2 border-background bg-sky-500" />
+                                                    <div className="flex flex-wrap items-center gap-2">
                                                       <span
-                                                        className={`px-2 py-0.5 rounded-full uppercase tracking-wide text-[10px] ${stageMeta.className}`}
+                                                        className={`px-2 py-0.5 rounded-full uppercase tracking-[0.16em] text-[10px] ${stageMeta.className}`}
                                                       >
                                                         {stageMeta.label}
                                                       </span>
@@ -723,7 +717,7 @@ export function FutureGrowthSection({
                                     </span>
                                   )}
                                   {c.type && (
-                                    <span className="rounded-full border border-blue-200 bg-blue-100 px-2.5 py-0.5 text-blue-700 dark:border-blue-700/40 dark:bg-blue-900/35 dark:text-blue-200">
+                                    <span className={chipClass("sky")}>
                                       {toDisplayLabel(c.type) ?? c.type}
                                     </span>
                                   )}
@@ -738,7 +732,7 @@ export function FutureGrowthSection({
                                     </span>
                                   )}
                                   {priorityLabel && (
-                                    <span className="rounded-full border border-violet-200 bg-violet-100 px-2.5 py-0.5 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/35 dark:text-violet-200">
+                                    <span className={chipClass("slate")}>
                                       {priorityLabel}
                                     </span>
                                   )}
@@ -746,13 +740,13 @@ export function FutureGrowthSection({
                               </div>
 
                               {quantifiedLabel && (
-                                <div className="rounded-xl border border-border/35 bg-muted/15 p-3">
+                                <div className={`${nestedDetailClass} p-3`}>
                                   <div className="space-y-2">
                                     <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
                                       Growth Impact
                                     </p>
                                     <div className="space-y-1">
-                                      <p className="text-[18px] font-semibold leading-[1.02] tracking-tight text-foreground sm:text-[20px]">
+                                      <p className="text-2xl font-semibold leading-[1.02] tracking-tight text-foreground">
                                         {quantifiedDisplay.headline ?? quantifiedLabel ?? "Unquantified"}
                                       </p>
                                       {quantifiedDisplay.subline && (
@@ -768,7 +762,7 @@ export function FutureGrowthSection({
                               {(whatIsChanging || whyItMatters) && (
                                 <div className="space-y-2">
                                   {whatIsChanging && (
-                                    <div className="rounded-lg border border-border/35 bg-background/70 p-3 space-y-1">
+                                    <div className={`${nestedDetailClass} p-3 space-y-1`}>
                                       <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
                                         What&apos;s Changing
                                       </p>
@@ -778,10 +772,12 @@ export function FutureGrowthSection({
                                     </div>
                                   )}
                                   {whyItMatters && (
-                                    <div className="rounded-lg border border-emerald-200/35 bg-emerald-50/35 p-3 space-y-1 dark:border-emerald-700/25 dark:bg-emerald-900/10">
-                                      <p className="text-[10px] uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300 font-semibold">
-                                        Why It Matters
-                                      </p>
+                                    <div className={`${nestedDetailClass} p-3 space-y-1`}>
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-[10px] uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300 font-semibold">
+                                          Why It Matters
+                                        </p>
+                                      </div>
                                       <p className="text-[12px] leading-relaxed text-foreground">
                                         {whyItMatters}
                                       </p>
@@ -809,7 +805,7 @@ export function FutureGrowthSection({
             {hasDeepDive && (
               <div className={`${nestedDetailClass} px-3 py-2.5 space-y-3`}>
                 <div className="space-y-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-foreground/90">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/90">
                     Scenario Analysis
                   </p>
                   <p className="text-[11px] leading-snug text-muted-foreground">
