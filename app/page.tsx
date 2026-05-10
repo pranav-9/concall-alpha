@@ -31,20 +31,20 @@ function RecentScoreUpdatesHeroFallback() {
 export default function Home() {
   const analysisFramework = [
     {
-      title: "Industry Context",
-      eyebrow: "Industry layer",
-      body:
-        "Understand the industry overview, value chain, classification map, regulations, tailwinds, and headwinds shaping the business.",
-      stripClass: "bg-sky-500/80",
-      badge: { kind: "text" as const, label: "Maps + drivers" },
-    },
-    {
       title: "Business Snapshot",
       eyebrow: "Business layer",
       body:
         "Break the company into segments, revenue drivers, business mix, and the historical economics that explain how it has made money.",
       stripClass: "bg-emerald-500/80",
       badge: { kind: "text" as const, label: "25% 4 yr CAGR" },
+    },
+    {
+      title: "Moat Analysis",
+      eyebrow: "Durability layer",
+      body:
+        "Close with the durability layer: competitive position, structural advantages, and what could erode them.",
+      stripClass: "bg-emerald-500/80",
+      badge: { kind: "moat" as const, label: "Narrow Moat" },
     },
     {
       title: "Quarterly Score",
@@ -77,14 +77,6 @@ export default function Home() {
         "See how management has guided over time, what changed, and whether credibility is strengthening or deteriorating.",
       stripClass: "bg-amber-500/80",
       badge: { kind: "text" as const, label: "15% growth" },
-    },
-    {
-      title: "Moat Analysis",
-      eyebrow: "Durability layer",
-      body:
-        "Close with the durability layer: competitive position, structural advantages, and what could erode them.",
-      stripClass: "bg-emerald-500/80",
-      badge: { kind: "moat" as const, label: "Narrow Moat" },
     },
   ];
 
@@ -149,7 +141,7 @@ export default function Home() {
                 Analysis framework
               </p>
               <h2 className="mt-2 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
-                7-step framework
+                6-step framework
               </h2>
             </div>
 

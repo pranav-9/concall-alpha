@@ -22,11 +22,9 @@ import {
   CommunityPanel,
   FutureGrowthPanel,
   GuidanceHistoryPanel,
-  IndustryContextPanel,
   KeyVariablesPanel,
   MoatAnalysisPanel,
   QuarterlyScorePanel,
-  SubSectorPanel,
 } from "./company-detail-sections";
 
 export async function generateMetadata({
@@ -77,20 +75,6 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
       meta: overview.sector
         ? { kind: "text" as const, text: overview.sector }
         : { kind: "text" as const, text: "Live" },
-    },
-    {
-      ...SECTION_MAP.industryContext,
-      meta: overview.sub_sector
-        ? { kind: "text" as const, text: overview.sub_sector }
-        : availability.industryContext
-          ? { kind: "text" as const, text: "Live" }
-          : { kind: "text" as const, text: "Soon" },
-    },
-    {
-      ...SECTION_MAP.subSector,
-      meta: availability.subSector
-        ? { kind: "text" as const, text: "Live" }
-        : { kind: "text" as const, text: "Soon" },
     },
     {
       ...SECTION_MAP.businessSnapshot,
@@ -155,38 +139,6 @@ function buildOverviewSectionPreviews(overview: CompanyPageOverviewCacheRow) {
     null;
 
   return [
-    {
-      title: "Industry Context",
-      href: "#industry-context",
-      bodyPills: (() => {
-        const pills: Array<{ label: string; tone: OverviewBodyPillTone }> = [];
-        if (overview.sector) {
-          pills.push({ label: overview.sector, tone: "sky" });
-        }
-        if (
-          overview.sector_rank != null &&
-          overview.sector_total != null &&
-          overview.sector_percentile != null
-        ) {
-          const tone = getPercentileTone(overview.sector_percentile);
-          pills.push({
-            label: `Sector Rank ${overview.sector_rank}/${overview.sector_total}`,
-            tone,
-          });
-          pills.push({ label: `Top ${Math.round(overview.sector_percentile)}%`, tone });
-        }
-        return pills.length > 0 ? pills : undefined;
-      })(),
-      indicator: availability.industryContext ? undefined : { kind: "pill" as const, label: "Soon" },
-    },
-    {
-      title: "Sub-sector Analysis",
-      href: "#sub-sector",
-      bodyPills: overview.sub_sector
-        ? [{ label: overview.sub_sector, tone: "emerald" as const }]
-        : undefined,
-      indicator: availability.subSector ? undefined : { kind: "pill" as const, label: "Soon" },
-    },
     {
       title: "Business Snapshot",
       href: "#business-overview",
@@ -329,14 +281,6 @@ export default async function Page({
                 </Suspense>
               }
             />
-          </div>
-
-          <div data-section-id="industry-context">
-            <IndustryContextPanel overview={overview} />
-          </div>
-
-          <div data-section-id="sub-sector">
-            <SubSectorPanel overview={overview} />
           </div>
 
           <div data-section-id="business-overview">

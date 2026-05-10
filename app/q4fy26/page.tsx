@@ -9,7 +9,6 @@ import {
   type TrackerEntry,
   getTrackerData,
 } from "./data";
-import { SectorFilter } from "./sector-filter";
 
 export const metadata: Metadata = {
   title: `${TARGET_LABEL} Tracker – Story of a Stock`,
@@ -31,7 +30,7 @@ export default async function Q4FY26TrackerPage({
   const activeBucket = isBucketKey(resolved?.bucket) ? resolved!.bucket : null;
   const activeSector = resolved?.sector ?? null;
 
-  const { entries, countsByBucket, sectors, totalCompanies, reportedCompanies } =
+  const { entries, countsByBucket, totalCompanies, reportedCompanies } =
     await getTrackerData();
 
   const filtered = entries.filter((entry) => {
@@ -143,8 +142,6 @@ export default async function Q4FY26TrackerPage({
               );
             })}
           </div>
-
-          <SectorFilter sectors={sectors} selected={activeSector} />
         </section>
 
         {filtered.length === 0 ? (

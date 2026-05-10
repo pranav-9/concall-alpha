@@ -44,7 +44,6 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
   const navItems = [
     { href: "/leaderboards", label: "Leaderboards" },
     { href: "/watchlists", label: "Watchlists" },
-    { href: "/sectors", label: "Sectors" },
     { href: "/requests", label: "Submit Request" },
   ];
 
