@@ -6,6 +6,7 @@ Next.js 15 / React 19 portal that reads concall analysis from Supabase and rende
 
 - `app/` — Next App Router. Company page is `app/company/[code]/`; section components live in `app/company/components/`.
 - `lib/<domain>/` — per-section data layer. Each domain folder has `types.ts` (frontend payload validation) and `normalize.ts` (raw → display shape). Domains: `business-snapshot`, `moat-analysis`, `growth-outlook`, `guidance-snapshot`, `guidance-tracking`, `key-variables-snapshot`, `sector-intelligence`, `company-industry-analysis`.
+- `lib/<top-level>.ts` — cross-cutting utilities not scoped to one domain. Examples: `admin-auth.ts`, `company-overview-cache.ts`, `company-freshness.ts`, `visitor-id.ts`, `logger.ts`, `utils.ts`, `nse-event-calendar.ts`, `homepage-activity-feed.ts`, `leaderboard-rank.ts`.
 - `lib/supabase/` — Supabase clients (`client.ts`, `server.ts`, `middleware.ts`, `admin.ts`, `public-read.ts`) plus `*.sql` files that define the portal-owned tables.
 - `components/ui/` — shadcn/ui primitives. `app/company/components/surface-tokens.ts` is the shared surface-class source.
 
@@ -48,7 +49,8 @@ Read [skills/concall-alpha-ui-patterns/SKILL.md](skills/concall-alpha-ui-pattern
 
 ## Project-specific gotchas
 
-- Industry Context and Business Snapshot are collapsed by default on the company page. Don't "fix" this.
+- Industry Context is currently **not rendered** on the company page (`IndustryContextPanel` is defined in `app/company/[code]/company-detail-sections.tsx` but not imported into `page.tsx`). It was temporarily pulled while other sections get polished — do **not** re-wire it back into the page without checking with the user first.
+- Business Snapshot renders **expanded by default** on the company page. The internal `<details>` blocks inside it (about "Read more", historical-economics drawer) are intentional *sub-element* collapses — don't flatten them.
 - Guidance History uses thread-style trails, not full comparison cards. Don't reintroduce comparison cards without a product reason.
 - `/admin` requires both `ADMIN_PANEL_PASSCODE` and `SUPABASE_SERVICE_ROLE_KEY`. If a feature seems to "not work locally," check `.env.local`.
 - `lib/supabase/*.sql` files exist beyond the four named in the README (e.g. `homepage_activity_feed.sql`, `company_page_overview_cache.sql`, `activity_feed_score_history_indexes.sql`). Treat the README list as incomplete; check the directory.

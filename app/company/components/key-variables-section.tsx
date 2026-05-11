@@ -24,13 +24,10 @@ import {
 } from "./surface-tokens";
 import { getDeltaToneClass } from "./delta-tone";
 import { cn } from "@/lib/utils";
+import { formatPeriodDelta, getPeriodOverPeriodDelta } from "@/lib/period-delta";
 
 const numberFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 2,
-});
-
-const deltaFormatter = new Intl.NumberFormat("en-IN", {
-  maximumFractionDigits: 0,
 });
 
 const formatCellValue = (value: string | number | null | undefined) => {
@@ -50,28 +47,14 @@ const asNumericValue = (value: string | number | null | undefined) => {
   return null;
 };
 
-const getPeriodOverPeriodGrowth = (
-  periods: string[],
+const toNumericValuesByPeriod = (
   valuesByPeriod: Record<string, string | number | null>,
-  period: string,
-) => {
-  const periodIndex = periods.indexOf(period);
-  if (periodIndex <= 0) return null;
-
-  const currentValue = asNumericValue(valuesByPeriod[periods[periodIndex]]);
-  const previousValue = asNumericValue(valuesByPeriod[periods[periodIndex - 1]]);
-
-  if (currentValue == null || previousValue == null || previousValue === 0) {
-    return null;
+): Record<string, number | null> => {
+  const result: Record<string, number | null> = {};
+  for (const key of Object.keys(valuesByPeriod)) {
+    result[key] = asNumericValue(valuesByPeriod[key]);
   }
-
-  return ((currentValue - previousValue) / previousValue) * 100;
-};
-
-const formatDeltaPercentValue = (value: number | null | undefined) => {
-  if (value == null) return null;
-  const formatted = deltaFormatter.format(Math.abs(value));
-  return `${value > 0 ? "+" : value < 0 ? "-" : ""}${formatted}%`;
+  return result;
 };
 
 const sourceBasisDisplay: Record<
@@ -266,7 +249,9 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
             </tr>
           </thead>
           <tbody>
-            {history.rows.map((row) => (
+            {history.rows.map((row) => {
+              const numericValuesByPeriod = toNumericValuesByPeriod(row.valuesByPeriod);
+              return (
               <tr key={row.metric} className="border-b border-border/20 last:border-b-0">
                 <td className="px-3 py-2 text-[12px] font-medium text-foreground">
                   {row.metric}
@@ -276,17 +261,17 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
                     ariaLabel={`${row.metric} trend across ${periods.length} periods`}
                     points={periods.map((period) => ({
                       period,
-                      value: asNumericValue(row.valuesByPeriod[period]),
+                      value: numericValuesByPeriod[period] ?? null,
                     }))}
                   />
                 </td>
                 {periods.map((period) => {
-                  const yoyValue = getPeriodOverPeriodGrowth(
+                  const delta = getPeriodOverPeriodDelta(
                     periods,
-                    row.valuesByPeriod,
+                    numericValuesByPeriod,
                     period,
                   );
-                  const yoyLabel = formatDeltaPercentValue(yoyValue);
+                  const formatted = formatPeriodDelta(delta);
 
                   return (
                     <td key={period} className="px-3 py-2 text-right">
@@ -294,13 +279,13 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
                         <span className="text-[12px] text-muted-foreground">
                           {formatCellValue(row.valuesByPeriod[period])}
                         </span>
-                        {yoyLabel ? (
+                        {formatted ? (
                           <span
                             className={`text-[10px] leading-none ${getDeltaToneClass(
-                              yoyValue,
+                              formatted.toneValue,
                             )}`}
                           >
-                            {yoyLabel}
+                            {formatted.label}
                           </span>
                         ) : (
                           <span className="text-[10px] leading-none text-muted-foreground">
@@ -312,7 +297,8 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
                   );
                 })}
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

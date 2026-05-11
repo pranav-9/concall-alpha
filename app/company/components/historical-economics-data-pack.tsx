@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { KpiSparkline } from "./kpi-sparkline-lazy";
 import { getDeltaToneClass } from "./delta-tone";
+import { formatPeriodDelta, getPeriodOverPeriodDelta } from "@/lib/period-delta";
 import type {
   NormalizedHistoricalEconomics,
   NormalizedRevenueHistoryBySegment,
@@ -56,21 +57,11 @@ const percentFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 1,
 });
 
-const integerPercentFormatter = new Intl.NumberFormat("en-IN", {
-  maximumFractionDigits: 0,
-});
-
 const formatAbsoluteValue = (value: number | null | undefined) =>
   value == null ? "—" : valueFormatter.format(value);
 
 const formatPercentValue = (value: number | null | undefined) =>
   value == null ? "—" : `${percentFormatter.format(value)}%`;
-
-const formatDeltaPercentValue = (value: number | null | undefined) => {
-  if (value == null) return null;
-  const formatted = integerPercentFormatter.format(Math.abs(value));
-  return `${value > 0 ? "+" : value < 0 ? "-" : ""}${formatted}% YoY`;
-};
 
 const formatMixDeltaLabel = (value: number | null | undefined) => {
   if (value == null) return "—";
@@ -181,28 +172,6 @@ const getLatestNumericValue = (
     }
   }
   return Number.NEGATIVE_INFINITY;
-};
-
-const getPeriodOverPeriodGrowth = (
-  periods: string[],
-  valuesByPeriod: Record<string, number | null>,
-  period: string,
-) => {
-  const periodIndex = periods.indexOf(period);
-  if (periodIndex <= 0) return null;
-
-  const currentValue = valuesByPeriod[periods[periodIndex]];
-  const previousValue = valuesByPeriod[periods[periodIndex - 1]];
-
-  if (
-    typeof currentValue !== "number" ||
-    typeof previousValue !== "number" ||
-    previousValue === 0
-  ) {
-    return null;
-  }
-
-  return ((currentValue - previousValue) / previousValue) * 100;
 };
 
 const getPeriodOverPeriodPpChange = (
@@ -506,13 +475,13 @@ function RevenueHistoryModule({
                         {formatAbsoluteValue(row.valuesByPeriod[period])}
                       </span>
                       {(() => {
-                        const yoyValue = getPeriodOverPeriodGrowth(
+                        const delta = getPeriodOverPeriodDelta(
                           displayPeriods,
                           row.valuesByPeriod,
                           period,
                         );
-                        const yoyLabel = formatDeltaPercentValue(yoyValue);
-                        if (!yoyLabel) {
+                        const formatted = formatPeriodDelta(delta);
+                        if (!formatted) {
                           return (
                             <span className="text-[10px] leading-none text-muted-foreground">
                               &nbsp;
@@ -522,10 +491,10 @@ function RevenueHistoryModule({
                         return (
                           <span
                             className={`text-[10px] leading-none ${getDeltaToneClass(
-                              yoyValue,
+                              formatted.toneValue,
                             )}`}
                           >
-                            {yoyLabel}
+                            {formatted.label}
                           </span>
                         );
                       })()}
@@ -886,13 +855,13 @@ function RevenueHistorySegmentModule({
                         {formatAbsoluteValue(row.revenueByYear[period])}
                       </span>
                       {(() => {
-                        const yoyValue = getPeriodOverPeriodGrowth(
+                        const delta = getPeriodOverPeriodDelta(
                           displayPeriods,
                           row.revenueByYear,
                           period,
                         );
-                        const yoyLabel = formatDeltaPercentValue(yoyValue);
-                        if (!yoyLabel) {
+                        const formatted = formatPeriodDelta(delta);
+                        if (!formatted) {
                           return (
                             <span className="text-[10px] leading-none text-muted-foreground">
                               &nbsp;
@@ -903,10 +872,10 @@ function RevenueHistorySegmentModule({
                         return (
                           <span
                             className={`text-[10px] leading-none ${getDeltaToneClass(
-                              yoyValue,
+                              formatted.toneValue,
                             )}`}
                           >
-                            {yoyLabel}
+                            {formatted.label}
                           </span>
                         );
                       })()}
