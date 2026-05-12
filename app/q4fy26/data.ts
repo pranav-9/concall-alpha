@@ -24,6 +24,7 @@ type BucketDef = {
   barClass: string;
   textClass: string;
   borderClass: string;
+  textOnBarClass: string;
 };
 
 export const BUCKETS: Record<BucketKey, BucketDef> = {
@@ -34,6 +35,7 @@ export const BUCKETS: Record<BucketKey, BucketDef> = {
     barClass: "bg-emerald-500",
     textClass: "text-emerald-700 dark:text-emerald-300",
     borderClass: "border-emerald-300/60 dark:border-emerald-700/40",
+    textOnBarClass: "text-white",
   },
   great: {
     key: "great",
@@ -42,6 +44,7 @@ export const BUCKETS: Record<BucketKey, BucketDef> = {
     barClass: "bg-sky-500",
     textClass: "text-sky-700 dark:text-sky-300",
     borderClass: "border-sky-300/60 dark:border-sky-700/40",
+    textOnBarClass: "text-white",
   },
   good: {
     key: "good",
@@ -50,6 +53,7 @@ export const BUCKETS: Record<BucketKey, BucketDef> = {
     barClass: "bg-green-500",
     textClass: "text-green-700 dark:text-green-300",
     borderClass: "border-green-300/60 dark:border-green-700/40",
+    textOnBarClass: "text-white",
   },
   ok: {
     key: "ok",
@@ -58,6 +62,7 @@ export const BUCKETS: Record<BucketKey, BucketDef> = {
     barClass: "bg-amber-400",
     textClass: "text-amber-700 dark:text-amber-300",
     borderClass: "border-amber-300/60 dark:border-amber-700/40",
+    textOnBarClass: "text-zinc-900",
   },
   weak: {
     key: "weak",
@@ -66,6 +71,7 @@ export const BUCKETS: Record<BucketKey, BucketDef> = {
     barClass: "bg-red-500",
     textClass: "text-red-700 dark:text-red-300",
     borderClass: "border-red-300/60 dark:border-red-700/40",
+    textOnBarClass: "text-white",
   },
   upcoming: {
     key: "upcoming",
@@ -74,6 +80,7 @@ export const BUCKETS: Record<BucketKey, BucketDef> = {
     barClass: "bg-zinc-300 dark:bg-zinc-700",
     textClass: "text-zinc-700 dark:text-zinc-300",
     borderClass: "border-zinc-300/60 dark:border-zinc-700/40",
+    textOnBarClass: "text-zinc-900 dark:text-zinc-100",
   },
 };
 

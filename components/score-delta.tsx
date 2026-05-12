@@ -6,12 +6,14 @@ export function ScoreDelta({
   priorLabel,
   missingLabel,
   className = "text-[10px]",
+  inlineSuffix = true,
 }: {
   score: number;
   priorScore: number | null;
   priorLabel?: string | null;
   missingLabel?: string;
   className?: string;
+  inlineSuffix?: boolean;
 }) {
   if (priorScore == null) {
     if (!missingLabel) return null;
@@ -25,13 +27,14 @@ export function ScoreDelta({
   const priorTitle = priorLabel
     ? `Previous (${priorLabel}): ${priorScore.toFixed(1)}`
     : `Previous: ${priorScore.toFixed(1)}`;
+  const suffix = inlineSuffix && priorLabel ? ` vs ${priorLabel}` : "";
   if (Math.abs(delta) < DELTA_EPSILON) {
     return (
       <span
         className={`${className} font-medium text-muted-foreground`}
         title={priorTitle}
       >
-        no change{priorLabel ? ` vs ${priorLabel}` : ""}
+        no change{suffix}
       </span>
     );
   }
@@ -46,7 +49,7 @@ export function ScoreDelta({
       title={priorTitle}
     >
       {arrow} {Math.abs(delta).toFixed(1)}
-      {priorLabel ? ` vs ${priorLabel}` : ""}
+      {suffix}
     </span>
   );
 }

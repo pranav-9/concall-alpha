@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ScoreDelta } from "@/components/score-delta";
 import { HERO_CARD, PAGE_SHELL, PANEL_CARD_SKY } from "@/lib/design/shell";
 import {
   BUCKETS,
@@ -74,7 +75,7 @@ export default async function Q4FY26TrackerPage({
               </p>
             </div>
 
-            <DistributionBar countsByBucket={countsByBucket} total={totalCompanies} />
+            <DistributionBar countsByBucket={countsByBucket} total={reportedCompanies} />
 
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
               {BUCKET_ORDER.map((key) => {
@@ -116,7 +117,7 @@ export default async function Q4FY26TrackerPage({
               prefetch={false}
               className={`rounded-full border px-3 py-1.5 font-medium transition-colors ${
                 activeBucket == null
-                  ? "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-700 dark:bg-sky-900/40 dark:text-sky-200"
+                  ? "border-sky-400 bg-sky-100 text-sky-900 ring-1 ring-sky-300/60 dark:border-sky-400 dark:bg-sky-700/70 dark:text-sky-50 dark:ring-sky-400/40"
                   : "border-border/60 bg-background/80 text-muted-foreground hover:bg-accent"
               }`}
             >
@@ -133,7 +134,7 @@ export default async function Q4FY26TrackerPage({
                   prefetch={false}
                   className={`rounded-full border px-3 py-1.5 font-medium transition-colors ${
                     isActive
-                      ? `${def.borderClass} bg-background/90 ${def.textClass}`
+                      ? `${def.borderClass} bg-sky-100/70 ring-1 ring-sky-300/60 ${def.textClass} dark:bg-sky-800/40 dark:ring-sky-400/40`
                       : "border-border/60 bg-background/80 text-muted-foreground hover:bg-accent"
                   }`}
                 >
@@ -185,6 +186,7 @@ function DistributionBar({
   return (
     <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-zinc-200/60 dark:bg-zinc-800/60">
       {BUCKET_ORDER.map((key) => {
+        if (key === "upcoming") return null;
         const count = countsByBucket[key];
         if (count === 0) return null;
         const pct = (count / total) * 100;
@@ -209,6 +211,11 @@ function BucketSection({
   entries: TrackerEntry[];
 }) {
   const def = BUCKETS[bucketKey];
+  const firstPrior = entries[0]?.priorLabel ?? null;
+  const uniformPrior =
+    firstPrior != null && entries.every((e) => e.priorLabel === firstPrior)
+      ? firstPrior
+      : null;
   return (
     <section className="space-y-3">
       <div className="flex items-baseline gap-2">
@@ -217,9 +224,10 @@ function BucketSection({
         </h2>
         <span className="text-xs text-muted-foreground">
           {entries.length} {entries.length === 1 ? "company" : "companies"} · {def.description}
+          {uniformPrior ? ` · vs ${uniformPrior}` : ""}
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
         {entries.map((entry) => (
           <CompanyCard key={entry.code} entry={entry} />
         ))}
@@ -252,7 +260,12 @@ function CompanyCard({ entry }: { entry: TrackerEntry }) {
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">{entry.name}</p>
+          <p
+            className="truncate text-sm font-semibold text-foreground"
+            title={entry.name}
+          >
+            {entry.name}
+          </p>
           <p className="truncate text-[11px] text-muted-foreground">{entry.code}</p>
         </div>
         {isUpcoming ? (
@@ -261,16 +274,29 @@ function CompanyCard({ entry }: { entry: TrackerEntry }) {
           </span>
         ) : (
           <span
-            className={`inline-flex h-9 min-w-9 items-center justify-center rounded-full px-2 text-sm font-extrabold text-black shadow-sm ${def.barClass}`}
+            className={`inline-flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs font-extrabold shadow-sm ${def.barClass} ${def.textOnBarClass}`}
             title={def.label}
+            aria-label={
+              entry.score != null
+                ? `${def.label} — score ${entry.score.toFixed(1)}`
+                : def.label
+            }
           >
-            {entry.score?.toFixed(1)}
+            {entry.score != null ? entry.score.toFixed(1) : "—"}
           </span>
         )}
       </div>
       <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
         <span className="truncate">{entry.sector ?? "—"}</span>
-        {entry.priorScore != null && entry.priorLabel ? (
+        {entry.score != null && entry.priorScore != null ? (
+          <ScoreDelta
+            score={entry.score}
+            priorScore={entry.priorScore}
+            priorLabel={entry.priorLabel}
+            className="text-[11px]"
+            inlineSuffix={false}
+          />
+        ) : entry.priorScore != null && entry.priorLabel ? (
           <span className="shrink-0">
             {entry.priorLabel}: {entry.priorScore.toFixed(1)}
           </span>
