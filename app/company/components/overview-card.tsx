@@ -138,7 +138,7 @@ export function OverviewCard({
 
           {sectionPreviews.length > 0 && (
             <div className="space-y-3 pt-1">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {sectionPreviews.map((preview) => (
                   (() => {
                     const isLocked = preview.indicator?.kind === "pill" && preview.indicator.label === "Soon";
