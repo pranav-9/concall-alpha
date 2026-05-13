@@ -45,6 +45,8 @@ Reference implementation: `moat-analysis`. Files to copy/adapt:
 4. `app/company/components/<name>-section.tsx` — UI. Use `SectionCard`, `surface-tokens.ts`, and the drawer-vs-details rules from the SKILL below.
 5. Wire into the company page (see how `moat-analysis-section.tsx` is wired in `app/company/[code]/`).
 
+Before pitching or scoping a new feature, section, or surface, walk the four phases in [skills/concall-alpha-feature-planner/SKILL.md](skills/concall-alpha-feature-planner/SKILL.md). It produces a one-page brief that hands off to `/plan-eng-review` and `/ship`.
+
 Read [skills/concall-alpha-ui-patterns/SKILL.md](skills/concall-alpha-ui-patterns/SKILL.md) before any company-page UI change. It has the section hierarchy, drawer vs details rules, and review checklist.
 
 ## Project-specific gotchas
@@ -57,6 +59,7 @@ Read [skills/concall-alpha-ui-patterns/SKILL.md](skills/concall-alpha-ui-pattern
 
 ## Where to look first
 
+- Feature planning: [skills/concall-alpha-feature-planner/SKILL.md](skills/concall-alpha-feature-planner/SKILL.md)
 - UI conventions: [skills/concall-alpha-ui-patterns/SKILL.md](skills/concall-alpha-ui-patterns/SKILL.md)
 - Visual system: [docs/portal-design-system.md](docs/portal-design-system.md)
 - Surface classes: [app/company/components/surface-tokens.ts](app/company/components/surface-tokens.ts)

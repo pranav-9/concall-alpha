@@ -1,0 +1,4 @@
+interface:
+  display_name: "Concall Alpha Feature Planner"
+  short_description: "Plan a new concall-alpha portal feature through Discovery, Discussion, Scoping, and Execution-handoff."
+  default_prompt: "Use $concall-alpha-feature-planner to plan a new feature, section, or surface in the concall-alpha portal."
