@@ -150,11 +150,21 @@ export function responseKindMatchesQuestionType(
 }
 
 // Multi-select submissions must respect the poll's max_selections cap.
+// Two helpers: one for the raw PollDefinition shape (admin path) and one for
+// the NormalizedPoll display shape (banner-submission path) so callers don't
+// have to re-shape the data.
 export function multiSelectWithinCap(
   response: Extract<ResponseValue, { kind: "multi_select" }>,
   poll: Extract<PollDefinition, { question_type: "multi_select" }>,
 ): boolean {
   return response.option_keys.length <= poll.options.max_selections;
+}
+
+export function multiSelectWithinCapNormalized(
+  response: Extract<ResponseValue, { kind: "multi_select" }>,
+  options: Extract<NormalizedPoll["options"], { kind: "multi_select" }>,
+): boolean {
+  return response.option_keys.length <= options.maxSelections;
 }
 
 // ---------------------------------------------------------------------------

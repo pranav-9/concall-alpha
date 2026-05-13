@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
 import {
-  multiSelectWithinCap,
+  multiSelectWithinCapNormalized,
   responseKindMatchesQuestionType,
   responsePayloadSchema,
   type FeedbackPollRow,
@@ -79,19 +79,7 @@ export async function POST(request: Request) {
   if (
     parsed.data.response_value.kind === "multi_select" &&
     activePoll.options.kind === "multi_select" &&
-    !multiSelectWithinCap(
-      parsed.data.response_value,
-      // pollDefinitionSchema's discriminator on the multi_select branch
-      // exposes options.max_selections via .options; rebuild the shape from
-      // the normalized projection. (Equivalent at runtime.)
-      {
-        question_type: "multi_select",
-        options: {
-          entries: activePoll.options.entries,
-          max_selections: activePoll.options.maxSelections,
-        },
-      } as Parameters<typeof multiSelectWithinCap>[1],
-    )
+    !multiSelectWithinCapNormalized(parsed.data.response_value, activePoll.options)
   ) {
     return NextResponse.json(
       { ok: false, error: "Too many options selected." },

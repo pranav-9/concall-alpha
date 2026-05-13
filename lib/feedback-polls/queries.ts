@@ -109,3 +109,17 @@ export async function aggregateResponses(pollId: string): Promise<PollAggregate>
     counts: {},
   }) as PollAggregate;
 }
+
+// Single-round-trip variant for the admin polls page. Returns a map keyed by
+// poll_id; missing keys mean zero responses for that poll.
+export async function aggregateAllResponses(): Promise<Record<string, PollAggregate>> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.rpc("aggregate_all_feedback_polls");
+
+  if (error) {
+    logger.error("feedback-polls: aggregateAllResponses failed", { error });
+    throw error;
+  }
+
+  return (data ?? {}) as Record<string, PollAggregate>;
+}

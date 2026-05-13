@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_ACCESS_COOKIE, hasAdminAccess } from "@/lib/admin-auth";
-import { aggregateResponses, listAllPolls } from "@/lib/feedback-polls/queries";
+import { aggregateAllResponses, listAllPolls } from "@/lib/feedback-polls/queries";
 import type { AdminPollRow } from "@/lib/feedback-polls/queries";
 import type { PollAggregate, QuestionType } from "@/lib/feedback-polls/types";
 import { PollCreateForm } from "./_components/poll-create-form";
@@ -49,17 +49,19 @@ function renderAggregate(agg: PollAggregate, questionType: QuestionType): string
 async function loadData(): Promise<
   Array<{ poll: AdminPollRow; aggregate: PollAggregate }>
 > {
-  const polls = await listAllPolls();
-  const aggregates = await Promise.all(
-    polls.map((poll) =>
-      aggregateResponses(poll.id).catch(() => ({
+  const [polls, aggregates] = await Promise.all([
+    listAllPolls(),
+    aggregateAllResponses().catch(() => ({}) as Record<string, PollAggregate>),
+  ]);
+  return polls.map((poll) => ({
+    poll,
+    aggregate:
+      aggregates[poll.id] ?? {
         total_responses: 0,
         question_type: poll.question_type,
         counts: {},
-      } as PollAggregate)),
-    ),
-  );
-  return polls.map((poll, idx) => ({ poll, aggregate: aggregates[idx] }));
+      },
+  }));
 }
 
 export default async function AdminPollsPage() {

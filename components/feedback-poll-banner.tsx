@@ -227,7 +227,7 @@ export function FeedbackPollBanner({ poll }: BannerProps) {
           size="icon"
           aria-label="Dismiss feedback poll"
           className="absolute right-1.5 top-1.5 h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
-          disabled={submitting}
+          disabled={submitting || showThanks}
           onClick={() => startExit(false)}
         >
           <X className="h-3.5 w-3.5" />
@@ -236,10 +236,6 @@ export function FeedbackPollBanner({ poll }: BannerProps) {
     </div>
   );
 }
-
-type SingleChoicePoll = NormalizedPoll & {
-  options: { kind: "single_choice"; entries: Array<{ key: string; label: string }> };
-};
 
 function SingleChoiceOptions({
   poll,
@@ -251,7 +247,7 @@ function SingleChoiceOptions({
   onChoose: (optionKey: string) => void;
 }) {
   if (poll.options.kind !== "single_choice") return null;
-  const entries = (poll as SingleChoicePoll).options.entries;
+  const entries = poll.options.entries;
   const labelledBy = `feedback-poll-question-${poll.id}`;
 
   return (
@@ -275,14 +271,6 @@ function SingleChoiceOptions({
   );
 }
 
-type MultiSelectPoll = NormalizedPoll & {
-  options: {
-    kind: "multi_select";
-    entries: Array<{ key: string; label: string }>;
-    maxSelections: number;
-  };
-};
-
 function MultiSelectOptions({
   poll,
   selected,
@@ -297,7 +285,7 @@ function MultiSelectOptions({
   onSubmit: () => void;
 }) {
   if (poll.options.kind !== "multi_select") return null;
-  const entries = (poll as MultiSelectPoll).options.entries;
+  const entries = poll.options.entries;
   const labelledBy = `feedback-poll-question-${poll.id}`;
   const canSubmit = selected.size > 0 && !disabled;
 

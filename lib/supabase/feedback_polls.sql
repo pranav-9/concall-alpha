@@ -220,3 +220,25 @@ end;
 $$;
 
 grant execute on function public.aggregate_feedback_poll_responses(uuid) to service_role;
+
+-- ---------------------------------------------------------------------------
+-- aggregate_all_feedback_polls — single round-trip variant for the admin
+-- polls page. Returns a JSON map keyed by poll_id (text), each value matches
+-- the shape returned by aggregate_feedback_poll_responses(uuid).
+-- ---------------------------------------------------------------------------
+
+create or replace function public.aggregate_all_feedback_polls()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    jsonb_object_agg(id::text, public.aggregate_feedback_poll_responses(id)),
+    '{}'::jsonb
+  )
+  from public.feedback_polls;
+$$;
+
+grant execute on function public.aggregate_all_feedback_polls() to service_role;

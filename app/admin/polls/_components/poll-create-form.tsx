@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ function toLocalInputValue(value: Date): string {
 }
 
 export function PollCreateForm() {
+  const router = useRouter();
   const now = React.useMemo(() => new Date(), []);
   const defaultEnd = React.useMemo(
     () => new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
@@ -119,7 +121,7 @@ export function PollCreateForm() {
       setSlug("");
       setQuestionText("");
       setOptionsText(DEFAULT_OPTIONS.map((o) => `${o.key}|${o.label}`).join("\n"));
-      window.location.reload();
+      router.refresh();
     } catch {
       toast.error("Unable to create poll.");
     } finally {
