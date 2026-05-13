@@ -7,9 +7,11 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Navbar from "./(hero)/navbar";
 import { createClient } from "@/lib/supabase/server";
+import { FeedbackPollBanner } from "@/components/feedback-poll-banner";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
+import { getActivePoll } from "@/lib/feedback-polls/queries";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -48,6 +50,12 @@ async function NavbarWithUser() {
   );
 }
 
+async function ActivePollSlot() {
+  const poll = await getActivePoll();
+  if (!poll) return null;
+  return <FeedbackPollBanner poll={poll} />;
+}
+
 function NavbarFallback() {
   return (
     <nav
@@ -78,6 +86,9 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <Suspense fallback={<NavbarFallback />}>
               <NavbarWithUser />
+            </Suspense>
+            <Suspense fallback={null}>
+              <ActivePollSlot />
             </Suspense>
             <Suspense fallback={null}>
               <PageViewTracker />
