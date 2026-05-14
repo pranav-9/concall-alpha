@@ -22,6 +22,7 @@ type CompanySearchProps = {
   className?: string;
   onNavigate?: () => void;
   instanceId?: string;
+  initialCompanies?: { code: string; name: string | null }[];
 };
 
 const CompanySearch = dynamic<CompanySearchProps>(
@@ -37,7 +38,13 @@ const ThemeSwitcher = dynamic(
   { ssr: false },
 );
 
-const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
+const Navbar = ({
+  initialUser = null,
+  initialCompanies = [],
+}: {
+  initialUser?: UserInfo;
+  initialCompanies?: { code: string; name: string | null }[];
+}) => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
@@ -142,7 +149,10 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-3 lg:gap-4">
               <div className="w-60 lg:w-72">
-                <CompanySearch instanceId="navbar-company-search" />
+                <CompanySearch
+                  instanceId="navbar-company-search"
+                  initialCompanies={initialCompanies}
+                />
               </div>
               {navItems.map((item) => (
                 <Link
@@ -196,6 +206,7 @@ const Navbar = ({ initialUser = null }: { initialUser?: UserInfo }) => {
                 className="mb-1 w-full"
                 onNavigate={() => setIsMenuOpen(false)}
                 instanceId="navbar-mobile-company-search"
+                initialCompanies={initialCompanies}
               />
               {navItems.map((item) => (
                 <Link

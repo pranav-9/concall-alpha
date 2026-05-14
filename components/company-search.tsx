@@ -15,19 +15,75 @@ type SearchResponse = {
   error?: string;
 };
 
+const SEARCH_DEBOUNCE_MS = 180;
+const MAX_CACHE_ENTRIES = 50;
+
+function dedupeResults(items: Result[]) {
+  const seen = new Set<string>();
+  const out: Result[] = [];
+
+  items.forEach((item) => {
+    const code = item.code?.trim();
+    if (!code) return;
+    const key = code.toUpperCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ code, name: item.name });
+  });
+
+  return out;
+}
+
+function normalize(value: string | null | undefined) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function scoreResult(row: Result, query: string) {
+  const q = query.toLowerCase();
+  const code = normalize(row.code);
+  const name = normalize(row.name);
+
+  if (code === q) return 0;
+  if (code.startsWith(q)) return 1;
+  if (name.startsWith(q)) return 2;
+  if (code.includes(q)) return 3;
+  if (name.includes(q)) return 4;
+  return Number.POSITIVE_INFINITY;
+}
+
+function searchLocalCompanies(items: Result[], query: string) {
+  return items
+    .map((row) => ({ row, rank: scoreResult(row, query) }))
+    .filter((item) => Number.isFinite(item.rank))
+    .sort((a, b) => {
+      const rank = a.rank - b.rank;
+      if (rank !== 0) return rank;
+
+      const aName = normalize(a.row.name || a.row.code);
+      const bName = normalize(b.row.name || b.row.code);
+      return aName.localeCompare(bName);
+    })
+    .map((item) => item.row)
+    .slice(0, 8);
+}
+
 export function CompanySearch({
   className,
   onNavigate,
   instanceId,
+  initialCompanies,
 }: {
   className?: string;
   onNavigate?: () => void;
   instanceId?: string;
+  initialCompanies?: Result[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const fetchControllerRef = useRef<AbortController | null>(null);
+  const requestSeqRef = useRef(0);
+  const cacheRef = useRef<Map<string, Result[]>>(new Map());
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Result[]>([]);
@@ -38,11 +94,20 @@ export function CompanySearch({
 
   const listId = `${instanceId ?? "company-search"}-results`;
   const trimmedQuery = query.trim();
+  const localCompanies = useMemo(
+    () => dedupeResults(initialCompanies ?? []),
+    [initialCompanies],
+  );
+  const hasLocalCompanies = localCompanies.length > 0;
 
   useEffect(() => {
     setOpen(false);
     setActiveIndex(-1);
   }, [pathname]);
+
+  useEffect(() => {
+    return () => fetchControllerRef.current?.abort();
+  }, []);
 
   useEffect(() => {
     const onClickOutside = (event: MouseEvent) => {
@@ -57,6 +122,11 @@ export function CompanySearch({
   }, []);
 
   useEffect(() => {
+    const requestId = requestSeqRef.current + 1;
+    requestSeqRef.current = requestId;
+    fetchControllerRef.current?.abort();
+    fetchControllerRef.current = null;
+
     if (!trimmedQuery) {
       setResults([]);
       setOpen(false);
@@ -65,11 +135,33 @@ export function CompanySearch({
       return;
     }
 
+    const cacheKey = trimmedQuery.toLowerCase();
+
+    if (hasLocalCompanies) {
+      const nextResults = searchLocalCompanies(localCompanies, trimmedQuery);
+      setResults(nextResults);
+      setOpen(true);
+      setLoading(false);
+      setError(null);
+      setActiveIndex(nextResults.length ? 0 : -1);
+      return;
+    }
+
+    const cachedResults = cacheRef.current.get(cacheKey);
+    if (cachedResults) {
+      setResults(cachedResults);
+      setOpen(true);
+      setLoading(false);
+      setError(null);
+      setActiveIndex(cachedResults.length ? 0 : -1);
+      return;
+    }
+
     setLoading(true);
+    setOpen(true);
     setError(null);
     const timeout = setTimeout(async () => {
       try {
-        fetchControllerRef.current?.abort();
         const controller = new AbortController();
         fetchControllerRef.current = controller;
 
@@ -77,6 +169,7 @@ export function CompanySearch({
           signal: controller.signal,
         });
         const payload = (await res.json()) as SearchResponse;
+        if (requestSeqRef.current !== requestId) return;
 
         if (!res.ok || !payload.ok) {
           setResults([]);
@@ -86,22 +179,35 @@ export function CompanySearch({
           return;
         }
 
-        setResults(payload.results ?? []);
+        const nextResults = dedupeResults(payload.results ?? []);
+        cacheRef.current.set(cacheKey, nextResults);
+        if (cacheRef.current.size > MAX_CACHE_ENTRIES) {
+          const oldestKey = cacheRef.current.keys().next().value;
+          if (oldestKey) cacheRef.current.delete(oldestKey);
+        }
+
+        setResults(nextResults);
         setOpen(true);
-        setActiveIndex(payload.results?.length ? 0 : -1);
+        setActiveIndex(nextResults.length ? 0 : -1);
       } catch (err) {
         if ((err as { name?: string })?.name === "AbortError") return;
+        if (requestSeqRef.current !== requestId) return;
         setResults([]);
         setError("Unable to load results");
         setOpen(true);
         setActiveIndex(-1);
       } finally {
-        setLoading(false);
+        if (requestSeqRef.current === requestId) {
+          setLoading(false);
+        }
       }
-    }, 230);
+    }, SEARCH_DEBOUNCE_MS);
 
-    return () => clearTimeout(timeout);
-  }, [trimmedQuery]);
+    return () => {
+      clearTimeout(timeout);
+      fetchControllerRef.current?.abort();
+    };
+  }, [hasLocalCompanies, localCompanies, trimmedQuery]);
 
   const openResult = (result: Result | undefined) => {
     if (!result?.code) return;
@@ -185,7 +291,7 @@ export function CompanySearch({
               {results.map((item, idx) => {
                 const active = idx === activeIndex;
                 return (
-                  <li key={item.code} role="presentation">
+                  <li key={`${item.code}-${idx}`} role="presentation">
                     <button
                       id={`${listId}-item-${idx}`}
                       role="option"

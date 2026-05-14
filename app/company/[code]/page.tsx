@@ -25,6 +25,7 @@ import {
   KeyVariablesPanel,
   MoatAnalysisPanel,
   QuarterlyScorePanel,
+  WalkTheTalkPanel,
 } from "./company-detail-sections";
 
 export async function generateMetadata({
@@ -110,6 +111,10 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
       meta: availability.futureGrowth
         ? { kind: "score" as const, score: overview.growth_score }
         : { kind: "text" as const, text: "Soon" },
+    },
+    {
+      ...SECTION_MAP.walkTheTalk,
+      meta: { kind: "text" as const, text: "Live" },
     },
     {
       ...SECTION_MAP.guidanceHistory,
@@ -310,6 +315,12 @@ export default async function Page({
           <div data-section-id="future-growth">
             <Suspense fallback={<SectionLoading id="future-growth" title="Future Growth" />}>
               <FutureGrowthPanel overview={overview} />
+            </Suspense>
+          </div>
+
+          <div data-section-id="walk-the-talk">
+            <Suspense fallback={<SectionLoading id="walk-the-talk" title="Walk the Talk" />}>
+              <WalkTheTalkPanel overview={overview} />
             </Suspense>
           </div>
 

@@ -1,17 +1,16 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { after, NextResponse } from "next/server";
+import { recordApiRouteMetric } from "@/lib/api-metrics";
+import {
+  getCachedCompanySearchRows,
+  type CompanySearchRow,
+} from "@/lib/company-search-cache";
 import { logger } from "@/lib/logger";
-
-type Result = {
-  code: string;
-  name: string | null;
-};
 
 function normalize(value: string | null | undefined) {
   return (value ?? "").trim().toLowerCase();
 }
 
-function scoreResult(row: Result, query: string) {
+function scoreResult(row: CompanySearchRow, query: string) {
   const q = query.toLowerCase();
   const code = normalize(row.code);
   const name = normalize(row.name);
@@ -21,45 +20,93 @@ function scoreResult(row: Result, query: string) {
   if (name.startsWith(q)) return 2;
   if (code.includes(q)) return 3;
   if (name.includes(q)) return 4;
-  return 5;
+  return Number.POSITIVE_INFINITY;
+}
+
+function dedupeResults(rows: CompanySearchRow[]) {
+  const seen = new Set<string>();
+  const deduped: CompanySearchRow[] = [];
+
+  rows.forEach((row) => {
+    const code = row.code?.trim();
+    if (!code) return;
+    const key = code.toUpperCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    deduped.push({ code, name: row.name });
+  });
+
+  return deduped;
+}
+
+function searchCompanyRows(rows: CompanySearchRow[], q: string) {
+  return dedupeResults(rows)
+    .map((row) => ({ row, rank: scoreResult(row, q) }))
+    .filter((item) => Number.isFinite(item.rank))
+    .sort((a, b) => {
+      const rank = a.rank - b.rank;
+      if (rank !== 0) return rank;
+
+      const aName = normalize(a.row.name || a.row.code);
+      const bName = normalize(b.row.name || b.row.code);
+      return aName.localeCompare(bName);
+    })
+    .map((item) => item.row)
+    .slice(0, 8);
 }
 
 export async function GET(request: Request) {
+  const startedAt = performance.now();
   const { searchParams } = new URL(request.url);
   const q = (searchParams.get("q") ?? "").trim();
 
+  const recordMetric = ({
+    statusCode,
+    resultCount,
+    errorCode,
+  }: {
+    statusCode: number;
+    resultCount: number;
+    errorCode?: string | null;
+  }) => {
+    const durationMs = performance.now() - startedAt;
+    after(() =>
+      recordApiRouteMetric({
+        route: "/api/company-search",
+        method: "GET",
+        statusCode,
+        durationMs,
+        resultCount,
+        queryLength: q.length,
+        errorCode,
+      }),
+    );
+  };
+
   if (!q || q.length > 80) {
-    return NextResponse.json({ ok: true, results: [] as Result[] });
+    recordMetric({ statusCode: 200, resultCount: 0 });
+    return NextResponse.json({ ok: true, results: [] as CompanySearchRow[] });
   }
 
-  const supabase = await createClient();
-  const pattern = `%${q.replace(/[%_]/g, "\\$&")}%`;
-
-  const { data, error } = await supabase
-    .from("company")
-    .select("code,name")
-    .or(`code.ilike.${pattern},name.ilike.${pattern}`)
-    .limit(30);
-
-  if (error) {
+  try {
+    const companyRows = await getCachedCompanySearchRows();
+    const rows = searchCompanyRows(companyRows, q);
+    recordMetric({ statusCode: 200, resultCount: rows.length });
+    return NextResponse.json({ ok: true, results: rows });
+  } catch (error) {
     logger.error("supabase: company search failed", { q, error });
+    recordMetric({
+      statusCode: 500,
+      resultCount: 0,
+      errorCode: "company_search_cache_failed",
+    });
     return NextResponse.json(
-      { ok: false, error: "Unable to fetch company search results.", results: [] as Result[] },
+      {
+        ok: false,
+        error: "Unable to fetch company search results.",
+        results: [] as CompanySearchRow[],
+      },
       { status: 500 },
     );
   }
-
-  const rows = ((data ?? []) as Result[])
-    .filter((row) => row.code)
-    .sort((a, b) => {
-      const rank = scoreResult(a, q) - scoreResult(b, q);
-      if (rank !== 0) return rank;
-
-      const aName = normalize(a.name || a.code);
-      const bName = normalize(b.name || b.code);
-      return aName.localeCompare(bName);
-    })
-    .slice(0, 8);
-
-  return NextResponse.json({ ok: true, results: rows });
 }

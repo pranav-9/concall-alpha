@@ -11,10 +11,12 @@ import {
 export function AdminAnalyticsTabs({
   usage,
   watchlists,
+  apiPerformance,
   operations,
 }: {
   usage: ReactNode;
   watchlists: ReactNode;
+  apiPerformance: ReactNode;
   operations: ReactNode;
 }) {
   return (
@@ -39,6 +41,12 @@ export function AdminAnalyticsTabs({
           >
             Requests & Moderation
           </TabsTrigger>
+          <TabsTrigger
+            value="api-performance"
+            className="min-w-[11rem] rounded-xl px-4 py-2.5 text-sm data-[state=active]:bg-foreground data-[state=active]:text-background dark:data-[state=active]:bg-foreground dark:data-[state=active]:text-background"
+          >
+            API Performance
+          </TabsTrigger>
         </TabsList>
       </div>
 
@@ -50,6 +58,9 @@ export function AdminAnalyticsTabs({
       </TabsContent>
       <TabsContent value="operations" className="mt-0">
         {operations}
+      </TabsContent>
+      <TabsContent value="api-performance" className="mt-0">
+        {apiPerformance}
       </TabsContent>
     </Tabs>
   );

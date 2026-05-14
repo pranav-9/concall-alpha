@@ -22,6 +22,7 @@ const SHORT_LABELS: Record<string, string> = {
   "sentiment-score": "Quarterly",
   "key-variables": "Variables",
   "future-growth": "Growth",
+  "walk-the-talk": "Walk the Talk",
   "guidance-history": "Guidance",
   community: "Community",
 };

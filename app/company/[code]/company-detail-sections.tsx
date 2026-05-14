@@ -6,6 +6,7 @@ import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import { normalizeKeyVariablesSnapshot } from "@/lib/key-variables-snapshot/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
+import { getWalkTheTalk } from "@/lib/walk-the-talk/get";
 import { createClient } from "@/lib/supabase/server";
 import type { GuidanceSnapshotRow } from "@/lib/guidance-snapshot/types";
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
@@ -23,6 +24,10 @@ import { MissingSectionState } from "../components/missing-section-state";
 import { MoatAnalysisSection } from "../components/moat-analysis-section";
 import { SectionLoading } from "../components/section-loading";
 import { SubSectorSection } from "../components/sub-sector-section";
+import {
+  WalkTheTalkSection,
+  walkTheTalkSinceBadge,
+} from "../components/walk-the-talk-section";
 import {
   CompanyCommentsSection,
   GuidanceHistorySection,
@@ -333,6 +338,43 @@ export async function FutureGrowthPanel({ overview }: CompanyDetailSectionProps)
           : null
       }
     />
+  );
+}
+
+export async function WalkTheTalkPanel({ overview }: CompanyDetailSectionProps) {
+  const snapshot = await getWalkTheTalk(overview.company_code);
+  const sinceBadge = walkTheTalkSinceBadge(snapshot);
+  const generatedAtShort = formatShortDate(snapshot.updatedAtRaw);
+  const hasRow = snapshot.schemaStatus !== "missing";
+
+  return (
+    <SectionCard
+      id="walk-the-talk"
+      title="Walk the Talk"
+      feedbackEnabled={hasRow}
+      feedbackCompanyCode={overview.company_code}
+      feedbackCompanyName={overview.company_name}
+      headerAction={
+        sinceBadge ? (
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            {sinceBadge}
+          </span>
+        ) : generatedAtShort ? (
+          <span className="text-[11px] text-muted-foreground">{generatedAtShort}</span>
+        ) : null
+      }
+    >
+      {hasRow ? (
+        <WalkTheTalkSection snapshot={snapshot} />
+      ) : (
+        missingSectionState(
+          overview,
+          "walk-the-talk",
+          "Walk the Talk",
+          "We have not yet computed a management commitment delivery score for this company.",
+        )
+      )}
+    </SectionCard>
   );
 }
 

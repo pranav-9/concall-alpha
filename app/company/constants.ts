@@ -54,6 +54,10 @@ export const SECTIONS = [
     id: "competitive-strategy",
     label: "Top Business Strategies",
   },
+  {
+    id: "walk-the-talk",
+    label: "Walk the Talk",
+  },
 ] as const;
 
 export const SECTION_MAP = {
@@ -68,4 +72,5 @@ export const SECTION_MAP = {
   moatAnalysis: SECTIONS[8],
   community: SECTIONS[9],
   topBusinessStrategies: SECTIONS[10],
+  walkTheTalk: SECTIONS[11],
 } as const;

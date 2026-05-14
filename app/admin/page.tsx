@@ -38,6 +38,10 @@ import {
   type AdminReportedRow,
 } from "@/components/admin/company-comments-table";
 import {
+  ApiPerformanceTable,
+  type ApiPerformanceRow,
+} from "@/components/admin/api-performance-table";
+import {
   ADMIN_ACCESS_COOKIE,
   hasAdminAccess,
 } from "@/lib/admin-auth";
@@ -88,6 +92,29 @@ type AdminUserSummary = {
   displayName: string | null;
 };
 
+type ApiMetricRawRow = {
+  id: string;
+  route: string | null;
+  method: string | null;
+  status_code: number | null;
+  duration_ms: number | null;
+  result_count: number | null;
+  query_length: number | null;
+  error_code: string | null;
+  created_at: string | null;
+};
+
+type ApiPerformanceData = {
+  available: boolean;
+  totalCalls: number;
+  errorCount: number;
+  avgMs: number | null;
+  p50Ms: number | null;
+  p90Ms: number | null;
+  p95Ms: number | null;
+  slowRows: ApiPerformanceRow[];
+};
+
 const ADMIN_CHART_MAX_DAYS = 90;
 const ACTIVE_VISITOR_LOOKBACK_DAYS = 29;
 const EVENT_PAGE_SIZE = 1000;
@@ -95,6 +122,8 @@ const EVENT_CHART_MAX_ROWS = 20000;
 const WATCHLIST_ITEMS_PAGE_SIZE = 1000;
 const WATCHLIST_ITEMS_MAX_ROWS = 20000;
 const WATCHLIST_ACTIVITY_LIMIT = 100;
+const API_METRICS_MAX_ROWS = 5000;
+const API_METRICS_SLOW_ROWS = 50;
 const INDIA_TIME_ZONE = "Asia/Kolkata";
 const localDateFormatter = new Intl.DateTimeFormat("en-IN", {
   timeZone: INDIA_TIME_ZONE,
@@ -445,6 +474,83 @@ function countRequestsByType(rows: FeedbackRequestRow[]) {
   );
 }
 
+function emptyApiPerformance(available = true): ApiPerformanceData {
+  return {
+    available,
+    totalCalls: 0,
+    errorCount: 0,
+    avgMs: null,
+    p50Ms: null,
+    p90Ms: null,
+    p95Ms: null,
+    slowRows: [],
+  };
+}
+
+function percentile(sortedValues: number[], percentileValue: number): number | null {
+  if (sortedValues.length === 0) return null;
+  const index = Math.ceil((percentileValue / 100) * sortedValues.length) - 1;
+  return sortedValues[Math.max(0, Math.min(sortedValues.length - 1, index))];
+}
+
+function formatMs(value: number | null): string {
+  if (value == null || !Number.isFinite(value)) return "-";
+  return `${Math.round(value).toLocaleString()}ms`;
+}
+
+async function getApiPerformance(startIso: string | null): Promise<ApiPerformanceData> {
+  const supabase = createAdminClient();
+  let query = supabase
+    .from("api_route_metrics")
+    .select(
+      "id, route, method, status_code, duration_ms, result_count, query_length, error_code, created_at",
+      { count: "exact" },
+    )
+    .order("created_at", { ascending: false })
+    .limit(API_METRICS_MAX_ROWS);
+
+  if (startIso) {
+    query = query.gte("created_at", startIso);
+  }
+
+  const { data, error, count } = await query;
+  if (error) {
+    return emptyApiPerformance(false);
+  }
+
+  const rows = ((data ?? []) as ApiMetricRawRow[]).map((row) => ({
+    id: row.id,
+    route: row.route ?? "unknown",
+    method: row.method ?? "GET",
+    statusCode: Number(row.status_code ?? 0),
+    durationMs: Number(row.duration_ms ?? 0),
+    resultCount: row.result_count,
+    queryLength: row.query_length,
+    errorCode: row.error_code,
+    createdAt: row.created_at,
+  }));
+
+  const durations = rows
+    .map((row) => row.durationMs)
+    .filter((value) => Number.isFinite(value) && value >= 0)
+    .sort((a, b) => a - b);
+  const totalDuration = durations.reduce((sum, value) => sum + value, 0);
+  const slowRows = [...rows]
+    .sort((a, b) => b.durationMs - a.durationMs)
+    .slice(0, API_METRICS_SLOW_ROWS);
+
+  return {
+    available: true,
+    totalCalls: Number(count ?? rows.length),
+    errorCount: rows.filter((row) => row.statusCode >= 400).length,
+    avgMs: durations.length > 0 ? totalDuration / durations.length : null,
+    p50Ms: percentile(durations, 50),
+    p90Ms: percentile(durations, 90),
+    p95Ms: percentile(durations, 95),
+    slowRows,
+  };
+}
+
 async function getRecentAccounts(
   startIso: string | null,
 ): Promise<{
@@ -570,6 +676,7 @@ async function getAdminData(range: RangeKey) {
 
   const recentAccountsPromise = getRecentAccounts(startIso);
   const activeVisitorsPromise = getActiveVisitors(chartStartIso);
+  const apiPerformancePromise = getApiPerformance(startIso);
 
   const recentWatchlistsBase = supabase
     .from("watchlists")
@@ -627,6 +734,7 @@ async function getAdminData(range: RangeKey) {
     reportsCountResult,
     recentAccountsResult,
     activeVisitors,
+    apiPerformance,
     recentWatchlistsResult,
     activityWatchlistsResult,
     watchlistsCountResult,
@@ -644,6 +752,7 @@ async function getAdminData(range: RangeKey) {
       reportsCountPromise,
       recentAccountsPromise,
       activeVisitorsPromise,
+      apiPerformancePromise,
       recentWatchlistsPromise,
       activityWatchlistsPromise,
       watchlistsCountPromise,
@@ -724,6 +833,7 @@ async function getAdminData(range: RangeKey) {
       topSavedCompanies,
       latestActivityRows,
     },
+    apiPerformance,
     operations: {
       feedbackRows,
       feedbackCount,
@@ -772,6 +882,7 @@ export default async function AdminPage({
       topSavedCompanies: [] as TopSavedCompanyRow[],
       latestActivityRows: [] as LatestWatchlistActivityRow[],
     },
+    apiPerformance: emptyApiPerformance(),
     operations: {
       feedbackRows: [] as FeedbackRequestRow[],
       feedbackCount: 0,
@@ -880,6 +991,30 @@ export default async function AdminPage({
               <RecentWatchlistsTable rows={data.watchlists.recentWatchlistsRows} />
               <TopSavedCompaniesTable rows={data.watchlists.topSavedCompanies} />
             </div>
+          </AdminSection>
+        }
+        apiPerformance={
+          <AdminSection
+            title="API Performance"
+            description="Server-side route timing for instrumented API endpoints. Search terms are not stored."
+          >
+            {!data.apiPerformance.available ? (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+                API metrics table is not available yet. Apply lib/supabase/api_route_metrics.sql
+                in Supabase and reload the schema.
+              </div>
+            ) : null}
+            <AdminMetricGrid
+              metrics={[
+                { label: "API Calls", value: data.apiPerformance.totalCalls },
+                { label: "Errors", value: data.apiPerformance.errorCount },
+                { label: "Avg Latency", value: formatMs(data.apiPerformance.avgMs) },
+                { label: "P95 Latency", value: formatMs(data.apiPerformance.p95Ms) },
+                { label: "P50 Latency", value: formatMs(data.apiPerformance.p50Ms) },
+                { label: "P90 Latency", value: formatMs(data.apiPerformance.p90Ms) },
+              ]}
+            />
+            <ApiPerformanceTable rows={data.apiPerformance.slowRows} />
           </AdminSection>
         }
         operations={

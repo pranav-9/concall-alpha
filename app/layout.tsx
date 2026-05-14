@@ -11,6 +11,7 @@ import { FeedbackPollBanner } from "@/components/feedback-poll-banner";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
+import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { getActivePoll } from "@/lib/feedback-polls/queries";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -31,12 +32,15 @@ const geistSans = Geist({
 
 async function NavbarWithUser() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [userResult, initialCompanies] = await Promise.all([
+    supabase.auth.getUser(),
+    getCachedCompanySearchRows().catch(() => []),
+  ]);
+  const user = userResult.data.user;
 
   return (
     <Navbar
+      initialCompanies={initialCompanies}
       initialUser={
         user
           ? {
