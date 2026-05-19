@@ -301,7 +301,7 @@ function CompanyCard({ entry }: { entry: TrackerEntry }) {
   const expectedLabel = formatExpectedDate(entry.expectedDate);
   return (
     <Link
-      href={`/company/${encodeURIComponent(entry.code)}`}
+      href={`/company/${encodeURIComponent(entry.code)}#sentiment-score`}
       prefetch={false}
       className="group flex h-full min-h-[5.8rem] flex-col justify-between gap-2 rounded-lg border border-border/35 bg-background/70 p-3 shadow-sm shadow-black/5 transition-colors hover:border-border/65 hover:bg-accent/60"
     >
