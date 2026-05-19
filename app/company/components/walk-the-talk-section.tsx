@@ -1,4 +1,4 @@
-import { AlertTriangle, Clock, ListChecks } from "lucide-react";
+import { Clock, ListChecks } from "lucide-react";
 
 import { chipClass, type ChipTone } from "./chip-tone";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
