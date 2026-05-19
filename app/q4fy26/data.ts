@@ -31,7 +31,7 @@ export const BUCKETS: Record<BucketKey, BucketDef> = {
   excellent: {
     key: "excellent",
     label: "Excellent",
-    description: "Score ≥ 9.0",
+    description: "9.0+",
     barClass: "bg-emerald-500",
     textClass: "text-emerald-700 dark:text-emerald-300",
     borderClass: "border-emerald-300/60 dark:border-emerald-700/40",
@@ -40,7 +40,7 @@ export const BUCKETS: Record<BucketKey, BucketDef> = {
   great: {
     key: "great",
     label: "Great",
-    description: "8.5 – 9.0",
+    description: "8.5 to <9.0",
     barClass: "bg-sky-500",
     textClass: "text-sky-700 dark:text-sky-300",
     borderClass: "border-sky-300/60 dark:border-sky-700/40",
@@ -49,7 +49,7 @@ export const BUCKETS: Record<BucketKey, BucketDef> = {
   good: {
     key: "good",
     label: "Good",
-    description: "7.5 – 8.5",
+    description: "7.5 to <8.5",
     barClass: "bg-green-500",
     textClass: "text-green-700 dark:text-green-300",
     borderClass: "border-green-300/60 dark:border-green-700/40",
@@ -58,7 +58,7 @@ export const BUCKETS: Record<BucketKey, BucketDef> = {
   ok: {
     key: "ok",
     label: "Ok",
-    description: "6.5 – 7.5",
+    description: ">6.5 to <7.5",
     barClass: "bg-amber-400",
     textClass: "text-amber-700 dark:text-amber-300",
     borderClass: "border-amber-300/60 dark:border-amber-700/40",
@@ -67,7 +67,7 @@ export const BUCKETS: Record<BucketKey, BucketDef> = {
   weak: {
     key: "weak",
     label: "Weak",
-    description: "< 6.5",
+    description: "<= 6.5",
     barClass: "bg-red-500",
     textClass: "text-red-700 dark:text-red-300",
     borderClass: "border-red-300/60 dark:border-red-700/40",

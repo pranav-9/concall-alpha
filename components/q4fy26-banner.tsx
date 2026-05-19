@@ -38,9 +38,9 @@ export function Q4FY26Banner() {
             Live
           </span>
           <span className="truncate text-xs font-semibold text-emerald-50 sm:text-sm">
-            {TARGET_LABEL} Earnings Tracker
+            {TARGET_LABEL} Quality Tracker
             <span className="ml-2 hidden text-emerald-100/85 sm:inline">
-              — quality buckets, sector splits & expected dates across coverage
+              — score movement, quality buckets & sector splits across coverage
             </span>
           </span>
         </div>
