@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { BANDS, SCORE_BAND_ORDER, bandForScore, type BandKey } from "@/lib/score-band";
 
 // Note: concall_analysis.fy is stored as the 4-digit year (e.g. 2026),
 // not the short FY identifier — keep this in sync with that schema.
@@ -6,91 +7,13 @@ export const TARGET_FY = 2026;
 export const TARGET_QTR = 4;
 export const TARGET_LABEL = "Q4 FY26";
 
-export type BucketKey = "excellent" | "great" | "good" | "ok" | "weak" | "upcoming";
-
-export const BUCKET_ORDER: BucketKey[] = [
-  "excellent",
-  "great",
-  "good",
-  "ok",
-  "weak",
-  "upcoming",
-];
-
-type BucketDef = {
-  key: BucketKey;
-  label: string;
-  description: string;
-  barClass: string;
-  textClass: string;
-  borderClass: string;
-  textOnBarClass: string;
-};
-
-export const BUCKETS: Record<BucketKey, BucketDef> = {
-  excellent: {
-    key: "excellent",
-    label: "Excellent",
-    description: "9.0+",
-    barClass: "bg-emerald-500",
-    textClass: "text-emerald-700 dark:text-emerald-300",
-    borderClass: "border-emerald-300/60 dark:border-emerald-700/40",
-    textOnBarClass: "text-white",
-  },
-  great: {
-    key: "great",
-    label: "Great",
-    description: "8.5 to <9.0",
-    barClass: "bg-sky-500",
-    textClass: "text-sky-700 dark:text-sky-300",
-    borderClass: "border-sky-300/60 dark:border-sky-700/40",
-    textOnBarClass: "text-white",
-  },
-  good: {
-    key: "good",
-    label: "Good",
-    description: "7.5 to <8.5",
-    barClass: "bg-green-500",
-    textClass: "text-green-700 dark:text-green-300",
-    borderClass: "border-green-300/60 dark:border-green-700/40",
-    textOnBarClass: "text-white",
-  },
-  ok: {
-    key: "ok",
-    label: "Ok",
-    description: ">6.5 to <7.5",
-    barClass: "bg-amber-400",
-    textClass: "text-amber-700 dark:text-amber-300",
-    borderClass: "border-amber-300/60 dark:border-amber-700/40",
-    textOnBarClass: "text-zinc-900",
-  },
-  weak: {
-    key: "weak",
-    label: "Weak",
-    description: "<= 6.5",
-    barClass: "bg-red-500",
-    textClass: "text-red-700 dark:text-red-300",
-    borderClass: "border-red-300/60 dark:border-red-700/40",
-    textOnBarClass: "text-white",
-  },
-  upcoming: {
-    key: "upcoming",
-    label: "Upcoming",
-    description: "Not yet reported",
-    barClass: "bg-zinc-300 dark:bg-zinc-700",
-    textClass: "text-zinc-700 dark:text-zinc-300",
-    borderClass: "border-zinc-300/60 dark:border-zinc-700/40",
-    textOnBarClass: "text-zinc-900 dark:text-zinc-100",
-  },
-};
-
-export const bucketForScore = (score: number): Exclude<BucketKey, "upcoming"> => {
-  if (score >= 9) return "excellent";
-  if (score >= 8.5) return "great";
-  if (score >= 7.5) return "good";
-  if (score > 6.5) return "ok";
-  return "weak";
-};
+// Score classification is platform-wide — single source of truth in lib/score-band.
+// These thin aliases keep this page's existing names/shape; page.tsx is band-key-agnostic
+// except for the "upcoming" not-reported state, which the shared module preserves.
+export type BucketKey = BandKey;
+export const BUCKET_ORDER = SCORE_BAND_ORDER;
+export const BUCKETS = BANDS;
+export const bucketForScore = bandForScore;
 
 export type TrackerEntry = {
   code: string;
@@ -102,6 +25,7 @@ export type TrackerEntry = {
   priorScore: number | null;
   priorLabel: string | null;
   expectedDate: string | null;
+  createdAt: string | null;
 };
 
 type CompanyRow = {
@@ -116,6 +40,7 @@ type AnalysisRow = {
   score: number | string | null;
   fy: number;
   qtr: number;
+  created_at: string | null;
 };
 
 type CalendarRow = {
@@ -155,7 +80,9 @@ export async function getTrackerData(): Promise<TrackerData> {
   const [{ data: companyData }, { data: analysisData }, calendarResult] =
     await Promise.all([
       supabase.from("company").select("code, name, sector, sub_sector"),
-      supabase.from("concall_analysis").select("company_code, score, fy, qtr"),
+      supabase
+        .from("concall_analysis")
+        .select("company_code, score, fy, qtr, created_at"),
       supabase
         .from("earnings_calendar")
         .select("company_code, nse_symbol, event_date")
@@ -243,6 +170,7 @@ export async function getTrackerData(): Promise<TrackerData> {
         priorScore,
         priorLabel: prior ? quarterLabelFor(prior.fy, prior.qtr) : null,
         expectedDate,
+        createdAt: target?.created_at ?? null,
       };
     })
     .filter((entry) => {

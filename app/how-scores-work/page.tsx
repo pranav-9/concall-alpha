@@ -40,11 +40,11 @@ const scoreSteps = [
   },
   {
     index: "3",
-    title: "Assign quarterly score + category",
-    description: "A 1-10 quarterly score is generated with a confidence level.",
+    title: "Assign quarterly score",
+    description: "A 1-10 quarterly score is generated from the weighted factors.",
     bullets: [
-      "Outputs include a category label (e.g. Mildly Bullish, Strongly Bullish).",
-      "Confidence helps you judge how strongly the evidence supports the score.",
+      "The score anchors to concrete fundamentals on a 1-10 scale, not management tone.",
+      "Evidence quality gates the score so fluff-heavy calls don't inflate it.",
     ],
   },
   {
@@ -59,7 +59,7 @@ const scoreSteps = [
 ];
 
 const returnedFieldGroups = [
-  { title: "Core", fields: ["score", "category", "confidence"] },
+  { title: "Core", fields: ["score"] },
   {
     title: "Context",
     fields: ["quarter_summary", "results_summary", "guidance", "rationale", "risks"],

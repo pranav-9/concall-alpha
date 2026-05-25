@@ -230,7 +230,7 @@ export async function QuarterlyScorePanel({ overview }: CompanyDetailSectionProp
           : undefined
       }
     >
-      <QuarterlyScoreSection chartData={chartData} detailQuarters={detailQuarters} trend={trend} />
+      <QuarterlyScoreSection chartData={chartData} detailQuarters={detailQuarters} />
     </SectionCard>
   );
 }

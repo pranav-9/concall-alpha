@@ -259,10 +259,20 @@ export function ChartLineLabel({
   const denseDesktop = !isMobile && chartData.length >= 10;
   const showStar = !isMobile && chartData.length <= 10;
 
+  // Fit the y-axis to the data (scores cluster high) so quarter-to-quarter
+  // movement is legible, instead of a fixed 0-10 that flattens the trend.
+  const scores = chartData.map((d) => d.score).filter((n) => Number.isFinite(n));
+  const dataMin = scores.length ? Math.min(...scores) : 0;
+  const dataMax = scores.length ? Math.max(...scores) : 10;
+  const yMin = Math.max(0, Math.floor(dataMin) - 1);
+  const yMax = Math.min(10, Math.ceil(dataMax) + 1);
+  const yTicks: number[] = [];
+  for (let t = yMin; t <= yMax; t += 1) yTicks.push(t);
+
   return (
     <Card className="w-full bg-transparent border-0 shadow-none">
       <CardContent className="pt-0 px-0">
-        <ChartContainer config={chartConfig} className="!aspect-[2.15/1]">
+        <ChartContainer config={chartConfig} className="!aspect-[2.6/1]">
           <LineChart
             accessibilityLayer
             data={chartData}
@@ -303,8 +313,8 @@ export function ChartLineLabel({
               stroke={axisStroke}
               tickLine={false}
               axisLine={false}
-              domain={[0, 10]}
-              ticks={isMobile ? [0, 5, 10] : [0, 2, 4, 6, 8, 10]}
+              domain={[yMin, yMax]}
+              ticks={isMobile ? [yMin, Math.round((yMin + yMax) / 2), yMax] : yTicks}
               width={isMobile ? 28 : 40}
               label={
                 isMobile

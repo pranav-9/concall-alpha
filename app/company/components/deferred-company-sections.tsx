@@ -5,11 +5,6 @@ import type { ChartDataPoint, QuarterData } from "../types";
 import type { NormalizedHistoricalEconomics } from "@/lib/business-snapshot/types";
 import type { GuidanceHistorySectionProps } from "./guidance-history-section";
 
-type TrendInfo = {
-  direction: "improving" | "declining" | "stable";
-  description: string;
-};
-
 type SectionPlaceholderProps = {
   label: string;
 };
@@ -23,7 +18,6 @@ const SectionPlaceholder = ({ label }: SectionPlaceholderProps) => (
 export const QuarterlyScoreSection = dynamic<{
   chartData: ChartDataPoint[];
   detailQuarters: QuarterData[];
-  trend: TrendInfo;
 }>(
   () => import("./quarterly-score-section").then((mod) => mod.QuarterlyScoreSection),
   {

@@ -1,49 +1,60 @@
 "use client";
 
 import * as React from "react";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown } from "lucide-react";
 import ConcallScore from "@/components/concall-score";
 import { cn } from "@/lib/utils";
+import { BANDS, bandForScore } from "@/lib/score-band";
 import { ChartLineLabel } from "../[code]/chart";
 import { chipClass } from "./chip-tone";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
-import type { ChartDataPoint, QuarterData } from "../types";
+import {
+  normalizeQuarterlyV4Categories,
+  type NormalizedQuarterlyV4,
+} from "@/lib/quarterly-v4/normalize";
+import { V4CategoryCards, V4CoverageStrip } from "./quarterly-v4-section";
 
-type TrendInfo = {
-  direction: "improving" | "declining" | "stable";
-  description: string;
-};
+import type { ChartDataPoint, QuarterData } from "../types";
 
 type QuarterlyScoreSectionProps = {
   chartData: ChartDataPoint[];
   detailQuarters: QuarterData[];
-  trend: TrendInfo;
+};
+
+// rationale on the row: new rows are structured {direction, heading, detail};
+// legacy rows are flat strings. Both are normalized to RationaleItem for render.
+type RationalePointShape = { direction?: string; heading?: string; detail?: string };
+type RationaleItem = {
+  direction: "positive" | "negative" | null;
+  heading: string;
+  detail: string;
 };
 
 type ConcallDetails = {
   score?: number;
-  category?: string;
-  rationale?: string[];
-  quarter_summary?: string[];
+  rationale?: (string | RationalePointShape)[];
+  // results_summary / guidance / risks are legacy flat fields: only present on
+  // rows scored before the v4 breakdown existed. New rows carry v4_categories
+  // instead (cat_1 ⊃ results_summary, cat_2 ⊃ guidance, cat_5 ⊃ risks). Kept here
+  // so older quarters still render their stored copy when v4 is absent.
   results_summary?: string[];
   guidance?: string;
   risks?: string[];
   fy?: number;
   qtr?: number;
-  confidence?: number;
+  v4_categories?: unknown;
 };
 
 type DetailQuarterContext = {
   details: ConcallDetails | null;
   risks: string[];
-  rationale: string[];
-  quarterSummary: string[];
+  rationale: RationaleItem[];
   resultsSummary: string[];
   guidance: string | null;
-  category: string | null;
-  confidence: number | null;
   detailScore: number;
+  band: { label: string; tone: string };
   detailQuarterLabel: string;
+  v4: NormalizedQuarterlyV4 | null;
 };
 
 const parseJsonObject = (value: unknown) => {
@@ -62,33 +73,46 @@ const parseJsonObject = (value: unknown) => {
 const buildDetailQuarterContext = (quarter: QuarterData): DetailQuarterContext => {
   const details = parseJsonObject(quarter.details) as ConcallDetails | null;
   const risks = Array.isArray(details?.risks) ? (details.risks as string[]) : [];
-  const rationale = Array.isArray(details?.rationale) ? (details.rationale as string[]) : [];
-  const quarterSummary = Array.isArray(details?.quarter_summary)
-    ? (details.quarter_summary as string[])
+  const rationale: RationaleItem[] = Array.isArray(details?.rationale)
+    ? (details!.rationale as unknown[])
+        .map((it): RationaleItem => {
+          if (typeof it === "string") return { direction: null, heading: "", detail: it };
+          if (it && typeof it === "object") {
+            const o = it as RationalePointShape;
+            const direction =
+              o.direction === "positive" || o.direction === "negative" ? o.direction : null;
+            return {
+              direction,
+              heading: typeof o.heading === "string" ? o.heading : "",
+              detail: typeof o.detail === "string" ? o.detail : "",
+            };
+          }
+          return { direction: null, heading: "", detail: String(it) };
+        })
+        .filter((r) => r.heading || r.detail)
     : [];
   const resultsSummary = Array.isArray(details?.results_summary)
     ? (details.results_summary as string[])
     : [];
   const guidance = typeof details?.guidance === "string" ? details.guidance : null;
-  const category = typeof details?.category === "string" ? details.category : null;
-  const confidence = typeof details?.confidence === "number" ? details.confidence : null;
   const detailScore = typeof details?.score === "number" ? details.score : quarter.score;
+  const band = BANDS[bandForScore(detailScore)];
   const detailQuarterLabel =
     typeof details?.qtr === "number" && typeof details?.fy === "number"
       ? `Q${details.qtr} FY${details.fy}`
       : quarter.quarter_label;
+  const v4 = normalizeQuarterlyV4Categories(details?.v4_categories ?? null, detailQuarterLabel);
 
   return {
     details,
     risks,
     rationale,
-    quarterSummary,
     resultsSummary,
     guidance,
-    category,
-    confidence,
     detailScore,
+    band,
     detailQuarterLabel,
+    v4,
   };
 };
 
@@ -137,29 +161,6 @@ const renderCard = (card: SectionCard) => {
   );
 };
 
-const renderTrendRow = (trend: TrendInfo) => {
-  const tone =
-    trend.direction === "improving" ? "emerald" : trend.direction === "declining" ? "rose" : "amber";
-  const label =
-    trend.direction === "improving"
-      ? "Improving"
-      : trend.direction === "declining"
-        ? "Declining"
-        : "Stable";
-  const Icon =
-    trend.direction === "improving" ? TrendingUp : trend.direction === "declining" ? TrendingDown : null;
-
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className={cn(chipClass(tone), "uppercase tracking-[0.14em]")}>
-        {Icon && <Icon className="mr-1 h-3 w-3" />}
-        {label}
-      </span>
-      <span className="text-[12px] leading-snug text-foreground/85">{trend.description}</span>
-    </div>
-  );
-};
-
 const renderChartCard = ({
   chartData,
   selectedQuarterLabel,
@@ -175,6 +176,7 @@ const renderChartCard = ({
         Score trend
       </p>
       <span className="text-[10px] text-muted-foreground">
+        <span className="text-amber-400/90">⭐</span> 8.5+&nbsp;&nbsp;·&nbsp;&nbsp;
         {chartData.length === 1 ? "1 quarter" : `${chartData.length} quarters`}
       </span>
     </div>
@@ -191,7 +193,6 @@ const renderChartCard = ({
 export function QuarterlyScoreSection({
   chartData,
   detailQuarters,
-  trend,
 }: QuarterlyScoreSectionProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
@@ -201,7 +202,6 @@ export function QuarterlyScoreSection({
 
   const selectedQuarter = detailQuarters[selectedIndex];
   const quarterContext = selectedQuarter ? buildDetailQuarterContext(selectedQuarter) : null;
-  const isLatest = selectedIndex === 0;
 
   const handleQuarterSelect = (quarterLabel: string) => {
     const nextIndex = detailQuarters.findIndex((q) => q.quarter_label === quarterLabel);
@@ -210,18 +210,6 @@ export function QuarterlyScoreSection({
 
   const cards: Record<string, SectionCard> = quarterContext
     ? {
-        quarterSummary: {
-          key: "quarter-summary",
-          label: "Quarter summary",
-          accent: "bg-amber-400/80",
-          items: quarterContext.quarterSummary,
-        },
-        rationale: {
-          key: "rationale",
-          label: "Rationale",
-          accent: "bg-amber-400/80",
-          items: quarterContext.rationale,
-        },
         resultsSummary: {
           key: "results-summary",
           label: "Results summary",
@@ -244,6 +232,7 @@ export function QuarterlyScoreSection({
     : {};
 
   return (
+    <div className="flex flex-col gap-3">
     <div className={`${elevatedBlockClass} p-2.5`}>
       <div className="flex flex-col gap-3">
         {detailQuarters.length > 0 && (
@@ -290,48 +279,63 @@ export function QuarterlyScoreSection({
         )}
 
         {quarterContext ? (
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-start">
-            <div className="flex min-w-0 flex-col gap-3">
-              {renderTrendRow(trend)}
-
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <ConcallScore
-                  score={quarterContext.detailScore}
-                  size="sm"
-                  className="shrink-0 shadow-none ring-1"
-                />
-                <h3 className="text-[18px] font-semibold leading-tight text-foreground sm:text-[20px]">
-                  {quarterContext.detailQuarterLabel}
-                </h3>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {isLatest && <span className={chipClass("sky")}>Latest</span>}
-                  {quarterContext.category && (
-                    <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] font-medium text-foreground/80">
-                      {quarterContext.category}
-                    </span>
-                  )}
-                  {typeof quarterContext.confidence === "number" && (
-                    <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                      Confidence {(quarterContext.confidence * 100).toFixed(0)}%
-                    </span>
-                  )}
+          <>
+            {/* Body: the verdict — "Why this score" (score circle + reasoning, the
+                one second-order read kept) next to the score-trend chart. */}
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
+              <div className={`${nestedDetailClass} flex flex-col p-3`}>
+                {/* Title: score circle + sentiment band (derived from the score, no LLM). */}
+                <div className="mb-4 flex items-center gap-2.5">
+                  <ConcallScore
+                    score={quarterContext.detailScore}
+                    size="sm"
+                    className="shrink-0 shadow-none ring-1"
+                  />
+                  <span className={`text-[14px] font-semibold ${quarterContext.band.tone}`}>
+                    {quarterContext.band.label}
+                  </span>
                 </div>
+                {/* Sub-label introducing the score drivers. */}
+                <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Why this score
+                </p>
+                {quarterContext.rationale.length > 0 ? (
+                  <ul className="flex flex-1 flex-col justify-between gap-3">
+                    {quarterContext.rationale.map((item, i) => (
+                      <li
+                        key={i}
+                        className="flex gap-2 text-[12px] leading-snug text-foreground/85"
+                      >
+                        {item.direction === "positive" ? (
+                          <ArrowUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                        ) : item.direction === "negative" ? (
+                          <ArrowDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-400" />
+                        ) : (
+                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400/80" />
+                        )}
+                        <span>
+                          {item.heading && (
+                            <span className="font-semibold text-foreground">{item.heading}</span>
+                          )}
+                          {item.heading && item.detail ? " — " : ""}
+                          {item.detail}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[11px] italic text-muted-foreground">
+                    No rationale for this quarter.
+                  </p>
+                )}
               </div>
-
-              {renderCard(cards.quarterSummary)}
+              {renderChartCard({
+                chartData,
+                selectedQuarterLabel: selectedQuarter?.quarter_label ?? "",
+                onQuarterSelect: handleQuarterSelect,
+              })}
             </div>
-
-            {renderChartCard({
-              chartData,
-              selectedQuarterLabel: selectedQuarter?.quarter_label ?? "",
-              onQuarterSelect: handleQuarterSelect,
-            })}
-
-            {renderCard(cards.rationale)}
-            {renderCard(cards.resultsSummary)}
-            {renderCard(cards.guidance)}
-            {renderCard(cards.risks)}
-          </div>
+          </>
         ) : (
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <div
@@ -347,6 +351,42 @@ export function QuarterlyScoreSection({
           </div>
         )}
       </div>
+    </div>
+
+      {quarterContext && (
+        <details className={`group ${elevatedBlockClass} p-2.5`}>
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center gap-2">
+              <h3 className="text-[13px] font-semibold text-foreground">
+                Quarter breakdown by category
+              </h3>
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+            </span>
+            <span className="text-[11px] tabular-nums text-muted-foreground">
+              {quarterContext.detailQuarterLabel}
+            </span>
+          </summary>
+
+          {/* First-order extraction: the category cards (cat_1 included). "Why this
+              score" + Quarter summary live in the verdict block above; risks is folded
+              into cat_5 (Concentration/dependencies). Legacy rows with no v4 keep the
+              old flat cards so no data is lost. */}
+          <div className="mt-3">
+            {quarterContext.v4 && <V4CoverageStrip categories={quarterContext.v4.categories} />}
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-start">
+              {quarterContext.v4 ? (
+                <V4CategoryCards categories={quarterContext.v4.categories} />
+              ) : (
+                <>
+                  {renderCard(cards.resultsSummary)}
+                  {renderCard(cards.guidance)}
+                  {renderCard(cards.risks)}
+                </>
+              )}
+            </div>
+          </div>
+        </details>
+      )}
     </div>
   );
 }

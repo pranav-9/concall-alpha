@@ -1,6 +1,5 @@
 import Link from "next/link";
 import ConcallScore from "@/components/concall-score";
-import { ScoreDelta } from "@/components/score-delta";
 import {
   formatRelativeActivityTime,
   typeChipClass,
@@ -92,18 +91,7 @@ export default async function RecentScoreUpdates({
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-0.5">
                   {typeof item.score === "number" ? (
-                    <>
-                      <ConcallScore score={item.score} size="sm" />
-                      <ScoreDelta
-                        score={item.score}
-                        priorScore={item.priorScore}
-                        priorLabel={item.priorLabel}
-                        missingLabel={
-                          item.type === "quarter" ? "no prior qtr" : "no prior score"
-                        }
-                        className={isCompact ? "text-[9px]" : "text-[10px]"}
-                      />
-                    </>
+                    <ConcallScore score={item.score} size="sm" />
                   ) : item.contextLabel ? (
                     <span
                       className={`${chipClass} ${typeChipClass(item.type)}`}

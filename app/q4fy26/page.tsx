@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ScoreDelta } from "@/components/score-delta";
 import { HERO_CARD, PAGE_SHELL } from "@/lib/design/shell";
 import {
   BUCKETS,
@@ -11,6 +10,7 @@ import {
   getTrackerData,
 } from "./data";
 import { SectorFilter } from "./sector-filter";
+import { TrackerTable } from "./tracker-table";
 
 export const metadata: Metadata = {
   title: `${TARGET_LABEL} Quality Tracker – Story of a Stock`,
@@ -89,11 +89,6 @@ export default async function Q4FY26TrackerPage({
     matchesMovement(entry, activeMovement),
   );
 
-  const groups = BUCKET_ORDER.map((key) => ({
-    key,
-    entries: resultEntries.filter((e) => e.bucket === key),
-  })).filter((g) => g.entries.length > 0);
-
   const buildHref = (overrides: Partial<{ movement: MovementKey | null; sector: string | null }>) => {
     const params = new URLSearchParams();
     const movement =
@@ -171,15 +166,7 @@ export default async function Q4FY26TrackerPage({
             No companies match the current filters.
           </div>
         ) : (
-          <div className="space-y-6">
-            {groups.map((group) => (
-              <BucketSection
-                key={group.key}
-                bucketKey={group.key}
-                entries={group.entries}
-              />
-            ))}
-          </div>
+          <TrackerTable entries={resultEntries} />
         )}
 
         <div className="flex justify-end">
@@ -245,110 +232,3 @@ function DistributionBar({
   );
 }
 
-function BucketSection({
-  bucketKey,
-  entries,
-}: {
-  bucketKey: BucketKey;
-  entries: TrackerEntry[];
-}) {
-  const def = BUCKETS[bucketKey];
-  const isUpcoming = bucketKey === "upcoming";
-  const firstPrior = entries[0]?.priorLabel ?? null;
-  const uniformPrior =
-    firstPrior != null && entries.every((e) => e.priorLabel === firstPrior)
-      ? firstPrior
-      : null;
-  return (
-    <section className={isUpcoming ? "space-y-3 pt-2" : "space-y-3"}>
-      <div className="flex items-baseline gap-2">
-        <h2
-          className={`text-sm font-semibold uppercase tracking-[0.16em] ${
-            isUpcoming ? "text-muted-foreground" : def.textClass
-          }`}
-        >
-          {def.label}
-        </h2>
-        <span className="text-xs text-muted-foreground">
-          {entries.length} {entries.length === 1 ? "company" : "companies"} · {def.description}
-          {uniformPrior ? ` · vs ${uniformPrior}` : ""}
-        </span>
-      </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-        {entries.map((entry) => (
-          <CompanyCard key={entry.code} entry={entry} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-const SHORT_DATE = new Intl.DateTimeFormat("en-IN", {
-  day: "2-digit",
-  month: "short",
-});
-
-const formatExpectedDate = (iso: string | null): string | null => {
-  if (!iso) return null;
-  const d = new Date(`${iso}T00:00:00Z`);
-  if (Number.isNaN(d.getTime())) return null;
-  return SHORT_DATE.format(d);
-};
-
-function CompanyCard({ entry }: { entry: TrackerEntry }) {
-  const def = BUCKETS[entry.bucket];
-  const isUpcoming = entry.bucket === "upcoming";
-  const expectedLabel = formatExpectedDate(entry.expectedDate);
-  return (
-    <Link
-      href={`/company/${encodeURIComponent(entry.code)}#sentiment-score`}
-      prefetch={false}
-      className="group flex h-full min-h-[5.8rem] flex-col justify-between gap-2 rounded-lg border border-border/35 bg-background/70 p-3 shadow-sm shadow-black/5 transition-colors hover:border-border/65 hover:bg-accent/60"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p
-            className="truncate text-sm font-semibold text-foreground"
-            title={entry.name}
-          >
-            {entry.name}
-          </p>
-          <p className="truncate text-[11px] text-muted-foreground">{entry.code}</p>
-        </div>
-        {isUpcoming ? (
-          <span className="inline-flex items-center rounded-full border border-border/45 bg-muted/45 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {expectedLabel ?? "Upcoming"}
-          </span>
-        ) : (
-          <span
-            className={`inline-flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-[11px] font-bold shadow-sm shadow-black/10 ${def.barClass} ${def.textOnBarClass}`}
-            title={def.label}
-            aria-label={
-              entry.score != null
-                ? `${def.label} — score ${entry.score.toFixed(1)}`
-                : def.label
-            }
-          >
-            {entry.score != null ? entry.score.toFixed(1) : "—"}
-          </span>
-        )}
-      </div>
-      <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-        <span className="truncate">{entry.sector ?? "—"}</span>
-        {entry.score != null && entry.priorScore != null ? (
-          <ScoreDelta
-            score={entry.score}
-            priorScore={entry.priorScore}
-            priorLabel={entry.priorLabel}
-            className="text-[11px]"
-            inlineSuffix={false}
-          />
-        ) : entry.priorScore != null && entry.priorLabel ? (
-          <span className="shrink-0">
-            {entry.priorLabel}: {entry.priorScore.toFixed(1)}
-          </span>
-        ) : null}
-      </div>
-    </Link>
-  );
-}
