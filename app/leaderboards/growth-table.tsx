@@ -4,6 +4,7 @@ import Link from "next/link";
 import ConcallScore from "@/components/concall-score";
 import { DataTable } from "@/app/company/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
+import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
 
 export type GrowthRowTable = {
   leaderboardRank: number;
@@ -26,18 +27,6 @@ const formatDate = (value: string | null | undefined) => {
     month: "short",
     year: "numeric",
   }).format(d);
-};
-
-const renderGrowthPctCell = (value: string | null) => {
-  const display = value ?? "—";
-  return (
-    <span
-      className="inline-block max-w-[5.5rem] truncate align-middle text-foreground lg:max-w-[7rem]"
-      title={value ?? undefined}
-    >
-      {display}
-    </span>
-  );
 };
 
 const growthColumns: ColumnDef<GrowthRowTable>[] = [
@@ -75,6 +64,23 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
     },
   },
   {
+    id: "band",
+    header: "Band",
+    cell: ({ row }) => {
+      const score = row.original.growthScore;
+      if (typeof score !== "number") {
+        return <span className="text-muted-foreground">—</span>;
+      }
+      const band = GROWTH_BANDS[bandForGrowthScore(score)];
+      return (
+        <span className="inline-flex items-center gap-1.5">
+          <span className={`h-1.5 w-1.5 rounded-full ${band.barClass}`} />
+          <span className={`text-[12px] font-medium ${band.textClass}`}>{band.label}</span>
+        </span>
+      );
+    },
+  },
+  {
     accessorKey: "growthScore",
     header: "Growth score",
     cell: ({ row }) => {
@@ -82,7 +88,7 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
       return (
         <div className="flex justify-center">
           {typeof score === "number" ? (
-            <ConcallScore score={score} />
+            <ConcallScore score={score} kind="growth" />
           ) : (
             <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted text-sm text-muted-foreground">
               -
@@ -93,34 +99,43 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
     },
   },
   {
-    accessorKey: "baseDisplay",
-    header: "Base %",
+    id: "scenarios",
+    header: "Scenarios",
     cell: ({ row }) => {
-      const value = row.getValue("baseDisplay") as string | null;
-      return renderGrowthPctCell(value);
-    },
-  },
-  {
-    accessorKey: "upsideDisplay",
-    header: "Upside %",
-    cell: ({ row }) => {
-      const value = row.getValue("upsideDisplay") as string | null;
-      return renderGrowthPctCell(value);
-    },
-  },
-  {
-    accessorKey: "downsideDisplay",
-    header: "Downside %",
-    cell: ({ row }) => {
-      const value = row.getValue("downsideDisplay") as string | null;
-      return renderGrowthPctCell(value);
+      const base = row.original.baseDisplay ?? null;
+      const upside = row.original.upsideDisplay ?? null;
+      const downside = row.original.downsideDisplay ?? null;
+      if (!base && !upside && !downside) {
+        return <span className="text-muted-foreground">—</span>;
+      }
+      const tooltip = [
+        base ? `Base ${base}` : null,
+        upside ? `Upside ${upside}` : null,
+        downside ? `Downside ${downside}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      return (
+        <div className="flex flex-col leading-tight" title={tooltip}>
+          <span className="text-[13px] font-semibold text-foreground">{base ?? "—"}</span>
+          {(upside || downside) && (
+            <span className="mt-0.5 text-[11px] text-muted-foreground">
+              {upside && <span className="text-emerald-700 dark:text-emerald-400">↑ {upside}</span>}
+              {upside && downside && <span className="mx-1">·</span>}
+              {downside && <span className="text-red-700 dark:text-red-400">↓ {downside}</span>}
+            </span>
+          )}
+        </div>
+      );
     },
   },
   {
     accessorKey: "updatedAt",
     header: "Updated",
     cell: ({ row }) => (
-      <span className="text-foreground">{formatDate(row.getValue("updatedAt") as string | null)}</span>
+      <span className="text-[12px] text-muted-foreground">
+        {formatDate(row.getValue("updatedAt") as string | null)}
+      </span>
     ),
   },
 ];

@@ -32,56 +32,43 @@ export function transformToChartData(data: QuarterData[]): ChartDataPoint[] {
 }
 
 /**
- * Calculate broader trend based on average scores
- * Compares recent average (last 3 quarters) vs historical average
+ * Trend = latest quarter score − the displayed 4Q average. Defined this way
+ * so the row arithmetic reconciles for the reader (Latest − 4Q Avg = Trend).
+ * Stable when |change| < 0.2 because the 4Q-avg baseline includes latest,
+ * which dampens the delta vs a strict "prior quarters only" baseline.
  */
 export function calculateTrend(data: QuarterData[]): {
   direction: "improving" | "declining" | "stable";
   change: number;
-  recentAvg: number;
-  historicalAvg: number;
+  latestScore: number;
+  priorBaseline: number;
   description: string;
 } {
   if (data.length < 2) {
     return {
       direction: "stable",
       change: 0,
-      recentAvg: 0,
-      historicalAvg: 0,
+      latestScore: data[0]?.score ?? 0,
+      priorBaseline: 0,
       description: "Insufficient data for trend analysis",
     };
   }
 
-  // Recent 3 quarters average
-  const recentCount = Math.min(3, data.length);
-  const recentScores = data.slice(0, recentCount).map((d) => d.score);
-  const recentAvg = recentScores.reduce((a, b) => a + b, 0) / recentCount;
+  const latestScore = data[0].score;
+  const fourQScores = data.slice(0, Math.min(4, data.length)).map((d) => d.score);
+  const fourQAvg =
+    fourQScores.reduce((a, b) => a + b, 0) / fourQScores.length;
 
-  // Historical average (up to last 10 quarters, excluding recent 3)
-  const historicalCount = Math.min(10, data.length - recentCount);
-  const historicalScores =
-    historicalCount > 0
-      ? data
-          .slice(recentCount, recentCount + historicalCount)
-          .map((d) => d.score)
-      : [];
-  const historicalAvg =
-    historicalScores.length > 0
-      ? historicalScores.reduce((a, b) => a + b, 0) / historicalScores.length
-      : recentAvg;
-
-  const change = recentAvg - historicalAvg;
+  const change = latestScore - fourQAvg;
   const absChange = Math.abs(change);
 
   if (absChange < 0.2) {
     return {
       direction: "stable",
       change,
-      recentAvg,
-      historicalAvg,
-      description: `Recent quarters averaging ${recentAvg.toFixed(
-        2,
-      )}, holding near the prior ${historicalAvg.toFixed(2)} baseline.`,
+      latestScore,
+      priorBaseline: fourQAvg,
+      description: `Latest quarter ${latestScore.toFixed(2)}, holding near the 4-quarter average of ${fourQAvg.toFixed(2)}.`,
     };
   }
 
@@ -89,21 +76,17 @@ export function calculateTrend(data: QuarterData[]): {
     return {
       direction: "improving",
       change,
-      recentAvg,
-      historicalAvg,
-      description: `Recent quarters averaging ${recentAvg.toFixed(
-        2,
-      )}, up from ${historicalAvg.toFixed(2)} over the prior ${historicalCount} quarters.`,
+      latestScore,
+      priorBaseline: fourQAvg,
+      description: `Latest quarter ${latestScore.toFixed(2)}, above the 4-quarter average of ${fourQAvg.toFixed(2)}.`,
     };
   }
 
   return {
     direction: "declining",
     change,
-    recentAvg,
-    historicalAvg,
-    description: `Recent quarters averaging ${recentAvg.toFixed(
-      2,
-    )}, down from ${historicalAvg.toFixed(2)} over the prior ${historicalCount} quarters.`,
+    latestScore,
+    priorBaseline: fourQAvg,
+    description: `Latest quarter ${latestScore.toFixed(2)}, below the 4-quarter average of ${fourQAvg.toFixed(2)}.`,
   };
 }

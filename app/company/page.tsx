@@ -4,7 +4,7 @@ import { getConcallData } from "./get-concall-data";
 
 export const metadata: Metadata = {
   title: "Leaderboard – Story of a Stock",
-  description: "Latest concall sentiment leaderboard across companies.",
+  description: "Latest quarter score leaderboard across companies.",
 };
 
 export default async function CompanyLeaderboardPage() {

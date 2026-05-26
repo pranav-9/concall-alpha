@@ -388,7 +388,7 @@ export function WatchlistTable({ rows }: { rows: WatchlistTableRow[] }) {
               </TableCell>
               <TableCell className="px-3 py-3">
                 {row.growthScore != null ? (
-                  <ConcallScore score={row.growthScore} size="sm" />
+                  <ConcallScore score={row.growthScore} size="sm" kind="growth" />
                 ) : (
                   "—"
                 )}

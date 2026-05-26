@@ -23,6 +23,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import ConcallScore from "@/components/concall-score";
+import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
 import type {
   NormalizedGrowthOutlook,
   NormalizedGrowthScenario,
@@ -383,7 +384,17 @@ export function FutureGrowthSection({
       feedbackCompanyCode={companyCode}
       feedbackCompanyName={companyName}
       headerAction={
-        typeof growthScore === "number" ? <ConcallScore score={growthScore} size="sm" /> : undefined
+        typeof growthScore === "number" ? (
+          (() => {
+            const band = GROWTH_BANDS[bandForGrowthScore(growthScore)];
+            return (
+              <div className="flex items-center gap-2">
+                <ConcallScore score={growthScore} size="sm" kind="growth" />
+                <span className={`text-[13px] font-semibold ${band.tone}`}>{band.label}</span>
+              </div>
+            );
+          })()
+        ) : undefined
       }
     >
         {outlook ? (

@@ -81,8 +81,8 @@ export const getConcallData = async () => {
       row.trendDirection = trend.direction;
       row.trendDescription = trend.description;
       row.trendChange = trend.change;
-      row.trendRecentAvg = trend.recentAvg;
-      row.trendHistoricalAvg = trend.historicalAvg;
+      row.trendLatestScore = trend.latestScore;
+      row.trendPriorBaseline = trend.priorBaseline;
 
       return row;
     },

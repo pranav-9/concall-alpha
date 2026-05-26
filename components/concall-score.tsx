@@ -1,19 +1,23 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge"; // adjust path if needed
 import { BANDS, bandForScore } from "@/lib/score-band";
+import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
 
 type Size = "sm" | "md" | "lg";
+type Kind = "quarterly" | "growth";
 
-// Score → colour derives from the single platform band scheme (lib/score-band) so the
-// circle, charts, bars and titles all agree. One colour per band (no separate gradient).
+// Score → colour derives from one of two band schemes: lib/score-band (Quarterly /
+// sentiment, default) or lib/growth-band (forward growth outlook). One colour per
+// band so the circle, charts and bars all agree.
 
 /** Hex colour for charts — one colour per band, consistent with the score circle. */
 export const chartColorFor = (score: number): string =>
   BANDS[bandForScore(score)].chartHex;
 
 /** Badge styling for the score circle — band fill + ring + on-fill text colour. */
-export const categoryFor = (score: number) => {
-  const b = BANDS[bandForScore(score)];
+export const categoryFor = (score: number, kind: Kind = "quarterly") => {
+  const b =
+    kind === "growth" ? GROWTH_BANDS[bandForGrowthScore(score)] : BANDS[bandForScore(score)];
   return { label: b.label, bg: b.barClass, ring: b.ringClass, textClass: b.textOnBarClass };
 };
 
@@ -22,6 +26,7 @@ interface ConcallScoreProps {
   size?: Size; // "sm" | "md" | "lg"
   showLabel?: boolean; // show text label next to the badge
   className?: string;
+  kind?: Kind; // which band scheme to use; defaults to "quarterly"
 }
 
 const sizeMap: Record<Size, string> = {
@@ -35,9 +40,10 @@ const ConcallScore: React.FC<ConcallScoreProps> = ({
   size = "md",
   showLabel = false,
   className = "",
+  kind = "quarterly",
 }) => {
   const n = Number(score) || 0;
-  const cat = categoryFor(n);
+  const cat = categoryFor(n, kind);
 
   return (
     <div className="inline-flex items-center gap-2">

@@ -7,7 +7,7 @@ export default {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
-    // score-band.ts defines the band colour class literals (bg-emerald-600, etc.)
+    // score-band.ts defines the band colour class literals (bg-teal-700, etc.)
     // consumed dynamically by the score circle / charts — must be scanned or they get purged.
     "./lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],

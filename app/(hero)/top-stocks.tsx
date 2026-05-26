@@ -326,7 +326,7 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
   };
 
   const strength: ListBlock[] = [
-    { title: "Top Past Sentiment (4Q avg)", items: strong4Q, scoreKey: "avg4", signal: "sentiment" },
+    { title: "Top 4Q Average", items: strong4Q, scoreKey: "avg4", signal: "sentiment" },
   ];
 
   const weakness: ListBlock[] = [
@@ -437,7 +437,7 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
           ...latestTop,
           title: `${latestLabel || "Latest qtr"} Top Performers`,
           subtitle:
-            "Highest latest-quarter sentiment scores across covered companies.",
+            "Highest latest-quarter scores across covered companies.",
         }
       : strength[0];
   const { sumMap, nameMap } = buildFourQSumMap(records);
@@ -575,7 +575,7 @@ function ListCard({
           <span className="leading-tight">{list.title}</span>
           {list.signal && (
             <Badge variant="outline" className="text-xs px-2 py-0.5 border-border uppercase tracking-wide text-muted-foreground">
-              {list.signal === "sentiment" ? "Sentiment" : "Growth"}
+              {list.signal === "sentiment" ? "Quarter" : "Growth"}
             </Badge>
           )}
         </div>
@@ -668,7 +668,7 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
                 </div>
                 <div className="flex flex-col items-end gap-0.5 min-w-[72px]">
                   {typeof item.growthScore === "number" ? (
-                    <ConcallScore score={item.growthScore} />
+                    <ConcallScore score={item.growthScore} kind="growth" />
                   ) : (
                     <div className="h-10 w-10 rounded-full border border-border bg-muted flex items-center justify-center text-sm text-muted-foreground">
                       -

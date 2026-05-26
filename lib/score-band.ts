@@ -12,6 +12,13 @@
 // The cut is semantic (7+ = a clearly strong quarter), not cohort-balanced. This makes the
 // scale intentionally asymmetric (3 bullish tiers, 2 bearish) — the universe is right-skewed
 // and the bearish side is near-empty today; mirror it only when bearish names accumulate.
+//
+// 2026-05-25c: bullish tiers recoloured emerald/green/lime -> a single teal ramp
+// (teal-700/500/300, fill darkest = strongest). Two reasons: the old three greens were
+// near-indistinguishable, and red<->green is the worst colourblind pair while carrying the
+// bull/bear signal. Teal keeps the "green = good" instinct but separates cleanly from the
+// red bearish side under CVD. Bearish (orange/red) + neutral (amber) unchanged, so the
+// whole scale is now a diverging teal<->red ramp around the ~5.5 neutral midpoint.
 
 export type BandKey =
   | "strongly_bullish"
@@ -40,37 +47,37 @@ export const BANDS: Record<BandKey, BandDef> = {
     key: "strongly_bullish",
     label: "Strongly Bullish",
     description: "≥ 8.0",
-    tone: "text-emerald-400",
-    barClass: "bg-emerald-600",
-    textClass: "text-emerald-700 dark:text-emerald-300",
-    borderClass: "border-emerald-300/60 dark:border-emerald-700/40",
+    tone: "text-teal-400",
+    barClass: "bg-teal-700",
+    textClass: "text-teal-700 dark:text-teal-300",
+    borderClass: "border-teal-300/60 dark:border-teal-700/40",
     textOnBarClass: "text-white",
-    ringClass: "ring-emerald-300/50 dark:ring-emerald-600/35",
-    chartHex: "#059669",
+    ringClass: "ring-teal-300/50 dark:ring-teal-600/35",
+    chartHex: "#0f766e",
   },
   bullish: {
     key: "bullish",
     label: "Bullish",
     description: "7.0 – 7.9",
-    tone: "text-green-400",
-    barClass: "bg-green-500",
-    textClass: "text-green-700 dark:text-green-300",
-    borderClass: "border-green-300/60 dark:border-green-700/40",
+    tone: "text-teal-400",
+    barClass: "bg-teal-500",
+    textClass: "text-teal-700 dark:text-teal-300",
+    borderClass: "border-teal-300/60 dark:border-teal-700/40",
     textOnBarClass: "text-white",
-    ringClass: "ring-green-300/50 dark:ring-green-600/35",
-    chartHex: "#22c55e",
+    ringClass: "ring-teal-300/50 dark:ring-teal-600/35",
+    chartHex: "#14b8a6",
   },
   mildly_bullish: {
     key: "mildly_bullish",
     label: "Mildly Bullish",
     description: "6.5 – 6.9",
-    tone: "text-lime-400",
-    barClass: "bg-lime-500",
-    textClass: "text-lime-700 dark:text-lime-300",
-    borderClass: "border-lime-300/60 dark:border-lime-700/40",
+    tone: "text-teal-400",
+    barClass: "bg-teal-300",
+    textClass: "text-teal-700 dark:text-teal-300",
+    borderClass: "border-teal-300/60 dark:border-teal-700/40",
     textOnBarClass: "text-zinc-900",
-    ringClass: "ring-lime-300/50 dark:ring-lime-600/35",
-    chartHex: "#84cc16",
+    ringClass: "ring-teal-300/50 dark:ring-teal-600/35",
+    chartHex: "#5eead4",
   },
   neutral: {
     key: "neutral",

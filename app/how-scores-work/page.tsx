@@ -11,6 +11,13 @@ import {
   PAGE_SHELL,
   PANEL_CARD_SKY,
 } from "@/lib/design/shell";
+import { getConcallData } from "@/app/company/get-concall-data";
+import { fetchLeaderboardData } from "@/app/leaderboards/data";
+import {
+  computeGrowthBandCounts,
+  computeQuarterBandCounts,
+  type BandCount,
+} from "@/lib/leaderboard-distribution";
 
 export const metadata: Metadata = {
   title: "How Scores Are Calculated – Story of a Stock",
@@ -101,6 +108,24 @@ const growthScenarioReadPoints = [
   "The model applies directional stress so upside and downside are not treated as equal-quality paths.",
 ];
 
+const growthBands = [
+  { label: "Exceptional", cut: "≥ 8.5", body: "Top-conviction outlook: strong base, well-supported scenarios, durable catalysts." },
+  { label: "Strong", cut: "8.0 – 8.4", body: "Solid base growth and supportive scenarios; visible execution path." },
+  { label: "Solid", cut: "7.5 – 7.9", body: "Clearly positive outlook with reasonable conviction; some moving parts to monitor." },
+  { label: "Moderate", cut: "7.0 – 7.4", body: "Mixed conviction or lower base growth; needs further evidence to firm up." },
+  { label: "Soft", cut: "6.5 – 6.9", body: "Weak conviction or downside-heavy scenarios; growth is unclear." },
+  { label: "Weak", cut: "< 6.5", body: "Material concerns on growth visibility or execution." },
+];
+
+const quarterlyBands = [
+  { label: "Strongly Bullish", cut: "≥ 8.0", body: "Clearly strong quarter; execution and tone are unambiguously positive." },
+  { label: "Bullish", cut: "7.0 – 7.9", body: "Solid quarter with positive signals outweighing concerns." },
+  { label: "Mildly Bullish", cut: "6.5 – 6.9", body: "Modestly positive; some progress but not yet a clearly strong quarter." },
+  { label: "Neutral / Balanced", cut: "4.5 – 6.4", body: "Mixed read; positives and negatives roughly balance out." },
+  { label: "Mildly Bearish", cut: "3.0 – 4.4", body: "Soft quarter with visible concerns; weakness outweighs progress." },
+  { label: "Strongly Bearish", cut: "< 3.0", body: "Clearly weak quarter; material concerns dominate the read." },
+];
+
 const growthReturnedFields = [
   "Base case growth view",
   "Upside case potential",
@@ -130,7 +155,25 @@ const TABS_LIST_CLASS =
 const TABS_TRIGGER_CLASS =
   "rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors data-[state=active]:bg-sky-100 data-[state=active]:text-sky-800 data-[state=active]:shadow-sm dark:data-[state=active]:bg-sky-900/30 dark:data-[state=active]:text-sky-200";
 
-export default function HowScoresWorkPage() {
+export default async function HowScoresWorkPage() {
+  const [{ rows, quarterLabels }, { growthEntries }] = await Promise.all([
+    getConcallData(),
+    fetchLeaderboardData(),
+  ]);
+  const latestQuarterLabel = quarterLabels[0] ?? null;
+  const quarterLatestScores = latestQuarterLabel
+    ? rows.map((r) => {
+        const raw = r[latestQuarterLabel];
+        if (raw == null || raw === "") return null;
+        const n = Number(raw);
+        return Number.isFinite(n) ? n : null;
+      })
+    : [];
+  const quarterBandCounts = computeQuarterBandCounts(quarterLatestScores);
+  const quarterScored = quarterLatestScores.filter((s): s is number => typeof s === "number").length;
+  const growthBandCounts = computeGrowthBandCounts(growthEntries.map((e) => e.growthScore));
+  const growthScored = growthEntries.filter((e) => typeof e.growthScore === "number").length;
+
   const overviewMetrics = [
     {
       label: "Score models",
@@ -252,6 +295,26 @@ export default function HowScoresWorkPage() {
               </div>
 
               <div className="space-y-3">
+                <p className="text-sm font-semibold text-foreground">Score bands</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {growthBands.map((band) => (
+                    <div key={band.label} className={CARD_CLASS}>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-foreground">{band.label}</p>
+                        <span className="text-[11px] font-mono text-muted-foreground">{band.cut}</span>
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{band.body}</p>
+                    </div>
+                  ))}
+                </div>
+                <DistributionHistogram
+                  total={growthScored}
+                  bandCounts={growthBandCounts}
+                  caption="Current coverage universe — how the cohort actually distributes across these bands today."
+                />
+              </div>
+
+              <div className="space-y-3">
                 <p className="text-sm font-semibold text-foreground">How to read this score</p>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
                   <div className={CARD_CLASS}>
@@ -341,6 +404,26 @@ export default function HowScoresWorkPage() {
               </div>
 
               <div className="space-y-3">
+                <p className="text-sm font-semibold text-foreground">Score bands</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {quarterlyBands.map((band) => (
+                    <div key={band.label} className={CARD_CLASS}>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-foreground">{band.label}</p>
+                        <span className="text-[11px] font-mono text-muted-foreground">{band.cut}</span>
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{band.body}</p>
+                    </div>
+                  ))}
+                </div>
+                <DistributionHistogram
+                  total={quarterScored}
+                  bandCounts={quarterBandCounts}
+                  caption="Current coverage universe — how the latest-quarter cohort actually distributes across these bands today."
+                />
+              </div>
+
+              <div className="space-y-3">
                 <p className="text-sm font-semibold text-foreground">Quarterly example</p>
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                   <div className={CARD_CLASS}>
@@ -388,5 +471,53 @@ export default function HowScoresWorkPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function DistributionHistogram<K extends string>({
+  total,
+  bandCounts,
+  caption,
+}: {
+  total: number;
+  bandCounts: BandCount<K>[];
+  caption?: string;
+}) {
+  if (total === 0) return null;
+  const maxCount = bandCounts.reduce((acc, b) => Math.max(acc, b.count), 0);
+  if (maxCount === 0) return null;
+  return (
+    <div className={`${INNER_CARD} p-4`}>
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          Coverage distribution
+        </p>
+        <p className="text-[11px] tabular-nums text-muted-foreground">{total} companies</p>
+      </div>
+      <div className="space-y-1.5">
+        {bandCounts.map((band) => {
+          const pct = maxCount === 0 ? 0 : (band.count / maxCount) * 100;
+          const sharePct = total === 0 ? 0 : (band.count / total) * 100;
+          return (
+            <div key={band.key} className="grid grid-cols-[7.5rem_minmax(0,1fr)_3rem] items-center gap-3">
+              <span className="truncate text-[12px] text-foreground/90">{band.label}</span>
+              <div className="relative h-2 rounded-full bg-muted/50">
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full bg-sky-500/70 dark:bg-sky-400/60"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <span className="text-right text-[11px] tabular-nums text-muted-foreground">
+                {band.count}
+                <span className="ml-1 text-[10px] text-muted-foreground/70">({sharePct.toFixed(0)}%)</span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {caption && (
+        <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">{caption}</p>
+      )}
+    </div>
   );
 }

@@ -219,12 +219,12 @@ export async function QuarterlyScorePanel({ overview }: CompanyDetailSectionProp
               {
                 label: `Q Rank ${overview.quarter_rank}/${overview.quarter_total}`,
                 tone: getPercentileTone(overview.quarter_percentile),
-                href: "/leaderboards?tab=sentiment",
+                href: "/leaderboards?tab=quarter",
               },
               {
                 label: `Top ${Math.round(overview.quarter_percentile)}%`,
                 tone: getPercentileTone(overview.quarter_percentile),
-                href: "/leaderboards?tab=sentiment",
+                href: "/leaderboards?tab=quarter",
               },
             ]
           : undefined

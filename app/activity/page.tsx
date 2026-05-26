@@ -69,7 +69,11 @@ function ActivityRow({ item }: { item: UnifiedUpdate }) {
       <div className="flex shrink-0 flex-col items-end gap-1">
         {typeof item.score === "number" ? (
           <>
-            <ConcallScore score={item.score} size="sm" />
+            <ConcallScore
+              score={item.score}
+              size="sm"
+              kind={item.type === "growth" ? "growth" : "quarterly"}
+            />
             <ScoreDelta
               score={item.score}
               priorScore={item.priorScore}

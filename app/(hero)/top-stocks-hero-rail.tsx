@@ -208,7 +208,7 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
               </div>
               <div className="flex shrink-0 min-w-[64px] flex-col items-end gap-0.5">
                 {typeof item.growthScore === "number" ? (
-                  <ConcallScore score={item.growthScore} size="sm" />
+                  <ConcallScore score={item.growthScore} size="sm" kind="growth" />
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted text-sm text-muted-foreground">
                     -

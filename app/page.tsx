@@ -68,7 +68,7 @@ export default function Home() {
       body:
         "Move from what has happened to what could happen next through catalysts, scenarios, and the forward setup.",
       stripClass: "bg-sky-500/80",
-      badge: { kind: "score" as const, value: 8.7 },
+      badge: { kind: "score" as const, value: 8.7, scoreKind: "growth" as const },
     },
     {
       title: "Guidance Tracker",
@@ -165,7 +165,12 @@ export default function Home() {
                       </h3>
                     </div>
                     {item.badge.kind === "score" ? (
-                      <ConcallScore score={item.badge.value} size="sm" className="ring-2" />
+                      <ConcallScore
+                        score={item.badge.value}
+                        size="sm"
+                        className="ring-2"
+                        kind={"scoreKind" in item.badge ? item.badge.scoreKind : "quarterly"}
+                      />
                     ) : item.badge.kind === "moat" ? (
                       <span className="shrink-0 rounded-full border border-violet-200/60 bg-violet-100/70 px-2.5 py-1 text-[10px] font-medium text-violet-800 dark:border-violet-700/35 dark:bg-violet-900/30 dark:text-violet-200">
                         {item.badge.label}
