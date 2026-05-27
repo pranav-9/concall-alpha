@@ -4,6 +4,7 @@ import { logger } from "@/lib/logger";
 
 type Payload = {
   companyCode?: string;
+  watchlistId?: number | string;
 };
 
 export async function POST(request: Request) {
@@ -43,6 +44,22 @@ async function resolveWatchlistContext(request: Request) {
     } as const;
   }
 
+  const watchlistIdRaw =
+    typeof body.watchlistId === "string" ? Number.parseInt(body.watchlistId, 10) : body.watchlistId;
+  const watchlistId =
+    typeof watchlistIdRaw === "number" && Number.isFinite(watchlistIdRaw) && watchlistIdRaw > 0
+      ? watchlistIdRaw
+      : null;
+
+  if (watchlistId == null) {
+    return {
+      errorResponse: NextResponse.json(
+        { ok: false, error: "Missing watchlist id." },
+        { status: 400 },
+      ),
+    } as const;
+  }
+
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId =
@@ -60,46 +77,47 @@ async function resolveWatchlistContext(request: Request) {
   const { data: watchlistRows, error: watchlistError } = await supabase
     .from("watchlists")
     .select("id")
+    .eq("id", watchlistId)
     .eq("user_id", userId)
-    .order("created_at", { ascending: true })
     .limit(1);
 
   if (watchlistError) {
-    logger.error("supabase: failed to load watchlists for items op", {
+    logger.error("supabase: failed to load watchlist for items op", {
       userId,
+      watchlistId,
       error: watchlistError,
     });
     return {
       errorResponse: NextResponse.json(
-        { ok: false, error: "Unable to load watchlists." },
+        { ok: false, error: "Unable to load watchlist." },
         { status: 500 },
       ),
     } as const;
   }
 
-  const firstWatchlist = watchlistRows?.[0] as { id: number } | undefined;
-  if (!firstWatchlist) {
+  const watchlist = watchlistRows?.[0] as { id: number } | undefined;
+  if (!watchlist) {
     return {
       errorResponse: NextResponse.json(
-        { ok: false, error: "Create a watchlist first.", code: "watchlist_missing" },
-        { status: 400 },
+        { ok: false, error: "Watchlist not found.", code: "watchlist_missing" },
+        { status: 404 },
       ),
     } as const;
   }
 
-  return { supabase, companyCode, firstWatchlist } as const;
+  return { supabase, companyCode, watchlist } as const;
 }
 
 async function addWatchlistItem(request: Request) {
   const context = await resolveWatchlistContext(request);
   if ("errorResponse" in context) return context.errorResponse;
 
-  const { supabase, companyCode, firstWatchlist } = context;
+  const { supabase, companyCode, watchlist } = context;
 
   const { data: existingItems, error: existingError } = await supabase
     .from("watchlist_items")
     .select("id")
-    .eq("watchlist_id", firstWatchlist.id)
+    .eq("watchlist_id", watchlist.id)
     .eq("company_code", companyCode)
     .limit(1);
 
@@ -122,13 +140,13 @@ async function addWatchlistItem(request: Request) {
   }
 
   const { error: insertError } = await supabase.from("watchlist_items").insert({
-    watchlist_id: firstWatchlist.id,
+    watchlist_id: watchlist.id,
     company_code: companyCode,
   });
 
   if (insertError) {
     logger.error("supabase: failed to insert watchlist_item", {
-      watchlistId: firstWatchlist.id,
+      watchlistId: watchlist.id,
       companyCode,
       error: insertError,
     });
@@ -149,12 +167,12 @@ async function removeWatchlistItem(request: Request) {
   const context = await resolveWatchlistContext(request);
   if ("errorResponse" in context) return context.errorResponse;
 
-  const { supabase, companyCode, firstWatchlist } = context;
+  const { supabase, companyCode, watchlist } = context;
 
   const { data: existingItems, error: existingError } = await supabase
     .from("watchlist_items")
     .select("id")
-    .eq("watchlist_id", firstWatchlist.id)
+    .eq("watchlist_id", watchlist.id)
     .eq("company_code", companyCode)
     .limit(1);
 
@@ -179,12 +197,12 @@ async function removeWatchlistItem(request: Request) {
   const { error: deleteError } = await supabase
     .from("watchlist_items")
     .delete()
-    .eq("watchlist_id", firstWatchlist.id)
+    .eq("watchlist_id", watchlist.id)
     .eq("company_code", companyCode);
 
   if (deleteError) {
     logger.error("supabase: failed to delete watchlist_item", {
-      watchlistId: firstWatchlist.id,
+      watchlistId: watchlist.id,
       companyCode,
       error: deleteError,
     });

@@ -30,34 +30,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: existingRows, error: existingError } = await supabase
-      .from("watchlists")
-      .select("id, name")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: true })
-      .limit(1);
-
-    if (existingError) {
-      logger.error("supabase: failed to load watchlists", {
-        userId,
-        error: existingError,
-      });
-      return NextResponse.json(
-        { ok: false, error: "Unable to load watchlists." },
-        { status: 500 },
-      );
-    }
-
-    const existing = existingRows?.[0] as { id: number; name: string } | undefined;
-    if (existing) {
-      return NextResponse.json({
-        ok: true,
-        watchlistId: existing.id,
-        name: existing.name,
-        existing: true,
-      });
-    }
-
     const { data: insertedRow, error: insertError } = await supabase
       .from("watchlists")
       .insert({
@@ -82,7 +54,6 @@ export async function POST(request: Request) {
       ok: true,
       watchlistId: insertedRow.id,
       name: insertedRow.name,
-      existing: false,
     });
   } catch (err) {
     logger.warn("watchlists: invalid POST payload", { error: err });

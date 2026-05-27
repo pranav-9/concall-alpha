@@ -1,13 +1,17 @@
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/server";
 
+type WatchlistOption = {
+  id: number;
+  name: string;
+};
+
 type WatchlistButtonProps = {
   companyCode: string;
   loginRedirectPath: string;
   initialIsAuthenticated: boolean;
-  initialHasWatchlist: boolean;
-  initialIsInWatchlist: boolean;
-  initialWatchlistName?: string | null;
+  initialWatchlists: WatchlistOption[];
+  initialContainingIds: number[];
 };
 
 const WatchlistButton = dynamic<WatchlistButtonProps>(
@@ -49,28 +53,34 @@ export default async function CompanyWatchlistSlot({
       ? authClaimsData.claims.sub
       : null;
 
-  let firstWatchlist: { id: number; name: string } | null = null;
-  let isInFirstWatchlist = false;
+  let watchlists: WatchlistOption[] = [];
+  let containingIds: number[] = [];
 
   if (authenticatedUserId) {
     const { data: watchlistRows } = await supabase
       .from("watchlists")
       .select("id, name")
       .eq("user_id", authenticatedUserId)
-      .order("created_at", { ascending: true })
-      .limit(1);
+      .order("created_at", { ascending: true });
 
-    firstWatchlist =
-      (watchlistRows?.[0] as { id: number; name: string } | undefined) ?? null;
+    watchlists = ((watchlistRows ?? []) as WatchlistOption[]).map((row) => ({
+      id: row.id,
+      name: row.name,
+    }));
 
-    if (firstWatchlist) {
-      const { data: watchlistItemRows } = await supabase
+    if (watchlists.length > 0) {
+      const watchlistIds = watchlists.map((row) => row.id);
+      const { data: membershipRows } = await supabase
         .from("watchlist_items")
-        .select("id")
-        .eq("watchlist_id", firstWatchlist.id)
-        .eq("company_code", companyCode)
-        .limit(1);
-      isInFirstWatchlist = (watchlistItemRows?.length ?? 0) > 0;
+        .select("watchlist_id")
+        .in("watchlist_id", watchlistIds)
+        .eq("company_code", companyCode);
+
+      const seen = new Set<number>();
+      ((membershipRows ?? []) as Array<{ watchlist_id: number }>).forEach((row) => {
+        seen.add(row.watchlist_id);
+      });
+      containingIds = Array.from(seen);
     }
   }
 
@@ -80,9 +90,8 @@ export default async function CompanyWatchlistSlot({
         companyCode={companyCode}
         loginRedirectPath={`/company/${companyCode}`}
         initialIsAuthenticated={Boolean(authenticatedUserId)}
-        initialHasWatchlist={Boolean(firstWatchlist)}
-        initialIsInWatchlist={isInFirstWatchlist}
-        initialWatchlistName={firstWatchlist?.name ?? null}
+        initialWatchlists={watchlists}
+        initialContainingIds={containingIds}
       />
     </WatchlistSlotShell>
   );

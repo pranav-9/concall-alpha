@@ -219,7 +219,13 @@ function sortRows(rows: WatchlistTableRow[], sort: SortState) {
   });
 }
 
-export function WatchlistTable({ rows }: { rows: WatchlistTableRow[] }) {
+export function WatchlistTable({
+  rows,
+  watchlistId,
+}: {
+  rows: WatchlistTableRow[];
+  watchlistId: number;
+}) {
   const router = useRouter();
   const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
   const [removingCompanyCode, setRemovingCompanyCode] = useState<string | null>(null);
@@ -251,7 +257,7 @@ export function WatchlistTable({ rows }: { rows: WatchlistTableRow[] }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ companyCode: row.companyCode }),
+        body: JSON.stringify({ companyCode: row.companyCode, watchlistId }),
       });
 
       const payload = (await response.json().catch(() => null)) as
@@ -260,7 +266,7 @@ export function WatchlistTable({ rows }: { rows: WatchlistTableRow[] }) {
 
       if (!response.ok) {
         if (payload?.code === "watchlist_missing") {
-          window.alert("Create a watchlist first.");
+          window.alert("This watchlist no longer exists.");
           return;
         }
         window.alert(payload?.error ?? "Unable to remove company from watchlist.");
