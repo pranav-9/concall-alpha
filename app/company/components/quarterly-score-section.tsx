@@ -25,7 +25,7 @@ type QuarterlyScoreSectionProps = {
 // legacy rows are flat strings. Both are normalized to RationaleItem for render.
 type RationalePointShape = { direction?: string; heading?: string; detail?: string };
 type RationaleItem = {
-  direction: "positive" | "negative" | null;
+  direction: "positive" | "negative" | "neutral" | null;
   heading: string;
   detail: string;
 };
@@ -80,7 +80,11 @@ const buildDetailQuarterContext = (quarter: QuarterData): DetailQuarterContext =
           if (it && typeof it === "object") {
             const o = it as RationalePointShape;
             const direction =
-              o.direction === "positive" || o.direction === "negative" ? o.direction : null;
+              o.direction === "positive" ||
+              o.direction === "negative" ||
+              o.direction === "neutral"
+                ? o.direction
+                : null;
             return {
               direction,
               heading: typeof o.heading === "string" ? o.heading : "",
