@@ -3,9 +3,11 @@ export type GuidanceTrackingRow = {
   company_code: string;
   guidance_key: string;
   guidance_text?: string | null;
-  guidance_type?: string | null;
+  guidance_family?: string | null;
+  metric_subtype?: string | null;
+  value?: unknown;
+  horizon?: unknown;
   first_mentioned_in?: unknown;
-  target_period?: string | null;
   source_mentions?: unknown;
   trail?: unknown;
   status?: string | null;
@@ -46,16 +48,25 @@ export type NormalizedGuidanceTrailItem = {
   positionInStory: number | null;
 };
 
+export type GuidanceFamily = "growth" | "margin";
+export type GuidanceMetricSubtype = "revenue" | "ebitda" | "pat" | "gross";
+
 export type NormalizedGuidanceItem = {
   id: number;
   companyCode: string;
   guidanceKey: string;
   guidanceText: string;
-  guidanceType: string | null;
-  guidanceTypeLabel: string | null;
+  guidanceFamily: GuidanceFamily | null;
+  metricSubtype: GuidanceMetricSubtype | null;
+  metricLabel: string | null;
+  horizonType: string | null;
+  appliesFrom: string | null;
+  appliesTo: string | null;
+  horizonLabel: string | null;
+  valuePercent: number | null;
+  valueText: string | null;
   firstMentionPeriod: string | null;
   latestMentionPeriod: string | null;
-  targetPeriod: string | null;
   mentionedPeriods: string[];
   statusKey: NormalizedGuidanceStatusKey;
   statusLabel: string;

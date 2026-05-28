@@ -2,7 +2,6 @@ import { Clock, ListChecks } from "lucide-react";
 
 import { chipClass, type ChipTone } from "./chip-tone";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
-import { WalkTheTalkMatrix } from "./walk-the-talk-matrix";
 import {
   TIER_LABELS,
   type NormalizedWalkTheTalk,
@@ -87,8 +86,9 @@ function NotEnoughDataState({ snapshot }: { snapshot: NormalizedWalkTheTalk }) {
 }
 
 // Rendered when guidance items exist but fewer than 3 have decided outcomes.
-// Avoids the all-empty state — users still get the per-commitment matrix
-// and a clear explanation of what the grade is waiting on.
+// Avoids the all-empty state — users get a clear explanation of what the
+// grade is waiting on. Per-thread evidence lives in the Guidance History
+// tab; this surface is purely the verdict view.
 function GradePendingState({ snapshot }: { snapshot: NormalizedWalkTheTalk }) {
   const total = snapshot.commitments.length;
   const graded = snapshot.commitments.filter((c) => c.counts_for_grade).length;
@@ -96,23 +96,20 @@ function GradePendingState({ snapshot }: { snapshot: NormalizedWalkTheTalk }) {
   const gradedVerb = graded === 1 ? "has" : "have";
 
   return (
-    <div className="space-y-4">
-      <div className={cn(elevatedBlockClass, "p-5")}>
-        <div className="flex items-start gap-3">
-          <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-          <div className="space-y-2">
-            <p className={labelClass}>Grade pending</p>
-            <p className={subtleClass}>
-              {snapshot.ticker || "This company"} has {total} tracked guidance{" "}
-              {totalWord}, but only {graded} {gradedVerb} a decided outcome
-              (met / delayed / dropped / revised). The walk-the-talk grade
-              needs at least 3 with decided outcomes; the others (active /
-              not yet clear) will resolve in future quarters.
-            </p>
-          </div>
+    <div className={cn(elevatedBlockClass, "p-5")}>
+      <div className="flex items-start gap-3">
+        <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+        <div className="space-y-2">
+          <p className={labelClass}>Grade pending</p>
+          <p className={subtleClass}>
+            {snapshot.ticker || "This company"} has {total} tracked guidance{" "}
+            {totalWord}, but only {graded} {gradedVerb} a decided outcome
+            (met / delayed / dropped / revised). The walk-the-talk grade
+            needs at least 3 with decided outcomes; the others (active /
+            not yet clear) will resolve in future quarters.
+          </p>
         </div>
       </div>
-      <WalkTheTalkMatrix commitments={snapshot.commitments} />
     </div>
   );
 }
@@ -167,10 +164,8 @@ export function WalkTheTalkSection({ snapshot }: Props) {
         </div>
       )}
 
-      {/* Commitment matrix — rendered inline. */}
-      {snapshot.commitments.length > 0 && (
-        <WalkTheTalkMatrix commitments={snapshot.commitments} />
-      )}
+      {/* Per-thread evidence lives in the Guidance History tab — this
+          surface is purely the verdict view. */}
     </div>
   );
 }

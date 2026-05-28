@@ -330,69 +330,6 @@ export const splitCatalystQuantifiedLabel = (label: string | null) => {
   };
 };
 
-export const getGuidanceSnapshotStyleDisplay = (value: string | null): DisplayBadge | null => {
-  const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
-  switch (normalized) {
-    case "directional":
-      return {
-        label: "Directional",
-        className:
-          "border-sky-200/80 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200",
-      };
-    case "quantitative":
-      return {
-        label: "Quantitative",
-        className:
-          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
-      };
-    case "mixed":
-      return {
-        label: "Mixed",
-        className:
-          "border-violet-200/80 bg-violet-100 text-violet-800 dark:border-violet-700/40 dark:bg-violet-900/30 dark:text-violet-200",
-      };
-    default:
-      return normalized
-        ? {
-            label: toDisplayLabel(normalized) ?? formatCompactLabel(normalized),
-            className: "border-border/60 bg-muted/60 text-foreground",
-          }
-        : null;
-  }
-};
-
-export const getGuidanceSignalTrendDisplay = (value: string | null): DisplayBadge | null => {
-  const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
-  switch (normalized) {
-    case "upgraded":
-      return {
-        label: "Upgraded",
-        className:
-          "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200",
-      };
-    case "reiterated":
-    case "active":
-      return {
-        label: "Reiterated",
-        className:
-          "border-slate-200/80 bg-slate-100 text-slate-800 dark:border-slate-700/40 dark:bg-slate-900/30 dark:text-slate-200",
-      };
-    case "downgraded":
-      return {
-        label: "Downgraded",
-        className:
-          "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
-      };
-    default:
-      return normalized
-        ? {
-            label: toDisplayLabel(normalized) ?? formatCompactLabel(normalized),
-            className: "border-border/60 bg-muted/60 text-foreground",
-          }
-        : null;
-  }
-};
-
 export const getGuidanceAccuracyVerdictDisplay = (value: string | null): DisplayBadge | null => {
   const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
   switch (normalized) {

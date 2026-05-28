@@ -17,7 +17,6 @@ import type { CompanyPageOverviewCacheRow } from "@/lib/company-overview-cache";
 import { SectionCard } from "../components/section-card";
 import { BusinessSnapshotSection } from "../components/business-snapshot-section";
 import { FutureGrowthSection } from "../components/future-growth-section";
-import { GuidanceSnapshotSummary } from "../components/guidance-snapshot-summary";
 import { IndustryContextSection } from "../components/industry-context-section";
 import { KeyVariablesSection } from "../components/key-variables-section";
 import { MissingSectionState } from "../components/missing-section-state";
@@ -392,7 +391,7 @@ export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionPro
     supabase
       .from("guidance_snapshot")
       .select(
-        "company_code, generated_at, analysis_window_quarters, guidance_style_classification, big_picture_growth_guidance, current_year_revenue_guidance, prior_two_year_accuracy, credibility_verdict, guidance_items, source_files, details, updated_at",
+        "company_code, generated_at, analysis_window_quarters, guidance_items, source_files, details, updated_at",
       )
       .eq("company_code", overview.company_code)
       .order("generated_at", { ascending: false })
@@ -421,23 +420,11 @@ export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionPro
           normalizedGuidanceSnapshot.sourceFiles.length === 1 ? "" : "s"
         }`
       : null;
-  const currentGuidanceLabel =
-    normalizedGuidanceSnapshot?.currentYearRevenueGuidance?.officialCurrentGuidancePercent != null
-      ? `Current guidance ${normalizedGuidanceSnapshot.currentYearRevenueGuidance.officialCurrentGuidancePercent}%`
-      : normalizedGuidanceSnapshot?.currentYearRevenueGuidance
-        ? "Current guidance"
-        : null;
   const headerPills = normalizedGuidanceSnapshot
     ? [
         guidanceSnapshotAnalysisWindowLabel,
         guidanceSnapshotUpdatedAtShort ? `Updated ${guidanceSnapshotUpdatedAtShort}` : null,
         guidanceSnapshotSourceFilesLabel,
-        currentGuidanceLabel,
-        normalizedGuidanceSnapshot.currentYearRevenueGuidance?.sourceQuarterTimeline.length
-          ? "Guidance evolution"
-          : null,
-        normalizedGuidanceSnapshot.priorTwoYearAccuracy.length > 0 ? "Accuracy" : null,
-        normalizedGuidanceSnapshot.credibilityVerdict ? "Credibility verdict" : null,
       ].filter((value): value is string => Boolean(value))
     : [];
   return (
@@ -458,12 +445,7 @@ export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionPro
         </span>
       }
     >
-      {normalizedGuidanceSnapshot ? (
-        <div className="space-y-4">
-          <GuidanceSnapshotSummary snapshot={normalizedGuidanceSnapshot} />
-          {guidanceItems.length > 0 ? <GuidanceHistorySection items={guidanceItems} /> : null}
-        </div>
-      ) : guidanceItems.length > 0 ? (
+      {guidanceItems.length > 0 ? (
         <GuidanceHistorySection items={guidanceItems} />
       ) : (
         missingSectionState(

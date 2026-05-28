@@ -21,11 +21,17 @@ const item = (
   companyCode: "TESTCO",
   guidanceKey: `K${nextItemId}`,
   guidanceText: "default text",
-  guidanceType: "other",
-  guidanceTypeLabel: null,
+  guidanceFamily: null,
+  metricSubtype: null,
+  metricLabel: null,
+  horizonType: null,
+  appliesFrom: null,
+  appliesTo: null,
+  horizonLabel: null,
+  valuePercent: null,
+  valueText: null,
   firstMentionPeriod: "Q1 FY26",
   latestMentionPeriod: "Q1 FY26",
-  targetPeriod: null,
   mentionedPeriods: [],
   statusKey: "unknown",
   statusLabel: "Unknown",
@@ -46,11 +52,6 @@ const snapshot = (
   generatedAtRaw: "2026-05-14T00:00:00Z",
   updatedAtRaw: "2026-05-14T00:00:00Z",
   analysisWindowQuarters: 4,
-  guidanceStyleClassification: null,
-  bigPictureGrowthGuidance: null,
-  currentYearRevenueGuidance: null,
-  priorTwoYearAccuracy: [],
-  credibilityVerdict: null,
   guidanceItems: items,
   sourceFiles: [],
   details: null,
@@ -67,17 +68,35 @@ const test = (name: string, fn: () => void) => {
   }
 };
 
+// Test fixture helper. The first arg is a "logical category" string used by
+// older tests; it maps to a (family, subtype) pair on the new shape. Anything
+// not in the map is left as a null family — which exercises the "other"
+// bucket in mapGuidanceFamilyToCategory.
+const FAMILY_MAP: Record<
+  string,
+  { family: NormalizedGuidanceItem["guidanceFamily"]; subtype: NormalizedGuidanceItem["metricSubtype"] }
+> = {
+  growth: { family: "growth", subtype: "revenue" },
+  revenue: { family: "growth", subtype: "revenue" },
+  ebitda_growth: { family: "growth", subtype: "ebitda" },
+  margin: { family: "margin", subtype: "ebitda" },
+  gross_margin: { family: "margin", subtype: "gross" },
+};
+
 const mk = (
   type: string | null,
   status: NormalizedGuidanceStatusKey,
   extras: Partial<NormalizedGuidanceItem> = {},
-) =>
-  item({
-    guidanceType: type,
+) => {
+  const mapping = type ? FAMILY_MAP[type] ?? null : null;
+  return item({
+    guidanceFamily: mapping?.family ?? null,
+    metricSubtype: mapping?.subtype ?? null,
     statusKey: status,
     statusLabel: status,
     ...extras,
   });
+};
 
 // ===========================================================================
 // schemaStatus paths
@@ -105,57 +124,35 @@ test("empty guidanceItems → schemaStatus 'missing'", () => {
 });
 
 test("non-empty guidanceItems → schemaStatus 'present'", () => {
-  const r = normalizeWalkTheTalk(snapshot([mk("capex", "met")]));
+  const r = normalizeWalkTheTalk(snapshot([mk("growth", "met")]));
   assert.equal(r.schemaStatus, "present");
 });
 
 // ===========================================================================
-// Category mapping (mapGuidanceTypeToCategory)
+// Category mapping (mapGuidanceFamilyToCategory)
+// Phase 6 v2 narrowed scope: only growth + margin families. capex / capacity
+// buckets are no longer populated by the producer.
 // ===========================================================================
 
-test("category mapping: capex + commissioning → 'capex'", () => {
+test("category mapping: growth family → 'revenue'", () => {
   const r = normalizeWalkTheTalk(
-    snapshot([mk("capex", "met"), mk("commissioning", "met")]),
-  );
-  const categories = r.commitments.map((c) => c.category).sort();
-  assert.deepEqual(categories, ["capex", "capex"]);
-});
-
-test("category mapping: utilization → 'capacity'", () => {
-  const r = normalizeWalkTheTalk(snapshot([mk("utilization", "met")]));
-  assert.equal(r.commitments[0].category, "capacity");
-});
-
-test("category mapping: revenue + demand → 'revenue'", () => {
-  const r = normalizeWalkTheTalk(
-    snapshot([mk("revenue", "met"), mk("demand", "met")]),
+    snapshot([mk("growth", "met"), mk("ebitda_growth", "met")]),
   );
   const categories = r.commitments.map((c) => c.category).sort();
   assert.deepEqual(categories, ["revenue", "revenue"]);
 });
 
-test("category mapping: margin → 'margin'", () => {
-  const r = normalizeWalkTheTalk(snapshot([mk("margin", "met")]));
-  assert.equal(r.commitments[0].category, "margin");
-});
-
-test("category mapping: launch / segment / export / debt / other → 'other'", () => {
+test("category mapping: margin family → 'margin'", () => {
   const r = normalizeWalkTheTalk(
-    snapshot([
-      mk("launch", "met"),
-      mk("segment", "met"),
-      mk("export", "met"),
-      mk("debt", "met"),
-      mk("other", "met"),
-    ]),
+    snapshot([mk("margin", "met"), mk("gross_margin", "met")]),
   );
-  const allOther = r.commitments.every((c) => c.category === "other");
-  assert.equal(allOther, true);
+  const categories = r.commitments.map((c) => c.category).sort();
+  assert.deepEqual(categories, ["margin", "margin"]);
 });
 
-test("category mapping: null/empty guidanceType → 'other'", () => {
+test("category mapping: null/unknown family → 'other'", () => {
   const r = normalizeWalkTheTalk(
-    snapshot([mk(null, "met"), mk("", "met")]),
+    snapshot([mk(null, "met"), mk("unrecognized", "met")]),
   );
   const allOther = r.commitments.every((c) => c.category === "other");
   assert.equal(allOther, true);
@@ -166,46 +163,46 @@ test("category mapping: null/empty guidanceType → 'other'", () => {
 // ===========================================================================
 
 test("status: met → counts=true, on_time=true", () => {
-  const r = normalizeWalkTheTalk(snapshot([mk("capex", "met")]));
+  const r = normalizeWalkTheTalk(snapshot([mk("growth", "met")]));
   const c = r.commitments[0];
   assert.equal(c.counts_for_grade, true);
   assert.equal(c.on_time, true);
 });
 
 test("status: delayed → counts=true, on_time=false", () => {
-  const r = normalizeWalkTheTalk(snapshot([mk("capex", "delayed")]));
+  const r = normalizeWalkTheTalk(snapshot([mk("growth", "delayed")]));
   const c = r.commitments[0];
   assert.equal(c.counts_for_grade, true);
   assert.equal(c.on_time, false);
 });
 
 test("status: dropped → counts=true, on_time=false", () => {
-  const r = normalizeWalkTheTalk(snapshot([mk("capex", "dropped")]));
+  const r = normalizeWalkTheTalk(snapshot([mk("growth", "dropped")]));
   const c = r.commitments[0];
   assert.equal(c.counts_for_grade, true);
   assert.equal(c.on_time, false);
 });
 
 test("status: revised → counts=true, on_time=false", () => {
-  const r = normalizeWalkTheTalk(snapshot([mk("capex", "revised")]));
+  const r = normalizeWalkTheTalk(snapshot([mk("growth", "revised")]));
   const c = r.commitments[0];
   assert.equal(c.counts_for_grade, true);
   assert.equal(c.on_time, false);
 });
 
 test("status: active → counts=false (in matrix, not graded)", () => {
-  const r = normalizeWalkTheTalk(snapshot([mk("capex", "active")]));
+  const r = normalizeWalkTheTalk(snapshot([mk("growth", "active")]));
   const c = r.commitments[0];
   assert.equal(c.counts_for_grade, false);
 });
 
 test("status: not_yet_clear → counts=false", () => {
-  const r = normalizeWalkTheTalk(snapshot([mk("capex", "not_yet_clear")]));
+  const r = normalizeWalkTheTalk(snapshot([mk("growth", "not_yet_clear")]));
   assert.equal(r.commitments[0].counts_for_grade, false);
 });
 
 test("status: unknown → counts=false", () => {
-  const r = normalizeWalkTheTalk(snapshot([mk("capex", "unknown")]));
+  const r = normalizeWalkTheTalk(snapshot([mk("growth", "unknown")]));
   assert.equal(r.commitments[0].counts_for_grade, false);
 });
 
@@ -213,33 +210,33 @@ test("status: unknown → counts=false", () => {
 // Per-category bucket aggregation
 // ===========================================================================
 
-test("per-category: 3 capex, 3 met → 'reliable' (100%)", () => {
+test("per-category: 3 revenue, 3 met → 'reliable' (100%)", () => {
   const r = normalizeWalkTheTalk(
     snapshot([
-      mk("capex", "met"),
-      mk("capex", "met"),
-      mk("capex", "met"),
+      mk("growth", "met"),
+      mk("growth", "met"),
+      mk("growth", "met"),
     ]),
   );
-  const capex = r.byCategory.find((b) => b.category === "capex");
-  assert.ok(capex);
-  assert.equal(capex.total_count, 3);
-  assert.equal(capex.on_time_count, 3);
-  assert.equal(capex.tier, "reliable");
+  const bucket = r.byCategory.find((b) => b.category === "revenue");
+  assert.ok(bucket);
+  assert.equal(bucket.total_count, 3);
+  assert.equal(bucket.on_time_count, 3);
+  assert.equal(bucket.tier, "reliable");
 });
 
-test("per-category: 4 capex, 2 met → 'erratic' (50%)", () => {
+test("per-category: 4 revenue, 2 met → 'erratic' (50%)", () => {
   const r = normalizeWalkTheTalk(
     snapshot([
-      mk("capex", "met"),
-      mk("capex", "met"),
-      mk("capex", "delayed"),
-      mk("capex", "dropped"),
+      mk("growth", "met"),
+      mk("growth", "met"),
+      mk("growth", "delayed"),
+      mk("growth", "dropped"),
     ]),
   );
-  const capex = r.byCategory.find((b) => b.category === "capex");
-  assert.ok(capex);
-  assert.equal(capex.tier, "erratic");
+  const bucket = r.byCategory.find((b) => b.category === "revenue");
+  assert.ok(bucket);
+  assert.equal(bucket.tier, "erratic");
 });
 
 test("per-category: only 2 in category → 'not_enough_data'", () => {
@@ -257,7 +254,7 @@ test("empty per-category buckets are suppressed (only those with ≥1 counted it
   const r = normalizeWalkTheTalk(
     snapshot([
       mk("margin", "met"),
-      mk("capex", "active"),
+      mk("growth", "active"),
       mk("revenue", "unknown"),
     ]),
   );
@@ -265,19 +262,19 @@ test("empty per-category buckets are suppressed (only those with ≥1 counted it
   assert.deepEqual(cats, ["margin"]);
 });
 
-test("per-category bucket order: capex, capacity, revenue, margin, other", () => {
+test("per-category bucket order: revenue, margin, other (capex/capacity unpopulated in v2)", () => {
   const r = normalizeWalkTheTalk(
     snapshot([
       mk("other", "met"),
       mk("margin", "met"),
       mk("revenue", "met"),
-      mk("capex", "met"),
-      mk("utilization", "met"),
     ]),
   );
-  // All 5 categories present, each n=1 → all not_enough_data, but ordered.
+  // Phase 6 v2 only emits growth + margin; capex/capacity buckets stay empty
+  // and are suppressed in byCategory output. Order follows the WT_T constant
+  // (capex, capacity, revenue, margin, other) with absent buckets dropped.
   const order = r.byCategory.map((b) => b.category);
-  assert.deepEqual(order, ["capex", "capacity", "revenue", "margin", "other"]);
+  assert.deepEqual(order, ["revenue", "margin", "other"]);
 });
 
 // ===========================================================================
@@ -287,9 +284,9 @@ test("per-category bucket order: capex, capacity, revenue, margin, other", () =>
 test("overall: aggregates all counted commitments across categories", () => {
   const r = normalizeWalkTheTalk(
     snapshot([
-      mk("capex", "met"),
-      mk("capex", "met"),
-      mk("capex", "delayed"),
+      mk("growth", "met"),
+      mk("growth", "met"),
+      mk("growth", "delayed"),
       mk("margin", "met"),
       mk("revenue", "dropped"),
       mk("revenue", "active"), // not counted
@@ -308,9 +305,9 @@ test("overall: aggregates all counted commitments across categories", () => {
 test("commitments[] preserves not-counted items for the matrix drawer", () => {
   const r = normalizeWalkTheTalk(
     snapshot([
-      mk("capex", "met"),
-      mk("capex", "active"),
-      mk("capex", "not_yet_clear"),
+      mk("growth", "met"),
+      mk("growth", "active"),
+      mk("growth", "not_yet_clear"),
     ]),
   );
   // All 3 in commitments[]; only 1 counts for grade.
@@ -325,7 +322,7 @@ test("commitments[] preserves not-counted items for the matrix drawer", () => {
 test("delay_mention_count counts trail entries with mentionType='delay'", () => {
   const r = normalizeWalkTheTalk(
     snapshot([
-      mk("capex", "delayed", {
+      mk("growth", "delayed", {
         trail: [
           { quarter: "Q1 FY26", summary: null, excerpt: null, mentionType: "first_mention", documentType: null, documentLabel: null, sourceReference: null, confidence: null, positionInStory: 0 },
           { quarter: "Q2 FY26", summary: null, excerpt: null, mentionType: "delay", documentType: null, documentLabel: null, sourceReference: null, confidence: null, positionInStory: 1 },
@@ -340,9 +337,9 @@ test("delay_mention_count counts trail entries with mentionType='delay'", () => 
 test("asOfQuarter picks the latest mention period across all commitments", () => {
   const r = normalizeWalkTheTalk(
     snapshot([
-      mk("capex", "met", { latestMentionPeriod: "Q1 FY25" }),
-      mk("capex", "met", { latestMentionPeriod: "Q3 FY26" }),
-      mk("capex", "met", { latestMentionPeriod: "Q2 FY26" }),
+      mk("growth", "met", { latestMentionPeriod: "Q1 FY25" }),
+      mk("growth", "met", { latestMentionPeriod: "Q3 FY26" }),
+      mk("growth", "met", { latestMentionPeriod: "Q2 FY26" }),
     ]),
   );
   assert.equal(r.asOfQuarter, "Q3 FY26");
@@ -351,7 +348,7 @@ test("asOfQuarter picks the latest mention period across all commitments", () =>
 test("dataSpan: earliest firstMentionPeriod → latest latestMentionPeriod", () => {
   const r = normalizeWalkTheTalk(
     snapshot([
-      mk("capex", "met", {
+      mk("growth", "met", {
         firstMentionPeriod: "Q2 FY25",
         latestMentionPeriod: "Q4 FY26",
       }),
@@ -372,7 +369,7 @@ test("dataSpan: earliest firstMentionPeriod → latest latestMentionPeriod", () 
 test("dataSpan: null start/end when no commitment quarters are parseable", () => {
   const r = normalizeWalkTheTalk(
     snapshot([
-      mk("capex", "met", {
+      mk("growth", "met", {
         firstMentionPeriod: null,
         latestMentionPeriod: null,
       }),
@@ -385,7 +382,7 @@ test("dataSpan: null start/end when no commitment quarters are parseable", () =>
 test("dataSpan: same start and end when all commitments share one quarter", () => {
   const r = normalizeWalkTheTalk(
     snapshot([
-      mk("capex", "met", {
+      mk("growth", "met", {
         firstMentionPeriod: "Q4 FY26",
         latestMentionPeriod: "Q4 FY26",
       }),
@@ -396,17 +393,17 @@ test("dataSpan: same start and end when all commitments share one quarter", () =
 });
 
 test("analysisWindowQuarters passes through from snapshot", () => {
-  const r = normalizeWalkTheTalk(snapshot([mk("capex", "met")]));
+  const r = normalizeWalkTheTalk(snapshot([mk("growth", "met")]));
   assert.equal(r.analysisWindowQuarters, 4);
 });
 
 test("commitment fields preserved: label, source_quarter, target_period, status_label", () => {
   const r = normalizeWalkTheTalk(
     snapshot([
-      mk("capex", "met", {
+      mk("growth", "met", {
         guidanceText: "Commission AHF plant at Dahej",
         firstMentionPeriod: "Q1 FY25",
-        targetPeriod: "Q4 FY26",
+        horizonLabel: "Q4 FY26",
         statusLabel: "Met",
       }),
     ]),

@@ -24,6 +24,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import {
+  currentFiscalYear,
+  extractFyYear,
+  formatAbsoluteAmount,
+  isHistoricalGuidanceItem,
+  isReasoningProse,
+} from "@/lib/guidance-tracking/normalize";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 import type {
   NormalizedGuidanceItem,
@@ -88,8 +95,10 @@ const STATUS_STYLES: Record<
   not_yet_clear: {
     badgeClass:
       "border-zinc-200 bg-zinc-100 text-zinc-800 dark:border-zinc-700/40 dark:bg-zinc-900/30 dark:text-zinc-200",
+    // Dashed-border / transparent fill to signal "unresolved" — distinct
+    // from the solid-slate Active pill at a glance.
     cardBadgeClass:
-      "border-zinc-300 bg-zinc-200 text-zinc-800 dark:border-zinc-500 dark:bg-zinc-600 dark:text-zinc-50",
+      "border-dashed border-zinc-400 bg-transparent text-zinc-700 dark:border-zinc-500 dark:bg-transparent dark:text-zinc-300",
     accentClass: "bg-zinc-500",
   },
   met: {
@@ -121,10 +130,20 @@ const TRACKER_TRAIL_CLASS = `${nestedDetailClass} px-3 py-2.5`;
 
 const TRACKER_EMPTY_CLASS = `${elevatedBlockClass} p-4`;
 
-const isRevenueGuidanceType = (value: string | null) => {
-  const normalized = value?.trim().toLowerCase().replace(/[\s-]+/g, "_");
-  return normalized === "revenue";
+// Stable identifier for the type-filter chips. Combines family + subtype so
+// "growth/revenue" and "growth/ebitda" are distinguishable in the UI even
+// when both render under the "Growth" umbrella.
+const ALL_TYPES_FILTER_KEY = "all";
+
+const getFilterKey = (item: NormalizedGuidanceItem): string => {
+  if (item.guidanceFamily && item.metricSubtype) {
+    return `${item.guidanceFamily}:${item.metricSubtype}`;
+  }
+  return "unknown";
 };
+
+const getFilterLabel = (item: NormalizedGuidanceItem): string =>
+  item.metricLabel ?? "Other";
 
 // Prefer latestView (freshest management commentary) over statusReason
 // (producer-rationale string). The drawer header still shows statusReason.
@@ -138,7 +157,25 @@ const getGuidanceWindowText = (item: NormalizedGuidanceItem) => {
       : `${item.firstMentionPeriod} -> ${item.latestMentionPeriod}`;
   }
 
-  return item.latestMentionPeriod ?? item.firstMentionPeriod ?? item.targetPeriod;
+  return item.latestMentionPeriod ?? item.firstMentionPeriod ?? item.horizonLabel;
+};
+
+const formatValueBadge = (item: NormalizedGuidanceItem): string | null => {
+  if (typeof item.valuePercent === "number" && Number.isFinite(item.valuePercent)) {
+    const rounded = Math.round(item.valuePercent * 10) / 10;
+    const display = Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1);
+    return `${display}%`;
+  }
+  if (!item.valueText) return null;
+  // Suppress badges where the LLM stuffed reasoning prose into the value
+  // field — they read as garbage truncations ("Not explicitly qua…").
+  if (isReasoningProse(item.valueText)) return null;
+  // Pull out a headline rupee/dollar amount when present — this is the
+  // common case for Indian listed cos that guide on absolute revenue
+  // targets (INR Xcr) rather than %.
+  const absolute = formatAbsoluteAmount(item.valueText);
+  if (absolute) return absolute;
+  return item.valueText.length > 20 ? `${item.valueText.slice(0, 18)}…` : item.valueText;
 };
 
 const getTrailMentionBadgeClass = (mentionType: string | null) => {
@@ -229,11 +266,19 @@ function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
   );
 }
 
-function GuidanceThreadCard({ item }: { item: NormalizedGuidanceItem }) {
+function GuidanceThreadCard({
+  item,
+  currentFy,
+}: {
+  item: NormalizedGuidanceItem;
+  currentFy: string;
+}) {
   const supportText = getGuidanceSupportText(item);
   const periodWindowText = getGuidanceWindowText(item);
   const showTrail = item.trail.length > 0;
   const statusStyle = STATUS_STYLES[item.statusKey];
+  const valueBadge = formatValueBadge(item);
+  const isHistorical = isHistoricalGuidanceItem(item, currentFy);
 
   return (
     <article className={`${nestedDetailClass} relative overflow-hidden p-3`}>
@@ -242,11 +287,21 @@ function GuidanceThreadCard({ item }: { item: NormalizedGuidanceItem }) {
             <div className="min-w-0 space-y-2">
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  {formatTypeChipLabel(item.guidanceType)}
+                  {item.metricLabel ?? "—"}
                 </span>
-                {item.targetPeriod ? (
+                {item.horizonLabel ? (
                   <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                    Target {item.targetPeriod}
+                    {item.horizonLabel}
+                  </span>
+                ) : null}
+                {valueBadge ? (
+                  <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                    {valueBadge}
+                  </span>
+                ) : null}
+                {isHistorical ? (
+                  <span className="px-1 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
+                    Past
                   </span>
                 ) : null}
               </div>
@@ -301,9 +356,19 @@ function GuidanceThreadCard({ item }: { item: NormalizedGuidanceItem }) {
                       </DrawerTitle>
                       <DrawerDescription>
                         <span className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                          {item.targetPeriod ? (
+                          {item.metricLabel ? (
+                            <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                              {item.metricLabel}
+                            </span>
+                          ) : null}
+                          {item.horizonLabel ? (
                             <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                              Target {item.targetPeriod}
+                              {item.horizonLabel}
+                            </span>
+                          ) : null}
+                          {valueBadge ? (
+                            <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                              {valueBadge}
                             </span>
                           ) : null}
                           {periodWindowText ? (
@@ -337,30 +402,10 @@ function GuidanceThreadCard({ item }: { item: NormalizedGuidanceItem }) {
   );
 }
 
-const ALL_TYPES_FILTER_KEY = "all";
-
-const formatTypeChipLabel = (rawType: string | null) => {
-  if (!rawType) return "MISC";
-  // Producer's "other" enum surfaces here as a residual bucket
-  // (partnerships / milestones the type classifier didn't bin).
-  // Rename to "MISC" so users read it as "uncategorised", not as a meaningful
-  // category called "Other".
-  if (rawType.toLowerCase() === "other") return "MISC";
-  return rawType.replace(/[_-]+/g, " ").toUpperCase();
-};
-
 export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
-  const summaryItems = React.useMemo(
-    () => items.filter((item) => !isRevenueGuidanceType(item.guidanceType)),
-    [items],
-  );
-  const revenueItems = React.useMemo(
-    () => items.filter((item) => isRevenueGuidanceType(item.guidanceType)),
-    [items],
-  );
-
-  // Type-filter state (single-select; defaults to "all"). Filter applies
-  // globally across both Active and Met columns.
+  // Type-filter state (single-select; defaults to "all"). Filter keys are
+  // `${family}:${subtype}` so revenue-growth and EBITDA-growth threads
+  // filter independently.
   const [typeFilter, setTypeFilter] = React.useState<string>(ALL_TYPES_FILTER_KEY);
 
   // Show first 6 cards by default (3 rows on desktop's 2-col grid).
@@ -374,22 +419,23 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
     setIsExpanded(false);
   }, [typeFilter]);
 
-  // Counts per type across summaryItems (the unfiltered, non-revenue set).
-  // Used to label the filter chips and skip empty types.
+  // Counts per (family, subtype) across all items. Used to label the filter
+  // chips and skip empty buckets.
   const typeCounts = React.useMemo(() => {
-    const counts = new Map<string, number>();
-    summaryItems.forEach((item) => {
-      const key = (item.guidanceType ?? "other").toLowerCase();
-      counts.set(key, (counts.get(key) ?? 0) + 1);
+    const counts = new Map<string, { label: string; count: number }>();
+    items.forEach((item) => {
+      const key = getFilterKey(item);
+      const existing = counts.get(key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        counts.set(key, { label: getFilterLabel(item), count: 1 });
+      }
     });
     return Array.from(counts.entries())
-      .map(([key, count]) => ({
-        key,
-        label: formatTypeChipLabel(key),
-        count,
-      }))
+      .map(([key, { label, count }]) => ({ key, label, count }))
       .sort((a, b) => b.count - a.count);
-  }, [summaryItems]);
+  }, [items]);
 
   // Reset filter to "all" if the current filter no longer has any items
   // (defensive — items can change as the page hydrates).
@@ -402,11 +448,9 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
 
   // Filtered slice that drives the status grouping below.
   const filteredItems = React.useMemo(() => {
-    if (typeFilter === ALL_TYPES_FILTER_KEY) return summaryItems;
-    return summaryItems.filter(
-      (item) => (item.guidanceType ?? "other").toLowerCase() === typeFilter,
-    );
-  }, [summaryItems, typeFilter]);
+    if (typeFilter === ALL_TYPES_FILTER_KEY) return items;
+    return items.filter((item) => getFilterKey(item) === typeFilter);
+  }, [items, typeFilter]);
 
   // Bucket filteredItems by status — used by the legend chips in the overview
   // band ("Active 14 · Met 7"). Order of statusGroups follows STATUS_ORDER:
@@ -445,15 +489,20 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
       });
   }, [filteredItems]);
 
-  // Flat ordered list rendered as a 2-col grid:
-  //   Active items first, then Met, then any remaining statuses (delayed,
-  //   revised, dropped, etc.) in STATUS_ORDER.
-  // Within each status bucket, items keep their input-array order — the
-  // producer emits guidance_items[] sorted by impact_score descending, so
-  // input order IS impact-desc for free (no need to thread impact_score
-  // through the normaliser).
+  const currentFy = currentFiscalYear();
+
+  // Flat ordered list rendered as a 2-col grid. Two zones:
+  //   1. Current / forward-looking commitments (applies_to >= current FY,
+  //      or unspecified/ongoing). Sorted by status priority — active first,
+  //      then met, revised, delayed, not_yet_clear, dropped — preserving
+  //      input order within ties.
+  //   2. Historical threads (applies_to < current FY). Sorted by FY
+  //      descending first (most recent past at top), then status priority
+  //      within each FY as tiebreaker. Without this, FY25 "Met" floats
+  //      above FY26 "Dropped" because status priority alone wins — the
+  //      reader's eye then reads FY27 → FY25 → FY26, non-monotonic.
   const orderedThreads = React.useMemo(() => {
-    const RENDER_STATUS_ORDER: NormalizedGuidanceStatusKey[] = [
+    const STATUS_PRIORITY: NormalizedGuidanceStatusKey[] = [
       "active",
       "met",
       "revised",
@@ -462,33 +511,40 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
       "dropped",
       "unknown",
     ];
-    const out: NormalizedGuidanceItem[] = [];
-    RENDER_STATUS_ORDER.forEach((statusKey) => {
-      filteredItems.forEach((item) => {
-        if (item.statusKey === statusKey) out.push(item);
-      });
+    const priorityOf = (key: NormalizedGuidanceStatusKey) => {
+      const idx = STATUS_PRIORITY.indexOf(key);
+      return idx === -1 ? STATUS_PRIORITY.length : idx;
+    };
+
+    const current: NormalizedGuidanceItem[] = [];
+    const historical: NormalizedGuidanceItem[] = [];
+    filteredItems.forEach((item) => {
+      (isHistoricalGuidanceItem(item, currentFy) ? historical : current).push(item);
     });
-    return out;
-  }, [filteredItems]);
+
+    current.sort((a, b) => priorityOf(a.statusKey) - priorityOf(b.statusKey));
+
+    historical.sort((a, b) => {
+      const aYear = extractFyYear(a.appliesTo) ?? Number.NEGATIVE_INFINITY;
+      const bYear = extractFyYear(b.appliesTo) ?? Number.NEGATIVE_INFINITY;
+      if (aYear !== bYear) return bYear - aYear;
+      return priorityOf(a.statusKey) - priorityOf(b.statusKey);
+    });
+
+    return [...current, ...historical];
+  }, [filteredItems, currentFy]);
 
   const totalSourceMentions = React.useMemo(
     () => filteredItems.reduce((count, item) => count + item.sourceMentions.length, 0),
     [filteredItems],
   );
 
-  if (!summaryItems.length) {
+  if (!items.length) {
     return (
       <div className={TRACKER_EMPTY_CLASS}>
         <p className="text-sm font-medium text-foreground">
-          {revenueItems.length > 0
-            ? "No qualitative guidance threads tracked yet."
-            : "No guidance threads tracked yet."}
+          No guidance threads tracked yet.
         </p>
-        {revenueItems.length > 0 ? (
-          <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
-            Revenue guidance is covered in the snapshot panel above.
-          </p>
-        ) : null}
       </div>
     );
   }
@@ -568,7 +624,7 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
                   className="!flex-none w-auto min-w-fit rounded-full border px-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] whitespace-nowrap data-[variant=outline]:border data-[variant=outline]:first:border-l data-[variant=outline]:border-l data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:[&_span]:text-background/70"
                 >
                   All
-                  <span className="ml-1.5 text-muted-foreground">{summaryItems.length}</span>
+                  <span className="ml-1.5 text-muted-foreground">{items.length}</span>
                 </ToggleGroupItem>
                 {typeCounts.map((entry) => (
                   <ToggleGroupItem
@@ -585,30 +641,36 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
             </div>
           ) : null}
 
-          {totalSourceMentions > 0 || revenueItems.length > 0 ? (
+          {totalSourceMentions > 0 ? (
             <div className="flex flex-wrap items-center gap-1.5 border-t border-border/30 pt-3">
-              {totalSourceMentions > 0 ? (
-                <span className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
-                  {totalSourceMentions} mention{totalSourceMentions === 1 ? "" : "s"}
-                </span>
-              ) : null}
-              {revenueItems.length > 0 ? (
-                <span className="rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-[10px] font-medium text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-200">
-                  {revenueItems.length} revenue separate
-                </span>
-              ) : null}
+              <span className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+                {totalSourceMentions} mention{totalSourceMentions === 1 ? "" : "s"}
+              </span>
             </div>
           ) : null}
         </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        {(isExpanded
-          ? orderedThreads
-          : orderedThreads.slice(0, COLLAPSED_VISIBLE_COUNT)
-        ).map((item) => (
-          <GuidanceThreadCard key={item.guidanceKey} item={item} />
-        ))}
+        {(() => {
+          const visibleThreads = isExpanded
+            ? orderedThreads
+            : orderedThreads.slice(0, COLLAPSED_VISIBLE_COUNT);
+          const firstHistoricalIdx = visibleThreads.findIndex((item) =>
+            isHistoricalGuidanceItem(item, currentFy),
+          );
+          return visibleThreads.map((item, idx) => (
+            <React.Fragment key={item.guidanceKey}>
+              {idx === firstHistoricalIdx && firstHistoricalIdx > 0 ? (
+                <div
+                  aria-hidden="true"
+                  className="col-span-full my-1 border-t border-border/40"
+                />
+              ) : null}
+              <GuidanceThreadCard item={item} currentFy={currentFy} />
+            </React.Fragment>
+          ));
+        })()}
       </div>
 
       {orderedThreads.length > COLLAPSED_VISIBLE_COUNT ? (

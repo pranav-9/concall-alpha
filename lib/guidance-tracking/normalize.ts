@@ -1,4 +1,6 @@
 import type {
+  GuidanceFamily,
+  GuidanceMetricSubtype,
   GuidanceStatusKey,
   GuidanceTrackingRow,
   NormalizedGuidanceItem,
@@ -85,6 +87,91 @@ const normalizeYearForSort = (value: string) => {
   const parsed = parseInt(digits, 10);
   if (!Number.isFinite(parsed)) return Number.NEGATIVE_INFINITY;
   return digits.length <= 2 ? 2000 + parsed : parsed;
+};
+
+// Extract the 4-digit FY end-year from a horizon string like "FY26",
+// "FY'27", "Q3 FY26", or a bare current-FY token. Distinct from
+// `normalizeYearForSort` because that helper concatenates ALL digits
+// (so "Q3 FY26" becomes 2326, not 2026). This one anchors on the FY
+// token specifically.
+export const extractFyYear = (value: string | null | undefined): number | null => {
+  if (!value) return null;
+  const match = value.match(/FY\s*'?\s*(\d{2,4})/i);
+  if (!match) return null;
+  const digits = match[1];
+  const parsed = parseInt(digits, 10);
+  if (!Number.isFinite(parsed)) return null;
+  return digits.length <= 2 ? 2000 + parsed : parsed;
+};
+
+// Reasoning-prose hints in `value_text` — when the LLM had nothing
+// concrete to quote, it sometimes stuffs meta-commentary into the value
+// field instead of leaving it null. We treat those as "no value" rather
+// than badging the prose.
+const REASONING_PROSE_HINTS: RegExp[] = [
+  /not explicitly (quantified|stated)/i,
+  /no firm.*commit/i,
+  /no specific.*guidance/i,
+  /operational leverage mentioned/i,
+  /management indicated/i,
+];
+
+export const isReasoningProse = (text: string | null | undefined): boolean => {
+  if (!text) return false;
+  return REASONING_PROSE_HINTS.some((re) => re.test(text));
+};
+
+// Extract a financial-amount headline (rupee crores, dollar billions, etc.)
+// from a `value_text` like:
+//   "INR 1,500 crores, later revised to INR 1,800 crores"  →  "₹1,800cr+"
+//   "INR 60-70 crores per year for five years"              →  "₹60-70cr"
+//   "over INR 2,000 crores, then INR 2,200-plus crores"     →  "₹2,200cr+"
+//   "$1 billion kitchen business"                           →  "$1B"
+//
+// Strategy: find all "<number>[ to <number>] <unit>" occurrences and pick
+// the LAST one (revision sequences end with the current target). Append
+// "+" when "over"/"above"/"plus"/"surpass"/"cross" is in the immediate
+// vicinity AND the match isn't a range.
+export const formatAbsoluteAmount = (text: string | null | undefined): string | null => {
+  if (!text) return null;
+  const pattern =
+    /(\d+(?:,\d+)*(?:\.\d+)?)(?:\s*(?:to|-|–)\s*(\d+(?:,\d+)*(?:\.\d+)?))?(?:[^\d\n]{0,15}?)(crore|cr\b|bn\b|billion|mn\b|million)/gi;
+  const matches = [...text.matchAll(pattern)];
+  if (matches.length === 0) return null;
+  const m = matches[matches.length - 1];
+  const num1 = m[1].replace(/,/g, "");
+  const num2 = m[2]?.replace(/,/g, "");
+  const unitToken = m[3].toLowerCase();
+  const unit = unitToken.startsWith("cr")
+    ? "cr"
+    : /bn|billion/.test(unitToken)
+      ? "B"
+      : "M";
+  const symbol =
+    /(INR|Rs\.?|₹)/i.test(text)
+      ? "₹"
+      : /\$|USD|dollar/i.test(text)
+        ? "$"
+        : unit === "cr"
+          ? "₹"
+          : "$";
+  const matchStart = m.index ?? 0;
+  const matchEnd = matchStart + m[0].length;
+  const around = text.slice(Math.max(0, matchStart - 12), Math.min(text.length, matchEnd + 12));
+  const hasPlus = /\+|\bplus\b|\bover\b|\babove\b|\bsurpass|\bcross/i.test(around);
+  if (num2) return `${symbol}${num1}-${num2}${unit}`;
+  return `${symbol}${num1}${unit}${hasPlus ? "+" : ""}`;
+};
+
+// Compute the current Indian fiscal year (April–March cycle) as an
+// FY-suffixed string ("FY27"). FY label uses the calendar year in which
+// the fiscal year ends, so April 2026 → "FY27" and February 2027 →
+// "FY27" too. Optional `today` for deterministic tests.
+export const currentFiscalYear = (today: Date = new Date()): string => {
+  const month = today.getMonth() + 1;
+  const year = today.getFullYear();
+  const fyEndYear = month >= 4 ? year + 1 : year;
+  return `FY${String(fyEndYear).slice(-2)}`;
 };
 
 export const formatGuidancePeriodLabel = (value: string | null | undefined) => {
@@ -348,6 +435,73 @@ const buildTrailFromSourceMentions = (
 
 export const formatGuidanceTypeLabel = (value: string | null | undefined) => toTitleCase(value);
 
+const ALLOWED_FAMILIES: ReadonlySet<GuidanceFamily> = new Set(["growth", "margin"]);
+const ALLOWED_SUBTYPES: ReadonlySet<GuidanceMetricSubtype> = new Set([
+  "revenue",
+  "ebitda",
+  "pat",
+  "gross",
+]);
+const SUBTYPE_DISPLAY: Record<GuidanceMetricSubtype, string> = {
+  revenue: "Revenue",
+  ebitda: "EBITDA",
+  pat: "PAT",
+  gross: "Gross",
+};
+
+const normalizeFamily = (value: unknown): GuidanceFamily | null => {
+  const s = asString(value)?.toLowerCase();
+  return s && ALLOWED_FAMILIES.has(s as GuidanceFamily) ? (s as GuidanceFamily) : null;
+};
+
+const normalizeSubtype = (value: unknown): GuidanceMetricSubtype | null => {
+  const s = asString(value)?.toLowerCase();
+  return s && ALLOWED_SUBTYPES.has(s as GuidanceMetricSubtype)
+    ? (s as GuidanceMetricSubtype)
+    : null;
+};
+
+export const formatMetricLabel = (
+  family: GuidanceFamily | null,
+  subtype: GuidanceMetricSubtype | null,
+): string | null => {
+  if (!family || !subtype) return null;
+  const metric = SUBTYPE_DISPLAY[subtype];
+  if (!metric) return null;
+  if (family === "growth") return `${metric} Growth`;
+  if (family === "margin") return `${metric} Margin`;
+  return null;
+};
+
+export const formatHorizonLabel = (
+  horizonType: string | null,
+  appliesFrom: string | null,
+  appliesTo: string | null,
+  horizonText: string | null,
+): string | null => {
+  const from = appliesFrom && appliesFrom.toLowerCase() === "ongoing" ? null : appliesFrom;
+  const to = appliesTo && appliesTo.toLowerCase() === "ongoing" ? null : appliesTo;
+  const labelFrom = from ? formatGuidancePeriodLabel(from) ?? from : null;
+  const labelTo = to ? formatGuidancePeriodLabel(to) ?? to : null;
+
+  switch (horizonType) {
+    case "single_quarter":
+    case "single_fy":
+      return labelFrom ?? labelTo;
+    case "multi_quarter":
+    case "multi_fy":
+      if (labelFrom && labelTo && labelFrom !== labelTo) return `${labelFrom}–${labelTo}`;
+      return labelFrom ?? labelTo;
+    case "rolling":
+      return horizonText ?? "Rolling";
+    case "unspecified":
+      return "Ongoing";
+    default:
+      if (labelFrom && labelTo && labelFrom !== labelTo) return `${labelFrom}–${labelTo}`;
+      return labelFrom ?? labelTo ?? horizonText;
+  }
+};
+
 const getLatestMentionSortSignal = (item: NormalizedGuidanceItem): SortSignal => {
   const periodSignal = periodToSortSignal(item.latestMentionPeriod);
   if (periodSignal) return periodSignal;
@@ -360,6 +514,24 @@ const getLatestMentionSortSignal = (item: NormalizedGuidanceItem): SortSignal =>
 
 const getStatusPriority = (statusKey: NormalizedGuidanceStatusKey) => {
   return statusKey === "unknown" ? 6 : GUIDANCE_STATUS_META[statusKey].priority;
+};
+
+// A thread is historical when its time window is fully behind today's FY.
+// Ongoing / unspecified horizons (e.g. "Maintain X% margin") are never
+// historical — they're standing commitments. Multi-year threads whose
+// applies_to lands in the current FY or beyond are also not historical
+// because they remain in scope.
+export const isHistoricalGuidanceItem = (
+  item: NormalizedGuidanceItem,
+  currentFy: string,
+): boolean => {
+  if (item.horizonType === "unspecified") return false;
+  const appliesTo = item.appliesTo ?? "";
+  if (!appliesTo || appliesTo.toLowerCase() === "ongoing") return false;
+  const itemYear = extractFyYear(appliesTo);
+  const currentYear = extractFyYear(currentFy);
+  if (itemYear == null || currentYear == null) return false;
+  return itemYear < currentYear;
 };
 
 export const compareGuidanceItems = (
@@ -443,16 +615,37 @@ const normalizeGuidanceTrackingRow = (
 
   const normalizedStatus = normalizeStatus(asString(row.status));
 
+  const guidanceFamily = normalizeFamily(row.guidance_family);
+  const metricSubtype = normalizeSubtype(row.metric_subtype);
+  const metricLabel = formatMetricLabel(guidanceFamily, metricSubtype);
+
+  const horizonObj = parseJsonObjectLike(row.horizon);
+  const horizonType = asString(horizonObj?.horizon_type)?.toLowerCase() ?? null;
+  const appliesFrom = asString(horizonObj?.applies_from);
+  const appliesTo = asString(horizonObj?.applies_to);
+  const horizonText = asString(horizonObj?.horizon_text);
+  const horizonLabel = formatHorizonLabel(horizonType, appliesFrom, appliesTo, horizonText);
+
+  const valueObj = parseJsonObjectLike(row.value);
+  const valuePercent = asNumber(valueObj?.magnitude_percent);
+  const valueText = asString(valueObj?.value_text);
+
   return {
     id: row.id,
     companyCode: row.company_code,
     guidanceKey: row.guidance_key,
     guidanceText,
-    guidanceType: asString(row.guidance_type),
-    guidanceTypeLabel: formatGuidanceTypeLabel(asString(row.guidance_type)),
+    guidanceFamily,
+    metricSubtype,
+    metricLabel,
+    horizonType,
+    appliesFrom,
+    appliesTo,
+    horizonLabel,
+    valuePercent,
+    valueText,
     firstMentionPeriod,
     latestMentionPeriod,
-    targetPeriod: formatGuidancePeriodLabel(asString(row.target_period)),
     mentionedPeriods,
     statusKey: normalizedStatus.key,
     statusLabel: normalizedStatus.label,

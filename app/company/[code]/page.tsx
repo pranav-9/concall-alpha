@@ -25,7 +25,8 @@ import {
   KeyVariablesPanel,
   MoatAnalysisPanel,
   QuarterlyScorePanel,
-  WalkTheTalkPanel,
+  // WalkTheTalkPanel hidden for now — re-import when re-enabling the tab.
+  // WalkTheTalkPanel,
 } from "./company-detail-sections";
 
 export async function generateMetadata({
@@ -112,10 +113,12 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
         ? { kind: "score" as const, score: overview.growth_score }
         : { kind: "text" as const, text: "Soon" },
     },
-    {
-      ...SECTION_MAP.walkTheTalk,
-      meta: { kind: "text" as const, text: "Live" },
-    },
+    // Walk the Talk tab hidden for now — verdict-style synthesis surface;
+    // re-enable when ready. Component code is kept intact.
+    // {
+    //   ...SECTION_MAP.walkTheTalk,
+    //   meta: { kind: "text" as const, text: "Live" },
+    // },
     {
       ...SECTION_MAP.guidanceHistory,
       meta:
@@ -318,11 +321,13 @@ export default async function Page({
             </Suspense>
           </div>
 
-          <div data-section-id="walk-the-talk">
+          {/* Walk the Talk panel hidden for now — re-enable alongside the
+              tab nav entry above when ready. */}
+          {/* <div data-section-id="walk-the-talk">
             <Suspense fallback={<SectionLoading id="walk-the-talk" title="Walk the Talk" />}>
               <WalkTheTalkPanel overview={overview} />
             </Suspense>
-          </div>
+          </div> */}
 
           <div data-section-id="guidance-history">
             <Suspense fallback={<SectionLoading id="guidance-history" title="Guidance History" />}>

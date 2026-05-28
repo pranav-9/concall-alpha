@@ -41,29 +41,18 @@ export type WalkTheTalkCategory =
   | "margin"
   | "other";
 
-// Phase 6 guidance_type → walk-the-talk display category.
-// Schema enum: revenue / margin / capex / commissioning / demand /
-// utilization / launch / segment / export / debt / other.
-export function mapGuidanceTypeToCategory(
-  guidanceType: string | null | undefined,
+// Phase 6 v2 family → walk-the-talk display category.
+// Phase 6 narrowed scope: only growth + margin families. capex / capacity /
+// other buckets will be empty until additional families are added in a
+// later phase.
+export function mapGuidanceFamilyToCategory(
+  guidanceFamily: string | null | undefined,
 ): WalkTheTalkCategory {
-  switch ((guidanceType ?? "").toLowerCase()) {
-    case "capex":
-    case "commissioning":
-      return "capex";
-    case "utilization":
-      return "capacity";
-    case "revenue":
-    case "demand":
+  switch ((guidanceFamily ?? "").toLowerCase()) {
+    case "growth":
       return "revenue";
     case "margin":
       return "margin";
-    case "launch":
-    case "segment":
-    case "export":
-    case "debt":
-    case "other":
-    case "":
     default:
       return "other";
   }

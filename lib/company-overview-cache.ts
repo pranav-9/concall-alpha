@@ -523,19 +523,11 @@ export async function buildCompanyPageOverviewCacheRow(
     return { rank, total, percentile: ((total - rank + 1) / total) * 100 };
   })();
 
-  const revenueGuidance = normalizedGuidanceSnapshot?.currentYearRevenueGuidance ?? null;
-  const revenueGuidanceLabel = (() => {
-    if (!revenueGuidance) return null;
-    const fyPart = revenueGuidance.fiscalYear ? `${revenueGuidance.fiscalYear} ` : "";
-    if (revenueGuidance.officialCurrentGuidancePercent != null) {
-      return `${fyPart}Rev: ${revenueGuidance.officialCurrentGuidancePercent}%`;
-    }
-    if (revenueGuidance.officialCurrentGuidanceText) {
-      return `${fyPart}Rev: ${revenueGuidance.officialCurrentGuidanceText}`;
-    }
-    return null;
-  })();
-  const credibilityVerdictKey = normalizedGuidanceSnapshot?.credibilityVerdict?.verdict ?? null;
+  // Phase 6 v2 dropped the synthesis blocks (current-year revenue guidance,
+  // credibility verdict). These cache fields stay nullable for now; PR 2 will
+  // re-populate them by deriving from guidance_items.
+  const revenueGuidanceLabel: string | null = null;
+  const credibilityVerdictKey: string | null = null;
   const credibilityDisplay = getGuidanceCredibilityVerdictDisplay(credibilityVerdictKey);
   const segmentEntries = normalizedBusinessSnapshot?.revenueBreakdown?.bySegment ?? [];
   const businessSegmentMix = (() => {

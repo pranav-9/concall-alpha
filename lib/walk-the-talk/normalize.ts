@@ -3,7 +3,7 @@ import type { NormalizedGuidanceItem } from "@/lib/guidance-tracking/types";
 
 import { computeTier, countsForGrade, isOnTime } from "./grade-utils";
 import {
-  mapGuidanceTypeToCategory,
+  mapGuidanceFamilyToCategory,
   type NormalizedWalkTheTalk,
   type WalkTheTalkCategory,
   type WalkTheTalkCategoryBucket,
@@ -31,13 +31,17 @@ function buildCommitmentRow(
   item: NormalizedGuidanceItem,
 ): WalkTheTalkCommitmentRow {
   const statusKey = item.statusKey;
+  const rawGuidanceType =
+    item.guidanceFamily && item.metricSubtype
+      ? `${item.guidanceFamily}/${item.metricSubtype}`
+      : item.guidanceFamily;
   return {
     guidance_key: item.guidanceKey,
     label: item.guidanceText,
-    category: mapGuidanceTypeToCategory(item.guidanceType),
-    raw_guidance_type: item.guidanceType ?? null,
+    category: mapGuidanceFamilyToCategory(item.guidanceFamily),
+    raw_guidance_type: rawGuidanceType,
     source_quarter: item.firstMentionPeriod,
-    target_period: item.targetPeriod,
+    target_period: item.horizonLabel,
     latest_quarter: item.latestMentionPeriod,
     status_key: statusKey,
     status_label: item.statusLabel,
