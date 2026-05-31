@@ -15,8 +15,11 @@ assert(currentFiscalYear(new Date("2027-04-01")) === "FY28", "Apr 2027 -> FY28")
 const mk = (overrides: Partial<NormalizedGuidanceItem>): NormalizedGuidanceItem => ({
   id: 1, companyCode: "X", guidanceKey: "k", guidanceText: "t",
   guidanceFamily: null, metricSubtype: null, metricLabel: null,
+  segment: null,
+  segmentCanonical: null,
   horizonType: "single_fy", appliesFrom: null, appliesTo: null,
   horizonLabel: null, valuePercent: null, valueText: null,
+  valueKind: null, numericValue: null, unit: null,
   firstMentionPeriod: null, latestMentionPeriod: null, mentionedPeriods: [],
   statusKey: "unknown", statusLabel: "Unknown", latestView: null, statusReason: null,
   confidence: null, generatedAtRaw: null, sourceMentions: [], trail: [],

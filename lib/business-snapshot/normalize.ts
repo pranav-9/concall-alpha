@@ -72,6 +72,24 @@ const asBoolean = (value: unknown): boolean | null => {
   return null;
 };
 
+// True only if `value` carries at least one populated leaf (non-empty string,
+// finite number, true, or a nested array/object that itself has one). An empty
+// object/array or all-null/empty content reads as false. Used so a
+// present-but-empty `historical_economics` ({} or tables with empty rows) is not
+// mistaken for "data exists" — otherwise the Business Momentum section renders
+// its "stored structure does not match" fallback instead of hiding cleanly.
+const hasPopulatedValue = (value: unknown): boolean => {
+  if (value == null) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "boolean") return value;
+  if (Array.isArray(value)) return value.some(hasPopulatedValue);
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).some(hasPopulatedValue);
+  }
+  return false;
+};
+
 const toStringArray = (value: unknown): string[] =>
   parseJsonArrayLike(value)
     .map((item) => asString(item))
@@ -741,12 +759,11 @@ export function normalizeBusinessSnapshot({
     parseJsonObjectLike(detailsBusinessSnapshot?.historical_economics) ??
     parseJsonObjectLike(detailsNestedBusinessSnapshot?.historical_economics) ??
     null;
-  const hasHistoricalEconomicsSource = Boolean(
-    snapshotRow.historical_economics != null ||
-      businessSnapshotObject?.historical_economics != null ||
-      detailsBusinessSnapshot?.historical_economics != null ||
-      detailsNestedBusinessSnapshot?.historical_economics != null,
-  );
+  // Only treat historical economics as "present" when the resolved source object
+  // actually has populated content. A bare {} (the generator's conditional-empty
+  // case, e.g. companies without comparable multi-year segment history) must not
+  // trip the "data exists but not display-ready" fallback.
+  const hasHistoricalEconomicsSource = hasPopulatedValue(historicalEconomicsSource);
 
   if (parseJsonObjectLike(snapshotRow.historical_economics)) {
     schemaHints.add("historical_economics_column");

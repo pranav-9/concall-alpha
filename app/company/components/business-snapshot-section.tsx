@@ -344,7 +344,7 @@ function renderHistoricalEconomicsCard(history: NormalizedHistoricalEconomics) {
             {hasCompanyRevenueCagr && companyRevenueCagr && (
               <div className={`${snapshotSubsectionClass} p-3`}>
                 <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                  Company Revenue CAGR (3Y)
+                  Company Revenue CAGR
                 </p>
                 <div className="mt-2 flex flex-wrap items-end gap-2">
                   {companyRevenueCagr.cagrPercent != null && (
@@ -378,7 +378,7 @@ function renderHistoricalEconomicsCard(history: NormalizedHistoricalEconomics) {
             {hasSegmentGrowth && (
               <div className={`${snapshotSubsectionClass} p-3`}>
                 <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-semibold">
-                  Segment Growth CAGR (3Y)
+                  Segment Growth CAGR
                 </p>
                 <div className="mt-2 space-y-2">
                   {segmentGrowthRows.map((row: NormalizedSegmentGrowthCagr3yRow, idx) => (

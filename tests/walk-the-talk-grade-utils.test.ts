@@ -24,6 +24,7 @@ const test = (name: string, fn: () => void) => {
 
 test("isOnTime — only 'met' is on-time", () => {
   assert.equal(isOnTime("met"), true);
+  assert.equal(isOnTime("missed"), false);
   assert.equal(isOnTime("delayed"), false);
   assert.equal(isOnTime("dropped"), false);
   assert.equal(isOnTime("revised"), false);
@@ -36,8 +37,9 @@ test("isOnTime — only 'met' is on-time", () => {
 // countsForGrade
 // ===========================================================================
 
-test("countsForGrade — decided outcomes count: met, delayed, dropped, revised", () => {
+test("countsForGrade — decided outcomes count: met, missed, delayed, dropped, revised", () => {
   assert.equal(countsForGrade("met"), true);
+  assert.equal(countsForGrade("missed"), true);
   assert.equal(countsForGrade("delayed"), true);
   assert.equal(countsForGrade("dropped"), true);
   assert.equal(countsForGrade("revised"), true);

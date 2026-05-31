@@ -11,15 +11,19 @@ import type {
 // status keys are coarser (no slippage_quarters precision), so the on-time
 // rule simplifies to "status === met".
 //
-// Methodology locked 2026-05-14:
+// Methodology locked 2026-05-14, extended 2026-05-29 (added `missed`):
 //   - met            → counts, on_time=true
+//   - missed         → counts, on_time=false (target not achieved per mgmt
+//                      acknowledgement — the canonical bad-faith signal)
 //   - delayed        → counts, on_time=false (mgmt admitted delay)
 //   - dropped        → counts, on_time=false (walked back; bad-faith signal)
 //   - revised        → counts, on_time=false (conservative: Phase 6 does
 //                      not distinguish revised-up from revised-down; treat
 //                      as deviation from original signal)
 //   - active         → does NOT count (still in window)
-//   - not_yet_clear  → does NOT count
+//   - not_yet_clear  → does NOT count (conservative: horizon elapsed but
+//                      no outcome evidence retrieved — can't grade what
+//                      we can't see)
 //   - unknown        → does NOT count (defensive: from guidance-snapshot
 //                      normalizer when status field is missing/invalid)
 //
@@ -40,6 +44,7 @@ export function isOnTime(statusKey: NormalizedGuidanceStatusKey): boolean {
 export function countsForGrade(statusKey: NormalizedGuidanceStatusKey): boolean {
   switch (statusKey) {
     case "met":
+    case "missed":
     case "delayed":
     case "dropped":
     case "revised":

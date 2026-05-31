@@ -21,7 +21,8 @@ const GUIDANCE_STATUS_META: Record<GuidanceStatusKey, { label: string; priority:
   active: { label: "Active", priority: 2 },
   not_yet_clear: { label: "Not Yet Clear", priority: 3 },
   met: { label: "Met", priority: 4 },
-  dropped: { label: "Dropped", priority: 5 },
+  missed: { label: "Missed", priority: 5 },
+  dropped: { label: "Dropped", priority: 6 },
 };
 
 const parseJsonValue = (value: unknown): unknown => {
@@ -114,6 +115,16 @@ const REASONING_PROSE_HINTS: RegExp[] = [
   /no specific.*guidance/i,
   /operational leverage mentioned/i,
   /management indicated/i,
+  // Soft / directional commentary that escaped into value_text. These
+  // phrases describe what guidance MIGHT be rather than what it IS, so
+  // they aren't legitimate target/value badge content.
+  /\bcan be\b/i,
+  /\bcould be\b/i,
+  /\bis expected to\b/i,
+  /\bare expected to\b/i,
+  /\bwill likely be\b/i,
+  /\bmay be\b/i,
+  /\bsubject to/i,
 ];
 
 export const isReasoningProse = (text: string | null | undefined): boolean => {
@@ -161,6 +172,35 @@ export const formatAbsoluteAmount = (text: string | null | undefined): string | 
   const hasPlus = /\+|\bplus\b|\bover\b|\babove\b|\bsurpass|\bcross/i.test(around);
   if (num2) return `${symbol}${num1}-${num2}${unit}`;
   return `${symbol}${num1}${unit}${hasPlus ? "+" : ""}`;
+};
+
+// Pull a percent RANGE out of value_text when management quoted a band.
+// We prefer the verbatim range ("20-25%") over the computed midpoint
+// ("22.5%") in the % Growth column — the band is what was actually said
+// and it carries the uncertainty information a midpoint hides.
+//
+// Matches:
+//   "20-25%"            → "20-25%"
+//   "20% to 25%"        → "20-25%"
+//   "north of 25-26%"   → "25-26%"
+//   "12% to 17% annual" → "12-17%"
+// Does not match (returns null):
+//   "approximately 15%" (single value — caller falls back to midpoint)
+//   "mid-teens"         (no number)
+export const extractPercentRange = (text: string | null | undefined): string | null => {
+  if (!text) return null;
+  const pattern = /(\d+(?:\.\d+)?)\s*(?:%\s*)?(?:to|-|–|—)\s*(\d+(?:\.\d+)?)\s*%/i;
+  const m = text.match(pattern);
+  if (!m) return null;
+  const lo = parseFloat(m[1]);
+  const hi = parseFloat(m[2]);
+  // Growth ranges are ascending. A descending pair ("65% to 60%") is
+  // almost always a margin / ratio improvement leak ("cost-to-income from
+  // 65 to 60"), NOT a growth band — refuse it so it doesn't render in
+  // the % Growth column. The synthesizer should have rejected the thread
+  // upstream; this is a defensive frontend guard.
+  if (!Number.isFinite(lo) || !Number.isFinite(hi) || hi <= lo) return null;
+  return `${m[1]}-${m[2]}%`;
 };
 
 // Compute the current Indian fiscal year (April–March cycle) as an
@@ -333,7 +373,29 @@ const normalizeTrailItem = (value: unknown): NormalizedGuidanceTrailItem | null 
   const documentLabel = asString(row.document_label);
   const sourceReference = asString(row.source_reference);
   const confidence = asNumber(row.confidence);
-  const positionInStory = asNumber(row.position_in_story);
+
+  // Per-step value (optional). Mirrors the top-level value shape — when
+  // present, this entry carried a specific commitment value at this point
+  // in the trail.
+  const trailValueObj = parseJsonObjectLike(row.value);
+  const valuePercent = trailValueObj ? asNumber(trailValueObj.magnitude_percent) : null;
+  const valueText = trailValueObj ? asString(trailValueObj.value_text) : null;
+  const trailValueKindRaw = trailValueObj ? asString(trailValueObj.value_kind) : null;
+  const trailValueKind: "percent" | "absolute" | null =
+    trailValueKindRaw === "percent" || trailValueKindRaw === "absolute"
+      ? trailValueKindRaw
+      : null;
+  const trailNumericValue = trailValueObj ? asNumber(trailValueObj.numeric_value) : null;
+  const trailUnit = trailValueObj ? asString(trailValueObj.unit) : null;
+
+  // Per-step horizon (optional). When present, this entry was bound to a
+  // specific horizon distinct from the thread's canonical top-level one.
+  const trailHorizonObj = parseJsonObjectLike(row.horizon);
+  const horizonType = trailHorizonObj ? asString(trailHorizonObj.horizon_type)?.toLowerCase() ?? null : null;
+  const appliesFrom = trailHorizonObj ? asString(trailHorizonObj.applies_from) : null;
+  const appliesTo = trailHorizonObj ? asString(trailHorizonObj.applies_to) : null;
+  const horizonText = trailHorizonObj ? asString(trailHorizonObj.horizon_text) : null;
+  const horizonLabel = formatHorizonLabel(horizonType, appliesFrom, appliesTo, horizonText);
 
   if (
     !quarter &&
@@ -344,7 +406,9 @@ const normalizeTrailItem = (value: unknown): NormalizedGuidanceTrailItem | null 
     !documentLabel &&
     !sourceReference &&
     confidence == null &&
-    positionInStory == null
+    valuePercent == null &&
+    !valueText &&
+    !horizonLabel
   ) {
     return null;
   }
@@ -358,7 +422,15 @@ const normalizeTrailItem = (value: unknown): NormalizedGuidanceTrailItem | null 
     documentLabel,
     sourceReference,
     confidence,
-    positionInStory,
+    valuePercent,
+    valueText,
+    valueKind: trailValueKind,
+    numericValue: trailNumericValue,
+    unit: trailUnit,
+    horizonType,
+    appliesFrom,
+    appliesTo,
+    horizonLabel,
   };
 };
 
@@ -380,17 +452,8 @@ const compareTrailItemsAscending = (
   a: NormalizedGuidanceTrailItem,
   b: NormalizedGuidanceTrailItem,
 ) => {
-  const aPosition = a.positionInStory;
-  const bPosition = b.positionInStory;
-  const aHasPosition = typeof aPosition === "number" && Number.isFinite(aPosition);
-  const bHasPosition = typeof bPosition === "number" && Number.isFinite(bPosition);
-
-  if (aHasPosition && bHasPosition && aPosition !== bPosition) {
-    return aPosition - bPosition;
-  }
-  if (aHasPosition && !bHasPosition) return -1;
-  if (!aHasPosition && bHasPosition) return 1;
-
+  // PR3 dropped positionInStory; sort by quarter, then by summary/excerpt
+  // tiebreaker. Array index becomes the canonical position downstream.
   if (a.quarter && b.quarter) {
     const quarterCompare = comparePeriodsAscending(a.quarter, b.quarter);
     if (quarterCompare !== 0) return quarterCompare;
@@ -427,7 +490,15 @@ const buildTrailFromSourceMentions = (
         documentLabel: null,
         sourceReference: null,
         confidence: null,
-        positionInStory: null,
+        valuePercent: null,
+        valueText: null,
+        valueKind: null,
+        numericValue: null,
+        unit: null,
+        horizonType: null,
+        appliesFrom: null,
+        appliesTo: null,
+        horizonLabel: null,
       };
     })
     .filter((item): item is NormalizedGuidanceTrailItem => Boolean(item))
@@ -435,18 +506,16 @@ const buildTrailFromSourceMentions = (
 
 export const formatGuidanceTypeLabel = (value: string | null | undefined) => toTitleCase(value);
 
-const ALLOWED_FAMILIES: ReadonlySet<GuidanceFamily> = new Set(["growth", "margin"]);
+const ALLOWED_FAMILIES: ReadonlySet<GuidanceFamily> = new Set(["growth"]);
 const ALLOWED_SUBTYPES: ReadonlySet<GuidanceMetricSubtype> = new Set([
   "revenue",
   "ebitda",
   "pat",
-  "gross",
 ]);
 const SUBTYPE_DISPLAY: Record<GuidanceMetricSubtype, string> = {
   revenue: "Revenue",
   ebitda: "EBITDA",
   pat: "PAT",
-  gross: "Gross",
 };
 
 const normalizeFamily = (value: unknown): GuidanceFamily | null => {
@@ -468,9 +537,8 @@ export const formatMetricLabel = (
   if (!family || !subtype) return null;
   const metric = SUBTYPE_DISPLAY[subtype];
   if (!metric) return null;
-  if (family === "growth") return `${metric} Growth`;
-  if (family === "margin") return `${metric} Margin`;
-  return null;
+  // Phase 6 narrowed scope: family is always "growth".
+  return `${metric} Growth`;
 };
 
 export const formatHorizonLabel = (
@@ -576,23 +644,21 @@ const normalizeGuidanceTrackingRow = (
   const trail =
     parsedTrail.length > 0 ? parsedTrail : buildTrailFromSourceMentions(sourceMentions);
 
-  const firstMention = parseJsonObjectLike(row.first_mentioned_in);
-  const firstMentionPeriodFromField = formatGuidancePeriodLabel(asString(firstMention?.period));
+  // PR3 dropped `first_mentioned_in` at the schema level — derive
+  // firstMentionPeriod directly from the trail (= the earliest quarter
+  // referenced in the chronologically-sorted trail).
   const trailPeriods = trail
     .map((item) => item.quarter)
     .filter((period): period is string => Boolean(period));
-  const earliestMentionPeriod =
+  const firstMentionPeriod =
     [...trailPeriods].sort(comparePeriodsAscending)[0] ?? null;
-  const firstMentionPeriod = firstMentionPeriodFromField ?? earliestMentionPeriod;
 
   const latestMentionPeriod =
     [...trailPeriods].sort(comparePeriodsDescending)[0] ?? firstMentionPeriod;
 
   const mentionedPeriods = Array.from(
     new Set(
-      [firstMentionPeriodFromField, ...trailPeriods].filter(
-        (period): period is string => Boolean(period),
-      ),
+      trailPeriods.filter((period): period is string => Boolean(period)),
     ),
   ).sort(comparePeriodsAscending);
 
@@ -618,6 +684,16 @@ const normalizeGuidanceTrackingRow = (
   const guidanceFamily = normalizeFamily(row.guidance_family);
   const metricSubtype = normalizeSubtype(row.metric_subtype);
   const metricLabel = formatMetricLabel(guidanceFamily, metricSubtype);
+  const segmentRaw = asString(row.segment);
+  const segment = segmentRaw && segmentRaw.toLowerCase() !== "null" ? segmentRaw.slice(0, 80) : null;
+  // Canonical form drives consolidation logic in the backend; the frontend
+  // surfaces it so future client-side dedupe / grouping (e.g. filter chips
+  // that collapse "CDMO" + "CDMO Business") can use the same key.
+  const segmentCanonicalRaw = asString(row.segment_canonical);
+  const segmentCanonical =
+    segmentCanonicalRaw && segmentCanonicalRaw.toLowerCase() !== "null"
+      ? segmentCanonicalRaw.slice(0, 80)
+      : null;
 
   const horizonObj = parseJsonObjectLike(row.horizon);
   const horizonType = asString(horizonObj?.horizon_type)?.toLowerCase() ?? null;
@@ -629,6 +705,11 @@ const normalizeGuidanceTrackingRow = (
   const valueObj = parseJsonObjectLike(row.value);
   const valuePercent = asNumber(valueObj?.magnitude_percent);
   const valueText = asString(valueObj?.value_text);
+  const valueKindRaw = asString(valueObj?.value_kind);
+  const valueKind: "percent" | "absolute" | null =
+    valueKindRaw === "percent" || valueKindRaw === "absolute" ? valueKindRaw : null;
+  const numericValue = asNumber(valueObj?.numeric_value);
+  const unit = asString(valueObj?.unit);
 
   return {
     id: row.id,
@@ -638,12 +719,17 @@ const normalizeGuidanceTrackingRow = (
     guidanceFamily,
     metricSubtype,
     metricLabel,
+    segment,
+    segmentCanonical,
     horizonType,
     appliesFrom,
     appliesTo,
     horizonLabel,
     valuePercent,
     valueText,
+    valueKind,
+    numericValue,
+    unit,
     firstMentionPeriod,
     latestMentionPeriod,
     mentionedPeriods,

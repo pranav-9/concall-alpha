@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, History } from "lucide-react";
+import { ChevronDown, History, LayoutGrid, TableProperties } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,21 +12,16 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from "@/components/ui/drawer";
 import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   currentFiscalYear,
   extractFyYear,
+  extractPercentRange,
   formatAbsoluteAmount,
   isHistoricalGuidanceItem,
   isReasoningProse,
@@ -39,21 +34,13 @@ import type {
 
 export type GuidanceHistorySectionProps = {
   items: NormalizedGuidanceItem[];
+  // Snapshot-scoped provenance (PR2 item 16). Heterogeneous because
+  // legacy snapshots stored a list of chunk ids; PR2-onwards stores
+  // objects with source_doc_id / period_label / fy / qtr / doc_type /
+  // url / local_path. The section renders only well-shaped entries and
+  // skips the rest.
+  sourceFiles?: unknown[];
 };
-
-const STATUS_ORDER: NormalizedGuidanceStatusKey[] = [
-  "revised",
-  "delayed",
-  "active",
-  "not_yet_clear",
-  "met",
-  "dropped",
-  "unknown",
-];
-
-const STATUS_ORDER_INDEX = new Map<NormalizedGuidanceStatusKey, number>(
-  STATUS_ORDER.map((status, index) => [status, index]),
-);
 
 // `badgeClass` is the soft variant (low-contrast tint) used in the drawer
 // header and section overviews where the badge sits near other muted chips.
@@ -108,6 +95,16 @@ const STATUS_STYLES: Record<
       "border-emerald-500 bg-emerald-500 text-white dark:border-emerald-400 dark:bg-emerald-500 dark:text-white",
     accentClass: "bg-emerald-500",
   },
+  missed: {
+    // Distinct from `dropped` (which is rose/red) — missed is an outcome
+    // event (target not achieved) while dropped is a withdrawal. Use a
+    // warmer red-orange so the eye can tell them apart on the page.
+    badgeClass:
+      "border-red-200 bg-red-100 text-red-800 dark:border-red-700/40 dark:bg-red-900/30 dark:text-red-200",
+    cardBadgeClass:
+      "border-red-600 bg-red-600 text-white dark:border-red-500 dark:bg-red-600 dark:text-white",
+    accentClass: "bg-red-600",
+  },
   dropped: {
     badgeClass:
       "border-rose-200 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200",
@@ -130,20 +127,31 @@ const TRACKER_TRAIL_CLASS = `${nestedDetailClass} px-3 py-2.5`;
 
 const TRACKER_EMPTY_CLASS = `${elevatedBlockClass} p-4`;
 
-// Stable identifier for the type-filter chips. Combines family + subtype so
-// "growth/revenue" and "growth/ebitda" are distinguishable in the UI even
-// when both render under the "Growth" umbrella.
-const ALL_TYPES_FILTER_KEY = "all";
+// Top-level family tabs. Today only "growth" populates — the rest render
+// "Coming soon" so the user can see what's planned. The schema currently
+// only emits `guidanceFamily: "growth"`; margins / capex / others will be
+// new families added later (no production threads in those buckets yet).
+type FamilyTabId = "growth" | "margins" | "capex" | "others";
 
-const getFilterKey = (item: NormalizedGuidanceItem): string => {
-  if (item.guidanceFamily && item.metricSubtype) {
-    return `${item.guidanceFamily}:${item.metricSubtype}`;
+const FAMILY_TABS: ReadonlyArray<{ id: FamilyTabId; label: string }> = [
+  { id: "growth", label: "Growth" },
+  { id: "margins", label: "Margins" },
+  { id: "capex", label: "CapEx" },
+  { id: "others", label: "Others" },
+] as const;
+
+// Which family does a thread belong to? Today every thread comes back as
+// "growth", but the function is forward-compatible: when the schema starts
+// emitting margin/capex/etc., this is the single switch that routes them
+// to the right tab.
+const familyOfItem = (item: NormalizedGuidanceItem): FamilyTabId => {
+  switch (item.guidanceFamily) {
+    case "growth":
+      return "growth";
+    default:
+      return "others";
   }
-  return "unknown";
 };
-
-const getFilterLabel = (item: NormalizedGuidanceItem): string =>
-  item.metricLabel ?? "Other";
 
 // Prefer latestView (freshest management commentary) over statusReason
 // (producer-rationale string). The drawer header still shows statusReason.
@@ -160,23 +168,99 @@ const getGuidanceWindowText = (item: NormalizedGuidanceItem) => {
   return item.latestMentionPeriod ?? item.firstMentionPeriod ?? item.horizonLabel;
 };
 
-const formatValueBadge = (item: NormalizedGuidanceItem): string | null => {
-  if (typeof item.valuePercent === "number" && Number.isFinite(item.valuePercent)) {
-    const rounded = Math.round(item.valuePercent * 10) / 10;
-    const display = Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1);
-    return `${display}%`;
+// Both NormalizedGuidanceItem and NormalizedGuidanceTrailItem carry the
+// same value-shape fields (PR2 added trail-level value+horizon). Defining
+// the badge formatters against this minimal projection lets the trail UI
+// render its own per-step badges with the same logic that the top-level
+// row uses, without copy-pasting.
+type ValueBadgeFields = {
+  valuePercent: number | null;
+  valueText: string | null;
+  valueKind: "percent" | "absolute" | null;
+  numericValue: number | null;
+  unit: string | null;
+};
+
+// Format a unit string for display ("INRcr" → "₹__cr", "USDmn" → "$__M").
+// Returns the symbol prefix and suffix; caller assembles "<symbol><num><suffix>".
+const formatUnitParts = (unit: string | null): { symbol: string; suffix: string } => {
+  if (!unit) return { symbol: "", suffix: "" };
+  const u = unit.toLowerCase();
+  if (u === "inrcr") return { symbol: "₹", suffix: "cr" };
+  if (u === "inrlakh" || u === "inrlakhs") return { symbol: "₹", suffix: "L" };
+  if (u === "inr") return { symbol: "₹", suffix: "" };
+  if (u === "usdmn" || u === "usdm") return { symbol: "$", suffix: "M" };
+  if (u === "usdbn" || u === "usdb") return { symbol: "$", suffix: "B" };
+  if (u === "usd") return { symbol: "$", suffix: "" };
+  return { symbol: "", suffix: u };
+};
+
+// Split the value into two display badges: percent (velocity) and target
+// (destination). Prefers the PR2 structured fields (value_kind +
+// numeric_value + unit) when present; falls back to value_text parsing
+// (extractPercentRange / formatAbsoluteAmount) for legacy / partial rows.
+//
+// Mutual-exclusion rule: when value_kind is "percent" the target badge
+// returns null; when "absolute" the percent badge returns null. Without
+// value_kind we use the text-parsing path which has its own muting logic.
+const formatPercentBadge = (item: ValueBadgeFields): string | null => {
+  // PR2 structured path — only renders when LLM tagged value_kind="percent".
+  if (item.valueKind === "percent") {
+    // Prefer the verbatim range from value_text ("20-25%") when present —
+    // it carries uncertainty information the midpoint hides.
+    const range = extractPercentRange(item.valueText);
+    if (range) return range;
+    if (typeof item.numericValue === "number" && Number.isFinite(item.numericValue)) {
+      const rounded = Math.round(item.numericValue * 10) / 10;
+      const display = Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1);
+      return `${display}%`;
+    }
+  }
+  // Legacy / null value_kind path: parse from value_text.
+  if (item.valueKind == null) {
+    const range = extractPercentRange(item.valueText);
+    if (range) return range;
+    if (typeof item.valuePercent === "number" && Number.isFinite(item.valuePercent)) {
+      const rounded = Math.round(item.valuePercent * 10) / 10;
+      const display = Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1);
+      return `${display}%`;
+    }
+  }
+  return null;
+};
+
+const formatTargetBadge = (item: ValueBadgeFields): string | null => {
+  // PR2 structured path — render the absolute target with proper unit.
+  if (item.valueKind === "absolute") {
+    if (typeof item.numericValue === "number" && Number.isFinite(item.numericValue)) {
+      const { symbol, suffix } = formatUnitParts(item.unit);
+      const n = item.numericValue;
+      // Try to recover a range from value_text first ("₹600-825cr"); if
+      // present, use it verbatim rather than collapsing to the midpoint.
+      const absolute = formatAbsoluteAmount(item.valueText);
+      if (absolute) return absolute;
+      const rounded = Number.isInteger(n) ? n.toFixed(0) : n.toFixed(1);
+      return `${symbol}${rounded}${suffix}`;
+    }
+    // numeric_value missing — fall through to value_text parsing below.
   }
   if (!item.valueText) return null;
-  // Suppress badges where the LLM stuffed reasoning prose into the value
-  // field — they read as garbage truncations ("Not explicitly qua…").
   if (isReasoningProse(item.valueText)) return null;
-  // Pull out a headline rupee/dollar amount when present — this is the
-  // common case for Indian listed cos that guide on absolute revenue
-  // targets (INR Xcr) rather than %.
   const absolute = formatAbsoluteAmount(item.valueText);
   if (absolute) return absolute;
+  // If the percent column already renders, don't repeat the same number here
+  // as a narrative form ("approximately 15%").
+  if (typeof item.valuePercent === "number" && Number.isFinite(item.valuePercent)) {
+    return null;
+  }
+  // Qualitative-only fallback ("double-digit", "mid-teens").
   return item.valueText.length > 20 ? `${item.valueText.slice(0, 18)}…` : item.valueText;
 };
+
+// Drawer header keeps a single combined badge for back-compat (header is
+// already chip-dense; not worth splitting into two there).
+const formatValueBadge = (item: NormalizedGuidanceItem): string | null =>
+  formatPercentBadge(item) ?? formatTargetBadge(item);
 
 const getTrailMentionBadgeClass = (mentionType: string | null) => {
   const normalized = mentionType?.trim().toLowerCase().replace(/\s+/g, "_");
@@ -216,7 +300,7 @@ function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
         ].filter((entry): entry is string => Boolean(entry));
 
         return (
-          <li key={`${item.guidanceKey}-trail-${trailItem.positionInStory ?? idx}`} className={TRACKER_TRAIL_CLASS}>
+          <li key={`${item.guidanceKey}-trail-${idx}`} className={TRACKER_TRAIL_CLASS}>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
                 {trailItem.quarter ? (
@@ -234,6 +318,38 @@ function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
                     {trailItem.mentionType}
                   </span>
                 ) : null}
+                {/* Per-step horizon — only renders when the trail entry
+                   carries its own horizon (set by the synthesizer when this
+                   step references a specific FY distinct from the thread's
+                   canonical horizon). Lets the reader see "in this quarter
+                   management was talking about FY27" at a glance. */}
+                {trailItem.horizonLabel ? (
+                  <span className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-muted-foreground">
+                    {trailItem.horizonLabel}
+                  </span>
+                ) : null}
+                {/* Per-step % growth — emerald, mirrors the top-level
+                   % growth column. Renders the value committed AT THIS
+                   step (revisions show 12% then 15% etc.). */}
+                {(() => {
+                  const pct = formatPercentBadge(trailItem);
+                  if (!pct) return null;
+                  return (
+                    <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                      {pct}
+                    </span>
+                  );
+                })()}
+                {/* Per-step absolute target — sky, mirrors the Target column. */}
+                {(() => {
+                  const tgt = formatTargetBadge(trailItem);
+                  if (!tgt) return null;
+                  return (
+                    <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 font-semibold text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
+                      {tgt}
+                    </span>
+                  );
+                })()}
                 {typeof trailItem.confidence === "number" ? (
                   <span className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-muted-foreground">
                     {(trailItem.confidence * 100).toFixed(0)}% conf
@@ -269,225 +385,310 @@ function GuidanceTrailContent({ item }: { item: NormalizedGuidanceItem }) {
 function GuidanceThreadCard({
   item,
   currentFy,
+  onSelect,
 }: {
   item: NormalizedGuidanceItem;
   currentFy: string;
+  onSelect: (item: NormalizedGuidanceItem) => void;
 }) {
   const supportText = getGuidanceSupportText(item);
-  const periodWindowText = getGuidanceWindowText(item);
-  const showTrail = item.trail.length > 0;
   const statusStyle = STATUS_STYLES[item.statusKey];
-  const valueBadge = formatValueBadge(item);
+  const percentBadge = formatPercentBadge(item);
+  const targetBadge = formatTargetBadge(item);
   const isHistorical = isHistoricalGuidanceItem(item, currentFy);
 
   return (
-    <article className={`${nestedDetailClass} relative overflow-hidden p-3`}>
+    <article
+      onClick={() => onSelect(item)}
+      className={cn(
+        nestedDetailClass,
+        "relative cursor-pointer overflow-hidden p-3 transition-colors hover:bg-muted/30",
+        isHistorical && "opacity-70",
+      )}
+    >
       <div className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-            <div className="min-w-0 space-y-2">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  {item.metricLabel ?? "—"}
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {item.metricLabel ?? "—"}
+              </span>
+              {item.segment ? (
+                <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {item.segment}
                 </span>
-                {item.horizonLabel ? (
-                  <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                    {item.horizonLabel}
-                  </span>
-                ) : null}
-                {valueBadge ? (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
-                    {valueBadge}
-                  </span>
-                ) : null}
-                {isHistorical ? (
-                  <span className="px-1 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
-                    Past
-                  </span>
-                ) : null}
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-[13px] font-semibold leading-[1.35] text-foreground">
-                  {item.guidanceText}
-                </p>
-                {supportText ? (
-                  <p className="text-[11px] leading-snug text-foreground/70">{supportText}</p>
-                ) : null}
-              </div>
+              ) : null}
+              {item.horizonLabel ? (
+                <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {item.horizonLabel}
+                </span>
+              ) : null}
+              {percentBadge ? (
+                <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                  {percentBadge}
+                </span>
+              ) : null}
+              {targetBadge ? (
+                <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
+                  {targetBadge}
+                </span>
+              ) : null}
+              {isHistorical ? (
+                <span className="px-1 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
+                  Past
+                </span>
+              ) : null}
             </div>
 
-            <div className="flex shrink-0 items-center gap-2 sm:justify-end">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "h-fit shrink-0 px-2 py-0.5 text-[10px] font-semibold",
-                  statusStyle.cardBadgeClass,
-                )}
-              >
-                {item.statusLabel}
-              </Badge>
-              {showTrail ? (
-                <Drawer direction="right">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DrawerTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon-sm"
-                          aria-label="Open guidance trail"
-                          className="relative size-7 rounded-full border-border/60 bg-background/70 text-muted-foreground shadow-none hover:bg-accent hover:text-foreground"
-                        >
-                          <History className="size-3.5" />
-                          <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full border border-background bg-emerald-500 px-1 text-[10px] font-semibold leading-4 text-background">
-                            {item.trail.length}
-                          </span>
-                        </Button>
-                      </DrawerTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent sideOffset={6}>
-                      Open trail
-                    </TooltipContent>
-                  </Tooltip>
-                  <DrawerContent className="w-full max-w-xl">
-                    <DrawerHeader className="border-b border-border">
-                      <DrawerTitle className="text-[14px] leading-snug">
-                        {item.guidanceText}
-                      </DrawerTitle>
-                      <DrawerDescription>
-                        <span className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                          {item.metricLabel ? (
-                            <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                              {item.metricLabel}
-                            </span>
-                          ) : null}
-                          {item.horizonLabel ? (
-                            <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                              {item.horizonLabel}
-                            </span>
-                          ) : null}
-                          {valueBadge ? (
-                            <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
-                              {valueBadge}
-                            </span>
-                          ) : null}
-                          {periodWindowText ? (
-                            <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                              {periodWindowText}
-                            </span>
-                          ) : null}
-                          <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            {item.trail.length} update{item.trail.length === 1 ? "" : "s"}
-                          </span>
-                        </span>
-                      </DrawerDescription>
-                    </DrawerHeader>
-                    <div className="space-y-3 overflow-y-auto px-4 py-4">
-                      <GuidanceTrailContent item={item} />
-                    </div>
-                    <DrawerFooter className="border-t border-border">
-                      <DrawerClose asChild>
-                        <Button variant="outline">Close</Button>
-                      </DrawerClose>
-                    </DrawerFooter>
-                  </DrawerContent>
-                </Drawer>
+            <div className="space-y-1">
+              <p className="text-[13px] font-semibold leading-[1.35] text-foreground">
+                {item.guidanceText}
+              </p>
+              {supportText ? (
+                <p className="text-[11px] leading-snug text-foreground/70">{supportText}</p>
               ) : null}
             </div>
           </div>
 
-          {showTrail ? null : <GuidanceTrailContent item={item} />}
+          <div className="flex shrink-0 items-center gap-2 sm:justify-end">
+            <Badge
+              variant="outline"
+              className={cn(
+                "h-fit shrink-0 px-2 py-0.5 text-[10px] font-semibold",
+                statusStyle.cardBadgeClass,
+              )}
+            >
+              {item.statusLabel}
+            </Badge>
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+              <History className="size-3" />
+              {item.trail.length}
+            </span>
+          </div>
+        </div>
       </div>
     </article>
   );
 }
 
-export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
-  // Type-filter state (single-select; defaults to "all"). Filter keys are
-  // `${family}:${subtype}` so revenue-growth and EBITDA-growth threads
-  // filter independently.
-  const [typeFilter, setTypeFilter] = React.useState<string>(ALL_TYPES_FILTER_KEY);
+function GuidanceTableRow({
+  item,
+  currentFy,
+  onSelect,
+  showSegmentColumn,
+}: {
+  item: NormalizedGuidanceItem;
+  currentFy: string;
+  onSelect: (item: NormalizedGuidanceItem) => void;
+  showSegmentColumn: boolean;
+}) {
+  const statusStyle = STATUS_STYLES[item.statusKey];
+  const percentBadge = formatPercentBadge(item);
+  const targetBadge = formatTargetBadge(item);
+  const isHistorical = isHistoricalGuidanceItem(item, currentFy);
 
-  // Show first 6 cards by default (3 rows on desktop's 2-col grid).
-  // The expander reveals all remaining items. Resets to collapsed whenever
-  // the filter changes — clicking a filter is a "fresh look" gesture, the
-  // user shouldn't see 21 cards expanded just because they had it open
-  // before.
-  const COLLAPSED_VISIBLE_COUNT = 6;
+  return (
+    <tr
+      onClick={() => onSelect(item)}
+      className={cn(
+        "cursor-pointer transition-colors hover:bg-muted/30",
+        isHistorical && "opacity-70",
+      )}
+    >
+      <td className="whitespace-nowrap px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        {item.metricLabel ?? "—"}
+      </td>
+      {showSegmentColumn ? (
+        <td className="px-3 py-2.5 text-[12px] leading-snug text-foreground">
+          {item.segment ?? <span className="text-muted-foreground/60">—</span>}
+        </td>
+      ) : null}
+      <td className="whitespace-nowrap px-3 py-2.5 text-[12px] leading-snug text-foreground">
+        {item.horizonLabel ?? <span className="text-muted-foreground/60">—</span>}
+      </td>
+      <td className="whitespace-nowrap px-3 py-2.5 text-[12px]">
+        {percentBadge ? (
+          <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+            {percentBadge}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/60">—</span>
+        )}
+      </td>
+      <td className="whitespace-nowrap px-3 py-2.5 text-[12px]">
+        {targetBadge ? (
+          <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
+            {targetBadge}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/60">—</span>
+        )}
+      </td>
+      <td className="whitespace-nowrap px-3 py-2.5">
+        <div className="flex items-center gap-1.5">
+          <Badge
+            variant="outline"
+            className={cn(
+              "h-fit shrink-0 px-2 py-0.5 text-[10px] font-semibold",
+              statusStyle.cardBadgeClass,
+            )}
+          >
+            {item.statusLabel}
+          </Badge>
+          {isHistorical ? (
+            <span className="text-[9px] font-medium uppercase tracking-[0.14em] text-muted-foreground/60">
+              Past
+            </span>
+          ) : null}
+        </div>
+      </td>
+      <td className="whitespace-nowrap px-3 py-2.5 text-right">
+        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+          <History className="size-3" />
+          {item.trail.length}
+        </span>
+      </td>
+    </tr>
+  );
+}
+
+function GuidanceDrawerBody({ item }: { item: NormalizedGuidanceItem }) {
+  const supportText = getGuidanceSupportText(item);
+  const periodWindowText = getGuidanceWindowText(item);
+  const valueBadge = formatValueBadge(item);
+
+  return (
+    <>
+      <DrawerHeader className="border-b border-border">
+        <DrawerTitle className="text-[14px] leading-snug">
+          {item.guidanceText}
+        </DrawerTitle>
+        <DrawerDescription>
+          <span className="flex flex-wrap items-center gap-1.5 text-[11px]">
+            {item.metricLabel ? (
+              <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {item.metricLabel}
+              </span>
+            ) : null}
+            {item.segment ? (
+              <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {item.segment}
+              </span>
+            ) : null}
+            {item.horizonLabel ? (
+              <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {item.horizonLabel}
+              </span>
+            ) : null}
+            {valueBadge ? (
+              <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                {valueBadge}
+              </span>
+            ) : null}
+            {periodWindowText ? (
+              <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {periodWindowText}
+              </span>
+            ) : null}
+            <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              {item.trail.length} update{item.trail.length === 1 ? "" : "s"}
+            </span>
+          </span>
+        </DrawerDescription>
+      </DrawerHeader>
+      <div className="space-y-3 overflow-y-auto px-4 py-4">
+        {supportText ? (
+          <p className="text-[12px] leading-snug text-foreground/85">{supportText}</p>
+        ) : null}
+        <GuidanceTrailContent item={item} />
+      </div>
+      <DrawerFooter className="border-t border-border">
+        <DrawerClose asChild>
+          <Button variant="outline">Close</Button>
+        </DrawerClose>
+      </DrawerFooter>
+    </>
+  );
+}
+
+// Narrow a heterogeneous sourceFiles entry to the PR2-shape dict. Skips
+// legacy chunk-id numbers and entries missing the minimum needed for a
+// click-through render.
+type RichSourceFile = {
+  source_doc_id: number;
+  period_label: string | null;
+  fy: number | null;
+  qtr: number | null;
+  doc_type: string | null;
+  url: string | null;
+  local_path: string | null;
+};
+
+const asRichSourceFile = (entry: unknown): RichSourceFile | null => {
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+  const e = entry as Record<string, unknown>;
+  const sid = e.source_doc_id;
+  if (typeof sid !== "number" || !Number.isFinite(sid)) return null;
+  return {
+    source_doc_id: sid,
+    period_label: typeof e.period_label === "string" ? e.period_label : null,
+    fy: typeof e.fy === "number" ? e.fy : null,
+    qtr: typeof e.qtr === "number" ? e.qtr : null,
+    doc_type: typeof e.doc_type === "string" ? e.doc_type : null,
+    url: typeof e.url === "string" && e.url.length > 0 ? e.url : null,
+    local_path:
+      typeof e.local_path === "string" && e.local_path.length > 0 ? e.local_path : null,
+  };
+};
+
+export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySectionProps) {
+  // Top-level family tab — Growth | Margins | CapEx | Others. Today only
+  // "growth" carries content; the others render a "Coming soon" placeholder.
+  // Default is "growth" because that's the only family with data.
+  const [familyTab, setFamilyTab] = React.useState<FamilyTabId>("growth");
+
+  // Default view: only current / forward-looking commitments. Historical
+  // threads (track record) are hidden behind an expander. The reasoning
+  // is that current commitments are what the reader needs to see on every
+  // visit; track record is reference material they pull up when they want
+  // to verify management's delivery history. Reset to collapsed whenever
+  // the tab changes — switching tabs is a "fresh look" gesture.
   const [isExpanded, setIsExpanded] = React.useState<boolean>(false);
   React.useEffect(() => {
     setIsExpanded(false);
-  }, [typeFilter]);
+  }, [familyTab]);
 
-  // Counts per (family, subtype) across all items. Used to label the filter
-  // chips and skip empty buckets.
-  const typeCounts = React.useMemo(() => {
-    const counts = new Map<string, { label: string; count: number }>();
+  // Single Drawer at the section level — clicking any table row sets the
+  // selected thread, which renders the drawer body. Avoids wrapping each
+  // <tr> in a separate Drawer (which would break <table> DOM semantics).
+  const [selectedThread, setSelectedThread] = React.useState<NormalizedGuidanceItem | null>(null);
+
+  // Two view modes: "table" (dense, default) and "cards" (looser, original).
+  // Both share the same hoisted Drawer for thread details.
+  const [viewMode, setViewMode] = React.useState<"table" | "cards">("table");
+
+  // Counts per family — drives the tab badges. Today every count except
+  // "growth" is 0; the tabs still render so users can preview the structure.
+  const familyCounts = React.useMemo(() => {
+    const counts: Record<FamilyTabId, number> = {
+      growth: 0,
+      margins: 0,
+      capex: 0,
+      others: 0,
+    };
     items.forEach((item) => {
-      const key = getFilterKey(item);
-      const existing = counts.get(key);
-      if (existing) {
-        existing.count += 1;
-      } else {
-        counts.set(key, { label: getFilterLabel(item), count: 1 });
-      }
+      counts[familyOfItem(item)] += 1;
     });
-    return Array.from(counts.entries())
-      .map(([key, { label, count }]) => ({ key, label, count }))
-      .sort((a, b) => b.count - a.count);
+    return counts;
   }, [items]);
 
-  // Reset filter to "all" if the current filter no longer has any items
-  // (defensive — items can change as the page hydrates).
-  React.useEffect(() => {
-    if (typeFilter === ALL_TYPES_FILTER_KEY) return;
-    if (!typeCounts.some((entry) => entry.key === typeFilter)) {
-      setTypeFilter(ALL_TYPES_FILTER_KEY);
-    }
-  }, [typeFilter, typeCounts]);
-
-  // Filtered slice that drives the status grouping below.
-  const filteredItems = React.useMemo(() => {
-    if (typeFilter === ALL_TYPES_FILTER_KEY) return items;
-    return items.filter((item) => getFilterKey(item) === typeFilter);
-  }, [items, typeFilter]);
-
-  // Bucket filteredItems by status — used by the legend chips in the overview
-  // band ("Active 14 · Met 7"). Order of statusGroups follows STATUS_ORDER:
-  // [revised, delayed, active, not_yet_clear, met, dropped, unknown].
-  // For the legend we only care about the count per bucket; render order of
-  // the cards themselves is computed in `orderedThreads` below.
-  const statusGroups = React.useMemo(() => {
-    const groups = new Map<
-      NormalizedGuidanceStatusKey,
-      { title: string; threads: NormalizedGuidanceItem[] }
-    >();
-
-    filteredItems.forEach((item) => {
-      const existing = groups.get(item.statusKey);
-      if (existing) {
-        existing.threads.push(item);
-        return;
-      }
-
-      groups.set(item.statusKey, {
-        title: item.statusLabel,
-        threads: [item],
-      });
-    });
-
-    return Array.from(groups.entries())
-      .map(([statusKey, group]) => ({
-        statusKey,
-        title: group.title,
-        threads: group.threads,
-      }))
-      .sort((a, b) => {
-        const aIndex = STATUS_ORDER_INDEX.get(a.statusKey) ?? STATUS_ORDER.length;
-        const bIndex = STATUS_ORDER_INDEX.get(b.statusKey) ?? STATUS_ORDER.length;
-        return aIndex - bIndex;
-      });
-  }, [filteredItems]);
+  // Items in the active family tab. When the tab has no content (margins /
+  // capex / others today), this is empty and the Coming Soon panel renders
+  // instead of the table.
+  const filteredItems = React.useMemo(
+    () => items.filter((item) => familyOfItem(item) === familyTab),
+    [items, familyTab],
+  );
 
   const currentFy = currentFiscalYear();
 
@@ -496,15 +697,18 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
   //      or unspecified/ongoing). Sorted by status priority — active first,
   //      then met, revised, delayed, not_yet_clear, dropped — preserving
   //      input order within ties.
-  //   2. Historical threads (applies_to < current FY). Sorted by FY
-  //      descending first (most recent past at top), then status priority
-  //      within each FY as tiebreaker. Without this, FY25 "Met" floats
-  //      above FY26 "Dropped" because status priority alone wins — the
-  //      reader's eye then reads FY27 → FY25 → FY26, non-monotonic.
+  //   2. Historical threads (applies_to < current FY). Sorted by:
+  //      (a) FY descending — most recent past at top
+  //      (b) family priority — growth threads before margin threads within
+  //          each FY group, so the reader reads each FY as "what did they
+  //          promise on top-line first, then on profitability"
+  //      (c) status priority — active before met/revised/dropped within
+  //          each (FY, family) bucket
   const orderedThreads = React.useMemo(() => {
     const STATUS_PRIORITY: NormalizedGuidanceStatusKey[] = [
       "active",
       "met",
+      "missed",
       "revised",
       "delayed",
       "not_yet_clear",
@@ -515,6 +719,8 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
       const idx = STATUS_PRIORITY.indexOf(key);
       return idx === -1 ? STATUS_PRIORITY.length : idx;
     };
+    const familyPriorityOf = (family: NormalizedGuidanceItem["guidanceFamily"]) =>
+      family === "growth" ? 0 : family === "margin" ? 1 : 2;
 
     const current: NormalizedGuidanceItem[] = [];
     const historical: NormalizedGuidanceItem[] = [];
@@ -522,12 +728,47 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
       (isHistoricalGuidanceItem(item, currentFy) ? historical : current).push(item);
     });
 
-    current.sort((a, b) => priorityOf(a.statusKey) - priorityOf(b.statusKey));
+    // Pre-compute segment counts so the heaviest segment clusters first
+    // under SEGMENT-LEVEL (e.g. CDMO 4 before HPP 4 before Specialty 4
+    // when counts are equal — fall back to alphabetical). Consolidated
+    // threads (segment === null) aren't counted here.
+    const segmentRank = new Map<string, number>();
+    {
+      const counts = new Map<string, number>();
+      current.forEach((item) => {
+        if (item.segment) counts.set(item.segment, (counts.get(item.segment) ?? 0) + 1);
+      });
+      const ordered = Array.from(counts.entries()).sort(
+        (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+      );
+      ordered.forEach(([name], idx) => segmentRank.set(name, idx));
+    }
+
+    current.sort((a, b) => {
+      // Primary: consolidated (segment=null) first, segment-specific
+      // second — so the rendered subheadings ("Overall" / "Segment-level")
+      // get coherent groups under them.
+      const aSegmented = a.segment ? 1 : 0;
+      const bSegmented = b.segment ? 1 : 0;
+      if (aSegmented !== bSegmented) return aSegmented - bSegmented;
+      // Within SEGMENT-LEVEL: cluster by segment (heaviest first).
+      // Cards from the same segment land adjacent so the reader scans
+      // a coherent segment-by-segment narrative under the subheading.
+      if (a.segment && b.segment && a.segment !== b.segment) {
+        const aRank = segmentRank.get(a.segment) ?? Number.MAX_SAFE_INTEGER;
+        const bRank = segmentRank.get(b.segment) ?? Number.MAX_SAFE_INTEGER;
+        if (aRank !== bRank) return aRank - bRank;
+      }
+      // Within the same segment (or both consolidated): status priority.
+      return priorityOf(a.statusKey) - priorityOf(b.statusKey);
+    });
 
     historical.sort((a, b) => {
       const aYear = extractFyYear(a.appliesTo) ?? Number.NEGATIVE_INFINITY;
       const bYear = extractFyYear(b.appliesTo) ?? Number.NEGATIVE_INFINITY;
       if (aYear !== bYear) return bYear - aYear;
+      const famDiff = familyPriorityOf(a.guidanceFamily) - familyPriorityOf(b.guidanceFamily);
+      if (famDiff !== 0) return famDiff;
       return priorityOf(a.statusKey) - priorityOf(b.statusKey);
     });
 
@@ -552,150 +793,344 @@ export function GuidanceHistorySection({ items }: GuidanceHistorySectionProps) {
   return (
     <div className={TRACKER_ROOT_CLASS}>
       <div className={TRACKER_OVERVIEW_CLASS}>
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Guidance tracker
-            </p>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              {statusGroups.map((group) => {
-                const statusStyle = STATUS_STYLES[group.statusKey];
-                return (
-                  <span
-                    key={group.statusKey}
-                    className="inline-flex items-center gap-1.5 text-[11px] font-medium text-foreground"
-                  >
-                    <span className={cn("h-1.5 w-1.5 rounded-full", statusStyle.accentClass)} />
-                    <span>{group.title}</span>
-                    <span className="text-muted-foreground">{group.threads.length}</span>
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-
-          {typeCounts.length > 1 ? (
-            <div className="border-t border-border/30 pt-3">
-              <ToggleGroup
-                type="single"
-                value={typeFilter}
-                onValueChange={(nextValue) => {
-                  // ToggleGroup emits "" when the active item is clicked again;
-                  // treat that as "show everything" rather than blanking the
-                  // selection.
-                  if (!nextValue) {
-                    setTypeFilter(ALL_TYPES_FILTER_KEY);
-                    return;
-                  }
-                  setTypeFilter(nextValue);
-                }}
-                variant="outline"
-                size="sm"
-                // Disable shadow + max-width so chips can wrap freely. `gap-2`
-                // gives visible space between adjacent pills since we override
-                // the segmented-control styling on each item below.
-                className="w-fit max-w-full flex-wrap gap-2 shadow-none data-[variant=outline]:shadow-none"
-                aria-label="Filter guidance threads by type"
+        <ToggleGroup
+          type="single"
+          value={familyTab}
+          onValueChange={(nextValue) => {
+            // ToggleGroup emits "" when the active item is re-clicked;
+            // ignore that so one tab is always active.
+            if (
+              nextValue === "growth" ||
+              nextValue === "margins" ||
+              nextValue === "capex" ||
+              nextValue === "others"
+            ) {
+              setFamilyTab(nextValue);
+            }
+          }}
+          variant="outline"
+          size="sm"
+          className="w-fit max-w-full flex-wrap gap-2 shadow-none data-[variant=outline]:shadow-none"
+          aria-label="Filter guidance threads by family"
+        >
+          {FAMILY_TABS.map((tab) => {
+            const count = familyCounts[tab.id];
+            return (
+              <ToggleGroupItem
+                key={tab.id}
+                value={tab.id}
+                aria-label={`Show ${tab.label} guidance`}
+                className="!flex-none w-auto min-w-fit rounded-full border px-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] whitespace-nowrap data-[variant=outline]:border data-[variant=outline]:first:border-l data-[variant=outline]:border-l data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:[&_span]:text-background/70"
               >
-                {/*
-                  The base ToggleGroupItem renders chips as a SEGMENTED CONTROL
-                  (shared borders, rounded only at first/last, equal-width via
-                  `flex-1`). For a filter bar the chips are conceptually
-                  independent and each should size to its label, so we break
-                  out of that look:
-                  - `!flex-none w-auto min-w-fit` overrides the base `flex-1
-                    min-w-0` so each chip sizes to its content. Without this,
-                    `flex-1` distributes width evenly and longer labels like
-                    "COMMISSIONING" overflow their allocated slot.
-                  - `whitespace-nowrap` keeps the LABEL + count on one line.
-                  - `rounded-full` overrides `rounded-none first:rounded-l-md last:rounded-r-md`
-                  - `border` + `data-[variant=outline]:border` restore borders
-                    that segmented styling stripped via `border-l-0`
-                  - `px-3.5` gives breathing room so `LABEL <count>` doesn't
-                    crowd adjacent chips
-                  - `data-[state=on]:bg-foreground / text-background` inverts
-                    the chip when active so the selected filter is unambiguous
-                  - `[&_span]` adjusts the count's color so it stays legible on
-                    the inverted active background
-                */}
-                <ToggleGroupItem
-                  value={ALL_TYPES_FILTER_KEY}
-                  aria-label="Show all guidance types"
-                  className="!flex-none w-auto min-w-fit rounded-full border px-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] whitespace-nowrap data-[variant=outline]:border data-[variant=outline]:first:border-l data-[variant=outline]:border-l data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:[&_span]:text-background/70"
-                >
-                  All
-                  <span className="ml-1.5 text-muted-foreground">{items.length}</span>
-                </ToggleGroupItem>
-                {typeCounts.map((entry) => (
-                  <ToggleGroupItem
-                    key={entry.key}
-                    value={entry.key}
-                    aria-label={`Show only ${entry.label} threads`}
-                    className="!flex-none w-auto min-w-fit rounded-full border px-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] whitespace-nowrap data-[variant=outline]:border data-[variant=outline]:first:border-l data-[variant=outline]:border-l data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:[&_span]:text-background/70"
-                  >
-                    {entry.label}
-                    <span className="ml-1.5 text-muted-foreground">{entry.count}</span>
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
-          ) : null}
+                {tab.label}
+                <span className="ml-1.5 text-muted-foreground">{count}</span>
+              </ToggleGroupItem>
+            );
+          })}
+        </ToggleGroup>
 
-          {totalSourceMentions > 0 ? (
-            <div className="flex flex-wrap items-center gap-1.5 border-t border-border/30 pt-3">
-              <span className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
-                {totalSourceMentions} mention{totalSourceMentions === 1 ? "" : "s"}
-              </span>
-            </div>
-          ) : null}
-        </div>
+        {totalSourceMentions > 0 && familyTab === "growth" ? (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/30 pt-3">
+            <span className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+              {totalSourceMentions} mention{totalSourceMentions === 1 ? "" : "s"}
+            </span>
+          </div>
+        ) : null}
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        {(() => {
-          const visibleThreads = isExpanded
-            ? orderedThreads
-            : orderedThreads.slice(0, COLLAPSED_VISIBLE_COUNT);
-          const firstHistoricalIdx = visibleThreads.findIndex((item) =>
-            isHistoricalGuidanceItem(item, currentFy),
-          );
-          return visibleThreads.map((item, idx) => (
-            <React.Fragment key={item.guidanceKey}>
-              {idx === firstHistoricalIdx && firstHistoricalIdx > 0 ? (
-                <div
-                  aria-hidden="true"
-                  className="col-span-full my-1 border-t border-border/40"
-                />
-              ) : null}
-              <GuidanceThreadCard item={item} currentFy={currentFy} />
-            </React.Fragment>
-          ));
-        })()}
-      </div>
-
-      {orderedThreads.length > COLLAPSED_VISIBLE_COUNT ? (
-        <div className="flex justify-center">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsExpanded((prev) => !prev)}
-            className="rounded-full px-4 text-[11px] font-medium text-muted-foreground hover:text-foreground"
-          >
-            {isExpanded ? (
-              <>
-                Show fewer
-                <ChevronDown className="ml-1.5 size-3.5 rotate-180 transition-transform" />
-              </>
-            ) : (
-              <>
-                Show {orderedThreads.length - COLLAPSED_VISIBLE_COUNT} more
-                <ChevronDown className="ml-1.5 size-3.5 transition-transform" />
-              </>
-            )}
-          </Button>
+      {filteredItems.length === 0 ? (
+        <div className={cn(elevatedBlockClass, "p-8 text-center")}>
+          <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+            Coming soon
+          </p>
+          <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground/70">
+            {FAMILY_TABS.find((t) => t.id === familyTab)?.label} guidance tracking is on the roadmap.
+            We currently extract growth (revenue / EBITDA / PAT) commitments only.
+          </p>
         </div>
       ) : null}
+
+      {filteredItems.length > 0 ? (
+        <>
+      <div className="flex justify-end">
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(v) => {
+            // ToggleGroup emits "" when the active item is re-clicked;
+            // ignore that to keep one view always active.
+            if (v === "table" || v === "cards") setViewMode(v);
+          }}
+          variant="outline"
+          size="sm"
+          className="w-fit shadow-none data-[variant=outline]:shadow-none"
+          aria-label="View mode"
+        >
+          <ToggleGroupItem
+            value="table"
+            aria-label="Table view"
+            className="rounded-l-full rounded-r-none border px-2.5 data-[variant=outline]:border data-[state=on]:bg-foreground data-[state=on]:text-background"
+          >
+            <TableProperties className="size-3.5" />
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="cards"
+            aria-label="Card view"
+            className="rounded-l-none rounded-r-full border px-2.5 data-[variant=outline]:border data-[state=on]:bg-foreground data-[state=on]:text-background"
+          >
+            <LayoutGrid className="size-3.5" />
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
+      {(() => {
+        const currentCount = orderedThreads.filter(
+          (item) => !isHistoricalGuidanceItem(item, currentFy),
+        ).length;
+        const visibleThreads =
+          isExpanded || currentCount === 0
+            ? orderedThreads
+            : orderedThreads.slice(0, currentCount);
+
+        const firstConsolidatedIdx = visibleThreads.findIndex(
+          (item) =>
+            !isHistoricalGuidanceItem(item, currentFy) && !item.segment,
+        );
+        const firstSegmentedIdx = visibleThreads.findIndex(
+          (item) =>
+            !isHistoricalGuidanceItem(item, currentFy) && Boolean(item.segment),
+        );
+        const firstHistoricalIdx = visibleThreads.findIndex((item) =>
+          isHistoricalGuidanceItem(item, currentFy),
+        );
+        const showOverallLabel =
+          firstConsolidatedIdx >= 0 && firstSegmentedIdx >= 0;
+        const showSegmentLabel =
+          firstConsolidatedIdx >= 0 && firstSegmentedIdx >= 0;
+
+        if (viewMode === "table") {
+          // Split into two tables for cleaner reading: Overall (no segment
+          // column — every row would be em-dash) and Segment-level (full
+          // columns). Each table renders its current rows followed by a
+          // hairline-divided historical zone, when expanded.
+          const overallRows = visibleThreads.filter((i) => !i.segment);
+          const segmentedRows = visibleThreads.filter((i) => Boolean(i.segment));
+
+          const overallFirstHistoricalIdx = overallRows.findIndex((item) =>
+            isHistoricalGuidanceItem(item, currentFy),
+          );
+          const segmentedFirstHistoricalIdx = segmentedRows.findIndex((item) =>
+            isHistoricalGuidanceItem(item, currentFy),
+          );
+
+          const sectionLabelClass =
+            "px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70";
+
+          return (
+            <div className="space-y-4">
+              {overallRows.length > 0 ? (
+                <div>
+                  <div className={sectionLabelClass}>Overall</div>
+                  <div className={cn(elevatedBlockClass, "overflow-x-auto")}>
+                    <table className="w-full text-[12px]">
+                      <thead className="bg-muted/30 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                        <tr>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Metric</th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Horizon</th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">% Growth</th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Target</th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Status</th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-right">Trail</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/25">
+                        {overallRows.map((item, idx) => (
+                          <React.Fragment key={item.guidanceKey}>
+                            {idx === overallFirstHistoricalIdx && overallFirstHistoricalIdx > 0 ? (
+                              <tr aria-hidden="true">
+                                <td colSpan={6} className="border-t-2 border-border/40 p-0" />
+                              </tr>
+                            ) : null}
+                            <GuidanceTableRow
+                              item={item}
+                              currentFy={currentFy}
+                              onSelect={setSelectedThread}
+                              showSegmentColumn={false}
+                            />
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : null}
+
+              {segmentedRows.length > 0 ? (
+                <div>
+                  <div className={sectionLabelClass}>Segment-level</div>
+                  <div className={cn(elevatedBlockClass, "overflow-x-auto")}>
+                    <table className="w-full text-[12px]">
+                      <thead className="bg-muted/30 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                        <tr>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Metric</th>
+                          <th scope="col" className="px-3 py-2 text-left">Segment</th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Horizon</th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">% Growth</th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Target</th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Status</th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-right">Trail</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/25">
+                        {segmentedRows.map((item, idx) => (
+                          <React.Fragment key={item.guidanceKey}>
+                            {idx === segmentedFirstHistoricalIdx && segmentedFirstHistoricalIdx > 0 ? (
+                              <tr aria-hidden="true">
+                                <td colSpan={7} className="border-t-2 border-border/40 p-0" />
+                              </tr>
+                            ) : null}
+                            <GuidanceTableRow
+                              item={item}
+                              currentFy={currentFy}
+                              onSelect={setSelectedThread}
+                              showSegmentColumn={true}
+                            />
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          );
+        }
+
+        // viewMode === "cards" — original card grid layout.
+        const subheadingClass =
+          "col-span-full pt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80";
+        return (
+          <div className="grid gap-3 md:grid-cols-2">
+            {visibleThreads.map((item, idx) => (
+              <React.Fragment key={item.guidanceKey}>
+                {showOverallLabel && idx === firstConsolidatedIdx ? (
+                  <div className={subheadingClass}>Overall</div>
+                ) : null}
+                {showSegmentLabel && idx === firstSegmentedIdx ? (
+                  <div className={subheadingClass}>Segment-level</div>
+                ) : null}
+                {idx === firstHistoricalIdx && firstHistoricalIdx > 0 ? (
+                  <div
+                    aria-hidden="true"
+                    className="col-span-full my-1 border-t border-border/40"
+                  />
+                ) : null}
+                <GuidanceThreadCard
+                  item={item}
+                  currentFy={currentFy}
+                  onSelect={setSelectedThread}
+                />
+              </React.Fragment>
+            ))}
+          </div>
+        );
+      })()}
+
+      {(() => {
+        const currentCount = orderedThreads.filter(
+          (item) => !isHistoricalGuidanceItem(item, currentFy),
+        ).length;
+        const historicalCount = orderedThreads.length - currentCount;
+        // Toggle only matters when there are both current AND historical
+        // threads — i.e., something to switch between. If the page is all
+        // current or all historical, hide the button.
+        if (currentCount === 0 || historicalCount === 0) return null;
+        return (
+          <div className="flex justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              className="rounded-full px-4 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+            >
+              {isExpanded ? (
+                <>
+                  Hide track record
+                  <ChevronDown className="ml-1.5 size-3.5 rotate-180 transition-transform" />
+                </>
+              ) : (
+                <>
+                  Show track record ({historicalCount})
+                  <ChevronDown className="ml-1.5 size-3.5 transition-transform" />
+                </>
+              )}
+            </Button>
+          </div>
+        );
+      })()}
+
+      {(() => {
+        // Snapshot-scoped provenance. Renders only when at least one
+        // PR2-shape source_files entry exists (legacy chunk-id arrays
+        // skip rendering). Collapsed by default so it doesn't dominate
+        // the section; expandable details disclosure on demand.
+        const rich = (sourceFiles ?? [])
+          .map(asRichSourceFile)
+          .filter((entry): entry is RichSourceFile => Boolean(entry));
+        if (rich.length === 0) return null;
+        return (
+          <details className={cn(elevatedBlockClass, "px-4 py-3 group")}>
+            <summary className="flex cursor-pointer items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground">
+              <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
+              Sources ({rich.length})
+            </summary>
+            <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
+              {rich.map((src) => {
+                const label = src.period_label ?? (src.fy && src.qtr ? `Q${src.qtr} FY${String(src.fy).slice(-2)}` : `#${src.source_doc_id}`);
+                const docType = src.doc_type ?? "transcript";
+                const docTypeShort = docType === "transcript" ? "Concall" : docType === "presentation" ? "PPT" : docType === "annual_report" ? "AR" : docType;
+                const labelText = `${label} ${docTypeShort}`;
+                if (src.url) {
+                  return (
+                    <li key={src.source_doc_id}>
+                      <a
+                        href={src.url}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="inline-flex items-center gap-1 rounded-md border border-border/40 bg-background/60 px-2 py-1 text-[11px] text-foreground/85 hover:border-border hover:bg-background hover:text-foreground"
+                      >
+                        {labelText} <span className="text-muted-foreground">↗</span>
+                      </a>
+                    </li>
+                  );
+                }
+                return (
+                  <li key={src.source_doc_id}>
+                    <span className="inline-flex items-center gap-1 rounded-md border border-border/40 bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground">
+                      {labelText}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </details>
+        );
+      })()}
+        </>
+      ) : null}
+
+      <Drawer
+        direction="right"
+        open={selectedThread !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedThread(null);
+        }}
+      >
+        <DrawerContent className="w-full max-w-xl">
+          {selectedThread ? <GuidanceDrawerBody item={selectedThread} /> : null}
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

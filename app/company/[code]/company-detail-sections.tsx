@@ -446,7 +446,10 @@ export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionPro
       }
     >
       {guidanceItems.length > 0 ? (
-        <GuidanceHistorySection items={guidanceItems} />
+        <GuidanceHistorySection
+          items={guidanceItems}
+          sourceFiles={normalizedGuidanceSnapshot?.sourceFiles}
+        />
       ) : (
         missingSectionState(
           overview,

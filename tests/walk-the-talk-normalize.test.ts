@@ -24,12 +24,17 @@ const item = (
   guidanceFamily: null,
   metricSubtype: null,
   metricLabel: null,
+  segment: null,
+  segmentCanonical: null,
   horizonType: null,
   appliesFrom: null,
   appliesTo: null,
   horizonLabel: null,
   valuePercent: null,
   valueText: null,
+  valueKind: null,
+  numericValue: null,
+  unit: null,
   firstMentionPeriod: "Q1 FY26",
   latestMentionPeriod: "Q1 FY26",
   mentionedPeriods: [],
@@ -72,6 +77,9 @@ const test = (name: string, fn: () => void) => {
 // older tests; it maps to a (family, subtype) pair on the new shape. Anything
 // not in the map is left as a null family — which exercises the "other"
 // bucket in mapGuidanceFamilyToCategory.
+// Phase 6 narrowed scope: GROWTH only. Margin / gross are out of scope and
+// no longer mapped here. Strings not in the map produce a null family,
+// which exercises the "other" bucket in mapGuidanceFamilyToCategory.
 const FAMILY_MAP: Record<
   string,
   { family: NormalizedGuidanceItem["guidanceFamily"]; subtype: NormalizedGuidanceItem["metricSubtype"] }
@@ -79,8 +87,7 @@ const FAMILY_MAP: Record<
   growth: { family: "growth", subtype: "revenue" },
   revenue: { family: "growth", subtype: "revenue" },
   ebitda_growth: { family: "growth", subtype: "ebitda" },
-  margin: { family: "margin", subtype: "ebitda" },
-  gross_margin: { family: "margin", subtype: "gross" },
+  pat_growth: { family: "growth", subtype: "pat" },
 };
 
 const mk = (
@@ -130,24 +137,18 @@ test("non-empty guidanceItems → schemaStatus 'present'", () => {
 
 // ===========================================================================
 // Category mapping (mapGuidanceFamilyToCategory)
-// Phase 6 v2 narrowed scope: only growth + margin families. capex / capacity
-// buckets are no longer populated by the producer.
+// Phase 6 v2 narrowed scope: GROWTH only. Margin / capex / capacity buckets
+// are no longer populated by the producer. mapGuidanceFamilyToCategory still
+// has the legacy "margin → 'margin'" branch for forward-compatibility, but
+// the producer never emits margin now so we don't test that branch here.
 // ===========================================================================
 
 test("category mapping: growth family → 'revenue'", () => {
   const r = normalizeWalkTheTalk(
-    snapshot([mk("growth", "met"), mk("ebitda_growth", "met")]),
+    snapshot([mk("growth", "met"), mk("ebitda_growth", "met"), mk("pat_growth", "met")]),
   );
   const categories = r.commitments.map((c) => c.category).sort();
-  assert.deepEqual(categories, ["revenue", "revenue"]);
-});
-
-test("category mapping: margin family → 'margin'", () => {
-  const r = normalizeWalkTheTalk(
-    snapshot([mk("margin", "met"), mk("gross_margin", "met")]),
-  );
-  const categories = r.commitments.map((c) => c.category).sort();
-  assert.deepEqual(categories, ["margin", "margin"]);
+  assert.deepEqual(categories, ["revenue", "revenue", "revenue"]);
 });
 
 test("category mapping: null/unknown family → 'other'", () => {
@@ -240,41 +241,42 @@ test("per-category: 4 revenue, 2 met → 'erratic' (50%)", () => {
 });
 
 test("per-category: only 2 in category → 'not_enough_data'", () => {
+  // Two unrecognized-family items → both map to "other" bucket.
   const r = normalizeWalkTheTalk(
-    snapshot([mk("margin", "met"), mk("margin", "met")]),
+    snapshot([mk("unrecognized", "met"), mk("unrecognized", "met")]),
   );
-  const margin = r.byCategory.find((b) => b.category === "margin");
-  assert.ok(margin);
-  assert.equal(margin.total_count, 2);
-  assert.equal(margin.tier, "not_enough_data");
+  const bucket = r.byCategory.find((b) => b.category === "other");
+  assert.ok(bucket);
+  assert.equal(bucket.total_count, 2);
+  assert.equal(bucket.tier, "not_enough_data");
 });
 
 test("empty per-category buckets are suppressed (only those with ≥1 counted item appear)", () => {
-  // 1 margin counted, 1 capex active (not counted), 1 revenue unknown (not counted).
+  // 1 revenue counted (growth/met), 1 growth active (not counted), 1 revenue
+  // unknown (not counted). Only the counted-revenue should produce a bucket.
   const r = normalizeWalkTheTalk(
     snapshot([
-      mk("margin", "met"),
+      mk("growth", "met"),
       mk("growth", "active"),
       mk("revenue", "unknown"),
     ]),
   );
   const cats = r.byCategory.map((b) => b.category);
-  assert.deepEqual(cats, ["margin"]);
+  assert.deepEqual(cats, ["revenue"]);
 });
 
-test("per-category bucket order: revenue, margin, other (capex/capacity unpopulated in v2)", () => {
+test("per-category bucket order: revenue, other (margin/capex/capacity unpopulated in v2)", () => {
+  // Phase 6 v2 narrowed to growth-only — only revenue and other buckets
+  // can ever appear. Order follows the WT_T constant (capex, capacity,
+  // revenue, margin, other) with absent buckets dropped.
   const r = normalizeWalkTheTalk(
     snapshot([
       mk("other", "met"),
-      mk("margin", "met"),
       mk("revenue", "met"),
     ]),
   );
-  // Phase 6 v2 only emits growth + margin; capex/capacity buckets stay empty
-  // and are suppressed in byCategory output. Order follows the WT_T constant
-  // (capex, capacity, revenue, margin, other) with absent buckets dropped.
   const order = r.byCategory.map((b) => b.category);
-  assert.deepEqual(order, ["revenue", "margin", "other"]);
+  assert.deepEqual(order, ["revenue", "other"]);
 });
 
 // ===========================================================================
@@ -282,17 +284,18 @@ test("per-category bucket order: revenue, margin, other (capex/capacity unpopula
 // ===========================================================================
 
 test("overall: aggregates all counted commitments across categories", () => {
+  // All counted items: 3 met (on-time), 1 delayed, 1 dropped (not on-time).
+  // 1 active not counted. Total 5 counted, 3 on-time = 60% → erratic.
   const r = normalizeWalkTheTalk(
     snapshot([
       mk("growth", "met"),
       mk("growth", "met"),
       mk("growth", "delayed"),
-      mk("margin", "met"),
+      mk("ebitda_growth", "met"),
       mk("revenue", "dropped"),
       mk("revenue", "active"), // not counted
     ]),
   );
-  // counted: 5 (4 capex/margin/revenue with met/delayed/dropped). on-time: 3.
   assert.equal(r.overall.totalCount, 5);
   assert.equal(r.overall.onTimeCount, 3);
   assert.equal(r.overall.tier, "erratic"); // 60%
@@ -324,9 +327,9 @@ test("delay_mention_count counts trail entries with mentionType='delay'", () => 
     snapshot([
       mk("growth", "delayed", {
         trail: [
-          { quarter: "Q1 FY26", summary: null, excerpt: null, mentionType: "first_mention", documentType: null, documentLabel: null, sourceReference: null, confidence: null, positionInStory: 0 },
-          { quarter: "Q2 FY26", summary: null, excerpt: null, mentionType: "delay", documentType: null, documentLabel: null, sourceReference: null, confidence: null, positionInStory: 1 },
-          { quarter: "Q3 FY26", summary: null, excerpt: null, mentionType: "delay", documentType: null, documentLabel: null, sourceReference: null, confidence: null, positionInStory: 2 },
+          { quarter: "Q1 FY26", summary: null, excerpt: null, mentionType: "first_mention", documentType: null, documentLabel: null, sourceReference: null, confidence: null, valuePercent: null, valueText: null, valueKind: null, numericValue: null, unit: null, horizonType: null, appliesFrom: null, appliesTo: null, horizonLabel: null },
+          { quarter: "Q2 FY26", summary: null, excerpt: null, mentionType: "delay", documentType: null, documentLabel: null, sourceReference: null, confidence: null, valuePercent: null, valueText: null, valueKind: null, numericValue: null, unit: null, horizonType: null, appliesFrom: null, appliesTo: null, horizonLabel: null },
+          { quarter: "Q3 FY26", summary: null, excerpt: null, mentionType: "delay", documentType: null, documentLabel: null, sourceReference: null, confidence: null, valuePercent: null, valueText: null, valueKind: null, numericValue: null, unit: null, horizonType: null, appliesFrom: null, appliesTo: null, horizonLabel: null },
         ],
       }),
     ]),
