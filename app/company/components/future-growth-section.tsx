@@ -32,8 +32,6 @@ import { formatShortDate, pctFormatter } from "../[code]/page-helpers";
 import {
   formatCatalystQuantifiedLabel,
   formatCompactLabel,
-  getCatalystConfidenceDisplay,
-  getCatalystImpactPillDisplay,
   getCatalystStatusDisplay,
   getGrowthScoreComponentLabel,
   getPercentileTone,
@@ -311,22 +309,6 @@ function renderCompactScenarioCard(
   );
 }
 
-function buildHeaderPills(
-  outlook: NormalizedGrowthOutlook | null,
-  hasDeepDive: boolean,
-): string[] {
-  if (!outlook) return [];
-  return [
-    outlook.summaryBullets.length > 0 ||
-    outlook.growthScoreComponents.length > 0 ||
-    outlook.baseGrowthPct
-      ? "Summary"
-      : null,
-    outlook.catalysts.length > 0 ? "Top catalysts" : null,
-    hasDeepDive ? "Scenarios" : null,
-  ].filter((value): value is string => Boolean(value));
-}
-
 type FutureGrowthSectionProps = {
   outlook: NormalizedGrowthOutlook | null;
   companyCode: string;
@@ -365,35 +347,31 @@ export function FutureGrowthSection({
   rankInfo = null,
 }: FutureGrowthSectionProps) {
   const growthScore = outlook?.growthScore ?? null;
+  const growthBand =
+    typeof growthScore === "number"
+      ? GROWTH_BANDS[bandForGrowthScore(growthScore)]
+      : null;
   const growthUpdatedAt = formatShortDate(outlook?.updatedAtRaw, true);
   const hasDeepDive = Boolean(
     outlook?.scenarios?.base ||
       outlook?.scenarios?.upside ||
       outlook?.scenarios?.downside,
   );
-  const headerPills = buildHeaderPills(outlook, hasDeepDive);
   const headerRankPills = buildGrowthRankPills(rankInfo);
 
   return (
     <SectionCard
       id="future-growth"
       title="Future Growth Prospects"
-      headerPills={headerPills}
       headerRankPills={headerRankPills}
       feedbackEnabled={Boolean(outlook)}
       feedbackCompanyCode={companyCode}
       feedbackCompanyName={companyName}
       headerAction={
-        typeof growthScore === "number" ? (
-          (() => {
-            const band = GROWTH_BANDS[bandForGrowthScore(growthScore)];
-            return (
-              <div className="flex items-center gap-2">
-                <ConcallScore score={growthScore} size="sm" kind="growth" />
-                <span className={`text-[13px] font-semibold ${band.tone}`}>{band.label}</span>
-              </div>
-            );
-          })()
+        growthUpdatedAt ? (
+          <span className="text-[11px] text-muted-foreground">
+            Updated: {growthUpdatedAt}
+          </span>
         ) : undefined
       }
     >
@@ -412,13 +390,31 @@ export function FutureGrowthSection({
                         {outlook.growthScoreComponents.length > 0 && (
                           <Drawer direction="right">
                             <DrawerTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-7 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-none hover:bg-accent"
+                              <button
+                                type="button"
+                                aria-label="View growth score breakdown"
+                                className="flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1 shadow-none transition-colors hover:bg-accent"
                               >
-                                View score breakdown
-                              </Button>
+                                {typeof growthScore === "number" && growthBand ? (
+                                  <>
+                                    <span className="inline-flex items-center gap-0.5">
+                                      <ConcallScore score={growthScore} size="sm" kind="growth" />
+                                      <span className="text-[11px] font-medium text-muted-foreground">
+                                        /10
+                                      </span>
+                                    </span>
+                                    <span
+                                      className={`text-[13px] font-semibold ${growthBand.tone}`}
+                                    >
+                                      {growthBand.label}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground">
+                                    View score breakdown
+                                  </span>
+                                )}
+                              </button>
                             </DrawerTrigger>
                             <DrawerContent className="w-full max-w-xl">
                               <DrawerHeader className="border-b border-border">
@@ -455,20 +451,25 @@ export function FutureGrowthSection({
                             </DrawerContent>
                           </Drawer>
                         )}
-                        {growthUpdatedAt && (
-                          <span className="px-2 py-0.5 rounded-full bg-muted text-foreground border border-border/60 text-[10px]">
-                            Updated: {growthUpdatedAt}
-                          </span>
-                        )}
                       </div>
                     </div>
-                    <ul className="space-y-1">
-                      {outlook.summaryBullets.slice(0, 5).map((bullet, idx) => (
-                        <li key={idx} className="text-[11px] text-foreground leading-snug">
-                          • {bullet}
-                        </li>
-                      ))}
-                    </ul>
+                    {outlook.summaryBullets[0] && (
+                      <p className="text-sm font-semibold leading-snug text-foreground">
+                        {outlook.summaryBullets[0]}
+                      </p>
+                    )}
+                    {outlook.summaryBullets.length > 1 && (
+                      <ul className="space-y-1 border-l border-border/50 pl-3">
+                        {outlook.summaryBullets.slice(1, 5).map((bullet, idx) => (
+                          <li
+                            key={idx}
+                            className="text-[11px] leading-snug text-muted-foreground"
+                          >
+                            {bullet}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )}
 
@@ -600,8 +601,6 @@ export function FutureGrowthSection({
                       const timelineItems = c.timelineItems;
                       const hasTimelineDetails = timelineItems.length > 0;
                       const statusDisplay = getCatalystStatusDisplay(c.statusTag);
-                      const confidenceDisplay = getCatalystConfidenceDisplay(c.pillConfidence);
-                      const impactDisplay = getCatalystImpactPillDisplay(c);
                       const quantifiedLabel = formatCatalystQuantifiedLabel(c);
                       const quantifiedDisplay = splitCatalystQuantifiedLabel(quantifiedLabel);
                       const priorityLabel =
@@ -732,16 +731,6 @@ export function FutureGrowthSection({
                                       {toDisplayLabel(c.type) ?? c.type}
                                     </span>
                                   )}
-                                  {impactDisplay && (
-                                    <span className={`rounded-full border px-2.5 py-0.5 ${impactDisplay.className}`}>
-                                      {impactDisplay.label}
-                                    </span>
-                                  )}
-                                  {confidenceDisplay && (
-                                    <span className={`rounded-full border px-2.5 py-0.5 ${confidenceDisplay.className}`}>
-                                      {confidenceDisplay.label}
-                                    </span>
-                                  )}
                                   {priorityLabel && (
                                     <span className={chipClass("slate")}>
                                       {priorityLabel}
@@ -750,15 +739,15 @@ export function FutureGrowthSection({
                                 </div>
                               </div>
 
-                              {quantifiedLabel && (
-                                <div className={`${nestedDetailClass} p-3`}>
-                                  <div className="space-y-2">
-                                    <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                                      Growth Impact
-                                    </p>
+                              <div className={`${nestedDetailClass} p-3`}>
+                                <div className="space-y-2">
+                                  <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+                                    Growth Impact
+                                  </p>
+                                  {quantifiedLabel ? (
                                     <div className="space-y-1">
                                       <p className="text-2xl font-semibold leading-[1.02] tracking-tight text-foreground">
-                                        {quantifiedDisplay.headline ?? quantifiedLabel ?? "Unquantified"}
+                                        {quantifiedDisplay.headline ?? quantifiedLabel}
                                       </p>
                                       {quantifiedDisplay.subline && (
                                         <p className="max-w-[28rem] text-[11px] leading-relaxed text-muted-foreground">
@@ -766,9 +755,13 @@ export function FutureGrowthSection({
                                         </p>
                                       )}
                                     </div>
-                                  </div>
+                                  ) : (
+                                    <p className="text-[13px] text-muted-foreground">
+                                      Not quantified
+                                    </p>
+                                  )}
                                 </div>
-                              )}
+                              </div>
 
                               {(whatIsChanging || whyItMatters) && (
                                 <div className="space-y-2">

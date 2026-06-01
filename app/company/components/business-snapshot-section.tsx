@@ -15,6 +15,7 @@ import { SectionCard } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
 import { BusinessSegmentsMosaic } from "./business-segments-mosaic";
 import { HistoricalEconomicsDataPack } from "./deferred-company-sections";
+import { SegmentHistoryPanel } from "./segment-history-panel";
 import {
   elevatedBlockClass,
   nestedDetailClass,
@@ -224,6 +225,74 @@ function renderRevenueSplitRow(
   );
 }
 
+// Company-level latest annual YoY, surfaced in the Business Momentum preview.
+// Builds a company-total revenue series from whichever revenue history exists
+// (the demoted Total/Consolidated row when present, else a clean segment sum),
+// and returns null unless both the latest and prior annual periods are fully
+// available — so a partial/ambiguous total never produces a misleading number.
+function getCompanyLatestYoy(
+  history: NormalizedHistoricalEconomics,
+): { period: string; yoyPercent: number } | null {
+  let periods: string[] = [];
+  let seriesByPeriod: Record<string, number | null> = {};
+
+  const segHist = history.revenueHistoryBySegment;
+  const unitHist = history.revenueHistoryByUnit;
+
+  if (segHist && segHist.rows.length > 0) {
+    periods = [...segHist.years].sort(
+      (a, b) => extractSortNumber(a) - extractSortNumber(b),
+    );
+    const totalRow = segHist.rows.find((row) => row.isTotal);
+    const segments = segHist.rows.filter((row) => !row.isTotal);
+    seriesByPeriod = Object.fromEntries(
+      periods.map((period) => {
+        if (totalRow && typeof totalRow.revenueByYear[period] === "number") {
+          return [period, totalRow.revenueByYear[period] as number];
+        }
+        const values = segments.map((row) => row.revenueByYear[period]);
+        if (values.length > 0 && values.every((v) => typeof v === "number")) {
+          return [period, values.reduce((sum, v) => sum + (v as number), 0)];
+        }
+        return [period, null];
+      }),
+    );
+  } else if (unitHist && unitHist.rows.length > 0) {
+    periods = [...unitHist.periods].sort(
+      (a, b) => extractSortNumber(a) - extractSortNumber(b),
+    );
+    const consolidated = unitHist.rows.find((row) => row.isConsolidated);
+    const units = unitHist.rows.filter((row) => !row.isConsolidated);
+    seriesByPeriod = Object.fromEntries(
+      periods.map((period) => {
+        if (
+          consolidated &&
+          typeof consolidated.valuesByPeriod[period] === "number"
+        ) {
+          return [period, consolidated.valuesByPeriod[period] as number];
+        }
+        const values = units.map((row) => row.valuesByPeriod[period]);
+        if (values.length > 0 && values.every((v) => typeof v === "number")) {
+          return [period, values.reduce((sum, v) => sum + (v as number), 0)];
+        }
+        return [period, null];
+      }),
+    );
+  } else {
+    return null;
+  }
+
+  if (periods.length < 2) return null;
+  const latest = periods[periods.length - 1];
+  const prior = periods[periods.length - 2];
+  const latestVal = seriesByPeriod[latest];
+  const priorVal = seriesByPeriod[prior];
+  if (typeof latestVal !== "number" || typeof priorVal !== "number" || priorVal === 0) {
+    return null;
+  }
+  return { period: latest, yoyPercent: ((latestVal - priorVal) / priorVal) * 100 };
+}
+
 function renderHistoricalEconomicsCard(history: NormalizedHistoricalEconomics) {
   const hasRichHistoricalEconomics =
     Boolean(history.summary) ||
@@ -253,8 +322,8 @@ function renderHistoricalEconomicsCard(history: NormalizedHistoricalEconomics) {
   const historicalMetaColumn = hasCompanyRevenueCagr || hasSegmentGrowth;
   const richSummaryCagr = history.summary?.companyRevenueCagr ?? history.companyRevenueCagr3y;
   const richSegmentRowCount =
-    history.revenueHistoryBySegment?.rows.length ??
-    history.revenueMixHistoryBySegment?.rows.length ??
+    history.revenueHistoryBySegment?.rows.filter((row) => !row.isTotal).length ??
+    history.revenueMixHistoryBySegment?.rows.filter((row) => !row.isTotal).length ??
     0;
   const richUnitRowCount =
     history.revenueHistoryByUnit?.rows.length ?? history.revenueMixHistoryByUnit?.rows.length ?? 0;
@@ -270,11 +339,18 @@ function renderHistoricalEconomicsCard(history: NormalizedHistoricalEconomics) {
           ? history.revenueMixHistoryBySegment?.years ?? []
           : history.revenueMixHistoryByUnit?.periods ?? [];
   const richPeriodCount = richPeriods.length;
+  const companyYoy = getCompanyLatestYoy(history);
+  const cagrWindow = richSummaryCagr
+    ? formatRangeLabel(richSummaryCagr.startYear, richSummaryCagr.endYear)
+    : null;
   const preview =
     hasRichHistoricalEconomics
       ? [
+          companyYoy
+            ? `${companyYoy.period} ${companyYoy.yoyPercent > 0 ? "+" : ""}${formatPctLabel(companyYoy.yoyPercent)} YoY`
+            : null,
           richSummaryCagr?.cagrPercent != null
-            ? `${formatPctLabel(richSummaryCagr.cagrPercent)} company CAGR`
+            ? `${formatPctLabel(richSummaryCagr.cagrPercent)} company CAGR${cagrWindow ? ` (${cagrWindow})` : ""}`
             : richSummaryCagr
               ? "Company CAGR tracked"
               : null,
@@ -545,6 +621,10 @@ export function BusinessSnapshotSection({
                       : hasHistoricalEconomicsSource
                         ? renderHistoricalEconomicsUnavailableCard()
                         : null}
+                    <SegmentHistoryPanel
+                      quarterly={snapshot.segmentHistoryQuarterly}
+                      annual={snapshot.consolidatedFinancialsAnnual}
+                    />
                   </div>
                 ) : hasLegacyBusinessSnapshot ? (
                   <>

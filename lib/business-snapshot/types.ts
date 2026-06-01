@@ -4,6 +4,8 @@ export type BusinessSnapshotRow = {
   segment_profiles?: unknown;
   business_snapshot?: unknown;
   historical_economics?: unknown;
+  segment_history_quarterly?: unknown;
+  consolidated_financials_annual?: unknown;
   about_company?: unknown;
   revenue_breakdown?: unknown;
   revenue_engine?: unknown;
@@ -105,6 +107,7 @@ export type NormalizedRevenueHistoryBySegmentInsight = {
 
 export type NormalizedRevenueHistoryBySegmentRow = {
   segment: string;
+  isTotal: boolean;
   revenueByYear: Record<string, number | null>;
   comparabilityLabel: string | null;
   growthMetricPeriod: string | null;
@@ -121,6 +124,7 @@ export type NormalizedRevenueHistoryBySegment = {
 
 export type NormalizedRevenueMixHistoryBySegmentRow = {
   segment: string;
+  isTotal: boolean;
   mixPercentByYear: Record<string, number | null>;
   directionLabel: string | null;
   latestMixPercent: number | null;
@@ -143,6 +147,36 @@ export type NormalizedHistoricalEconomics = {
   revenueMixHistoryBySegment: NormalizedRevenueMixHistoryBySegment | null;
   revenueHistoryByUnit: NormalizedRevenueHistoryByUnit | null;
   revenueMixHistoryByUnit: NormalizedRevenueMixHistoryByUnit | null;
+};
+
+// Tri-axis slots (chunks-fed pipeline). Mirror business_snapshot.schema.json
+// definitions `segment_period_table` and `consolidated_annual_table`. Both are
+// optional and fill-if-found; null when the source slot is absent or empty {}.
+export type NormalizedSegmentPeriodRow = {
+  segment: string;
+  amountByPeriod: Record<string, number | null>;
+  unit: string | null;
+  mixPctLatest: number | null;
+  comparabilityLabel: string | null;
+};
+
+export type NormalizedSegmentHistoryQuarterly = {
+  periods: string[];
+  rows: NormalizedSegmentPeriodRow[];
+  insights: string[];
+};
+
+export type NormalizedConsolidatedAnnualRow = {
+  metric: string;
+  valueByPeriod: Record<string, number | null>;
+  unit: string | null;
+  comparabilityLabel: string | null;
+};
+
+export type NormalizedConsolidatedFinancialsAnnual = {
+  periods: string[];
+  rows: NormalizedConsolidatedAnnualRow[];
+  insights: string[];
 };
 
 export type NormalizedBusinessSnapshot = {
@@ -171,5 +205,7 @@ export type NormalizedBusinessSnapshot = {
   revenueBreakdown: NormalizedRevenueBreakdown | null;
   historicalEconomics: NormalizedHistoricalEconomics | null;
   hasHistoricalEconomicsSource: boolean;
+  segmentHistoryQuarterly: NormalizedSegmentHistoryQuarterly | null;
+  consolidatedFinancialsAnnual: NormalizedConsolidatedFinancialsAnnual | null;
   schemaHints: string[];
 };

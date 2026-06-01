@@ -31,18 +31,43 @@ export function KpiSparkline({
   const last = numericPoints[numericPoints.length - 1].value;
   const stroke = last > first ? "#10b981" : last < first ? "#f43f5e" : "#94a3b8";
 
+  // Index of the last real value within the full (null-inclusive) array — the
+  // sparkline anchors a dot there so the eye sees where the series landed.
+  let lastNumericIndex = -1;
+  for (let i = points.length - 1; i >= 0; i -= 1) {
+    if (points[i].value != null) {
+      lastNumericIndex = i;
+      break;
+    }
+  }
+
   return (
     <div className="h-7 w-20" aria-label={ariaLabel}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={points} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+        <LineChart data={points} margin={{ top: 2, right: 3, bottom: 2, left: 2 }}>
           <Line
-            type="monotone"
+            type="linear"
             dataKey="value"
             stroke={stroke}
             strokeWidth={1.5}
-            dot={false}
             isAnimationActive={false}
-            connectNulls
+            connectNulls={false}
+            dot={(props: { cx?: number; cy?: number; index?: number }) => {
+              const { cx, cy, index } = props;
+              if (index !== lastNumericIndex || cx == null || cy == null) {
+                return <g key={`sparkline-dot-${index}`} />;
+              }
+              return (
+                <circle
+                  key={`sparkline-dot-${index}`}
+                  cx={cx}
+                  cy={cy}
+                  r={2}
+                  fill={stroke}
+                  stroke="none"
+                />
+              );
+            }}
           />
         </LineChart>
       </ResponsiveContainer>

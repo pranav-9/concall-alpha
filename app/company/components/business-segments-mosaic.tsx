@@ -1,5 +1,5 @@
 import type { NormalizedRevenueBreakdownItem } from "@/lib/business-snapshot/types";
-import { BusinessSegmentMixDonutChart } from "./business-segment-mix-donut-chart-lazy";
+import { BusinessSegmentMixBar } from "./business-segment-mix-bar";
 import { colorPalette, maxSlices } from "./business-segment-mix-constants";
 import { elevatedBlockClass } from "./surface-tokens";
 
@@ -8,7 +8,7 @@ type BusinessSegmentsMosaicProps = {
 };
 
 const pctFormatter = new Intl.NumberFormat("en-IN", {
-  maximumFractionDigits: 2,
+  maximumFractionDigits: 1,
 });
 
 const formatPctLabel = (value: number) => `${pctFormatter.format(value)}%`;
@@ -98,11 +98,7 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
   };
 
   const cardsSurface = (
-    <div
-      className={`min-w-0 rounded-xl border border-border/20 bg-background/25 p-3 ${
-        hasSegmentMixDonut ? "lg:col-span-2" : ""
-      }`}
-    >
+    <div className="min-w-0 rounded-xl border border-border/20 bg-background/25 p-3">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {visibleEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "visible"))}
       </div>
@@ -131,15 +127,12 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
       </div>
 
       {hasSegmentMixDonut ? (
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(18rem,0.95fr)] lg:items-stretch">
+        <div className="mt-3 space-y-3">
+          <BusinessSegmentMixBar segments={segments} />
           {cardsSurface}
-          <BusinessSegmentMixDonutChart
-            segments={segments}
-            className="lg:col-start-3 lg:row-start-1 lg:h-full"
-          />
         </div>
       ) : (
-        cardsSurface
+        <div className="mt-3">{cardsSurface}</div>
       )}
     </div>
   );

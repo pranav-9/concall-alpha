@@ -110,9 +110,9 @@ export function SectionFeedbackButton({
   return (
     <Button
       type="button"
-      variant={requested ? "outline" : "default"}
+      variant="outline"
       size="sm"
-      className="h-8 rounded-full px-2.5 text-[11px] font-medium shadow-sm sm:px-3"
+      className="h-8 rounded-full border-border/60 px-2.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:px-3"
       disabled={requested || submitting}
       onClick={handleClick}
     >

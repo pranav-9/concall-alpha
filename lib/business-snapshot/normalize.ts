@@ -14,6 +14,10 @@ import type {
   NormalizedRevenueMixHistoryBySegmentRow,
   NormalizedRevenueMixHistoryByUnit,
   NormalizedRevenueMixHistoryByUnitRow,
+  NormalizedSegmentHistoryQuarterly,
+  NormalizedSegmentPeriodRow,
+  NormalizedConsolidatedFinancialsAnnual,
+  NormalizedConsolidatedAnnualRow,
 } from "@/lib/business-snapshot/types";
 
 type JsonRecord = Record<string, unknown>;
@@ -346,6 +350,26 @@ const normalizeHistoricalEconomicsInsight = (
   return segment ? `${segment}: ${trendInsight}` : trendInsight;
 };
 
+// A segment-history row that is actually the company total (sum of the
+// segments), not a segment. The extractor contract forbids these, but they
+// still appear (e.g. a "Consolidated" row), so we flag them to demote rather
+// than rank them as the largest "segment". Mirrors the by-unit isConsolidated.
+const TOTAL_ROW_NAMES = new Set([
+  "consolidated",
+  "total",
+  "grand total",
+  "company total",
+  "consolidated total",
+  "total revenue",
+  "total income",
+  "net revenue",
+]);
+
+const isTotalRowName = (name: string): boolean => {
+  const normalized = name.trim().toLowerCase();
+  return TOTAL_ROW_NAMES.has(normalized) || normalized.includes("consolidated");
+};
+
 const normalizeRevenueHistoryBySegmentRow = (
   value: unknown,
 ): NormalizedRevenueHistoryBySegmentRow | null => {
@@ -379,6 +403,7 @@ const normalizeRevenueHistoryBySegmentRow = (
 
   return {
     segment,
+    isTotal: (asBoolean(row.is_consolidated) ?? asBoolean(row.is_total) ?? false) || isTotalRowName(segment),
     revenueByYear,
     comparabilityLabel,
     growthMetricPeriod,
@@ -602,6 +627,7 @@ const normalizeRevenueMixHistoryBySegmentRow = (
 
   return {
     segment,
+    isTotal: (asBoolean(row.is_consolidated) ?? asBoolean(row.is_total) ?? false) || isTotalRowName(segment),
     mixPercentByYear,
     directionLabel,
     latestMixPercent,
@@ -695,6 +721,82 @@ const normalizeHistoricalEconomics = ({
     revenueMixHistoryBySegment,
     revenueHistoryByUnit,
     revenueMixHistoryByUnit,
+  };
+};
+
+// ── Tri-axis slots (chunks-fed): segment_history_quarterly + consolidated_financials_annual ──
+// Independent, fill-if-found. Each returns null when the source is absent or empty {}.
+
+const normalizeSegmentHistoryQuarterly = (
+  value: unknown,
+): NormalizedSegmentHistoryQuarterly | null => {
+  const obj = parseJsonObjectLike(value);
+  if (!obj) return null;
+  const rows = parseJsonArrayLike(obj.rows)
+    .map((item): NormalizedSegmentPeriodRow | null => {
+      const r = parseJsonObjectLike(item);
+      if (!r) return null;
+      const segment = asString(r.segment) ?? asString(r.segment_name);
+      if (!segment) return null;
+      const amountByPeriod = normalizeNumericPeriodMap(r.amount_by_period ?? r.values_by_period);
+      if (Object.keys(amountByPeriod).length === 0) return null;
+      return {
+        segment,
+        amountByPeriod,
+        unit: asString(r.unit),
+        mixPctLatest: asNumber(r.mix_pct_latest),
+        comparabilityLabel: asString(r.comparability_label),
+      };
+    })
+    .filter((r): r is NormalizedSegmentPeriodRow => Boolean(r));
+  if (rows.length === 0) return null;
+  const periods = toStringArray(obj.periods);
+  const insights = parseJsonArrayLike(obj.insights)
+    .map((i) => {
+      const r = parseJsonObjectLike(i);
+      return r ? asString(r.trend_insight) : null;
+    })
+    .filter((s): s is string => Boolean(s));
+  return {
+    periods: periods.length > 0 ? periods : collectPeriodsFromNumericMaps(rows.map((r) => r.amountByPeriod)),
+    rows,
+    insights,
+  };
+};
+
+const normalizeConsolidatedFinancialsAnnual = (
+  value: unknown,
+): NormalizedConsolidatedFinancialsAnnual | null => {
+  const obj = parseJsonObjectLike(value);
+  if (!obj) return null;
+  const rows = parseJsonArrayLike(obj.rows)
+    .map((item): NormalizedConsolidatedAnnualRow | null => {
+      const r = parseJsonObjectLike(item);
+      if (!r) return null;
+      const metric = asString(r.metric);
+      if (!metric) return null;
+      const valueByPeriod = normalizeNumericPeriodMap(r.value_by_period ?? r.values_by_period);
+      if (Object.keys(valueByPeriod).length === 0) return null;
+      return {
+        metric,
+        valueByPeriod,
+        unit: asString(r.unit),
+        comparabilityLabel: asString(r.comparability_label),
+      };
+    })
+    .filter((r): r is NormalizedConsolidatedAnnualRow => Boolean(r));
+  if (rows.length === 0) return null;
+  const periods = toStringArray(obj.periods);
+  const insights = parseJsonArrayLike(obj.insights)
+    .map((i) => {
+      const r = parseJsonObjectLike(i);
+      return r ? asString(r.trend_insight) : null;
+    })
+    .filter((s): s is string => Boolean(s));
+  return {
+    periods: periods.length > 0 ? periods : collectPeriodsFromNumericMaps(rows.map((r) => r.valueByPeriod)),
+    rows,
+    insights,
   };
 };
 
@@ -828,6 +930,24 @@ export function normalizeBusinessSnapshot({
     historicalEconomicsSource,
   });
 
+  // Tri-axis slots — sibling keys in the business_snapshot body (chunks-fed merge).
+  const segmentHistoryQuarterlySource =
+    parseJsonObjectLike(snapshotRow.segment_history_quarterly) ??
+    parseJsonObjectLike(businessSnapshotObject?.segment_history_quarterly) ??
+    parseJsonObjectLike(detailsBusinessSnapshot?.segment_history_quarterly) ??
+    null;
+  const consolidatedFinancialsAnnualSource =
+    parseJsonObjectLike(snapshotRow.consolidated_financials_annual) ??
+    parseJsonObjectLike(businessSnapshotObject?.consolidated_financials_annual) ??
+    parseJsonObjectLike(detailsBusinessSnapshot?.consolidated_financials_annual) ??
+    null;
+  const segmentHistoryQuarterly = normalizeSegmentHistoryQuarterly(segmentHistoryQuarterlySource);
+  const consolidatedFinancialsAnnual = normalizeConsolidatedFinancialsAnnual(
+    consolidatedFinancialsAnnualSource,
+  );
+  if (segmentHistoryQuarterly) schemaHints.add("segment_history_quarterly");
+  if (consolidatedFinancialsAnnual) schemaHints.add("consolidated_financials_annual");
+
   return {
     companyCode: snapshotRow.company ?? companyCode,
     generatedAtRaw: asString(snapshotRow.generated_at),
@@ -854,6 +974,8 @@ export function normalizeBusinessSnapshot({
     revenueBreakdown: normalizedRevenueBreakdown,
     historicalEconomics: normalizedHistoricalEconomics,
     hasHistoricalEconomicsSource,
+    segmentHistoryQuarterly,
+    consolidatedFinancialsAnnual,
     schemaHints: Array.from(schemaHints),
   };
 }
