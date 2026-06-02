@@ -6,6 +6,7 @@ import HeroCoverageStats, {
   HeroCoverageStatsFallback,
 } from "./(hero)/hero-coverage-stats";
 import { CompanySearch } from "@/components/company-search";
+import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { Q4FY26Banner } from "@/components/q4fy26-banner";
 import { cn } from "@/lib/utils";
 import {
@@ -28,7 +29,9 @@ function RecentScoreUpdatesHeroFallback() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const companies = await getCachedCompanySearchRows().catch(() => []);
+
   const analysisFramework = [
     {
       title: "Business Snapshot",
@@ -98,7 +101,11 @@ export default function Home() {
             </p>
           </div>
 
-          <CompanySearch className="w-full max-w-xl" instanceId="hero-search" />
+          <CompanySearch
+            className="w-full max-w-xl"
+            instanceId="hero-search"
+            initialCompanies={companies}
+          />
         </section>
 
         {/* Row 2 — coverage universe | latest updates */}
