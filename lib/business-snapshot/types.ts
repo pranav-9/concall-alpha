@@ -5,6 +5,7 @@ export type BusinessSnapshotRow = {
   business_snapshot?: unknown;
   historical_economics?: unknown;
   segment_history_quarterly?: unknown;
+  segment_history_annual?: unknown;
   consolidated_financials_annual?: unknown;
   about_company?: unknown;
   revenue_breakdown?: unknown;
@@ -166,6 +167,10 @@ export type NormalizedSegmentHistoryQuarterly = {
   insights: string[];
 };
 
+// Per-segment ANNUAL has the same shape as quarterly (periods + segment rows),
+// only the period labels differ (FYxx vs QxFYxx). Often empty for single-segment filers.
+export type NormalizedSegmentHistoryAnnual = NormalizedSegmentHistoryQuarterly;
+
 export type NormalizedConsolidatedAnnualRow = {
   metric: string;
   valueByPeriod: Record<string, number | null>;
@@ -206,6 +211,7 @@ export type NormalizedBusinessSnapshot = {
   historicalEconomics: NormalizedHistoricalEconomics | null;
   hasHistoricalEconomicsSource: boolean;
   segmentHistoryQuarterly: NormalizedSegmentHistoryQuarterly | null;
+  segmentHistoryAnnual: NormalizedSegmentHistoryAnnual | null;
   consolidatedFinancialsAnnual: NormalizedConsolidatedFinancialsAnnual | null;
   schemaHints: string[];
 };

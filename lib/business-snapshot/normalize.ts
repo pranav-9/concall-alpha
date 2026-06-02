@@ -941,11 +941,19 @@ export function normalizeBusinessSnapshot({
     parseJsonObjectLike(businessSnapshotObject?.consolidated_financials_annual) ??
     parseJsonObjectLike(detailsBusinessSnapshot?.consolidated_financials_annual) ??
     null;
+  const segmentHistoryAnnualSource =
+    parseJsonObjectLike(snapshotRow.segment_history_annual) ??
+    parseJsonObjectLike(businessSnapshotObject?.segment_history_annual) ??
+    parseJsonObjectLike(detailsBusinessSnapshot?.segment_history_annual) ??
+    null;
   const segmentHistoryQuarterly = normalizeSegmentHistoryQuarterly(segmentHistoryQuarterlySource);
+  // Per-segment annual reuses the same shape/normalizer as quarterly.
+  const segmentHistoryAnnual = normalizeSegmentHistoryQuarterly(segmentHistoryAnnualSource);
   const consolidatedFinancialsAnnual = normalizeConsolidatedFinancialsAnnual(
     consolidatedFinancialsAnnualSource,
   );
   if (segmentHistoryQuarterly) schemaHints.add("segment_history_quarterly");
+  if (segmentHistoryAnnual) schemaHints.add("segment_history_annual");
   if (consolidatedFinancialsAnnual) schemaHints.add("consolidated_financials_annual");
 
   return {
@@ -975,6 +983,7 @@ export function normalizeBusinessSnapshot({
     historicalEconomics: normalizedHistoricalEconomics,
     hasHistoricalEconomicsSource,
     segmentHistoryQuarterly,
+    segmentHistoryAnnual,
     consolidatedFinancialsAnnual,
     schemaHints: Array.from(schemaHints),
   };

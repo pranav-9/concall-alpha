@@ -51,7 +51,7 @@ function buildCoverageUniverse(
   const topSectors = Array.from(sectorCounts.entries())
     .map(([sector, companyCount]) => ({ sector, companyCount }))
     .sort((a, b) => b.companyCount - a.companyCount || a.sector.localeCompare(b.sector))
-    .slice(0, 4);
+    .slice(0, 6);
   const totalSectors = sectorCounts.size;
 
   const recentlyAddedCandidates: Array<{
@@ -101,7 +101,7 @@ function buildCoverageUniverse(
 
 export function HeroCoverageStatsFallback() {
   return (
-    <>
+    <div className="flex h-full flex-col gap-3">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[0, 1, 2].map((i) => (
           <div
@@ -110,8 +110,8 @@ export function HeroCoverageStatsFallback() {
           />
         ))}
       </div>
-      <div className="h-[120px] rounded-[1.5rem] border border-border/50 bg-background/40" />
-    </>
+      <div className="min-h-[18rem] flex-1 rounded-[1.5rem] border border-border/50 bg-background/40" />
+    </div>
   );
 }
 
@@ -126,9 +126,10 @@ export default async function HeroCoverageStats() {
     (companyRows ?? []) as CompanyRow[],
     now,
   );
+  const maxSectorCount = coverageData.topSectors[0]?.companyCount ?? 0;
 
   return (
-    <>
+    <div className="flex h-full flex-col gap-3">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-border/45 bg-background/72 px-4 py-3.5 last:col-span-2 sm:px-5 sm:py-4 sm:last:col-span-1">
           <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -159,57 +160,75 @@ export default async function HeroCoverageStats() {
         </div>
       </div>
 
-      <div className="rounded-[1.5rem] border border-border/50 bg-background/68 px-4 py-3 shadow-[0_18px_50px_-38px_rgba(15,23,42,0.35)]">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:items-start">
+      <div className="flex flex-1 flex-col rounded-[1.5rem] border border-border/50 bg-background/68 px-4 py-4 shadow-[0_18px_50px_-38px_rgba(15,23,42,0.35)] sm:px-5">
+        <div className="grid flex-1 grid-cols-1 gap-5 sm:grid-cols-2">
+          {/* Most covered sectors */}
           <div className="min-w-0">
             <div className="flex items-center justify-between gap-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
                 Most covered sectors
               </p>
-              <span className="text-[10px] text-muted-foreground">Top 3</span>
+              <span className="text-[10px] text-muted-foreground">
+                Top {Math.min(coverageData.topSectors.length, 6)}
+              </span>
             </div>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-3 space-y-2.5">
               {coverageData.topSectors.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   Sector coverage will appear here as data becomes available.
                 </p>
               ) : (
-                coverageData.topSectors.slice(0, 3).map((sector) => (
+                coverageData.topSectors.slice(0, 6).map((sector) => (
                   <Link
                     key={sector.sector}
                     href={`/sector/${slugifySector(sector.sector)}`}
                     prefetch={false}
-                    className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/75 px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/70"
+                    className="group block"
                   >
-                    <span className="truncate">{sector.sector}</span>
-                    <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                      {sector.companyCount}
-                    </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-medium text-foreground">
+                        {sector.sector}
+                      </span>
+                      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                        {sector.companyCount}
+                      </span>
+                    </div>
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted/40">
+                      <div
+                        className="h-full rounded-full bg-emerald-500/55 transition-colors group-hover:bg-emerald-500/80"
+                        style={{
+                          width: `${maxSectorCount > 0 ? (sector.companyCount / maxSectorCount) * 100 : 0}%`,
+                        }}
+                      />
+                    </div>
                   </Link>
                 ))
               )}
             </div>
           </div>
 
-          <div className="min-w-0">
+          {/* New coverage */}
+          <div className="min-w-0 sm:border-l sm:border-border/40 sm:pl-5">
             <div className="flex items-center justify-between gap-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
                 New coverage
               </p>
-              <span className="text-[10px] text-muted-foreground">Latest 2</span>
+              <span className="text-[10px] text-muted-foreground">
+                Latest {Math.min(coverageData.recentlyAddedCompanies.length, 4)}
+              </span>
             </div>
-            <div className="mt-2 flex flex-col gap-2">
+            <div className="mt-3 flex flex-col gap-2">
               {coverageData.recentlyAddedCompanies.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   Recently added companies will appear here once coverage history is available.
                 </p>
               ) : (
-                coverageData.recentlyAddedCompanies.slice(0, 2).map((company) => (
+                coverageData.recentlyAddedCompanies.slice(0, 4).map((company) => (
                   <Link
                     key={company.code}
                     href={`/company/${company.code}`}
                     prefetch={false}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-transparent bg-background/65 px-3 py-2 transition-colors hover:border-border/40 hover:bg-accent/70"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-transparent bg-background/55 px-3 py-2 transition-colors hover:border-border/40 hover:bg-accent/70"
                   >
                     <div className="min-w-0">
                       <p className="line-clamp-1 text-sm font-medium text-foreground">
@@ -232,6 +251,6 @@ export default async function HeroCoverageStats() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

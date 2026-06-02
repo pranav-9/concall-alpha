@@ -83,7 +83,7 @@ export type UnifiedUpdate = {
 export const UPDATE_TYPE_LABELS: Record<UpdateType, string> = {
   quarter: "Quarter Score",
   growth: "Growth Update",
-  business_snapshot: "Biz Snapshot",
+  business_snapshot: "Business Snapshot",
   key_variables: "Key Variables",
   guidance_monitor: "Guidance Monitor",
 };
@@ -414,10 +414,10 @@ export async function getUnifiedUpdates({
     if (!companyCode) return;
     const atRaw = row.generated_at ?? null;
     const atMs = eventTimeMs(atRaw);
-    const detail =
-      row.snapshot_phase != null
-        ? `Phase ${row.snapshot_phase}`
-        : formatFeedLabel(row.snapshot_source) || "Refreshed";
+    // snapshot_phase / snapshot_source are internal pipeline provenance
+    // ("phase1_web", "phase2_docs", "phase9_layer1") — meaningless to readers.
+    // Surface no secondary detail; the chip + timestamp stand on their own.
+    const detail = "";
     const candidate: UnifiedUpdate = {
       id: `snapshot-${companyCode}`,
       type: "business_snapshot",
@@ -428,7 +428,7 @@ export async function getUnifiedUpdates({
       priorScore: null,
       priorLabel: null,
       detail,
-      sourceLabel: "Biz Snapshot",
+      sourceLabel: "Business Snapshot",
       contextLabel: null,
       atRaw,
       atMs,

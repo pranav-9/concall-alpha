@@ -5,10 +5,10 @@ import RecentScoreUpdates from "./(hero)/recent-score-updates";
 import HeroCoverageStats, {
   HeroCoverageStatsFallback,
 } from "./(hero)/hero-coverage-stats";
+import { CompanySearch } from "@/components/company-search";
 import { Q4FY26Banner } from "@/components/q4fy26-banner";
 import { cn } from "@/lib/utils";
 import {
-  HERO_CARD,
   INNER_CARD,
   PAGE_BACKGROUND_ATMOSPHERIC,
   PANEL_CARD_NEUTRAL,
@@ -24,7 +24,7 @@ function TopStocksHeroFallback() {
 
 function RecentScoreUpdatesHeroFallback() {
   return (
-    <div className="h-full w-full rounded-xl border border-border bg-card animate-pulse" />
+    <div className="min-h-[28rem] w-full rounded-xl border border-border bg-card animate-pulse" />
   );
 }
 
@@ -85,38 +85,30 @@ export default function Home() {
       <Q4FY26Banner />
       <div className={cn(PAGE_BACKGROUND_ATMOSPHERIC, "-top-28 h-[42rem]")} />
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-4 py-6 sm:px-6 sm:py-8 lg:gap-10 lg:px-10 lg:py-10">
-        <section className="grid grid-cols-1 gap-4 lg:min-h-[80vh] supports-[height:100dvh]:lg:min-h-[80dvh] lg:grid-cols-[minmax(0,7fr)_minmax(20rem,3fr)] lg:items-stretch">
-          <div className={`${HERO_CARD} sm:p-6 lg:h-full lg:p-8`}>
-            <div className="flex h-full flex-col gap-5 lg:justify-between">
-              <div className="space-y-5">
-                <div className="flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:gap-2 sm:text-[11px]">
-                  <span className="rounded-full border border-emerald-300/60 bg-emerald-100/80 px-3 py-1 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/25 dark:text-emerald-200">
-                    Business Analysis portal
-                  </span>
-                  <span className="rounded-full border border-border/60 bg-background/75 px-3 py-1">
-                    Built for long-term investors
-                  </span>
-                </div>
-
-                <div className="max-w-4xl space-y-3">
-                  <h1 className="max-w-4xl text-4xl font-black leading-[0.95] tracking-[-0.04em] text-foreground sm:text-5xl lg:text-6xl">
-                    India&apos;s first fundamental screener
-                  </h1>
-                  <p className="max-w-2xl text-sm leading-7 text-foreground/78 sm:text-base">
-                    We turn commentary, guidance, and business context into a structured research
-                    layer on top of quantitative data, so the numbers come with a real story.
-                  </p>
-                </div>
-
-                <Suspense fallback={<HeroCoverageStatsFallback />}>
-                  <HeroCoverageStats />
-                </Suspense>
-              </div>
-
-            </div>
+        {/* Row 1 — centered hero: title, subtitle, search */}
+        <section className="flex flex-col items-center gap-7 py-12 text-center sm:py-16 lg:py-24">
+          <div className="space-y-4">
+            <h1 className="mx-auto max-w-4xl text-4xl font-black leading-[0.95] tracking-[-0.04em] text-foreground sm:text-5xl lg:text-6xl">
+              Research, not just numbers.
+            </h1>
+            <p className="mx-auto max-w-2xl text-sm leading-7 text-foreground/78 sm:text-base">
+              Screeners give you the data. We give you the read — moat strength,
+              business quality, and whether management&apos;s guidance has actually
+              held up — built straight from the source documents.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:h-full">
+          <CompanySearch className="w-full max-w-xl" instanceId="hero-search" />
+        </section>
+
+        {/* Row 2 — coverage universe | latest updates */}
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_minmax(0,1fr)] lg:items-stretch">
+          <div className="min-w-0">
+            <Suspense fallback={<HeroCoverageStatsFallback />}>
+              <HeroCoverageStats />
+            </Suspense>
+          </div>
+          <div className="min-w-0">
             <Suspense fallback={<RecentScoreUpdatesHeroFallback />}>
               <RecentScoreUpdates heroPanel />
             </Suspense>
@@ -127,7 +119,7 @@ export default function Home() {
           <div className={cn(PANEL_CARD_NEUTRAL, "sm:p-6")}>
             <div className="mb-5">
               <h2 className="text-2xl font-bold leading-tight text-foreground">
-                Fundamental Screeners
+                Top-rated companies
               </h2>
             </div>
             <Suspense fallback={<TopStocksHeroFallback />}>

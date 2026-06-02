@@ -623,7 +623,7 @@ export function BusinessSnapshotSection({
                         : null}
                     <SegmentHistoryPanel
                       quarterly={snapshot.segmentHistoryQuarterly}
-                      annual={snapshot.consolidatedFinancialsAnnual}
+                      annual={snapshot.segmentHistoryAnnual}
                     />
                   </div>
                 ) : hasLegacyBusinessSnapshot ? (

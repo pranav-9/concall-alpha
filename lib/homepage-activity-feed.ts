@@ -7,8 +7,13 @@ import {
   type UnifiedUpdate,
   type UpdateType,
 } from "@/lib/activity-feed";
+import { collapseConsecutiveSameCompanyUpdates } from "@/app/(hero)/recent-score-updates-utils";
 import { logger } from "@/lib/logger";
 import { createPublicReadClient } from "@/lib/supabase/public-read";
+
+// Over-fetch from the (granular) cache table so collapsing consecutive
+// same-company runs still leaves enough distinct companies to fill the hero.
+const HOMEPAGE_FEED_READ_WINDOW = 50;
 
 export const HOMEPAGE_ACTIVITY_FEED_TAG = "homepage-activity-feed";
 
@@ -104,13 +109,18 @@ const readHomepageActivityFeed = async (limit: number): Promise<UnifiedUpdate[]>
         "id,event_type,company_code,company_name,company_is_new,source_label,detail,context_label,score,prior_score,prior_label,artifact_href,event_at,sort_at",
       )
       .order("sort_at", { ascending: false })
-      .limit(safeLimit);
+      .limit(HOMEPAGE_FEED_READ_WINDOW);
 
     if (error) throw error;
 
-    const updates = ((data ?? []) as HomepageActivityFeedRecord[])
-      .map(toUnifiedUpdate)
-      .filter((item): item is UnifiedUpdate => Boolean(item));
+    // Collapse consecutive same-company runs so one company can't occupy
+    // several stacked rows (e.g. Business Snapshot + Quarter Score + Key
+    // Variables for one name) — keeps the hero feed showing breadth.
+    const updates = collapseConsecutiveSameCompanyUpdates(
+      ((data ?? []) as HomepageActivityFeedRecord[])
+        .map(toUnifiedUpdate)
+        .filter((item): item is UnifiedUpdate => Boolean(item)),
+    ).slice(0, safeLimit);
 
     if (updates.length > 0) return updates;
   } catch (error) {

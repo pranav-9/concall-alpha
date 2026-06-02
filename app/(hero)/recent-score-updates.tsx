@@ -12,7 +12,7 @@ export default async function RecentScoreUpdates({
   heroPanel?: boolean;
 } = {}) {
   const isCompact = heroPanel;
-  const updates = await getCachedHomepageActivityFeed(isCompact ? 9 : 6);
+  const updates = await getCachedHomepageActivityFeed(isCompact ? 7 : 6);
   if (updates.length === 0) return null;
 
   const headerClass = isCompact
