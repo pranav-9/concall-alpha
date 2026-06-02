@@ -1,0 +1,38 @@
+---
+title: "Making it worth your time"
+date: "2026-06-02"
+dateLabel: "2 June 2026"
+summary: "Almost every change to the portal right now comes back to one idea: a working investor can't read everything. The portal's job is to earn the time you give it."
+---
+
+A running log of what I'm changing in the portal, and why. The "why" matters because almost every change right now comes back to one idea: a retail investor with a day job can't read everything. If you're tracking 50–250 companies, attention is the scarcest thing you have. So the job of this portal is to *earn* the time you give it — show you the takeaway first, and only ask you to dig when it's worth it.
+
+Three tabs are being reworked around that idea — Business Snapshot, Quarterly Score, and the Guidance Tracker — plus a big change under the hood.
+
+## Business Snapshot
+
+I'd been circling what this tab is actually *for*, and got some clarity. It now answers two questions: **What's the fastest-growing segment in this company?** and **Is there a product-mix shift playing out?**
+
+I've reworked it into one consolidated table for growth rates and mix — and above the table, the answers to those two questions. Synthesis first, data below: read the conclusion, then check it against the numbers. (That ordering — conclusion on top, evidence underneath — is becoming the rule across the whole portal.)
+
+## Quarterly Score
+
+Two things bugged me. First, I didn't fully trust the score. My gut said the relative ranking was right, but I wanted proof, not a feeling. Second, the concall summaries had the same flaw I've hit on every other platform: too big to digest. Be honest about the real cost — reading a concall is 30–45 minutes, and even a summary takes real effort to absorb. Now multiply that across the 50–250 companies a working investor might track.
+
+So the score now leads with the **Top 3 highlights that moved it** — each with an impact, a title, and a one-line summary. Score plus three highlights is usually enough to decide whether a quarter is worth a deeper look; if it is, the full details are one click down. This is the first version of the tab I actually trust.
+
+It already paid off. Someone asked me about [Kaynes Tech](/company/KAYNES). I opened the Quarterly Score, saw three red points and a low score, and decided in under a minute that it wasn't worth digging into for now. That's the whole point.
+
+## Guidance Tracker
+
+This one's been hard. The first version tried to do too much at once — raw extractions, synthesis, and judgments all on one screen, in a muddled order — and I didn't trust what I was looking at.
+
+So I'm stripping it back to raw extractions first: current and past guidance threads, what management said to expect versus what actually happened. For now, growth only — no margins, capex, or anything else yet. I'd rather get the framework right on one thing and trust it before scaling sideways.
+
+## Under the hood
+
+The biggest change is how the data gets generated. Instead of handing whole documents to the model, I've started chunking the source and retrieving only the relevant passages to send with the prompt — which gives noticeably better, more grounded answers.
+
+It's been a slog to ship, mostly because I've been checking output quality company by company, but it looks like the right long-term foundation. So far it's live for only 3–4 companies, and only across transcripts and presentations — not annual reports yet. That's the direction as I keep upgrading the data across the covered universe.
+
+More soon.
