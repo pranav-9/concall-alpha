@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { JournalMarkSeen } from "@/components/journal-mark-seen";
+
 import { getAllPostMeta } from "./posts";
 
 export const metadata: Metadata = {
-  title: "Build log – Story of a Stock",
-  description: "Notes on what I'm changing in the portal, and why.",
+  title: "Journal – Story of a Stock",
+  description:
+    "What I'm building, how I think as an investor, and the companies I'm digging into.",
 };
 
 export default function BlogIndexPage() {
@@ -13,13 +16,15 @@ export default function BlogIndexPage() {
 
   return (
     <main>
+      <JournalMarkSeen latestKey={posts[0]?.date ?? ""} />
       <div className="mx-auto w-full max-w-2xl px-4 py-10 sm:py-14">
         <header className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Build log
+            Journal
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Notes on what I&apos;m changing in the portal, and why.
+            What I&apos;m building, how I think as an investor, and the companies
+            I&apos;m digging into.
           </p>
         </header>
 

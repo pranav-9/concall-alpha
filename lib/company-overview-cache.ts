@@ -43,6 +43,15 @@ export type SectionAvailability = {
   guidanceHistory: boolean;
 };
 
+export type OverviewTakeaways = {
+  moatHeadline: string | null;
+  growthBasePct: string | null;
+  growthFiscalYear: string | null;
+  companyRevenueCagrPct: number | null;
+  keyVariableLead: string | null;
+  keyVariableTrend: string | null;
+};
+
 export type CompanyPageOverviewCacheRow = {
   company_code: string;
   company_name: string;
@@ -68,6 +77,7 @@ export type CompanyPageOverviewCacheRow = {
   guidance_verdict_label: string | null;
   revenue_guidance_label: string | null;
   business_segment_mix: BusinessSegmentMixItem[] | null;
+  overview_takeaways: OverviewTakeaways | null;
   section_availability: SectionAvailability;
   refreshed_at: string;
 };
@@ -119,6 +129,21 @@ const asSegmentMix = (value: unknown): BusinessSegmentMixItem[] | null => {
   return items.length >= 2 ? items : null;
 };
 
+const asOverviewTakeaways = (value: unknown): OverviewTakeaways | null => {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+  const takeaways: OverviewTakeaways = {
+    moatHeadline: str(raw.moatHeadline),
+    growthBasePct: str(raw.growthBasePct),
+    growthFiscalYear: str(raw.growthFiscalYear),
+    companyRevenueCagrPct: toNumeric(raw.companyRevenueCagrPct),
+    keyVariableLead: str(raw.keyVariableLead),
+    keyVariableTrend: str(raw.keyVariableTrend),
+  };
+  return Object.values(takeaways).some((v) => v != null) ? takeaways : null;
+};
+
 function normalizeCacheRow(row: Record<string, unknown>): CompanyPageOverviewCacheRow {
   return {
     company_code: String(row.company_code ?? ""),
@@ -148,6 +173,7 @@ function normalizeCacheRow(row: Record<string, unknown>): CompanyPageOverviewCac
     revenue_guidance_label:
       typeof row.revenue_guidance_label === "string" ? row.revenue_guidance_label : null,
     business_segment_mix: asSegmentMix(row.business_segment_mix),
+    overview_takeaways: asOverviewTakeaways(row.overview_takeaways),
     section_availability: asAvailability(row.section_availability),
     refreshed_at: String(row.refreshed_at ?? new Date().toISOString()),
   };
@@ -381,6 +407,23 @@ export async function buildCompanyPageOverviewCacheRow(
   );
   const hasBusinessSnapshotContent = hasStructuredBusinessSnapshot || hasLegacyBusinessSnapshot;
 
+  // v2 overview takeaways: one headline signal per section, derived from the
+  // already-normalized objects above (no extra fetches). Stored as a single
+  // jsonb column so the hot-table migration stays to one column.
+  const leadKeyVariable = normalizedKeyVariablesSnapshot?.deepTreatment?.[0] ?? null;
+  const overviewTakeaways: OverviewTakeaways = {
+    moatHeadline: normalizedMoatAnalysis?.payload?.headline?.trim() || null,
+    growthBasePct: normalizedGrowthOutlook?.baseGrowthPct?.trim() || null,
+    growthFiscalYear: normalizedGrowthOutlook?.fiscalYear?.trim() || null,
+    companyRevenueCagrPct:
+      historicalEconomics?.companyRevenueCagr3y?.cagrPercent ?? null,
+    keyVariableLead: leadKeyVariable?.variable?.trim() || null,
+    keyVariableTrend:
+      leadKeyVariable?.trendInterpretation?.trim() ||
+      leadKeyVariable?.currentRead?.trim() ||
+      null,
+  };
+
   const latestQuarterRowsGlobal = (latestQuarterRowsResult?.data ?? []) as Array<{
     company_code?: unknown;
     score?: unknown;
@@ -569,6 +612,7 @@ export async function buildCompanyPageOverviewCacheRow(
     guidance_verdict_label: credibilityDisplay?.label ?? null,
     revenue_guidance_label: revenueGuidanceLabel,
     business_segment_mix: businessSegmentMix,
+    overview_takeaways: overviewTakeaways,
     section_availability: {
       industryContext: hasIndustryAnalysis,
       subSector: hasIndustryAnalysis,
@@ -583,7 +627,7 @@ export async function buildCompanyPageOverviewCacheRow(
 }
 
 const selectColumns =
-  "company_code,company_name,is_new,sector,sub_sector,latest_score,quarter_rank,quarter_total,quarter_percentile,growth_score,growth_rank,growth_total,growth_percentile,sector_rank,sector_total,sector_percentile,moat_label,moat_tier_label,key_variable_count,guidance_count,guidance_verdict_key,guidance_verdict_label,revenue_guidance_label,business_segment_mix,section_availability,refreshed_at";
+  "company_code,company_name,is_new,sector,sub_sector,latest_score,quarter_rank,quarter_total,quarter_percentile,growth_score,growth_rank,growth_total,growth_percentile,sector_rank,sector_total,sector_percentile,moat_label,moat_tier_label,key_variable_count,guidance_count,guidance_verdict_key,guidance_verdict_label,revenue_guidance_label,business_segment_mix,overview_takeaways,section_availability,refreshed_at";
 
 async function readCompanyOverview(code: string): Promise<CompanyPageOverviewCacheRow | null> {
   const normalizedCode = code.trim().toUpperCase();

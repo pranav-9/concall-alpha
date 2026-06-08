@@ -13,6 +13,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { getActivePoll } from "@/lib/feedback-polls/queries";
+import { getAllPostMeta } from "@/app/blog/posts";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -37,10 +38,12 @@ async function NavbarWithUser() {
     getCachedCompanySearchRows().catch(() => []),
   ]);
   const user = userResult.data.user;
+  const latestJournalDate = getAllPostMeta()[0]?.date ?? null;
 
   return (
     <Navbar
       initialCompanies={initialCompanies}
+      latestJournalDate={latestJournalDate}
       initialUser={
         user
           ? {

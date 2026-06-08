@@ -135,7 +135,7 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
   ];
 }
 
-function buildOverviewSectionPreviews(overview: CompanyPageOverviewCacheRow) {
+function buildOverviewSectionGroups(overview: CompanyPageOverviewCacheRow) {
   const availability = overview.section_availability;
   const moatLabel =
     overview.moat_label && overview.moat_tier_label
@@ -146,10 +146,24 @@ function buildOverviewSectionPreviews(overview: CompanyPageOverviewCacheRow) {
     getGuidanceCredibilityVerdictDisplay(overview.guidance_verdict_key)?.label ??
     null;
 
-  return [
+  const takeaways = overview.overview_takeaways;
+  const businessTakeaway =
+    takeaways?.companyRevenueCagrPct != null
+      ? `Revenue ${Math.round(takeaways.companyRevenueCagrPct)}% 3-yr CAGR`
+      : null;
+  const growthTakeaway = takeaways?.growthBasePct
+    ? `${takeaways.growthFiscalYear ? `${takeaways.growthFiscalYear} ` : ""}base-case growth ${takeaways.growthBasePct}`
+    : null;
+  const keyVarTakeaway = takeaways?.keyVariableLead
+    ? `${takeaways.keyVariableLead}${takeaways.keyVariableTrend ? ` — ${takeaways.keyVariableTrend}` : ""}`
+    : null;
+  const moatTakeaway = takeaways?.moatHeadline ?? null;
+
+  const previews = [
     {
       title: "Business Snapshot",
       href: "#business-overview",
+      takeaway: businessTakeaway,
       media: overview.business_segment_mix
         ? { kind: "segment-bar" as const, segments: overview.business_segment_mix }
         : undefined,
@@ -160,6 +174,7 @@ function buildOverviewSectionPreviews(overview: CompanyPageOverviewCacheRow) {
     {
       title: "Moat Analysis",
       href: "#moat-analysis",
+      takeaway: moatTakeaway,
       indicator: moatLabel
         ? {
             kind: "pill" as const,
@@ -171,6 +186,7 @@ function buildOverviewSectionPreviews(overview: CompanyPageOverviewCacheRow) {
     {
       title: "Key Variables",
       href: "#key-variables",
+      takeaway: keyVarTakeaway,
       indicator: availability.keyVariables
         ? {
             kind: "pill" as const,
@@ -204,6 +220,7 @@ function buildOverviewSectionPreviews(overview: CompanyPageOverviewCacheRow) {
     {
       title: "Growth Prospects",
       href: "#future-growth",
+      takeaway: growthTakeaway,
       bodyPills:
         overview.growth_rank != null &&
         overview.growth_total != null &&
@@ -246,6 +263,30 @@ function buildOverviewSectionPreviews(overview: CompanyPageOverviewCacheRow) {
             : { kind: "pill" as const, label: "Soon" },
     },
   ];
+
+  // Decision-ordered scorecard: what it is + how durable → how it's doing +
+  // where it's headed → can you trust management + what drives it. Balanced
+  // across sections; no single tab leads.
+  const [businessSnapshot, moat, keyVariables, quarterly, growth, guidance] =
+    previews;
+
+  return [
+    {
+      key: "business",
+      label: "Business & moat",
+      previews: [businessSnapshot, moat],
+    },
+    {
+      key: "performance",
+      label: "Performance & outlook",
+      previews: [quarterly, growth],
+    },
+    {
+      key: "management",
+      label: "Management & drivers",
+      previews: [guidance, keyVariables],
+    },
+  ];
 }
 
 export default async function Page({
@@ -265,7 +306,7 @@ export default async function Page({
   }
 
   const sidebarSections = buildSidebarSections(overview);
-  const overviewSectionPreviews = buildOverviewSectionPreviews(overview);
+  const overviewSectionGroups = buildOverviewSectionGroups(overview);
 
   return (
     <div className="relative isolate w-full overflow-hidden px-3 py-3 pb-24 sm:px-4 sm:py-4 sm:pb-28 lg:px-8">
@@ -282,7 +323,7 @@ export default async function Page({
                 name: overview.company_name,
                 isNew: overview.is_new,
               }}
-              sectionPreviews={overviewSectionPreviews}
+              sectionGroups={overviewSectionGroups}
               watchlistSlot={
                 <Suspense fallback={<WatchlistSlotFallback />}>
                   <CompanyWatchlistSlot companyCode={overview.company_code} />

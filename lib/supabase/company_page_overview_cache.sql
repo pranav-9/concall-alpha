@@ -24,11 +24,17 @@ create table if not exists public.company_page_overview_cache (
   guidance_verdict_label text null,
   revenue_guidance_label text null,
   business_segment_mix jsonb null,
+  overview_takeaways jsonb null,
   section_availability jsonb not null default '{}'::jsonb,
   refreshed_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- v2 (overview scorecard takeaways). On existing DBs apply this ALTER manually,
+-- then run: notify pgrst, 'reload schema';
+alter table public.company_page_overview_cache
+  add column if not exists overview_takeaways jsonb null;
 
 create index if not exists idx_company_page_overview_cache_sector
   on public.company_page_overview_cache (sector);

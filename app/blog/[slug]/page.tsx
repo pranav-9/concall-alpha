@@ -36,7 +36,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           href="/blog"
           className="text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
-          ← Build log
+          ← Journal
         </Link>
 
         <header className="mb-8 mt-4 border-b border-border pb-6">

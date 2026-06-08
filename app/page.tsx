@@ -45,7 +45,7 @@ export default async function Home() {
       title: "Moat Analysis",
       eyebrow: "Durability layer",
       body:
-        "Close with the durability layer: competitive position, structural advantages, and what could erode them.",
+        "The durability layer: competitive position, structural advantages, and what could erode them.",
       stripClass: "bg-emerald-500/80",
       badge: { kind: "moat" as const, label: "Narrow Moat" },
     },
@@ -140,7 +140,7 @@ export default async function Home() {
                 Analysis framework
               </p>
               <h2 className="mt-2 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
-                6-step framework
+                6-layer framework
               </h2>
             </div>
 

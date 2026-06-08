@@ -26,6 +26,13 @@ type OverviewSectionPreview = {
   indicator?:
     | { kind: "score"; score: number | null }
     | { kind: "pill"; label: string; tone?: OverviewBodyPillTone };
+  takeaway?: string | null;
+};
+
+type OverviewSectionGroup = {
+  key: string;
+  label: string;
+  previews: OverviewSectionPreview[];
 };
 
 interface OverviewCardProps {
@@ -34,13 +41,13 @@ interface OverviewCardProps {
     name?: string;
     isNew?: boolean;
   };
-  sectionPreviews?: OverviewSectionPreview[];
+  sectionGroups?: OverviewSectionGroup[];
   watchlistSlot?: ReactNode;
 }
 
 export function OverviewCard({
   companyInfo,
-  sectionPreviews = [],
+  sectionGroups = [],
   watchlistSlot = null,
 }: OverviewCardProps) {
   const previewShellSurfaceClass = nestedDetailClass;
@@ -98,6 +105,135 @@ export function OverviewCard({
 
   const getSectionId = (href: string) => (href.startsWith("#") ? href.slice(1) : href);
 
+  const renderPreviewTile = (preview: OverviewSectionPreview) => {
+    const isLocked = preview.indicator?.kind === "pill" && preview.indicator.label === "Soon";
+    const sectionId = getSectionId(preview.href);
+    const requestLabel = "Request this section";
+    const previewShellClass = "flex h-full flex-col pt-1";
+
+    if (isLocked) {
+      return (
+        <div
+          key={preview.title}
+          className={cn(
+            "group relative overflow-hidden p-4 text-left transition-all duration-200",
+            previewShellSurfaceClass,
+          )}
+        >
+          <div className={cn("absolute inset-x-0 top-0 h-2", previewAccentClass)} />
+          <div className={previewShellClass}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 space-y-1">
+                <p className="text-sm font-semibold leading-tight text-foreground">
+                  {preview.title}
+                </p>
+              </div>
+              <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
+                Not ready
+              </span>
+            </div>
+
+            {companyInfo?.code && (
+              <div className="flex flex-1 items-center justify-center rounded-xl border border-border/40 bg-background/60 p-3">
+                <MissingSectionRequestButton
+                  companyCode={companyInfo.code}
+                  companyName={companyInfo.name ?? null}
+                  sectionId={sectionId}
+                  sectionTitle={preview.title}
+                  label={requestLabel}
+                  className="h-8 rounded-full border-border/60 bg-background/95 px-3 text-[10px] font-medium text-foreground shadow-sm hover:bg-background"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <button
+        key={preview.title}
+        type="button"
+        onClick={() => navigateToSection(preview.href)}
+        className={cn(
+          "group relative overflow-hidden p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-border/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+          previewShellSurfaceClass,
+        )}
+      >
+        <div className={cn("absolute inset-x-0 top-0 h-2", previewAccentClass)} />
+        <div className={previewShellClass}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 space-y-2">
+              <p className="text-sm font-semibold leading-tight text-foreground">
+                {preview.title}
+              </p>
+              {preview.bodyPills && preview.bodyPills.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {preview.bodyPills.map((pill) => (
+                    <span
+                      key={`${preview.title}-${pill.label}`}
+                      className={cn(
+                        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium",
+                        overviewBodyPillClass(pill.tone),
+                      )}
+                    >
+                      {pill.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {preview.media?.kind === "segment-bar" &&
+                preview.media.segments.length >= 2 && (
+                  <div className="space-y-1.5">
+                    <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted/40">
+                      {preview.media.segments.map((seg, i) => (
+                        <div
+                          key={`${preview.title}-seg-${seg.name}`}
+                          className="h-full"
+                          style={{
+                            width: `${seg.sharePct}%`,
+                            backgroundColor:
+                              segmentColorPalette[i % segmentColorPalette.length],
+                          }}
+                          title={`${seg.name}: ${seg.sharePct.toFixed(1)}%`}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+                      {preview.media.segments.slice(0, 3).map((seg, i) => (
+                        <span
+                          key={`${preview.title}-leg-${seg.name}`}
+                          className="inline-flex items-center gap-1"
+                        >
+                          <span
+                            className="inline-block h-1.5 w-1.5 rounded-full"
+                            style={{
+                              backgroundColor:
+                                segmentColorPalette[i % segmentColorPalette.length],
+                            }}
+                          />
+                          <span className="max-w-[7rem] truncate">{seg.name}</span>
+                          <span className="font-medium tabular-nums text-foreground/80">
+                            {Math.round(seg.sharePct)}%
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+            </div>
+            <div className="shrink-0">{renderIndicator(preview.indicator)}</div>
+          </div>
+          {preview.takeaway && (
+            <p className="mt-2 text-[11px] leading-snug text-muted-foreground line-clamp-2">
+              {preview.takeaway}
+            </p>
+          )}
+        </div>
+      </button>
+    );
+  };
+
   return (
     <div
       id="overview"
@@ -136,136 +272,18 @@ export function OverviewCard({
             {watchlistSlot}
           </div>
 
-          {sectionPreviews.length > 0 && (
-            <div className="space-y-3 pt-1">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {sectionPreviews.map((preview) => (
-                  (() => {
-                    const isLocked = preview.indicator?.kind === "pill" && preview.indicator.label === "Soon";
-                    const sectionId = getSectionId(preview.href);
-                    const requestLabel = "Request this section";
-                    const previewShellClass = "flex h-full flex-col pt-1";
-
-                    if (isLocked) {
-                      return (
-                        <div
-                          key={preview.title}
-                          className={cn(
-                            "group relative overflow-hidden p-4 text-left transition-all duration-200",
-                            previewShellSurfaceClass,
-                          )}
-                        >
-                          <div className={cn("absolute inset-x-0 top-0 h-2", previewAccentClass)} />
-                          <div className={previewShellClass}>
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 space-y-1">
-                              <p className="text-sm font-semibold leading-tight text-foreground">
-                                {preview.title}
-                              </p>
-                            </div>
-                            <span className="inline-flex shrink-0 items-center rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground">
-                                Not ready
-                            </span>
-                          </div>
-
-                            {companyInfo?.code && (
-                              <div className="flex flex-1 items-center justify-center rounded-xl border border-border/40 bg-background/60 p-3">
-                                <MissingSectionRequestButton
-                                  companyCode={companyInfo.code}
-                                  companyName={companyInfo.name ?? null}
-                                  sectionId={sectionId}
-                                  sectionTitle={preview.title}
-                                  label={requestLabel}
-                                  className="h-8 rounded-full border-border/60 bg-background/95 px-3 text-[10px] font-medium text-foreground shadow-sm hover:bg-background"
-                                />
-                              </div>
-                            )}
-
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <button
-                        key={preview.title}
-                        type="button"
-                        onClick={() => navigateToSection(preview.href)}
-                        className={cn(
-                          "group relative overflow-hidden p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-border/55 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
-                          previewShellSurfaceClass,
-                        )}
-                      >
-                        <div className={cn("absolute inset-x-0 top-0 h-2", previewAccentClass)} />
-                        <div className={previewShellClass}>
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 space-y-2">
-                              <p className="text-sm font-semibold leading-tight text-foreground">
-                                {preview.title}
-                              </p>
-                              {preview.bodyPills && preview.bodyPills.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {preview.bodyPills.map((pill) => (
-                                    <span
-                                      key={`${preview.title}-${pill.label}`}
-                                      className={cn(
-                                        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium",
-                                        overviewBodyPillClass(pill.tone),
-                                      )}
-                                    >
-                                      {pill.label}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                              {preview.media?.kind === "segment-bar" &&
-                                preview.media.segments.length >= 2 && (
-                                  <div className="space-y-1.5">
-                                    <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted/40">
-                                      {preview.media.segments.map((seg, i) => (
-                                        <div
-                                          key={`${preview.title}-seg-${seg.name}`}
-                                          className="h-full"
-                                          style={{
-                                            width: `${seg.sharePct}%`,
-                                            backgroundColor:
-                                              segmentColorPalette[i % segmentColorPalette.length],
-                                          }}
-                                          title={`${seg.name}: ${seg.sharePct.toFixed(1)}%`}
-                                        />
-                                      ))}
-                                    </div>
-                                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
-                                      {preview.media.segments.slice(0, 3).map((seg, i) => (
-                                        <span
-                                          key={`${preview.title}-leg-${seg.name}`}
-                                          className="inline-flex items-center gap-1"
-                                        >
-                                          <span
-                                            className="inline-block h-1.5 w-1.5 rounded-full"
-                                            style={{
-                                              backgroundColor:
-                                                segmentColorPalette[i % segmentColorPalette.length],
-                                            }}
-                                          />
-                                          <span className="max-w-[7rem] truncate">{seg.name}</span>
-                                          <span className="font-medium tabular-nums text-foreground/80">
-                                            {Math.round(seg.sharePct)}%
-                                          </span>
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                            </div>
-                            <div className="shrink-0">{renderIndicator(preview.indicator)}</div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })()
-                ))}
-              </div>
+          {sectionGroups.length > 0 && (
+            <div className="space-y-5 pt-1">
+              {sectionGroups.map((group) => (
+                <div key={group.key} className="space-y-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+                    {group.label}
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {group.previews.map((preview) => renderPreviewTile(preview))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 

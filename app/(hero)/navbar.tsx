@@ -7,6 +7,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/brand/logo";
+import { JournalNewIndicator } from "@/components/journal-new-indicator";
 
 type UserInfo = {
   email: string | null;
@@ -41,9 +42,11 @@ const ThemeSwitcher = dynamic(
 const Navbar = ({
   initialUser = null,
   initialCompanies = [],
+  latestJournalDate = null,
 }: {
   initialUser?: UserInfo;
   initialCompanies?: { code: string; name: string | null }[];
+  latestJournalDate?: string | null;
 }) => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -51,7 +54,7 @@ const Navbar = ({
   const navItems = [
     { href: "/leaderboards", label: "Leaderboards" },
     { href: "/watchlists", label: "Watchlists" },
-    { href: "/requests", label: "Submit Request" },
+    { href: "/blog", label: "Journal" },
   ];
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
@@ -63,7 +66,7 @@ const Navbar = ({
           <Link
             href="/auth/login"
             className={cn(
-              "inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+              "inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
             )}
           >
             Sign in
@@ -71,7 +74,7 @@ const Navbar = ({
           <Link
             href="/auth/sign-up"
             className={cn(
-              "inline-flex items-center rounded-full border border-foreground bg-foreground px-3 py-2 text-xs font-medium text-background transition-colors hover:bg-foreground/90",
+              "inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-foreground bg-foreground px-3 py-2 text-xs font-medium text-background transition-colors hover:bg-foreground/90",
             )}
           >
             Sign up
@@ -147,7 +150,7 @@ const Navbar = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-3 lg:gap-4">
+            <div className="hidden min-[1200px]:flex items-center gap-3 lg:gap-4">
               <div className="w-60 lg:w-72">
                 <CompanySearch
                   instanceId="navbar-company-search"
@@ -160,13 +163,16 @@ const Navbar = ({
                   href={item.href}
                   prefetch={false}
                   className={cn(
-                    "rounded-full px-3 py-2 text-xs font-medium transition-colors whitespace-nowrap",
+                    "inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-colors whitespace-nowrap",
                     isActive(item.href)
                       ? "bg-foreground text-background shadow-sm"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground"
                   )}
                 >
                   {item.label}
+                  {item.href === "/blog" && latestJournalDate ? (
+                    <JournalNewIndicator latestKey={latestJournalDate} />
+                  ) : null}
                   </Link>
               ))}
               <ThemeSwitcher />
@@ -178,7 +184,7 @@ const Navbar = ({
               aria-label="Toggle navigation menu"
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground"
+              className="min-[1200px]:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground"
             >
               {isMenuOpen ? (
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
@@ -200,7 +206,7 @@ const Navbar = ({
         </div>
 
         {isMenuOpen && (
-          <div className="md:hidden absolute left-3 right-3 top-[calc(100%+0.5rem)] overflow-hidden rounded-[1.5rem] border border-border/60 bg-background/96 shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl">
+          <div className="min-[1200px]:hidden absolute left-3 right-3 top-[calc(100%+0.5rem)] overflow-hidden rounded-[1.5rem] border border-border/60 bg-background/96 shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl">
             <div className="space-y-2 px-3 py-3">
               <CompanySearch
                 className="mb-1 w-full"
@@ -215,13 +221,16 @@ const Navbar = ({
                   prefetch={false}
                   onClick={() => setIsMenuOpen(false)}
                   className={cn(
-                    "flex w-full items-center rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex w-full items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive(item.href)
                       ? "bg-foreground text-background"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
                 >
                   {item.label}
+                  {item.href === "/blog" && latestJournalDate ? (
+                    <JournalNewIndicator latestKey={latestJournalDate} />
+                  ) : null}
                 </Link>
               ))}
               <div className="flex items-center justify-between pt-1">
