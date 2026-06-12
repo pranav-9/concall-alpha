@@ -82,7 +82,9 @@ export async function getTrackerData(): Promise<TrackerData> {
       supabase.from("company").select("code, name, sector, sub_sector"),
       supabase
         .from("concall_analysis")
-        .select("company_code, score, fy, qtr, created_at"),
+        .select("company_code, score, fy, qtr, created_at")
+        // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+        .not("details->scoring_meta", "is", null),
       supabase
         .from("earnings_calendar")
         .select("company_code, nse_symbol, event_date")

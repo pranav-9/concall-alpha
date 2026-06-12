@@ -39,11 +39,12 @@ function readMeta(file: string): BlogPostMeta {
   };
 }
 
-// Newest first.
+// Newest first; same-date posts keep filename order (stable sort) so a
+// follow-up post named alphabetically earlier lists above the one it cites.
 export function getAllPostMeta(): BlogPostMeta[] {
   return listPostFiles()
     .map(readMeta)
-    .sort((a, b) => (a.date < b.date ? 1 : -1));
+    .sort((a, b) => b.date.localeCompare(a.date));
 }
 
 export function getPostBySlug(slug: string): BlogPost | null {

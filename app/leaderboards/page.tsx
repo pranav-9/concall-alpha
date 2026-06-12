@@ -88,7 +88,12 @@ export default async function LeaderboardsPage({
           </TabsList>
 
           <TabsContent value="quarter" className="mt-4 space-y-3">
-            <BandSummaryLine total={quarterScored} bandCounts={quarterBandCounts} />
+            <BandSummaryLine
+              scored={quarterScored}
+              total={rows.length}
+              scopeNote="scored this quarter"
+              bandCounts={quarterBandCounts}
+            />
             <LeaderboardTable quarterLabels={quarterLabels} data={rows} />
           </TabsContent>
 
@@ -99,7 +104,12 @@ export default async function LeaderboardsPage({
               </div>
             ) : (
               <>
-                <BandSummaryLine total={growthScored} bandCounts={growthBandCounts} />
+                <BandSummaryLine
+                  scored={growthScored}
+                  total={growthEntries.length}
+                  scopeNote="with a growth score"
+                  bandCounts={growthBandCounts}
+                />
                 <GrowthTable data={growthEntries} />
               </>
             )}
@@ -132,17 +142,30 @@ export default async function LeaderboardsPage({
 }
 
 function BandSummaryLine<K extends string>({
+  scored,
   total,
+  scopeNote,
   bandCounts,
 }: {
+  scored: number;
   total: number;
+  scopeNote: string; // e.g. "scored this quarter" — shown when scored < total
   bandCounts: BandCount<K>[];
 }) {
   const visible = bandCounts.filter((b) => b.count > 0);
-  if (total === 0 || visible.length === 0) return null;
+  if (scored === 0 || visible.length === 0) return null;
   return (
     <p className="px-1 text-[12px] text-muted-foreground">
-      <span className="font-semibold text-foreground">{total} companies</span>
+      {scored === total ? (
+        <span className="font-semibold text-foreground">{total} companies</span>
+      ) : (
+        <>
+          <span className="font-semibold text-foreground">
+            {scored} of {total}
+          </span>{" "}
+          companies {scopeNote}
+        </>
+      )}
       {" · "}
       {visible.map((b, i) => (
         <span key={b.key}>

@@ -33,7 +33,7 @@ console.log("pollDefinitionSchema");
 
 it("accepts a valid single_choice poll definition", () => {
   const result = pollDefinitionSchema.safeParse({
-    id: "11111111-1111-1111-1111-111111111111",
+    id: "11111111-1111-4111-8111-111111111111",
     slug: "first-impression",
     question_text: "Which section was most useful?",
     question_type: "single_choice",
@@ -51,7 +51,7 @@ it("accepts a valid single_choice poll definition", () => {
 
 it("rejects single_choice with fewer than 2 options", () => {
   const result = pollDefinitionSchema.safeParse({
-    id: "11111111-1111-1111-1111-111111111111",
+    id: "11111111-1111-4111-8111-111111111111",
     slug: "too-few",
     question_text: "?",
     question_type: "single_choice",
@@ -64,7 +64,7 @@ it("rejects single_choice with fewer than 2 options", () => {
 
 it("accepts a valid multi_select poll with max_selections", () => {
   const result = pollDefinitionSchema.safeParse({
-    id: "11111111-1111-1111-1111-111111111111",
+    id: "11111111-1111-4111-8111-111111111111",
     slug: "pick-two",
     question_text: "Pick up to 2",
     question_type: "multi_select",
@@ -84,7 +84,7 @@ it("accepts a valid multi_select poll with max_selections", () => {
 
 it("rejects multi_select missing max_selections", () => {
   const result = pollDefinitionSchema.safeParse({
-    id: "11111111-1111-1111-1111-111111111111",
+    id: "11111111-1111-4111-8111-111111111111",
     slug: "missing-max",
     question_text: "Pick some",
     question_type: "multi_select",
@@ -97,7 +97,7 @@ it("rejects multi_select missing max_selections", () => {
 
 it("accepts rating_1_5 without options", () => {
   const result = pollDefinitionSchema.safeParse({
-    id: "11111111-1111-1111-1111-111111111111",
+    id: "11111111-1111-4111-8111-111111111111",
     slug: "rate-moat",
     question_text: "Rate moat coverage",
     question_type: "rating_1_5",
@@ -110,7 +110,7 @@ it("accepts rating_1_5 without options", () => {
 
 it("rejects unknown question_type", () => {
   const result = pollDefinitionSchema.safeParse({
-    id: "11111111-1111-1111-1111-111111111111",
+    id: "11111111-1111-4111-8111-111111111111",
     slug: "bad",
     question_text: "?",
     question_type: "open_text",
@@ -123,7 +123,7 @@ it("rejects unknown question_type", () => {
 
 it("rejects option key with disallowed characters", () => {
   const result = pollDefinitionSchema.safeParse({
-    id: "11111111-1111-1111-1111-111111111111",
+    id: "11111111-1111-4111-8111-111111111111",
     slug: "bad-keys",
     question_text: "?",
     question_type: "single_choice",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import {
   CartesianGrid,
   LabelList,
@@ -25,11 +25,16 @@ const chartConfig = {
     label: "Score",
     color: "#ffffff",
   },
+  rollingAvg: {
+    label: "4-qtr avg",
+    color: "#94a3b8",
+  },
 } satisfies ChartConfig;
 
 type ChartPoint = {
   qtr: string;
   score: number;
+  rollingAvg?: number | null;
 };
 
 type ChartLineLabelProps = {
@@ -324,8 +329,30 @@ export function ChartLineLabel({
             />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent indicator="line" />}
+              content={(tooltipProps) => {
+                // The rolling line is null for the first 3 quarters; drop those
+                // entries so the tooltip doesn't show a label with no value.
+                const p = tooltipProps as ComponentProps<typeof ChartTooltipContent>;
+                const payload = Array.isArray(p.payload)
+                  ? p.payload.filter((item) => item.value != null)
+                  : p.payload;
+                return <ChartTooltipContent {...p} payload={payload} indicator="line" />;
+              }}
             />
+            {/* Rolling trail under the raw line: derived, so dashed + muted, no
+                dots, not selectable. The raw quarter stays the primary datum. */}
+            {chartData.some((d) => d.rollingAvg != null) && (
+              <Line
+                dataKey="rollingAvg"
+                type="monotone"
+                stroke={isDark ? "#94a3b8" : "#64748b"}
+                strokeOpacity={0.65}
+                strokeWidth={1.5}
+                strokeDasharray="5 4"
+                dot={false}
+                activeDot={false}
+              />
+            )}
             <Line
               dataKey="score"
               type="natural"

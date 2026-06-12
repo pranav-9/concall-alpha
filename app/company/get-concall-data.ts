@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { buildNewCompanySet } from "@/lib/company-freshness";
-import { calculateTrend } from "./utils";
+import { classifyTrajectory, quarterIndex } from "@/lib/score-trajectory";
 import type { CompanyRow } from "./leaderboard-table";
 import type { QuarterData } from "./types";
 
@@ -10,10 +10,21 @@ type QuarterInfo = {
   label: string;
 };
 
+// Average over scored records only — a null score must not count as 0.
+const avgScore = (records: QuarterData[]): number | null => {
+  const scores = records
+    .map((r) => r.score)
+    .filter((s): s is number => typeof s === "number" && Number.isFinite(s));
+  return scores.length > 0
+    ? scores.reduce((acc, s) => acc + s, 0) / scores.length
+    : null;
+};
+
 export const getConcallData = async () => {
   const supabase = await createClient();
   const [{ data }, { data: companyRows }] = await Promise.all([
-    supabase.from("concall_analysis").select(),
+    // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+    supabase.from("concall_analysis").select().not("details->scoring_meta", "is", null),
     supabase.from("company").select("code, created_at"),
   ]);
   const newCompanySet = buildNewCompanySet(
@@ -56,44 +67,72 @@ export const getConcallData = async () => {
         company: companyCode,
         isNew: newCompanySet.has(companyCode.toUpperCase()),
       };
+      // Company's own newest scored quarter — lets the Band column fall back
+      // to the latest available band (with an "as of" label) when the company
+      // hasn't reported the leaderboard's latest quarter yet.
+      const ownLatest = companyRecords[0];
+      row.ownLatestScore = ownLatest?.score ?? null;
+      row.ownLatestQuarterLabel = ownLatest
+        ? (ownLatest.quarter_label ?? `Q${ownLatest.qtr} FY${ownLatest.fy}`)
+        : null;
+
       const latest4 = companyRecords.slice(0, 4);
       const latest12 = companyRecords.slice(0, 12);
       const recordsByQuarter = new Map(
         companyRecords.map((record) => [`${record.fy}-${record.qtr}`, record] as const),
       );
 
-      row["Latest 4Q Avg"] =
-        latest4.length > 0
-          ? latest4.reduce((acc, curr) => acc + Number(curr.score ?? 0), 0) / latest4.length
-          : null;
-      row["Latest 12Q Avg"] =
-        latest12.length > 0
-          ? latest12.reduce((acc, curr) => acc + Number(curr.score ?? 0), 0) / latest12.length
-          : null;
+      row["Latest 4Q Avg"] = avgScore(latest4);
+      row["Latest 12Q Avg"] = avgScore(latest12);
 
       selectedQuarters.forEach((q) => {
         const match = recordsByQuarter.get(`${q.fy}-${q.qtr}`);
         row[q.label] = match?.score ?? null;
       });
 
-      // Trend calculation reused from company detail page
-      const trend = calculateTrend(companyRecords.slice(0, 12));
-      row.trendDirection = trend.direction;
-      row.trendDescription = trend.description;
-      row.trendChange = trend.change;
-      row.trendLatestScore = trend.latestScore;
-      row.trendPriorBaseline = trend.priorBaseline;
+      // Trajectory classification (lib/score-trajectory owns all thresholds).
+      // Gap detection over the 4-record window: a missing quarter (fy/qtr not
+      // contiguous — FY rollover Q4→Q1 IS contiguous) or a null score inside
+      // the window withholds event labels (climbing / inflecting up / cracking).
+      const gapWindow = companyRecords.slice(0, 4);
+      let hasGapInWindow = gapWindow.some(
+        (r) => typeof r.score !== "number" || !Number.isFinite(r.score),
+      );
+      for (let i = 0; i < gapWindow.length - 1; i++) {
+        if (
+          quarterIndex(gapWindow[i].fy, gapWindow[i].qtr) -
+            quarterIndex(gapWindow[i + 1].fy, gapWindow[i + 1].qtr) !==
+          1
+        ) {
+          hasGapInWindow = true;
+        }
+      }
+      const trajectoryScores = companyRecords
+        .map((r) => r.score)
+        .filter((s): s is number => typeof s === "number" && Number.isFinite(s));
+      const trajectory = classifyTrajectory(trajectoryScores, { hasGapInWindow });
+      row.trajectoryKey = trajectory.key;
+      row.trendChange = trajectory.change;
+      row.trendDescription = trajectory.description;
 
       return row;
     },
   );
 
   const latestLabel = selectedQuarters[0]?.label;
+  // Descending by latest-quarter score; a real 0 is a score, null is not —
+  // unscored rows sort last.
   const sortedRows = latestLabel
-    ? rows.sort(
-        (a, b) =>
-          (Number(b[latestLabel]) || 0) - (Number(a[latestLabel]) || 0)
-      )
+    ? rows.sort((a, b) => {
+        const av = a[latestLabel];
+        const bv = b[latestLabel];
+        const an = typeof av === "number" && Number.isFinite(av) ? av : null;
+        const bn = typeof bv === "number" && Number.isFinite(bv) ? bv : null;
+        if (an == null && bn == null) return 0;
+        if (an == null) return 1;
+        if (bn == null) return -1;
+        return bn - an;
+      })
     : rows;
 
   return {

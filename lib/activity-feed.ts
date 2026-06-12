@@ -270,6 +270,8 @@ export async function getUnifiedUpdates({
       .select(
         "company_code,score,fy,qtr,quarter_label,updated_at,created_at",
       )
+      // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+      .not("details->scoring_meta", "is", null)
       .order("updated_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(quarterCap),
@@ -310,6 +312,7 @@ export async function getUnifiedUpdates({
         "company_code,score,fy,qtr,quarter_label,updated_at,created_at",
       )
       .in("company_code", quarterCompanyCodes)
+      .not("details->scoring_meta", "is", null)
       .order("fy", { ascending: false })
       .order("qtr", { ascending: false })
       .order("updated_at", { ascending: false, nullsFirst: false })

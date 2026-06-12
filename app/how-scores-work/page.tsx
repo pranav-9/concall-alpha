@@ -13,6 +13,7 @@ import {
 } from "@/lib/design/shell";
 import { getConcallData } from "@/app/company/get-concall-data";
 import { fetchLeaderboardData } from "@/app/leaderboards/data";
+import { TRAJECTORIES, TRAJECTORY_ORDER } from "@/lib/score-trajectory";
 import {
   computeGrowthBandCounts,
   computeQuarterBandCounts,
@@ -421,6 +422,36 @@ export default async function HowScoresWorkPage() {
                   bandCounts={quarterBandCounts}
                   caption="Current coverage universe — how the latest-quarter cohort actually distributes across these bands today."
                 />
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-foreground">Trajectory labels</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Bands say where a score sits; the Trend column says where it is heading. A 7 on
+                  the way up is a different stock from a 7 on the way down. Every threshold sits at
+                  or above the ±0.5 re-scoring noise floor, so a move that noise can explain never
+                  earns a directional label.
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {TRAJECTORY_ORDER.map((key) => {
+                    const def = TRAJECTORIES[key];
+                    return (
+                      <div key={key} className={CARD_CLASS}>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-sm font-semibold ${def.textClass}`}>{def.label}</p>
+                          {def.cellLabel !== def.label && def.cellLabel !== "—" && (
+                            <span className="text-[11px] font-mono text-muted-foreground">
+                              shown as “{def.cellLabel}”
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          {def.definition}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="space-y-3">

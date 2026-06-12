@@ -2,25 +2,40 @@
 
 import Link from "next/link";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
-import { ArrowUpDown, TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { Activity, ArrowUpDown, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
+import type { LucideIcon } from "lucide-react";
 
 import ConcallScore from "@/components/concall-score";
 import { Button } from "@/components/ui/button";
 import { BANDS, bandForScore } from "@/lib/score-band";
+import { TRAJECTORIES, type TrajectoryKey } from "@/lib/score-trajectory";
 import { DataTable } from "./data-table";
 
 export type CompanyRow = {
   company: string;
   leaderboardRank?: number;
   isNew?: boolean;
-  trendDirection?: "improving" | "declining" | "stable";
+  trajectoryKey?: TrajectoryKey;
   trendDescription?: string;
   trendChange?: number;
-  trendLatestScore?: number;
-  trendPriorBaseline?: number;
+  ownLatestScore?: number | null;
+  ownLatestQuarterLabel?: string | null;
   // Dynamic quarter columns keyed by label, e.g. "Q1 FY26"
   [key: string]: string | number | boolean | null | undefined;
+};
+
+const TREND_ICONS: Record<TrajectoryKey, LucideIcon> = {
+  climbing: TrendingUp,
+  inflecting_up: TrendingUp,
+  strong_steady: Minus,
+  steady: Minus,
+  drifting: Minus,
+  choppy: Activity,
+  weak_stuck: Minus,
+  cracking: TrendingDown,
+  worsening: TrendingDown,
+  no_read: Minus,
 };
 
 const SORT_HEADER_CLASS =
@@ -77,12 +92,23 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
       id: "band",
       header: "Band",
       cell: ({ row }) => {
-        const score = latestLabel ? asNumber(row.original[latestLabel]) : null;
+        const latestScore = latestLabel ? asNumber(row.original[latestLabel]) : null;
+        const ownScore = asNumber(row.original.ownLatestScore);
+        // No score for the leaderboard's latest quarter: fall back to the
+        // company's own newest band, labelled with its quarter, instead of
+        // a blanket "Upcoming".
+        const isStale = latestScore == null && ownScore != null;
+        const score = latestScore ?? ownScore;
         const band = score == null ? BANDS.upcoming : BANDS[bandForScore(score)];
         return (
           <span className="inline-flex items-center gap-1.5">
             <span className={`h-1.5 w-1.5 rounded-full ${band.barClass}`} />
             <span className={`text-[12px] font-medium ${band.textClass}`}>{band.label}</span>
+            {isStale && row.original.ownLatestQuarterLabel && (
+              <span className="text-[10px] text-muted-foreground">
+                as of {row.original.ownLatestQuarterLabel}
+              </span>
+            )}
           </span>
         );
       },
@@ -117,7 +143,22 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
 
   cols.push({
     id: "trend",
-    accessorFn: (row) => row.trendChange ?? null,
+    // Sort by taxonomy rank (best trajectory first), Δ tiebreak within a
+    // label. undefined + sortUndefined pins no-read rows last in BOTH
+    // directions (rank alone would put them first when descending).
+    accessorFn: (row) => {
+      const key = row.trajectoryKey;
+      return key && key !== "no_read" ? TRAJECTORIES[key].rank : undefined;
+    },
+    sortUndefined: "last",
+    sortingFn: (a, b, columnId) => {
+      const ra = a.getValue<number>(columnId);
+      const rb = b.getValue<number>(columnId);
+      if (ra !== rb) return ra - rb;
+      const ca = typeof a.original.trendChange === "number" ? a.original.trendChange : 0;
+      const cb = typeof b.original.trendChange === "number" ? b.original.trendChange : 0;
+      return cb - ca;
+    },
     header: ({ column }) => (
       <Button
         variant="ghost"
@@ -129,20 +170,17 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
       </Button>
     ),
     cell: ({ row }) => {
-      const direction = row.original.trendDirection;
-      const change = row.original.trendChange;
-      if (!direction) return <span className="text-muted-foreground">—</span>;
-
-      let icon = <Minus className="h-3 w-3" />;
-      let toneClass = "text-muted-foreground";
-      if (direction === "improving") {
-        icon = <TrendingUp className="h-3 w-3" />;
-        toneClass = "text-emerald-700 dark:text-emerald-300";
-      } else if (direction === "declining") {
-        icon = <TrendingDown className="h-3 w-3" />;
-        toneClass = "text-red-700 dark:text-red-300";
+      const key = row.original.trajectoryKey;
+      if (!key || key === "no_read") {
+        return (
+          <span className="text-muted-foreground" title={TRAJECTORIES.no_read.definition}>
+            —
+          </span>
+        );
       }
-
+      const def = TRAJECTORIES[key];
+      const Icon = TREND_ICONS[key];
+      const change = row.original.trendChange;
       const deltaLabel =
         typeof change === "number" && Number.isFinite(change)
           ? `${change >= 0 ? "+" : ""}${change.toFixed(1)}`
@@ -150,11 +188,12 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
 
       return (
         <span
-          className={`inline-flex items-center gap-1 text-[12px] tabular-nums ${toneClass}`}
-          title={row.original.trendDescription ?? undefined}
+          className={`inline-flex items-center gap-1 text-[12px] ${def.textClass}`}
+          title={`${def.label} — ${row.original.trendDescription ?? def.definition}`}
         >
-          {icon}
-          {deltaLabel && <span>{deltaLabel}</span>}
+          <Icon className="h-3 w-3" />
+          <span className="font-medium">{def.cellLabel}</span>
+          {deltaLabel && <span className="tabular-nums">{deltaLabel}</span>}
         </span>
       );
     },

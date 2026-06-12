@@ -32,7 +32,7 @@ import {
   GuidanceHistorySection,
   QuarterlyScoreSection,
 } from "../components/deferred-company-sections";
-import { calculateTrend, parseSummary, transformToChartData } from "../utils";
+import { parseSummary, transformToChartData } from "../utils";
 import type { QuarterData } from "../types";
 import { formatShortDate } from "./page-helpers";
 import {
@@ -184,6 +184,8 @@ export async function QuarterlyScorePanel({ overview }: CompanyDetailSectionProp
     .from("concall_analysis")
     .select()
     .eq("company_code", overview.company_code)
+    // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+    .not("details->scoring_meta", "is", null)
     .order("fy", { ascending: false })
     .order("qtr", { ascending: false })
     .limit(24);
@@ -195,11 +197,13 @@ export async function QuarterlyScorePanel({ overview }: CompanyDetailSectionProp
   }));
   const chartData = transformToChartData(quarters, 24);
   const detailQuarters = quarters.slice(0, 24);
-  const trend = calculateTrend(quarters.slice(0, 12));
+  // The "Trend" pill was always shown (the old calculateTrend never returned
+  // falsy); keep that behavior — it advertises the section, independent of
+  // whether a trajectory label is readable for this company.
   const headerPills = [
     chartData.length > 0 ? "Score trend" : null,
     detailQuarters.length > 0 ? "Quarter detail" : null,
-    trend ? "Trend" : null,
+    quarters.length > 0 ? "Trend" : null,
   ].filter((value): value is string => Boolean(value));
 
   return (

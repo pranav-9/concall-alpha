@@ -17,6 +17,8 @@ export type QuarterData = {
 export type ChartDataPoint = {
   qtr: string;
   score: number;
+  /** Trailing 4-quarter average; null for the first 3 points, absent when history < 8 quarters. */
+  rollingAvg?: number | null;
 };
 
 export type SegmentRevenue = {

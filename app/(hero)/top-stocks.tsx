@@ -120,6 +120,8 @@ const fetchAll = async (supabase: SupabaseServerClient) => {
   const { data, error } = await supabase
     .from("concall_analysis")
     .select("company_code, score, fy, qtr, quarter_label, company(name, sector, sub_sector, created_at)")
+    // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+    .not("details->scoring_meta", "is", null)
     .order("fy", { ascending: false })
     .order("qtr", { ascending: false });
 

@@ -168,6 +168,24 @@ const renderCard = (card: SectionCard) => {
 const CHART_RANGES = [12, 24] as const;
 type ChartRange = (typeof CHART_RANGES)[number];
 
+// The regime signal lives in the trail, not the single quarter (re-score drift
+// is ±0.5; lumpy-delivery businesses chop quarter to quarter). Trailing window
+// only — a centered average would imply knowledge of future quarters. Gated so
+// a short history can't dress up as a trend.
+const ROLLING_WINDOW = 4;
+const MIN_QUARTERS_FOR_ROLLING = 8;
+
+const withRollingAverage = (data: ChartDataPoint[]): ChartDataPoint[] => {
+  if (data.length < MIN_QUARTERS_FOR_ROLLING) return data;
+  return data.map((point, i) => {
+    if (i < ROLLING_WINDOW - 1) return { ...point, rollingAvg: null };
+    const windowSum = data
+      .slice(i - ROLLING_WINDOW + 1, i + 1)
+      .reduce((sum, p) => sum + p.score, 0);
+    return { ...point, rollingAvg: Math.round((windowSum / ROLLING_WINDOW) * 10) / 10 };
+  });
+};
+
 const renderChartCard = ({
   chartData,
   selectedQuarterLabel,
@@ -191,6 +209,11 @@ const renderChartCard = ({
       <span className="flex items-center gap-2 text-[10px] text-muted-foreground">
         <span>
           <span className="text-amber-400/90">⭐</span> 8.5+&nbsp;&nbsp;·&nbsp;&nbsp;
+          {chartData.some((d) => d.rollingAvg != null) && (
+            <>
+              <span className="tracking-[0.18em]">┄</span> 4Q avg&nbsp;&nbsp;·&nbsp;&nbsp;
+            </>
+          )}
           {chartData.length === 1 ? "1 quarter" : `${chartData.length} quarters`}
         </span>
         {showRangeToggle && (
@@ -281,7 +304,11 @@ export function QuarterlyScoreSection({
   const quarterContext = selectedQuarter ? buildDetailQuarterContext(selectedQuarter) : null;
 
   // chartData is oldest→newest; the range window keeps the most recent N points.
-  const visibleChartData = range >= chartData.length ? chartData : chartData.slice(-range);
+  // Rolling average is computed on the full series first so the line doesn't
+  // recompute (and jump) when the range narrows.
+  const enrichedChartData = React.useMemo(() => withRollingAverage(chartData), [chartData]);
+  const visibleChartData =
+    range >= enrichedChartData.length ? enrichedChartData : enrichedChartData.slice(-range);
   const showRangeToggle = chartData.length > CHART_RANGES[0];
 
   // Selecting a quarter outside the chart window widens it so the highlight is visible.

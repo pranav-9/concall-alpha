@@ -207,6 +207,8 @@ export async function buildCompanyPageOverviewCacheRow(
       .from("concall_analysis")
       .select("company_code, score, fy, qtr, quarter_label")
       .eq("company_code", normalizedCode)
+      // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+      .not("details->scoring_meta", "is", null)
       .order("fy", { ascending: false })
       .order("qtr", { ascending: false })
       .limit(12),
@@ -307,6 +309,7 @@ export async function buildCompanyPageOverviewCacheRow(
           .select("company_code, score")
           .eq("fy", companyLatestFy)
           .eq("qtr", companyLatestQtr)
+          .not("details->scoring_meta", "is", null)
       : null;
 
   const sectorPeerPromise = companySector
@@ -332,6 +335,7 @@ export async function buildCompanyPageOverviewCacheRow(
           .from("concall_analysis")
           .select("company_code, fy, qtr, score")
           .in("company_code", peerCodesUpper)
+          .not("details->scoring_meta", "is", null)
       : null;
 
   const normalizedGrowthOutlook = normalizeGrowthOutlook({

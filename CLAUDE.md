@@ -51,6 +51,8 @@ Read [skills/concall-alpha-ui-patterns/SKILL.md](skills/concall-alpha-ui-pattern
 
 ## Project-specific gotchas
 
+- **Every `concall_analysis` query must filter `.not("details->scoring_meta", "is", null)`.** Rows without `scoring_meta` were scored under retired pre-deterministic logic and are misleading; they are hidden portal-wide (decision 2026-06-12) but kept in the DB as the re-score backlog. If you add a new query, carry the filter.
+
 - Industry Context is currently **not rendered** on the company page (`IndustryContextPanel` is defined in `app/company/[code]/company-detail-sections.tsx` but not imported into `page.tsx`). It was temporarily pulled while other sections get polished — do **not** re-wire it back into the page without checking with the user first.
 - Business Snapshot renders **expanded by default** on the company page. The internal `<details>` blocks inside it (about "Read more", historical-economics drawer) are intentional *sub-element* collapses — don't flatten them.
 - Guidance History uses thread-style trails, not full comparison cards. Don't reintroduce comparison cards without a product reason.

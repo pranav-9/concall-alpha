@@ -85,7 +85,8 @@ test("computeTier — total < MIN_COMMITMENTS_FOR_GRADE is not_enough_data", () 
 
 test("computeTier — exactly MIN_COMMITMENTS_FOR_GRADE renders a tier", () => {
   assert.equal(computeTier(3, 3), "reliable"); // 100%
-  assert.equal(computeTier(1, 3), "erratic"); // 33%
+  assert.equal(computeTier(2, 3), "erratic"); // 67% — inside the 50-74% band
+  assert.equal(computeTier(1, 3), "weak"); // 33% — below 50%
   assert.equal(computeTier(0, 3), "weak"); // 0%
 });
 

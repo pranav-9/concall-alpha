@@ -6,7 +6,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "tsx tests/recent-score-updates.test.ts"
+    "test": "for f in tests/*.test.ts; do echo \"== $f\" && tsx \"$f\" || exit 1; done"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
