@@ -186,15 +186,15 @@ export async function QuarterlyScorePanel({ overview }: CompanyDetailSectionProp
     .eq("company_code", overview.company_code)
     .order("fy", { ascending: false })
     .order("qtr", { ascending: false })
-    .limit(12);
+    .limit(24);
 
   if (error) throw error;
   const quarters = ((data ?? []) as QuarterData[]).map((row) => ({
     ...row,
     summary: parseSummary(row.summary),
   }));
-  const chartData = transformToChartData(quarters);
-  const detailQuarters = quarters.slice(0, 12);
+  const chartData = transformToChartData(quarters, 24);
+  const detailQuarters = quarters.slice(0, 24);
   const trend = calculateTrend(quarters.slice(0, 12));
   const headerPills = [
     chartData.length > 0 ? "Score trend" : null,

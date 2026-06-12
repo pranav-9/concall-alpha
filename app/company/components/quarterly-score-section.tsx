@@ -165,23 +165,53 @@ const renderCard = (card: SectionCard) => {
   );
 };
 
+const CHART_RANGES = [12, 24] as const;
+type ChartRange = (typeof CHART_RANGES)[number];
+
 const renderChartCard = ({
   chartData,
   selectedQuarterLabel,
   onQuarterSelect,
+  range,
+  onRangeChange,
+  showRangeToggle,
 }: {
   chartData: ChartDataPoint[];
   selectedQuarterLabel: string;
   onQuarterSelect: (label: string) => void;
+  range: ChartRange;
+  onRangeChange: (range: ChartRange) => void;
+  showRangeToggle: boolean;
 }) => (
   <div className={`${nestedDetailClass} flex min-w-0 flex-col gap-2 p-2.5`}>
     <div className="flex items-center justify-between gap-2">
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
         Score trend
       </p>
-      <span className="text-[10px] text-muted-foreground">
-        <span className="text-amber-400/90">⭐</span> 8.5+&nbsp;&nbsp;·&nbsp;&nbsp;
-        {chartData.length === 1 ? "1 quarter" : `${chartData.length} quarters`}
+      <span className="flex items-center gap-2 text-[10px] text-muted-foreground">
+        <span>
+          <span className="text-amber-400/90">⭐</span> 8.5+&nbsp;&nbsp;·&nbsp;&nbsp;
+          {chartData.length === 1 ? "1 quarter" : `${chartData.length} quarters`}
+        </span>
+        {showRangeToggle && (
+          <span aria-label="Trend range" className="flex items-center gap-0.5" role="group">
+            {CHART_RANGES.map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={range === value}
+                onClick={() => onRangeChange(value)}
+                className={`rounded px-1.5 py-0.5 text-[10px] font-semibold tabular-nums transition-colors ${
+                  range === value
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                {value}Q
+              </button>
+            ))}
+          </span>
+        )}
       </span>
     </div>
     <div className="mx-auto flex w-full max-w-[34rem] justify-center">
@@ -199,17 +229,72 @@ export function QuarterlyScoreSection({
   detailQuarters,
 }: QuarterlyScoreSectionProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
+  const [range, setRange] = React.useState<ChartRange>(12);
+  const chipRowRef = React.useRef<HTMLDivElement | null>(null);
+  const [chipOverflow, setChipOverflow] = React.useState({ left: false, right: false });
 
   React.useEffect(() => {
     setSelectedIndex(0);
   }, [detailQuarters]);
 
+  // Keep the active chip visible when selection comes from the chart (the
+  // selected quarter can otherwise sit far off-screen in the scroll row).
+  React.useEffect(() => {
+    const active = chipRowRef.current?.querySelector<HTMLButtonElement>(
+      'button[aria-pressed="true"]',
+    );
+    active?.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
+  }, [selectedIndex]);
+
+  // Edge fades signal that more quarters exist beyond the visible row.
+  const updateChipOverflow = React.useCallback(() => {
+    const el = chipRowRef.current;
+    if (!el) return;
+    setChipOverflow({
+      left: el.scrollLeft > 2,
+      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 2,
+    });
+  }, []);
+
+  React.useEffect(() => {
+    updateChipOverflow();
+    const el = chipRowRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateChipOverflow, { passive: true });
+    window.addEventListener("resize", updateChipOverflow);
+    return () => {
+      el.removeEventListener("scroll", updateChipOverflow);
+      window.removeEventListener("resize", updateChipOverflow);
+    };
+  }, [updateChipOverflow, detailQuarters.length]);
+
+  const chipMaskClass =
+    chipOverflow.left && chipOverflow.right
+      ? "[mask-image:linear-gradient(to_right,transparent,black_24px,black_calc(100%-24px),transparent)]"
+      : chipOverflow.left
+        ? "[mask-image:linear-gradient(to_right,transparent,black_24px)]"
+        : chipOverflow.right
+          ? "[mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)]"
+          : "";
+
   const selectedQuarter = detailQuarters[selectedIndex];
   const quarterContext = selectedQuarter ? buildDetailQuarterContext(selectedQuarter) : null;
 
+  // chartData is oldest→newest; the range window keeps the most recent N points.
+  const visibleChartData = range >= chartData.length ? chartData : chartData.slice(-range);
+  const showRangeToggle = chartData.length > CHART_RANGES[0];
+
+  // Selecting a quarter outside the chart window widens it so the highlight is visible.
+  const expandRangeFor = (index: number) => {
+    if (index >= range) setRange(24);
+  };
+
   const handleQuarterSelect = (quarterLabel: string) => {
     const nextIndex = detailQuarters.findIndex((q) => q.quarter_label === quarterLabel);
-    if (nextIndex !== -1) setSelectedIndex(nextIndex);
+    if (nextIndex !== -1) {
+      setSelectedIndex(nextIndex);
+      expandRangeFor(nextIndex);
+    }
   };
 
   const cards: Record<string, SectionCard> = quarterContext
@@ -245,8 +330,12 @@ export function QuarterlyScoreSection({
               Quarter
             </span>
             <div
+              ref={chipRowRef}
               aria-label="Quarter selector"
-              className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
+              className={cn(
+                "flex min-w-0 flex-1 items-center gap-1 overflow-x-auto",
+                chipMaskClass,
+              )}
             >
               {detailQuarters.map((quarter, index) => {
                 const labelContext = buildDetailQuarterContext(quarter);
@@ -257,7 +346,10 @@ export function QuarterlyScoreSection({
                     type="button"
                     aria-pressed={isActive}
                     aria-label={`Select ${labelContext.detailQuarterLabel}`}
-                    onClick={() => setSelectedIndex(index)}
+                    onClick={() => {
+                      setSelectedIndex(index);
+                      expandRangeFor(index);
+                    }}
                     className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors ${
                       isActive
                         ? "bg-foreground text-background shadow-sm"
@@ -334,9 +426,12 @@ export function QuarterlyScoreSection({
                 )}
               </div>
               {renderChartCard({
-                chartData,
+                chartData: visibleChartData,
                 selectedQuarterLabel: selectedQuarter?.quarter_label ?? "",
                 onQuarterSelect: handleQuarterSelect,
+                range,
+                onRangeChange: setRange,
+                showRangeToggle,
               })}
             </div>
           </>
@@ -348,9 +443,12 @@ export function QuarterlyScoreSection({
               No quarterly context available.
             </div>
             {renderChartCard({
-              chartData,
+              chartData: visibleChartData,
               selectedQuarterLabel: "",
               onQuarterSelect: handleQuarterSelect,
+              range,
+              onRangeChange: setRange,
+              showRangeToggle,
             })}
           </div>
         )}

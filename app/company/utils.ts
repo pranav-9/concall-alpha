@@ -19,9 +19,9 @@ export function parseSummary(summary: unknown): QuarterData["summary"] {
 /**
  * Transform quarterly data into chart-ready format
  */
-export function transformToChartData(data: QuarterData[]): ChartDataPoint[] {
-  // Keep only the most recent 12 records (data is newest-first)
-  const limited = data.slice(0, 12);
+export function transformToChartData(data: QuarterData[], limit = 12): ChartDataPoint[] {
+  // Keep only the most recent `limit` records (data is newest-first)
+  const limited = data.slice(0, limit);
 
   return limited
     .map((x) => ({
