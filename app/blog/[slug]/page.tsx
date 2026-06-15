@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 
-import { getAllPostMeta, getPostBySlug } from "../posts";
+import { CATEGORY_LABELS, getAllPostMeta, getPostBySlug } from "../posts";
 import { mdxComponents } from "../mdx-components";
 
 type PageProps = { params: Promise<{ slug: string }> };
@@ -40,12 +40,20 @@ export default async function BlogPostPage({ params }: PageProps) {
         </Link>
 
         <header className="mb-8 mt-4 border-b border-border pb-6">
-          <time dateTime={post.date} className="text-xs text-muted-foreground">
-            {post.dateLabel}
-          </time>
+          {post.category ? (
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              {CATEGORY_LABELS[post.category]}
+            </span>
+          ) : null}
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             {post.title}
           </h1>
+          <time
+            dateTime={post.date}
+            className="mt-2 block text-xs text-muted-foreground"
+          >
+            {post.dateLabel}
+          </time>
         </header>
 
         <div className="space-y-4">
