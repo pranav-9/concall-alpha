@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   CHIP_BASE,
   CHIP_NEUTRAL,
-  HERO_CARD,
   INNER_CARD,
   PAGE_BACKGROUND_ATMOSPHERIC,
   PAGE_SHELL,
@@ -16,17 +15,20 @@ import { fetchLeaderboardData } from "@/app/leaderboards/data";
 import { TRAJECTORIES, TRAJECTORY_ORDER } from "@/lib/score-trajectory";
 import {
   computeGrowthBandCounts,
-  computeQuarterBandCounts,
   type BandCount,
 } from "@/lib/leaderboard-distribution";
-import { QuarterlyWeightBars, QuarterlyWorkedExample } from "./quarterly-model";
+import {
+  QuarterlyBandLegend,
+  QuarterlyCategoryModel,
+  QuarterlyDistributionCurve,
+  QuarterlyWeightBars,
+  QuarterlyWorkedExample,
+} from "./quarterly-model";
 
 export const metadata: Metadata = {
   title: "How Scores Are Calculated – Story of a Stock",
   description: "How quarterly and growth scores are calculated in Story of a Stock.",
 };
-
-const microChips = ["Fast scan", "Evidence-backed", "Comparable over time"];
 
 const growthCards = [
   {
@@ -71,15 +73,6 @@ const growthBands = [
   { label: "Weak", cut: "< 6.5", body: "Material concerns on growth visibility or execution." },
 ];
 
-const quarterlyBands = [
-  { label: "Strongly Bullish", cut: "≥ 8.0", body: "Clearly strong quarter; execution and tone are unambiguously positive." },
-  { label: "Bullish", cut: "7.0 – 7.9", body: "Solid quarter with positive signals outweighing concerns." },
-  { label: "Mildly Bullish", cut: "6.5 – 6.9", body: "Modestly positive; some progress but not yet a clearly strong quarter." },
-  { label: "Neutral / Balanced", cut: "4.5 – 6.4", body: "Mixed read; positives and negatives roughly balance out." },
-  { label: "Mildly Bearish", cut: "3.0 – 4.4", body: "Soft quarter with visible concerns; weakness outweighs progress." },
-  { label: "Strongly Bearish", cut: "< 3.0", body: "Clearly weak quarter; material concerns dominate the read." },
-];
-
 const growthReturnedFields = [
   "Base case growth view",
   "Upside case potential",
@@ -92,8 +85,6 @@ const growthReturnedFields = [
 const PAGE_BACKGROUND_CLASS = `h-[30rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 
 const PAGE_SHELL_CLASS = PAGE_SHELL;
-
-const HERO_CARD_CLASS = HERO_CARD;
 
 const PANEL_CARD_CLASS = PANEL_CARD_SKY;
 
@@ -123,73 +114,30 @@ export default async function HowScoresWorkPage() {
         return Number.isFinite(n) ? n : null;
       })
     : [];
-  const quarterBandCounts = computeQuarterBandCounts(quarterLatestScores);
   const quarterScored = quarterLatestScores.filter((s): s is number => typeof s === "number").length;
   const growthBandCounts = computeGrowthBandCounts(growthEntries.map((e) => e.growthScore));
   const growthScored = growthEntries.filter((e) => typeof e.growthScore === "number").length;
-
-  const overviewMetrics = [
-    {
-      label: "Score models",
-      value: "2",
-      note: "Forward outlook and execution read",
-    },
-    {
-      label: "Scale",
-      value: "0-10",
-      note: "Comparable across companies and time",
-    },
-    {
-      label: "Read order",
-      value: "Growth → Quarterly",
-      note: "Start with outlook, then check delivery",
-    },
-  ];
 
   return (
     <main className="relative isolate overflow-hidden">
       <div className={PAGE_BACKGROUND_CLASS} />
       <div className={PAGE_SHELL_CLASS}>
-        <section className={HERO_CARD_CLASS}>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                {microChips.map((chip) => (
-                  <span key={chip} className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
-                    {chip}
-                  </span>
-                ))}
-              </div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-200">
-                Score framework
-              </p>
-              <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
-                How scores are calculated
-              </h1>
-              <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Growth Score looks forward. Quarterly Score measures execution. Read them as two
-                separate lenses inside the same research workflow.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {overviewMetrics.map((metric) => (
-                <div key={metric.label} className={CARD_CLASS}>
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                    {metric.label}
-                  </p>
-                  <p className="mt-2 text-xl font-black leading-none text-foreground">
-                    {metric.value}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">{metric.note}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-200">
+            Score framework
+          </p>
+          <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
+            How scores are calculated
+          </h1>
+          <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+            Two lenses on the same company. <span className="text-foreground">Growth Score</span>{" "}
+            looks forward; <span className="text-foreground">Quarterly Score</span> measures how the
+            latest quarter actually went. Both sit on the same 1–10 scale.
+          </p>
+        </div>
 
         <section className={PANEL_CARD_CLASS}>
-          <Tabs defaultValue="growth" className="space-y-5">
+          <Tabs defaultValue="quarterly" className="space-y-5">
             <TabsList className={TABS_LIST_CLASS}>
               <TabsTrigger value="growth" className={TABS_TRIGGER_CLASS}>
                 Growth Score
@@ -297,74 +245,85 @@ export default async function HowScoresWorkPage() {
               </p>
             </TabsContent>
 
-            <TabsContent value="quarterly" className="space-y-5">
-              <div className={`${INNER_CARD} p-4`}>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Quarterly score model
-                </p>
-                <h2 className="mt-1 text-xl font-bold text-foreground">
-                  A weighted read of the concall, on a 1–10 scale
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Each quarter is rated on six categories. A category gets a lean from −2 (clearly
-                  deteriorating) through 0 (in line) to +2 (clearly exceptional). The leans are
-                  weighted, added to a 5.5 baseline, and a downside cap keeps a strong-looking
-                  quarter honest when a core category breaks down. The arithmetic is deterministic —
-                  the judgment lives only in the six leans.
-                </p>
-              </div>
+            <TabsContent value="quarterly" className="space-y-4">
+              <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                Each quarter is rated on six categories, each given a lean from −2 (clearly
+                deteriorating) through 0 (in line) to +2 (clearly exceptional). The leans are
+                weighted, added to a 5.5 baseline, and a downside cap keeps a strong-looking quarter
+                honest. The arithmetic is deterministic — the judgment lives only in the six leans.
+              </p>
 
-              <div className={`${INNER_CARD} p-4`}>
-                <p className="text-sm font-semibold text-foreground">
-                  The model — six weighted categories
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  How much each category can move the score. Financials and Guidance carry the
-                  most; Q&amp;A is a light tie-breaker.
-                </p>
-                <div className="mt-4">
-                  <QuarterlyWeightBars />
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <div className={`${INNER_CARD} p-4`}>
+                  <p className="text-sm font-semibold text-foreground">The six categories</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    What each quarter is read on.
+                  </p>
+                  <div className="mt-4">
+                    <QuarterlyCategoryModel />
+                  </div>
                 </div>
-                <div className="mt-4 rounded-lg border border-amber-300/50 bg-amber-50/70 px-3 py-2 text-xs leading-relaxed text-amber-900 dark:border-amber-700/30 dark:bg-amber-950/20 dark:text-amber-200">
-                  <span className="font-semibold">Downside cap.</span> If any core category —
-                  Financials, Guidance, or Concentration — scores −2, the whole quarter is capped at
-                  6.0, however strong the rest looks. The worst core read bounds the quarter.
+                <div className={`${INNER_CARD} p-4`}>
+                  <p className="text-sm font-semibold text-foreground">How they’re weighted</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    How far each can move the score. Weights sum to 1.00.
+                  </p>
+                  <div className="mt-4">
+                    <QuarterlyWeightBars />
+                  </div>
                 </div>
               </div>
 
-              <div className={`${INNER_CARD} p-4`}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-sm font-semibold text-foreground">Worked example</p>
-                  <span className="text-[11px] text-muted-foreground">illustrative leans</span>
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.3fr_1fr]">
+                <div className={`${INNER_CARD} p-4`}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-sm font-semibold text-foreground">Worked example</p>
+                    <span className="text-[11px] text-muted-foreground">illustrative leans</span>
+                  </div>
+                  <div className="mt-4">
+                    <QuarterlyWorkedExample />
+                  </div>
                 </div>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Each bar is one category’s push off the 5.5 baseline (weight × lean). The length
-                  already bakes in the weight, so a long bar is a category that actually moved the
-                  score — note Strategy’s +2 barely outweighs Financials’ +1.
-                </p>
-                <div className="mt-4">
-                  <QuarterlyWorkedExample />
+                <div className={`${INNER_CARD} space-y-3 p-4`}>
+                  <p className="text-sm font-semibold text-foreground">Reading it</p>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    Each bar is one category’s push off the 5.5 baseline (weight × lean). The length
+                    bakes in the weight, so a long bar is a category that actually moved the score —
+                    here Strategy’s standout +2 barely outweighs Financials’ +1, and a soft industry
+                    read trims a little back.
+                  </p>
+                  <div className="rounded-lg border border-amber-300/50 bg-amber-50/70 px-3 py-2 text-xs leading-relaxed text-amber-900 dark:border-amber-700/30 dark:bg-amber-950/20 dark:text-amber-200">
+                    <span className="font-semibold">Cap in action.</span> Had Guidance instead scored
+                    −2, this 7.1 would be clamped to 6.0 — one core category breaking down bounds the
+                    whole quarter.
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-foreground">Score bands</p>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {quarterlyBands.map((band) => (
-                    <div key={band.label} className={CARD_CLASS}>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-foreground">{band.label}</p>
-                        <span className="text-[11px] font-mono text-muted-foreground">{band.cut}</span>
-                      </div>
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{band.body}</p>
-                    </div>
-                  ))}
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <div className={`${INNER_CARD} p-4`}>
+                  <p className="text-sm font-semibold text-foreground">Score bands</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    Fixed cuts anchored on 5.5 = a typical, all-in-line quarter.
+                  </p>
+                  <div className="mt-4">
+                    <QuarterlyBandLegend />
+                  </div>
                 </div>
-                <DistributionHistogram
-                  total={quarterScored}
-                  bandCounts={quarterBandCounts}
-                  caption="Current coverage universe — how the latest-quarter cohort actually distributes across these bands today."
-                />
+                <div className={`${INNER_CARD} p-4`}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-sm font-semibold text-foreground">Where companies land</p>
+                    <span className="text-[11px] tabular-nums text-muted-foreground">
+                      {quarterScored} companies
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    Latest-quarter cohort, by score — right-skewed toward quality.
+                  </p>
+                  <div className="mt-4">
+                    <QuarterlyDistributionCurve scores={quarterLatestScores} />
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -403,8 +362,8 @@ export default async function HowScoresWorkPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Read Growth first, then Quarterly. Both models stay on the same 0-10 scale but answer
-            different questions.
+            Two lenses on the same comparable scale. Quarterly grades the latest quarter; Growth
+            looks at the forward outlook — read whichever fits your question.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild className="rounded-full bg-sky-600 text-white hover:bg-sky-700 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400">

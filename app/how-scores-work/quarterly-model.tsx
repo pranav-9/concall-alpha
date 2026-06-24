@@ -7,7 +7,16 @@
 // Colours reuse the platform's diverging teal<->orange ramp (lib/score-band.ts): teal = a
 // positive push off the 5.5 neutral midpoint, orange = a negative one.
 
-import { bandForScore, BANDS } from "@/lib/score-band";
+import {
+  type LucideIcon,
+  BarChart3,
+  Building2,
+  Compass,
+  MessagesSquare,
+  Route,
+  ShieldAlert,
+} from "lucide-react";
+import { bandForScore, BANDS, SCORE_BAND_ORDER } from "@/lib/score-band";
 
 type Category = {
   short: string;
@@ -75,7 +84,7 @@ export function QuarterlyWeightBars() {
       })}
       <p className="pt-1 text-[11px] text-muted-foreground">
         <span className="mr-1 inline-block h-1.5 w-1.5 translate-y-[1px] rounded-full bg-sky-600 dark:bg-sky-400" />
-        core — a −2 here caps the quarter at 6.0 &nbsp;·&nbsp; weights sum to 1.00
+        core categories
       </p>
     </div>
   );
@@ -173,5 +182,211 @@ export function QuarterlyWorkedExample() {
         <span className={`text-xs font-semibold ${band.textClass}`}>{band.label}</span>
       </div>
     </div>
+  );
+}
+
+// The conceptual model: what the six categories are, grouped into core (cap-bearing) and context.
+type ModelCat = { short: string; gloss: string; Icon: LucideIcon };
+const CORE_CATS: ModelCat[] = [
+  { short: "Financials", gloss: "the numbers", Icon: BarChart3 },
+  { short: "Guidance", gloss: "the outlook", Icon: Compass },
+  { short: "Concentration", gloss: "the risks", Icon: ShieldAlert },
+];
+const CONTEXT_CATS: ModelCat[] = [
+  { short: "Strategy", gloss: "capital moves", Icon: Route },
+  { short: "Industry", gloss: "the backdrop", Icon: Building2 },
+  { short: "Q&A", gloss: "tone & signals", Icon: MessagesSquare },
+];
+
+function CatTile({ short, gloss, Icon, core }: ModelCat & { core: boolean }) {
+  return (
+    <div
+      className={`flex flex-col items-center gap-1 rounded-lg border p-2.5 text-center ${
+        core
+          ? "border-sky-300/50 bg-sky-100/50 dark:border-sky-700/30 dark:bg-sky-900/20"
+          : "border-border/60 bg-background/40"
+      }`}
+    >
+      <Icon
+        className={`h-4 w-4 ${core ? "text-sky-700 dark:text-sky-300" : "text-muted-foreground"}`}
+        strokeWidth={1.75}
+        aria-hidden
+      />
+      <span className="text-[11px] font-semibold leading-tight text-foreground">{short}</span>
+      <span className="text-[10px] leading-tight text-muted-foreground">{gloss}</span>
+    </div>
+  );
+}
+
+export function QuarterlyCategoryModel() {
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-sky-800 dark:text-sky-200">
+          Core
+          <span className="ml-1 font-normal normal-case tracking-normal text-muted-foreground">
+            — a −2 here caps the quarter at 6.0
+          </span>
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {CORE_CATS.map((c) => (
+            <CatTile key={c.short} {...c} core />
+          ))}
+        </div>
+      </div>
+      <div>
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+          Context
+          <span className="ml-1 font-normal normal-case tracking-normal">— refines the read</span>
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          {CONTEXT_CATS.map((c) => (
+            <CatTile key={c.short} {...c} core={false} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Compact band legend — doubles as the colour key for the distribution curve.
+export function QuarterlyBandLegend() {
+  const keys = SCORE_BAND_ORDER.filter((k) => k !== "upcoming");
+  return (
+    <div className="space-y-1.5">
+      {keys.map((key) => {
+        const b = BANDS[key];
+        return (
+          <div key={key} className="flex items-center gap-2.5">
+            <span className={`h-3 w-3 shrink-0 rounded-sm ${b.barClass}`} aria-hidden />
+            <span className="text-sm text-foreground">{b.label}</span>
+            <span className="ml-auto font-mono text-xs tabular-nums text-muted-foreground">
+              {b.description}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Distribution of latest-quarter scores as a smooth density curve, filled with the band colours.
+const CURVE_REGIONS = [
+  { key: "mildly_bearish", lo: 3, hi: 4.5 },
+  { key: "neutral", lo: 4.5, hi: 6.5 },
+  { key: "mildly_bullish", lo: 6.5, hi: 7 },
+  { key: "bullish", lo: 7, hi: 8 },
+  { key: "strongly_bullish", lo: 8, hi: 9.5 },
+] as const;
+
+export function QuarterlyDistributionCurve({
+  scores,
+}: {
+  scores: Array<number | null | undefined>;
+}) {
+  const vals = scores.filter((s): s is number => typeof s === "number" && Number.isFinite(s));
+  if (vals.length === 0) return null;
+
+  const DMIN = 3;
+  const DMAX = 9.5;
+  const BIN = 0.5;
+  const nBins = Math.round((DMAX - DMIN) / BIN);
+  const counts = new Array(nBins).fill(0);
+  for (const s of vals) {
+    const c = Math.min(DMAX - 1e-9, Math.max(DMIN, s));
+    counts[Math.min(nBins - 1, Math.floor((c - DMIN) / BIN))] += 1;
+  }
+  const maxCount = Math.max(...counts, 1);
+
+  const W = 360;
+  const H = 168;
+  const padL = 6;
+  const padR = 6;
+  const padT = 16;
+  const padB = 24;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const baseY = padT + plotH;
+  const xOf = (score: number) => padL + ((score - DMIN) / (DMAX - DMIN)) * plotW;
+  const yOf = (count: number) => padT + plotH * (1 - count / maxCount);
+
+  const pts: [number, number][] = counts.map((c, i) => [xOf(DMIN + BIN * (i + 0.5)), yOf(c)]);
+
+  // Catmull-Rom -> cubic-bezier segments (no leading move), so we can reuse for stroke + area.
+  const segs = (() => {
+    let d = "";
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] ?? pts[i];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2] ?? p2;
+      const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+      const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+      const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+    }
+    return d;
+  })();
+  const first = pts[0];
+  const strokeD = `M ${first[0].toFixed(1)} ${first[1].toFixed(1)}${segs}`;
+  const areaD = `M ${xOf(DMIN).toFixed(1)} ${baseY} L ${first[0].toFixed(1)} ${first[1].toFixed(1)}${segs} L ${xOf(DMAX).toFixed(1)} ${baseY} Z`;
+
+  const sorted = [...vals].sort((a, b) => a - b);
+  const median = sorted[Math.floor((sorted.length - 1) / 2)];
+  const medX = xOf(Math.min(DMAX, Math.max(DMIN, median)));
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="h-auto w-full"
+      role="img"
+      aria-label="Distribution of latest-quarter scores"
+    >
+      <defs>
+        <clipPath id="qd-area">
+          <path d={areaD} />
+        </clipPath>
+      </defs>
+      <g clipPath="url(#qd-area)">
+        {CURVE_REGIONS.map((r) => (
+          <rect
+            key={r.key}
+            x={xOf(r.lo)}
+            y={padT}
+            width={xOf(r.hi) - xOf(r.lo)}
+            height={plotH}
+            fill={BANDS[r.key].chartHex}
+            fillOpacity={0.78}
+          />
+        ))}
+      </g>
+      <path d={strokeD} fill="none" className="stroke-foreground/55" strokeWidth={1.5} />
+      <line
+        x1={medX}
+        y1={padT}
+        x2={medX}
+        y2={baseY}
+        className="stroke-foreground/40"
+        strokeWidth={1}
+        strokeDasharray="3 3"
+      />
+      <text x={medX} y={padT - 5} textAnchor="middle" className="fill-muted-foreground" style={{ fontSize: 9 }}>
+        median {median.toFixed(1)}
+      </text>
+      <line x1={padL} y1={baseY} x2={W - padR} y2={baseY} className="stroke-border" strokeWidth={1} />
+      {[3, 4, 5, 6, 7, 8, 9].map((v) => (
+        <text
+          key={v}
+          x={xOf(v)}
+          y={baseY + 13}
+          textAnchor="middle"
+          className="fill-muted-foreground"
+          style={{ fontSize: 9 }}
+        >
+          {v}
+        </text>
+      ))}
+    </svg>
   );
 }

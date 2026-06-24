@@ -12,9 +12,10 @@ Captured with context so a future session can pick any item up cold. Source revi
 - **Depends on:** nothing.
 
 ### 2. Quarterly diagram polish (deferred)
-- **Non-core weight bars** are only subtly dimmer than core in dark mode (the ● dot carries the distinction). Consider dimming non-core further or a clearer encoding.
-- **Bands grid still hand-copied.** The quarterly "Score bands" array in `app/how-scores-work/page.tsx` duplicates `lib/score-band.ts`. Import `BANDS` + `SCORE_BAND_ORDER` to kill drift, and optionally colour the band labels with each band's `textClass`. (The worked-example score+label already derive live via `bandForScore`.)
 - **Illustrative leans.** The worked example uses hardcoded leans (→ 7.1), not a real DB `score_breakdown`. Could wire a representative real quarter.
+- **Non-core weight bars** are only subtly dimmer than core in dark mode (the model tiles now carry the core/context distinction, so this is low priority).
+
+(Done in the 2026-06-24 layout pass: two-column model+weights, worked-example beside its explanation, bands-as-colour-legend now rendered from `lib/score-band.ts` (`BANDS` + `SCORE_BAND_ORDER`, drift killed), distribution redrawn as a band-coloured density curve, hero metric card removed, default tab → Quarterly, pictorial icon-tile category model.)
 
 ## Trajectory labels — deferred follow-ups (eng review 2026-06-12)
 
