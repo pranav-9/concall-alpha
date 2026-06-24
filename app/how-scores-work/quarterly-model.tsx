@@ -12,9 +12,9 @@ import {
   BarChart3,
   Building2,
   Compass,
+  Crosshair,
   MessagesSquare,
   Route,
-  ShieldAlert,
 } from "lucide-react";
 import { bandForScore, BANDS, SCORE_BAND_ORDER } from "@/lib/score-band";
 
@@ -62,17 +62,12 @@ export function QuarterlyWeightBars() {
         const pct = (c.weight / maxWeight) * 100;
         return (
           <div key={c.short} className={WEIGHT_ROW}>
-            <div className="flex min-w-0 items-center gap-1.5">
-              <CoreDot on={c.core} />
-              <span className="truncate text-sm text-foreground" title={c.full}>
-                {c.short}
-              </span>
-            </div>
+            <span className="min-w-0 truncate text-sm text-foreground" title={c.full}>
+              {c.short}
+            </span>
             <div className="relative h-2.5 rounded-full bg-muted/50">
               <div
-                className={`absolute inset-y-0 left-0 rounded-full ${
-                  c.core ? "bg-sky-600 dark:bg-sky-500" : "bg-sky-400/60 dark:bg-sky-700/70"
-                }`}
+                className="absolute inset-y-0 left-0 rounded-full bg-sky-500 dark:bg-sky-400"
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -82,10 +77,6 @@ export function QuarterlyWeightBars() {
           </div>
         );
       })}
-      <p className="pt-1 text-[11px] text-muted-foreground">
-        <span className="mr-1 inline-block h-1.5 w-1.5 translate-y-[1px] rounded-full bg-sky-600 dark:bg-sky-400" />
-        core categories
-      </p>
     </div>
   );
 }
@@ -190,7 +181,7 @@ type ModelCat = { short: string; gloss: string; Icon: LucideIcon };
 const CORE_CATS: ModelCat[] = [
   { short: "Financials", gloss: "the numbers", Icon: BarChart3 },
   { short: "Guidance", gloss: "the outlook", Icon: Compass },
-  { short: "Concentration", gloss: "the risks", Icon: ShieldAlert },
+  { short: "Concentration", gloss: "the risks", Icon: Crosshair },
 ];
 const CONTEXT_CATS: ModelCat[] = [
   { short: "Strategy", gloss: "capital moves", Icon: Route },
