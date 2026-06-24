@@ -253,7 +253,7 @@ export default async function HowScoresWorkPage() {
                 honest. The arithmetic is deterministic — the judgment lives only in the six leans.
               </p>
 
-              <section className="space-y-4">
+              <section className="flex min-h-[90vh] flex-col justify-center space-y-4">
                 <SectionHeading
                   step={1}
                   title="Categories & weights"
@@ -278,7 +278,7 @@ export default async function HowScoresWorkPage() {
                 </div>
               </section>
 
-              <section className="space-y-4 border-t border-border/50 pt-8">
+              <section className="flex min-h-[90vh] flex-col justify-center space-y-4">
                 <SectionHeading
                   step={2}
                   title="Worked example"
@@ -309,7 +309,7 @@ export default async function HowScoresWorkPage() {
                 </div>
               </section>
 
-              <section className="space-y-4 border-t border-border/50 pt-8">
+              <section className="flex min-h-[90vh] flex-col justify-center space-y-4">
                 <SectionHeading
                   step={3}
                   title="Score bands"
@@ -342,7 +342,7 @@ export default async function HowScoresWorkPage() {
                 </div>
               </section>
 
-              <section className="space-y-4 border-t border-border/50 pt-8">
+              <section className="flex min-h-[90vh] flex-col justify-center space-y-4">
                 <SectionHeading
                   step={4}
                   title="Trajectory labels"
