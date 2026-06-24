@@ -42,7 +42,7 @@ const K = SPAN / 2; // contribution = weight * lean * 2.25
 
 const contribution = (c: Category) => c.weight * c.lean * K;
 
-const WEIGHT_ROW = "grid grid-cols-[8rem_minmax(0,1fr)_2.5rem] items-center gap-3";
+const WEIGHT_ROW = "grid grid-cols-[7rem_minmax(0,1fr)_2.25rem] items-center gap-2.5";
 const EXAMPLE_ROW = "grid grid-cols-[8rem_1.75rem_minmax(0,1fr)_3rem] items-center gap-2 sm:gap-3";
 
 function CoreDot({ on }: { on: boolean }) {
@@ -192,19 +192,25 @@ const CONTEXT_CATS: ModelCat[] = [
 function CatTile({ short, gloss, Icon, core }: ModelCat & { core: boolean }) {
   return (
     <div
-      className={`flex flex-col items-center gap-1 rounded-lg border p-2.5 text-center ${
+      className={`flex flex-col items-center gap-2 rounded-xl border p-2.5 text-center sm:p-4 ${
         core
           ? "border-sky-300/50 bg-sky-100/50 dark:border-sky-700/30 dark:bg-sky-900/20"
           : "border-border/60 bg-background/40"
       }`}
     >
-      <Icon
-        className={`h-4 w-4 ${core ? "text-sky-700 dark:text-sky-300" : "text-muted-foreground"}`}
-        strokeWidth={1.75}
-        aria-hidden
-      />
-      <span className="text-[11px] font-semibold leading-tight text-foreground">{short}</span>
-      <span className="text-[10px] leading-tight text-muted-foreground">{gloss}</span>
+      <span
+        className={`flex h-9 w-9 items-center justify-center rounded-full sm:h-10 sm:w-10 ${
+          core
+            ? "bg-sky-200/60 text-sky-700 dark:bg-sky-800/40 dark:text-sky-300"
+            : "bg-muted/60 text-muted-foreground"
+        }`}
+      >
+        <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" strokeWidth={1.75} aria-hidden />
+      </span>
+      <span className="text-xs font-semibold leading-tight text-foreground sm:text-sm">
+        {short}
+      </span>
+      <span className="text-xs leading-tight text-muted-foreground">{gloss}</span>
     </div>
   );
 }
@@ -219,7 +225,7 @@ export function QuarterlyCategoryModel() {
             — a −2 here caps the quarter at 6.0
           </span>
         </p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {CORE_CATS.map((c) => (
             <CatTile key={c.short} {...c} core />
           ))}
@@ -230,7 +236,7 @@ export function QuarterlyCategoryModel() {
           Context
           <span className="ml-1 font-normal normal-case tracking-normal">— refines the read</span>
         </p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {CONTEXT_CATS.map((c) => (
             <CatTile key={c.short} {...c} core={false} />
           ))}

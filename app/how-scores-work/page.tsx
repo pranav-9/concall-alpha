@@ -259,7 +259,7 @@ export default async function HowScoresWorkPage() {
                   title="Categories & weights"
                   subtitle="The six things every quarter is read on, and how far each can move the score."
                 />
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[7fr_3fr] lg:items-start">
                   <div className={`${INNER_CARD} p-4`}>
                     <p className="text-sm font-semibold text-foreground">The six categories</p>
                     <div className="mt-4">
