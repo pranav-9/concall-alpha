@@ -19,6 +19,7 @@ import {
   computeQuarterBandCounts,
   type BandCount,
 } from "@/lib/leaderboard-distribution";
+import { QuarterlyWeightBars, QuarterlyWorkedExample } from "./quarterly-model";
 
 export const metadata: Metadata = {
   title: "How Scores Are Calculated – Story of a Stock",
@@ -26,54 +27,6 @@ export const metadata: Metadata = {
 };
 
 const microChips = ["Fast scan", "Evidence-backed", "Comparable over time"];
-
-const scoreSteps = [
-  {
-    index: "1",
-    title: "Read the quarter context",
-    description: "Concall transcripts and disclosures are parsed into trackable signals.",
-    bullets: [
-      "Management commentary, Q&A, and reported numbers are captured in one place.",
-      "Noise is reduced so the same structure is used across companies.",
-    ],
-  },
-  {
-    index: "2",
-    title: "Evaluate core factors",
-    description: "The model checks quality, delivery, and risk from multiple angles.",
-    bullets: [
-      "Financial trajectory, guidance vs delivery, unit economics, and competitive position.",
-      "Risk/overhangs, capital allocation, and evidence quality to avoid fluff-heavy scoring.",
-    ],
-  },
-  {
-    index: "3",
-    title: "Assign quarterly score",
-    description: "A 1-10 quarterly score is generated from the weighted factors.",
-    bullets: [
-      "The score anchors to concrete fundamentals on a 1-10 scale, not management tone.",
-      "Evidence quality gates the score so fluff-heavy calls don't inflate it.",
-    ],
-  },
-  {
-    index: "4",
-    title: "Output actionable fields",
-    description: "Results are returned in a format you can quickly review and compare.",
-    bullets: [
-      "Rationale, quarter summary, results summary, guidance, and key risks.",
-      "Period fields (`fy`, `qtr`) make trend tracking consistent over time.",
-    ],
-  },
-];
-
-const returnedFieldGroups = [
-  { title: "Core", fields: ["score"] },
-  {
-    title: "Context",
-    fields: ["quarter_summary", "results_summary", "guidance", "rationale", "risks"],
-  },
-  { title: "Period", fields: ["fy", "qtr"] },
-];
 
 const growthCards = [
   {
@@ -350,57 +303,47 @@ export default async function HowScoresWorkPage() {
                   Quarterly score model
                 </p>
                 <h2 className="mt-1 text-xl font-bold text-foreground">
-                  From raw quarter data to a usable score
+                  A weighted read of the concall, on a 1–10 scale
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Quarterly scores turn dense management commentary into a comparable signal, so
-                  you can quickly see what improved, what weakened, and what deserves deeper work.
+                  Each quarter is rated on six categories. A category gets a lean from −2 (clearly
+                  deteriorating) through 0 (in line) to +2 (clearly exceptional). The leans are
+                  weighted, added to a 5.5 baseline, and a downside cap keeps a strong-looking
+                  quarter honest when a core category breaks down. The arithmetic is deterministic —
+                  the judgment lives only in the six leans.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {scoreSteps.map((step) => (
-                  <div key={step.index} className={CARD_CLASS + " space-y-2"}>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-sky-200/60 bg-sky-100/70 text-xs font-black text-sky-800 dark:border-sky-700/35 dark:bg-sky-900/30 dark:text-sky-200">
-                        {step.index}
-                      </span>
-                      <h3 className="text-sm font-semibold text-foreground">{step.title}</h3>
-                    </div>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {step.description}
-                    </p>
-                    <ul className="list-disc space-y-1 pl-5 marker:text-muted-foreground">
-                      {step.bullets.map((bullet) => (
-                        <li key={bullet} className="text-sm leading-relaxed text-foreground/90">
-                          {bullet}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+              <div className={`${INNER_CARD} p-4`}>
+                <p className="text-sm font-semibold text-foreground">
+                  The model — six weighted categories
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  How much each category can move the score. Financials and Guidance carry the
+                  most; Q&amp;A is a light tie-breaker.
+                </p>
+                <div className="mt-4">
+                  <QuarterlyWeightBars />
+                </div>
+                <div className="mt-4 rounded-lg border border-amber-300/50 bg-amber-50/70 px-3 py-2 text-xs leading-relaxed text-amber-900 dark:border-amber-700/30 dark:bg-amber-950/20 dark:text-amber-200">
+                  <span className="font-semibold">Downside cap.</span> If any core category —
+                  Financials, Guidance, or Concentration — scores −2, the whole quarter is capped at
+                  6.0, however strong the rest looks. The worst core read bounds the quarter.
+                </div>
               </div>
 
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-foreground">What gets returned</p>
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-                  {returnedFieldGroups.map((group) => (
-                    <div key={group.title} className={CARD_CLASS + " space-y-2"}>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        {group.title}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {group.fields.map((field) => (
-                          <span
-                            key={field}
-                            className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}
-                          >
-                            {field}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+              <div className={`${INNER_CARD} p-4`}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-sm font-semibold text-foreground">Worked example</p>
+                  <span className="text-[11px] text-muted-foreground">illustrative leans</span>
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  Each bar is one category’s push off the 5.5 baseline (weight × lean). The length
+                  already bakes in the weight, so a long bar is a category that actually moved the
+                  score — note Strategy’s +2 barely outweighs Financials’ +1.
+                </p>
+                <div className="mt-4">
+                  <QuarterlyWorkedExample />
                 </div>
               </div>
 
@@ -454,26 +397,6 @@ export default async function HowScoresWorkPage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-foreground">Quarterly example</p>
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                  <div className={CARD_CLASS}>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      Score 8.8, Mildly Bullish, Confidence 82%
-                    </p>
-                  </div>
-                  <div className={CARD_CLASS}>
-                    <ul className="space-y-1.5">
-                      <li className="text-sm leading-relaxed text-foreground/90">
-                        Driven by margin expansion and guidance consistency.
-                      </li>
-                      <li className="text-sm leading-relaxed text-foreground/90">
-                        Watch for working-capital slippage in the next quarter.
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
             </TabsContent>
           </Tabs>
         </section>

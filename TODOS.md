@@ -2,6 +2,20 @@
 
 Captured with context so a future session can pick any item up cold. Source review noted per item.
 
+## How Scores Work page — diagram pass follow-ups (2026-06-24)
+
+### 1. Growth Score tab — same diagrammatic treatment
+- **What:** Replace the Growth Score tab's prose card-soup with diagrams, mirroring the quarterly pass: weight bars for the six components + a worked example.
+- **Why:** The quarterly tab now shows its model visually (`app/how-scores-work/quarterly-model.tsx`); the Growth tab still only describes it — inconsistent, and Growth is the vaguer half.
+- **Different shape — do not copy the quarterly diagram:** Growth is a weighted AVERAGE of 0-10 sub-scores with dynamic renormalization (missing components renormalize), NOT signed ±2 leans off a 5.5 baseline with a cap. So the diverging-bar metaphor doesn't transfer. Use a 0-10 "sub-score × weight" track (each component's 0-10 sub-score as a marker, weight as bar thickness, final = weighted mean on the same 0-10 axis). Weights (real): catalyst 30 / scenario 25 / guidance 15 / execution 15 / sentiment 10 / industry 5. No baseline, no cap.
+- **Source of truth:** `concallyser/app/phase5_growth/growth_outlook.py` `_compute_growth_score` (~lines 657-811).
+- **Depends on:** nothing.
+
+### 2. Quarterly diagram polish (deferred)
+- **Non-core weight bars** are only subtly dimmer than core in dark mode (the ● dot carries the distinction). Consider dimming non-core further or a clearer encoding.
+- **Bands grid still hand-copied.** The quarterly "Score bands" array in `app/how-scores-work/page.tsx` duplicates `lib/score-band.ts`. Import `BANDS` + `SCORE_BAND_ORDER` to kill drift, and optionally colour the band labels with each band's `textClass`. (The worked-example score+label already derive live via `bandForScore`.)
+- **Illustrative leans.** The worked example uses hardcoded leans (→ 7.1), not a real DB `score_breakdown`. Could wire a representative real quarter.
+
 ## Trajectory labels — deferred follow-ups (eng review 2026-06-12)
 
 ### 1. Sparkline inside the Trend cell/tooltip (v2 of trajectory labels)
