@@ -259,19 +259,19 @@ export default async function HowScoresWorkPage() {
                   title="Categories & weights"
                   subtitle="The six things every quarter is read on, and how far each can move the score."
                 />
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[7fr_3fr] lg:items-start">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[7fr_3fr]">
                   <div className={`${INNER_CARD} p-4`}>
                     <p className="text-sm font-semibold text-foreground">The six categories</p>
                     <div className="mt-4">
                       <QuarterlyCategoryModel />
                     </div>
                   </div>
-                  <div className={`${INNER_CARD} p-4`}>
+                  <div className={`${INNER_CARD} flex flex-col p-4`}>
                     <p className="text-sm font-semibold text-foreground">
                       How they’re weighted
                       <span className="ml-2 text-xs font-normal text-muted-foreground">sum to 1.00</span>
                     </p>
-                    <div className="mt-4">
+                    <div className="mt-4 flex-1">
                       <QuarterlyWeightBars />
                     </div>
                   </div>

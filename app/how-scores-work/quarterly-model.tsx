@@ -57,7 +57,7 @@ function CoreDot({ on }: { on: boolean }) {
 export function QuarterlyWeightBars() {
   const maxWeight = Math.max(...CATEGORIES.map((c) => c.weight));
   return (
-    <div className="space-y-2.5">
+    <div className="flex h-full flex-col justify-between gap-3">
       {CATEGORIES.map((c) => {
         const pct = (c.weight / maxWeight) * 100;
         return (
@@ -65,7 +65,7 @@ export function QuarterlyWeightBars() {
             <span className="min-w-0 truncate text-sm text-foreground" title={c.full}>
               {c.short}
             </span>
-            <div className="relative h-2.5 rounded-full bg-muted/50">
+            <div className="relative h-3 rounded-full bg-muted/50">
               <div
                 className="absolute inset-y-0 left-0 rounded-full bg-sky-500 dark:bg-sky-400"
                 style={{ width: `${pct}%` }}
