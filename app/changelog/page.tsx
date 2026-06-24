@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { ChangelogMarkSeen } from "@/components/changelog-mark-seen";
 import { cn } from "@/lib/utils";
 
+import { ChangelogStats } from "./changelog-stats";
+
 import {
   changelogEntries,
   latestChangelogEntry,
@@ -42,6 +44,8 @@ export default function ChangelogPage() {
             What we shipped, and when.
           </p>
         </header>
+
+        <ChangelogStats />
 
         <ol className="divide-y divide-border border-y border-border">
           {changelogEntries.map((entry, index) => (
