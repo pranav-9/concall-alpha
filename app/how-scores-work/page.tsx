@@ -245,7 +245,7 @@ export default async function HowScoresWorkPage() {
               </p>
             </TabsContent>
 
-            <TabsContent value="quarterly" className="space-y-8">
+            <TabsContent value="quarterly" className="space-y-10">
               <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
                 Each quarter is rated on six categories, each given a lean from −2 (clearly
                 deteriorating) through 0 (in line) to +2 (clearly exceptional). The leans are
@@ -253,7 +253,7 @@ export default async function HowScoresWorkPage() {
                 honest. The arithmetic is deterministic — the judgment lives only in the six leans.
               </p>
 
-              <section className="flex min-h-[90vh] flex-col justify-center space-y-4">
+              <section className="space-y-4">
                 <SectionHeading
                   step={1}
                   title="Categories & weights"
@@ -278,7 +278,7 @@ export default async function HowScoresWorkPage() {
                 </div>
               </section>
 
-              <section className="flex min-h-[90vh] flex-col justify-center space-y-4">
+              <section className="space-y-4 border-t border-border/50 pt-10">
                 <SectionHeading
                   step={2}
                   title="Worked example"
@@ -309,7 +309,7 @@ export default async function HowScoresWorkPage() {
                 </div>
               </section>
 
-              <section className="flex min-h-[90vh] flex-col justify-center space-y-4">
+              <section className="space-y-4 border-t border-border/50 pt-10">
                 <SectionHeading
                   step={3}
                   title="Score bands"
@@ -342,7 +342,7 @@ export default async function HowScoresWorkPage() {
                 </div>
               </section>
 
-              <section className="flex min-h-[90vh] flex-col justify-center space-y-4">
+              <section className="space-y-4 border-t border-border/50 pt-10">
                 <SectionHeading
                   step={4}
                   title="Trajectory labels"
