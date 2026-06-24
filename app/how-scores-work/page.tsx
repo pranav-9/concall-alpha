@@ -245,7 +245,7 @@ export default async function HowScoresWorkPage() {
               </p>
             </TabsContent>
 
-            <TabsContent value="quarterly" className="space-y-4">
+            <TabsContent value="quarterly" className="space-y-8">
               <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
                 Each quarter is rated on six categories, each given a lean from −2 (clearly
                 deteriorating) through 0 (in line) to +2 (clearly exceptional). The leans are
@@ -253,86 +253,105 @@ export default async function HowScoresWorkPage() {
                 honest. The arithmetic is deterministic — the judgment lives only in the six leans.
               </p>
 
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <div className={`${INNER_CARD} p-4`}>
-                  <p className="text-sm font-semibold text-foreground">The six categories</p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    What each quarter is read on.
-                  </p>
-                  <div className="mt-4">
-                    <QuarterlyCategoryModel />
+              <section className="space-y-4">
+                <SectionHeading
+                  step={1}
+                  title="Categories & weights"
+                  subtitle="The six things every quarter is read on, and how far each can move the score."
+                />
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  <div className={`${INNER_CARD} p-4`}>
+                    <p className="text-sm font-semibold text-foreground">The six categories</p>
+                    <div className="mt-4">
+                      <QuarterlyCategoryModel />
+                    </div>
+                  </div>
+                  <div className={`${INNER_CARD} p-4`}>
+                    <p className="text-sm font-semibold text-foreground">
+                      How they’re weighted
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">sum to 1.00</span>
+                    </p>
+                    <div className="mt-4">
+                      <QuarterlyWeightBars />
+                    </div>
                   </div>
                 </div>
-                <div className={`${INNER_CARD} p-4`}>
-                  <p className="text-sm font-semibold text-foreground">How they’re weighted</p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    How far each can move the score. Weights sum to 1.00.
-                  </p>
-                  <div className="mt-4">
-                    <QuarterlyWeightBars />
-                  </div>
-                </div>
-              </div>
+              </section>
 
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.3fr_1fr]">
-                <div className={`${INNER_CARD} p-4`}>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-sm font-semibold text-foreground">Worked example</p>
-                    <span className="text-[11px] text-muted-foreground">illustrative leans</span>
-                  </div>
-                  <div className="mt-4">
+              <section className="space-y-4 border-t border-border/50 pt-8">
+                <SectionHeading
+                  step={2}
+                  title="Worked example"
+                  subtitle="How the six leans build to a score, off the 5.5 baseline."
+                />
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.3fr_1fr]">
+                  <div className={`${INNER_CARD} p-4`}>
+                    <div className="mb-4 flex items-baseline justify-between gap-2">
+                      <p className="text-sm font-semibold text-foreground">A 7.1 quarter</p>
+                      <span className="text-[11px] text-muted-foreground">illustrative leans</span>
+                    </div>
                     <QuarterlyWorkedExample />
                   </div>
-                </div>
-                <div className={`${INNER_CARD} space-y-3 p-4`}>
-                  <p className="text-sm font-semibold text-foreground">Reading it</p>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    Each bar is one category’s push off the 5.5 baseline (weight × lean). The length
-                    bakes in the weight, so a long bar is a category that actually moved the score —
-                    here Strategy’s standout +2 barely outweighs Financials’ +1, and a soft industry
-                    read trims a little back.
-                  </p>
-                  <div className="rounded-lg border border-amber-300/50 bg-amber-50/70 px-3 py-2 text-xs leading-relaxed text-amber-900 dark:border-amber-700/30 dark:bg-amber-950/20 dark:text-amber-200">
-                    <span className="font-semibold">Cap in action.</span> Had Guidance instead scored
-                    −2, this 7.1 would be clamped to 6.0 — one core category breaking down bounds the
-                    whole quarter.
+                  <div className={`${INNER_CARD} space-y-3 p-4`}>
+                    <p className="text-sm font-semibold text-foreground">Reading it</p>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      Each bar is one category’s push off the 5.5 baseline (weight × lean). The length
+                      bakes in the weight, so a long bar is a category that actually moved the score —
+                      here Strategy’s standout +2 barely outweighs Financials’ +1, and a soft industry
+                      read trims a little back.
+                    </p>
+                    <div className="rounded-lg border border-amber-300/50 bg-amber-50/70 px-3 py-2 text-xs leading-relaxed text-amber-900 dark:border-amber-700/30 dark:bg-amber-950/20 dark:text-amber-200">
+                      <span className="font-semibold">Cap in action.</span> Had Guidance instead
+                      scored −2, this 7.1 would be clamped to 6.0 — one core category breaking down
+                      bounds the whole quarter.
+                    </div>
                   </div>
                 </div>
-              </div>
+              </section>
 
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <div className={`${INNER_CARD} p-4`}>
-                  <p className="text-sm font-semibold text-foreground">Score bands</p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    Fixed cuts anchored on 5.5 = a typical, all-in-line quarter.
-                  </p>
-                  <div className="mt-4">
-                    <QuarterlyBandLegend />
+              <section className="space-y-4 border-t border-border/50 pt-8">
+                <SectionHeading
+                  step={3}
+                  title="Score bands"
+                  subtitle="What a score means, and where the cohort actually lands today."
+                />
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  <div className={`${INNER_CARD} p-4`}>
+                    <p className="text-sm font-semibold text-foreground">The bands</p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      Fixed cuts anchored on 5.5 = a typical, all-in-line quarter.
+                    </p>
+                    <div className="mt-4">
+                      <QuarterlyBandLegend />
+                    </div>
+                  </div>
+                  <div className={`${INNER_CARD} p-4`}>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="text-sm font-semibold text-foreground">Where companies land</p>
+                      <span className="text-[11px] tabular-nums text-muted-foreground">
+                        {quarterScored} companies
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      Latest-quarter cohort, by score — right-skewed toward quality.
+                    </p>
+                    <div className="mt-4">
+                      <QuarterlyDistributionCurve scores={quarterLatestScores} />
+                    </div>
                   </div>
                 </div>
-                <div className={`${INNER_CARD} p-4`}>
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-sm font-semibold text-foreground">Where companies land</p>
-                    <span className="text-[11px] tabular-nums text-muted-foreground">
-                      {quarterScored} companies
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    Latest-quarter cohort, by score — right-skewed toward quality.
-                  </p>
-                  <div className="mt-4">
-                    <QuarterlyDistributionCurve scores={quarterLatestScores} />
-                  </div>
-                </div>
-              </div>
+              </section>
 
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-foreground">Trajectory labels</p>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Bands say where a score sits; the Trend column says where it is heading. A 7 on
-                  the way up is a different stock from a 7 on the way down. Every threshold sits at
-                  or above the ±0.5 re-scoring noise floor, so a move that noise can explain never
-                  earns a directional label.
+              <section className="space-y-4 border-t border-border/50 pt-8">
+                <SectionHeading
+                  step={4}
+                  title="Trajectory labels"
+                  subtitle="Where a score sits is half the story — the Trend column says where it’s heading."
+                />
+                <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                  A 7 on the way up is a different stock from a 7 on the way down. Every threshold
+                  sits at or above the ±0.5 re-scoring noise floor, so a move that noise can explain
+                  never earns a directional label.
                 </p>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {TRAJECTORY_ORDER.map((key) => {
@@ -354,7 +373,7 @@ export default async function HowScoresWorkPage() {
                     );
                   })}
                 </div>
-              </div>
+              </section>
 
             </TabsContent>
           </Tabs>
@@ -384,6 +403,30 @@ export default async function HowScoresWorkPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function SectionHeading({
+  step,
+  title,
+  subtitle,
+}: {
+  step: number;
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-sky-300/50 bg-sky-100/70 text-xs font-bold text-sky-800 dark:border-sky-700/35 dark:bg-sky-900/30 dark:text-sky-200">
+        {step}
+      </span>
+      <div className="space-y-0.5">
+        <h2 className="text-base font-bold leading-tight tracking-tight text-foreground">{title}</h2>
+        {subtitle ? (
+          <p className="text-xs leading-relaxed text-muted-foreground">{subtitle}</p>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
