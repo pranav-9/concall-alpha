@@ -11,8 +11,31 @@
 import { cn } from "@/lib/utils";
 
 import type { NormalizedCategory } from "@/lib/quarterly-v4/normalize";
-import { chipClass } from "./chip-tone";
+import { chipClass, type ChipTone } from "./chip-tone";
 import { nestedDetailClass } from "./surface-tokens";
+
+// Maps a per-category lean (-2..+2) to a labeled, color-coded chip descriptor.
+// Word leads (the integer flickers across scorer runs — see concallyser
+// gemini_scorer), the signed integer is a secondary glyph; "In line" (0) shows
+// no number. null lean → no chip at all.
+function leanChip(
+  lean: number | null,
+): { label: string; tone: ChipTone; value: string | null } | null {
+  switch (lean) {
+    case 2:
+      return { label: "Strong positive", tone: "emerald", value: "+2" };
+    case 1:
+      return { label: "Positive", tone: "emerald", value: "+1" };
+    case 0:
+      return { label: "In line", tone: "slate", value: null };
+    case -1:
+      return { label: "Negative", tone: "rose", value: "−1" };
+    case -2:
+      return { label: "Strong negative", tone: "rose", value: "−2" };
+    default:
+      return null;
+  }
+}
 
 // Accent dot per state. Addressed uses the section's amber (matches the old
 // rationale/results/guidance/risks cards); absent + deferred are muted.
@@ -61,13 +84,27 @@ export function V4CoverageStrip({ categories }: { categories: NormalizedCategory
 // A single addressed category card. Exported so it can be placed outside the
 // breakdown grid (e.g. Quantitative decomposition rendered next to the chart).
 export function V4Card({ cat }: { cat: NormalizedCategory }) {
+  const chip = leanChip(cat.lean);
   return (
     <div className={cn(nestedDetailClass, "p-3")}>
-      <div className="mb-2 flex items-center gap-1.5">
-        <span className={cn("h-1.5 w-1.5 rounded-full", STATE_DOT.addressed)} />
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          {cat.label}
-        </p>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", STATE_DOT.addressed)} />
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            {cat.label}
+          </p>
+        </div>
+        {chip && (
+          <span
+            className={cn(chipClass(chip.tone), "shrink-0 gap-1 px-2 py-0.5 text-[10px]")}
+            title="How this category leans the quarter's score (−2 to +2)"
+          >
+            {chip.label}
+            {chip.value && (
+              <span className="font-semibold tabular-nums opacity-80">{chip.value}</span>
+            )}
+          </span>
+        )}
       </div>
       <ul className="space-y-1.5">
         {cat.keyPoints.map((point, i) => (

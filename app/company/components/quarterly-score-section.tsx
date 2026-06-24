@@ -43,6 +43,9 @@ type ConcallDetails = {
   fy?: number;
   qtr?: number;
   v4_categories?: unknown;
+  // Per-category leans (-2..+2) the deterministic composite is built from; keyed
+  // by v4 cat (cat_1_… etc.). Surfaced as a chip on each addressed v4 card.
+  score_breakdown?: Record<string, number>;
 };
 
 type DetailQuarterContext = {
@@ -105,7 +108,11 @@ const buildDetailQuarterContext = (quarter: QuarterData): DetailQuarterContext =
     typeof details?.qtr === "number" && typeof details?.fy === "number"
       ? `Q${details.qtr} FY${details.fy}`
       : quarter.quarter_label;
-  const v4 = normalizeQuarterlyV4Categories(details?.v4_categories ?? null, detailQuarterLabel);
+  const v4 = normalizeQuarterlyV4Categories(
+    details?.v4_categories ?? null,
+    detailQuarterLabel,
+    details?.score_breakdown ?? null,
+  );
 
   return {
     details,
