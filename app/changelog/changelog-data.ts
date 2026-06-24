@@ -18,6 +18,14 @@ export type ChangelogEntry = {
 // "updated" = significant enhancement to a capability that already existed.
 export const changelogEntries: ChangelogEntry[] = [
   { date: "2026-06-24", dateLabel: "24 Jun 2026", title: "Visual quarterly score breakdown", category: "Score framework", status: "updated" },
+  { date: "2026-06-12", dateLabel: "12 Jun 2026", title: "Score trend labels on leaderboards", category: "Score framework", status: "updated" },
+  { date: "2026-06-01", dateLabel: "1 Jun 2026", title: "Segment history on company pages", category: "Company analysis", status: "new" },
+  { date: "2026-06-01", dateLabel: "1 Jun 2026", title: "Business snapshot redesigned", category: "Company analysis", status: "updated" },
+  { date: "2026-05-28", dateLabel: "28 May 2026", title: "Guidance tracking redesigned", category: "Company analysis", status: "updated" },
+  { date: "2026-05-25", dateLabel: "25 May 2026", title: "Quarterly score breakdown by category", category: "Score framework", status: "new" },
+  { date: "2026-05-19", dateLabel: "19 May 2026", title: "Q4 FY26 results tracker", category: "Portal", status: "new" },
+  { date: "2026-05-14", dateLabel: "14 May 2026", title: "Walk the talk (guidance vs delivery)", category: "Company analysis", status: "new" },
+  { date: "2026-05-13", dateLabel: "13 May 2026", title: "In-portal feedback polls", category: "Portal", status: "new" },
   { date: "2026-04-29", dateLabel: "29 Apr 2026", title: "Sub-sector tabs on company pages", category: "Company analysis", status: "updated" },
   { date: "2026-04-29", dateLabel: "29 Apr 2026", title: "Filter sectors by sub-sector", category: "Portal", status: "new" },
   { date: "2026-04-28", dateLabel: "28 Apr 2026", title: "Moat leaderboard", category: "Score framework", status: "new" },
