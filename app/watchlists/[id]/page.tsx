@@ -8,6 +8,8 @@ import { WatchlistManageMenu } from "./watchlist-manage-menu";
 import { WatchlistTabs } from "./watchlist-tabs";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
+import { buildScorePath, type ScorePoint } from "@/lib/score-path";
+import type { TrajectoryKey } from "@/lib/score-trajectory";
 import { createClient } from "@/lib/supabase/server";
 import {
   CHIP_BASE,
@@ -232,7 +234,12 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
     );
   }
 
-  const [{ rows, latestLabel }, { data: companyNameRows }, { data: growthRows }, { data: moatRows }] =
+  const [
+    { rows, latestLabel, quarterLabels },
+    { data: companyNameRows },
+    { data: growthRows },
+    { data: moatRows },
+  ] =
     await Promise.all([
       getConcallData(),
       supabase.from("company").select("code, name"),
@@ -251,11 +258,25 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
         .order("id", { ascending: false }),
     ]);
 
-  const quarterScoreByCode = new Map<string, { latestScore: number | null; avg4: number | null }>();
+  const quarterDataByCode = new Map<
+    string,
+    {
+      latestScore: number | null;
+      avg4: number | null;
+      trajectoryKey?: TrajectoryKey;
+      trendChange?: number | null;
+      trendDescription?: string | null;
+      scorePath: ScorePoint[];
+    }
+  >();
   rows.forEach((row) => {
-    quarterScoreByCode.set(row.company.toUpperCase(), {
+    quarterDataByCode.set(row.company.toUpperCase(), {
       latestScore: latestLabel ? toNumeric(row[latestLabel]) : null,
       avg4: toNumeric(row["Latest 4Q Avg"]),
+      trajectoryKey: row.trajectoryKey,
+      trendChange: row.trendChange,
+      trendDescription: row.trendDescription,
+      scorePath: buildScorePath(row, quarterLabels),
     });
   });
 
@@ -291,38 +312,28 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
 
   const tableRows: WatchlistTableRow[] = watchlistCodes
     .map((companyCode) => {
-      const quarterData = quarterScoreByCode.get(companyCode);
+      const quarterData = quarterDataByCode.get(companyCode);
       const growthScore = growthScoreByCode.get(companyCode) ?? null;
       const moatData = latestMoatByCompany.get(companyCode) ?? null;
-      const latestQuarterScore = quarterData?.latestScore ?? null;
-      const avg4QuarterScore = quarterData?.avg4 ?? null;
-      const blendedScore = computeAverageScore([
-        latestQuarterScore,
-        growthScore,
-        avg4QuarterScore,
-      ]);
 
       return {
         companyCode,
         companyName: companyNameByCode.get(companyCode) ?? companyCode,
-        latestQuarterScore,
+        latestQuarterScore: quarterData?.latestScore ?? null,
+        avg4QuarterScore: quarterData?.avg4 ?? null,
         growthScore,
-        avg4QuarterScore,
-        blendedScore,
+        trajectoryKey: quarterData?.trajectoryKey,
+        trendChange: quarterData?.trendChange ?? null,
+        trendDescription: quarterData?.trendDescription ?? null,
+        scorePath: quarterData?.scorePath ?? [],
         moatLabel: moatData?.moatLabel ?? null,
         moatRating: moatData?.moatRating ?? null,
         moatTier: moatData?.moatTier ?? null,
       };
     })
+    // Initial order = latest quarter score desc (unscored last); the table
+    // component re-sorts client-side from its own DEFAULT_SORT.
     .sort((a, b) => {
-      if (a.blendedScore != null && b.blendedScore != null) {
-        if (b.blendedScore !== a.blendedScore) return b.blendedScore - a.blendedScore;
-      } else if (a.blendedScore != null) {
-        return -1;
-      } else if (b.blendedScore != null) {
-        return 1;
-      }
-
       if (a.latestQuarterScore != null && b.latestQuarterScore != null) {
         if (b.latestQuarterScore !== a.latestQuarterScore) {
           return b.latestQuarterScore - a.latestQuarterScore;
@@ -332,30 +343,10 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
       } else if (b.latestQuarterScore != null) {
         return 1;
       }
-
-      if (a.growthScore != null && b.growthScore != null) {
-        if (b.growthScore !== a.growthScore) return b.growthScore - a.growthScore;
-      } else if (a.growthScore != null) {
-        return -1;
-      } else if (b.growthScore != null) {
-        return 1;
-      }
-
-      if (a.avg4QuarterScore != null && b.avg4QuarterScore != null) {
-        if (b.avg4QuarterScore !== a.avg4QuarterScore) {
-          return b.avg4QuarterScore - a.avg4QuarterScore;
-        }
-      } else if (a.avg4QuarterScore != null) {
-        return -1;
-      } else if (b.avg4QuarterScore != null) {
-        return 1;
-      }
-
       return a.companyName.localeCompare(b.companyName);
     });
 
   const latestQuarterLabel = latestLabel ?? null;
-  const averageBlendedScore = computeAverageScore(tableRows.map((row) => row.blendedScore));
   const averageLatestQuarterScore = computeAverageScore(
     tableRows.map((row) => row.latestQuarterScore),
   );
@@ -382,17 +373,14 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
       <div className={TABLE_CARD_CLASS}>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Ranked by blended score
+            Ranked by latest quarter score
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
-              Avg blended: {averageBlendedScore != null ? averageBlendedScore.toFixed(1) : "—"}
-            </span>
             <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
               Avg latest qtr: {averageLatestQuarterScore != null ? averageLatestQuarterScore.toFixed(1) : "—"}
             </span>
             <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
-              Avg growth: {averageGrowthScore != null ? averageGrowthScore.toFixed(1) : "—"}
+              Avg forward: {averageGrowthScore != null ? averageGrowthScore.toFixed(1) : "—"}
             </span>
           </div>
         </div>
