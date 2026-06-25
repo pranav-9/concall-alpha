@@ -6,7 +6,8 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp, Minus } from "
 import type { ReactNode } from "react";
 import { useState } from "react";
 
-import ConcallScore from "@/components/concall-score";
+import { ScoreBandPill } from "@/app/company/components/score-band-pill";
+import { TrendBadge } from "@/app/company/components/trend-badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -16,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
 import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
 import {
   moatTierClass,
@@ -24,14 +26,19 @@ import {
   moatTierGradeLabel,
 } from "@/lib/moat-analysis/tier-class";
 import type { MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
+import type { ScorePoint } from "@/lib/score-path";
+import { compareTrend, type TrajectoryKey } from "@/lib/score-trajectory";
 
 export type WatchlistTableRow = {
   companyCode: string;
   companyName: string;
   latestQuarterScore: number | null;
-  growthScore: number | null;
   avg4QuarterScore: number | null;
-  blendedScore: number | null;
+  growthScore: number | null;
+  trajectoryKey?: TrajectoryKey;
+  trendChange: number | null;
+  trendDescription: string | null;
+  scorePath: ScorePoint[];
   moatLabel: string | null;
   moatRating: MoatRatingKey | null;
   moatTier: MoatTier | null;
@@ -48,13 +55,10 @@ const tierIconFor = (tier: MoatTier) => {
   }
 };
 
-type SortKey =
-  | "companyName"
-  | "latestQuarterScore"
-  | "growthScore"
-  | "avg4QuarterScore"
-  | "blendedScore"
-  | "moatTag";
+// Band is bandForScore(latestQuarterScore) — the same datum as Qtr, bucketed —
+// so it isn't an independent sort key. Sorting the level happens on the Qtr
+// column; Trend is its own axis (direction); Forward is the growth outlook.
+type SortKey = "companyName" | "latestQuarterScore" | "trend" | "growthScore" | "moatTag";
 
 type SortDirection = "asc" | "desc";
 
@@ -64,7 +68,7 @@ type SortState = {
 };
 
 const DEFAULT_SORT: SortState = {
-  key: "blendedScore",
+  key: "latestQuarterScore",
   direction: "desc",
 };
 
@@ -182,25 +186,14 @@ function sortRows(rows: WatchlistTableRow[], sort: SortState) {
         if (diff !== 0) return diff;
         return compareText(a.companyName, b.companyName, "asc");
       }
+      case "trend": {
+        const diff = compareTrend(a, b, sort.direction);
+        if (diff !== 0) return diff;
+        return compareText(a.companyName, b.companyName, "asc");
+      }
       case "growthScore": {
         const diff = compareNumber(a.growthScore, b.growthScore, sort.direction);
         if (diff !== 0) return diff;
-        return compareText(a.companyName, b.companyName, "asc");
-      }
-      case "avg4QuarterScore": {
-        const diff = compareNumber(a.avg4QuarterScore, b.avg4QuarterScore, sort.direction);
-        if (diff !== 0) return diff;
-        return compareText(a.companyName, b.companyName, "asc");
-      }
-      case "blendedScore": {
-        const diff = compareNumber(a.blendedScore, b.blendedScore, sort.direction);
-        if (diff !== 0) return diff;
-        const latestDiff = compareNumber(a.latestQuarterScore, b.latestQuarterScore, sort.direction);
-        if (latestDiff !== 0) return latestDiff;
-        const growthDiff = compareNumber(a.growthScore, b.growthScore, sort.direction);
-        if (growthDiff !== 0) return growthDiff;
-        const avg4Diff = compareNumber(a.avg4QuarterScore, b.avg4QuarterScore, sort.direction);
-        if (avg4Diff !== 0) return avg4Diff;
         return compareText(a.companyName, b.companyName, "asc");
       }
       case "moatTag": {
@@ -218,6 +211,10 @@ function sortRows(rows: WatchlistTableRow[], sort: SortState) {
     return 0;
   });
 }
+
+// Sticky first column so the company name stays visible while the decision
+// columns (Band / Qtr / Trend / ...) scroll horizontally on narrow screens.
+const STICKY_COL = "sticky left-0 bg-background";
 
 export function WatchlistTable({
   rows,
@@ -282,10 +279,13 @@ export function WatchlistTable({
   };
 
   return (
-    <Table className="min-w-[1240px] w-full text-sm">
+    <Table className="min-w-[1080px] w-full text-sm">
       <TableHeader className="bg-background/70">
         <TableRow className="border-b border-border/35 bg-background/70">
-          <TableHead aria-sort={sortDirectionLabel("companyName")} className="px-3 py-3 text-foreground">
+          <TableHead
+            aria-sort={sortDirectionLabel("companyName")}
+            className={`${STICKY_COL} z-20 px-3 py-3 text-foreground`}
+          >
             {renderSortHead({
               label: "Company",
               columnKey: "companyName",
@@ -293,14 +293,11 @@ export function WatchlistTable({
               onSort: handleSort,
             })}
           </TableHead>
-          <TableHead aria-sort={sortDirectionLabel("moatTag")} className="px-3 py-3 text-foreground">
-            {renderSortHead({
-              label: "Moat Tag",
-              columnKey: "moatTag",
-              sort,
-              onSort: handleSort,
-              subtitle: "Rating label",
-            })}
+          <TableHead className="px-3 py-3 text-foreground">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-semibold text-foreground">Band</span>
+              <span className="text-[10px] font-medium text-muted-foreground normal-case">Verdict</span>
+            </div>
           </TableHead>
           <TableHead
             aria-sort={sortDirectionLabel("latestQuarterScore")}
@@ -311,34 +308,34 @@ export function WatchlistTable({
               columnKey: "latestQuarterScore",
               sort,
               onSort: handleSort,
+              subtitle: "4Q avg below",
+            })}
+          </TableHead>
+          <TableHead aria-sort={sortDirectionLabel("trend")} className="px-3 py-3 text-foreground">
+            {renderSortHead({
+              label: "Trend",
+              columnKey: "trend",
+              sort,
+              onSort: handleSort,
+              subtitle: "Direction",
             })}
           </TableHead>
           <TableHead aria-sort={sortDirectionLabel("growthScore")} className="px-3 py-3 text-foreground">
             {renderSortHead({
-              label: "Growth Score",
+              label: "Forward",
               columnKey: "growthScore",
               sort,
               onSort: handleSort,
+              subtitle: "Outlook",
             })}
           </TableHead>
-          <TableHead aria-sort={sortDirectionLabel("avg4QuarterScore")} className="px-3 py-3 text-foreground">
+          <TableHead aria-sort={sortDirectionLabel("moatTag")} className="px-3 py-3 text-foreground">
             {renderSortHead({
-              label: "4Q Avg Score",
-              columnKey: "avg4QuarterScore",
+              label: "Moat Tag",
+              columnKey: "moatTag",
               sort,
               onSort: handleSort,
-            })}
-          </TableHead>
-          <TableHead
-            aria-sort={sortDirectionLabel("blendedScore")}
-            className="border-l border-border/70 px-3 py-3 text-foreground"
-          >
-            {renderSortHead({
-              label: "Avg Score",
-              columnKey: "blendedScore",
-              sort,
-              onSort: handleSort,
-              subtitle: "Derived from first 3",
+              subtitle: "Rating label",
             })}
           </TableHead>
           <TableHead className="px-3 py-3 text-foreground">Remove</TableHead>
@@ -351,7 +348,7 @@ export function WatchlistTable({
               key={row.companyCode}
               className="border-b border-border/45 transition-colors last:border-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
             >
-              <TableCell className="px-3 py-3">
+              <TableCell className={`${STICKY_COL} z-10 px-3 py-3`}>
                 <Link
                   href={`/company/${row.companyCode}`}
                   prefetch={false}
@@ -361,8 +358,49 @@ export function WatchlistTable({
                 </Link>
               </TableCell>
               <TableCell className="px-3 py-3">
+                <ScoreBandPill score={row.latestQuarterScore} />
+              </TableCell>
+              <TableCell className="px-3 py-3">
+                {row.latestQuarterScore != null ? (
+                  <div className="leading-tight">
+                    <div className="tabular-nums font-semibold text-foreground">
+                      {row.latestQuarterScore.toFixed(1)}
+                    </div>
+                    {row.avg4QuarterScore != null && (
+                      <div className="text-[10px] tabular-nums text-muted-foreground">
+                        4Q {row.avg4QuarterScore.toFixed(1)}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </TableCell>
+              <TableCell className="px-3 py-3">
+                <TrendBadge
+                  trajectoryKey={row.trajectoryKey}
+                  trendChange={row.trendChange}
+                  trendDescription={row.trendDescription}
+                  scorePath={row.scorePath}
+                />
+              </TableCell>
+              <TableCell className="px-3 py-3">
+                {row.growthScore != null ? (
+                  <div className="leading-tight">
+                    <div className="tabular-nums font-semibold text-foreground">
+                      {row.growthScore.toFixed(1)}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {GROWTH_BANDS[bandForGrowthScore(row.growthScore)].label}
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </TableCell>
+              <TableCell className="px-3 py-3">
                 {row.moatLabel ? (
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5 opacity-90">
                     <span
                       className={`${moatTierClass(row.moatRating)} inline-flex w-fit max-w-[11rem] items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]`}
                       title={row.moatLabel}
@@ -386,39 +424,6 @@ export function WatchlistTable({
                 )}
               </TableCell>
               <TableCell className="px-3 py-3">
-                {row.latestQuarterScore != null ? (
-                  <ConcallScore score={row.latestQuarterScore} size="sm" />
-                ) : (
-                  "—"
-                )}
-              </TableCell>
-              <TableCell className="px-3 py-3">
-                {row.growthScore != null ? (
-                  <ConcallScore score={row.growthScore} size="sm" kind="growth" />
-                ) : (
-                  "—"
-                )}
-              </TableCell>
-              <TableCell className="px-3 py-3">
-                {row.avg4QuarterScore != null ? (
-                  <ConcallScore score={row.avg4QuarterScore} size="sm" />
-                ) : (
-                  "—"
-                )}
-              </TableCell>
-          <TableCell className="border-l border-border/70 px-3 py-3">
-            {row.blendedScore != null ? (
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/80 px-2.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-emerald-700/40 dark:bg-emerald-950/20">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
-                  Blend
-                    </span>
-                    <ConcallScore score={row.blendedScore} size="sm" />
-                  </div>
-              ) : (
-                  "—"
-                )}
-              </TableCell>
-              <TableCell className="px-3 py-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -434,7 +439,7 @@ export function WatchlistTable({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
               No results.
             </TableCell>
           </TableRow>
