@@ -10,9 +10,13 @@ type KpiSparklinePoint = {
 export function KpiSparkline({
   points,
   ariaLabel,
+  className = "h-7 w-20",
 }: {
   points: KpiSparklinePoint[];
   ariaLabel?: string;
+  /** Wrapper sizing override; defaults to the KPI-row size. The watchlist
+   * Trend cell passes a smaller box for the inline sparkline. */
+  className?: string;
 }) {
   const numericPoints = points.filter(
     (point): point is { period: string; value: number } => point.value != null,
@@ -22,7 +26,7 @@ export function KpiSparkline({
     return (
       <div
         aria-label={ariaLabel ?? "Insufficient data for trend"}
-        className="h-7 w-20 rounded-sm bg-muted/40"
+        className={`${className} rounded-sm bg-muted/40`}
       />
     );
   }
@@ -42,7 +46,7 @@ export function KpiSparkline({
   }
 
   return (
-    <div className="h-7 w-20" aria-label={ariaLabel}>
+    <div className={className} aria-label={ariaLabel}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={points} margin={{ top: 2, right: 3, bottom: 2, left: 2 }}>
           <Line
