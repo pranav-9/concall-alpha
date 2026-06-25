@@ -19,12 +19,10 @@ Captured with context so a future session can pick any item up cold. Source revi
 
 ## Trajectory labels — deferred follow-ups (eng review 2026-06-12)
 
-### 1. Sparkline inside the Trend cell/tooltip (v2 of trajectory labels)
-- **What:** Replace the Trend tooltip's text score-path with an inline sparkline (reuse `app/company/components/kpi-sparkline.tsx` / `kpi-sparkline-lazy.tsx`) in the cell or a hover card.
-- **Why:** Makes the label's reasoning visual at a glance — strongest form of the articulated-take principle.
-- **Pros:** Component already shipped for Key Variables; pure reuse. **Cons:** Hover cards on touch are fiddly; render cost on a 128-row table; v1 text path already carries the reasoning.
-- **Context:** v1 ships label + Δ + title-tooltip with path text ("Climbed +3.2 over 4 qtrs: 5.0 → 7.1 → 7.7 → 8.2"). Sparkline was explicitly cut from v1 during eng review to keep the diff small and prove label value first. Start at `app/company/leaderboard-table.tsx` Trend cell.
-- **Depends on:** v1 shipped; behavioral-analytics evidence that readers hover/want the path.
+### 1. Sparkline inside the Trend cell/tooltip (v2 of trajectory labels) — PARTLY DONE (2026-06-25)
+- **Done:** the inline sparkline now exists. `app/company/components/trend-badge.tsx` (the shared Trend cell) renders an inline `kpi-sparkline` when passed a `scorePath`, and it **ships on the watchlist** (`app/watchlists/watchlist-table.tsx`). `lib/score-path.ts` builds the path.
+- **Residual:** the **leaderboard** still passes no `scorePath` (text-only Trend cell) — the original render-cost concern on a 128-row table. Decide whether to enable it there, or keep the sparkline as a watchlist-only signal (smaller table, more decision-focused surface).
+- **Depends on:** behavioral-analytics evidence that leaderboard readers want the path inline (watchlist already has it).
 
 ### 2. Label-transition alerts ("TIMETECHNO started Cracking")
 - **What:** Surface trajectory-label transitions (especially →Cracking, →Climbing) in the homepage activity feed when a new quarter lands.
