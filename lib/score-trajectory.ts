@@ -20,6 +20,7 @@
 export type TrajectoryKey =
   | "climbing"
   | "inflecting_up"
+  | "recovering"
   | "strong_steady"
   | "steady"
   | "drifting"
@@ -69,11 +70,19 @@ export const TRAJECTORIES: Record<TrajectoryKey, TrajectoryDef> = {
     definition: `Fresh break upward: latest quarter +${EVENT_DELTA} or more off a stable base.`,
     textClass: "text-teal-700 dark:text-teal-300",
   },
+  recovering: {
+    key: "recovering",
+    label: "Recovering",
+    cellLabel: "Recovering",
+    rank: 2,
+    definition: `Turning up off a recent low: latest quarter +${EVENT_DELTA} or more while still net-down over the last ~4 — a fresh upturn out of a decline, not yet a confirmed climb.`,
+    textClass: "text-teal-700 dark:text-teal-300",
+  },
   strong_steady: {
     key: "strong_steady",
     label: "Strong & steady",
     cellLabel: "Strong",
-    rank: 2,
+    rank: 3,
     definition: `Last 4 quarters all ≥ ${STRONG_FLOOR} with no fresh break down.`,
     textClass: "text-teal-700 dark:text-teal-300",
   },
@@ -81,7 +90,7 @@ export const TRAJECTORIES: Record<TrajectoryKey, TrajectoryDef> = {
     key: "steady",
     label: "Steady",
     cellLabel: "Steady",
-    rank: 3,
+    rank: 4,
     definition: `Range-bound: last 4 quarters within ${FLAT_RANGE_MAX} of each other.`,
     textClass: "text-muted-foreground",
   },
@@ -89,7 +98,7 @@ export const TRAJECTORIES: Record<TrajectoryKey, TrajectoryDef> = {
     key: "drifting",
     label: "Drifting",
     cellLabel: "Drifting",
-    rank: 4,
+    rank: 5,
     definition: "Moves around, but no direction the noise floor can't explain.",
     textClass: "text-muted-foreground",
   },
@@ -97,7 +106,7 @@ export const TRAJECTORIES: Record<TrajectoryKey, TrajectoryDef> = {
     key: "choppy",
     label: "Choppy",
     cellLabel: "Choppy",
-    rank: 5,
+    rank: 6,
     definition: `Alternating swings beyond ±${TRAJECTORY_NOISE} — the score itself is unstable.`,
     textClass: "text-amber-700 dark:text-amber-300",
   },
@@ -105,7 +114,7 @@ export const TRAJECTORIES: Record<TrajectoryKey, TrajectoryDef> = {
     key: "weak_stuck",
     label: "Weak & stuck",
     cellLabel: "Stuck",
-    rank: 6,
+    rank: 7,
     definition: `Flat below ${WEAK_CEILING} — low and not moving.`,
     textClass: "text-orange-700 dark:text-orange-300",
   },
@@ -113,7 +122,7 @@ export const TRAJECTORIES: Record<TrajectoryKey, TrajectoryDef> = {
     key: "cracking",
     label: "Cracking",
     cellLabel: "Cracking",
-    rank: 7,
+    rank: 8,
     definition: `Fresh break downward: latest quarter −${EVENT_DELTA} or more off a stable base.`,
     textClass: "text-red-700 dark:text-red-300",
   },
@@ -121,7 +130,7 @@ export const TRAJECTORIES: Record<TrajectoryKey, TrajectoryDef> = {
     key: "worsening",
     label: "Worsening",
     cellLabel: "Worsening",
-    rank: 8,
+    rank: 9,
     definition: `Sustained slide: cumulative fall of ${Math.abs(SLIDE_LOSS_MIN)}+ across consecutive quarters.`,
     textClass: "text-red-700 dark:text-red-300",
   },
@@ -129,7 +138,7 @@ export const TRAJECTORIES: Record<TrajectoryKey, TrajectoryDef> = {
     key: "no_read",
     label: "No read yet",
     cellLabel: "—",
-    rank: 9,
+    rank: 10,
     definition: `Fewer than ${MIN_QUARTERS} scored quarters — not enough points for any trajectory rule.`,
     textClass: "text-muted-foreground",
   },
@@ -139,6 +148,7 @@ export const TRAJECTORIES: Record<TrajectoryKey, TrajectoryDef> = {
 export const TRAJECTORY_ORDER: TrajectoryKey[] = [
   "climbing",
   "inflecting_up",
+  "recovering",
   "strong_steady",
   "steady",
   "drifting",
@@ -243,6 +253,18 @@ export function classifyTrajectory(
       key: "cracking",
       change,
       description: `Cracked ${fmt(latestD)} in the latest quarter off a steady base: ${path}.`,
+    };
+  }
+  // Recovering: an event-sized up-move in the LATEST quarter while the window is
+  // still net-down (recentGain ≤ SLIDE_LOSS_MIN) — a V-turn out of a decline.
+  // Must sit ABOVE choppy: a crash-then-bounce is two sign-flips, which the chop
+  // rule would otherwise read as instability. The net-down guard is what
+  // separates it from a chaotic zigzag (NEULANDLAB), whose window is net-UP.
+  if (geq(latestD, EVENT_DELTA) && leq(recentGain, SLIDE_LOSS_MIN) && !geq(min4, STRONG_FLOOR) && !gap) {
+    return {
+      key: "recovering",
+      change,
+      description: `Turning up ${fmt(latestD)} off a recent low: ${path}.`,
     };
   }
   if (flips >= 2 && !geq(min4, STRONG_FLOOR)) {

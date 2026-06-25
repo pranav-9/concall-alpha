@@ -61,7 +61,24 @@ expectLabel("NH mid-band range", [5.7, 6.0, 6.3, 6.1, 6.5, 6.5], "steady");
 expectLabel("ENTERO exact-threshold inflection", [7.3, 6.7, 7.1, 7.3], "inflecting_up");
 expectLabel("BETA alternation is chop, not crack", [5.5, 6.8, 6.3, 7.7, 6.5, 7.1], "choppy");
 expectLabel("NUVAMA", [7.2, 6.9, 5.5, 6.7, 7.2, 7.1], "drifting");
-expectLabel("AARTIPHARM drop + partial recovery alternates", [5.3, 4.6, 4.6, 7.2, 6.7, 7.0], "choppy");
+
+// ---------------------------------------------------------------------------
+// Recovering — an event-sized up-move in the LATEST quarter off a recent low,
+// while the window is still net-down. A V-turn out of a decline. Sits above
+// choppy: a crash-then-bounce is two sign-flips that the chop rule would
+// otherwise read as instability. The net-down guard (recentGain ≤ -0.8) is what
+// separates it from a chaotic zigzag, whose window is net-UP.
+// AARTIPHARM: reversed from "choppy" 2026-06-25 — the live read was an early
+// recovery, not chop (the recovery is the salient recent signal, not the
+// older middle wobble).
+// ---------------------------------------------------------------------------
+expectLabel("AARTIPHARM V-recovery: crash then turn up", [5.3, 4.6, 4.6, 7.2, 6.7, 7.0], "recovering");
+expectLabel("recovering: latest +0.6 off a low, window net-down", [5.4, 4.8, 4.8, 6.4], "recovering");
+// Boundary: latest +0.6 but the window is net-UP — a gentle staircase, so it
+// reads climbing, NOT recovering. The net-down guard keeps these apart.
+expectLabel("net-up climb is not a 'recovery'", [6.4, 5.8, 5.8, 5.6], "climbing");
+// The NEULANDLAB zigzag (pinned choppy above) is the other side of the guard:
+// big latest up-move but a net-UP window, so it stays choppy, not recovering.
 
 // ---------------------------------------------------------------------------
 // No-read floor (D5): < 3 scored quarters.

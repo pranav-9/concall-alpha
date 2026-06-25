@@ -13,6 +13,7 @@ import { KpiSparkline } from "./kpi-sparkline";
 const TREND_ICONS: Record<TrajectoryKey, LucideIcon> = {
   climbing: TrendingUp,
   inflecting_up: TrendingUp,
+  recovering: TrendingUp,
   strong_steady: Minus,
   steady: Minus,
   drifting: Minus,
