@@ -5,7 +5,9 @@ import { ArrowDown, ArrowUp, ChevronDown } from "lucide-react";
 import ConcallScore from "@/components/concall-score";
 import { cn } from "@/lib/utils";
 import { BANDS, bandForScore } from "@/lib/score-band";
+import { classifyTrajectory, quarterIndex, type TrajectoryResult } from "@/lib/score-trajectory";
 import { ChartLineLabel } from "../[code]/chart";
+import { TrendBadge } from "./trend-badge";
 import { chipClass } from "./chip-tone";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 import {
@@ -200,6 +202,7 @@ const renderChartCard = ({
   range,
   onRangeChange,
   showRangeToggle,
+  trajectory,
 }: {
   chartData: ChartDataPoint[];
   selectedQuarterLabel: string;
@@ -207,12 +210,24 @@ const renderChartCard = ({
   range: ChartRange;
   onRangeChange: (range: ChartRange) => void;
   showRangeToggle: boolean;
+  // Series-level trajectory (as of the latest quarter) — same classification the
+  // leaderboard/watchlist Trend column uses. Labels the chart, not a single quarter.
+  trajectory: TrajectoryResult;
 }) => (
   <div className={`${nestedDetailClass} flex min-w-0 flex-col gap-2 p-2.5`}>
     <div className="flex items-center justify-between gap-2">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        Score trend
-      </p>
+      <div className="flex items-center gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          Score trend
+        </p>
+        {trajectory.key !== "no_read" && (
+          <TrendBadge
+            trajectoryKey={trajectory.key}
+            trendChange={trajectory.change}
+            trendDescription={trajectory.description}
+          />
+        )}
+      </div>
       <span className="flex items-center gap-2 text-[10px] text-muted-foreground">
         <span>
           <span className="text-amber-400/90">⭐</span> 8.5+&nbsp;&nbsp;·&nbsp;&nbsp;
@@ -309,6 +324,30 @@ export function QuarterlyScoreSection({
 
   const selectedQuarter = detailQuarters[selectedIndex];
   const quarterContext = selectedQuarter ? buildDetailQuarterContext(selectedQuarter) : null;
+
+  // Series-level trajectory, computed the same way as get-concall-data (the
+  // leaderboard/watchlist source): scores newest-first, gap detection over the
+  // first-4 window (a non-contiguous fy/qtr or a null score withholds event
+  // labels). detailQuarters is newest-first (index 0 is "Latest").
+  const trajectory = React.useMemo<TrajectoryResult>(() => {
+    const window4 = detailQuarters.slice(0, 4);
+    let hasGapInWindow = window4.some(
+      (q) => typeof q.score !== "number" || !Number.isFinite(q.score),
+    );
+    for (let i = 0; i < window4.length - 1; i++) {
+      if (
+        quarterIndex(window4[i].fy, window4[i].qtr) -
+          quarterIndex(window4[i + 1].fy, window4[i + 1].qtr) !==
+        1
+      ) {
+        hasGapInWindow = true;
+      }
+    }
+    const scores = detailQuarters
+      .map((q) => q.score)
+      .filter((s): s is number => typeof s === "number" && Number.isFinite(s));
+    return classifyTrajectory(scores, { hasGapInWindow });
+  }, [detailQuarters]);
 
   // chartData is oldest→newest; the range window keeps the most recent N points.
   // Rolling average is computed on the full series first so the line doesn't
@@ -466,6 +505,7 @@ export function QuarterlyScoreSection({
                 range,
                 onRangeChange: setRange,
                 showRangeToggle,
+                trajectory,
               })}
             </div>
           </>
@@ -483,6 +523,7 @@ export function QuarterlyScoreSection({
               range,
               onRangeChange: setRange,
               showRangeToggle,
+              trajectory,
             })}
           </div>
         )}
