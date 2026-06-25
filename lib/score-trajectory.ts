@@ -292,3 +292,31 @@ export function classifyTrajectory(
 export function quarterIndex(fy: number, qtr: number): number {
   return fy * 4 + (qtr - 1);
 }
+
+// ---------------------------------------------------------------------------
+// Sort helpers — shared by the leaderboard (@tanstack sortingFn) and the
+// watchlist (hand-rolled sortRows) so the two tables order Trend identically.
+// ---------------------------------------------------------------------------
+
+/** Sort rank for a trajectory: lower = better (climbing first). Returns null
+ * for no_read / missing so callers can pin those last in BOTH directions. */
+export function trajectorySortRank(key?: TrajectoryKey | null): number | null {
+  return key && key !== "no_read" ? TRAJECTORIES[key].rank : null;
+}
+
+type TrendSortable = { trajectoryKey?: TrajectoryKey | null; trendChange?: number | null };
+
+/** Comparator over the Trend signal. `desc` (default) puts the best trajectory
+ * first, Δ as the within-label tiebreak. no_read / missing always sort last,
+ * regardless of direction — they are "no signal", not "worst signal". */
+export function compareTrend(a: TrendSortable, b: TrendSortable, direction: "asc" | "desc" = "desc"): number {
+  const ra = trajectorySortRank(a.trajectoryKey);
+  const rb = trajectorySortRank(b.trajectoryKey);
+  if (ra == null && rb == null) return 0;
+  if (ra == null) return 1;
+  if (rb == null) return -1;
+  if (ra !== rb) return direction === "desc" ? ra - rb : rb - ra;
+  const ca = typeof a.trendChange === "number" && Number.isFinite(a.trendChange) ? a.trendChange : 0;
+  const cb = typeof b.trendChange === "number" && Number.isFinite(b.trendChange) ? b.trendChange : 0;
+  return direction === "desc" ? cb - ca : ca - cb;
+}
