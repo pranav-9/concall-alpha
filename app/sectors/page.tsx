@@ -7,8 +7,6 @@ import { slugifySector } from "@/app/sector/utils";
 import { getConcallData } from "@/app/company/get-concall-data";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import {
-  HERO_CARD,
-  INNER_CARD,
   PAGE_BACKGROUND_ATMOSPHERIC,
   PAGE_SHELL,
   PANEL_CARD_NEUTRAL,
@@ -78,8 +76,6 @@ const avg = (values: number[]) => {
 
 const PAGE_BACKGROUND_CLASS = `h-[30rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 
-const METRIC_CARD_CLASS = `${INNER_CARD} px-4 py-3`;
-
 const PANEL_CARD_CLASS = PANEL_CARD_NEUTRAL;
 
 const TABLE_CARD_CLASS = TABLE_CARD_SKY;
@@ -128,16 +124,6 @@ export default async function SectorsPage({
       <main className="relative isolate overflow-hidden">
         <div className={PAGE_BACKGROUND_CLASS} />
         <div className={PAGE_SHELL}>
-          <section className={HERO_CARD}>
-            <div className="space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-200">
-                Sector overview
-              </p>
-              <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
-                Sector Overview
-              </h1>
-            </div>
-          </section>
           <div className={PANEL_CARD_CLASS}>
             <p className="text-sm text-muted-foreground">No sector data available yet.</p>
           </div>
@@ -311,40 +297,6 @@ export default async function SectorsPage({
     return a.sector.localeCompare(b.sector);
   });
 
-  const latestQuarterLabel = latestLabel ?? null;
-
-  const averageLatestQuarterScore = avg(
-    rows
-      .map((row) => row.avgLatestQuarterScore)
-      .filter((value): value is number => value != null),
-  );
-  const averageGrowthScore = avg(
-    rows.map((row) => row.avgGrowthScore).filter((value): value is number => value != null),
-  );
-  const overviewMetrics = [
-    {
-      label: "Sectors covered",
-      value: rows.length.toString(),
-      note: "With more than 1 company",
-    },
-    {
-      label: "Companies covered",
-      value: companies.length.toString(),
-      note: "In current sector universe",
-    },
-    {
-      label: "Avg latest qtr",
-      value:
-        averageLatestQuarterScore != null ? averageLatestQuarterScore.toFixed(1) : "—",
-      note: "Across visible sectors",
-    },
-    {
-      label: "Avg growth",
-      value: averageGrowthScore != null ? averageGrowthScore.toFixed(1) : "—",
-      note: "Across visible sectors",
-    },
-  ];
-
   const headerHref = (key: SectorSortKey) => {
     const keyDefault = defaultDirectionForKey(key);
     const nextOrder: "asc" | "desc" =
@@ -387,50 +339,6 @@ export default async function SectorsPage({
     <main className="relative isolate overflow-hidden">
       <div className={PAGE_BACKGROUND_CLASS} />
       <div className={PAGE_SHELL}>
-        <section className={HERO_CARD}>
-          <div className="space-y-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-3xl space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center rounded-full border border-sky-200/70 bg-sky-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
-                    Sector overview
-                  </span>
-                  {latestQuarterLabel && (
-                    <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
-                      Latest quarter: {latestQuarterLabel}
-                    </span>
-                  )}
-                </div>
-                <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
-                  Sector Overview
-                </h1>
-                <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                  Compare sectors by company breadth, latest quarter strength, and growth score
-                  averages. This view is designed as a research map, not a raw table dump.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {overviewMetrics.map((metric) => (
-                <div key={metric.label} className={METRIC_CARD_CLASS}>
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                    {metric.label}
-                  </p>
-                  <div className="mt-2 flex items-end justify-between gap-3">
-                    <p className="text-2xl font-black leading-none text-foreground">
-                      {metric.value}
-                    </p>
-                  </div>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    {metric.note}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {sortedRows.length === 0 ? (
           <div className={PANEL_CARD_CLASS}>
             <p className="text-sm text-muted-foreground">

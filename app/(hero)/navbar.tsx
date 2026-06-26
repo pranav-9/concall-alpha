@@ -53,6 +53,7 @@ const Navbar = ({
   const navRef = useRef<HTMLElement | null>(null);
   const navItems = [
     { href: "/leaderboards", label: "Leaderboards" },
+    { href: "/sectors", label: "Sectors" },
     { href: "/watchlists", label: "Watchlists" },
     { href: "/blog", label: "Journal" },
   ];
