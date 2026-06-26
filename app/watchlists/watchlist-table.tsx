@@ -361,7 +361,10 @@ export function WatchlistTable({
               subtitle: "Rating label",
             })}
           </TableHead>
-          <TableHead aria-sort={sortDirectionLabel("stance")} className="px-3 py-3 text-foreground">
+          <TableHead
+            aria-sort={sortDirectionLabel("stance")}
+            className="border-l border-border/70 bg-muted/30 px-3 py-3 text-foreground"
+          >
             {renderSortHead({
               label: "Read",
               columnKey: "stance",
@@ -457,7 +460,7 @@ export function WatchlistTable({
                   <span className="text-muted-foreground">—</span>
                 )}
               </TableCell>
-              <TableCell className="px-3 py-3">
+              <TableCell className="border-l border-border/70 bg-muted/20 px-3 py-3">
                 <StanceBadge stanceKey={row.stanceKey} description={row.stanceDescription} />
               </TableCell>
               <TableCell className="px-2 py-3 text-right">
