@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { GuidanceSnapshotRow } from "@/lib/guidance-snapshot/types";
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 import type { KeyVariablesSnapshotRow } from "@/lib/key-variables-snapshot/types";
+import type { WatchSwingVar } from "@/lib/next-quarter-watch/types";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import type { CompanyPageOverviewCacheRow } from "@/lib/company-overview-cache";
 
@@ -180,17 +181,47 @@ export async function MoatAnalysisPanel({ overview }: CompanyDetailSectionProps)
 
 export async function QuarterlyScorePanel({ overview }: CompanyDetailSectionProps) {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("concall_analysis")
-    .select()
-    .eq("company_code", overview.company_code)
-    // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
-    .not("details->scoring_meta", "is", null)
-    .order("fy", { ascending: false })
-    .order("qtr", { ascending: false })
-    .limit(24);
+  const [{ data, error }, { data: keyVarData }, { data: growthData }] = await Promise.all([
+    supabase
+      .from("concall_analysis")
+      .select()
+      .eq("company_code", overview.company_code)
+      // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+      .not("details->scoring_meta", "is", null)
+      .order("fy", { ascending: false })
+      .order("qtr", { ascending: false })
+      .limit(24),
+    // Forward inputs for the "What to watch next quarter" block.
+    supabase
+      .from("key_variables_snapshot")
+      .select(
+        "company_code, generated_at, discovery_summary, full_variable_list, deep_treatment, section_synthesis, details, updated_at",
+      )
+      .eq("company_code", overview.company_code)
+      .order("generated_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("growth_outlook")
+      .select("growth_score")
+      .or(`company.eq.${overview.company_code},company.eq.${overview.company_name}`)
+      .order("run_timestamp", { ascending: false })
+      .limit(1),
+  ]);
 
   if (error) throw error;
+
+  const keyVarSnapshot = normalizeKeyVariablesSnapshot(
+    (keyVarData?.[0] as KeyVariablesSnapshotRow | undefined) ?? null,
+  );
+  const swingVars: WatchSwingVar[] = (keyVarSnapshot?.deepTreatment ?? [])
+    .slice(0, 4)
+    .map((item) => ({
+      variable: item.variable,
+      note: item.whyItMattersNow ?? item.trendInterpretation ?? item.currentRead,
+    }));
+  const growthScoreRaw = growthData?.[0]?.growth_score;
+  const growthScore =
+    growthScoreRaw != null && Number.isFinite(Number(growthScoreRaw)) ? Number(growthScoreRaw) : null;
   const quarters = ((data ?? []) as QuarterData[]).map((row) => ({
     ...row,
     summary: parseSummary(row.summary),
@@ -233,7 +264,12 @@ export async function QuarterlyScorePanel({ overview }: CompanyDetailSectionProp
           : undefined
       }
     >
-      <QuarterlyScoreSection chartData={chartData} detailQuarters={detailQuarters} />
+      <QuarterlyScoreSection
+        chartData={chartData}
+        detailQuarters={detailQuarters}
+        growthScore={growthScore}
+        swingVars={swingVars}
+      />
     </SectionCard>
   );
 }

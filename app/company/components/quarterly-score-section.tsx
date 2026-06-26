@@ -5,8 +5,16 @@ import { ArrowDown, ArrowUp, ChevronDown } from "lucide-react";
 import ConcallScore from "@/components/concall-score";
 import { cn } from "@/lib/utils";
 import { BANDS, bandForScore } from "@/lib/score-band";
-import { classifyTrajectory, quarterIndex, type TrajectoryResult } from "@/lib/score-trajectory";
+import {
+  classifyTrajectory,
+  quarterIndex,
+  TRAJECTORIES,
+  type TrajectoryResult,
+} from "@/lib/score-trajectory";
+import { buildNextQuarterWatch } from "@/lib/next-quarter-watch/select";
+import type { WatchSwingVar } from "@/lib/next-quarter-watch/types";
 import { ChartLineLabel } from "../[code]/chart";
+import { NextQuarterWatch } from "./next-quarter-watch";
 import { TrendBadge } from "./trend-badge";
 import { chipClass } from "./chip-tone";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
@@ -21,6 +29,11 @@ import type { ChartDataPoint, QuarterData } from "../types";
 type QuarterlyScoreSectionProps = {
   chartData: ChartDataPoint[];
   detailQuarters: QuarterData[];
+  // Forward inputs for the "What to watch next quarter" block (threaded from the
+  // page so the block synthesizes without its own fetch). Both optional — the
+  // block stays silent when there's nothing to flag.
+  growthScore?: number | null;
+  swingVars?: WatchSwingVar[];
 };
 
 // rationale on the row: new rows are structured {direction, heading, detail};
@@ -272,6 +285,8 @@ const renderChartCard = ({
 export function QuarterlyScoreSection({
   chartData,
   detailQuarters,
+  growthScore,
+  swingVars,
 }: QuarterlyScoreSectionProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [range, setRange] = React.useState<ChartRange>(12);
@@ -348,6 +363,26 @@ export function QuarterlyScoreSection({
       .filter((s): s is number => typeof s === "number" && Number.isFinite(s));
     return classifyTrajectory(scores, { hasGapInWindow });
   }, [detailQuarters]);
+
+  // "What to watch next quarter": synthesise the latest score, the series
+  // trajectory, the forward outlook, and the swing variables. Silent when clean.
+  const watchTrajectoryLabel = TRAJECTORIES[trajectory.key].label;
+  const watchView = React.useMemo(
+    () =>
+      buildNextQuarterWatch({
+        latestScore:
+          typeof detailQuarters[0]?.score === "number" ? detailQuarters[0].score : null,
+        growthScore: growthScore ?? null,
+        trajectory: {
+          key: trajectory.key,
+          change: trajectory.change,
+          label: TRAJECTORIES[trajectory.key].label,
+          description: trajectory.description,
+        },
+        swingVars: swingVars ?? [],
+      }),
+    [detailQuarters, growthScore, trajectory, swingVars],
+  );
 
   // chartData is oldest→newest; the range window keeps the most recent N points.
   // Rolling average is computed on the full series first so the line doesn't
@@ -564,6 +599,7 @@ export function QuarterlyScoreSection({
           </div>
         </details>
       )}
+      <NextQuarterWatch view={watchView} trajectoryLabel={watchTrajectoryLabel} />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { ChartDataPoint, QuarterData } from "../types";
+import type { WatchSwingVar } from "@/lib/next-quarter-watch/types";
 import type { NormalizedHistoricalEconomics } from "@/lib/business-snapshot/types";
 import type { GuidanceHistorySectionProps } from "./guidance-history-section";
 
@@ -18,6 +19,8 @@ const SectionPlaceholder = ({ label }: SectionPlaceholderProps) => (
 export const QuarterlyScoreSection = dynamic<{
   chartData: ChartDataPoint[];
   detailQuarters: QuarterData[];
+  growthScore?: number | null;
+  swingVars?: WatchSwingVar[];
 }>(
   () => import("./quarterly-score-section").then((mod) => mod.QuarterlyScoreSection),
   {
