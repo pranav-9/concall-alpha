@@ -1,20 +1,24 @@
+import type { CompanyRow } from "@/app/company/leaderboard-table";
 import { getConcallData } from "@/app/company/get-concall-data";
+import type { WatchlistTableRow } from "@/app/watchlists/watchlist-table";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   HERO_CARD,
   PAGE_BACKGROUND_ATMOSPHERIC,
   PAGE_SHELL,
+  TABLE_CARD_SKY,
 } from "@/lib/design/shell";
 import {
   computeGrowthBandCounts,
   computeQuarterBandCounts,
   type BandCount,
 } from "@/lib/leaderboard-distribution";
+import { buildScorePath } from "@/lib/score-path";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { fetchLeaderboardData } from "./data";
+import { fetchLeaderboardData, type GrowthEntry, type MoatRowTable } from "./data";
 import { LeaderboardTabs } from "./leaderboard-tabs";
-import { GrowthTable, LeaderboardTable, MoatTable } from "./tables-lazy";
+import { GrowthTable, LeaderboardTable, MoatTable, OverallTable } from "./tables-lazy";
 
 export const metadata: Metadata = {
   title: "Leaderboards – Story of a Stock",
@@ -26,6 +30,70 @@ const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 const TAB_TRIGGER_CLASS =
   "min-w-[6rem] justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors data-[state=active]:bg-sky-100 data-[state=active]:text-sky-800 data-[state=active]:shadow-sm dark:data-[state=active]:bg-sky-900/30 dark:data-[state=active]:text-sky-200";
 
+const toNumericValue = (value: unknown): number | null => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+// "Overall" rows: join the three leaderboard substrates — quarter/trajectory
+// (getConcallData), growth + moat (fetchLeaderboardData) — into the watchlist
+// row shape, over the whole universe. A Moat "unknown" rating means no real
+// assessment, so it maps to an empty moat read ("—"), matching how a watchlist
+// surfaces an un-assessed name (and lets the Read stance flag the missing leg).
+function buildOverallRows(
+  rows: CompanyRow[],
+  latestLabel: string | null,
+  quarterLabels: string[],
+  growthEntries: GrowthEntry[],
+  moatEntries: MoatRowTable[],
+): WatchlistTableRow[] {
+  const growthByCode = new Map<string, number | null>();
+  const nameByCode = new Map<string, string>();
+  growthEntries.forEach((entry) => {
+    const code = entry.companyCode.toUpperCase();
+    growthByCode.set(code, entry.growthScore ?? null);
+    if (entry.companyName) nameByCode.set(code, entry.companyName);
+  });
+
+  const moatByCode = new Map<
+    string,
+    Pick<WatchlistTableRow, "moatLabel" | "moatRating" | "moatTier">
+  >();
+  moatEntries.forEach((entry) => {
+    const code = entry.companyCode.toUpperCase();
+    moatByCode.set(
+      code,
+      entry.moatRating === "unknown"
+        ? { moatLabel: null, moatRating: null, moatTier: null }
+        : { moatLabel: entry.moatLabel, moatRating: entry.moatRating, moatTier: entry.moatTier },
+    );
+    if (!nameByCode.has(code) && entry.companyName) nameByCode.set(code, entry.companyName);
+  });
+
+  return rows.map((row) => {
+    const code = String(row.company).toUpperCase();
+    const moat = moatByCode.get(code);
+    return {
+      companyCode: code,
+      companyName: nameByCode.get(code) ?? code,
+      latestQuarterScore: latestLabel ? toNumericValue(row[latestLabel]) : null,
+      avg4QuarterScore: toNumericValue(row["Latest 4Q Avg"]),
+      growthScore: growthByCode.get(code) ?? null,
+      trajectoryKey: row.trajectoryKey,
+      trendChange: row.trendChange ?? null,
+      trendDescription: row.trendDescription ?? null,
+      scorePath: buildScorePath(row, quarterLabels),
+      moatLabel: moat?.moatLabel ?? null,
+      moatRating: moat?.moatRating ?? null,
+      moatTier: moat?.moatTier ?? null,
+    };
+  });
+}
+
 export default async function LeaderboardsPage({
   searchParams,
 }: {
@@ -33,17 +101,28 @@ export default async function LeaderboardsPage({
 }) {
   const resolved = await searchParams;
   const tabParam = resolved?.tab;
-  // "sentiment" preserved as an alias for back-compat with old bookmarks/links.
+  // "Overall" is the default landing tab. "sentiment" preserved as an alias for
+  // back-compat with old bookmarks that pointed at the prior default (Quarter).
   const defaultTab =
-    tabParam === "growth"
-      ? "growth"
-      : tabParam === "moat"
-        ? "moat"
-        : "quarter";
-  const [{ rows, quarterLabels }, { growthEntries, moatEntries }] = await Promise.all([
+    tabParam === "quarter" || tabParam === "sentiment"
+      ? "quarter"
+      : tabParam === "growth"
+        ? "growth"
+        : tabParam === "moat"
+          ? "moat"
+          : "overall";
+  const [{ rows, latestLabel, quarterLabels }, { growthEntries, moatEntries }] = await Promise.all([
     getConcallData(),
     fetchLeaderboardData(),
   ]);
+
+  const overallRows = buildOverallRows(
+    rows,
+    latestLabel ?? null,
+    quarterLabels,
+    growthEntries,
+    moatEntries,
+  );
 
   const latestQuarterLabel = quarterLabels[0] ?? null;
   const quarterLatestScores = latestQuarterLabel
@@ -76,6 +155,9 @@ export default async function LeaderboardsPage({
 
         <LeaderboardTabs defaultTab={defaultTab} className="w-full space-y-4">
           <TabsList className="inline-flex h-auto w-fit rounded-full border border-sky-200/35 bg-background/80 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm dark:border-sky-700/20">
+            <TabsTrigger value="overall" className={TAB_TRIGGER_CLASS}>
+              Overall
+            </TabsTrigger>
             <TabsTrigger value="quarter" className={TAB_TRIGGER_CLASS}>
               Quarter
             </TabsTrigger>
@@ -86,6 +168,27 @@ export default async function LeaderboardsPage({
               Moat
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overall" className="mt-4 space-y-3">
+            <BandSummaryLine
+              scored={quarterScored}
+              total={rows.length}
+              scopeNote="scored this quarter"
+              bandCounts={quarterBandCounts}
+            />
+            <div className={TABLE_CARD_SKY}>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Every signal in one place
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Sorted by latest quarter score · click{" "}
+                  <span className="font-medium text-foreground">Read</span> to sort by the synthesis
+                </p>
+              </div>
+              <OverallTable rows={overallRows} />
+            </div>
+          </TabsContent>
 
           <TabsContent value="quarter" className="mt-4 space-y-3">
             <BandSummaryLine

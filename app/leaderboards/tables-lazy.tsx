@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { CompanyRow } from "@/app/company/leaderboard-table";
+import type { WatchlistTableRow } from "@/app/watchlists/watchlist-table";
 import type { GrowthRowTable } from "./growth-table";
 import type { MoatRowTable } from "./moat-table";
 
@@ -41,6 +42,17 @@ export const GrowthTable = dynamic<{ data: GrowthRowTable[] }>(
 
 export const MoatTable = dynamic<{ data: MoatRowTable[] }>(
   () => import("./moat-table").then((mod) => mod.MoatTable),
+  {
+    ssr: false,
+    loading: () => <TableSkeleton />,
+  },
+);
+
+// The "Overall" tab reuses the watchlist's multi-signal table (Band / Qtr /
+// Trend / Forward / Moat / Read) over the whole universe — no watchlistId, so
+// it renders in leaderboard mode (no per-row Remove).
+export const OverallTable = dynamic<{ rows: WatchlistTableRow[] }>(
+  () => import("@/app/watchlists/watchlist-table").then((mod) => mod.WatchlistTable),
   {
     ssr: false,
     loading: () => <TableSkeleton />,

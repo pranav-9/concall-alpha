@@ -244,12 +244,15 @@ export function WatchlistTable({
   watchlistId,
 }: {
   rows: WatchlistTableRow[];
-  watchlistId: number;
+  // Omitted on the leaderboard "Overall" tab: same table, all companies, no
+  // per-row Remove. Present on a real watchlist, which owns the remove action.
+  watchlistId?: number;
 }) {
   const router = useRouter();
   const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
   const [removingCompanyCode, setRemovingCompanyCode] = useState<string | null>(null);
   const sortedRows = sortRows(deriveRows(rows), sort);
+  const showRemove = watchlistId != null;
 
   const handleSort = (key: SortKey) => {
     setSort((current) => {
@@ -265,7 +268,7 @@ export function WatchlistTable({
     sort.key === key ? (sort.direction === "asc" ? "ascending" : "descending") : "none";
 
   const handleRemove = async (row: WatchlistTableRow) => {
-    if (removingCompanyCode) return;
+    if (removingCompanyCode || watchlistId == null) return;
 
     const confirmed = window.confirm(`Remove ${row.companyName} from this watchlist?`);
     if (!confirmed) return;
@@ -373,9 +376,11 @@ export function WatchlistTable({
               subtitle: "Synthesis",
             })}
           </TableHead>
-          <TableHead className="px-2 py-3 text-foreground">
-            <span className="sr-only">Remove</span>
-          </TableHead>
+          {showRemove && (
+            <TableHead className="px-2 py-3 text-foreground">
+              <span className="sr-only">Remove</span>
+            </TableHead>
+          )}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -463,23 +468,25 @@ export function WatchlistTable({
               <TableCell className="border-l border-border/70 bg-muted/20 px-3 py-3">
                 <StanceBadge stanceKey={row.stanceKey} description={row.stanceDescription} />
               </TableCell>
-              <TableCell className="px-2 py-3 text-right">
-                <button
-                  type="button"
-                  onClick={() => void handleRemove(row)}
-                  disabled={removingCompanyCode === row.companyCode}
-                  aria-label={`Remove ${row.companyName} from this watchlist`}
-                  title="Remove from watchlist"
-                  className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 dark:hover:bg-rose-950/20 dark:hover:text-rose-400"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </TableCell>
+              {showRemove && (
+                <TableCell className="px-2 py-3 text-right">
+                  <button
+                    type="button"
+                    onClick={() => void handleRemove(row)}
+                    disabled={removingCompanyCode === row.companyCode}
+                    aria-label={`Remove ${row.companyName} from this watchlist`}
+                    title="Remove from watchlist"
+                    className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 dark:hover:bg-rose-950/20 dark:hover:text-rose-400"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </TableCell>
+              )}
             </TableRow>
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+            <TableCell colSpan={showRemove ? 8 : 7} className="h-24 text-center text-muted-foreground">
               No results.
             </TableCell>
           </TableRow>
