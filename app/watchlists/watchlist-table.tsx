@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp, Minus } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp, Minus, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { ScoreBandPill } from "@/app/company/components/score-band-pill";
+import { StanceBadge } from "@/app/company/components/stance-badge";
 import { TrendBadge } from "@/app/company/components/trend-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +27,7 @@ import {
   moatTierGradeLabel,
 } from "@/lib/moat-analysis/tier-class";
 import type { MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
+import { classifyStance, compareStance, type StanceKey } from "@/lib/portfolio-stance";
 import type { ScorePoint } from "@/lib/score-path";
 import { compareTrend, type TrajectoryKey } from "@/lib/score-trajectory";
 
@@ -44,6 +46,20 @@ export type WatchlistTableRow = {
   moatTier: MoatTier | null;
 };
 
+// Each row's "Read" — the synthesis stance — is derived from the row's own
+// signals (lib/portfolio-stance), so it's computed here rather than fetched.
+type DerivedRow = WatchlistTableRow & {
+  stanceKey: StanceKey;
+  stanceDescription: string;
+};
+
+function deriveRows(rows: WatchlistTableRow[]): DerivedRow[] {
+  return rows.map((row) => {
+    const { key, description } = classifyStance(row);
+    return { ...row, stanceKey: key, stanceDescription: description };
+  });
+}
+
 const tierIconFor = (tier: MoatTier) => {
   switch (tier) {
     case "strong":
@@ -57,8 +73,10 @@ const tierIconFor = (tier: MoatTier) => {
 
 // Band is bandForScore(latestQuarterScore) — the same datum as Qtr, bucketed —
 // so it isn't an independent sort key. Sorting the level happens on the Qtr
-// column; Trend is its own axis (direction); Forward is the growth outlook.
-type SortKey = "companyName" | "latestQuarterScore" | "trend" | "growthScore" | "moatTag";
+// column; Trend is its own axis (direction); Forward is the growth outlook;
+// Read (stance) synthesises them, sorted most-aligned -> most-cautionary so the
+// watchlist becomes a decision queue (accumulate setups up top, cracking down).
+type SortKey = "companyName" | "latestQuarterScore" | "trend" | "growthScore" | "moatTag" | "stance";
 
 type SortDirection = "asc" | "desc";
 
@@ -173,7 +191,7 @@ function compareMoatTag(
   return direction === "desc" ? aOrder - bOrder : bOrder - aOrder;
 }
 
-function sortRows(rows: WatchlistTableRow[], sort: SortState) {
+function sortRows(rows: DerivedRow[], sort: SortState) {
   return [...rows].sort((a, b) => {
     switch (sort.key) {
       case "companyName": {
@@ -206,6 +224,11 @@ function sortRows(rows: WatchlistTableRow[], sort: SortState) {
         if (tierDiff !== 0) return tierDiff;
         return compareText(a.companyName, b.companyName, "asc");
       }
+      case "stance": {
+        const diff = compareStance(a, b, sort.direction);
+        if (diff !== 0) return diff;
+        return compareText(a.companyName, b.companyName, "asc");
+      }
     }
 
     return 0;
@@ -226,7 +249,7 @@ export function WatchlistTable({
   const router = useRouter();
   const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
   const [removingCompanyCode, setRemovingCompanyCode] = useState<string | null>(null);
-  const sortedRows = sortRows(rows, sort);
+  const sortedRows = sortRows(deriveRows(rows), sort);
 
   const handleSort = (key: SortKey) => {
     setSort((current) => {
@@ -279,7 +302,7 @@ export function WatchlistTable({
   };
 
   return (
-    <Table className="min-w-[1080px] w-full text-sm">
+    <Table className="min-w-[1160px] w-full text-sm">
       <TableHeader className="bg-background/70">
         <TableRow className="border-b border-border/35 bg-background/70">
           <TableHead
@@ -338,7 +361,18 @@ export function WatchlistTable({
               subtitle: "Rating label",
             })}
           </TableHead>
-          <TableHead className="px-3 py-3 text-foreground">Remove</TableHead>
+          <TableHead aria-sort={sortDirectionLabel("stance")} className="px-3 py-3 text-foreground">
+            {renderSortHead({
+              label: "Read",
+              columnKey: "stance",
+              sort,
+              onSort: handleSort,
+              subtitle: "Synthesis",
+            })}
+          </TableHead>
+          <TableHead className="px-2 py-3 text-foreground">
+            <span className="sr-only">Remove</span>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -424,22 +458,25 @@ export function WatchlistTable({
                 )}
               </TableCell>
               <TableCell className="px-3 py-3">
-                <Button
+                <StanceBadge stanceKey={row.stanceKey} description={row.stanceDescription} />
+              </TableCell>
+              <TableCell className="px-2 py-3 text-right">
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
                   onClick={() => void handleRemove(row)}
                   disabled={removingCompanyCode === row.companyCode}
-                  className="border-rose-200 text-rose-700 hover:bg-rose-50 hover:text-rose-800 dark:border-rose-700/40 dark:text-rose-300 dark:hover:bg-rose-950/20"
+                  aria-label={`Remove ${row.companyName} from this watchlist`}
+                  title="Remove from watchlist"
+                  className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 dark:hover:bg-rose-950/20 dark:hover:text-rose-400"
                 >
-                  {removingCompanyCode === row.companyCode ? "Removing..." : "Remove"}
-                </Button>
+                  <X className="h-4 w-4" />
+                </button>
               </TableCell>
             </TableRow>
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+            <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
               No results.
             </TableCell>
           </TableRow>
