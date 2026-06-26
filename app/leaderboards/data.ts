@@ -1,4 +1,9 @@
 import { buildNewCompanySet } from "@/lib/company-freshness";
+import {
+  pickHeadlineGuidance,
+  type HeadlineGuidance,
+  type HeadlineGuidanceRow,
+} from "@/lib/guidance-tracking/headline-guidance";
 import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
@@ -279,6 +284,32 @@ async function fetchMoatLeaders(ctx: LeaderboardContext): Promise<MoatRowTable[]
     void updatedAtSort;
     return { ...rest, leaderboardRank: index + 1 } satisfies MoatRowTable;
   });
+}
+
+// Headline current-FY revenue guidance per company, for the Overall tab's
+// Forward-cell accent. One query over the whole table (small); grouped by code.
+export async function fetchHeadlineGuidanceByCode(): Promise<Map<string, HeadlineGuidance>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("guidance_tracking")
+    .select("company_code, guidance_type, target_period, status, guidance_text, latest_view");
+  if (error) throw error;
+
+  const byCode = new Map<string, HeadlineGuidanceRow[]>();
+  ((data ?? []) as HeadlineGuidanceRow[]).forEach((row) => {
+    const code = (row.company_code ?? "").trim().toUpperCase();
+    if (!code) return;
+    const list = byCode.get(code) ?? [];
+    list.push(row);
+    byCode.set(code, list);
+  });
+
+  const out = new Map<string, HeadlineGuidance>();
+  byCode.forEach((rows, code) => {
+    const headline = pickHeadlineGuidance(rows);
+    if (headline) out.set(code, headline);
+  });
+  return out;
 }
 
 export async function fetchLeaderboardData(): Promise<{

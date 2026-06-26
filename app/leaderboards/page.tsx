@@ -13,10 +13,16 @@ import {
   computeQuarterBandCounts,
   type BandCount,
 } from "@/lib/leaderboard-distribution";
+import type { HeadlineGuidance } from "@/lib/guidance-tracking/headline-guidance";
 import { buildScorePath } from "@/lib/score-path";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { fetchLeaderboardData, type GrowthEntry, type MoatRowTable } from "./data";
+import {
+  fetchHeadlineGuidanceByCode,
+  fetchLeaderboardData,
+  type GrowthEntry,
+  type MoatRowTable,
+} from "./data";
 import { LeaderboardTabs } from "./leaderboard-tabs";
 import { GrowthTable, LeaderboardTable, MoatTable, OverallTable } from "./tables-lazy";
 
@@ -50,6 +56,7 @@ function buildOverallRows(
   quarterLabels: string[],
   growthEntries: GrowthEntry[],
   moatEntries: MoatRowTable[],
+  guidanceByCode: Map<string, HeadlineGuidance>,
 ): WatchlistTableRow[] {
   const growthByCode = new Map<string, number | null>();
   const nameByCode = new Map<string, string>();
@@ -90,6 +97,7 @@ function buildOverallRows(
       moatLabel: moat?.moatLabel ?? null,
       moatRating: moat?.moatRating ?? null,
       moatTier: moat?.moatTier ?? null,
+      guidance: guidanceByCode.get(code) ?? null,
     };
   });
 }
@@ -111,10 +119,8 @@ export default async function LeaderboardsPage({
         : tabParam === "moat"
           ? "moat"
           : "overall";
-  const [{ rows, latestLabel, quarterLabels }, { growthEntries, moatEntries }] = await Promise.all([
-    getConcallData(),
-    fetchLeaderboardData(),
-  ]);
+  const [{ rows, latestLabel, quarterLabels }, { growthEntries, moatEntries }, guidanceByCode] =
+    await Promise.all([getConcallData(), fetchLeaderboardData(), fetchHeadlineGuidanceByCode()]);
 
   const overallRows = buildOverallRows(
     rows,
@@ -122,6 +128,7 @@ export default async function LeaderboardsPage({
     quarterLabels,
     growthEntries,
     moatEntries,
+    guidanceByCode,
   );
 
   const latestQuarterLabel = quarterLabels[0] ?? null;

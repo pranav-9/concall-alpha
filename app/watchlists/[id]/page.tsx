@@ -6,6 +6,11 @@ import { getConcallData } from "@/app/company/get-concall-data";
 import { WatchlistTable, type WatchlistTableRow } from "../watchlist-table";
 import { WatchlistManageMenu } from "./watchlist-manage-menu";
 import { WatchlistTabs } from "./watchlist-tabs";
+import {
+  pickHeadlineGuidance,
+  type HeadlineGuidance,
+  type HeadlineGuidanceRow,
+} from "@/lib/guidance-tracking/headline-guidance";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import { buildScorePath, type ScorePoint } from "@/lib/score-path";
@@ -239,6 +244,7 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
     { data: companyNameRows },
     { data: growthRows },
     { data: moatRows },
+    { data: guidanceRows },
   ] =
     await Promise.all([
       getConcallData(),
@@ -256,6 +262,10 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
         .order("updated_at", { ascending: false })
         .order("created_at", { ascending: false })
         .order("id", { ascending: false }),
+      supabase
+        .from("guidance_tracking")
+        .select("company_code, guidance_type, target_period, status, guidance_text, latest_view")
+        .in("company_code", watchlistCodes),
     ]);
 
   const quarterDataByCode = new Map<
@@ -310,6 +320,20 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
     companyNameByCode.set(row.code.toUpperCase(), row.name?.trim() || row.code);
   });
 
+  const guidanceRowsByCode = new Map<string, HeadlineGuidanceRow[]>();
+  ((guidanceRows ?? []) as HeadlineGuidanceRow[]).forEach((row) => {
+    const code = (row.company_code ?? "").trim().toUpperCase();
+    if (!code) return;
+    const list = guidanceRowsByCode.get(code) ?? [];
+    list.push(row);
+    guidanceRowsByCode.set(code, list);
+  });
+  const guidanceByCode = new Map<string, HeadlineGuidance>();
+  guidanceRowsByCode.forEach((items, code) => {
+    const headline = pickHeadlineGuidance(items);
+    if (headline) guidanceByCode.set(code, headline);
+  });
+
   const tableRows: WatchlistTableRow[] = watchlistCodes
     .map((companyCode) => {
       const quarterData = quarterDataByCode.get(companyCode);
@@ -329,6 +353,7 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
         moatLabel: moatData?.moatLabel ?? null,
         moatRating: moatData?.moatRating ?? null,
         moatTier: moatData?.moatTier ?? null,
+        guidance: guidanceByCode.get(companyCode) ?? null,
       };
     })
     // Initial order = latest quarter score desc (unscored last); the table

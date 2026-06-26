@@ -27,6 +27,7 @@ import {
   moatTierGradeLabel,
 } from "@/lib/moat-analysis/tier-class";
 import type { MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
+import type { HeadlineGuidance } from "@/lib/guidance-tracking/headline-guidance";
 import { classifyStance, compareStance, type StanceKey } from "@/lib/portfolio-stance";
 import type { ScorePoint } from "@/lib/score-path";
 import { compareTrend, type TrajectoryKey } from "@/lib/score-trajectory";
@@ -44,6 +45,9 @@ export type WatchlistTableRow = {
   moatLabel: string | null;
   moatRating: MoatRatingKey | null;
   moatTier: MoatTier | null;
+  // Management's own stated growth guidance for the current FY (the FACT next to
+  // our analytical Forward score). Sparse by design — null for most companies.
+  guidance?: HeadlineGuidance | null;
 };
 
 // Each row's "Read" — the synthesis stance — is derived from the row's own
@@ -427,18 +431,31 @@ export function WatchlistTable({
                 />
               </TableCell>
               <TableCell className="px-3 py-3">
-                {row.growthScore != null ? (
-                  <div className="leading-tight">
-                    <div className="tabular-nums font-semibold text-foreground">
-                      {row.growthScore.toFixed(1)}
+                <div className="leading-tight">
+                  {row.growthScore != null ? (
+                    <>
+                      <div className="tabular-nums font-semibold text-foreground">
+                        {row.growthScore.toFixed(1)}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {GROWTH_BANDS[bandForGrowthScore(row.growthScore)].label}
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                  {row.guidance && (
+                    <div
+                      className="mt-1 flex items-baseline gap-1 text-[10px] text-muted-foreground"
+                      title={row.guidance.detail}
+                    >
+                      <span className="rounded bg-muted/60 px-1 text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                        mgmt
+                      </span>
+                      <span className="tabular-nums">{row.guidance.label}</span>
                     </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      {GROWTH_BANDS[bandForGrowthScore(row.growthScore)].label}
-                    </div>
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
+                  )}
+                </div>
               </TableCell>
               <TableCell className="px-3 py-3">
                 {row.moatLabel ? (
