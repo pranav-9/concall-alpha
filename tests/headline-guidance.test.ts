@@ -30,13 +30,51 @@ assert.equal(
   "15–20% FY26",
 );
 
-// AARTIPHARM CDMO revenue — "30-40%", take it (the EBITDA row is filtered by type).
+// AARTIPHARM — the only revenue row is SEGMENT-scoped ("CDMO/CMO revenue"), so no
+// overall company guidance exists → show nothing (don't headline segment growth).
 assert.equal(
   label([
     row({ guidance_text: "Standalone EBITDA growth FY26 guided 12-15%, revised to 8-12%.", guidance_type: "margin" }),
     row({ guidance_text: "CDMO/CMO revenue estimated to grow 30-40% in FY26.", guidance_type: "revenue" }),
   ]),
-  "30–40% FY26",
+  null,
+);
+
+// --- segment / sub-scope exclusions (overall company revenue only) ---
+
+// Named segment as the SUBJECT of revenue → excluded.
+assert.equal(label([row({ guidance_text: "ARV business revenue to grow 20-25% in FY26." })]), null);
+assert.equal(label([row({ guidance_text: "Domestic India business revenue to grow ~30% in FY26." })]), null);
+assert.equal(label([row({ guidance_text: "Pharma segment revenue to grow 25% in FY26." })]), null);
+assert.equal(label([row({ guidance_text: "Export revenue expected to grow 18-20% in FY26." })]), null);
+// A sub-metric, not a growth rate.
+assert.equal(label([row({ guidance_text: "Grow value-added product revenue share to 40% by FY26." })]), null);
+
+// --- metric mislabel: guidance_type "revenue" but text is a profit metric ---
+
+// Pure EBITDA growth (AARTIPHARM's other row) → excluded even though typed revenue.
+assert.equal(
+  label([row({ guidance_text: "Standalone EBITDA growth for FY26 guided at 12-15%, revised to 8-12%." })]),
+  null,
+);
+// A top-line subject keeps it (CCL: "volume" growth, even alongside EBITDA).
+assert.equal(
+  label([row({ guidance_text: "Maintain 15% to 20% annual volume and EBITDA growth in FY26." })]),
+  "15–20% FY26",
+);
+// Revenue named alongside EBITDA is fine.
+assert.equal(label([row({ guidance_text: "Revenue and EBITDA to grow ~15% in FY26." })]), "15% FY26");
+
+// FALSE-POSITIVE GUARD: a segment named only as a DRIVER of overall growth is kept
+// (ACUTAAS cites "CDMO momentum" but guides overall revenue).
+assert.equal(
+  label([row({ guidance_text: "FY26 revenue growth revised upwards to ~30% on order book and CDMO momentum." })]),
+  "30% FY26",
+);
+// "overall business" must not trip the business-revenue filter (NUVAMA).
+assert.equal(
+  label([row({ target_period: "FY27", guidance_text: "Maintain 20% plus annual growth for the overall business." })]),
+  "20% FY27",
 );
 
 // "revised to X" — report the LAST number, not the first.

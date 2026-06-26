@@ -57,6 +57,39 @@ const fyLabel = (period: string | null | undefined): string | null => {
   return years.length > 1 ? `FY${years[0]}+` : `FY${years[0]}`;
 };
 
+// Segment / sub-scope detection. The headline should be OVERALL company revenue,
+// not a division's. There's no structured scope field (the proper fix is a scope
+// tag in the Phase-6 guidance extraction upstream), so we detect it from text:
+//   - an explicit "segment" / "division" / "vertical"
+//   - a named segment/geography as the SUBJECT of revenue ("CDMO/CMO revenue",
+//     "domestic India business revenue", "ARV business revenue") — note this must
+//     bind the qualifier TO "revenue", so a row that merely cites "CDMO momentum"
+//     as a driver of OVERALL growth (ACUTAAS) is kept.
+//   - a sub-metric, not a growth rate ("same-store", "revenue share", "value-added")
+const SEGMENT_WORD = /\b(segment|division|vertical|sub-?segment)\b/i;
+const SEGMENT_REVENUE =
+  /\b(cdmo|cmo|arv|ads|api|domestic|exports?|overseas|standalone)\b[\s/&,-]*(?:and\s+)?(?:[\w.-]+\s+){0,2}revenue/i;
+const BUSINESS_REVENUE = /\b[\w-]+\s+business\s+revenue\b/i;
+const SUB_METRIC = /\b(same-?store|revenue share|value-?added)\b/i;
+
+const isSegmentScoped = (text: string | null | undefined): boolean => {
+  const t = text ?? "";
+  return (
+    SEGMENT_WORD.test(t) || SEGMENT_REVENUE.test(t) || BUSINESS_REVENUE.test(t) || SUB_METRIC.test(t)
+  );
+};
+
+// guidance_type is sometimes mislabeled "revenue" while the text is really about
+// a profit metric (AARTIPHARM: "Standalone EBITDA growth ... 8-12%"). Exclude
+// pure profit guidance, but KEEP any top-line subject (revenue / volume / AUM /
+// turnover), so CCL's "volume and EBITDA growth" still counts as growth.
+const TOPLINE_SUBJECT = /\b(revenue|top-?line|turnover|sales|volume|aum|run-?rate|disbursement)\b/i;
+const PROFIT_METRIC = /\b(ebitda|margin|pat|profit|earnings|bottom-?line)\b/i;
+const isProfitMetricOnly = (text: string | null | undefined): boolean => {
+  const t = text ?? "";
+  return PROFIT_METRIC.test(t) && !TOPLINE_SUBJECT.test(t);
+};
+
 const periodScore = (row: HeadlineGuidanceRow): number => {
   const p = (row.target_period ?? "").toLowerCase();
   let s = 0;
@@ -71,6 +104,8 @@ const periodScore = (row: HeadlineGuidanceRow): number => {
 export function pickHeadlineGuidance(rows: HeadlineGuidanceRow[]): HeadlineGuidance | null {
   const candidates = rows
     .filter((r) => (r.guidance_type ?? "").toLowerCase() === "revenue")
+    .filter((r) => !isSegmentScoped(r.guidance_text)) // overall company, not a division
+    .filter((r) => !isProfitMetricOnly(r.guidance_text)) // top-line growth, not EBITDA/PAT
     .filter((r) => CURRENT_FY.test(r.target_period ?? ""))
     .map((r) => ({ r, pct: extractPercent(r.guidance_text) }))
     .filter((c): c is { r: HeadlineGuidanceRow; pct: string } => c.pct != null)
