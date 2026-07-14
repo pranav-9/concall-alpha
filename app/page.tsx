@@ -97,7 +97,8 @@ export default async function Home() {
             <p className="mx-auto max-w-2xl text-sm leading-7 text-foreground/78 sm:text-base">
               Screeners give you the data. We give you the read — moat strength,
               business quality, and whether management&apos;s guidance has actually
-              held up — built straight from the source documents.
+              held up — built straight from the source documents of India&apos;s
+              mid- and small-cap companies.
             </p>
           </div>
 

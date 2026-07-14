@@ -22,7 +22,8 @@ const defaultUrl = process.env.VERCEL_URL
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
   title: "[beta] Story of a Stock",
-  description: "extracting the best signals from concalls",
+  description:
+    "source-document research on India's mid- and small-cap companies",
 };
 
 const geistSans = Geist({

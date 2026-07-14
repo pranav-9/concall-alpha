@@ -1,5 +1,6 @@
 import "server-only";
 import { isCompanyNew } from "@/lib/company-freshness";
+import { isDiscoveryListed } from "@/lib/coverage-policy";
 import { createClient } from "@/lib/supabase/server";
 import { collapseConsecutiveSameCompanyUpdates } from "@/app/(hero)/recent-score-updates-utils";
 
@@ -587,15 +588,35 @@ export async function getUnifiedUpdates({
   if (companyCodes.length > 0) {
     const { data: companyRows } = await supabase
       .from("company")
-      .select("code, name, created_at")
+      .select("code, name, created_at, market_cap_band_at_admission")
       .in("code", companyCodes);
 
     const companyNameMap = new Map<string, string>();
     const companyFreshnessMap = new Map<string, boolean>();
-    (companyRows ?? []).forEach((row: { code: string; name?: string | null; created_at?: string | null }) => {
-      companyNameMap.set(row.code.toUpperCase(), row.name?.trim() || row.code);
-      companyFreshnessMap.set(row.code.toUpperCase(), isCompanyNew(row.created_at ?? null));
-    });
+    const excludedCodes = new Set<string>();
+    (companyRows ?? []).forEach(
+      (row: {
+        code: string;
+        name?: string | null;
+        created_at?: string | null;
+        market_cap_band_at_admission?: string | null;
+      }) => {
+        if (!isDiscoveryListed(row.market_cap_band_at_admission)) {
+          excludedCodes.add(row.code.toUpperCase());
+          return;
+        }
+        companyNameMap.set(row.code.toUpperCase(), row.name?.trim() || row.code);
+        companyFreshnessMap.set(row.code.toUpperCase(), isCompanyNew(row.created_at ?? null));
+      },
+    );
+
+    // Coverage policy: drop updates for companies admitted as large cap.
+    if (excludedCodes.size > 0) {
+      for (let i = updates.length - 1; i >= 0; i--) {
+        const code = updates[i].companyCode?.toUpperCase();
+        if (code && excludedCodes.has(code)) updates.splice(i, 1);
+      }
+    }
 
     updates.forEach((item) => {
       if (!item.companyCode) return;

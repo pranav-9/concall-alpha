@@ -4,6 +4,7 @@ import Link from "next/link";
 import ConcallScore from "@/components/concall-score";
 import { Badge } from "@/components/ui/badge";
 import { isCompanyNew } from "@/lib/company-freshness";
+import { isDiscoveryListed } from "@/lib/coverage-policy";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
 import type {
@@ -114,6 +115,22 @@ const sortTimestamp = (value: string | null | undefined) => {
   if (!value) return Number.NEGATIVE_INFINITY;
   const ts = Date.parse(value);
   return Number.isFinite(ts) ? ts : Number.NEGATIVE_INFINITY;
+};
+
+/** Uppercased codes+names of companies excluded from discovery surfaces. */
+const fetchExcludedCompanyKeys = async (supabase: SupabaseServerClient) => {
+  const { data, error } = await supabase
+    .from("company")
+    .select("code, name, market_cap_band_at_admission");
+  if (error) throw error;
+  const keys = new Set<string>();
+  (data ?? []).forEach((row) => {
+    const r = row as { code: string | null; name: string | null; market_cap_band_at_admission: string | null };
+    if (isDiscoveryListed(r.market_cap_band_at_admission)) return;
+    if (r.code) keys.add(r.code.toUpperCase());
+    if (r.name) keys.add(r.name.toUpperCase());
+  });
+  return keys;
 };
 
 const fetchAll = async (supabase: SupabaseServerClient) => {
@@ -418,11 +435,28 @@ const buildFourQSumMap = (records: CompanyRecord[]) => {
 const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) => {
   const supabase = await createClient();
   const now = new Date();
-  const [records, growthLeaders, moatLeaders] = await Promise.all([
+  const [excludedKeys, allRecords, allGrowthLeaders, allMoatLeaders] = await Promise.all([
+    fetchExcludedCompanyKeys(supabase),
     fetchAll(supabase),
     fetchGrowthList(supabase),
     fetchMoatLeaders(supabase),
   ]);
+
+  // Coverage policy: companies admitted as large cap are hidden from
+  // homepage discovery (pages stay reachable via search/direct link).
+  const records = allRecords.filter(
+    (r) =>
+      !excludedKeys.has(r.company_code?.toUpperCase() ?? "") &&
+      !excludedKeys.has(r.company?.name?.toUpperCase() ?? ""),
+  );
+  const growthLeaders = allGrowthLeaders.filter(
+    (g) => !excludedKeys.has(g.company?.toUpperCase() ?? ""),
+  );
+  const moatLeaders = allMoatLeaders.filter(
+    (m) =>
+      !excludedKeys.has(m.code?.toUpperCase() ?? "") &&
+      !excludedKeys.has(m.name?.toUpperCase() ?? ""),
+  );
 
   if (!records.length) {
     return (

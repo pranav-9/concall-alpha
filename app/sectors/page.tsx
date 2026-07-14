@@ -6,6 +6,7 @@ import ConcallScore from "@/components/concall-score";
 import { slugifySector } from "@/app/sector/utils";
 import { getConcallData } from "@/app/company/get-concall-data";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
+import { isDiscoveryListed } from "@/lib/coverage-policy";
 import {
   PAGE_BACKGROUND_ATMOSPHERIC,
   PAGE_SHELL,
@@ -18,6 +19,7 @@ type CompanyRow = {
   name: string | null;
   sector: string | null;
   sub_sector: string | null;
+  market_cap_band_at_admission?: string | null;
 };
 
 type GrowthOutlookRow = {
@@ -109,7 +111,7 @@ export default async function SectorsPage({
   ] = await Promise.all([
     supabase
       .from("company")
-      .select("code, name, sector, sub_sector")
+      .select("code, name, sector, sub_sector, market_cap_band_at_admission")
       .not("sector", "is", null),
     getConcallData(),
     supabase
@@ -118,7 +120,9 @@ export default async function SectorsPage({
       .order("run_timestamp", { ascending: false }),
   ]);
 
-  const companies = (companiesData ?? []) as CompanyRow[];
+  const companies = ((companiesData ?? []) as CompanyRow[]).filter((company) =>
+    isDiscoveryListed(company.market_cap_band_at_admission),
+  );
   if (!companies.length) {
     return (
       <main className="relative isolate overflow-hidden">

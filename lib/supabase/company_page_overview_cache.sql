@@ -5,6 +5,7 @@ create table if not exists public.company_page_overview_cache (
   is_new boolean not null default false,
   sector text null,
   sub_sector text null,
+  market_cap_band text null,
   latest_score numeric null,
   quarter_rank integer null,
   quarter_total integer null,
@@ -35,6 +36,11 @@ create table if not exists public.company_page_overview_cache (
 -- then run: notify pgrst, 'reload schema';
 alter table public.company_page_overview_cache
   add column if not exists overview_takeaways jsonb null;
+
+-- v3 (AMFI market-cap band chip). On existing DBs apply this ALTER manually,
+-- then run: notify pgrst, 'reload schema';
+alter table public.company_page_overview_cache
+  add column if not exists market_cap_band text null;
 
 create index if not exists idx_company_page_overview_cache_sector
   on public.company_page_overview_cache (sector);

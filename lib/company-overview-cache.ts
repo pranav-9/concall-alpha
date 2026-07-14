@@ -58,6 +58,7 @@ export type CompanyPageOverviewCacheRow = {
   is_new: boolean;
   sector: string | null;
   sub_sector: string | null;
+  market_cap_band: string | null;
   latest_score: number | null;
   quarter_rank: number | null;
   quarter_total: number | null;
@@ -151,6 +152,7 @@ function normalizeCacheRow(row: Record<string, unknown>): CompanyPageOverviewCac
     is_new: Boolean(row.is_new),
     sector: typeof row.sector === "string" ? row.sector : null,
     sub_sector: typeof row.sub_sector === "string" ? row.sub_sector : null,
+    market_cap_band: typeof row.market_cap_band === "string" ? row.market_cap_band : null,
     latest_score: toNumeric(row.latest_score),
     quarter_rank: toNumeric(row.quarter_rank),
     quarter_total: toNumeric(row.quarter_total),
@@ -199,7 +201,7 @@ export async function buildCompanyPageOverviewCacheRow(
   ] = await Promise.all([
     supabase
       .from("company")
-      .select("name, sector, sub_sector, code, website, created_at")
+      .select("name, sector, sub_sector, market_cap_band, code, website, created_at")
       .eq("code", normalizedCode)
       .limit(1)
       .maybeSingle(),
@@ -268,6 +270,7 @@ export async function buildCompanyPageOverviewCacheRow(
     name?: string | null;
     sector?: string | null;
     sub_sector?: string | null;
+    market_cap_band?: string | null;
     code?: string | null;
     website?: string | null;
     created_at?: string | null;
@@ -275,6 +278,7 @@ export async function buildCompanyPageOverviewCacheRow(
   const companyName = company?.name?.trim() || normalizedCode;
   const companySector = company?.sector?.trim() || null;
   const companySubSector = company?.sub_sector?.trim() || null;
+  const companyMarketCapBand = company?.market_cap_band?.trim() || null;
   const concallRows = (concallResult.data ?? []) as Array<{
     company_code?: string | null;
     score?: unknown;
@@ -595,6 +599,7 @@ export async function buildCompanyPageOverviewCacheRow(
     is_new: isCompanyNew(company?.created_at ?? null),
     sector: companySector,
     sub_sector: companySubSector,
+    market_cap_band: companyMarketCapBand,
     latest_score: latestScore,
     quarter_rank: quarterRankInfo?.rank ?? null,
     quarter_total: quarterRankInfo?.total ?? null,
@@ -631,7 +636,7 @@ export async function buildCompanyPageOverviewCacheRow(
 }
 
 const selectColumns =
-  "company_code,company_name,is_new,sector,sub_sector,latest_score,quarter_rank,quarter_total,quarter_percentile,growth_score,growth_rank,growth_total,growth_percentile,sector_rank,sector_total,sector_percentile,moat_label,moat_tier_label,key_variable_count,guidance_count,guidance_verdict_key,guidance_verdict_label,revenue_guidance_label,business_segment_mix,overview_takeaways,section_availability,refreshed_at";
+  "company_code,company_name,is_new,sector,sub_sector,market_cap_band,latest_score,quarter_rank,quarter_total,quarter_percentile,growth_score,growth_rank,growth_total,growth_percentile,sector_rank,sector_total,sector_percentile,moat_label,moat_tier_label,key_variable_count,guidance_count,guidance_verdict_key,guidance_verdict_label,revenue_guidance_label,business_segment_mix,overview_takeaways,section_availability,refreshed_at";
 
 async function readCompanyOverview(code: string): Promise<CompanyPageOverviewCacheRow | null> {
   const normalizedCode = code.trim().toUpperCase();

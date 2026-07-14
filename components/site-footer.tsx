@@ -15,6 +15,7 @@ type FooterLinkItem = {
 const exploreLinks: FooterLinkItem[] = [
   { href: "/leaderboards", label: "Leaderboards" },
   { href: "/sectors", label: "Sectors" },
+  { href: "/coverage", label: "Coverage Universe" },
   { href: "/how-scores-work", label: "How Scores Work" },
   { href: "/blog", label: "Journal" },
   { href: "/changelog", label: "Changelog" },

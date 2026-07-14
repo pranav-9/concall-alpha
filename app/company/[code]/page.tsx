@@ -322,6 +322,8 @@ export default async function Page({
                 code: overview.company_code,
                 name: overview.company_name,
                 isNew: overview.is_new,
+                marketCapBand: overview.market_cap_band,
+                sector: overview.sector,
               }}
               sectionGroups={overviewSectionGroups}
               watchlistSlot={

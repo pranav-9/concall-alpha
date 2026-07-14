@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { isCompanyNew } from "@/lib/company-freshness";
+import { isDiscoveryListed } from "@/lib/coverage-policy";
 import { slugifySector } from "@/app/sector/utils";
 
 type CompanyRow = {
@@ -8,6 +9,7 @@ type CompanyRow = {
   name?: string | null;
   sector?: string | null;
   created_at?: string | null;
+  market_cap_band_at_admission?: string | null;
 };
 
 type CoverageUniverseData = {
@@ -120,10 +122,12 @@ export default async function HeroCoverageStats() {
   const now = new Date();
   const { data: companyRows } = await supabase
     .from("company")
-    .select("code, name, sector, created_at");
+    .select("code, name, sector, created_at, market_cap_band_at_admission");
 
   const coverageData = buildCoverageUniverse(
-    (companyRows ?? []) as CompanyRow[],
+    ((companyRows ?? []) as CompanyRow[]).filter((company) =>
+      isDiscoveryListed(company.market_cap_band_at_admission),
+    ),
     now,
   );
   const maxSectorCount = coverageData.topSectors[0]?.companyCount ?? 0;

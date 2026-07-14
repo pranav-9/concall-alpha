@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getConcallData } from "@/app/company/get-concall-data";
 import { isCompanyNew } from "@/lib/company-freshness";
+import { isDiscoveryListed } from "@/lib/coverage-policy";
 import {
   CHIP_BASE,
   CHIP_NEUTRAL,
@@ -25,6 +26,7 @@ type CompanyRow = {
   sector: string | null;
   sub_sector: string | null;
   created_at?: string | null;
+  market_cap_band_at_admission?: string | null;
 };
 
 type GrowthOutlookRow = {
@@ -91,12 +93,18 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
 
   const { data: sectorListRows } = await supabase
     .from("company")
-    .select("sector")
+    .select("sector, market_cap_band_at_admission")
     .not("sector", "is", null);
 
   const sectors = Array.from(
     new Set(
       (sectorListRows ?? [])
+        .filter((row) =>
+          isDiscoveryListed(
+            (row as { market_cap_band_at_admission?: string | null })
+              .market_cap_band_at_admission,
+          ),
+        )
         .map((row) => (row as { sector?: string | null }).sector?.trim())
         .filter((sector): sector is string => Boolean(sector)),
     ),
@@ -109,10 +117,12 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
 
   const { data: companyRows } = await supabase
     .from("company")
-    .select("code, name, sector, sub_sector, created_at")
+    .select("code, name, sector, sub_sector, created_at, market_cap_band_at_admission")
     .eq("sector", sectorName);
 
-  const companies = (companyRows ?? []) as CompanyRow[];
+  const companies = ((companyRows ?? []) as CompanyRow[]).filter((company) =>
+    isDiscoveryListed(company.market_cap_band_at_admission),
+  );
   if (!companies.length) {
     return (
       <main className="relative isolate overflow-hidden">

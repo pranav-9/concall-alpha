@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import ConcallScore from "@/components/concall-score";
+import { marketCapBandLabel } from "@/lib/coverage-policy";
 import { cn } from "@/lib/utils";
 import {
   overviewBodyPillClass,
@@ -40,6 +41,8 @@ interface OverviewCardProps {
     code?: string;
     name?: string;
     isNew?: boolean;
+    marketCapBand?: string | null;
+    sector?: string | null;
   };
   sectionGroups?: OverviewSectionGroup[];
   watchlistSlot?: ReactNode;
@@ -255,6 +258,12 @@ export function OverviewCard({
                 {companyInfo?.code && (
                   <span className="inline-flex items-center rounded-full border border-border/60 bg-muted/50 px-2.5 py-1 text-[10px] font-semibold tracking-wider text-foreground">
                     {companyInfo.code}
+                  </span>
+                )}
+                {marketCapBandLabel(companyInfo?.marketCapBand) && (
+                  <span className="inline-flex items-center rounded-full border border-border/60 bg-muted/50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    {marketCapBandLabel(companyInfo?.marketCapBand)}
+                    {companyInfo?.sector ? ` · ${companyInfo.sector}` : ""}
                   </span>
                 )}
                 {companyInfo?.isNew && (

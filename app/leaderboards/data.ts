@@ -1,4 +1,5 @@
 import { buildNewCompanySet } from "@/lib/company-freshness";
+import { isDiscoveryListed } from "@/lib/coverage-policy";
 import {
   pickHeadlineGuidance,
   type HeadlineGuidance,
@@ -17,12 +18,15 @@ type CompanyRow = {
   code: string;
   name?: string | null;
   created_at?: string | null;
+  market_cap_band_at_admission?: string | null;
 };
 
 type LeaderboardContext = {
   supabase: SupabaseServerClient;
   companies: CompanyRow[];
   newCompanySet: Set<string>;
+  /** Uppercased codes+names of companies excluded by coverage policy. */
+  excludedKeys: Set<string>;
 };
 
 type GrowthRow = {
@@ -105,7 +109,7 @@ async function fetchGrowthLeaders(ctx: LeaderboardContext): Promise<GrowthEntry[
 
   rows.forEach((row) => {
     const key = row.company?.toUpperCase();
-    if (!key) return;
+    if (!key || ctx.excludedKeys.has(key)) return;
     if (!latestByCompany.has(key)) {
       latestByCompany.set(key, row);
     }
@@ -319,10 +323,19 @@ export async function fetchLeaderboardData(): Promise<{
   const supabase = await createClient();
   const { data: companiesData, error: companiesError } = await supabase
     .from("company")
-    .select("code, name, created_at");
+    .select("code, name, created_at, market_cap_band_at_admission");
   if (companiesError) throw companiesError;
 
-  const companies = (companiesData ?? []) as CompanyRow[];
+  const allCompanies = (companiesData ?? []) as CompanyRow[];
+  const companies = allCompanies.filter((company) =>
+    isDiscoveryListed(company.market_cap_band_at_admission),
+  );
+  const excludedKeys = new Set<string>();
+  allCompanies.forEach((company) => {
+    if (isDiscoveryListed(company.market_cap_band_at_admission)) return;
+    if (company.code) excludedKeys.add(company.code.toUpperCase());
+    if (company.name) excludedKeys.add(company.name.toUpperCase());
+  });
   const newCompanySet = buildNewCompanySet(
     companies.map((company) => ({
       code: company.code,
@@ -330,7 +343,7 @@ export async function fetchLeaderboardData(): Promise<{
     })),
   );
 
-  const ctx: LeaderboardContext = { supabase, companies, newCompanySet };
+  const ctx: LeaderboardContext = { supabase, companies, newCompanySet, excludedKeys };
   const [growthEntries, moatEntries] = await Promise.all([
     fetchGrowthLeaders(ctx),
     fetchMoatLeaders(ctx),
