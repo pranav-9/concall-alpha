@@ -1,11 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { BANDS, SCORE_BAND_ORDER, bandForScore, type BandKey } from "@/lib/score-band";
+import {
+  currentReportingQuarter,
+  quarterLabelFor,
+  type ReportingQuarter,
+} from "@/lib/current-quarter";
 
-// Note: concall_analysis.fy is stored as the 4-digit year (e.g. 2026),
-// not the short FY identifier — keep this in sync with that schema.
-export const TARGET_FY = 2026;
-export const TARGET_QTR = 4;
-export const TARGET_LABEL = "Q4 FY26";
+// The tracked quarter is derived from today's date (lib/current-quarter), so
+// the tracker rolls forward automatically each results season. fy/qtr match
+// concall_analysis.fy (4-digit year) / qtr.
+export const getTargetQuarter = (): ReportingQuarter => currentReportingQuarter();
 
 // Score classification is platform-wide — single source of truth in lib/score-band.
 // These thin aliases keep this page's existing names/shape; page.tsx is band-key-agnostic
@@ -61,13 +65,8 @@ const isPriorTo = (row: { fy: number; qtr: number }, fy: number, qtr: number) =>
   return row.qtr < qtr;
 };
 
-const quarterLabelFor = (fy: number, qtr: number) => {
-  // fy is stored as 4-digit year (e.g. 2026); display as 2-digit "FY26".
-  const short = fy >= 2000 ? fy - 2000 : fy;
-  return `Q${qtr} FY${String(short).padStart(2, "0")}`;
-};
-
 export type TrackerData = {
+  target: ReportingQuarter;
   entries: TrackerEntry[];
   countsByBucket: Record<BucketKey, number>;
   sectors: string[];
@@ -76,6 +75,7 @@ export type TrackerData = {
 };
 
 export async function getTrackerData(): Promise<TrackerData> {
+  const target = getTargetQuarter();
   const supabase = await createClient();
   const [{ data: companyData }, { data: analysisData }, calendarResult] =
     await Promise.all([
@@ -88,8 +88,8 @@ export async function getTrackerData(): Promise<TrackerData> {
       supabase
         .from("earnings_calendar")
         .select("company_code, nse_symbol, event_date")
-        .eq("inferred_fy", TARGET_FY)
-        .eq("inferred_qtr", TARGET_QTR),
+        .eq("inferred_fy", target.fy)
+        .eq("inferred_qtr", target.qtr),
     ]);
 
   const companies = (companyData ?? []) as CompanyRow[];
@@ -127,11 +127,11 @@ export async function getTrackerData(): Promise<TrackerData> {
   for (const row of analysis) {
     const key = row.company_code?.toUpperCase();
     if (!key) continue;
-    if (row.fy === TARGET_FY && row.qtr === TARGET_QTR) {
+    if (row.fy === target.fy && row.qtr === target.qtr) {
       targetByCompany.set(key, row);
     }
     anyHistoryByCompany.add(key);
-    if (isPriorTo(row, TARGET_FY, TARGET_QTR)) {
+    if (isPriorTo(row, target.fy, target.qtr)) {
       const existing = priorBestByCompany.get(key);
       if (
         !existing ||
@@ -205,6 +205,7 @@ export async function getTrackerData(): Promise<TrackerData> {
   ).sort((a, b) => a.localeCompare(b));
 
   return {
+    target,
     entries,
     countsByBucket,
     sectors,

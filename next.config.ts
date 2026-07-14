@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      // Old hardcoded-quarter tracker route; the tracker is evergreen now.
+      { source: "/q4fy26", destination: "/quarter-tracker", permanent: true },
+    ];
+  },
   experimental: {
     optimizePackageImports: [
       "recharts",

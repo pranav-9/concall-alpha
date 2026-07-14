@@ -4,18 +4,23 @@ import { HERO_CARD, PAGE_SHELL } from "@/lib/design/shell";
 import {
   BUCKETS,
   BUCKET_ORDER,
-  TARGET_LABEL,
   type BucketKey,
   type TrackerEntry,
+  getTargetQuarter,
   getTrackerData,
 } from "./data";
 import { SectorFilter } from "./sector-filter";
 import { TrackerTable } from "./tracker-table";
 
-export const metadata: Metadata = {
-  title: `${TARGET_LABEL} Quality Tracker – Story of a Stock`,
-  description: `Track ${TARGET_LABEL} quarter quality across coverage by score movement and sector.`,
-};
+// generateMetadata (not a static export) so the label is computed per request
+// and never freezes at a season boundary.
+export async function generateMetadata(): Promise<Metadata> {
+  const { label } = getTargetQuarter();
+  return {
+    title: `${label} Quality Tracker – Story of a Stock`,
+    description: `Track ${label} quarter quality across coverage by score movement and sector.`,
+  };
+}
 
 const PAGE_BACKGROUND_CLASS =
   "pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.10),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.78),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(15,23,42,0.34),_transparent_62%)]";
@@ -61,7 +66,7 @@ const matchesMovement = (entry: TrackerEntry, movement: MovementKey | null) => {
 const getMovementCount = (entries: TrackerEntry[], movement: MovementKey | null) =>
   entries.filter((entry) => matchesMovement(entry, movement)).length;
 
-export default async function Q4FY26TrackerPage({
+export default async function QuarterTrackerPage({
   searchParams,
 }: {
   searchParams?: Promise<{ movement?: string; sector?: string }>;
@@ -70,7 +75,7 @@ export default async function Q4FY26TrackerPage({
   const activeMovement = isMovementKey(resolved?.movement) ? resolved!.movement : null;
   const activeSector = resolved?.sector ?? null;
 
-  const { entries, countsByBucket, sectors, totalCompanies, reportedCompanies } =
+  const { target, entries, countsByBucket, sectors, totalCompanies, reportedCompanies } =
     await getTrackerData();
   const upcomingCompanies = countsByBucket.upcoming;
 
@@ -109,15 +114,15 @@ export default async function Q4FY26TrackerPage({
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div className="space-y-2">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-200">
-                  {TARGET_LABEL} quarter quality tracker
+                  {target.label} quarter quality tracker
                 </p>
                 <h1 className="text-2xl font-black text-foreground sm:text-3xl">
-                  {TARGET_LABEL} Quality Tracker
+                  {target.label} Quality Tracker
                 </h1>
               </div>
               <p className="inline-flex w-fit rounded-full border border-border/50 bg-background/60 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm shadow-black/5">
                 {reportedCompanies} / {totalCompanies} reported · {upcomingCompanies} upcoming ·{" "}
-                {TARGET_LABEL}
+                {target.label}
               </p>
             </div>
 
@@ -166,7 +171,7 @@ export default async function Q4FY26TrackerPage({
             No companies match the current filters.
           </div>
         ) : (
-          <TrackerTable entries={resultEntries} />
+          <TrackerTable entries={resultEntries} scoreLabel={target.label} />
         )}
 
         <div className="flex justify-end">

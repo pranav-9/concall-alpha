@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { TARGET_FY, TARGET_QTR, TARGET_LABEL } from "@/app/q4fy26/data";
+import { currentReportingQuarter } from "@/lib/current-quarter";
 
-async function BannerCounts() {
+async function BannerCounts({ fy, qtr }: { fy: number; qtr: number }) {
   const supabase = await createClient();
   const [reportedRes, totalRes] = await Promise.all([
     supabase
       .from("concall_analysis")
       .select("company_code", { count: "exact", head: true })
-      .eq("fy", TARGET_FY)
-      .eq("qtr", TARGET_QTR),
+      .eq("fy", fy)
+      .eq("qtr", qtr)
+      // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+      .not("details->scoring_meta", "is", null),
     supabase
       .from("company")
       .select("code", { count: "exact", head: true }),
@@ -25,10 +27,11 @@ async function BannerCounts() {
   );
 }
 
-export function Q4FY26Banner() {
+export function QuarterTrackerBanner() {
+  const { fy, qtr, label } = currentReportingQuarter();
   return (
     <Link
-      href="/q4fy26"
+      href="/quarter-tracker"
       prefetch={false}
       className="group block w-full bg-gradient-to-r from-emerald-700 via-emerald-600 to-sky-700 text-emerald-50 transition-colors hover:from-emerald-800 hover:to-sky-800"
     >
@@ -38,7 +41,7 @@ export function Q4FY26Banner() {
             Live
           </span>
           <span className="truncate text-xs font-semibold text-emerald-50 sm:text-sm">
-            {TARGET_LABEL} Quality Tracker
+            {label} Quality Tracker
             <span className="ml-2 hidden text-emerald-100/85 sm:inline">
               — score movement, quality buckets & sector splits across coverage
             </span>
@@ -46,7 +49,7 @@ export function Q4FY26Banner() {
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <Suspense fallback={null}>
-            <BannerCounts />
+            <BannerCounts fy={fy} qtr={qtr} />
           </Suspense>
           <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-50 transition-transform group-hover:translate-x-0.5">
             View

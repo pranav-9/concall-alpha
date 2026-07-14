@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { ArrowUpDown } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -11,7 +12,7 @@ import { BANDS, bandForScore } from "@/lib/score-band";
 import { DataTable } from "@/app/company/data-table";
 import type { TrackerEntry } from "./data";
 
-// Q4 FY26 tracker rendered with the SAME platform table (DataTable) the leaderboard
+// Quarter tracker rendered with the SAME platform table (DataTable) the leaderboard
 // uses — band + sector as columns, and when the score was created as a column. Score
 // circle + colours come from the shared band scheme (lib/score-band), matching the platform.
 
@@ -32,7 +33,7 @@ const formatCreatedAt = (iso: string | null): string => {
   return Number.isNaN(d.getTime()) ? "—" : CREATED_FMT.format(d);
 };
 
-const COLUMNS: ColumnDef<TrackerEntry>[] = [
+const buildColumns = (scoreLabel: string): ColumnDef<TrackerEntry>[] => [
   {
     id: "rank",
     header: "#",
@@ -89,7 +90,7 @@ const COLUMNS: ColumnDef<TrackerEntry>[] = [
     accessorKey: "score",
     header: ({ column }) => (
       <Button variant="ghost" className={headerBtnClass} onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Q4 FY26
+        {scoreLabel}
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
@@ -116,6 +117,13 @@ const COLUMNS: ColumnDef<TrackerEntry>[] = [
   },
 ];
 
-export function TrackerTable({ entries }: { entries: TrackerEntry[] }) {
-  return <DataTable columns={COLUMNS} data={entries} />;
+export function TrackerTable({
+  entries,
+  scoreLabel,
+}: {
+  entries: TrackerEntry[];
+  scoreLabel: string;
+}) {
+  const columns = useMemo(() => buildColumns(scoreLabel), [scoreLabel]);
+  return <DataTable columns={columns} data={entries} />;
 }

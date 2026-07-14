@@ -7,7 +7,7 @@ import HeroCoverageStats, {
 } from "./(hero)/hero-coverage-stats";
 import { CompanySearch } from "@/components/company-search";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
-import { Q4FY26Banner } from "@/components/q4fy26-banner";
+import { QuarterTrackerBanner } from "@/components/quarter-tracker-banner";
 import { cn } from "@/lib/utils";
 import {
   INNER_CARD,
@@ -85,7 +85,7 @@ export default async function Home() {
 
   return (
     <main className="relative min-h-screen overflow-hidden">
-      <Q4FY26Banner />
+      <QuarterTrackerBanner />
       <div className={cn(PAGE_BACKGROUND_ATMOSPHERIC, "-top-28 h-[42rem]")} />
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-4 py-6 sm:px-6 sm:py-8 lg:gap-10 lg:px-10 lg:py-10">
         {/* Row 1 — centered hero: title, subtitle, search */}
