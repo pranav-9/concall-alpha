@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { buildNewCompanySet } from "@/lib/company-freshness";
+import { isDiscoveryListed } from "@/lib/coverage-policy";
 import { classifyTrajectory, quarterIndex } from "@/lib/score-trajectory";
 import type { CompanyRow } from "./leaderboard-table";
 import type { QuarterData } from "./types";
@@ -20,18 +21,36 @@ const avgScore = (records: QuarterData[]): number | null => {
     : null;
 };
 
-export const getConcallData = async () => {
+export const getConcallData = async ({
+  excludeLargeCaps = false,
+}: { excludeLargeCaps?: boolean } = {}) => {
   const supabase = await createClient();
   const [{ data }, { data: companyRows }] = await Promise.all([
     // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
     supabase.from("concall_analysis").select().not("details->scoring_meta", "is", null),
-    supabase.from("company").select("code, created_at"),
+    supabase.from("company").select("code, created_at, market_cap_band_at_admission"),
   ]);
-  const newCompanySet = buildNewCompanySet(
-    ((companyRows ?? []) as Array<{ code: string; created_at?: string | null }>),
-  );
+  const companyRowList = (companyRows ?? []) as Array<{
+    code: string;
+    created_at?: string | null;
+    market_cap_band_at_admission?: string | null;
+  }>;
+  const newCompanySet = buildNewCompanySet(companyRowList);
 
-  const records = data ?? [];
+  // Coverage policy: on discovery surfaces, drop companies admitted as large
+  // cap. Off by default so user-owned surfaces (watchlists) keep every holding.
+  const excludedCodes = new Set<string>();
+  if (excludeLargeCaps) {
+    companyRowList.forEach((row) => {
+      if (!isDiscoveryListed(row.market_cap_band_at_admission)) {
+        excludedCodes.add(row.code.toUpperCase());
+      }
+    });
+  }
+
+  const records = (data ?? []).filter(
+    (r) => excludedCodes.size === 0 || !excludedCodes.has(String(r.company_code).toUpperCase()),
+  );
 
   // sort newest -> oldest
   const sorted = [...records].sort(

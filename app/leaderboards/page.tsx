@@ -120,7 +120,7 @@ export default async function LeaderboardsPage({
           ? "moat"
           : "overall";
   const [{ rows, latestLabel, quarterLabels }, { growthEntries, moatEntries }, guidanceByCode] =
-    await Promise.all([getConcallData(), fetchLeaderboardData(), fetchHeadlineGuidanceByCode()]);
+    await Promise.all([getConcallData({ excludeLargeCaps: true }), fetchLeaderboardData(), fetchHeadlineGuidanceByCode()]);
 
   const overallRows = buildOverallRows(
     rows,

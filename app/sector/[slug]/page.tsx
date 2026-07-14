@@ -152,7 +152,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
 
   const [{ rows: concallRows, latestLabel }, { data: growthRows }, { data: moatRows }] =
     await Promise.all([
-      getConcallData(),
+      getConcallData({ excludeLargeCaps: true }),
       supabase
         .from("growth_outlook")
         .select("company, growth_score, run_timestamp")

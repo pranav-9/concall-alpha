@@ -102,7 +102,7 @@ const TABS_TRIGGER_CLASS =
 
 export default async function HowScoresWorkPage() {
   const [{ rows, quarterLabels }, { growthEntries }] = await Promise.all([
-    getConcallData(),
+    getConcallData({ excludeLargeCaps: true }),
     fetchLeaderboardData(),
   ]);
   const latestQuarterLabel = quarterLabels[0] ?? null;

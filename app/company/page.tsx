@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CompanyLeaderboardPage() {
-  const { rows, quarterLabels } = await getConcallData();
+  const { rows, quarterLabels } = await getConcallData({ excludeLargeCaps: true });
 
   return (
     <div className="container mx-auto py-10">

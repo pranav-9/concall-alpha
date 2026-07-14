@@ -113,7 +113,7 @@ export default async function SectorsPage({
       .from("company")
       .select("code, name, sector, sub_sector, market_cap_band_at_admission")
       .not("sector", "is", null),
-    getConcallData(),
+    getConcallData({ excludeLargeCaps: true }),
     supabase
       .from("growth_outlook")
       .select("company, growth_score, run_timestamp")
