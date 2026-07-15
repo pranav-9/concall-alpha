@@ -95,10 +95,7 @@ export default async function Home() {
               Research, not just numbers.
             </h1>
             <p className="mx-auto max-w-2xl text-sm leading-7 text-foreground/78 sm:text-base">
-              Screeners give you the data. We give you the read — moat strength,
-              business quality, and whether management&apos;s guidance has actually
-              held up — built straight from the source documents of India&apos;s
-              mid- and small-cap companies.
+              Research on a handpicked 100 mid- and small-cap companies.
             </p>
           </div>
 
