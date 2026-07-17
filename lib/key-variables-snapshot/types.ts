@@ -24,6 +24,8 @@ export type NormalizedKeyVariableListItem = {
   sourceBasis: NormalizedKeyVariableSourceBasis;
 };
 
+export type NormalizedKeyVariableTransition = "retained" | "promoted";
+
 export type NormalizedKeyVariableDeepTreatmentItem = {
   variable: string;
   kpiHistory: NormalizedKeyVariableKpiHistory | null;
@@ -31,6 +33,13 @@ export type NormalizedKeyVariableDeepTreatmentItem = {
   whatItTracks: string | null;
   whyItMattersNow: string | null;
   trendInterpretation: string | null;
+  transition: NormalizedKeyVariableTransition | null;
+  transitionReason: string | null;
+};
+
+export type NormalizedKeyVariableDroppedItem = {
+  variable: string;
+  reason: string | null;
 };
 
 export type NormalizedKeyVariableKpiHistory = {
@@ -57,6 +66,7 @@ export type NormalizedKeyVariablesSnapshot = {
   discoverySummary: NormalizedKeyVariableDiscoverySummary | null;
   fullVariableList: NormalizedKeyVariableListItem[];
   deepTreatment: NormalizedKeyVariableDeepTreatmentItem[];
+  droppedVariables: NormalizedKeyVariableDroppedItem[];
   sectionSynthesis: string | null;
   details: Record<string, unknown> | null;
 };

@@ -347,6 +347,11 @@ export function KeyVariablesSection({
                   {item.variable}
                 </p>
                 <div className="flex flex-wrap items-center justify-start gap-1.5 sm:shrink-0 sm:justify-end">
+                  {item.transition === "promoted" ? (
+                    <span className="rounded-full border border-emerald-200/80 bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                      Newly deep-tracked
+                    </span>
+                  ) : null}
                   <span className="rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-muted-foreground">
                     Variable {index + 1}
                   </span>
@@ -397,6 +402,17 @@ export function KeyVariablesSection({
                   </div>
                 ) : null}
 
+                {item.transition === "promoted" && item.transitionReason ? (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Why Promoted
+                    </p>
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      {item.transitionReason}
+                    </p>
+                  </div>
+                ) : null}
+
                 {item.trendInterpretation ? (
                   <div className={cn(nestedDetailClass, "px-3 py-3")}>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -417,6 +433,29 @@ export function KeyVariablesSection({
             No deep-treatment variables surfaced for this company.
           </p>
         </div>
+      ) : null}
+
+      {snapshot.droppedVariables.length > 0 ? (
+        <details className={cn("group", nestedDetailClass, "px-3 py-2")}>
+          <summary className="cursor-pointer list-none text-[11px] text-muted-foreground hover:text-foreground">
+            <span className="group-open:hidden">
+              No longer deep-tracked ({snapshot.droppedVariables.length})
+            </span>
+            <span className="hidden group-open:inline">Hide details</span>
+          </summary>
+          <div className="mt-2 space-y-2">
+            {snapshot.droppedVariables.map((item) => (
+              <div key={item.variable}>
+                <p className="text-[12px] font-medium text-foreground">{item.variable}</p>
+                {item.reason ? (
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    {item.reason}
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </details>
       ) : null}
     </div>
   );

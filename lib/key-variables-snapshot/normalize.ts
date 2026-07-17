@@ -2,11 +2,13 @@ import type {
   KeyVariablesSnapshotRow,
   NormalizedKeyVariableDeepTreatmentItem,
   NormalizedKeyVariableDiscoverySummary,
+  NormalizedKeyVariableDroppedItem,
   NormalizedKeyVariableKpiHistory,
   NormalizedKeyVariableKpiHistoryRow,
   NormalizedKeyVariableListItem,
   NormalizedKeyVariableSourceBasis,
   NormalizedKeyVariablesSnapshot,
+  NormalizedKeyVariableTransition,
 } from "@/lib/key-variables-snapshot/types";
 
 type JsonRecord = Record<string, unknown>;
@@ -158,6 +160,11 @@ const normalizeKpiHistory = (value: unknown): NormalizedKeyVariableKpiHistory | 
   };
 };
 
+const normalizeTransition = (value: unknown): NormalizedKeyVariableTransition | null => {
+  const normalized = asString(value)?.toLowerCase();
+  return normalized === "retained" || normalized === "promoted" ? normalized : null;
+};
+
 const normalizeDeepTreatmentItem = (
   value: unknown,
 ): NormalizedKeyVariableDeepTreatmentItem | null => {
@@ -172,6 +179,19 @@ const normalizeDeepTreatmentItem = (
     whatItTracks: asString(row?.what_it_tracks),
     whyItMattersNow: asString(row?.why_it_matters_now),
     trendInterpretation: asString(row?.trend_interpretation),
+    transition: normalizeTransition(row?.transition),
+    transitionReason: asString(row?.transition_reason),
+  };
+};
+
+const normalizeDroppedItem = (value: unknown): NormalizedKeyVariableDroppedItem | null => {
+  const row = parseJsonObjectLike(value);
+  const variable = asString(row?.variable);
+  if (!variable) return null;
+
+  return {
+    variable,
+    reason: asString(row?.reason),
   };
 };
 
@@ -189,6 +209,12 @@ export function normalizeKeyVariablesSnapshot(
   const deepTreatment = extractVariablesArray(row.deep_treatment)
     .map((entry) => normalizeDeepTreatmentItem(entry))
     .filter((entry): entry is NormalizedKeyVariableDeepTreatmentItem => Boolean(entry));
+
+  const droppedVariables = parseJsonArrayLike(
+    parseJsonObjectLike(row.deep_treatment)?.dropped_variables,
+  )
+    .map((entry) => normalizeDroppedItem(entry))
+    .filter((entry): entry is NormalizedKeyVariableDroppedItem => Boolean(entry));
 
   const sectionSynthesis = asString(row.section_synthesis);
   const discoverySummary = normalizeDiscoverySummary(row.discovery_summary);
@@ -210,6 +236,7 @@ export function normalizeKeyVariablesSnapshot(
     discoverySummary,
     fullVariableList,
     deepTreatment,
+    droppedVariables,
     sectionSynthesis,
     details,
   };
