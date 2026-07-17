@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { isCompanyNew } from "@/lib/company-freshness";
+import { COVERAGE_SELECT, isDiscoveryListed, type CoverageFields } from "@/lib/coverage-policy";
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
 import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
@@ -198,6 +199,7 @@ export async function buildCompanyPageOverviewCacheRow(
     { data: moatAnalysisData },
     { data: keyVariablesSnapshotData },
     { data: growthRankRows },
+    { data: coverageRows },
   ] = await Promise.all([
     supabase
       .from("company")
@@ -262,7 +264,18 @@ export async function buildCompanyPageOverviewCacheRow(
       .from("growth_outlook")
       .select("company, growth_score, base_growth_pct, run_timestamp")
       .order("run_timestamp", { ascending: false }),
+    supabase.from("company").select(`code, ${COVERAGE_SELECT}`),
   ]);
+
+  // Ranks are only meaningful within the covered universe — a mid/small-cap
+  // platform must not rank a company against names it de-emphasizes. An
+  // excluded company (large cap or below the coverage cut) isn't in the pool,
+  // so its own rank comes out null and the page simply omits it.
+  const listedCodes = new Set(
+    ((coverageRows ?? []) as Array<{ code: string } & CoverageFields>)
+      .filter((row) => isDiscoveryListed(row))
+      .map((row) => row.code.toUpperCase()),
+  );
 
   if (concallResult.error) throw concallResult.error;
 
@@ -326,10 +339,10 @@ export async function buildCompanyPageOverviewCacheRow(
     sectorPeerPromise,
   ]);
 
-  const sectorPeerRows = (sectorPeerResult?.data ?? []) as Array<{
+  const sectorPeerRows = ((sectorPeerResult?.data ?? []) as Array<{
     code?: string | null;
     name?: string | null;
-  }>;
+  }>).filter((row) => listedCodes.has(String(row.code ?? "").toUpperCase()));
   const peerCodesUpper = sectorPeerRows
     .map((row) => String(row.code ?? "").toUpperCase())
     .filter(Boolean);
@@ -444,7 +457,7 @@ export async function buildCompanyPageOverviewCacheRow(
           companyCode: String(row.company_code ?? "").toUpperCase(),
           score: toNumeric(row.score),
         }))
-        .filter((row) => row.companyCode && row.score != null)
+        .filter((row) => row.companyCode && row.score != null && listedCodes.has(row.companyCode))
         .sort((a, b) => {
           if ((b.score ?? 0) !== (a.score ?? 0)) return (b.score ?? 0) - (a.score ?? 0);
           return a.companyCode.localeCompare(b.companyCode);
@@ -465,6 +478,7 @@ export async function buildCompanyPageOverviewCacheRow(
   (growthRankRows ?? []).forEach((row) => {
     const companyKey = String((row as { company?: string }).company ?? "").toUpperCase();
     if (!companyKey || latestGrowthByCompany.has(companyKey)) return;
+    if (!listedCodes.has(companyKey)) return;
     const growthScoreValue = toNumeric((row as { growth_score?: unknown }).growth_score);
     if (growthScoreValue == null) return;
     latestGrowthByCompany.set(companyKey, {
