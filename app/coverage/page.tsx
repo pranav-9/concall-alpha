@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { isDiscoveryListed } from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import {
   INNER_CARD,
   PAGE_BACKGROUND_ATMOSPHERIC,
@@ -37,14 +37,11 @@ export default async function CoveragePage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("company")
-    .select("code, market_cap_band, market_cap_band_at_admission");
+    .select(`code, market_cap_band, ${COVERAGE_SELECT}`);
 
   const companies = data ?? [];
   const covered = companies.filter((row) =>
-    isDiscoveryListed(
-      (row as { market_cap_band_at_admission?: string | null })
-        .market_cap_band_at_admission,
-    ),
+    isDiscoveryListed(row as { market_cap_band_at_admission?: string | null }),
   );
   const bandCount = (band: string) =>
     covered.filter(

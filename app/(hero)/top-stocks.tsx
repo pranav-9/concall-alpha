@@ -4,7 +4,7 @@ import Link from "next/link";
 import ConcallScore from "@/components/concall-score";
 import { Badge } from "@/components/ui/badge";
 import { isCompanyNew } from "@/lib/company-freshness";
-import { isDiscoveryListed } from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
 import type {
@@ -121,12 +121,17 @@ const sortTimestamp = (value: string | null | undefined) => {
 const fetchExcludedCompanyKeys = async (supabase: SupabaseServerClient) => {
   const { data, error } = await supabase
     .from("company")
-    .select("code, name, market_cap_band_at_admission");
+    .select(`code, name, ${COVERAGE_SELECT}`);
   if (error) throw error;
   const keys = new Set<string>();
   (data ?? []).forEach((row) => {
-    const r = row as { code: string | null; name: string | null; market_cap_band_at_admission: string | null };
-    if (isDiscoveryListed(r.market_cap_band_at_admission)) return;
+    const r = row as {
+      code: string | null;
+      name: string | null;
+      market_cap_band_at_admission: string | null;
+      excluded_from_discovery: boolean | null;
+    };
+    if (isDiscoveryListed(r)) return;
     if (r.code) keys.add(r.code.toUpperCase());
     if (r.name) keys.add(r.name.toUpperCase());
   });

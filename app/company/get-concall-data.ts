@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { buildNewCompanySet } from "@/lib/company-freshness";
-import { isDiscoveryListed } from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import { classifyTrajectory, quarterIndex } from "@/lib/score-trajectory";
 import type { CompanyRow } from "./leaderboard-table";
 import type { QuarterData } from "./types";
@@ -28,12 +28,13 @@ export const getConcallData = async ({
   const [{ data }, { data: companyRows }] = await Promise.all([
     // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
     supabase.from("concall_analysis").select().not("details->scoring_meta", "is", null),
-    supabase.from("company").select("code, created_at, market_cap_band_at_admission"),
+    supabase.from("company").select(`code, created_at, ${COVERAGE_SELECT}`),
   ]);
   const companyRowList = (companyRows ?? []) as Array<{
     code: string;
     created_at?: string | null;
     market_cap_band_at_admission?: string | null;
+    excluded_from_discovery?: boolean | null;
   }>;
   const newCompanySet = buildNewCompanySet(companyRowList);
 
@@ -42,7 +43,7 @@ export const getConcallData = async ({
   const excludedCodes = new Set<string>();
   if (excludeLargeCaps) {
     companyRowList.forEach((row) => {
-      if (!isDiscoveryListed(row.market_cap_band_at_admission)) {
+      if (!isDiscoveryListed(row)) {
         excludedCodes.add(row.code.toUpperCase());
       }
     });

@@ -1,6 +1,6 @@
 import "server-only";
 import { isCompanyNew } from "@/lib/company-freshness";
-import { isDiscoveryListed } from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import { createClient } from "@/lib/supabase/server";
 import { collapseConsecutiveSameCompanyUpdates } from "@/app/(hero)/recent-score-updates-utils";
 
@@ -588,7 +588,7 @@ export async function getUnifiedUpdates({
   if (companyCodes.length > 0) {
     const { data: companyRows } = await supabase
       .from("company")
-      .select("code, name, created_at, market_cap_band_at_admission")
+      .select(`code, name, created_at, ${COVERAGE_SELECT}`)
       .in("code", companyCodes);
 
     const companyNameMap = new Map<string, string>();
@@ -600,8 +600,9 @@ export async function getUnifiedUpdates({
         name?: string | null;
         created_at?: string | null;
         market_cap_band_at_admission?: string | null;
+        excluded_from_discovery?: boolean | null;
       }) => {
-        if (!isDiscoveryListed(row.market_cap_band_at_admission)) {
+        if (!isDiscoveryListed(row)) {
           excludedCodes.add(row.code.toUpperCase());
           return;
         }

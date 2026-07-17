@@ -1,5 +1,5 @@
 import { buildNewCompanySet } from "@/lib/company-freshness";
-import { isDiscoveryListed } from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import {
   pickHeadlineGuidance,
   type HeadlineGuidance,
@@ -19,6 +19,7 @@ type CompanyRow = {
   name?: string | null;
   created_at?: string | null;
   market_cap_band_at_admission?: string | null;
+  excluded_from_discovery?: boolean | null;
 };
 
 type LeaderboardContext = {
@@ -323,16 +324,14 @@ export async function fetchLeaderboardData(): Promise<{
   const supabase = await createClient();
   const { data: companiesData, error: companiesError } = await supabase
     .from("company")
-    .select("code, name, created_at, market_cap_band_at_admission");
+    .select(`code, name, created_at, ${COVERAGE_SELECT}`);
   if (companiesError) throw companiesError;
 
   const allCompanies = (companiesData ?? []) as CompanyRow[];
-  const companies = allCompanies.filter((company) =>
-    isDiscoveryListed(company.market_cap_band_at_admission),
-  );
+  const companies = allCompanies.filter((company) => isDiscoveryListed(company));
   const excludedKeys = new Set<string>();
   allCompanies.forEach((company) => {
-    if (isDiscoveryListed(company.market_cap_band_at_admission)) return;
+    if (isDiscoveryListed(company)) return;
     if (company.code) excludedKeys.add(company.code.toUpperCase());
     if (company.name) excludedKeys.add(company.name.toUpperCase());
   });
