@@ -57,6 +57,7 @@ function buildOverallRows(
   growthEntries: GrowthEntry[],
   moatEntries: MoatRowTable[],
   guidanceByCode: Map<string, HeadlineGuidance>,
+  coverageRankByCode: Map<string, number>,
 ): WatchlistTableRow[] {
   const growthByCode = new Map<string, number | null>();
   const nameByCode = new Map<string, string>();
@@ -87,6 +88,7 @@ function buildOverallRows(
     return {
       companyCode: code,
       companyName: nameByCode.get(code) ?? code,
+      coverageRank: coverageRankByCode.get(code) ?? null,
       latestQuarterScore: latestLabel ? toNumericValue(row[latestLabel]) : null,
       avg4QuarterScore: toNumericValue(row["Latest 4Q Avg"]),
       growthScore: growthByCode.get(code) ?? null,
@@ -119,8 +121,15 @@ export default async function LeaderboardsPage({
         : tabParam === "moat"
           ? "moat"
           : "overall";
-  const [{ rows, latestLabel, quarterLabels }, { growthEntries, moatEntries }, guidanceByCode] =
-    await Promise.all([getConcallData({ excludeLargeCaps: true }), fetchLeaderboardData(), fetchHeadlineGuidanceByCode()]);
+  const [
+    { rows, latestLabel, quarterLabels },
+    { growthEntries, moatEntries, coverageRankByCode },
+    guidanceByCode,
+  ] = await Promise.all([
+    getConcallData({ excludeLargeCaps: true }),
+    fetchLeaderboardData(),
+    fetchHeadlineGuidanceByCode(),
+  ]);
 
   const overallRows = buildOverallRows(
     rows,
@@ -129,6 +138,7 @@ export default async function LeaderboardsPage({
     growthEntries,
     moatEntries,
     guidanceByCode,
+    coverageRankByCode,
   );
 
   const latestQuarterLabel = quarterLabels[0] ?? null;
@@ -189,7 +199,7 @@ export default async function LeaderboardsPage({
                   Every signal in one place
                 </p>
                 <p className="text-[11px] text-muted-foreground">
-                  Sorted by latest quarter score · click{" "}
+                  Ranked by overall score (quarter + outlook) · click{" "}
                   <span className="font-medium text-foreground">Read</span> to sort by the synthesis
                 </p>
               </div>

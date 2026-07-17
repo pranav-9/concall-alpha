@@ -5,9 +5,24 @@ create table if not exists public.page_view_events (
   path text not null,
   company_code text null,
   user_agent text null,
+  -- Client-reported external referrer (null when internal/self). Rows before
+  -- 2026-07 hold the server-side Referer header, which was always self.
   referrer text null,
+  utm_source text null,
+  utm_medium text null,
+  utm_campaign text null,
+  utm_content text null,
+  utm_term text null,
   created_at timestamptz not null default now()
 );
+
+-- Migration 2026-07: first-touch attribution columns. Idempotent — run in the
+-- Supabase SQL editor, then: notify pgrst, 'reload schema';
+alter table public.page_view_events add column if not exists utm_source text null;
+alter table public.page_view_events add column if not exists utm_medium text null;
+alter table public.page_view_events add column if not exists utm_campaign text null;
+alter table public.page_view_events add column if not exists utm_content text null;
+alter table public.page_view_events add column if not exists utm_term text null;
 
 create index if not exists idx_page_view_events_created_at_desc
   on public.page_view_events (created_at desc);

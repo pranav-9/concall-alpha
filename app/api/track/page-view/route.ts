@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { getOwnHosts, normalizeExternalReferrer, sanitizeUtmValue } from "@/lib/attribution";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
@@ -7,6 +8,14 @@ import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
 type Payload = {
   path?: string;
   companyCode?: string | null;
+  // Attribution fields are optional: bundles deployed before 2026-07 POST only
+  // the two fields above, and attribution is best-effort — sanitized, never 400.
+  referrer?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+  utmTerm?: string | null;
 };
 
 const PATH_REGEX = /^\/[A-Za-z0-9\-._~!$&'()*+,;=:@/?%]*$/;
@@ -39,7 +48,9 @@ export async function POST(request: Request) {
 
     const h = await headers();
     const userAgent = h.get("user-agent");
-    const referrer = h.get("referer");
+    // The request's own Referer header is always this app's page — the real
+    // acquisition referrer is the client-reported document.referrer.
+    const referrer = normalizeExternalReferrer(body.referrer, getOwnHosts(process.env));
 
     const supabase = await createClient();
     const { error: insertError } = await supabase.from("page_view_events").insert({
@@ -48,6 +59,11 @@ export async function POST(request: Request) {
       company_code: parsed.companyCode,
       user_agent: userAgent,
       referrer,
+      utm_source: sanitizeUtmValue(body.utmSource),
+      utm_medium: sanitizeUtmValue(body.utmMedium),
+      utm_campaign: sanitizeUtmValue(body.utmCampaign),
+      utm_content: sanitizeUtmValue(body.utmContent),
+      utm_term: sanitizeUtmValue(body.utmTerm),
     });
 
     if (insertError) {

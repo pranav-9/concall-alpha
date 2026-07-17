@@ -20,6 +20,7 @@ type CompanyRow = {
   created_at?: string | null;
   market_cap_band_at_admission?: string | null;
   excluded_from_discovery?: boolean | null;
+  coverage_rank?: number | null;
 };
 
 type LeaderboardContext = {
@@ -320,11 +321,13 @@ export async function fetchHeadlineGuidanceByCode(): Promise<Map<string, Headlin
 export async function fetchLeaderboardData(): Promise<{
   growthEntries: GrowthEntry[];
   moatEntries: MoatRowTable[];
+  /** Overall (composite) rank per company code — powers the Overall tab's # column. */
+  coverageRankByCode: Map<string, number>;
 }> {
   const supabase = await createClient();
   const { data: companiesData, error: companiesError } = await supabase
     .from("company")
-    .select(`code, name, created_at, ${COVERAGE_SELECT}`);
+    .select(`code, name, created_at, coverage_rank, ${COVERAGE_SELECT}`);
   if (companiesError) throw companiesError;
 
   const allCompanies = (companiesData ?? []) as CompanyRow[];
@@ -342,10 +345,17 @@ export async function fetchLeaderboardData(): Promise<{
     })),
   );
 
+  const coverageRankByCode = new Map<string, number>();
+  companies.forEach((company) => {
+    if (typeof company.coverage_rank === "number") {
+      coverageRankByCode.set(company.code.toUpperCase(), company.coverage_rank);
+    }
+  });
+
   const ctx: LeaderboardContext = { supabase, companies, newCompanySet, excludedKeys };
   const [growthEntries, moatEntries] = await Promise.all([
     fetchGrowthLeaders(ctx),
     fetchMoatLeaders(ctx),
   ]);
-  return { growthEntries, moatEntries };
+  return { growthEntries, moatEntries, coverageRankByCode };
 }

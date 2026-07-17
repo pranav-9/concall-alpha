@@ -35,6 +35,10 @@ import { compareTrend, type TrajectoryKey } from "@/lib/score-trajectory";
 export type WatchlistTableRow = {
   companyCode: string;
   companyName: string;
+  // Overall rank across the covered universe (composite score). Present on the
+  // leaderboard "Overall" tab, absent on a real watchlist — the rank column
+  // renders only when rows carry it.
+  coverageRank?: number | null;
   latestQuarterScore: number | null;
   avg4QuarterScore: number | null;
   growthScore: number | null;
@@ -80,7 +84,14 @@ const tierIconFor = (tier: MoatTier) => {
 // column; Trend is its own axis (direction); Forward is the growth outlook;
 // Read (stance) synthesises them, sorted most-aligned -> most-cautionary so the
 // watchlist becomes a decision queue (accumulate setups up top, cracking down).
-type SortKey = "companyName" | "latestQuarterScore" | "trend" | "growthScore" | "moatTag" | "stance";
+type SortKey =
+  | "coverageRank"
+  | "companyName"
+  | "latestQuarterScore"
+  | "trend"
+  | "growthScore"
+  | "moatTag"
+  | "stance";
 
 type SortDirection = "asc" | "desc";
 
@@ -95,7 +106,7 @@ const DEFAULT_SORT: SortState = {
 };
 
 const defaultDirectionForKey = (key: SortKey): SortDirection =>
-  key === "companyName" ? "asc" : "desc";
+  key === "companyName" || key === "coverageRank" ? "asc" : "desc";
 
 const compareText = (a: string | null | undefined, b: string | null | undefined, direction: SortDirection) => {
   const aText = (a ?? "").trim();
@@ -198,6 +209,13 @@ function compareMoatTag(
 function sortRows(rows: DerivedRow[], sort: SortState) {
   return [...rows].sort((a, b) => {
     switch (sort.key) {
+      case "coverageRank": {
+        // Unranked rows (outside the covered universe) sort last either way.
+        const aRank = a.coverageRank ?? Number.POSITIVE_INFINITY;
+        const bRank = b.coverageRank ?? Number.POSITIVE_INFINITY;
+        if (aRank !== bRank) return sort.direction === "asc" ? aRank - bRank : bRank - aRank;
+        return compareText(a.companyName, b.companyName, "asc");
+      }
       case "companyName": {
         const diff = compareText(a.companyName, b.companyName, sort.direction);
         if (diff !== 0) return diff;
@@ -253,10 +271,18 @@ export function WatchlistTable({
   watchlistId?: number;
 }) {
   const router = useRouter();
-  const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
+  // The leaderboard "Overall" tab passes an overall rank per row; a watchlist
+  // doesn't. Show the rank column (and lead with it) only when it's there.
+  const showRank = rows.some((row) => row.coverageRank != null);
+  const [sort, setSort] = useState<SortState>(
+    showRank ? { key: "coverageRank", direction: "asc" } : DEFAULT_SORT,
+  );
   const [removingCompanyCode, setRemovingCompanyCode] = useState<string | null>(null);
   const sortedRows = sortRows(deriveRows(rows), sort);
   const showRemove = watchlistId != null;
+  // Company stays pinned while the decision columns scroll; the rank column
+  // pins to its left, so Company shifts right by the rank column's width.
+  const stickyCompany = showRank ? "sticky left-12 bg-background" : STICKY_COL;
 
   const handleSort = (key: SortKey) => {
     setSort((current) => {
@@ -312,9 +338,22 @@ export function WatchlistTable({
     <Table className="min-w-[1160px] w-full text-sm">
       <TableHeader className="bg-background/70">
         <TableRow className="border-b border-border/35 bg-background/70">
+          {showRank ? (
+            <TableHead
+              aria-sort={sortDirectionLabel("coverageRank")}
+              className={`${STICKY_COL} z-20 w-12 px-3 py-3 text-foreground`}
+            >
+              {renderSortHead({
+                label: "#",
+                columnKey: "coverageRank",
+                sort,
+                onSort: handleSort,
+              })}
+            </TableHead>
+          ) : null}
           <TableHead
             aria-sort={sortDirectionLabel("companyName")}
-            className={`${STICKY_COL} z-20 px-3 py-3 text-foreground`}
+            className={`${stickyCompany} z-20 px-3 py-3 text-foreground`}
           >
             {renderSortHead({
               label: "Company",
@@ -394,7 +433,14 @@ export function WatchlistTable({
               key={row.companyCode}
               className="border-b border-border/45 transition-colors last:border-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
             >
-              <TableCell className={`${STICKY_COL} z-10 px-3 py-3`}>
+              {showRank ? (
+                <TableCell className={`${STICKY_COL} z-10 w-12 px-3 py-3`}>
+                  <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                    {row.coverageRank ?? "—"}
+                  </span>
+                </TableCell>
+              ) : null}
+              <TableCell className={`${stickyCompany} z-10 px-3 py-3`}>
                 <Link
                   href={`/company/${row.companyCode}`}
                   prefetch={false}

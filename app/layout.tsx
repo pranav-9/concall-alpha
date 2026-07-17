@@ -12,16 +12,13 @@ import { PageViewTracker } from "@/components/page-view-tracker";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
+import { getSiteUrl } from "@/lib/site-url";
 import { getActivePoll } from "@/lib/feedback-polls/queries";
 import { getAllPostMeta } from "@/app/blog/posts";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "[beta] Story of a Stock",
+  metadataBase: new URL(getSiteUrl()),
+  title: "Story of a Stock — concall research on Indian mid & small caps",
   description:
     "source-document research on India's mid- and small-cap companies",
 };

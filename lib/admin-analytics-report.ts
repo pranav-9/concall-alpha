@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { extractReferrerHost, getOwnHosts, isInternalHost } from "@/lib/attribution";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type RangeKey = "7d" | "30d" | "90d" | "all";
@@ -248,6 +249,81 @@ async function fetchPageViewEvents(
     if (error) throw error;
     return (data ?? []) as PageViewEventRow[];
   });
+}
+
+type AcquisitionRow = {
+  visitor_id: string | null;
+  referrer: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+};
+
+// Separate from fetchPageViewEvents: that fetch serves the DAU chart window,
+// this one the report range. Only rows with any attribution signal — pre-2026-07
+// rows all carry self-referrers, which the builders classify as internal.
+async function fetchAcquisitionRows(
+  supabase: SupabaseClient,
+  startIso: string | null,
+): Promise<AcquisitionRow[]> {
+  return paginate(async (from, to) => {
+    let query = supabase
+      .from("page_view_events")
+      .select("visitor_id, referrer, utm_source, utm_medium")
+      .or("referrer.not.is.null,utm_source.not.is.null")
+      .order("created_at", { ascending: true })
+      .range(from, to);
+    if (startIso) query = query.gte("created_at", startIso);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data ?? []) as AcquisitionRow[];
+  });
+}
+
+function buildTopReferrerHosts(
+  rows: AcquisitionRow[],
+  ownHosts: readonly string[],
+): Array<{ host: string; visitors: number; views: number }> {
+  const byHost = new Map<string, { visitors: Set<string>; views: number }>();
+  rows.forEach((row) => {
+    const host = extractReferrerHost(row.referrer);
+    if (!host || isInternalHost(host, ownHosts)) return;
+    const entry = byHost.get(host) ?? { visitors: new Set<string>(), views: 0 };
+    if (row.visitor_id) entry.visitors.add(row.visitor_id);
+    entry.views += 1;
+    byHost.set(host, entry);
+  });
+  return Array.from(byHost.entries())
+    .map(([host, entry]) => ({ host, visitors: entry.visitors.size, views: entry.views }))
+    .sort((a, b) => b.visitors - a.visitors || b.views - a.views)
+    .slice(0, 10);
+}
+
+function buildTopUtmSources(
+  rows: AcquisitionRow[],
+): Array<{ source: string; medium: string | null; visitors: number; views: number }> {
+  const byKey = new Map<
+    string,
+    { source: string; medium: string | null; visitors: Set<string>; views: number }
+  >();
+  rows.forEach((row) => {
+    if (!row.utm_source) return;
+    const key = `${row.utm_source} ${row.utm_medium ?? ""}`;
+    const entry =
+      byKey.get(key) ??
+      { source: row.utm_source, medium: row.utm_medium, visitors: new Set<string>(), views: 0 };
+    if (row.visitor_id) entry.visitors.add(row.visitor_id);
+    entry.views += 1;
+    byKey.set(key, entry);
+  });
+  return Array.from(byKey.values())
+    .map((entry) => ({
+      source: entry.source,
+      medium: entry.medium,
+      visitors: entry.visitors.size,
+      views: entry.views,
+    }))
+    .sort((a, b) => b.visitors - a.visitors || b.views - a.views)
+    .slice(0, 10);
 }
 
 async function fetchAuthUsers(supabase: SupabaseClient): Promise<AuthUserRow[]> {
@@ -544,6 +620,13 @@ function renderUsageSection(args: {
   commentsInRange: number;
   requestsInRange: number;
   activeVisitors: ActiveVisitorPoint[];
+  topReferrerHosts: Array<{ host: string; visitors: number; views: number }>;
+  topUtmSources: Array<{
+    source: string;
+    medium: string | null;
+    visitors: number;
+    views: number;
+  }>;
   range: RangeKey;
 }): string {
   const {
@@ -552,6 +635,8 @@ function renderUsageSection(args: {
     commentsInRange,
     requestsInRange,
     activeVisitors,
+    topReferrerHosts,
+    topUtmSources,
     range,
   } = args;
   const lines: string[] = [];
@@ -576,6 +661,36 @@ function renderUsageSection(args: {
       );
     });
     lines.push("");
+  }
+  lines.push("### Acquisition", "");
+  lines.push(
+    "_External sources only — internal/self referrers are excluded. Attribution capture began 2026-07._",
+    "",
+  );
+  if (topReferrerHosts.length === 0 && topUtmSources.length === 0) {
+    lines.push("_No external attribution in range._", "");
+  } else {
+    if (topReferrerHosts.length > 0) {
+      lines.push("| Referrer Host | Unique Visitors | Views |", "| --- | ---: | ---: |");
+      topReferrerHosts.forEach((row) => {
+        lines.push(
+          `| ${escapeTableCell(row.host)} | ${formatNumber(row.visitors)} | ${formatNumber(row.views)} |`,
+        );
+      });
+      lines.push("");
+    }
+    if (topUtmSources.length > 0) {
+      lines.push(
+        "| UTM Source | Medium | Unique Visitors | Views |",
+        "| --- | --- | ---: | ---: |",
+      );
+      topUtmSources.forEach((row) => {
+        lines.push(
+          `| ${escapeTableCell(row.source)} | ${escapeTableCell(row.medium ?? "—")} | ${formatNumber(row.visitors)} | ${formatNumber(row.views)} |`,
+        );
+      });
+      lines.push("");
+    }
   }
   lines.push(`### Accounts Created (${formatNumber(accountsInRange.length)})`, "");
   if (accountsInRange.length === 0) {
@@ -796,6 +911,7 @@ export async function generateAdminReport(
   const [
     uniqueVisitors,
     pageViewEvents,
+    acquisitionRows,
     authUsers,
     watchlists,
     items,
@@ -806,6 +922,7 @@ export async function generateAdminReport(
   ] = await Promise.all([
     fetchUniqueVisitors(supabase, startIso),
     fetchPageViewEvents(supabase, chartFetchStartIso),
+    fetchAcquisitionRows(supabase, startIso),
     fetchAuthUsers(supabase),
     fetchWatchlists(supabase, startIso),
     fetchWatchlistItems(supabase, startIso),
@@ -872,6 +989,8 @@ export async function generateAdminReport(
       commentsInRange: comments.length,
       requestsInRange: requests.length,
       activeVisitors,
+      topReferrerHosts: buildTopReferrerHosts(acquisitionRows, getOwnHosts(process.env)),
+      topUtmSources: buildTopUtmSources(acquisitionRows),
       range,
     }),
     "",

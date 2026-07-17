@@ -35,9 +35,21 @@ export async function generateMetadata({
   params: Promise<{ code: string }>;
 }): Promise<Metadata> {
   const { code } = await params;
+  // Same fetcher + cache key as the page body, so this costs no extra query.
+  const overview = await getCachedCompanyPageOverview(code).catch(() => null);
+  if (!overview) {
+    return {
+      title: `${code} - Story of a Stock`,
+      description: `Company detail for ${code} on Story of a Stock.`,
+    };
+  }
+
+  const name = overview.company_name || overview.company_code;
+  const sectorSuffix = overview.sector ? ` (${overview.sector})` : "";
   return {
-    title: `${code} - Story of a Stock`,
-    description: `Company detail for ${code} on Story of a Stock.`,
+    title: `${name} (${overview.company_code}) — concall analysis | Story of a Stock`,
+    description: `Quarterly earnings-call analysis for ${name}${sectorSuffix}: concall score, moat rating, guidance credibility, and key variables — sourced from company filings and transcripts.`,
+    alternates: { canonical: `/company/${overview.company_code}` },
   };
 }
 

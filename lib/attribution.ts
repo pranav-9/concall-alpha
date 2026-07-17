@@ -23,7 +23,6 @@ const UTM_KEYS = [
 
 export function sanitizeUtmValue(value: unknown): string | null {
   if (typeof value !== "string") return null;
-  // eslint-disable-next-line no-control-regex
   const cleaned = value.replace(/[\u0000-\u001f\u007f]/g, "").trim();
   if (!cleaned) return null;
   return cleaned.slice(0, MAX_UTM_LENGTH);
