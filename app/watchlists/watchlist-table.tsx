@@ -40,6 +40,11 @@ export type WatchlistTableRow = {
   // renders only when rows carry it.
   coverageRank?: number | null;
   latestQuarterScore: number | null;
+  // Set when latestQuarterScore is the company's OWN newest quarter rather than
+  // the board's latest — i.e. it hasn't reported yet. Carries that quarter's
+  // label so the cell can say "as of Q4 FY26" instead of showing a bare score
+  // that looks like it's for the current quarter.
+  latestQuarterAsOf?: string | null;
   avg4QuarterScore: number | null;
   growthScore: number | null;
   trajectoryKey?: TrajectoryKey;
@@ -450,7 +455,14 @@ export function WatchlistTable({
                 </Link>
               </TableCell>
               <TableCell className="px-3 py-3">
-                <ScoreBandPill score={row.latestQuarterScore} />
+                <span className="inline-flex items-center gap-1.5">
+                  <ScoreBandPill score={row.latestQuarterScore} />
+                  {row.latestQuarterAsOf && (
+                    <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                      as of {row.latestQuarterAsOf}
+                    </span>
+                  )}
+                </span>
               </TableCell>
               <TableCell className="px-3 py-3">
                 {row.latestQuarterScore != null ? (

@@ -85,11 +85,19 @@ function buildOverallRows(
   return rows.map((row) => {
     const code = String(row.company).toUpperCase();
     const moat = moatByCode.get(code);
+    // A company that hasn't reported the board's latest quarter yet would show
+    // a bare "—" for Band and Qtr, which empties the table at the start of every
+    // earnings season. Fall back to its own newest quarter and label it, the
+    // same way the /company board does (app/company/leaderboard-table.tsx).
+    const boardScore = latestLabel ? toNumericValue(row[latestLabel]) : null;
+    const ownScore = toNumericValue(row.ownLatestScore);
+    const isStale = boardScore == null && ownScore != null;
     return {
       companyCode: code,
       companyName: nameByCode.get(code) ?? code,
       coverageRank: coverageRankByCode.get(code) ?? null,
-      latestQuarterScore: latestLabel ? toNumericValue(row[latestLabel]) : null,
+      latestQuarterScore: boardScore ?? ownScore,
+      latestQuarterAsOf: isStale ? (row.ownLatestQuarterLabel ?? null) : null,
       avg4QuarterScore: toNumericValue(row["Latest 4Q Avg"]),
       growthScore: growthByCode.get(code) ?? null,
       trajectoryKey: row.trajectoryKey,
