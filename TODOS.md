@@ -2,6 +2,30 @@
 
 Captured with context so a future session can pick any item up cold. Source review noted per item.
 
+## Marketing-readiness plumbing — deferred follow-ups (2026-07-17)
+
+(Shipped that day: first-touch attribution fix + Acquisition report section, sitemap/robots/metadataBase/company-page metadata, `[beta]` dropped. Domain decision: storyofastock.in. See memory `project_marketing_readiness_plumbing`.)
+
+### 1. Per-company OG share cards
+- **What:** `app/company/[code]/opengraph-image.tsx` rendering company name, sector, and the score trail, so links shared into WhatsApp/X/Telegram look like evidence instead of the generic brand card.
+- **Why:** WhatsApp/Telegram groups are the likely forward-channel for Indian retail investors; the shared-link preview is the pitch. The site-wide card (`app/opengraph-image.tsx`) already has the reusable brand-mark constants (`components/brand/logo`); data via `getCachedCompanyPageOverview` + `lib/score-path.ts`.
+- **Depends on:** nothing. Deliberately deferred from the 2026-07-17 pass.
+
+### 2. Email capture (owned channel)
+- **What:** Small Supabase table + anon-insert API route + signup component on Journal/homepage. Copy the `user_requests` pattern (`lib/supabase/user_requests.sql` + `app/api/user-requests/route.ts`): RLS insert-only policy, server client, manual SQL apply.
+- **Why:** ValuePickr ban proved platform risk first-hand; email is the un-bannable channel, and the quarterly earnings calendar gives a natural send cadence ("what changed across your names this season"). Also the retention lever for the 88%-one-day-visitor problem.
+- **Depends on:** nothing code-wise; product call on placement.
+
+### 3. Domain + Search Console ops (user actions)
+- **What:** Register storyofastock.in (external registrar — Vercel can't sell .in; storyofastock.com is taken), connect in Vercel → Settings → Domains, set `NEXT_PUBLIC_SITE_URL=https://storyofastock.in` in Vercel env, redeploy, submit sitemap in Google Search Console + Bing Webmaster Tools.
+- **Why:** Everything code-side already hangs off `NEXT_PUBLIC_SITE_URL` (`lib/site-url.ts`); until set, canonicals/sitemap point at the production vercel.app URL and earned SEO accrues to the wrong domain.
+- **Depends on:** deploy of the 2026-07-17 pass.
+
+### 4. Re-pull acquisition data after the first channel test
+- **What:** After the Neuland X-thread (links tagged `utm_source=twitter&utm_campaign=neuland`) has run for a week-plus, download the admin report and compare channels on *return visits*, not raw arrivals.
+- **Why:** The question that decides where marketing effort goes is "which channel sends people who come back" — the hypotheses doc's H2 gate. April-2026's 3x traffic spike was unattributable under the old self-referrer bug; this is the first test the fixed pipeline can actually measure.
+- **Depends on:** deploy + the thread being posted (user action).
+
 ## How Scores Work page — diagram pass follow-ups (2026-06-24)
 
 ### 1. Growth Score tab — same diagrammatic treatment
