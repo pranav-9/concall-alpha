@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import { BANDS, SCORE_BAND_ORDER, bandForScore, type BandKey } from "@/lib/score-band";
 import {
   currentReportingQuarter,
@@ -37,6 +38,8 @@ type CompanyRow = {
   name: string | null;
   sector: string | null;
   sub_sector: string | null;
+  market_cap_band_at_admission: string | null;
+  excluded_from_discovery: boolean | null;
 };
 
 type AnalysisRow = {
@@ -79,7 +82,9 @@ export async function getTrackerData(): Promise<TrackerData> {
   const supabase = await createClient();
   const [{ data: companyData }, { data: analysisData }, calendarResult] =
     await Promise.all([
-      supabase.from("company").select("code, name, sector, sub_sector"),
+      supabase
+        .from("company")
+        .select(`code, name, sector, sub_sector, ${COVERAGE_SELECT}`),
       supabase
         .from("concall_analysis")
         .select("company_code, score, fy, qtr, created_at")
@@ -92,7 +97,10 @@ export async function getTrackerData(): Promise<TrackerData> {
         .eq("inferred_qtr", target.qtr),
     ]);
 
-  const companies = (companyData ?? []) as CompanyRow[];
+  // The tracker is a discovery surface (linked from the homepage banner):
+  // de-emphasized companies (large-cap band / coverage cut) stay off it,
+  // same as leaderboards and the homepage feed.
+  const companies = ((companyData ?? []) as CompanyRow[]).filter(isDiscoveryListed);
   const analysis = (analysisData ?? []) as AnalysisRow[];
   // earnings_calendar may not yet exist in the DB — treat errors as empty.
   const calendarRows: CalendarRow[] =

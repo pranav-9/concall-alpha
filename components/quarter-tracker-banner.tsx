@@ -1,24 +1,34 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import { currentReportingQuarter } from "@/lib/current-quarter";
 
 async function BannerCounts({ fy, qtr }: { fy: number; qtr: number }) {
   const supabase = await createClient();
-  const [reportedRes, totalRes] = await Promise.all([
+  // Counts mirror the tracker page: discovery-listed companies only, so
+  // de-emphasized large caps don't inflate "reported"/"upcoming".
+  const [companiesRes, reportedRes] = await Promise.all([
+    supabase.from("company").select(`code, ${COVERAGE_SELECT}`),
     supabase
       .from("concall_analysis")
-      .select("company_code", { count: "exact", head: true })
+      .select("company_code")
       .eq("fy", fy)
       .eq("qtr", qtr)
       // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
       .not("details->scoring_meta", "is", null),
-    supabase
-      .from("company")
-      .select("code", { count: "exact", head: true }),
   ]);
-  const reported = reportedRes.count ?? 0;
-  const total = totalRes.count ?? 0;
+  const listed = new Set(
+    (companiesRes.data ?? [])
+      .filter(isDiscoveryListed)
+      .map((r) => (r.code as string).toUpperCase()),
+  );
+  const reported = new Set(
+    (reportedRes.data ?? [])
+      .map((r) => (r.company_code as string | null)?.toUpperCase() ?? "")
+      .filter((code) => listed.has(code)),
+  ).size;
+  const total = listed.size;
   const upcoming = Math.max(total - reported, 0);
   return (
     <span className="text-[11px] font-medium text-emerald-100/90">
