@@ -45,7 +45,7 @@ export function QuarterTrackerBanner() {
       prefetch={false}
       className="group block w-full bg-gradient-to-r from-emerald-700 via-emerald-600 to-sky-700 text-emerald-50 transition-colors hover:from-emerald-800 hover:to-sky-800"
     >
-      <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-3 px-3 py-2 sm:px-4 lg:px-8">
+      <div className="mx-auto flex h-[var(--quarter-tracker-banner-height,2.25rem)] w-full max-w-[1440px] items-center justify-between gap-3 px-3 sm:px-4 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <span className="inline-flex items-center rounded-full bg-emerald-50/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-50">
             Live

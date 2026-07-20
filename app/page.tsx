@@ -84,7 +84,7 @@ export default async function Home() {
       <div className={cn(PAGE_BACKGROUND_ATMOSPHERIC, "-top-28 h-[56rem]")} />
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-4 pb-6 sm:px-6 sm:pb-8 lg:gap-10 lg:px-10 lg:pb-10">
         {/* Row 1 — full-viewport hero: title, subtitle, search, coverage strip */}
-        <section className="flex min-h-[calc(100svh-var(--global-navbar-height,4.25rem))] flex-col items-center text-center">
+        <section className="flex min-h-[calc(100svh-var(--global-navbar-height,4.25rem)-var(--quarter-tracker-banner-height,2.25rem))] flex-col items-center text-center">
           <div className="flex w-full flex-1 flex-col items-center justify-center gap-7">
             <div className="space-y-4">
               <h1 className="mx-auto max-w-4xl text-4xl font-black leading-[0.95] tracking-[-0.04em] text-foreground sm:text-5xl lg:text-6xl">
