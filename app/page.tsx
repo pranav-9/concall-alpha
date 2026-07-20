@@ -91,7 +91,7 @@ export default async function Home() {
                 Research, not just numbers.
               </h1>
               <p className="mx-auto max-w-2xl text-sm leading-7 text-foreground/78 sm:text-base">
-                The story behind a handpicked 100 mid- and small-cap companies.
+                Every concall, read for you — the quarter, in a minute.
               </p>
             </div>
 
