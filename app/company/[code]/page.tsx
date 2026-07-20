@@ -19,7 +19,8 @@ import {
 } from "./display-tokens";
 import {
   BusinessSnapshotPanel,
-  CommunityPanel,
+  // CommunityPanel retired 2026-07 (no engagement) — re-import when re-enabling the tab.
+  // CommunityPanel,
   FutureGrowthPanel,
   GuidanceHistoryPanel,
   KeyVariablesPanel,
@@ -140,10 +141,12 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
             ? { kind: "text" as const, text: "Live" }
             : { kind: "text" as const, text: "Soon" },
     },
-    {
-      ...SECTION_MAP.community,
-      meta: { kind: "text" as const, text: "Discuss" },
-    },
+    // Community tab retired for now — no engagement (1 comment total as of 2026-07).
+    // Component + API routes + Supabase tables kept intact; re-enable when ready.
+    // {
+    //   ...SECTION_MAP.community,
+    //   meta: { kind: "text" as const, text: "Discuss" },
+    // },
   ];
 }
 
@@ -390,9 +393,11 @@ export default async function Page({
             </Suspense>
           </div>
 
-          <div data-section-id="community">
+          {/* Community panel retired for now — re-enable alongside the
+              tab nav entry above when ready. */}
+          {/* <div data-section-id="community">
             <CommunityPanel overview={overview} />
-          </div>
+          </div> */}
         </CompanyPageWorkspace>
       </div>
     </div>
