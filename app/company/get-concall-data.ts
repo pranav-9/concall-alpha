@@ -11,8 +11,49 @@ type QuarterInfo = {
   label: string;
 };
 
+// The leaderboard maths only reads these five fields. A bare .select() also drags
+// down the `details` JSONB for every row — ~4 MB per request instead of ~70 KB.
+const SCORE_COLUMNS = "company_code, fy, qtr, quarter_label, score";
+
+// PostgREST silently caps an unpaginated select at 1000 rows, so page through it.
+// concall_analysis passes 841 rows through the scoring_meta filter today and grows
+// ~one row per company per quarter — without this it would start dropping quarters.
+const PAGE_SIZE = 1000;
+
+type ScoreRow = Pick<
+  QuarterData,
+  "company_code" | "fy" | "qtr" | "quarter_label" | "score"
+>;
+
+async function fetchScoreRows(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<ScoreRow[]> {
+  const rows: ScoreRow[] = [];
+  let from = 0;
+
+  for (;;) {
+    const { data, error } = await supabase
+      .from("concall_analysis")
+      // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+      .select(SCORE_COLUMNS)
+      .not("details->scoring_meta", "is", null)
+      .order("id", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw error;
+
+    const page = (data ?? []) as unknown as ScoreRow[];
+    rows.push(...page);
+
+    if (page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return rows;
+}
+
 // Average over scored records only — a null score must not count as 0.
-const avgScore = (records: QuarterData[]): number | null => {
+const avgScore = (records: ScoreRow[]): number | null => {
   const scores = records
     .map((r) => r.score)
     .filter((s): s is number => typeof s === "number" && Number.isFinite(s));
@@ -25,9 +66,8 @@ export const getConcallData = async ({
   excludeLargeCaps = false,
 }: { excludeLargeCaps?: boolean } = {}) => {
   const supabase = await createClient();
-  const [{ data }, { data: companyRows }] = await Promise.all([
-    // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
-    supabase.from("concall_analysis").select().not("details->scoring_meta", "is", null),
+  const [scoreRows, { data: companyRows }] = await Promise.all([
+    fetchScoreRows(supabase),
     supabase.from("company").select(`code, created_at, ${COVERAGE_SELECT}`),
   ]);
   const companyRowList = (companyRows ?? []) as Array<{
@@ -49,7 +89,7 @@ export const getConcallData = async ({
     });
   }
 
-  const records = (data ?? []).filter(
+  const records = scoreRows.filter(
     (r) => excludedCodes.size === 0 || !excludedCodes.has(String(r.company_code).toUpperCase()),
   );
 
@@ -71,8 +111,8 @@ export const getConcallData = async ({
   });
   const selectedQuarters = quarters.slice(0, 4);
 
-  const recordsByCompany = new Map<string, QuarterData[]>();
-  for (const row of sorted as QuarterData[]) {
+  const recordsByCompany = new Map<string, ScoreRow[]>();
+  for (const row of sorted) {
     const bucket = recordsByCompany.get(row.company_code);
     if (bucket) {
       bucket.push(row);
@@ -148,10 +188,14 @@ export const getConcallData = async ({
         const bv = b[latestLabel];
         const an = typeof av === "number" && Number.isFinite(av) ? av : null;
         const bn = typeof bv === "number" && Number.isFinite(bv) ? bv : null;
-        if (an == null && bn == null) return 0;
+        // Ties (equal scores, or two companies that haven't reported the latest
+        // quarter) break on company code. Without this the tail order fell out of
+        // whatever physical order Postgres returned, so it reshuffled after writes.
+        if (an == null && bn == null) return a.company.localeCompare(b.company);
         if (an == null) return 1;
         if (bn == null) return -1;
-        return bn - an;
+        if (bn !== an) return bn - an;
+        return a.company.localeCompare(b.company);
       })
     : rows;
 
