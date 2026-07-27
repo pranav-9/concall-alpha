@@ -1,0 +1,11 @@
+# X accounts to track — one handle per line (no @). Blank lines / # comments ignored.
+# The tracker scans each and keeps only tweets about companies WE cover.
+equities_samjho
+ishmohit1
+soicfinance
+LearningEleven
+suru27
+prabhakarkudva
+# --- Paste-only (timeline endpoint returns empty — sub-~10k-follower wall). Use hydrate-tweet.mjs: ---
+# kyroventures — 0 tweets via syndication (HTTP 200 but empty). Paste specific tweet URLs.
+# abhayjainp   — 0 tweets via syndication. Paste specific tweet URLs.

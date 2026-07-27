@@ -16,11 +16,20 @@ import { getSiteUrl } from "@/lib/site-url";
 import { getActivePoll } from "@/lib/feedback-polls/queries";
 import { getAllPostMeta } from "@/app/blog/posts";
 
+// Search Console verifies a URL-prefix property off this meta tag. The token is
+// public by design (it ships in the HTML); it's an env var only so a new property
+// — e.g. the custom domain — can be verified without a code change.
+const googleSiteVerification =
+  process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim() || undefined;
+
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: "Story of a Stock — concall research on Indian mid & small caps",
   description:
     "source-document research on India's mid- and small-cap companies",
+  ...(googleSiteVerification
+    ? { verification: { google: googleSiteVerification } }
+    : {}),
 };
 
 const geistSans = Geist({
