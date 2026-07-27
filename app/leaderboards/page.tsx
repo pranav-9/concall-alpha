@@ -29,6 +29,7 @@ import { GrowthTable, LeaderboardTable, MoatTable, OverallTable } from "./tables
 export const metadata: Metadata = {
   title: "Leaderboards – Story of a Stock",
   description: "Quarter scores, growth outlook, and moat tier leaderboards.",
+  alternates: { canonical: "/leaderboards" },
 };
 
 const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;

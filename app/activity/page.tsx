@@ -16,6 +16,7 @@ export const revalidate = 120;
 export const metadata: Metadata = {
   title: "Activity – Story of a Stock",
   description: "Time-ordered feed of updates across covered companies.",
+  alternates: { canonical: "/activity" },
 };
 
 type FilterKey = "all" | UpdateType | "quarter_latest";

@@ -21,6 +21,7 @@ export async function generateMetadata({
   return {
     title: `${post.title} – Story of a Stock`,
     description: post.summary,
+    alternates: { canonical: `/blog/${slug}` },
   };
 }
 

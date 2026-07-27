@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   title: "Coverage Universe – Story of a Stock",
   description:
     "What Story of a Stock covers and why: a deliberately small universe of mid- and small-cap Indian companies, researched from their source documents.",
+  alternates: { canonical: "/coverage" },
 };
 
 const PAGE_BACKGROUND_CLASS = `h-[30rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;

@@ -28,6 +28,7 @@ import {
 export const metadata: Metadata = {
   title: "How Scores Are Calculated – Story of a Stock",
   description: "How quarterly and growth scores are calculated in Story of a Stock.",
+  alternates: { canonical: "/how-scores-work" },
 };
 
 const growthCards = [

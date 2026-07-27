@@ -61,6 +61,7 @@ const defaultDirectionForKey = (key: SectorSortKey): "asc" | "desc" =>
 export const metadata: Metadata = {
   title: "Sectors – Story of a Stock",
   description: "Sector overview with company count, latest quarter score and growth score averages.",
+  alternates: { canonical: "/sectors" },
 };
 
 const toNumberOrNull = (value: unknown): number | null => {

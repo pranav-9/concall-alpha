@@ -19,6 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${label} Quality Tracker – Story of a Stock`,
     description: `Track ${label} quarter quality across coverage by score movement and sector.`,
+    alternates: { canonical: "/quarter-tracker" },
   };
 }
 

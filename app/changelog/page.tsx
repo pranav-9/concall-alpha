@@ -14,6 +14,7 @@ import {
 export const metadata: Metadata = {
   title: "Changelog – Story of a Stock",
   description: "What we shipped, and when.",
+  alternates: { canonical: "/changelog" },
 };
 
 const CATEGORY_PILL_CLASSES: Record<ChangelogCategory, string> = {

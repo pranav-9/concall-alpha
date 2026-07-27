@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ChevronDown } from "lucide-react";
 import ConcallScore from "@/components/concall-score";
@@ -15,6 +16,12 @@ import {
   PAGE_BACKGROUND_ATMOSPHERIC,
   PANEL_CARD_NEUTRAL,
 } from "@/lib/design/shell";
+
+// Title/description are inherited from the root layout; this exists only to
+// pin the canonical so query-string variants don't get indexed separately.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 function TopStocksHeroFallback() {
   return (

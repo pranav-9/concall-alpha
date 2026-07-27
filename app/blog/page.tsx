@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: "Journal – Story of a Stock",
   description:
     "What I'm building, how I think as an investor, and the companies I'm digging into.",
+  alternates: { canonical: "/blog" },
 };
 
 export default function BlogIndexPage() {

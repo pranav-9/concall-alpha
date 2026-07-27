@@ -16,6 +16,7 @@ import { RequestIntakeForm } from "@/components/request-intake-form";
 export const metadata: Metadata = {
   title: "Submit Request – Story of a Stock",
   description: "Request a stock, share feedback, or report a bug.",
+  alternates: { canonical: "/requests" },
 };
 
 const PAGE_BACKGROUND_CLASS = `h-[30rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;

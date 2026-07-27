@@ -83,6 +83,7 @@ export async function generateMetadata({
   return {
     title: `${slug.replace(/-/g, " ")} – Sector – Story of a Stock`,
     description: "Sector-level view with latest quarter and growth scores.",
+    alternates: { canonical: `/sector/${slug}` },
   };
 }
 
