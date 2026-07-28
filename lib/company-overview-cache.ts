@@ -42,6 +42,7 @@ export type SectionAvailability = {
   keyVariables: boolean;
   futureGrowth: boolean;
   guidanceHistory: boolean;
+  valuationCheck: boolean;
 };
 
 export type OverviewTakeaways = {
@@ -101,6 +102,7 @@ const defaultAvailability: SectionAvailability = {
   keyVariables: false,
   futureGrowth: false,
   guidanceHistory: false,
+  valuationCheck: false,
 };
 
 const asAvailability = (value: unknown): SectionAvailability => {
@@ -113,6 +115,7 @@ const asAvailability = (value: unknown): SectionAvailability => {
     keyVariables: Boolean(raw.keyVariables),
     futureGrowth: Boolean(raw.futureGrowth),
     guidanceHistory: Boolean(raw.guidanceHistory),
+    valuationCheck: Boolean(raw.valuationCheck),
   };
 };
 
@@ -200,6 +203,7 @@ export async function buildCompanyPageOverviewCacheRow(
     { data: keyVariablesSnapshotData },
     { data: growthRankRows },
     { data: coverageRows },
+    { data: valuationRows },
   ] = await Promise.all([
     supabase
       .from("company")
@@ -265,6 +269,14 @@ export async function buildCompanyPageOverviewCacheRow(
       .select("company, growth_score, base_growth_pct, run_timestamp")
       .order("run_timestamp", { ascending: false }),
     supabase.from("company").select(`code, ${COVERAGE_SELECT}`),
+    // Only a published row counts as availability: the section opens per company, so an
+    // unpublished valuation must leave the tab reading "Soon", not "Live".
+    supabase
+      .from("valuation_check")
+      .select("company_code")
+      .eq("company_code", normalizedCode)
+      .eq("valuation_published", true)
+      .limit(1)
   ]);
 
   // Ranks are only meaningful within the covered universe — a mid/small-cap
@@ -644,6 +656,7 @@ export async function buildCompanyPageOverviewCacheRow(
       keyVariables: Boolean(normalizedKeyVariablesSnapshot),
       futureGrowth: Boolean(normalizedGrowthOutlook),
       guidanceHistory: Boolean(normalizedGuidanceSnapshot || guidanceItems.length > 0),
+      valuationCheck: Boolean(valuationRows?.length),
     },
     refreshed_at: new Date().toISOString(),
   };

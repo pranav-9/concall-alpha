@@ -58,6 +58,10 @@ export const SECTIONS = [
     id: "walk-the-talk",
     label: "Walk the Talk",
   },
+  {
+    id: "valuation-check",
+    label: "Valuation Check",
+  },
 ] as const;
 
 export const SECTION_MAP = {
@@ -73,4 +77,5 @@ export const SECTION_MAP = {
   community: SECTIONS[9],
   topBusinessStrategies: SECTIONS[10],
   walkTheTalk: SECTIONS[11],
+  valuationCheck: SECTIONS[12],
 } as const;

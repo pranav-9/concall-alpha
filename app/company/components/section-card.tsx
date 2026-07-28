@@ -44,6 +44,7 @@ const SECTION_TONE_BY_ID: Record<string, SectionTone> = {
   "future-growth": "sky",
   "walk-the-talk": "emerald",
   "guidance-history": "amber",
+  "valuation-check": "violet",
   "community": "rose",
 };
 

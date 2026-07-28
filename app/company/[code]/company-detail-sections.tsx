@@ -6,6 +6,7 @@ import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import { normalizeKeyVariablesSnapshot } from "@/lib/key-variables-snapshot/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
+import { assessStaleness, normalizeValuationCheck } from "@/lib/valuation-check/normalize";
 import { getWalkTheTalk } from "@/lib/walk-the-talk/get";
 import { createClient } from "@/lib/supabase/server";
 import type { GuidanceSnapshotRow } from "@/lib/guidance-snapshot/types";
@@ -13,6 +14,7 @@ import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 import type { KeyVariablesSnapshotRow } from "@/lib/key-variables-snapshot/types";
 import type { WatchSwingVar } from "@/lib/next-quarter-watch/types";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
+import type { ValuationCheckRow } from "@/lib/valuation-check/types";
 import type { CompanyPageOverviewCacheRow } from "@/lib/company-overview-cache";
 
 import { SectionCard } from "../components/section-card";
@@ -24,6 +26,7 @@ import { MissingSectionState } from "../components/missing-section-state";
 import { MoatAnalysisSection } from "../components/moat-analysis-section";
 import { SectionLoading } from "../components/section-loading";
 import { SubSectorSection } from "../components/sub-sector-section";
+import { ValuationCheckSection } from "../components/valuation-check-section";
 import {
   WalkTheTalkSection,
   walkTheTalkSinceBadge,
@@ -512,6 +515,52 @@ export function CommunityPanel({ overview }: CompanyDetailSectionProps) {
       feedbackCompanyName={overview.company_name}
     >
       <CompanyCommentsSection companyCode={overview.company_code} />
+    </SectionCard>
+  );
+}
+
+
+export async function ValuationCheckPanel({ overview }: CompanyDetailSectionProps) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("valuation_check")
+    .select("*")
+    .eq("company_code", overview.company_code)
+    .eq("valuation_published", true)
+    .limit(1);
+
+  const valuation = normalizeValuationCheck(
+    (data?.[0] as ValuationCheckRow | undefined) ?? null,
+  );
+  // Staleness is assessed at render time, not at write time: the row is fine, it is the
+  // price underneath it that ages. Without a live quote only the age bound applies.
+  const staleness = valuation
+    ? assessStaleness(valuation)
+    : { stale: false, reason: null, ageDays: null };
+
+  return (
+    <SectionCard
+      id="valuation-check"
+      title="Valuation Check"
+      feedbackEnabled={Boolean(valuation)}
+      feedbackCompanyCode={overview.company_code}
+      feedbackCompanyName={overview.company_name}
+      headerAction={
+        valuation?.pricedAsOf ? (
+          <span className="text-[11px] text-muted-foreground">{valuation.pricedAsOf}</span>
+        ) : null
+      }
+    >
+      {valuation ? (
+        <ValuationCheckSection valuation={valuation} staleness={staleness} />
+      ) : (
+        missingSectionState(
+          overview,
+          "valuation-check",
+          "Valuation Check",
+          "We have not published a valuation read for this company yet.",
+        )
+      )}
     </SectionCard>
   );
 }

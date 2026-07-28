@@ -25,6 +25,7 @@ import {
   GuidanceHistoryPanel,
   KeyVariablesPanel,
   MoatAnalysisPanel,
+  ValuationCheckPanel,
   QuarterlyScorePanel,
   // WalkTheTalkPanel hidden for now — re-import when re-enabling the tab.
   // WalkTheTalkPanel,
@@ -132,6 +133,12 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
     //   ...SECTION_MAP.walkTheTalk,
     //   meta: { kind: "text" as const, text: "Live" },
     // },
+    {
+      ...SECTION_MAP.valuationCheck,
+      meta: availability.valuationCheck
+        ? { kind: "text" as const, text: "Live" }
+        : { kind: "text" as const, text: "Soon" },
+    },
     {
       ...SECTION_MAP.guidanceHistory,
       meta:
@@ -386,6 +393,12 @@ export default async function Page({
               <WalkTheTalkPanel overview={overview} />
             </Suspense>
           </div> */}
+
+          <div data-section-id="valuation-check">
+            <Suspense fallback={<SectionLoading id="valuation-check" title="Valuation Check" />}>
+              <ValuationCheckPanel overview={overview} />
+            </Suspense>
+          </div>
 
           <div data-section-id="guidance-history">
             <Suspense fallback={<SectionLoading id="guidance-history" title="Guidance History" />}>
