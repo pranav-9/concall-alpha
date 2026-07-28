@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
 import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
+import type { ValuationVerdict } from "@/lib/valuation-check/types";
 import {
   moatTierClass,
   moatTierGradeClass,
@@ -54,6 +55,11 @@ export type WatchlistTableRow = {
   moatLabel: string | null;
   moatRating: MoatRatingKey | null;
   moatTier: MoatTier | null;
+  // Published, non-stale valuation read only. Null covers three different things —
+  // no verdict, unpublished, or a price too old to stand behind — and the cell
+  // renders all of them the same way, because a board cannot explain a caveat.
+  valuationVerdict?: ValuationVerdict | null;
+  valuationScore?: number | null;
   // Management's own stated growth guidance for the current FY (the FACT next to
   // our analytical Forward score). Sparse by design — null for most companies.
   guidance?: HeadlineGuidance | null;
@@ -89,6 +95,24 @@ const tierIconFor = (tier: MoatTier) => {
 // column; Trend is its own axis (direction); Forward is the growth outlook;
 // Read (stance) synthesises them, sorted most-aligned -> most-cautionary so the
 // watchlist becomes a decision queue (accumulate setups up top, cracking down).
+// Higher score = cheaper, matching the pills on the company page. Kept as quiet text
+// rather than a chip: this column is context beside the quarter score, not a rival to it.
+const VALUATION_CLASS: Record<ValuationVerdict, string> = {
+  "DEEPLY UNDERVALUED": "text-emerald-700 dark:text-emerald-300",
+  UNDERVALUED: "text-emerald-700 dark:text-emerald-300",
+  "FAIRLY VALUED": "text-muted-foreground",
+  EXPENSIVE: "text-amber-700 dark:text-amber-300",
+  "RICHLY PRICED": "text-rose-700 dark:text-rose-300",
+};
+
+const VALUATION_SHORT: Record<ValuationVerdict, string> = {
+  "DEEPLY UNDERVALUED": "Deep value",
+  UNDERVALUED: "Undervalued",
+  "FAIRLY VALUED": "Fair",
+  EXPENSIVE: "Expensive",
+  "RICHLY PRICED": "Richly priced",
+};
+
 type SortKey =
   | "coverageRank"
   | "companyName"
@@ -96,6 +120,7 @@ type SortKey =
   | "trend"
   | "growthScore"
   | "moatTag"
+  | "valuation"
   | "stance";
 
 type SortDirection = "asc" | "desc";
@@ -249,6 +274,11 @@ function sortRows(rows: DerivedRow[], sort: SortState) {
             ? moatTierRank(a.moatTier) - moatTierRank(b.moatTier)
             : moatTierRank(b.moatTier) - moatTierRank(a.moatTier);
         if (tierDiff !== 0) return tierDiff;
+        return compareText(a.companyName, b.companyName, "asc");
+      }
+      case "valuation": {
+        const diff = compareNumber(a.valuationScore ?? null, b.valuationScore ?? null, sort.direction);
+        if (diff !== 0) return diff;
         return compareText(a.companyName, b.companyName, "asc");
       }
       case "stance": {
@@ -412,6 +442,15 @@ export function WatchlistTable({
               subtitle: "Rating label",
             })}
           </TableHead>
+          <TableHead aria-sort={sortDirectionLabel("valuation")} className="px-3 py-3 text-foreground">
+            {renderSortHead({
+              label: "Valuation",
+              columnKey: "valuation",
+              sort,
+              onSort: handleSort,
+              subtitle: "Price read",
+            })}
+          </TableHead>
           <TableHead
             aria-sort={sortDirectionLabel("stance")}
             className="border-l border-border/70 bg-muted/30 px-3 py-3 text-foreground"
@@ -540,6 +579,22 @@ export function WatchlistTable({
                   <span className="text-muted-foreground">—</span>
                 )}
               </TableCell>
+              <TableCell className="px-3 py-3">
+                {row.valuationVerdict ? (
+                  <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
+                    <span className={`text-[12px] font-medium ${VALUATION_CLASS[row.valuationVerdict]}`}>
+                      {VALUATION_SHORT[row.valuationVerdict]}
+                    </span>
+                    {row.valuationScore != null && (
+                      <span className="text-[11px] tabular-nums text-muted-foreground">
+                        {row.valuationScore}
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </TableCell>
               <TableCell className="border-l border-border/70 bg-muted/20 px-3 py-3">
                 <StanceBadge stanceKey={row.stanceKey} description={row.stanceDescription} />
               </TableCell>
@@ -561,7 +616,7 @@ export function WatchlistTable({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={showRemove ? 8 : 7} className="h-24 text-center text-muted-foreground">
+            <TableCell colSpan={showRemove ? 9 : 8} className="h-24 text-center text-muted-foreground">
               No results.
             </TableCell>
           </TableRow>

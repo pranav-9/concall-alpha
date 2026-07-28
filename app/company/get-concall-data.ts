@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { buildNewCompanySet } from "@/lib/company-freshness";
 import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import { classifyTrajectory, quarterIndex } from "@/lib/score-trajectory";
+import { assessStaleness } from "@/lib/valuation-check/normalize";
+import type { ValuationVerdict } from "@/lib/valuation-check/types";
 import type { CompanyRow } from "./leaderboard-table";
 import type { QuarterData } from "./types";
 
@@ -66,10 +68,39 @@ export const getConcallData = async ({
   excludeLargeCaps = false,
 }: { excludeLargeCaps?: boolean } = {}) => {
   const supabase = await createClient();
-  const [scoreRows, { data: companyRows }] = await Promise.all([
+  const [scoreRows, { data: companyRows }, { data: valuationRows }] = await Promise.all([
     fetchScoreRows(supabase),
     supabase.from("company").select(`code, created_at, ${COVERAGE_SELECT}`),
+    // Only published rows: the section opens per company, and an unpublished read must not
+    // reach a discovery surface ahead of the company page it belongs to.
+    supabase
+      .from("valuation_check")
+      .select("company_code, verdict, score, rateable, priced_as_of, price_at_run")
+      .eq("valuation_published", true),
   ]);
+
+  // A leaderboard cell cannot show its own staleness caveat, so a stale read is dropped
+  // rather than displayed: the company page is where a withheld verdict gets explained.
+  const valuationByCompany = new Map<string, { verdict: ValuationVerdict; score: number | null }>();
+  for (const row of (valuationRows ?? []) as Array<{
+    company_code: string;
+    verdict: string | null;
+    score: number | null;
+    rateable: boolean | null;
+    priced_as_of: string | null;
+    price_at_run: number | null;
+  }>) {
+    if (!row.rateable || row.verdict == null) continue;
+    const { stale } = assessStaleness({
+      pricedAsOf: row.priced_as_of,
+      priceAtRun: row.price_at_run,
+    });
+    if (stale) continue;
+    valuationByCompany.set(row.company_code.toUpperCase(), {
+      verdict: row.verdict as ValuationVerdict,
+      score: row.score,
+    });
+  }
   const companyRowList = (companyRows ?? []) as Array<{
     code: string;
     created_at?: string | null;
@@ -123,9 +154,12 @@ export const getConcallData = async ({
 
   const rows: CompanyRow[] = Array.from(recordsByCompany.entries()).map(
     ([companyCode, companyRecords]) => {
+      const valuation = valuationByCompany.get(companyCode.toUpperCase());
       const row: CompanyRow = {
         company: companyCode,
         isNew: newCompanySet.has(companyCode.toUpperCase()),
+        valuationVerdict: valuation?.verdict ?? null,
+        valuationScore: valuation?.score ?? null,
       };
       // Company's own newest scored quarter — lets the Band column fall back
       // to the latest available band (with an "as of" label) when the company

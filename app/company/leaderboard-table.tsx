@@ -11,6 +11,7 @@ import { ScoreBandPill } from "@/app/company/components/score-band-pill";
 import { TrendBadge } from "@/app/company/components/trend-badge";
 import { BANDS } from "@/lib/score-band";
 import { trajectorySortRank, type TrajectoryKey } from "@/lib/score-trajectory";
+import type { ValuationVerdict } from "@/lib/valuation-check/types";
 import { DataTable } from "./data-table";
 
 export type CompanyRow = {
@@ -22,12 +23,33 @@ export type CompanyRow = {
   trendChange?: number;
   ownLatestScore?: number | null;
   ownLatestQuarterLabel?: string | null;
+  valuationVerdict?: ValuationVerdict | null;
+  valuationScore?: number | null;
   // Dynamic quarter columns keyed by label, e.g. "Q1 FY26"
   [key: string]: string | number | boolean | null | undefined;
 };
 
 const SORT_HEADER_CLASS =
   "h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none hover:bg-transparent hover:text-foreground";
+
+// Higher score = cheaper, so cheap reads emerald and rich reads rose — the same direction
+// as the pills on the company page. Deliberately quieter than the ConcallScore chips: this
+// column is context beside a quarter score, not a second thing to rank on.
+const VALUATION_CLASS: Record<ValuationVerdict, string> = {
+  "DEEPLY UNDERVALUED": "text-emerald-700 dark:text-emerald-300",
+  UNDERVALUED: "text-emerald-700 dark:text-emerald-300",
+  "FAIRLY VALUED": "text-muted-foreground",
+  EXPENSIVE: "text-amber-700 dark:text-amber-300",
+  "RICHLY PRICED": "text-rose-700 dark:text-rose-300",
+};
+
+const VALUATION_SHORT: Record<ValuationVerdict, string> = {
+  "DEEPLY UNDERVALUED": "Deep value",
+  UNDERVALUED: "Undervalued",
+  "FAIRLY VALUED": "Fair",
+  EXPENSIVE: "Expensive",
+  "RICHLY PRICED": "Richly priced",
+};
 
 const asNumber = (value: unknown): number | null => {
   if (value == null || value === "") return null;
@@ -168,6 +190,47 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
         trendDescription={row.original.trendDescription}
       />
     ),
+  });
+
+  cols.push({
+    id: "valuation",
+    // Sorted on the score, but the verdict word is what the cell leads with. v14 §9.6 makes
+    // the verdict the output and the score only its magnitude within a band; a column that
+    // showed the bare number would invert that.
+    accessorFn: (row) => row.valuationScore ?? undefined,
+    sortUndefined: "last",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        className={SORT_HEADER_CLASS}
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        <span className="flex flex-col items-start leading-tight">
+          <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Valuation
+          </span>
+          <span>Read</span>
+        </span>
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const verdict = row.original.valuationVerdict;
+      const score = asNumber(row.original.valuationScore);
+      // No verdict is the honest majority state for lenders and thin-history names, and it
+      // is not the same as "expensive" — it renders as an em dash, never as a low score.
+      if (!verdict) return <span className="text-muted-foreground">—</span>;
+      return (
+        <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap">
+          <span className={`text-[12px] font-medium ${VALUATION_CLASS[verdict]}`}>
+            {VALUATION_SHORT[verdict]}
+          </span>
+          {score != null && (
+            <span className="text-[11px] tabular-nums text-muted-foreground">{score}</span>
+          )}
+        </span>
+      );
+    },
   });
 
   cols.push({

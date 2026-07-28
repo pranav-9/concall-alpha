@@ -108,6 +108,8 @@ function buildOverallRows(
       moatLabel: moat?.moatLabel ?? null,
       moatRating: moat?.moatRating ?? null,
       moatTier: moat?.moatTier ?? null,
+      valuationVerdict: row.valuationVerdict ?? null,
+      valuationScore: row.valuationScore ?? null,
       guidance: guidanceByCode.get(code) ?? null,
     };
   });
