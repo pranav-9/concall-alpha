@@ -62,15 +62,6 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
 
   const cols: ColumnDef<CompanyRow>[] = [
     {
-      id: "rank",
-      header: "#",
-      cell: ({ row }) => (
-        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          {row.original.leaderboardRank ?? row.index + 1}.
-        </span>
-      ),
-    },
-    {
       accessorKey: "company",
       header: ({ column }) => (
         <Button
@@ -86,6 +77,9 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
         const name: string = row.getValue("company");
         return (
           <div className="flex items-center gap-2">
+            <span className="w-6 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {row.original.leaderboardRank ?? row.index + 1}.
+            </span>
             <Link href={`/company/${name}`} className="font-semibold text-foreground hover:underline">
               {name}
             </Link>
@@ -95,38 +89,6 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
               </span>
             )}
           </div>
-        );
-      },
-    },
-    {
-      id: "band",
-      header: "Band",
-      cell: ({ row }) => {
-        const latestScore = latestLabel ? asNumber(row.original[latestLabel]) : null;
-        const ownScore = asNumber(row.original.ownLatestScore);
-        // No score for the leaderboard's latest quarter: fall back to the
-        // company's own newest band, labelled with its quarter, instead of
-        // a blanket "Upcoming".
-        const isStale = latestScore == null && ownScore != null;
-        const score = latestScore ?? ownScore;
-        return (
-          <span className="inline-flex items-center gap-1.5">
-            {score == null ? (
-              <>
-                <span className={`h-1.5 w-1.5 rounded-full ${BANDS.upcoming.barClass}`} />
-                <span className={`text-[12px] font-medium ${BANDS.upcoming.textClass}`}>
-                  {BANDS.upcoming.label}
-                </span>
-              </>
-            ) : (
-              <ScoreBandPill score={score} />
-            )}
-            {isStale && row.original.ownLatestQuarterLabel && (
-              <span className="text-[10px] text-muted-foreground">
-                as of {row.original.ownLatestQuarterLabel}
-              </span>
-            )}
-          </span>
         );
       },
     },
@@ -150,10 +112,40 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
+      // Score and band are one value: the band is bandForScore() of the number beside it.
       cell: ({ row }) => {
-        const score = asNumber(row.getValue(latestLabel));
-        if (score == null) return <span className="text-muted-foreground">—</span>;
-        return <ConcallScore score={score} size="sm" />;
+        const latestScore = asNumber(row.getValue(latestLabel));
+        const ownScore = asNumber(row.original.ownLatestScore);
+        // No score for the board's latest quarter: fall back to the company's own newest
+        // band, labelled with its quarter, rather than a blanket "Upcoming".
+        const isStale = latestScore == null && ownScore != null;
+        const score = latestScore ?? ownScore;
+        return (
+          <div className="leading-tight">
+            {latestScore != null ? (
+              <ConcallScore score={latestScore} size="sm" />
+            ) : (
+              <span className="text-muted-foreground">—</span>
+            )}
+            <div className="mt-0.5 flex items-baseline gap-1.5">
+              {score == null ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <span className={`h-1.5 w-1.5 rounded-full ${BANDS.upcoming.barClass}`} />
+                  <span className={`text-[10px] font-medium ${BANDS.upcoming.textClass}`}>
+                    {BANDS.upcoming.label}
+                  </span>
+                </span>
+              ) : (
+                <ScoreBandPill score={score} />
+              )}
+              {isStale && row.original.ownLatestQuarterLabel && (
+                <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                  as of {row.original.ownLatestQuarterLabel}
+                </span>
+              )}
+            </div>
+          </div>
+        );
       },
     });
   }

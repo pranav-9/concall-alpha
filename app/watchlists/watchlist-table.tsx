@@ -317,7 +317,7 @@ export function WatchlistTable({
   const showRemove = watchlistId != null;
   // Company stays pinned while the decision columns scroll; the rank column
   // pins to its left, so Company shifts right by the rank column's width.
-  const stickyCompany = showRank ? "sticky left-12 bg-background" : STICKY_COL;
+  const stickyCompany = STICKY_COL;
 
   const handleSort = (key: SortKey) => {
     setSort((current) => {
@@ -370,37 +370,29 @@ export function WatchlistTable({
   };
 
   return (
-    <Table className="min-w-[1160px] w-full text-sm">
+    <Table className="min-w-[1000px] w-full text-sm">
       <TableHeader className="bg-background/70">
         <TableRow className="border-b border-border/35 bg-background/70">
-          {showRank ? (
-            <TableHead
-              aria-sort={sortDirectionLabel("coverageRank")}
-              className={`${STICKY_COL} z-20 w-12 px-3 py-3 text-foreground`}
-            >
-              {renderSortHead({
-                label: "#",
-                columnKey: "coverageRank",
-                sort,
-                onSort: handleSort,
-              })}
-            </TableHead>
-          ) : null}
           <TableHead
             aria-sort={sortDirectionLabel("companyName")}
             className={`${stickyCompany} z-20 px-3 py-3 text-foreground`}
           >
-            {renderSortHead({
-              label: "Company",
-              columnKey: "companyName",
-              sort,
-              onSort: handleSort,
-            })}
-          </TableHead>
-          <TableHead className="px-3 py-3 text-foreground">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-semibold text-foreground">Band</span>
-              <span className="text-[10px] font-medium text-muted-foreground normal-case">Verdict</span>
+            {/* Rank first, matching the body cell where it prefixes the name. */}
+            <div className="flex items-baseline gap-3">
+              {showRank
+                ? renderSortHead({
+                    label: "#",
+                    columnKey: "coverageRank",
+                    sort,
+                    onSort: handleSort,
+                  })
+                : null}
+              {renderSortHead({
+                label: "Company",
+                columnKey: "companyName",
+                sort,
+                onSort: handleSort,
+              })}
             </div>
           </TableHead>
           <TableHead
@@ -412,7 +404,7 @@ export function WatchlistTable({
               columnKey: "latestQuarterScore",
               sort,
               onSort: handleSort,
-              subtitle: "4Q avg below",
+              subtitle: "Band below",
             })}
           </TableHead>
           <TableHead aria-sort={sortDirectionLabel("trend")} className="px-3 py-3 text-foreground">
@@ -477,43 +469,46 @@ export function WatchlistTable({
               key={row.companyCode}
               className="border-b border-border/45 transition-colors last:border-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
             >
-              {showRank ? (
-                <TableCell className={`${STICKY_COL} z-10 w-12 px-3 py-3`}>
-                  <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                    {row.coverageRank ?? "—"}
-                  </span>
-                </TableCell>
-              ) : null}
               <TableCell className={`${stickyCompany} z-10 px-3 py-3`}>
-                <Link
-                  href={`/company/${row.companyCode}`}
-                  prefetch={false}
-                  className="font-semibold text-foreground hover:underline"
-                >
-                  {row.companyName}
-                </Link>
-              </TableCell>
-              <TableCell className="px-3 py-3">
-                <span className="inline-flex items-center gap-1.5">
-                  <ScoreBandPill score={row.latestQuarterScore} />
-                  {row.latestQuarterAsOf && (
-                    <span className="whitespace-nowrap text-[10px] text-muted-foreground">
-                      as of {row.latestQuarterAsOf}
+                <div className="flex items-baseline gap-2">
+                  {showRank && (
+                    <span className="w-6 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                      {row.coverageRank ?? "—"}
                     </span>
                   )}
-                </span>
+                  <Link
+                    href={`/company/${row.companyCode}`}
+                    prefetch={false}
+                    className="font-semibold text-foreground hover:underline"
+                  >
+                    {row.companyName}
+                  </Link>
+                </div>
               </TableCell>
+              {/* Score and band are one value, not two: the band is bandForScore() of the
+                  number above it. Stacked in a single cell the same way Forward already
+                  renders its score over its band label. */}
               <TableCell className="px-3 py-3">
                 {row.latestQuarterScore != null ? (
                   <div className="leading-tight">
-                    <div className="tabular-nums font-semibold text-foreground">
-                      {row.latestQuarterScore.toFixed(1)}
+                    <div className="flex items-baseline gap-2">
+                      <span className="tabular-nums font-semibold text-foreground">
+                        {row.latestQuarterScore.toFixed(1)}
+                      </span>
+                      {row.avg4QuarterScore != null && (
+                        <span className="text-[10px] tabular-nums text-muted-foreground">
+                          4Q {row.avg4QuarterScore.toFixed(1)}
+                        </span>
+                      )}
                     </div>
-                    {row.avg4QuarterScore != null && (
-                      <div className="text-[10px] tabular-nums text-muted-foreground">
-                        4Q {row.avg4QuarterScore.toFixed(1)}
-                      </div>
-                    )}
+                    <div className="flex items-baseline gap-1.5">
+                      <ScoreBandPill score={row.latestQuarterScore} />
+                      {row.latestQuarterAsOf && (
+                        <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                          as of {row.latestQuarterAsOf}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <span className="text-muted-foreground">—</span>
@@ -616,7 +611,7 @@ export function WatchlistTable({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={showRemove ? 9 : 8} className="h-24 text-center text-muted-foreground">
+            <TableCell colSpan={showRemove ? 7 : 6} className="h-24 text-center text-muted-foreground">
               No results.
             </TableCell>
           </TableRow>
