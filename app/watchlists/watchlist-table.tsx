@@ -265,7 +265,9 @@ function SortButton({
       type="button"
       variant="ghost"
       aria-label={ariaLabel}
-      className="h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none hover:bg-transparent hover:text-foreground"
+      // z-10 keeps this above ColumnInfo's oversized tap target, which is
+      // centred on the icon 2px to the right and overlaps this button's edge.
+      className="relative z-10 h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none hover:bg-transparent hover:text-foreground"
       onClick={onClick}
     >
       {children}
