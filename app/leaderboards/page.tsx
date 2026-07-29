@@ -215,7 +215,7 @@ export default async function LeaderboardsPage({
             <div className={TABLE_CARD_SKY}>
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Every signal in one place
+                  Overall board
                 </p>
                 {/* Names the actual sort key. It is coverage_rank, which
                     compute_composite_score.py defines as 0.5 x latest-4Q average
