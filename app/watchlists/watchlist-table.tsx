@@ -267,7 +267,10 @@ function SortButton({
       aria-label={ariaLabel}
       // z-10 keeps this above ColumnInfo's oversized tap target, which is
       // centred on the icon 2px to the right and overlaps this button's edge.
-      className="relative z-10 h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none hover:bg-transparent hover:text-foreground"
+      // has-[>svg]:px-0 is doing real work: the Button size variant carries
+      // has-[>svg]:px-3, and the sort chevron IS a child svg, so plain px-0 lost
+      // to it and every header label sat 12px right of its own sub-label.
+      className="relative z-10 h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none has-[>svg]:px-0 hover:bg-transparent hover:text-foreground"
       onClick={onClick}
     >
       {children}
