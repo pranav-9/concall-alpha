@@ -37,8 +37,13 @@ const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 // min-w only from sm up: four 6rem triggers plus the list's own padding measure
 // 394px, which overflowed a 366px phone and cut the "Moat" tab off the screen
 // with no way to scroll to it. Below sm they size to their labels (~322px total).
+// Active state is the canonical in-page tab pill from the design system
+// (bg-foreground / text-background), not a sky tint. The navbar 200px above
+// renders its active pill this way, so the tinted variant put two different
+// active-state languages on one screen — and bg-sky-100 is a raw palette
+// utility outside the four sanctioned sources of colour.
 const TAB_TRIGGER_CLASS =
-  "shrink-0 justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors sm:min-w-[6rem] data-[state=active]:bg-sky-100 data-[state=active]:text-sky-800 data-[state=active]:shadow-sm dark:data-[state=active]:bg-sky-900/30 dark:data-[state=active]:text-sky-200";
+  "shrink-0 justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors sm:min-w-[6rem] data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm";
 
 const toNumericValue = (value: unknown): number | null => {
   if (typeof value === "number" && Number.isFinite(value)) return value;
