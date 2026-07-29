@@ -165,16 +165,20 @@ function SortButton({
   direction,
   children,
   onClick,
+  ariaLabel,
 }: {
   active: boolean;
   direction: SortDirection;
   children: ReactNode;
   onClick: () => void;
+  /** Spoken name, when the visible label isn't one (e.g. "#"). */
+  ariaLabel?: string;
 }) {
   return (
     <Button
       type="button"
       variant="ghost"
+      aria-label={ariaLabel}
       className="h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none hover:bg-transparent hover:text-foreground"
       onClick={onClick}
     >
@@ -198,19 +202,26 @@ function renderSortHead({
   sort,
   onSort,
   subtitle,
+  ariaLabel,
 }: {
   label: string;
   columnKey: SortKey;
   sort: SortState;
   onSort: (key: SortKey) => void;
   subtitle?: string;
+  ariaLabel?: string;
 }) {
   const active = sort.key === columnKey;
   const direction = active ? sort.direction : defaultDirectionForKey(columnKey);
 
   return (
     <div className="flex flex-col gap-0.5">
-      <SortButton active={active} direction={direction} onClick={() => onSort(columnKey)}>
+      <SortButton
+        active={active}
+        direction={direction}
+        ariaLabel={ariaLabel}
+        onClick={() => onSort(columnKey)}
+      >
         {label}
       </SortButton>
       {subtitle ? (
@@ -293,8 +304,14 @@ function sortRows(rows: DerivedRow[], sort: SortState) {
 }
 
 // Sticky first column so the company name stays visible while the decision
-// columns (Band / Qtr / Trend / ...) scroll horizontally on narrow screens.
+// columns (Qtr / Trend / Forward / ...) scroll horizontally on narrow screens.
+// The base has to be fully opaque or the scrolling cells show through it — which
+// also means it can't take the row's translucent hover tint. STICKY_COL_BODY
+// re-applies that tint as an overlay on top of the opaque base, so the pinned
+// cell lights up with the rest of the row instead of staying a dead slab.
 const STICKY_COL = "sticky left-0 bg-background";
+
+const STICKY_COL_BODY = `${STICKY_COL} before:pointer-events-none before:absolute before:inset-0 before:bg-sky-50/25 before:opacity-0 before:transition-opacity group-hover:before:opacity-100 dark:before:bg-sky-950/10`;
 
 export function WatchlistTable({
   rows,
@@ -315,9 +332,9 @@ export function WatchlistTable({
   const [removingCompanyCode, setRemovingCompanyCode] = useState<string | null>(null);
   const sortedRows = sortRows(deriveRows(rows), sort);
   const showRemove = watchlistId != null;
-  // Company stays pinned while the decision columns scroll; the rank column
-  // pins to its left, so Company shifts right by the rank column's width.
-  const stickyCompany = STICKY_COL;
+  // Rank and Company share one pinned cell (rank prefixes the name), so there's
+  // no second sticky column to offset against.
+  const columnCount = 7 + (showRemove ? 1 : 0);
 
   const handleSort = (key: SortKey) => {
     setSort((current) => {
@@ -373,9 +390,16 @@ export function WatchlistTable({
     <Table className="min-w-[1000px] w-full text-sm">
       <TableHeader className="bg-background/70">
         <TableRow className="border-b border-border/35 bg-background/70">
+          {/* Rank and Company are two sort keys in one cell, so aria-sort reports
+              whichever of them is active — hardwiring it to companyName told a
+              screen reader the table was unsorted while it was sorted by rank. */}
           <TableHead
-            aria-sort={sortDirectionLabel("companyName")}
-            className={`${stickyCompany} z-20 px-3 py-3 text-foreground`}
+            aria-sort={
+              sort.key === "coverageRank" || sort.key === "companyName"
+                ? sortDirectionLabel(sort.key)
+                : "none"
+            }
+            className={`${STICKY_COL} z-20 px-3 py-3 text-foreground`}
           >
             {/* Rank first, matching the body cell where it prefixes the name. */}
             <div className="flex items-baseline gap-3">
@@ -385,6 +409,7 @@ export function WatchlistTable({
                     columnKey: "coverageRank",
                     sort,
                     onSort: handleSort,
+                    ariaLabel: "Overall rank",
                   })
                 : null}
               {renderSortHead({
@@ -467,10 +492,11 @@ export function WatchlistTable({
           sortedRows.map((row) => (
             <TableRow
               key={row.companyCode}
-              className="border-b border-border/45 transition-colors last:border-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
+              className="group border-b border-border/45 transition-colors last:border-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
             >
-              <TableCell className={`${stickyCompany} z-10 px-3 py-3`}>
-                <div className="flex items-baseline gap-2">
+              <TableCell className={`${STICKY_COL_BODY} z-10 px-3 py-3`}>
+                {/* Above the hover overlay, which is absolutely positioned. */}
+                <div className="relative z-[1] flex items-baseline gap-2">
                   {showRank && (
                     <span className="w-6 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
                       {row.coverageRank ?? "—"}
@@ -611,7 +637,7 @@ export function WatchlistTable({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={showRemove ? 7 : 6} className="h-24 text-center text-muted-foreground">
+            <TableCell colSpan={columnCount} className="h-24 text-center text-muted-foreground">
               No results.
             </TableCell>
           </TableRow>

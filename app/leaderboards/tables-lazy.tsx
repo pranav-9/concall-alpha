@@ -6,9 +6,13 @@ import type { WatchlistTableRow } from "@/app/watchlists/watchlist-table";
 import type { GrowthRowTable } from "./growth-table";
 import type { MoatRowTable } from "./moat-table";
 
+// Rows only, no card. Every caller already sits inside its own shell — the
+// Overall tab wraps in TABLE_CARD_SKY (app/leaderboards/page.tsx), the Moat
+// table wraps itself — so a carded skeleton nested a card inside a card on
+// load, and hand-rolled the TABLE_CARD_SKY recipe to do it.
 function TableSkeleton() {
   return (
-    <div className="overflow-hidden rounded-[1.45rem] border border-sky-200/25 bg-background/40 p-6">
+    <div className="p-6">
       <div className="space-y-2">
         <div className="h-9 w-full animate-pulse rounded-md bg-muted/40" />
         <div className="h-9 w-full animate-pulse rounded-md bg-muted/30" />
