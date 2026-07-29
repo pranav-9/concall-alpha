@@ -16,7 +16,6 @@ import {
 import type { HeadlineGuidance } from "@/lib/guidance-tracking/headline-guidance";
 import { buildScorePath } from "@/lib/score-path";
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   fetchHeadlineGuidanceByCode,
   fetchLeaderboardData,
@@ -277,16 +276,6 @@ export default async function LeaderboardsPage({
           </TabsContent>
         </LeaderboardTabs>
 
-        {/* placeholder anchor */}
-        <div className="flex justify-end">
-          <Link
-            href="/"
-            prefetch={false}
-            className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Back to home
-          </Link>
-        </div>
       </div>
     </main>
   );
