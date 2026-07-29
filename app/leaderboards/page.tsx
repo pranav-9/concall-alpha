@@ -209,8 +209,13 @@ export default async function LeaderboardsPage({
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   Every signal in one place
                 </p>
+                {/* Names the actual sort key. It is coverage_rank, which
+                    compute_composite_score.py defines as 0.5 x latest-4Q average
+                    + 0.5 x growth score — NOT the single-quarter number the Qtr
+                    column shows large. Saying "quarter" made the top rows read as
+                    a bug (8.5 above 8.8, because 4Q 8.1 beats 4Q 8.0). */}
                 <p className="text-[11px] text-muted-foreground">
-                  Ranked by overall score (quarter + outlook) · click{" "}
+                  Ranked by 4-quarter average + outlook · click{" "}
                   <span className="font-medium text-foreground">Read</span> to sort by the synthesis
                 </p>
               </div>

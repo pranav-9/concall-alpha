@@ -6,6 +6,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp, Minus, X } fro
 import type { ReactNode } from "react";
 import { useState } from "react";
 
+import { ColumnInfo } from "@/app/company/components/column-info";
 import { ScoreBandPill } from "@/app/company/components/score-band-pill";
 import { StanceBadge } from "@/app/company/components/stance-badge";
 import { TrendBadge } from "@/app/company/components/trend-badge";
@@ -113,6 +114,91 @@ const VALUATION_SHORT: Record<ValuationVerdict, string> = {
   "RICHLY PRICED": "Richly priced",
 };
 
+// Column explainers. Each line restates vocabulary that already exists in code —
+// lib/score-band, lib/score-trajectory, lib/growth-band, lib/portfolio-stance,
+// schemas/valuation_check_v1.json — so the board can't drift from the pipeline.
+const COLUMN_INFO = {
+  qtrScore: (
+    <>
+      <p>
+        The ConcallScore for the company&apos;s latest reported quarter, 0–10, read off that
+        quarter&apos;s concall. The word beneath it is the band that score falls in.
+      </p>
+      <p>
+        <span className="font-medium text-foreground">4Q</span> is the average of its last four
+        quarterly scores. <span className="font-medium text-foreground">as of Qx FYxx</span> means
+        the company hasn&apos;t reported the board&apos;s latest quarter yet, so this is its own
+        newest print.
+      </p>
+    </>
+  ),
+  trend: (
+    <>
+      <p>
+        Direction, not level — where the score is heading. A 7 on the way up is a different stock
+        from a 7 on the way down.
+      </p>
+      <p>
+        The number is the latest score minus its own 4-quarter average. Every threshold sits at or
+        above the ±0.5 re-score drift band, so a move that drift alone could explain never earns a
+        directional label. The line is the shape of the last four quarters, oldest to newest.
+      </p>
+    </>
+  ),
+  forward: (
+    <>
+      <p>
+        Growth outlook, 0–10 — a forward read rather than a print. Band labels are fixed absolute
+        cuts (Exceptional ≥ 8.5 down to Weak), not percentiles of the cohort, so they stay
+        comparable across companies and over time.
+      </p>
+      <p>
+        A <span className="font-medium text-foreground">mgmt</span> line is management&apos;s own
+        stated growth guidance for the current financial year — their claim, sitting next to our
+        score. Most companies don&apos;t give one.
+      </p>
+    </>
+  ),
+  moat: (
+    <>
+      <p>
+        Our durability read. The pill is the rating label; the chip beside it grades the tier within
+        that rating (Strong / Mid / Weak).
+      </p>
+      <p>
+        <span className="font-medium text-foreground">—</span> means no assessment we&apos;d stand
+        behind yet, which is not the same as a weak moat.
+      </p>
+    </>
+  ),
+  valuation: (
+    <>
+      <p>
+        Price read, 0–100, where higher is more attractively valued. It is a valuation lens on the
+        current price, independent of the quarter score.
+      </p>
+      <p>
+        Only published, non-stale reads appear here.{" "}
+        <span className="font-medium text-foreground">—</span> covers three different things: no
+        verdict, not yet published, or a price too old to stand behind.
+      </p>
+    </>
+  ),
+  read: (
+    <>
+      <p>
+        The synthesis — one stance per row, derived from that row&apos;s own signals (score, trend,
+        outlook, moat). It isn&apos;t a separate model output, so it can never disagree with the
+        columns to its left.
+      </p>
+      <p>
+        Sorting by Read orders most-aligned to most-cautionary, which turns the board into a
+        decision queue rather than a ranking.
+      </p>
+    </>
+  ),
+} as const;
+
 type SortKey =
   | "coverageRank"
   | "companyName"
@@ -185,12 +271,12 @@ function SortButton({
       {children}
       {active ? (
         direction === "asc" ? (
-          <ChevronUp className="ml-2 h-4 w-4" />
+          <ChevronUp className="ml-1.5 h-3.5 w-3.5" />
         ) : (
-          <ChevronDown className="ml-2 h-4 w-4" />
+          <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
         )
       ) : (
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <ArrowUpDown className="ml-1.5 h-3.5 w-3.5" />
       )}
     </Button>
   );
@@ -203,6 +289,7 @@ function renderSortHead({
   onSort,
   subtitle,
   ariaLabel,
+  info,
 }: {
   label: string;
   columnKey: SortKey;
@@ -210,20 +297,25 @@ function renderSortHead({
   onSort: (key: SortKey) => void;
   subtitle?: string;
   ariaLabel?: string;
+  /** Column vocabulary, opened on tap. See ColumnInfo for the copy rule. */
+  info?: ReactNode;
 }) {
   const active = sort.key === columnKey;
   const direction = active ? sort.direction : defaultDirectionForKey(columnKey);
 
   return (
     <div className="flex flex-col gap-0.5">
-      <SortButton
-        active={active}
-        direction={direction}
-        ariaLabel={ariaLabel}
-        onClick={() => onSort(columnKey)}
-      >
-        {label}
-      </SortButton>
+      <div className="flex items-center gap-0.5">
+        <SortButton
+          active={active}
+          direction={direction}
+          ariaLabel={ariaLabel}
+          onClick={() => onSort(columnKey)}
+        >
+          {label}
+        </SortButton>
+        {info ? <ColumnInfo label={label}>{info}</ColumnInfo> : null}
+      </div>
       {subtitle ? (
         <span className="text-[10px] font-medium text-muted-foreground normal-case">{subtitle}</span>
       ) : null}
@@ -430,6 +522,7 @@ export function WatchlistTable({
               sort,
               onSort: handleSort,
               subtitle: "Band below",
+              info: COLUMN_INFO.qtrScore,
             })}
           </TableHead>
           <TableHead aria-sort={sortDirectionLabel("trend")} className="px-3 py-3 text-foreground">
@@ -439,6 +532,7 @@ export function WatchlistTable({
               sort,
               onSort: handleSort,
               subtitle: "Direction",
+              info: COLUMN_INFO.trend,
             })}
           </TableHead>
           <TableHead aria-sort={sortDirectionLabel("growthScore")} className="px-3 py-3 text-foreground">
@@ -448,6 +542,7 @@ export function WatchlistTable({
               sort,
               onSort: handleSort,
               subtitle: "Outlook",
+              info: COLUMN_INFO.forward,
             })}
           </TableHead>
           <TableHead aria-sort={sortDirectionLabel("moatTag")} className="px-3 py-3 text-foreground">
@@ -457,6 +552,7 @@ export function WatchlistTable({
               sort,
               onSort: handleSort,
               subtitle: "Rating label",
+              info: COLUMN_INFO.moat,
             })}
           </TableHead>
           <TableHead aria-sort={sortDirectionLabel("valuation")} className="px-3 py-3 text-foreground">
@@ -465,7 +561,13 @@ export function WatchlistTable({
               columnKey: "valuation",
               sort,
               onSort: handleSort,
-              subtitle: "Price read",
+              // The number is meaningless without its direction, and the schema's
+              // own words are "higher = more attractively valued" (0-100 integer,
+              // schemas/valuation_check_v1.json). Direction is the part that can't
+              // wait for a click, so it goes here; the 0-100 range lives in the
+              // explainer. Spelling out both overflowed the shell by ~36px.
+              subtitle: "Higher = cheaper",
+              info: COLUMN_INFO.valuation,
             })}
           </TableHead>
           <TableHead
@@ -478,6 +580,7 @@ export function WatchlistTable({
               sort,
               onSort: handleSort,
               subtitle: "Synthesis",
+              info: COLUMN_INFO.read,
             })}
           </TableHead>
           {showRemove && (
