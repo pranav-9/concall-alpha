@@ -78,7 +78,7 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
 
   return (
     <div className={TABLE_CARD_SKY}>
-      <Table className="w-full text-sm">
+      <Table aria-label="Companies grouped by moat rating" className="w-full text-sm">
         <TableHeader className="bg-background/70">
           <TableRow className="border-b border-border/35 bg-background/70">
             <TableHead className="w-12 px-3 py-3 text-foreground">#</TableHead>

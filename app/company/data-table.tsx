@@ -23,11 +23,15 @@ import React from "react";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  /** Accessible name for the table. Every board renders one of these, so
+      without it a screen reader announces several unlabelled tables. */
+  ariaLabel?: string;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  ariaLabel,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -44,7 +48,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className={TABLE_CARD_SKY}>
-      <Table className="w-full text-sm">
+      <Table aria-label={ariaLabel} className="w-full text-sm">
         <TableHeader className="bg-background/70">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="border-b border-border/35 bg-background/70">

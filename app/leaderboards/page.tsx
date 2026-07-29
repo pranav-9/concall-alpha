@@ -34,14 +34,14 @@ export const metadata: Metadata = {
 
 const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 
-// min-w only from sm up: four 6rem triggers plus the list's own padding measure
-// 394px, which overflowed a 366px phone and cut the "Moat" tab off the screen
-// with no way to scroll to it. Below sm they size to their labels (~322px total).
-// Active state is the canonical in-page tab pill from the design system
-// (bg-foreground / text-background), not a sky tint. The navbar 200px above
-// renders its active pill this way, so the tinted variant put two different
-// active-state languages on one screen — and bg-sky-100 is a raw palette
-// utility outside the four sanctioned sources of colour.
+// Two constraints ride on this string:
+//   min-w only from sm up — four 6rem triggers plus the list's own padding
+//   measured 394px, which overflowed a 366px phone and cut the "Moat" tab off
+//   the screen. Below sm they size to their labels (~322px total).
+//   Active state is the design system's in-page tab pill (bg-foreground /
+//   text-background), matching the navbar 200px above. The previous sky tint
+//   put two active-state languages on one screen and reached for a raw palette
+//   utility outside the four sanctioned sources of colour.
 const TAB_TRIGGER_CLASS =
   "shrink-0 justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors sm:min-w-[6rem] data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm";
 
@@ -219,9 +219,9 @@ export default async function LeaderboardsPage({
             />
             <div className={TABLE_CARD_SKY}>
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   Overall board
-                </p>
+                </h2>
                 {/* Names the actual sort key. It is coverage_rank, which
                     compute_composite_score.py defines as 0.5 x latest-4Q average
                     + 0.5 x growth score — NOT the single-quarter number the Qtr
@@ -236,6 +236,7 @@ export default async function LeaderboardsPage({
           </TabsContent>
 
           <TabsContent value="quarter" className="mt-4 space-y-3">
+            <h2 className="sr-only">Quarter board</h2>
             <BandSummaryLine
               scored={quarterScored}
               total={rows.length}
@@ -246,6 +247,7 @@ export default async function LeaderboardsPage({
           </TabsContent>
 
           <TabsContent value="growth" className="mt-4 space-y-3">
+            <h2 className="sr-only">Growth board</h2>
             {growthEntries.length === 0 ? (
               <div className="rounded-xl border border-border/40 bg-background/40 px-4 py-8 text-center text-sm text-muted-foreground">
                 No growth outlook data available yet.
@@ -264,6 +266,7 @@ export default async function LeaderboardsPage({
           </TabsContent>
 
           <TabsContent value="moat" className="mt-4">
+            <h2 className="sr-only">Moat board</h2>
             {moatEntries.length === 0 ? (
               <div className="rounded-xl border border-border/40 bg-background/40 px-4 py-8 text-center text-sm text-muted-foreground">
                 No moat assessments available yet.

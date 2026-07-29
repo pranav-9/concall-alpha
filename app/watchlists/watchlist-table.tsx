@@ -499,7 +499,10 @@ export function WatchlistTable({
         aria-hidden
         className="pointer-events-none absolute inset-y-0 right-0 z-30 w-10 bg-gradient-to-l from-background to-transparent xl:hidden"
       />
-      <Table className="min-w-[1000px] w-full text-sm">
+      <Table
+        aria-label="Companies by overall rank, with quarter score, trend, outlook, moat, valuation and read"
+        className="min-w-[1000px] w-full text-sm"
+      >
       <TableHeader className="bg-background/70">
         <TableRow className="border-b border-border/35 bg-background/70">
           {/* Rank and Company are two sort keys in one cell, so aria-sort reports
