@@ -34,8 +34,11 @@ export const metadata: Metadata = {
 
 const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 
+// min-w only from sm up: four 6rem triggers plus the list's own padding measure
+// 394px, which overflowed a 366px phone and cut the "Moat" tab off the screen
+// with no way to scroll to it. Below sm they size to their labels (~322px total).
 const TAB_TRIGGER_CLASS =
-  "min-w-[6rem] justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors data-[state=active]:bg-sky-100 data-[state=active]:text-sky-800 data-[state=active]:shadow-sm dark:data-[state=active]:bg-sky-900/30 dark:data-[state=active]:text-sky-200";
+  "shrink-0 justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors sm:min-w-[6rem] data-[state=active]:bg-sky-100 data-[state=active]:text-sky-800 data-[state=active]:shadow-sm dark:data-[state=active]:bg-sky-900/30 dark:data-[state=active]:text-sky-200";
 
 const toNumericValue = (value: unknown): number | null => {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -182,7 +185,11 @@ export default async function LeaderboardsPage({
         </section>
 
         <LeaderboardTabs defaultTab={defaultTab} className="w-full space-y-4">
-          <TabsList className="inline-flex h-auto w-fit rounded-full border border-sky-200/35 bg-background/80 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm dark:border-sky-700/20">
+          {/* Scrolls rather than clips if the strip ever outgrows the viewport
+              again (a fifth tab, a longer label). Negative margin lets the pill
+              run to the screen edge on mobile instead of stopping at the gutter. */}
+          <div className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex h-auto w-fit rounded-full border border-sky-200/35 bg-background/80 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm dark:border-sky-700/20">
             <TabsTrigger value="overall" className={TAB_TRIGGER_CLASS}>
               Overall
             </TabsTrigger>
@@ -195,7 +202,8 @@ export default async function LeaderboardsPage({
             <TabsTrigger value="moat" className={TAB_TRIGGER_CLASS}>
               Moat
             </TabsTrigger>
-          </TabsList>
+            </TabsList>
+          </div>
 
           <TabsContent value="overall" className="mt-4 space-y-3">
             <BandSummaryLine
