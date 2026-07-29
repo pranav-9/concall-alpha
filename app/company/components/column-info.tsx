@@ -33,7 +33,7 @@ export function ColumnInfo({ label, children }: { label: string; children: React
         <Info className="h-3 w-3" />
       </PopoverTrigger>
       <PopoverContent className="space-y-1.5 text-[12px] font-normal normal-case leading-relaxed tracking-normal text-muted-foreground">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground">
           {label}
         </p>
         {children}

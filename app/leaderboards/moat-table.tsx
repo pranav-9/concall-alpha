@@ -38,7 +38,7 @@ function TierChip({ tier }: { tier: MoatTier }) {
   const Icon = tierIcon(tier);
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] ${moatTierGradeClass()}`}
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] ${moatTierGradeClass()}`}
     >
       {Icon && <Icon className={`h-3 w-3 ${moatTierGradeIconClass(tier)}`} />}
       {moatTierGradeLabel(tier)}
@@ -124,7 +124,7 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
               {rows.map((row) => (
                 <TableRow
                   key={row.companyCode}
-                  className="border-b border-border/45 transition-colors hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
+                  className="border-b border-border/45 transition-colors hover:bg-accent/50"
                 >
                   <TableCell className="px-3 py-3 align-middle">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">

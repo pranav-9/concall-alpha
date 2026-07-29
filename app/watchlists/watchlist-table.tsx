@@ -413,7 +413,7 @@ function sortRows(rows: DerivedRow[], sort: SortState) {
 // beside the name, which is the pair a reader needs first.
 const STICKY_COL = "sticky left-0 max-w-[11.5rem] bg-background sm:max-w-none";
 
-const STICKY_COL_BODY = `${STICKY_COL} before:pointer-events-none before:absolute before:inset-0 before:bg-sky-50/25 before:opacity-0 before:transition-opacity group-hover:before:opacity-100 dark:before:bg-sky-950/10`;
+const STICKY_COL_BODY = `${STICKY_COL} before:pointer-events-none before:absolute before:inset-0 before:bg-accent/50 before:opacity-0 before:transition-opacity group-hover:before:opacity-100`;
 
 export function WatchlistTable({
   rows,
@@ -618,7 +618,7 @@ export function WatchlistTable({
           sortedRows.map((row) => (
             <TableRow
               key={row.companyCode}
-              className="group border-b border-border/45 transition-colors last:border-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
+              className="group border-b border-border/45 transition-colors last:border-0 hover:bg-accent/50"
             >
               <TableCell className={`${STICKY_COL_BODY} z-10 px-3 py-3`}>
                 {/* Above the hover overlay, which is absolutely positioned. */}
@@ -696,7 +696,7 @@ export function WatchlistTable({
                       className="mt-1 flex items-baseline gap-1 text-[10px] text-muted-foreground"
                       title={row.guidance.detail}
                     >
-                      <span className="rounded bg-muted/60 px-1 text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                      <span className="rounded bg-muted/60 px-1 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         mgmt
                       </span>
                       <span className="tabular-nums">{row.guidance.label}</span>
@@ -708,7 +708,7 @@ export function WatchlistTable({
                 {row.moatLabel ? (
                   <div className="flex flex-wrap items-center gap-1.5 opacity-90">
                     <span
-                      className={`${moatTierClass(row.moatRating)} inline-flex w-fit max-w-[11rem] items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]`}
+                      className={`${moatTierClass(row.moatRating)} inline-flex w-fit max-w-[11rem] items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]`}
                       title={row.moatLabel}
                     >
                       {row.moatLabel}
@@ -717,7 +717,7 @@ export function WatchlistTable({
                       const TierIcon = tierIconFor(row.moatTier);
                       return (
                         <span
-                          className={`${moatTierGradeClass()} inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em]`}
+                          className={`${moatTierGradeClass()} inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em]`}
                         >
                           <TierIcon className={`h-3 w-3 ${moatTierGradeIconClass(row.moatTier)}`} />
                           {moatTierGradeLabel(row.moatTier)}
