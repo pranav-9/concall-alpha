@@ -401,7 +401,12 @@ function sortRows(rows: DerivedRow[], sort: SortState) {
 // also means it can't take the row's translucent hover tint. STICKY_COL_BODY
 // re-applies that tint as an overlay on top of the opaque base, so the pinned
 // cell lights up with the rest of the row instead of staying a dead slab.
-const STICKY_COL = "sticky left-0 bg-background";
+// The width cap is load-bearing on mobile, not cosmetic. Uncapped, the longest
+// company name sized this column to 373px inside a 364px viewport, so the pinned
+// cell filled the screen and every decision column sat off it — the board opened
+// as a list of names with no signal at all. Capped, Qtr Score clears the fold
+// beside the name, which is the pair a reader needs first.
+const STICKY_COL = "sticky left-0 max-w-[11.5rem] bg-background sm:max-w-none";
 
 const STICKY_COL_BODY = `${STICKY_COL} before:pointer-events-none before:absolute before:inset-0 before:bg-sky-50/25 before:opacity-0 before:transition-opacity group-hover:before:opacity-100 dark:before:bg-sky-950/10`;
 
@@ -479,7 +484,17 @@ export function WatchlistTable({
   };
 
   return (
-    <Table className="min-w-[1000px] w-full text-sm">
+    // The scroll container lives inside <Table>, so the fade is a sibling
+    // pinned over its right edge rather than a child that would scroll away
+    // with the content. It is the only cue that six more columns exist — the
+    // container carried no shadow, no mask, and no scrollbar on touch.
+    // Hidden from xl up, where 1000px of table fits the shell without scrolling.
+    <div className="relative">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 z-30 w-10 bg-gradient-to-l from-background to-transparent xl:hidden"
+      />
+      <Table className="min-w-[1000px] w-full text-sm">
       <TableHeader className="bg-background/70">
         <TableRow className="border-b border-border/35 bg-background/70">
           {/* Rank and Company are two sort keys in one cell, so aria-sort reports
@@ -605,10 +620,13 @@ export function WatchlistTable({
                       {row.coverageRank ?? "—"}
                     </span>
                   )}
+                  {/* min-w-0 lets truncate actually engage inside the flex row.
+                      Only bites under the sm cap; full names show from sm up. */}
                   <Link
                     href={`/company/${row.companyCode}`}
                     prefetch={false}
-                    className="font-semibold text-foreground hover:underline"
+                    title={row.companyName}
+                    className="min-w-0 truncate font-semibold text-foreground hover:underline"
                   >
                     {row.companyName}
                   </Link>
@@ -745,7 +763,8 @@ export function WatchlistTable({
             </TableCell>
           </TableRow>
         )}
-      </TableBody>
-    </Table>
+        </TableBody>
+      </Table>
+    </div>
   );
 }
