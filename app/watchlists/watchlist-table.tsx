@@ -538,7 +538,7 @@ export function WatchlistTable({
               columnKey: "latestQuarterScore",
               sort,
               onSort: handleSort,
-              subtitle: "Band below",
+              subtitle: "Latest reported qtr",
               info: COLUMN_INFO.qtrScore,
             })}
           </TableHead>
@@ -548,7 +548,7 @@ export function WatchlistTable({
               columnKey: "trend",
               sort,
               onSort: handleSort,
-              subtitle: "Direction",
+              subtitle: "vs its own 4Q avg",
               info: COLUMN_INFO.trend,
             })}
           </TableHead>
@@ -558,7 +558,7 @@ export function WatchlistTable({
               columnKey: "growthScore",
               sort,
               onSort: handleSort,
-              subtitle: "Outlook",
+              subtitle: "Growth outlook",
               info: COLUMN_INFO.forward,
             })}
           </TableHead>
@@ -568,7 +568,7 @@ export function WatchlistTable({
               columnKey: "moatTag",
               sort,
               onSort: handleSort,
-              subtitle: "Rating label",
+              subtitle: "— = not assessed",
               info: COLUMN_INFO.moat,
             })}
           </TableHead>
@@ -596,7 +596,7 @@ export function WatchlistTable({
               columnKey: "stance",
               sort,
               onSort: handleSort,
-              subtitle: "Synthesis",
+              subtitle: "From the columns left",
               info: COLUMN_INFO.read,
             })}
           </TableHead>
