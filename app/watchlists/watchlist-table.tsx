@@ -265,7 +265,12 @@ function SortButton({
       type="button"
       variant="ghost"
       aria-label={ariaLabel}
-      className="h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none hover:bg-transparent hover:text-foreground"
+      // z-10 keeps this above ColumnInfo's oversized tap target, which is
+      // centred on the icon 2px to the right and overlaps this button's edge.
+      // has-[>svg]:px-0 is doing real work: the Button size variant carries
+      // has-[>svg]:px-3, and the sort chevron IS a child svg, so plain px-0 lost
+      // to it and every header label sat 12px right of its own sub-label.
+      className="relative z-10 h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none has-[>svg]:px-0 hover:bg-transparent hover:text-foreground"
       onClick={onClick}
     >
       {children}
@@ -401,9 +406,14 @@ function sortRows(rows: DerivedRow[], sort: SortState) {
 // also means it can't take the row's translucent hover tint. STICKY_COL_BODY
 // re-applies that tint as an overlay on top of the opaque base, so the pinned
 // cell lights up with the rest of the row instead of staying a dead slab.
-const STICKY_COL = "sticky left-0 bg-background";
+// The width cap is load-bearing on mobile, not cosmetic. Uncapped, the longest
+// company name sized this column to 373px inside a 364px viewport, so the pinned
+// cell filled the screen and every decision column sat off it — the board opened
+// as a list of names with no signal at all. Capped, Qtr Score clears the fold
+// beside the name, which is the pair a reader needs first.
+const STICKY_COL = "sticky left-0 max-w-[11.5rem] bg-background sm:max-w-none";
 
-const STICKY_COL_BODY = `${STICKY_COL} before:pointer-events-none before:absolute before:inset-0 before:bg-sky-50/25 before:opacity-0 before:transition-opacity group-hover:before:opacity-100 dark:before:bg-sky-950/10`;
+const STICKY_COL_BODY = `${STICKY_COL} before:pointer-events-none before:absolute before:inset-0 before:bg-accent/50 before:opacity-0 before:transition-opacity group-hover:before:opacity-100`;
 
 export function WatchlistTable({
   rows,
@@ -479,7 +489,20 @@ export function WatchlistTable({
   };
 
   return (
-    <Table className="min-w-[1000px] w-full text-sm">
+    // The scroll container lives inside <Table>, so the fade is a sibling
+    // pinned over its right edge rather than a child that would scroll away
+    // with the content. It is the only cue that six more columns exist — the
+    // container carried no shadow, no mask, and no scrollbar on touch.
+    // Hidden from xl up, where 1000px of table fits the shell without scrolling.
+    <div className="relative">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 z-30 w-10 bg-gradient-to-l from-background to-transparent xl:hidden"
+      />
+      <Table
+        aria-label="Companies by overall rank, with quarter score, trend, outlook, moat, valuation and read"
+        className="min-w-[1000px] w-full text-sm"
+      >
       <TableHeader className="bg-background/70">
         <TableRow className="border-b border-border/35 bg-background/70">
           {/* Rank and Company are two sort keys in one cell, so aria-sort reports
@@ -521,7 +544,7 @@ export function WatchlistTable({
               columnKey: "latestQuarterScore",
               sort,
               onSort: handleSort,
-              subtitle: "Band below",
+              subtitle: "Latest reported qtr",
               info: COLUMN_INFO.qtrScore,
             })}
           </TableHead>
@@ -531,7 +554,7 @@ export function WatchlistTable({
               columnKey: "trend",
               sort,
               onSort: handleSort,
-              subtitle: "Direction",
+              subtitle: "vs its own 4Q avg",
               info: COLUMN_INFO.trend,
             })}
           </TableHead>
@@ -541,7 +564,7 @@ export function WatchlistTable({
               columnKey: "growthScore",
               sort,
               onSort: handleSort,
-              subtitle: "Outlook",
+              subtitle: "Growth outlook",
               info: COLUMN_INFO.forward,
             })}
           </TableHead>
@@ -551,7 +574,7 @@ export function WatchlistTable({
               columnKey: "moatTag",
               sort,
               onSort: handleSort,
-              subtitle: "Rating label",
+              subtitle: "— = not assessed",
               info: COLUMN_INFO.moat,
             })}
           </TableHead>
@@ -579,7 +602,7 @@ export function WatchlistTable({
               columnKey: "stance",
               sort,
               onSort: handleSort,
-              subtitle: "Synthesis",
+              subtitle: "From the columns left",
               info: COLUMN_INFO.read,
             })}
           </TableHead>
@@ -595,7 +618,7 @@ export function WatchlistTable({
           sortedRows.map((row) => (
             <TableRow
               key={row.companyCode}
-              className="group border-b border-border/45 transition-colors last:border-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
+              className="group border-b border-border/45 transition-colors last:border-0 hover:bg-accent/50"
             >
               <TableCell className={`${STICKY_COL_BODY} z-10 px-3 py-3`}>
                 {/* Above the hover overlay, which is absolutely positioned. */}
@@ -605,10 +628,13 @@ export function WatchlistTable({
                       {row.coverageRank ?? "—"}
                     </span>
                   )}
+                  {/* min-w-0 lets truncate actually engage inside the flex row.
+                      Only bites under the sm cap; full names show from sm up. */}
                   <Link
                     href={`/company/${row.companyCode}`}
                     prefetch={false}
-                    className="font-semibold text-foreground hover:underline"
+                    title={row.companyName}
+                    className="min-w-0 truncate font-semibold text-foreground hover:underline"
                   >
                     {row.companyName}
                   </Link>
@@ -670,7 +696,7 @@ export function WatchlistTable({
                       className="mt-1 flex items-baseline gap-1 text-[10px] text-muted-foreground"
                       title={row.guidance.detail}
                     >
-                      <span className="rounded bg-muted/60 px-1 text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                      <span className="rounded bg-muted/60 px-1 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         mgmt
                       </span>
                       <span className="tabular-nums">{row.guidance.label}</span>
@@ -682,7 +708,7 @@ export function WatchlistTable({
                 {row.moatLabel ? (
                   <div className="flex flex-wrap items-center gap-1.5 opacity-90">
                     <span
-                      className={`${moatTierClass(row.moatRating)} inline-flex w-fit max-w-[11rem] items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]`}
+                      className={`${moatTierClass(row.moatRating)} inline-flex w-fit max-w-[11rem] items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]`}
                       title={row.moatLabel}
                     >
                       {row.moatLabel}
@@ -691,7 +717,7 @@ export function WatchlistTable({
                       const TierIcon = tierIconFor(row.moatTier);
                       return (
                         <span
-                          className={`${moatTierGradeClass()} inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em]`}
+                          className={`${moatTierGradeClass()} inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em]`}
                         >
                           <TierIcon className={`h-3 w-3 ${moatTierGradeIconClass(row.moatTier)}`} />
                           {moatTierGradeLabel(row.moatTier)}
@@ -745,7 +771,8 @@ export function WatchlistTable({
             </TableCell>
           </TableRow>
         )}
-      </TableBody>
-    </Table>
+        </TableBody>
+      </Table>
+    </div>
   );
 }

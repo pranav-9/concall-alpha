@@ -141,5 +141,5 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
 ];
 
 export function GrowthTable({ data }: { data: GrowthRowTable[] }) {
-  return <DataTable columns={growthColumns} data={data} />;
+  return <DataTable ariaLabel="Companies by growth outlook score" columns={growthColumns} data={data} />;
 }

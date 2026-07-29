@@ -38,7 +38,7 @@ function TierChip({ tier }: { tier: MoatTier }) {
   const Icon = tierIcon(tier);
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] ${moatTierGradeClass()}`}
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] ${moatTierGradeClass()}`}
     >
       {Icon && <Icon className={`h-3 w-3 ${moatTierGradeIconClass(tier)}`} />}
       {moatTierGradeLabel(tier)}
@@ -78,7 +78,7 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
 
   return (
     <div className={TABLE_CARD_SKY}>
-      <Table className="w-full text-sm">
+      <Table aria-label="Companies grouped by moat rating" className="w-full text-sm">
         <TableHeader className="bg-background/70">
           <TableRow className="border-b border-border/35 bg-background/70">
             <TableHead className="w-12 px-3 py-3 text-foreground">#</TableHead>
@@ -124,7 +124,7 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
               {rows.map((row) => (
                 <TableRow
                   key={row.companyCode}
-                  className="border-b border-border/45 transition-colors hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
+                  className="border-b border-border/45 transition-colors hover:bg-accent/50"
                 >
                   <TableCell className="px-3 py-3 align-middle">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -147,10 +147,14 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
                       )}
                     </div>
                   </TableCell>
+                  {/* Always the row's own tier. Collapsing it to an em dash when
+                      the group shares one saved a repeat, but em dash already
+                      means "not assessed" in the two columns to the right — so a
+                      Wide Moat group headed "all STRONG" sat above three rows
+                      whose Strength cell read as unassessed. Repetition is
+                      cheaper than a glyph that means two things in one row. */}
                   <TableCell className="px-3 py-3 align-middle">
-                    {sharedTier ? (
-                      <span className="text-muted-foreground/60">—</span>
-                    ) : row.moatTier ? (
+                    {row.moatTier ? (
                       <TierChip tier={row.moatTier} />
                     ) : (
                       <span className="text-muted-foreground">—</span>

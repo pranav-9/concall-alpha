@@ -23,11 +23,15 @@ import React from "react";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  /** Accessible name for the table. Every board renders one of these, so
+      without it a screen reader announces several unlabelled tables. */
+  ariaLabel?: string;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  ariaLabel,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -44,7 +48,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className={TABLE_CARD_SKY}>
-      <Table className="w-full text-sm">
+      <Table aria-label={ariaLabel} className="w-full text-sm">
         <TableHeader className="bg-background/70">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="border-b border-border/35 bg-background/70">
@@ -69,7 +73,7 @@ export function DataTable<TData, TValue>({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="border-b border-border/45 transition-colors last:border-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
+                className="border-b border-border/45 transition-colors last:border-0 hover:bg-accent/50"
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id} className="px-3 py-3 align-middle whitespace-nowrap">

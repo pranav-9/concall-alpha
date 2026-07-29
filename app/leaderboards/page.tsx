@@ -16,7 +16,6 @@ import {
 import type { HeadlineGuidance } from "@/lib/guidance-tracking/headline-guidance";
 import { buildScorePath } from "@/lib/score-path";
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   fetchHeadlineGuidanceByCode,
   fetchLeaderboardData,
@@ -34,8 +33,16 @@ export const metadata: Metadata = {
 
 const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 
+// Two constraints ride on this string:
+//   min-w only from sm up — four 6rem triggers plus the list's own padding
+//   measured 394px, which overflowed a 366px phone and cut the "Moat" tab off
+//   the screen. Below sm they size to their labels (~322px total).
+//   Active state is the design system's in-page tab pill (bg-foreground /
+//   text-background), matching the navbar 200px above. The previous sky tint
+//   put two active-state languages on one screen and reached for a raw palette
+//   utility outside the four sanctioned sources of colour.
 const TAB_TRIGGER_CLASS =
-  "min-w-[6rem] justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors data-[state=active]:bg-sky-100 data-[state=active]:text-sky-800 data-[state=active]:shadow-sm dark:data-[state=active]:bg-sky-900/30 dark:data-[state=active]:text-sky-200";
+  "shrink-0 justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors sm:min-w-[6rem] data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm";
 
 const toNumericValue = (value: unknown): number | null => {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -182,7 +189,11 @@ export default async function LeaderboardsPage({
         </section>
 
         <LeaderboardTabs defaultTab={defaultTab} className="w-full space-y-4">
-          <TabsList className="inline-flex h-auto w-fit rounded-full border border-sky-200/35 bg-background/80 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm dark:border-sky-700/20">
+          {/* Scrolls rather than clips if the strip ever outgrows the viewport
+              again (a fifth tab, a longer label). Negative margin lets the pill
+              run to the screen edge on mobile instead of stopping at the gutter. */}
+          <div className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex h-auto w-fit rounded-full border border-sky-200/35 bg-background/80 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm dark:border-sky-700/20">
             <TabsTrigger value="overall" className={TAB_TRIGGER_CLASS}>
               Overall
             </TabsTrigger>
@@ -195,7 +206,8 @@ export default async function LeaderboardsPage({
             <TabsTrigger value="moat" className={TAB_TRIGGER_CLASS}>
               Moat
             </TabsTrigger>
-          </TabsList>
+            </TabsList>
+          </div>
 
           <TabsContent value="overall" className="mt-4 space-y-3">
             <BandSummaryLine
@@ -206,17 +218,16 @@ export default async function LeaderboardsPage({
             />
             <div className={TABLE_CARD_SKY}>
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Every signal in one place
-                </p>
+                <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Overall board
+                </h2>
                 {/* Names the actual sort key. It is coverage_rank, which
                     compute_composite_score.py defines as 0.5 x latest-4Q average
                     + 0.5 x growth score — NOT the single-quarter number the Qtr
                     column shows large. Saying "quarter" made the top rows read as
                     a bug (8.5 above 8.8, because 4Q 8.1 beats 4Q 8.0). */}
                 <p className="text-[11px] text-muted-foreground">
-                  Ranked by 4-quarter average + outlook · click{" "}
-                  <span className="font-medium text-foreground">Read</span> to sort by the synthesis
+                  Ranked by 4-quarter average + outlook
                 </p>
               </div>
               <OverallTable rows={overallRows} />
@@ -224,6 +235,7 @@ export default async function LeaderboardsPage({
           </TabsContent>
 
           <TabsContent value="quarter" className="mt-4 space-y-3">
+            <h2 className="sr-only">Quarter board</h2>
             <BandSummaryLine
               scored={quarterScored}
               total={rows.length}
@@ -234,6 +246,7 @@ export default async function LeaderboardsPage({
           </TabsContent>
 
           <TabsContent value="growth" className="mt-4 space-y-3">
+            <h2 className="sr-only">Growth board</h2>
             {growthEntries.length === 0 ? (
               <div className="rounded-xl border border-border/40 bg-background/40 px-4 py-8 text-center text-sm text-muted-foreground">
                 No growth outlook data available yet.
@@ -252,6 +265,7 @@ export default async function LeaderboardsPage({
           </TabsContent>
 
           <TabsContent value="moat" className="mt-4">
+            <h2 className="sr-only">Moat board</h2>
             {moatEntries.length === 0 ? (
               <div className="rounded-xl border border-border/40 bg-background/40 px-4 py-8 text-center text-sm text-muted-foreground">
                 No moat assessments available yet.
@@ -262,16 +276,6 @@ export default async function LeaderboardsPage({
           </TabsContent>
         </LeaderboardTabs>
 
-        {/* placeholder anchor */}
-        <div className="flex justify-end">
-          <Link
-            href="/"
-            prefetch={false}
-            className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Back to home
-          </Link>
-        </div>
       </div>
     </main>
   );
