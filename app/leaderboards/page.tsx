@@ -223,8 +223,7 @@ export default async function LeaderboardsPage({
                     column shows large. Saying "quarter" made the top rows read as
                     a bug (8.5 above 8.8, because 4Q 8.1 beats 4Q 8.0). */}
                 <p className="text-[11px] text-muted-foreground">
-                  Ranked by 4-quarter average + outlook · click{" "}
-                  <span className="font-medium text-foreground">Read</span> to sort by the synthesis
+                  Ranked by 4-quarter average + outlook
                 </p>
               </div>
               <OverallTable rows={overallRows} />
