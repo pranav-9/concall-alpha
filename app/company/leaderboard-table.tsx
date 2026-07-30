@@ -18,6 +18,8 @@ export type CompanyRow = {
   company: string;
   leaderboardRank?: number;
   isNew?: boolean;
+  /** Inside the mid/small universe but below the composite cut (rank > 100). */
+  belowCut?: boolean;
   trajectoryKey?: TrajectoryKey;
   trendDescription?: string;
   trendChange?: number;

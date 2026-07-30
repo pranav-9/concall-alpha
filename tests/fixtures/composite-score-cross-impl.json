@@ -1,0 +1,127 @@
+{
+  "_comment": "Cross-implementation fixture. Generated from the LIVE Supabase legs by the same code path as concallyser/scripts/compute_composite_score.py, at full precision. concall-alpha's computeBoardComposite() must reproduce every composite here exactly, or the board ranks on one number and displays another.",
+  "generated": "2026-07-30",
+  "quality_weight": 0.88,
+  "price_weight": 0.12,
+  "rows": [
+    {
+      "code": "VINCOFE",
+      "qtr": 8.133333333333333,
+      "growth": 8.4,
+      "valuation": 7.9,
+      "composite": 8.222667
+    },
+    {
+      "code": "GRSE",
+      "qtr": 8.125,
+      "growth": 8.2,
+      "valuation": null,
+      "composite": 8.1625
+    },
+    {
+      "code": "JSLL",
+      "qtr": 8.125,
+      "growth": 8.7,
+      "valuation": 6.2,
+      "composite": 8.147
+    },
+    {
+      "code": "POCL",
+      "qtr": 7.875,
+      "growth": 8.4,
+      "valuation": 7.5,
+      "composite": 8.061
+    },
+    {
+      "code": "BHAGYANGR",
+      "qtr": 8.133333333333333,
+      "growth": 8.2,
+      "valuation": 6.8,
+      "composite": 8.002667
+    },
+    {
+      "code": "AEROFLEX",
+      "qtr": 7.2,
+      "growth": 8.2,
+      "valuation": 3.1,
+      "composite": 7.148
+    },
+    {
+      "code": "SHILPAMED",
+      "qtr": 7.2,
+      "growth": 7.6,
+      "valuation": 5.2,
+      "composite": 7.136
+    },
+    {
+      "code": "CARTRADE",
+      "qtr": 7.25,
+      "growth": 7.6,
+      "valuation": 5.0,
+      "composite": 7.134
+    },
+    {
+      "code": "WINDLAS",
+      "qtr": 6.675,
+      "growth": 7.8,
+      "valuation": 6.2,
+      "composite": 7.113
+    },
+    {
+      "code": "AARTIPHARM",
+      "qtr": 5.425,
+      "growth": 7.6,
+      "valuation": 1.9,
+      "composite": 5.959
+    },
+    {
+      "code": "POKARNA",
+      "qtr": 5.6,
+      "growth": 7.1,
+      "valuation": 2.6,
+      "composite": 5.9
+    },
+    {
+      "code": "PGEL",
+      "qtr": 4.95,
+      "growth": 7.9,
+      "valuation": 1.3,
+      "composite": 5.81
+    },
+    {
+      "code": "CDSL",
+      "qtr": 5.425,
+      "growth": 6.6,
+      "valuation": 2.5,
+      "composite": 5.591
+    },
+    {
+      "code": "SOLARA",
+      "qtr": 5.275,
+      "growth": 6.9,
+      "valuation": 1.0,
+      "composite": 5.477
+    },
+    {
+      "code": "SAILIFE",
+      "qtr": 7.875,
+      "growth": 8.1,
+      "valuation": null,
+      "composite": 7.9875
+    },
+    {
+      "code": "KSHINTL",
+      "qtr": 7.3,
+      "growth": 8.3,
+      "valuation": null,
+      "composite": 7.8
+    },
+    {
+      "code": "TIMEX",
+      "qtr": null,
+      "growth": 7.4,
+      "valuation": null,
+      "composite": 7.4
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import {
   bandForGrowthScore,
   type GrowthBandKey,
 } from "@/lib/growth-band";
+import { BOARD_READS, BOARD_READ_ORDER, type BoardReadKey } from "@/lib/board-read";
 
 export type BandCount<K extends string> = {
   key: K;
@@ -31,6 +32,30 @@ export function computeQuarterBandCounts(scores: Array<number | null | undefined
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   return scoreBandOrder.map((key) => ({ key, label: BANDS[key].label, count: counts.get(key) ?? 0 }));
+}
+
+/**
+ * Distribution of the Overall board's Read column.
+ *
+ * Counts CONFIGURATIONS, not score bands. The Read cell shows a configuration
+ * word ("Aligned & cheap"), so summarising it with the quarter band vocabulary
+ * ("Bullish") would describe the column in words it never uses — and imply the
+ * composite is a sentiment score, which it isn't.
+ */
+export function computeBoardReadCounts(
+  keys: Array<BoardReadKey | null | undefined>,
+): BandCount<BoardReadKey>[] {
+  const counts = new Map<BoardReadKey, number>();
+  for (const key of BOARD_READ_ORDER) counts.set(key, 0);
+  for (const key of keys) {
+    if (!key) continue;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return BOARD_READ_ORDER.map((key) => ({
+    key,
+    label: BOARD_READS[key].label,
+    count: counts.get(key) ?? 0,
+  }));
 }
 
 export function computeGrowthBandCounts(scores: Array<number | null | undefined>): BandCount<GrowthBandKey>[] {

@@ -1,6 +1,5 @@
 import type { CompanyRow } from "@/app/company/leaderboard-table";
 import { getConcallData } from "@/app/company/get-concall-data";
-import type { WatchlistTableRow } from "@/app/watchlists/watchlist-table";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   HERO_CARD,
@@ -9,20 +8,17 @@ import {
   TABLE_CARD_SKY,
 } from "@/lib/design/shell";
 import {
+  computeBoardReadCounts,
   computeGrowthBandCounts,
   computeQuarterBandCounts,
   type BandCount,
 } from "@/lib/leaderboard-distribution";
-import type { HeadlineGuidance } from "@/lib/guidance-tracking/headline-guidance";
-import { buildScorePath } from "@/lib/score-path";
+import { classifyBoardRead } from "@/lib/board-read";
+import { toValuationScale } from "@/lib/valuation-band";
 import type { Metadata } from "next";
-import {
-  fetchHeadlineGuidanceByCode,
-  fetchLeaderboardData,
-  type GrowthEntry,
-  type MoatRowTable,
-} from "./data";
+import { fetchLeaderboardData } from "./data";
 import { LeaderboardTabs } from "./leaderboard-tabs";
+import type { OverallRow } from "./overall-table";
 import { GrowthTable, LeaderboardTable, MoatTable, OverallTable } from "./tables-lazy";
 
 export const metadata: Metadata = {
@@ -53,71 +49,35 @@ const toNumericValue = (value: unknown): number | null => {
   return null;
 };
 
-// "Overall" rows: join the three leaderboard substrates — quarter/trajectory
-// (getConcallData), growth + moat (fetchLeaderboardData) — into the watchlist
-// row shape, over the whole universe. A Moat "unknown" rating means no real
-// assessment, so it maps to an empty moat read ("—"), matching how a watchlist
-// surfaces an un-assessed name (and lets the Read stance flag the missing leg).
+// "Overall" rows: join the quarter substrate (getConcallData) with the growth
+// and valuation ones into four parallel 0-10 scores. Moat and guidance are
+// deliberately absent — the moat rating is categorical and can't share the
+// number+band format, so it keeps its own tab. See overall-table.tsx.
 function buildOverallRows(
   rows: CompanyRow[],
   latestLabel: string | null,
-  quarterLabels: string[],
-  growthEntries: GrowthEntry[],
-  moatEntries: MoatRowTable[],
-  guidanceByCode: Map<string, HeadlineGuidance>,
-  coverageRankByCode: Map<string, number>,
-): WatchlistTableRow[] {
-  const growthByCode = new Map<string, number | null>();
-  const nameByCode = new Map<string, string>();
-  growthEntries.forEach((entry) => {
-    const code = entry.companyCode.toUpperCase();
-    growthByCode.set(code, entry.growthScore ?? null);
-    if (entry.companyName) nameByCode.set(code, entry.companyName);
-  });
-
-  const moatByCode = new Map<
-    string,
-    Pick<WatchlistTableRow, "moatLabel" | "moatRating" | "moatTier">
-  >();
-  moatEntries.forEach((entry) => {
-    const code = entry.companyCode.toUpperCase();
-    moatByCode.set(
-      code,
-      entry.moatRating === "unknown"
-        ? { moatLabel: null, moatRating: null, moatTier: null }
-        : { moatLabel: entry.moatLabel, moatRating: entry.moatRating, moatTier: entry.moatTier },
-    );
-    if (!nameByCode.has(code) && entry.companyName) nameByCode.set(code, entry.companyName);
-  });
-
+  growthScoreByCode: Map<string, number>,
+  nameByCode: Map<string, string>,
+): OverallRow[] {
   return rows.map((row) => {
     const code = String(row.company).toUpperCase();
-    const moat = moatByCode.get(code);
-    // A company that hasn't reported the board's latest quarter yet would show
-    // a bare "—" for Band and Qtr, which empties the table at the start of every
-    // earnings season. Fall back to its own newest quarter and label it, the
-    // same way the /company board does (app/company/leaderboard-table.tsx).
+    // A company that hasn't reported the board's latest quarter yet would show a
+    // bare "—", which empties the column at the start of every earnings season.
+    // Fall back to its own newest quarter and label it, the same way the
+    // /company board does (app/company/leaderboard-table.tsx).
     const boardScore = latestLabel ? toNumericValue(row[latestLabel]) : null;
     const ownScore = toNumericValue(row.ownLatestScore);
     const isStale = boardScore == null && ownScore != null;
     return {
       companyCode: code,
       companyName: nameByCode.get(code) ?? code,
-      coverageRank: coverageRankByCode.get(code) ?? null,
-      latestQuarterScore: boardScore ?? ownScore,
-      latestQuarterAsOf: isStale ? (row.ownLatestQuarterLabel ?? null) : null,
-      avg4QuarterScore: toNumericValue(row["Latest 4Q Avg"]),
-      growthScore: growthByCode.get(code) ?? null,
-      trajectoryKey: row.trajectoryKey,
-      trendChange: row.trendChange ?? null,
-      trendDescription: row.trendDescription ?? null,
-      scorePath: buildScorePath(row, quarterLabels),
-      moatLabel: moat?.moatLabel ?? null,
-      moatRating: moat?.moatRating ?? null,
-      moatTier: moat?.moatTier ?? null,
-      valuationVerdict: row.valuationVerdict ?? null,
-      valuationScore: row.valuationScore ?? null,
-      guidance: guidanceByCode.get(code) ?? null,
+      quarterScore: boardScore ?? ownScore,
+      quarterAsOf: isStale ? (row.ownLatestQuarterLabel ?? null) : null,
+      growthScore: growthScoreByCode.get(code) ?? null,
+      // getConcallData already applies the publish + staleness gates; this only
+      // moves the stored 0-100 integer onto the board's 0-10 scale.
+      valuationScore: toValuationScale(toNumericValue(row.valuationScore)),
+      belowCut: row.belowCut === true,
     };
   });
 }
@@ -141,27 +101,27 @@ export default async function LeaderboardsPage({
           : "overall";
   const [
     { rows, latestLabel, quarterLabels },
-    { growthEntries, moatEntries, coverageRankByCode },
-    guidanceByCode,
+    { growthEntries, moatEntries, growthScoreByCode, nameByCode },
   ] = await Promise.all([
-    getConcallData({ excludeLargeCaps: true }),
+    // includeBelowCut: the Overall board renders the tail greyed out rather than
+    // dropping it. Large caps are still excluded outright — two different gates.
+    getConcallData({ excludeLargeCaps: true, includeBelowCut: true }),
     fetchLeaderboardData(),
-    fetchHeadlineGuidanceByCode(),
   ]);
 
   const overallRows = buildOverallRows(
     rows,
     latestLabel ?? null,
-    quarterLabels,
-    growthEntries,
-    moatEntries,
-    guidanceByCode,
-    coverageRankByCode,
+    growthScoreByCode,
+    nameByCode,
   );
+
+  // The Quarter tab keeps its long-standing scope: the ranked hundred only.
+  const rankedRows = rows.filter((row) => row.belowCut !== true);
 
   const latestQuarterLabel = quarterLabels[0] ?? null;
   const quarterLatestScores = latestQuarterLabel
-    ? rows.map((r) => {
+    ? rankedRows.map((r) => {
         const raw = r[latestQuarterLabel];
         if (raw == null || raw === "") return null;
         const n = Number(raw);
@@ -173,6 +133,21 @@ export default async function LeaderboardsPage({
   const growthBandCounts = computeGrowthBandCounts(growthEntries.map((e) => e.growthScore));
   const growthScored = growthEntries.filter((e) => typeof e.growthScore === "number").length;
 
+  // The Overall summary describes the Read column, not the Quarter one — the
+  // board is ranked by the composite, so counting quarter bands under it
+  // described a column the reader isn't sorted by. Counted in the Read's own
+  // configuration vocabulary, which is what the cells actually show.
+  const overallReads = overallRows.map((row) =>
+    classifyBoardRead({
+      quarterScore: row.quarterScore,
+      growthScore: row.growthScore,
+      valuationScore: row.valuationScore,
+    }),
+  );
+  const overallBandCounts = computeBoardReadCounts(overallReads.map((r) => r.key));
+  const overallScored = overallReads.filter((r) => r.key !== "no_read").length;
+  const belowCutCount = overallRows.filter((row) => row.belowCut).length;
+
   return (
     <main className="relative isolate overflow-hidden">
       <div className={PAGE_BACKGROUND_CLASS} />
@@ -183,7 +158,8 @@ export default async function LeaderboardsPage({
               Leaderboards
             </h1>
             <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Quarter scores, growth outlook, and moat tiers in a single research shell.
+              Every company on the same three scores — the quarter just reported, the outlook
+              ahead, and what you pay for it.
             </p>
           </div>
         </section>
@@ -211,26 +187,38 @@ export default async function LeaderboardsPage({
 
           <TabsContent value="overall" className="mt-4 space-y-3">
             <BandSummaryLine
-              scored={quarterScored}
-              total={rows.length}
-              scopeNote="scored this quarter"
-              bandCounts={quarterBandCounts}
+              scored={overallScored}
+              total={overallRows.length}
+              scopeNote="with a read"
+              bandCounts={overallBandCounts}
             />
             <div className={TABLE_CARD_SKY}>
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
                 <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   Overall board
                 </h2>
-                {/* Names the actual sort key. It is coverage_rank, which
-                    compute_composite_score.py defines as 0.5 x latest-4Q average
-                    + 0.5 x growth score — NOT the single-quarter number the Qtr
-                    column shows large. Saying "quarter" made the top rows read as
-                    a bug (8.5 above 8.8, because 4Q 8.1 beats 4Q 8.0). */}
+                {/* The sort key is coverage_rank, and the Read column now shows
+                    the very number it ranks on — so this line only has to say
+                    which way the weighting leans. The old caption existed
+                    because the rank was invisible; it isn't any more. */}
                 <p className="text-[11px] text-muted-foreground">
-                  Ranked by 4-quarter average + outlook
+                  Ranked by Read · quality weighted 2:1 over price
                 </p>
               </div>
               <OverallTable rows={overallRows} />
+              {belowCutCount > 0 && (
+                // The greyed rows need naming or they read as a rendering fault.
+                // Deliberately NOT "the last N": cut membership is a stored,
+                // reviewed flag while the order above is computed live, so a
+                // greyed row can sit mid-board until the next compute run. The
+                // copy has to be true in both states.
+                <p className="border-t border-border/35 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
+                  <span className="font-medium text-foreground">{belowCutCount}</span>{" "}
+                  {belowCutCount === 1 ? "greyed company sits" : "greyed companies sit"} below the
+                  coverage cut — still tracked, not in the ranked hundred, and not linked from this
+                  board. Their pages stay reachable through search.
+                </p>
+              )}
             </div>
           </TabsContent>
 
@@ -238,11 +226,11 @@ export default async function LeaderboardsPage({
             <h2 className="sr-only">Quarter board</h2>
             <BandSummaryLine
               scored={quarterScored}
-              total={rows.length}
+              total={rankedRows.length}
               scopeNote="scored this quarter"
               bandCounts={quarterBandCounts}
             />
-            <LeaderboardTable quarterLabels={quarterLabels} data={rows} />
+            <LeaderboardTable quarterLabels={quarterLabels} data={rankedRows} />
           </TabsContent>
 
           <TabsContent value="growth" className="mt-4 space-y-3">
