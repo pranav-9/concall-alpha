@@ -1,10 +1,9 @@
 import { buildNewCompanySet } from "@/lib/company-freshness";
-import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import {
-  pickHeadlineGuidance,
-  type HeadlineGuidance,
-  type HeadlineGuidanceRow,
-} from "@/lib/guidance-tracking/headline-guidance";
+  COVERAGE_SELECT,
+  isAdmittedLargeCap,
+  isBelowCoverageCut,
+} from "@/lib/coverage-policy";
 import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
@@ -292,37 +291,28 @@ async function fetchMoatLeaders(ctx: LeaderboardContext): Promise<MoatRowTable[]
   });
 }
 
-// Headline current-FY revenue guidance per company, for the Overall tab's
-// Forward-cell accent. One query over the whole table (small); grouped by code.
-export async function fetchHeadlineGuidanceByCode(): Promise<Map<string, HeadlineGuidance>> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("guidance_tracking")
-    .select("company_code, guidance_type, target_period, status, guidance_text, latest_view");
-  if (error) throw error;
-
-  const byCode = new Map<string, HeadlineGuidanceRow[]>();
-  ((data ?? []) as HeadlineGuidanceRow[]).forEach((row) => {
-    const code = (row.company_code ?? "").trim().toUpperCase();
-    if (!code) return;
-    const list = byCode.get(code) ?? [];
-    list.push(row);
-    byCode.set(code, list);
-  });
-
-  const out = new Map<string, HeadlineGuidance>();
-  byCode.forEach((rows, code) => {
-    const headline = pickHeadlineGuidance(rows);
-    if (headline) out.set(code, headline);
-  });
-  return out;
-}
+// NOTE: the Overall board used to carry a "mgmt" line under its Forward cell —
+// management's own stated current-FY growth guidance, fetched here. The redesign
+// dropped it: the board's four columns are now one score + one band each, and a
+// third line under Growth broke that grammar. The capability is untouched and
+// still renders on /watchlists (app/watchlists/[id]/page.tsx).
 
 export async function fetchLeaderboardData(): Promise<{
+  /** Growth board rows — the ranked hundred only, as the Growth tab has always shown. */
   growthEntries: GrowthEntry[];
   moatEntries: MoatRowTable[];
   /** Overall (composite) rank per company code — powers the Overall tab's # column. */
   coverageRankByCode: Map<string, number>;
+  /**
+   * Growth score across the WHOLE mid/small universe, below-cut names included.
+   * The Overall board shows the tail greyed out rather than dropping it, so it
+   * needs scores the Growth tab deliberately doesn't list.
+   */
+  growthScoreByCode: Map<string, number>;
+  /** Display names across the whole universe, so a greyed row isn't just a code. */
+  nameByCode: Map<string, string>;
+  /** Mid/small companies below the composite cut — the greyed, non-clickable tail. */
+  belowCutCodes: Set<string>;
 }> {
   const supabase = await createClient();
   const { data: companiesData, error: companiesError } = await supabase
@@ -331,31 +321,75 @@ export async function fetchLeaderboardData(): Promise<{
   if (companiesError) throw companiesError;
 
   const allCompanies = (companiesData ?? []) as CompanyRow[];
-  const companies = allCompanies.filter((company) => isDiscoveryListed(company));
+  // Two gates, handled separately (lib/coverage-policy): admission removes large
+  // caps from the board entirely; the composite cut only greys a company out.
+  const midSmall = allCompanies.filter((company) => !isAdmittedLargeCap(company));
+  const companies = midSmall.filter((company) => !isBelowCoverageCut(company));
+  const belowCutCodes = new Set(
+    midSmall
+      .filter((company) => isBelowCoverageCut(company))
+      .map((company) => company.code.toUpperCase()),
+  );
+
+  // Growth rows are matched by code OR name, so both forms of an out-of-universe
+  // company have to be blocked. Only large caps qualify now — below-cut names
+  // stay, because the Overall board renders them.
   const excludedKeys = new Set<string>();
   allCompanies.forEach((company) => {
-    if (isDiscoveryListed(company)) return;
+    if (!isAdmittedLargeCap(company)) return;
     if (company.code) excludedKeys.add(company.code.toUpperCase());
     if (company.name) excludedKeys.add(company.name.toUpperCase());
   });
   const newCompanySet = buildNewCompanySet(
-    companies.map((company) => ({
+    midSmall.map((company) => ({
       code: company.code,
       created_at: company.created_at ?? null,
     })),
   );
 
   const coverageRankByCode = new Map<string, number>();
-  companies.forEach((company) => {
+  const nameByCode = new Map<string, string>();
+  midSmall.forEach((company) => {
+    const code = company.code.toUpperCase();
     if (typeof company.coverage_rank === "number") {
-      coverageRankByCode.set(company.code.toUpperCase(), company.coverage_rank);
+      coverageRankByCode.set(code, company.coverage_rank);
+    }
+    if (company.name) nameByCode.set(code, company.name);
+  });
+
+  // Growth is computed over the whole universe (the Overall board needs the
+  // tail); moat only over the ranked hundred, since the Moat tab is unchanged
+  // and the Overall board no longer carries a moat column.
+  const [allGrowthEntries, moatEntries] = await Promise.all([
+    fetchGrowthLeaders({ supabase, companies: midSmall, newCompanySet, excludedKeys }),
+    fetchMoatLeaders({ supabase, companies, newCompanySet, excludedKeys }),
+  ]);
+
+  const growthScoreByCode = new Map<string, number>();
+  allGrowthEntries.forEach((entry) => {
+    if (typeof entry.growthScore === "number") {
+      growthScoreByCode.set(entry.companyCode.toUpperCase(), entry.growthScore);
+    }
+    if (!nameByCode.has(entry.companyCode.toUpperCase()) && entry.companyName) {
+      nameByCode.set(entry.companyCode.toUpperCase(), entry.companyName);
     }
   });
 
-  const ctx: LeaderboardContext = { supabase, companies, newCompanySet, excludedKeys };
-  const [growthEntries, moatEntries] = await Promise.all([
-    fetchGrowthLeaders(ctx),
-    fetchMoatLeaders(ctx),
-  ]);
-  return { growthEntries, moatEntries, coverageRankByCode };
+  // Re-rank after dropping the tail, or the Growth tab shows gaps where the
+  // below-cut companies used to sit.
+  const growthEntries = assignCompetitionRanks(
+    allGrowthEntries.filter(
+      (entry) => !belowCutCodes.has(entry.companyCode.toUpperCase()),
+    ),
+    (entry) => (typeof entry.growthScore === "number" ? entry.growthScore : null),
+  );
+
+  return {
+    growthEntries,
+    moatEntries,
+    coverageRankByCode,
+    growthScoreByCode,
+    nameByCode,
+    belowCutCodes,
+  };
 }

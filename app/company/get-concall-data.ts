@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { buildNewCompanySet } from "@/lib/company-freshness";
-import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
+import {
+  COVERAGE_SELECT,
+  isAdmittedLargeCap,
+  isBelowCoverageCut,
+} from "@/lib/coverage-policy";
 import { classifyTrajectory, quarterIndex } from "@/lib/score-trajectory";
 import { assessStaleness } from "@/lib/valuation-check/normalize";
 import type { ValuationVerdict } from "@/lib/valuation-check/types";
@@ -66,7 +70,18 @@ const avgScore = (records: ScoreRow[]): number | null => {
 
 export const getConcallData = async ({
   excludeLargeCaps = false,
-}: { excludeLargeCaps?: boolean } = {}) => {
+  includeBelowCut = false,
+}: {
+  excludeLargeCaps?: boolean;
+  /**
+   * Keep companies below the composite cut in the result, flagged `belowCut`,
+   * instead of dropping them. The leaderboard renders them as a greyed,
+   * non-clickable tail below the ranked hundred; every other discovery surface
+   * still wants them gone. Only meaningful alongside excludeLargeCaps — large
+   * caps are never part of the tail (see lib/coverage-policy).
+   */
+  includeBelowCut?: boolean;
+} = {}) => {
   const supabase = await createClient();
   const [scoreRows, { data: companyRows }, { data: valuationRows }] = await Promise.all([
     fetchScoreRows(supabase),
@@ -111,11 +126,20 @@ export const getConcallData = async ({
 
   // Coverage policy: on discovery surfaces, drop companies admitted as large
   // cap. Off by default so user-owned surfaces (watchlists) keep every holding.
+  // The two gates are handled separately here — with includeBelowCut, only the
+  // admission gate removes rows; the cut gate just marks them.
   const excludedCodes = new Set<string>();
+  const belowCutCodes = new Set<string>();
   if (excludeLargeCaps) {
     companyRowList.forEach((row) => {
-      if (!isDiscoveryListed(row)) {
-        excludedCodes.add(row.code.toUpperCase());
+      const code = row.code.toUpperCase();
+      if (isAdmittedLargeCap(row)) {
+        excludedCodes.add(code);
+        return;
+      }
+      if (isBelowCoverageCut(row)) {
+        if (includeBelowCut) belowCutCodes.add(code);
+        else excludedCodes.add(code);
       }
     });
   }
@@ -158,6 +182,7 @@ export const getConcallData = async ({
       const row: CompanyRow = {
         company: companyCode,
         isNew: newCompanySet.has(companyCode.toUpperCase()),
+        belowCut: belowCutCodes.has(companyCode.toUpperCase()),
         valuationVerdict: valuation?.verdict ?? null,
         valuationScore: valuation?.score ?? null,
       };

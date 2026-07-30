@@ -24,10 +24,34 @@ export function isDiscoveryListed(
   if (typeof company === "string" || company == null) {
     return company !== "large";
   }
-  return (
-    company.market_cap_band_at_admission !== "large" &&
-    company.excluded_from_discovery !== true
-  );
+  return !isAdmittedLargeCap(company) && !isBelowCoverageCut(company);
+}
+
+/**
+ * Gate 1 — ADMISSION. The platform covers mid/small caps; a company admitted as
+ * a large cap is outside the positioning entirely, not merely ranked low. These
+ * are hidden from discovery surfaces outright.
+ *
+ * Split out from isDiscoveryListed because the leaderboard needs to treat the
+ * two gates differently: below-the-cut companies are shown greyed out (they're
+ * in the universe, just not in the top 100), while large caps aren't shown at
+ * all. Conflating them would put 24 large caps into the greyed tail.
+ */
+export function isAdmittedLargeCap(
+  company: CoverageFields | null | undefined,
+): boolean {
+  return company?.market_cap_band_at_admission === "large";
+}
+
+/**
+ * Gate 2 — COVERAGE CUT. Inside the mid/small universe but below the composite
+ * cut line (concallyser/scripts/compute_composite_score.py --target 100). Still
+ * one of ours; just not in the ranked hundred.
+ */
+export function isBelowCoverageCut(
+  company: CoverageFields | null | undefined,
+): boolean {
+  return company?.excluded_from_discovery === true;
 }
 
 /** Columns every discovery-surface `company` select must include. */
