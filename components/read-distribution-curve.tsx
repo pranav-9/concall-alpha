@@ -188,6 +188,32 @@ export function ReadDistributionCurve({
   );
 }
 
+/**
+ * The whole figure compressed to one line, for the collapsed state.
+ *
+ * The curve is supporting evidence — it earns a click, not permanent height.
+ * But "your median against the field" is the one thing a reader would have
+ * taken from it anyway, and it costs a single row, so it stays visible whether
+ * the chart is open or not.
+ */
+export function ReadDistributionHeadline({ distribution }: { distribution: ReadDistribution }) {
+  const { markerMedian, universeMedian, universeCount } = distribution;
+  return (
+    <span className="text-[11px] text-muted-foreground">
+      {markerMedian != null ? (
+        <>
+          your median{" "}
+          <span className="font-semibold tabular-nums text-foreground">{fmt(markerMedian)}</span>{" "}
+          vs <span className="tabular-nums">{fmt(universeMedian)}</span> across {universeCount}{" "}
+          covered companies
+        </>
+      ) : (
+        <>{universeCount} covered companies, median {fmt(universeMedian)}</>
+      )}
+    </span>
+  );
+}
+
 /** Legend + the one comparison a reader wants in words, not pixels. */
 export function ReadDistributionLegend({
   distribution,
