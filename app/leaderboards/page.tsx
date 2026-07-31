@@ -1,5 +1,5 @@
-import type { CompanyRow } from "@/app/company/leaderboard-table";
 import { getConcallData } from "@/app/company/get-concall-data";
+import { BandSummaryLine } from "@/components/band-summary-line";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   HERO_CARD,
@@ -11,14 +11,12 @@ import {
   computeBoardReadCounts,
   computeGrowthBandCounts,
   computeQuarterBandCounts,
-  type BandCount,
 } from "@/lib/leaderboard-distribution";
 import { classifyBoardRead } from "@/lib/board-read";
-import { toValuationScale } from "@/lib/valuation-band";
+import { buildScoreBoardRows } from "@/lib/score-board-rows";
 import type { Metadata } from "next";
 import { fetchLeaderboardData } from "./data";
 import { LeaderboardTabs } from "./leaderboard-tabs";
-import type { OverallRow } from "./overall-table";
 import { GrowthTable, LeaderboardTable, MoatTable, OverallTable } from "./tables-lazy";
 
 export const metadata: Metadata = {
@@ -39,48 +37,6 @@ const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 //   utility outside the four sanctioned sources of colour.
 const TAB_TRIGGER_CLASS =
   "shrink-0 justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors sm:min-w-[6rem] data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm";
-
-const toNumericValue = (value: unknown): number | null => {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = Number.parseFloat(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-};
-
-// "Overall" rows: join the quarter substrate (getConcallData) with the growth
-// and valuation ones into four parallel 0-10 scores. Moat and guidance are
-// deliberately absent — the moat rating is categorical and can't share the
-// number+band format, so it keeps its own tab. See overall-table.tsx.
-function buildOverallRows(
-  rows: CompanyRow[],
-  latestLabel: string | null,
-  growthScoreByCode: Map<string, number>,
-  nameByCode: Map<string, string>,
-): OverallRow[] {
-  return rows.map((row) => {
-    const code = String(row.company).toUpperCase();
-    // A company that hasn't reported the board's latest quarter yet would show a
-    // bare "—", which empties the column at the start of every earnings season.
-    // Fall back to its own newest quarter and label it, the same way the
-    // /company board does (app/company/leaderboard-table.tsx).
-    const boardScore = latestLabel ? toNumericValue(row[latestLabel]) : null;
-    const ownScore = toNumericValue(row.ownLatestScore);
-    const isStale = boardScore == null && ownScore != null;
-    return {
-      companyCode: code,
-      companyName: nameByCode.get(code) ?? code,
-      quarterScore: boardScore ?? ownScore,
-      quarterAsOf: isStale ? (row.ownLatestQuarterLabel ?? null) : null,
-      growthScore: growthScoreByCode.get(code) ?? null,
-      // getConcallData already applies the publish + staleness gates; this only
-      // moves the stored 0-100 integer onto the board's 0-10 scale.
-      valuationScore: toValuationScale(toNumericValue(row.valuationScore)),
-      belowCut: row.belowCut === true,
-    };
-  });
-}
 
 export default async function LeaderboardsPage({
   searchParams,
@@ -109,7 +65,7 @@ export default async function LeaderboardsPage({
     fetchLeaderboardData(),
   ]);
 
-  const overallRows = buildOverallRows(
+  const overallRows = buildScoreBoardRows(
     rows,
     latestLabel ?? null,
     growthScoreByCode,
@@ -266,41 +222,5 @@ export default async function LeaderboardsPage({
 
       </div>
     </main>
-  );
-}
-
-function BandSummaryLine<K extends string>({
-  scored,
-  total,
-  scopeNote,
-  bandCounts,
-}: {
-  scored: number;
-  total: number;
-  scopeNote: string; // e.g. "scored this quarter" — shown when scored < total
-  bandCounts: BandCount<K>[];
-}) {
-  const visible = bandCounts.filter((b) => b.count > 0);
-  if (scored === 0 || visible.length === 0) return null;
-  return (
-    <p className="px-1 text-[12px] text-muted-foreground">
-      {scored === total ? (
-        <span className="font-semibold text-foreground">{total} companies</span>
-      ) : (
-        <>
-          <span className="font-semibold text-foreground">
-            {scored} of {total}
-          </span>{" "}
-          companies {scopeNote}
-        </>
-      )}
-      {" · "}
-      {visible.map((b, i) => (
-        <span key={b.key}>
-          {i > 0 && " · "}
-          <span className="font-semibold text-foreground">{b.count}</span> {b.label}
-        </span>
-      ))}
-    </p>
   );
 }

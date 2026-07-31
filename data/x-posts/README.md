@@ -1,5 +1,14 @@
 # Posted-X ledger
 
+Two files live here:
+
+- `posted.jsonl` — what we said publicly (schema below).
+- `performance.jsonl` — engagement snapshots for our own posted tweets, appended by
+  `scripts/x-post-performance.mjs` (one row per tweet per fetch day: views/likes/retweets/replies
+  via FxTwitter, falling back to the syndication tweet-result endpoint). Works for any account
+  size because it hydrates tweet-by-tweet from the ledger's `url` field — which is why recording
+  the URL at post time matters. Append-only; commit alongside posted.jsonl.
+
 Durable record of what we've already **said publicly** on X, so the `/x-post-drafter` skill
 never re-drafts a company/quarter angle that's already been posted. Companion to
 `../external-takes/` (what *others* said); this one is our own outbound side.
@@ -27,6 +36,17 @@ ranking, and `--exclude-posted` drops them entirely.
   "source_status": "unofficial",          // provenance at the time of posting
   "chars": 258,
   "text": "APAR just printed its best quarter ever — …"
+}
+```
+
+**Daily-desk fields (optional, added 2026-07-31 with the Twitter strategy):**
+
+```json
+{
+  "lane": "speed",                        // speed | evidence | dialogue — which strategy lane
+  "utm_campaign": "speed-aparinds-20260731", // campaign slug from the first-reply link
+  "reply_to": "https://x.com/.../status/...", // dialogue lane only: the tweet being replied to (Lane 3 dedupe key)
+  "dialog_candidate": "some_handle"       // only when a real exchange developed — feeds the weekly M1 count
 }
 ```
 

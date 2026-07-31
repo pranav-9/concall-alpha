@@ -2,13 +2,17 @@
 // the three scores already on the row (Quarter, Growth, Valuation).
 //
 // WHY THIS EXISTS separately from portfolio-stance.ts. That module synthesises a
-// watchlist row from FIVE signals including trajectory and moat, for a holdings
-// decision ("add / hold / trim?"). This one answers a different question on a
-// different surface: across 117 companies, which configuration of
-// quality-and-price is this? The leaderboard dropped Trend and Moat Tag, so a
-// stance built on them can't be computed here — and shouldn't be, because a
-// board is scanned, not studied. portfolio-stance.ts stays as-is for
-// /watchlists; this is not a replacement.
+// row from FIVE signals including trajectory and moat, for a holdings decision
+// ("add / hold / trim?"). This one answers a different question: given a board
+// of companies, which configuration of quality-and-price is this? It reads only
+// the three scores the board actually shows, because a board is scanned, not
+// studied.
+//
+// This is now the Read on BOTH boards — /leaderboards and /watchlists render the
+// same component (components/score-board-table.tsx), so a reader who learns the
+// grammar on one doesn't relearn it on the other. portfolio-stance.ts is no
+// longer rendered anywhere; it's kept (with its test) as the vocabulary for a
+// holdings-stance surface if one comes back.
 //
 // DESCRIPTIVE, not prescriptive — same discipline as portfolio-stance.ts. It
 // names the shape ("Aligned & cheap", "Priced for it"); it never emits a

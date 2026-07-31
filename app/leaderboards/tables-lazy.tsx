@@ -2,9 +2,9 @@
 
 import dynamic from "next/dynamic";
 import type { CompanyRow } from "@/app/company/leaderboard-table";
+import type { ScoreBoardRow } from "@/components/score-board-table";
 import type { GrowthRowTable } from "./growth-table";
 import type { MoatRowTable } from "./moat-table";
-import type { OverallRow } from "./overall-table";
 
 // Rows only, no card. Every caller already sits inside its own shell — the
 // Overall tab wraps in TABLE_CARD_SKY (app/leaderboards/page.tsx), the Moat
@@ -54,10 +54,10 @@ export const MoatTable = dynamic<{ data: MoatRowTable[] }>(
 
 // The "Overall" tab: four score columns (Quarter / Growth / Valuation / Read)
 // over the whole mid/small universe, below-cut names included as a greyed tail.
-// It used to reuse the watchlist table; the two surfaces diverged when this
-// board dropped Trend and Moat Tag. See overall-table.tsx for the reasoning.
-export const OverallTable = dynamic<{ rows: OverallRow[] }>(
-  () => import("./overall-table").then((mod) => mod.OverallTable),
+// The same board renders a watchlist (with a Remove column and nothing greyed) —
+// see components/score-board-table.tsx.
+export const OverallTable = dynamic<{ rows: ScoreBoardRow[] }>(
+  () => import("@/components/score-board-table").then((mod) => mod.ScoreBoardTable),
   {
     ssr: false,
     loading: () => <TableSkeleton />,

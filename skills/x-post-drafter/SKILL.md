@@ -1,6 +1,6 @@
 ---
 name: x-post-drafter
-description: Use when the user wants ready-to-post X (Twitter) drafts about companies from our own coverage, prioritising the most recent quarter updates. Pulls the freshest ConcallScore prints, QoQ score moves, and new guidance from Supabase, then writes 5 first-person, text-only options grounded strictly in our data — the user picks one and posts it. Triggers on "X posts", "tweet ideas", "give me posts to share", "what should I post about", "draft tweets on recent quarters", "social posts about our companies".
+description: Use when the user wants ready-to-post X (Twitter) drafts about companies from our own coverage, prioritising the most recent quarter updates. Two modes. CLASSIC — 5 first-person, text-only options from the freshest ConcallScore prints; the user picks and posts. DAILY DESK — the full morning posting sheet per the 2026-07-31 Twitter strategy (Lane 1 speed posts capped at 2 with selection rules, Lane 3 disagreement replies, Lane 2 thread nudge, UTM first-reply links, provisional labels, compliance footer). Triggers on "X posts", "tweet ideas", "give me posts to share", "what should I post about", "draft tweets on recent quarters", "social posts about our companies"; daily desk on "daily posting sheet", "today's posts", "daily options", "posting desk", or when chained from /results-season-run.
 ---
 
 # X post drafter
@@ -121,6 +121,80 @@ gets written here, so don't skip this step.
 > what I'm watching. 65% of revenue now rides on one acquired business and 77% is international.
 > Fast top-line, thinner base. The Q1 concall read dropped from last quarter for this reason.
 > `— FCL Q1FY27 · 8.8→6.3 clean · unofficial (early read) · 268 chars`
+
+## Daily Desk mode
+
+Use when the user asks for the **daily posting sheet** ("today's posts", "daily options") or when
+`/results-season-run` chains here after its morning pass. This mode operationalises the approved
+Twitter strategy (`~/.gstack/projects/story-of-a-stock-apps/ceo-plans/2026-07-31-twitter-distribution-strategy.md`);
+the strategy file wins on any conflict.
+
+### 1. Gather the sheet material
+
+```bash
+node scripts/x-post-candidates.mjs --daily --days 14
+```
+
+Emits the structured sheet: `lane1_speed` (top 2 by strategy selection order — largest clean
+|QoQ| move → first-ever print → coverage rank — with `first_reply_link`, `provisional`,
+`freshness`, and the overflow that rolls to tomorrow), `lane2_evidence` (days since last thread +
+nudge + candidate topics), `lane3_dialogue` (fresh postable disagreements from the external-takes
+ledger, already deduped against `reply_to` in the posted ledger), and the `conventions` block.
+`--lane3-days N` widens the reply-freshness window (default 10).
+
+### 2. Draft the sheet
+
+All CLASSIC-mode rules apply (grounding, voice, provenance, ≤280 chars, no tags). On top:
+
+- **Lane 1 (≤2 posts):** one draft per pick, plus one alternate angle each. Tweet text stays
+  **link-free**; under each draft show the ready-to-paste **first reply** = `first_reply_link` +
+  the `first_reply_disclaimer` from the sheet. `provisional: true` → the score must be framed
+  "(early read, provisional)" — lead with what the documents said, score as support.
+- **Lane 3 (cold-start co-primary — never silently skip):** for each candidate, a reply draft
+  that engages the *specific claim* with our data. Peer tone, never adversarial — these accounts
+  are the peer group. Honour the `recheck` note: verify the ledger's numbers against the current
+  print before drafting. If empty, say so and suggest running `/external-take-tracker`.
+- **Lane 2:** if `nudge: true`, surface it with the thread candidates — don't draft the whole
+  thread unless asked (threads are a deliberate sit-down, not a morning-desk item).
+- Present the whole sheet compactly: Lane 1 drafts first, Lane 3 replies second, Lane 2 nudge as
+  a footer line. Ask which items are going out.
+
+### 2b. Read the performance loop
+
+The sheet's `recent_performance` block carries the latest per-tweet metrics for our own posted
+tweets (views / likes / retweets / replies), fetched by:
+
+```bash
+node scripts/x-post-performance.mjs        # refresh — run before the sheet when posts went out recently
+```
+
+This works for ANY account size — it hydrates each posted tweet by its ledger `url` via
+FxTwitter / the syndication tweet-result endpoint (the profile *page* is login-walled and the
+*timeline* endpoint is empty under ~10k followers, so per-URL is the only honest path; that's why
+logging the tweet URL at post time matters — the block lists any `posted_rows_missing_url`).
+Snapshots append to `data/x-posts/performance.jsonl` (commit with the ledger), so growth over
+time is visible.
+
+**Use it to bias, not to obey:** lean toward angle *types* that pulled engagement (score-drop
+tension vs guidance-note vs candor-read), and say which prior post motivated the choice. n is
+tiny early on — treat it as a hint, never a rule, and never let it override grounding or
+compliance. If `posted_rows_missing_url` is non-empty, ask the user to paste those tweet URLs.
+
+### 3. Log with the extended fields
+
+Same append-only ledger, three extra optional fields (schema in the README): `lane`
+(`speed` | `evidence` | `dialogue`), `utm_campaign` (from the link), `reply_to` (the tweet URL a
+dialogue reply answers — this is the dedupe key for Lane 3), and `dialog_candidate` (handle, only
+when a real exchange developed — it feeds the weekly M1 count). End-of-day: commit
+`data/x-posts/posted.jsonl` (ledger durability rule).
+
+### Compliance (both modes, non-negotiable)
+
+No buy/sell/hold/accumulate language, no target prices, no portfolio advice in replies. Posts
+state what documents say and what our read did. The first-reply disclaimer rides every Lane 1
+post. The quarterly self-audit thread and any public track-record framing are **gated on the
+professional SEBI compliance read** (strategy constraint 1) — do not draft those until the user
+confirms that consult happened.
 
 ## Guardrails
 
