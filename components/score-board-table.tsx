@@ -1,25 +1,34 @@
 "use client";
 
-// The Overall board: four columns in one grammar — a 0-10 number with the band
-// it falls in underneath. Quarter (how it just did), Growth (what's ahead),
+// The score board: four columns in one grammar — a 0-10 number with the band it
+// falls in underneath. Quarter (how it just did), Growth (what's ahead),
 // Valuation (what you pay), and Read (the composite of the three, plus a word
 // naming the configuration).
 //
-// WHY NOT WatchlistTable, which used to render this tab. That table answers a
-// holdings question and needs Trend and Moat Tag to do it; this board answers
-// "where does this company sit among 117?" and drops both. Trend is a delta, not
-// a score — sitting beside three 0-10 levels it invited the question of why
-// growth and valuation had no trend of their own. Moat is a categorical rating
-// that can't share the number+band format. Both still live on their own tabs.
-// The two surfaces genuinely diverged, so they no longer share a component;
-// /watchlists keeps WatchlistTable unchanged.
+// TWO SURFACES, ONE COMPONENT. The leaderboard "Overall" tab and a watchlist
+// render this same board, because a reader who learns the grammar on one must
+// not have to relearn it on the other. They differ in exactly two ways, both
+// props:
+//   - `watchlistId` turns on the per-row Remove action.
+//   - `belowCut` on a row greys it and drops its link. Only the leaderboard sets
+//     it: watchlists are user-owned and deliberately unfiltered by the coverage
+//     policy, so a holding never gets greyed out on your own list.
+// The `#` column means "rank on this board" in both cases — across the covered
+// universe on /leaderboards, within the list on /watchlists — which is why it is
+// derived from the rows passed in rather than read from a stored rank.
+//
+// It replaced the old watchlist table (Qtr+4Q / Trend / Forward / Moat Tag /
+// Valuation / portfolio-stance Read). Trend is a delta, not a score, and moat is
+// categorical — neither can share the number+band format, so both live on their
+// own leaderboard tabs.
 //
 // The columns are deliberately parallel: every cell is bandFor*(score) of the
 // number above it, so no cell can contradict its own label, and the Read number
 // is the same composite the # column sorts by.
 
 import Link from "next/link";
-import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowUpDown, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 
@@ -43,7 +52,7 @@ import { BANDS, bandForScore } from "@/lib/score-band";
 import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
 import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
 
-export type OverallRow = {
+export type ScoreBoardRow = {
   companyCode: string;
   companyName: string;
   quarterScore: number | null;
@@ -52,11 +61,11 @@ export type OverallRow = {
   growthScore: number | null;
   /** ALREADY rescaled to 0-10 by the data layer (lib/valuation-band). */
   valuationScore: number | null;
-  /** Below the composite cut: rendered greyed and non-clickable. */
+  /** Below the composite cut: rendered greyed and non-clickable. Never set on a watchlist. */
   belowCut: boolean;
 };
 
-type DerivedRow = OverallRow & {
+type DerivedRow = ScoreBoardRow & {
   readKey: BoardReadKey;
   readScore: number | null;
   readDescription: string;
@@ -82,6 +91,9 @@ type DerivedRow = OverallRow & {
  * run required. The stored value still governs which companies are greyed out
  * (belowCut) — that's a reviewed membership decision and must not be recomputed
  * in the browser. The two converge once the script is re-run and applied.
+ *
+ * It is also what lets a watchlist share this component: the same code numbers
+ * 8 rows 1-8 by their Read without needing a universe to rank against.
  */
 function assignEffectiveRanks(rows: Array<Omit<DerivedRow, "effectiveRank">>): DerivedRow[] {
   const ordered = [...rows].sort((a, b) => {
@@ -104,7 +116,7 @@ function assignEffectiveRanks(rows: Array<Omit<DerivedRow, "effectiveRank">>): D
   }));
 }
 
-function deriveRows(rows: OverallRow[]): DerivedRow[] {
+function deriveRows(rows: ScoreBoardRow[]): DerivedRow[] {
   return assignEffectiveRanks(
     rows.map((row) => {
       const read = classifyBoardRead({
@@ -377,9 +389,23 @@ function ScoreCell({
 const STICKY_COL = "sticky left-0 max-w-[11.5rem] bg-background sm:max-w-none";
 const STICKY_COL_BODY = `${STICKY_COL} before:pointer-events-none before:absolute before:inset-0 before:bg-accent/50 before:opacity-0 before:transition-opacity group-hover:before:opacity-100`;
 
-export function OverallTable({ rows }: { rows: OverallRow[] }) {
+export function ScoreBoardTable({
+  rows,
+  watchlistId,
+}: {
+  rows: ScoreBoardRow[];
+  /**
+   * Present on a watchlist, which owns the remove action. Omitted on the
+   * leaderboard: same board, whole universe, nothing to remove.
+   */
+  watchlistId?: number;
+}) {
+  const router = useRouter();
   const [sort, setSort] = useState<SortState>({ key: "coverageRank", direction: "asc" });
+  const [removingCompanyCode, setRemovingCompanyCode] = useState<string | null>(null);
   const sortedRows = sortRows(deriveRows(rows), sort);
+  const showRemove = watchlistId != null;
+  const columnCount = 5 + (showRemove ? 1 : 0);
 
   const handleSort = (key: SortKey) => {
     setSort((current) =>
@@ -392,6 +418,43 @@ export function OverallTable({ rows }: { rows: OverallRow[] }) {
   const sortDirectionLabel = (key: SortKey) =>
     sort.key === key ? (sort.direction === "asc" ? "ascending" : "descending") : "none";
 
+  const handleRemove = async (row: ScoreBoardRow) => {
+    if (removingCompanyCode || watchlistId == null) return;
+
+    const confirmed = window.confirm(`Remove ${row.companyName} from this watchlist?`);
+    if (!confirmed) return;
+
+    setRemovingCompanyCode(row.companyCode);
+    try {
+      const response = await fetch("/api/watchlists/items", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ companyCode: row.companyCode, watchlistId }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | { ok?: boolean; removed?: boolean; notFound?: boolean; error?: string; code?: string }
+        | null;
+
+      if (!response.ok) {
+        if (payload?.code === "watchlist_missing") {
+          window.alert("This watchlist no longer exists.");
+          return;
+        }
+        window.alert(payload?.error ?? "Unable to remove company from watchlist.");
+        return;
+      }
+
+      if (payload?.removed || payload?.notFound) {
+        router.refresh();
+      }
+    } finally {
+      setRemovingCompanyCode(null);
+    }
+  };
+
   return (
     <div className="relative">
       {/* The only cue that more columns exist to the right — the scroll container
@@ -402,7 +465,11 @@ export function OverallTable({ rows }: { rows: OverallRow[] }) {
         className="pointer-events-none absolute inset-y-0 right-0 z-30 w-10 bg-gradient-to-l from-background to-transparent lg:hidden"
       />
       <Table
-        aria-label="Companies by overall rank, with quarter score, growth outlook, valuation and read"
+        aria-label={
+          showRemove
+            ? "Watchlist companies by read, with quarter score, growth outlook and valuation"
+            : "Companies by overall rank, with quarter score, growth outlook, valuation and read"
+        }
         className="min-w-[820px] w-full text-sm"
       >
         <TableHeader className="bg-background/70">
@@ -423,7 +490,9 @@ export function OverallTable({ rows }: { rows: OverallRow[] }) {
                   columnKey: "coverageRank",
                   sort,
                   onSort: handleSort,
-                  ariaLabel: "Overall rank",
+                  // Same column, same derivation — the universe it ranks within
+                  // is whatever rows the surface passed in.
+                  ariaLabel: showRemove ? "Rank in this watchlist" : "Overall rank",
                 })}
                 {renderSortHead({
                   label: "Company",
@@ -476,6 +545,11 @@ export function OverallTable({ rows }: { rows: OverallRow[] }) {
                 info: COLUMN_INFO.read,
               })}
             </TableHead>
+            {showRemove && (
+              <TableHead className="px-2 py-3 text-foreground">
+                <span className="sr-only">Remove</span>
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -489,7 +563,8 @@ export function OverallTable({ rows }: { rows: OverallRow[] }) {
                   // Below the cut: de-emphasized to ~55% and inert. The row still
                   // carries its full data — this is "not in the ranked hundred",
                   // not "no information". Its company page stays reachable through
-                  // search, which is where the coverage policy puts it.
+                  // search, which is where the coverage policy puts it. Never set
+                  // on a watchlist: your own list is not subject to the cut.
                   className={`group border-b border-border/45 transition-colors last:border-0 ${
                     dim ? "opacity-55" : "hover:bg-accent/50"
                   }`}
@@ -585,12 +660,26 @@ export function OverallTable({ rows }: { rows: OverallRow[] }) {
                       </div>
                     </div>
                   </TableCell>
+                  {showRemove && (
+                    <TableCell className="px-2 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => void handleRemove(row)}
+                        disabled={removingCompanyCode === row.companyCode}
+                        aria-label={`Remove ${row.companyName} from this watchlist`}
+                        title="Remove from watchlist"
+                        className="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 dark:hover:bg-rose-950/20 dark:hover:text-rose-400"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })
           ) : (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={columnCount} className="h-24 text-center text-muted-foreground">
                 No results.
               </TableCell>
             </TableRow>

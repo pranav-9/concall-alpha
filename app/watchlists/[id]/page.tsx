@@ -3,18 +3,13 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getConcallData } from "@/app/company/get-concall-data";
-import { WatchlistTable, type WatchlistTableRow } from "../watchlist-table";
 import { WatchlistManageMenu } from "./watchlist-manage-menu";
 import { WatchlistTabs } from "./watchlist-tabs";
-import {
-  pickHeadlineGuidance,
-  type HeadlineGuidance,
-  type HeadlineGuidanceRow,
-} from "@/lib/guidance-tracking/headline-guidance";
-import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
-import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
-import { buildScorePath, type ScorePoint } from "@/lib/score-path";
-import type { TrajectoryKey } from "@/lib/score-trajectory";
+import { BandSummaryLine } from "@/components/band-summary-line";
+import { ScoreBoardTable, type ScoreBoardRow } from "@/components/score-board-table";
+import { classifyBoardRead } from "@/lib/board-read";
+import { computeBoardReadCounts } from "@/lib/leaderboard-distribution";
+import { buildScoreBoardRows } from "@/lib/score-board-rows";
 import { createClient } from "@/lib/supabase/server";
 import {
   CHIP_BASE,
@@ -41,8 +36,6 @@ type GrowthRankRow = {
   growth_score?: string | number | null;
   run_timestamp?: string | null;
 };
-
-type MoatSummaryRow = Pick<WatchlistTableRow, "moatLabel" | "moatRating" | "moatTier">;
 
 type WatchlistDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -128,11 +121,6 @@ const toNumeric = (value: unknown): number | null => {
   return null;
 };
 
-const computeAverageScore = (values: Array<number | null>) => {
-  const validValues = values.filter((value): value is number => value != null);
-  if (validValues.length === 0) return null;
-  return validValues.reduce((sum, value) => sum + value, 0) / validValues.length;
-};
 
 export default async function WatchlistDetailPage({ params }: WatchlistDetailPageProps) {
   const { id: rawId } = await params;
@@ -239,13 +227,10 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
     );
   }
 
-  const [
-    { rows, latestLabel, quarterLabels },
-    { data: companyNameRows },
-    { data: growthRows },
-    { data: moatRows },
-    { data: guidanceRows },
-  ] =
+  // getConcallData() with no options on purpose: the coverage gates are a
+  // discovery-surface policy, and a watchlist is user-owned. A holding that's a
+  // large cap or below the composite cut still renders in full, ungreyed.
+  const [{ rows, latestLabel }, { data: companyNameRows }, { data: growthRows }] =
     await Promise.all([
       getConcallData(),
       supabase.from("company").select("code, name"),
@@ -253,42 +238,7 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
         .from("growth_outlook")
         .select("company, growth_score, run_timestamp")
         .order("run_timestamp", { ascending: false }),
-      supabase
-        .from("moat_analysis")
-        .select(
-          "id, company_code, company_name, industry, rating, tier, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
-        )
-        .in("company_code", watchlistCodes)
-        .order("updated_at", { ascending: false })
-        .order("created_at", { ascending: false })
-        .order("id", { ascending: false }),
-      supabase
-        .from("guidance_tracking")
-        .select("company_code, guidance_type, target_period, status, guidance_text, latest_view")
-        .in("company_code", watchlistCodes),
     ]);
-
-  const quarterDataByCode = new Map<
-    string,
-    {
-      latestScore: number | null;
-      avg4: number | null;
-      trajectoryKey?: TrajectoryKey;
-      trendChange?: number | null;
-      trendDescription?: string | null;
-      scorePath: ScorePoint[];
-    }
-  >();
-  rows.forEach((row) => {
-    quarterDataByCode.set(row.company.toUpperCase(), {
-      latestScore: latestLabel ? toNumeric(row[latestLabel]) : null,
-      avg4: toNumeric(row["Latest 4Q Avg"]),
-      trajectoryKey: row.trajectoryKey,
-      trendChange: row.trendChange,
-      trendDescription: row.trendDescription,
-      scorePath: buildScorePath(row, quarterLabels),
-    });
-  });
 
   const latestGrowthByCompany = new Map<string, GrowthRankRow>();
   ((growthRows ?? []) as GrowthRankRow[]).forEach((row) => {
@@ -302,80 +252,49 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
     growthScoreByCode.set(companyCode, toNumeric(row.growth_score));
   });
 
-  const latestMoatByCompany = new Map<string, MoatSummaryRow>();
-  ((moatRows ?? []) as MoatAnalysisRow[]).forEach((row) => {
-    const normalized = normalizeMoatAnalysis(row);
-    if (!normalized) return;
-    const companyCode = normalized.companyCode.trim().toUpperCase();
-    if (!companyCode || latestMoatByCompany.has(companyCode)) return;
-    latestMoatByCompany.set(companyCode, {
-      moatLabel: normalized.moatRatingLabel,
-      moatRating: normalized.moatRating,
-      moatTier: normalized.moatTier,
-    });
-  });
-
   const companyNameByCode = new Map<string, string>();
   ((companyNameRows ?? []) as CompanyNameRow[]).forEach((row) => {
     companyNameByCode.set(row.code.toUpperCase(), row.name?.trim() || row.code);
   });
 
-  const guidanceRowsByCode = new Map<string, HeadlineGuidanceRow[]>();
-  ((guidanceRows ?? []) as HeadlineGuidanceRow[]).forEach((row) => {
-    const code = (row.company_code ?? "").trim().toUpperCase();
-    if (!code) return;
-    const list = guidanceRowsByCode.get(code) ?? [];
-    list.push(row);
-    guidanceRowsByCode.set(code, list);
-  });
-  const guidanceByCode = new Map<string, HeadlineGuidance>();
-  guidanceRowsByCode.forEach((items, code) => {
-    const headline = pickHeadlineGuidance(items);
-    if (headline) guidanceByCode.set(code, headline);
-  });
+  // Same builder the leaderboard's Overall tab uses, so the four columns mean
+  // exactly the same thing on both surfaces — including the stale-quarter
+  // fallback and the 0-100 -> 0-10 valuation rescale.
+  const boardRowsByCode = new Map(
+    buildScoreBoardRows(rows, latestLabel ?? null, growthScoreByCode, companyNameByCode).map(
+      (row) => [row.companyCode, row],
+    ),
+  );
 
-  const tableRows: WatchlistTableRow[] = watchlistCodes
-    .map((companyCode) => {
-      const quarterData = quarterDataByCode.get(companyCode);
-      const growthScore = growthScoreByCode.get(companyCode) ?? null;
-      const moatData = latestMoatByCompany.get(companyCode) ?? null;
-
-      return {
+  // A watchlisted company with no scored quarter at all never reaches
+  // getConcallData's output, so it needs a placeholder row rather than silently
+  // disappearing from a list the user built by hand.
+  const tableRows: ScoreBoardRow[] = watchlistCodes.map(
+    (companyCode) =>
+      boardRowsByCode.get(companyCode) ?? {
         companyCode,
         companyName: companyNameByCode.get(companyCode) ?? companyCode,
-        latestQuarterScore: quarterData?.latestScore ?? null,
-        avg4QuarterScore: quarterData?.avg4 ?? null,
-        growthScore,
-        trajectoryKey: quarterData?.trajectoryKey,
-        trendChange: quarterData?.trendChange ?? null,
-        trendDescription: quarterData?.trendDescription ?? null,
-        scorePath: quarterData?.scorePath ?? [],
-        moatLabel: moatData?.moatLabel ?? null,
-        moatRating: moatData?.moatRating ?? null,
-        moatTier: moatData?.moatTier ?? null,
-        guidance: guidanceByCode.get(companyCode) ?? null,
-      };
-    })
-    // Initial order = latest quarter score desc (unscored last); the table
-    // component re-sorts client-side from its own DEFAULT_SORT.
-    .sort((a, b) => {
-      if (a.latestQuarterScore != null && b.latestQuarterScore != null) {
-        if (b.latestQuarterScore !== a.latestQuarterScore) {
-          return b.latestQuarterScore - a.latestQuarterScore;
-        }
-      } else if (a.latestQuarterScore != null) {
-        return -1;
-      } else if (b.latestQuarterScore != null) {
-        return 1;
-      }
-      return a.companyName.localeCompare(b.companyName);
-    });
+        quarterScore: null,
+        quarterAsOf: null,
+        growthScore: growthScoreByCode.get(companyCode) ?? null,
+        valuationScore: null,
+        belowCut: false,
+      },
+  );
 
   const latestQuarterLabel = latestLabel ?? null;
-  const averageLatestQuarterScore = computeAverageScore(
-    tableRows.map((row) => row.latestQuarterScore),
+
+  // Summarised in the Read column's own configuration vocabulary — the same line
+  // the leaderboard runs above its Overall board.
+  const reads = tableRows.map((row) =>
+    classifyBoardRead({
+      quarterScore: row.quarterScore,
+      growthScore: row.growthScore,
+      valuationScore: row.valuationScore,
+    }),
   );
-  const averageGrowthScore = computeAverageScore(tableRows.map((row) => row.growthScore));
+  const readBandCounts = computeBoardReadCounts(reads.map((r) => r.key));
+  const readScored = reads.filter((r) => r.key !== "no_read").length;
 
   return (
     <WatchlistShell
@@ -395,21 +314,27 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
       }
       actions={<WatchlistManageMenu watchlistId={watchlist.id} currentName={watchlist.name} />}
     >
-      <div className={TABLE_CARD_CLASS}>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Ranked by latest quarter score
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
-              Avg latest qtr: {averageLatestQuarterScore != null ? averageLatestQuarterScore.toFixed(1) : "—"}
-            </span>
-            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
-              Avg forward: {averageGrowthScore != null ? averageGrowthScore.toFixed(1) : "—"}
-            </span>
+      <div className="space-y-3">
+        <BandSummaryLine
+          scored={readScored}
+          total={tableRows.length}
+          scopeNote="with a read"
+          bandCounts={readBandCounts}
+        />
+        <div className={TABLE_CARD_CLASS}>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
+            <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Watchlist board
+            </h2>
+            {/* Same caption as the leaderboard's Overall board: the Read column
+                shows the very number the # column ranks on, so this line only
+                has to say which way the weighting leans. */}
+            <p className="text-[11px] text-muted-foreground">
+              Ranked by Read · quality weighted 2:1 over price
+            </p>
           </div>
+          <ScoreBoardTable rows={tableRows} watchlistId={watchlist.id} />
         </div>
-        <WatchlistTable rows={tableRows} watchlistId={watchlist.id} />
       </div>
     </WatchlistShell>
   );
