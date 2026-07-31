@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -8,6 +9,7 @@ import { WatchlistTabs } from "./watchlist-tabs";
 import { BandSummaryLine } from "@/components/band-summary-line";
 import {
   ReadDistributionCurve,
+  ReadDistributionHeadline,
   ReadDistributionLegend,
 } from "@/components/read-distribution-curve";
 import { ScoreBoardTable, type ScoreBoardRow } from "@/components/score-board-table";
@@ -359,30 +361,40 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
       actions={<WatchlistManageMenu watchlistId={watchlist.id} currentName={watchlist.name} />}
     >
       <div className="space-y-3">
+        {/* Collapsed by default. The curve is supporting evidence for the board,
+            not a headline, and open it cost more vertical space than the thing
+            it supports. The summary keeps the one number worth reading at a
+            glance, so the closed state is still informative. */}
         {readDistribution && (
-          <section className={PANEL_CARD_CLASS + " space-y-3"}>
-            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <details className={`${PANEL_CARD_CLASS} group`}>
+            <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-2.5 gap-y-1">
+              <ChevronDown className="size-3.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
               <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Where this list sits
               </h2>
-              <p className="text-[11px] text-muted-foreground">
-                Read, 0–10 — the composite the board below ranks on
+              <ReadDistributionHeadline distribution={readDistribution} />
+            </summary>
+            <div className="mt-4 space-y-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <ReadDistributionLegend
+                  distribution={readDistribution}
+                  subjectLabel="this watchlist"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Read, 0–10 — the composite the board below ranks on
+                </p>
+              </div>
+              <ReadDistributionCurve
+                distribution={readDistribution}
+                subjectLabel="this watchlist"
+              />
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                The shape is every covered company with a read; each tick under the axis is one of
+                them. Your companies are the sky needles — hover one for its read and where it
+                lands against the field. Names are printed for the ones furthest from the median.
               </p>
             </div>
-            <ReadDistributionLegend
-              distribution={readDistribution}
-              subjectLabel="this watchlist"
-            />
-            <ReadDistributionCurve
-              distribution={readDistribution}
-              subjectLabel="this watchlist"
-            />
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              The shape is every covered company with a read; each tick under the axis is one of
-              them. Your companies are the sky needles — hover one for its read and where it lands
-              against the field. Names are printed for the ones furthest from the median.
-            </p>
-          </section>
+          </details>
         )}
         <BandSummaryLine
           scored={readScored}
