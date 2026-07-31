@@ -6,9 +6,15 @@ import { getConcallData } from "@/app/company/get-concall-data";
 import { WatchlistManageMenu } from "./watchlist-manage-menu";
 import { WatchlistTabs } from "./watchlist-tabs";
 import { BandSummaryLine } from "@/components/band-summary-line";
+import {
+  ReadDistributionCurve,
+  ReadDistributionLegend,
+} from "@/components/read-distribution-curve";
 import { ScoreBoardTable, type ScoreBoardRow } from "@/components/score-board-table";
-import { classifyBoardRead } from "@/lib/board-read";
+import { BOARD_READS, classifyBoardRead } from "@/lib/board-read";
+import { COVERAGE_SELECT, isAdmittedLargeCap } from "@/lib/coverage-policy";
 import { computeBoardReadCounts } from "@/lib/leaderboard-distribution";
+import { buildReadDistribution } from "@/lib/read-distribution";
 import { buildScoreBoardRows } from "@/lib/score-board-rows";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -29,6 +35,8 @@ type WatchlistItemRow = {
 type CompanyNameRow = {
   code: string;
   name?: string | null;
+  market_cap_band_at_admission?: string | null;
+  excluded_from_discovery?: boolean | null;
 };
 
 type GrowthRankRow = {
@@ -233,7 +241,10 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
   const [{ rows, latestLabel }, { data: companyNameRows }, { data: growthRows }] =
     await Promise.all([
       getConcallData(),
-      supabase.from("company").select("code, name"),
+      // Coverage columns ride along on a select this page already makes: the
+      // board itself is unfiltered (user-owned), but the distribution behind it
+      // needs to know which companies form the covered reference population.
+      supabase.from("company").select(`code, name, ${COVERAGE_SELECT}`),
       supabase
         .from("growth_outlook")
         .select("company, growth_score, run_timestamp")
@@ -253,8 +264,11 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
   });
 
   const companyNameByCode = new Map<string, string>();
+  const coverageByCode = new Map<string, CompanyNameRow>();
   ((companyNameRows ?? []) as CompanyNameRow[]).forEach((row) => {
-    companyNameByCode.set(row.code.toUpperCase(), row.name?.trim() || row.code);
+    const code = row.code.toUpperCase();
+    companyNameByCode.set(code, row.name?.trim() || row.code);
+    coverageByCode.set(code, row);
   });
 
   // Same builder the leaderboard's Overall tab uses, so the four columns mean
@@ -296,6 +310,36 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
   const readBandCounts = computeBoardReadCounts(reads.map((r) => r.key));
   const readScored = reads.filter((r) => r.key !== "no_read").length;
 
+  // The reference population for the curve. Only the ADMISSION gate applies:
+  // large caps are outside the positioning entirely, but the below-the-cut tail
+  // is still ours and belongs in a picture of the universe — the same population
+  // the leaderboard's Overall board renders (excludeLargeCaps + includeBelowCut).
+  // Note this is the covered universe, not the watchlist's own peers: a holding
+  // that's a large cap still gets a needle, it just isn't in the shape.
+  const universeReadScores: number[] = [];
+  boardRowsByCode.forEach((row, code) => {
+    if (isAdmittedLargeCap(coverageByCode.get(code))) return;
+    const read = classifyBoardRead({
+      quarterScore: row.quarterScore,
+      growthScore: row.growthScore,
+      valuationScore: row.valuationScore,
+    });
+    // "Has a read" is the same test the summary line above the board uses, so
+    // the two counts on this page can't mean different things.
+    if (read.key === "no_read" || read.score == null) return;
+    universeReadScores.push(read.score);
+  });
+
+  const readDistribution = buildReadDistribution(
+    universeReadScores,
+    tableRows.map((row, i) => ({
+      code: row.companyCode,
+      name: row.companyName,
+      score: reads[i].key === "no_read" ? null : reads[i].score,
+      readLabel: BOARD_READS[reads[i].key].label,
+    })),
+  );
+
   return (
     <WatchlistShell
       tabs={tabsNode}
@@ -315,6 +359,31 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
       actions={<WatchlistManageMenu watchlistId={watchlist.id} currentName={watchlist.name} />}
     >
       <div className="space-y-3">
+        {readDistribution && (
+          <section className={PANEL_CARD_CLASS + " space-y-3"}>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Where this list sits
+              </h2>
+              <p className="text-[11px] text-muted-foreground">
+                Read, 0–10 — the composite the board below ranks on
+              </p>
+            </div>
+            <ReadDistributionLegend
+              distribution={readDistribution}
+              subjectLabel="this watchlist"
+            />
+            <ReadDistributionCurve
+              distribution={readDistribution}
+              subjectLabel="this watchlist"
+            />
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              The shape is every covered company with a read; each tick under the axis is one of
+              them. Your companies are the sky needles — hover one for its read and where it lands
+              against the field. Names are printed for the ones furthest from the median.
+            </p>
+          </section>
+        )}
         <BandSummaryLine
           scored={readScored}
           total={tableRows.length}
