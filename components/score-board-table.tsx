@@ -13,9 +13,10 @@
 //   - `belowCut` on a row greys it and drops its link. Only the leaderboard sets
 //     it: watchlists are user-owned and deliberately unfiltered by the coverage
 //     policy, so a holding never gets greyed out on your own list.
-// The `#` column means "rank on this board" in both cases — across the covered
-// universe on /leaderboards, within the list on /watchlists — which is why it is
-// derived from the rows passed in rather than read from a stored rank.
+// The `#` column means "rank on this board" in both cases — across the ranked
+// hundred on /leaderboards, within the list on /watchlists — which is why it is
+// derived from the rows passed in rather than read from a stored rank. Below-cut
+// rows carry no number and sit at the bottom; they're rendered, not ranked.
 //
 // It replaced the old watchlist table (Qtr+4Q / Trend / Forward / Moat Tag /
 // Valuation / portfolio-stance Read). Trend is a delta, not a score, and moat is
@@ -107,6 +108,13 @@ function assignEffectiveRanks(rows: Array<Omit<DerivedRow, "effectiveRank">>): D
   ordered.forEach((row) => {
     // Unscored rows get no position — they can't be ranked on a missing number.
     if (row.readScore == null) return;
+    // Nor do below-cut rows: the # column is a position in the ranked hundred,
+    // and these are by definition not in it. Numbering them interleaved was the
+    // visible contradiction — a greyed #40 sitting between two live rows — and
+    // it also pushed the genuine 100th name down to ~#103. Skipping them makes
+    // the ranked set number 1..N with no gaps, and pairs with the pin below so
+    // the greyed tail reads as a tail rather than as a rendering fault.
+    if (row.belowCut) return;
     position += 1;
     positionByCode.set(row.companyCode, position);
   });
@@ -225,6 +233,13 @@ function sortRows(rows: DerivedRow[], sort: SortState) {
   const byName = (a: DerivedRow, b: DerivedRow) =>
     compareText(a.companyName, b.companyName, "asc");
   return [...rows].sort((a, b) => {
+    // Below-cut rows pin to the bottom under EVERY sort key and direction —
+    // they are not part of the ranked board, so they aren't competing for a
+    // position in it. Doing this only on the default sort would put the greyed
+    // tail back in the middle the moment a reader sorted by Quarter, which is
+    // the confusion this pin exists to remove. No-op on a watchlist, which
+    // never sets belowCut.
+    if (a.belowCut !== b.belowCut) return a.belowCut ? 1 : -1;
     let diff = 0;
     switch (sort.key) {
       case "coverageRank": {
