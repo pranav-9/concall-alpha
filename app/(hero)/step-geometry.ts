@@ -35,6 +35,17 @@ type Options = {
   padBottom: number;
   /** Extra headroom above/below the data, in score units. */
   pad?: number;
+  /** Force a domain instead of deriving one. Small multiples that sit side by
+   * side must share a scale, or their shapes aren't comparable. */
+  domain?: [number, number];
+  /**
+   * Quarter slots to divide the plot into, when that differs from the number of
+   * scores. Panels sharing a row set this to the longest history among them, so
+   * one quarter is the same width everywhere and a shorter trail draws shorter
+   * instead of being stretched to fill. Series are anchored to the right, the
+   * recent end being the one worth lining up.
+   */
+  slots?: number;
 };
 
 /** Domain snapped to whole scores so the gridlines land on readable values. */
@@ -47,7 +58,7 @@ export function scoreDomain(scores: readonly number[], pad = 0.6): [number, numb
 
 export function buildSteps(options: Options): StepGeometry {
   const { scores, width, height, padLeft, padRight, padTop, padBottom } = options;
-  const domain = scoreDomain(scores, options.pad ?? 0.6);
+  const domain = options.domain ?? scoreDomain(scores, options.pad ?? 0.6);
   const [lo, hi] = domain;
   const plotW = width - padLeft - padRight;
   const plotH = height - padTop - padBottom;
@@ -59,10 +70,12 @@ export function buildSteps(options: Options): StepGeometry {
     return { treads: [], path: "", area: "", length: 0, y, baseline, domain };
   }
 
-  const w = plotW / scores.length;
+  const slots = Math.max(options.slots ?? scores.length, scores.length);
+  const w = plotW / slots;
+  const offset = (slots - scores.length) * w;
   const treads: Tread[] = scores.map((score, index) => ({
-    x0: padLeft + index * w,
-    x1: padLeft + (index + 1) * w,
+    x0: padLeft + offset + index * w,
+    x1: padLeft + offset + (index + 1) * w,
     y: y(score),
     score,
     index,

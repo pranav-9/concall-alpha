@@ -57,8 +57,8 @@ export type CompanyTrail = {
 };
 
 export type HomeTrails = {
-  /** The company whose read has travelled furthest — the hero plate's subject. */
-  exhibit: CompanyTrail | null;
+  /** The hero plate's panels — up to three companies, each a different reading. */
+  exhibits: CompanyTrail[];
   /** Every covered company with at least one scored quarter. */
   wall: CompanyTrail[];
   companyCount: number;
@@ -142,34 +142,53 @@ function toTrail(
   };
 }
 
+const range = (trail: CompanyTrail) => trail.high.score - trail.low.score;
+
 /**
- * The exhibit is the widest-travelled read: among companies with a long enough
- * history to show a shape, the one whose score has covered the most ground.
- * Derived, not curated — a flat trail can't win, and no company is pinned.
+ * The hero shows three companies whose reads are *shaped* differently — the
+ * whole claim of the page is that where a score has been matters, and three
+ * distinct shapes make that case where one cannot.
  *
- * One ordering rule sits above range: a company whose LATEST read is breaking
- * down is passed over while any other candidate exists. The landing page would
- * otherwise carry a standing negative verdict on a named company, which is a
- * bigger claim than a homepage should make on its own. It is a de-prioritisation
- * and not a filter — if every candidate is in the alarm family, the widest one
- * still runs, because silently showing nothing would be worse.
+ * So the rule is one panel per trajectory, not the top three by range: group
+ * the long-enough histories by their classified trajectory, take the
+ * widest-travelled example of each, then keep the three widest of those. Every
+ * panel is therefore a different reading, and none is hand-picked.
+ *
+ * Companies whose LATEST read is breaking down are passed over while other
+ * candidates exist — the landing page shouldn't carry a standing negative
+ * verdict on a named company. De-prioritisation, not a filter: if that leaves
+ * fewer than three panels, alarm-family trails fill the remainder rather than
+ * shipping a short row.
  */
-function pickExhibit(trails: CompanyTrail[]): CompanyTrail | null {
+function pickExhibits(trails: CompanyTrail[], count = 3): CompanyTrail[] {
   const eligible = trails.filter((t) => t.points.length >= EXHIBIT_MIN_QUARTERS);
   const pool = eligible.length > 0 ? eligible : trails;
-  if (pool.length === 0) return null;
+  if (pool.length === 0) return [];
 
-  const breakingDown = (trail: CompanyTrail) =>
-    trajectoryInk(trail.trajectory) === "alarm" ? 1 : 0;
+  const widestPerTrajectory = (candidates: CompanyTrail[]) => {
+    const best = new Map<TrajectoryKey, CompanyTrail>();
+    candidates.forEach((trail) => {
+      const held = best.get(trail.trajectory);
+      if (
+        !held ||
+        range(trail) > range(held) ||
+        (range(trail) === range(held) && trail.points.length > held.points.length)
+      ) {
+        best.set(trail.trajectory, trail);
+      }
+    });
+    return [...best.values()].sort(
+      (a, b) => range(b) - range(a) || b.points.length - a.points.length || a.code.localeCompare(b.code),
+    );
+  };
 
-  return [...pool].sort((a, b) => {
-    if (breakingDown(a) !== breakingDown(b)) return breakingDown(a) - breakingDown(b);
-    const rangeA = a.high.score - a.low.score;
-    const rangeB = b.high.score - b.low.score;
-    if (rangeB !== rangeA) return rangeB - rangeA;
-    if (b.points.length !== a.points.length) return b.points.length - a.points.length;
-    return a.code.localeCompare(b.code);
-  })[0];
+  const calm = pool.filter((t) => trajectoryInk(t.trajectory) !== "alarm");
+  const picked = widestPerTrajectory(calm).slice(0, count);
+  if (picked.length >= count) return picked;
+
+  // Short row: top up from the alarm family, still one panel per trajectory.
+  const alarm = pool.filter((t) => trajectoryInk(t.trajectory) === "alarm");
+  return [...picked, ...widestPerTrajectory(alarm)].slice(0, count);
 }
 
 async function fetchHomeTrails(): Promise<HomeTrails> {
@@ -233,7 +252,7 @@ async function fetchHomeTrails(): Promise<HomeTrails> {
   });
 
   return {
-    exhibit: pickExhibit(wall),
+    exhibits: pickExhibits(wall),
     wall,
     companyCount: covered.size,
     sectorCount: sectors.size,
@@ -245,6 +264,6 @@ export const getCachedHomeTrails = unstable_cache(
   fetchHomeTrails,
   // Bump the version whenever CompanyTrail's shape changes — the cached payload
   // is JSON on disk, and a stale entry would arrive missing the new fields.
-  ["home-score-trails-v3"],
+  ["home-score-trails-v4"],
   { revalidate: 600 },
 );

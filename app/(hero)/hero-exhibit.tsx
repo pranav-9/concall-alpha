@@ -19,11 +19,11 @@ export default async function HeroExhibit({
 }: {
   companies: CompanySearchRow[];
 }) {
-  const { exhibit, companyCount, sectorCount, quarterCount } = await getCachedHomeTrails();
-  if (!exhibit) return <HeroExhibitFallback />;
+  const { exhibits, companyCount, sectorCount, quarterCount } = await getCachedHomeTrails();
+  if (exhibits.length === 0) return <HeroExhibitFallback />;
 
   return (
-    <ScorePlate trail={exhibit}>
+    <ScorePlate trails={exhibits}>
       <div className="flex h-full flex-col justify-between gap-8">
         <div>
           <h1 className="house-display text-[1.9rem] leading-[1.05] sm:text-[2.3rem] lg:text-[1.95rem] xl:text-[2.3rem]">
@@ -34,7 +34,8 @@ export default async function HeroExhibit({
             <span className="house-data text-[var(--ink)]">{quarterCount}</span> quarters
             read so far, across{" "}
             <span className="house-data text-[var(--ink)]">{companyCount}</span> mid- and
-            small-cap companies.
+            small-cap companies. Three of them are on this plate — same model,
+            three different shapes.
           </p>
         </div>
 

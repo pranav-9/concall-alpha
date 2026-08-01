@@ -1,12 +1,17 @@
-// The hero exhibit: one covered company's entire scored history, drawn as the
-// step function it actually is. Subject is chosen by lib/home-trails (widest
-// travelled read), so this is a live plate — nothing here is illustration.
+// The hero exhibit: three covered companies' scored histories side by side,
+// each drawn as the step function it actually is. Subjects come from
+// lib/home-trails (widest-travelled example of three different trajectories),
+// so this is a live plate — nothing here is illustration.
+//
+// Three panels rather than one because the page's claim is that SHAPE matters:
+// a climb, a flat band and a V read as different stories at a glance, which is
+// an argument a single trail can only assert.
 
 import Link from "next/link";
 
 import type { CompanyTrail } from "@/lib/home-trails";
-import { buildSteps, gridValues } from "./step-geometry";
 import { INK, trajectoryInk } from "@/lib/trajectory-ink";
+import { buildSteps, gridValues, scoreDomain } from "./step-geometry";
 
 type ChartSize = {
   width: number;
@@ -17,78 +22,79 @@ type ChartSize = {
   padBottom: number;
   axisType: number;
   annotationType: number;
-  /** Show one x tick every N quarters. */
-  tickEvery: number;
 };
 
-// Aspect ratios are chosen to fill the plate cell at each breakpoint — the SVG
-// scales on width, so a mismatched viewBox would letterbox the chart inside its
-// own frame.
-const WIDE: ChartSize = {
-  width: 900,
+// Panels are narrow, so the right-hand score axis is dropped: the annotated
+// low, high and latest carry every number a reader needs, and the gridlines
+// still give the level. Fewer marks, same information.
+const PANEL: ChartSize = {
+  width: 320,
   height: 330,
   padLeft: 6,
-  padRight: 52,
-  padTop: 26,
-  padBottom: 36,
+  padRight: 30,
+  padTop: 24,
+  padBottom: 28,
   axisType: 11,
   annotationType: 12,
-  tickEvery: 4,
 };
 
-const COMPACT: ChartSize = {
+const PANEL_COMPACT: ChartSize = {
   width: 420,
-  height: 250,
+  height: 190,
   padLeft: 4,
-  padRight: 40,
+  padRight: 38,
   padTop: 22,
-  padBottom: 30,
-  axisType: 13,
-  annotationType: 14,
-  tickEvery: 8,
+  padBottom: 26,
+  axisType: 12,
+  annotationType: 13,
 };
 
-function StepChart({ trail, size }: { trail: CompanyTrail; size: ChartSize }) {
+function StepChart({
+  trail,
+  size,
+  drawDelay,
+  domain,
+  slots,
+}: {
+  trail: CompanyTrail;
+  size: ChartSize;
+  drawDelay: number;
+  domain: [number, number];
+  slots: number;
+}) {
   const scores = trail.points.map((p) => p.score);
-  const geo = buildSteps({ scores, ...size });
+  const geo = buildSteps({ scores, ...size, domain, slots });
   const ink = INK[trajectoryInk(trail.trajectory)];
   const last = geo.treads[geo.treads.length - 1];
-  const axisX = size.width - size.padRight + 8;
 
   const lowTread = geo.treads[trail.lowIndex] ?? geo.treads[0];
   const highTread = geo.treads[trail.highIndex] ?? geo.treads[geo.treads.length - 1];
   const centre = (tread: (typeof geo.treads)[number]) => (tread.x0 + tread.x1) / 2;
-  // Keep edge annotations off the plate's margins.
-  const clampX = (x: number) => Math.min(Math.max(x, size.padLeft + 18), size.width - size.padRight - 18);
+  // Keep edge annotations off the panel's margins.
+  const clampX = (x: number) =>
+    Math.min(Math.max(x, size.padLeft + 14), size.width - size.padRight - 14);
+
+  const first = trail.points[0];
+  const latest = trail.points[trail.points.length - 1];
 
   return (
     <svg
       viewBox={`0 0 ${size.width} ${size.height}`}
       className="h-auto w-full overflow-visible"
+      style={{ ["--draw-delay" as string]: `${drawDelay}ms` }}
       role="img"
-      aria-label={`${trail.name} quarterly score, ${trail.points[0].label} to ${trail.points[trail.points.length - 1].label}. ${trail.trajectoryDescription}`}
+      aria-label={`${trail.name} quarterly score, ${first.label} to ${latest.label}. ${trail.trajectoryDescription}`}
     >
       {gridValues(geo.domain).map((value) => (
-        <g key={value}>
-          <line
-            x1={size.padLeft}
-            x2={size.width - size.padRight}
-            y1={geo.y(value)}
-            y2={geo.y(value)}
-            stroke="var(--rule)"
-            strokeWidth={1}
-          />
-          <text
-            x={axisX}
-            y={geo.y(value)}
-            dominantBaseline="middle"
-            fontSize={size.axisType}
-            fill="var(--ink-soft)"
-            className="house-data"
-          >
-            {value.toFixed(0)}
-          </text>
-        </g>
+        <line
+          key={value}
+          x1={geo.treads[0]?.x0 ?? size.padLeft}
+          x2={size.width - size.padRight}
+          y1={geo.y(value)}
+          y2={geo.y(value)}
+          stroke="var(--rule)"
+          strokeWidth={1}
+        />
       ))}
 
       <path d={geo.area} fill={ink} className="house-wash" />
@@ -96,7 +102,7 @@ function StepChart({ trail, size }: { trail: CompanyTrail; size: ChartSize }) {
         d={geo.path}
         fill="none"
         stroke={ink}
-        strokeWidth={2.25}
+        strokeWidth={2}
         strokeLinejoin="miter"
         className="house-draw"
         style={{ ["--draw-length" as string]: geo.length.toFixed(0) }}
@@ -113,7 +119,7 @@ function StepChart({ trail, size }: { trail: CompanyTrail; size: ChartSize }) {
           strokeDasharray="2 3"
         />
         <text
-          x={axisX}
+          x={size.width - size.padRight + 6}
           y={last.y}
           dominantBaseline="middle"
           fontSize={size.annotationType}
@@ -126,7 +132,7 @@ function StepChart({ trail, size }: { trail: CompanyTrail; size: ChartSize }) {
 
         <text
           x={clampX(centre(highTread))}
-          y={highTread.y - 9}
+          y={highTread.y - 8}
           textAnchor="middle"
           fontSize={size.annotationType}
           fill="var(--ink)"
@@ -136,7 +142,7 @@ function StepChart({ trail, size }: { trail: CompanyTrail; size: ChartSize }) {
         </text>
         <text
           x={clampX(centre(lowTread))}
-          y={lowTread.y + 17}
+          y={lowTread.y + 16}
           textAnchor="middle"
           fontSize={size.annotationType}
           fill="var(--ink)"
@@ -147,7 +153,7 @@ function StepChart({ trail, size }: { trail: CompanyTrail; size: ChartSize }) {
       </g>
 
       <line
-        x1={size.padLeft}
+        x1={geo.treads[0].x0}
         x2={size.width - size.padRight}
         y1={geo.baseline}
         y2={geo.baseline}
@@ -155,75 +161,129 @@ function StepChart({ trail, size }: { trail: CompanyTrail; size: ChartSize }) {
         strokeWidth={1}
       />
       <g className="house-annotate">
-        {geo.treads.map((tread, index) => {
-          const isLast = index === geo.treads.length - 1;
-          if (index % size.tickEvery !== 0 && !isLast) return null;
-          return (
-            <text
-              key={tread.index}
-              x={isLast ? tread.x1 : tread.x0}
-              y={geo.baseline + size.axisType + 8}
-              textAnchor={isLast ? "end" : "start"}
-              fontSize={size.axisType}
-              fill="var(--ink-soft)"
-              className="house-data"
-            >
-              {trail.points[index].label}
-            </text>
-          );
-        })}
+        <text
+          x={geo.treads[0].x0}
+          y={geo.baseline + size.axisType + 7}
+          fontSize={size.axisType}
+          fill="var(--ink-soft)"
+          className="house-data"
+        >
+          {first.label}
+        </text>
+        <text
+          x={size.width - size.padRight}
+          y={geo.baseline + size.axisType + 7}
+          textAnchor="end"
+          fontSize={size.axisType}
+          fill="var(--ink-soft)"
+          className="house-data"
+        >
+          {latest.label}
+        </text>
       </g>
     </svg>
   );
 }
 
-export default function ScorePlate({
+function Panel({
   trail,
-  children,
+  index,
+  domain,
+  slots,
 }: {
   trail: CompanyTrail;
-  children: React.ReactNode;
+  index: number;
+  domain: [number, number];
+  slots: number;
 }) {
   const ink = INK[trajectoryInk(trail.trajectory)];
-  const first = trail.points[0];
-  const last = trail.points[trail.points.length - 1];
+  const drawDelay = 100 + index * 220;
+
+  return (
+    <figure className="house-panel">
+      <figcaption className="mb-2 flex items-baseline justify-between gap-2">
+        <Link
+          href={`/company/${trail.code}`}
+          prefetch={false}
+          className="house-data house-micro min-w-0 truncate text-[var(--ink)] underline-offset-4 hover:underline"
+          title={trail.name}
+        >
+          {trail.code}
+        </Link>
+        <span className="house-data house-micro whitespace-nowrap" style={{ color: ink }}>
+          {trail.trajectoryLabel}
+        </span>
+      </figcaption>
+
+      <div className="hidden lg:block">
+        <StepChart trail={trail} size={PANEL} drawDelay={drawDelay} domain={domain} slots={slots} />
+      </div>
+      <div className="lg:hidden">
+        <StepChart
+          trail={trail}
+          size={PANEL_COMPACT}
+          drawDelay={drawDelay}
+          domain={domain}
+          slots={slots}
+        />
+      </div>
+
+      <p className="house-data house-micro mt-2 text-[var(--ink-soft)]">
+        {trail.points.length} qtrs · low {trail.low.score.toFixed(1)} · high{" "}
+        {trail.high.score.toFixed(1)}
+      </p>
+    </figure>
+  );
+}
+
+export default function ScorePlate({
+  trails,
+  children,
+}: {
+  trails: CompanyTrail[];
+  children: React.ReactNode;
+}) {
+  const quarters = trails.reduce((sum, trail) => sum + trail.points.length, 0);
+  // One domain across all three panels. Per-panel scales would let a shallow
+  // wobble draw like a collapse, which is exactly the misreading this section
+  // is arguing against.
+  const domain = scoreDomain(trails.flatMap((trail) => trail.points.map((p) => p.score)));
+  // ...and one quarter width, so a shorter history draws shorter rather than
+  // being stretched across the same span as a longer one.
+  const slots = Math.max(...trails.map((trail) => trail.points.length));
 
   return (
     <figure className="house-plate">
       <figcaption className="house-plate-bar">
-        <span className="house-data house-micro whitespace-nowrap">Plate 01 — Quarterly read</span>
-        <Link href={`/company/${trail.code}`} prefetch={false} className="house-plate-subject">
-          <span className="house-data house-micro">{trail.code}</span>
-          <span aria-hidden className="text-[var(--rule)]">/</span>
-          <span className="truncate">{trail.name}</span>
-        </Link>
+        <span className="house-data house-micro whitespace-nowrap">
+          Plate 01 — Quarterly read
+        </span>
+        <span className="house-data house-micro truncate text-[var(--ink)]">
+          {trails.length} companies · {trails.length} shapes
+        </span>
       </figcaption>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,23rem)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
         <div className="house-plate-cell border-b border-[var(--rule)] lg:border-b-0 lg:border-r">
           {children}
         </div>
-        <div className="house-plate-cell flex items-center">
-          <div className="hidden w-full lg:block">
-            <StepChart trail={trail} size={WIDE} />
-          </div>
-          <div className="w-full lg:hidden">
-            <StepChart trail={trail} size={COMPACT} />
-          </div>
+        <div className="house-panels">
+          {trails.map((trail, index) => (
+            <Panel
+              key={trail.code}
+              trail={trail}
+              index={index}
+              domain={domain}
+              slots={slots}
+            />
+          ))}
         </div>
       </div>
 
       <div className="house-plate-foot house-data house-micro">
-        <span>
-          {trail.points.length} quarters read · {first.label}—{last.label}
-        </span>
+        <span>{quarters} quarters behind these three lines</span>
         <span aria-hidden className="hidden text-[var(--rule)] sm:inline">|</span>
-        <span>
-          Low {trail.low.score.toFixed(1)} {trail.low.label} · High {trail.high.score.toFixed(1)}{" "}
-          {trail.high.label}
-        </span>
-        <span aria-hidden className="hidden text-[var(--rule)] sm:inline">|</span>
-        <span style={{ color: ink }}>Now {trail.trajectoryLabel.toLowerCase()}</span>
+        <span>One scale on both axes — the shapes are the difference</span>
       </div>
     </figure>
   );
