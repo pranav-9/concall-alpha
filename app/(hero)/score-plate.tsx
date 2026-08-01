@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import type { CompanyTrail } from "@/lib/home-trails";
 import { buildSteps, gridValues } from "./step-geometry";
-import { INK, trajectoryInk } from "./trajectory-ink";
+import { INK, trajectoryInk } from "@/lib/trajectory-ink";
 
 type ChartSize = {
   width: number;

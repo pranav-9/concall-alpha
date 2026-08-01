@@ -14,7 +14,7 @@ import {
   familyTrajectories,
   trajectoryInk,
   type InkFamily,
-} from "./trajectory-ink";
+} from "@/lib/trajectory-ink";
 
 const SPARK = {
   width: 74,

@@ -19,6 +19,7 @@ import {
   type TrajectoryKey,
 } from "@/lib/score-trajectory";
 import { createPublicReadClient } from "@/lib/supabase/public-read";
+import { trajectoryInk } from "@/lib/trajectory-ink";
 
 const PAGE_SIZE = 1000;
 const MAX_ROWS = 20000;
@@ -145,13 +146,24 @@ function toTrail(
  * The exhibit is the widest-travelled read: among companies with a long enough
  * history to show a shape, the one whose score has covered the most ground.
  * Derived, not curated — a flat trail can't win, and no company is pinned.
+ *
+ * One ordering rule sits above range: a company whose LATEST read is breaking
+ * down is passed over while any other candidate exists. The landing page would
+ * otherwise carry a standing negative verdict on a named company, which is a
+ * bigger claim than a homepage should make on its own. It is a de-prioritisation
+ * and not a filter — if every candidate is in the alarm family, the widest one
+ * still runs, because silently showing nothing would be worse.
  */
 function pickExhibit(trails: CompanyTrail[]): CompanyTrail | null {
   const eligible = trails.filter((t) => t.points.length >= EXHIBIT_MIN_QUARTERS);
   const pool = eligible.length > 0 ? eligible : trails;
   if (pool.length === 0) return null;
 
+  const breakingDown = (trail: CompanyTrail) =>
+    trajectoryInk(trail.trajectory) === "alarm" ? 1 : 0;
+
   return [...pool].sort((a, b) => {
+    if (breakingDown(a) !== breakingDown(b)) return breakingDown(a) - breakingDown(b);
     const rangeA = a.high.score - a.low.score;
     const rangeB = b.high.score - b.low.score;
     if (rangeB !== rangeA) return rangeB - rangeA;
@@ -233,6 +245,6 @@ export const getCachedHomeTrails = unstable_cache(
   fetchHomeTrails,
   // Bump the version whenever CompanyTrail's shape changes — the cached payload
   // is JSON on disk, and a stale entry would arrive missing the new fields.
-  ["home-score-trails-v2"],
+  ["home-score-trails-v3"],
   { revalidate: 600 },
 );
