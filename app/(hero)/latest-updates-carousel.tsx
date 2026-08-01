@@ -42,8 +42,14 @@ function toCarouselItem(item: UnifiedUpdate): CarouselUpdateItem {
   };
 }
 
-export default async function LatestUpdatesCarousel() {
+export default async function LatestUpdatesCarousel({
+  heading,
+}: {
+  heading?: React.ReactNode;
+} = {}) {
   const updates = await getCachedHomepageActivityFeed(10);
   if (updates.length === 0) return null;
-  return <LatestUpdatesCarouselRail updates={updates.map(toCarouselItem)} />;
+  return (
+    <LatestUpdatesCarouselRail updates={updates.map(toCarouselItem)} heading={heading} />
+  );
 }

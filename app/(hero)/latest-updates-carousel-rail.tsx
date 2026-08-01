@@ -81,8 +81,13 @@ function UpdateCard({ item }: { item: CarouselUpdateItem }) {
 
 export default function LatestUpdatesCarouselRail({
   updates,
+  heading,
 }: {
   updates: CarouselUpdateItem[];
+  /** Optional replacement for the built-in title block. The scroll controls
+   * live in the same row, so a caller that wants its own heading passes it in
+   * here rather than hiding this one and re-implementing the arrows. */
+  heading?: React.ReactNode;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -101,14 +106,16 @@ export default function LatestUpdatesCarouselRail({
   return (
     <section className="w-full">
       <div className="mb-3 flex items-end justify-between gap-3">
-        <div>
-          <h2 className="text-base font-bold tracking-[-0.01em] text-foreground">
-            Latest updates
-          </h2>
-          <p className="text-[11px] leading-tight text-muted-foreground">
-            Recent activity across covered companies
-          </p>
-        </div>
+        {heading ?? (
+          <div>
+            <h2 className="text-base font-bold tracking-[-0.01em] text-foreground">
+              Latest updates
+            </h2>
+            <p className="text-[11px] leading-tight text-muted-foreground">
+              Recent activity across covered companies
+            </p>
+          </div>
+        )}
         <div className="hidden items-center gap-1.5 sm:flex">
           <button
             type="button"

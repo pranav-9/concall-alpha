@@ -1,21 +1,14 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { ChevronDown } from "lucide-react";
-import ConcallScore from "@/components/concall-score";
+import Link from "next/link";
 import TopStocks from "./(hero)/top-stocks";
-import CoverageStrip, { CoverageStripFallback } from "./(hero)/coverage-strip";
+import HeroExhibit, { HeroExhibitFallback } from "./(hero)/hero-exhibit";
+import TrailWallSection, { TrailWallFallback } from "./(hero)/trail-wall-section";
 import LatestUpdatesCarousel, {
   LatestUpdatesCarouselFallback,
 } from "./(hero)/latest-updates-carousel";
-import { CompanySearch } from "@/components/company-search";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { QuarterTrackerBanner } from "@/components/quarter-tracker-banner";
-import { cn } from "@/lib/utils";
-import {
-  INNER_CARD,
-  PAGE_BACKGROUND_ATMOSPHERIC,
-  PANEL_CARD_NEUTRAL,
-} from "@/lib/design/shell";
 
 // Title/description are inherited from the root layout; this exists only to
 // pin the canonical so query-string variants don't get indexed separately.
@@ -23,207 +16,180 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-function TopStocksHeroFallback() {
+// The six reads we publish per company. Not a sequence — six lenses on the same
+// documents — so they carry no step numbers; the question each one answers is
+// the structure that matters.
+const READS = [
+  {
+    layer: "Business Snapshot",
+    question: "What does this company actually sell, and to whom?",
+    body:
+      "Segments, revenue drivers, business mix, and the historical economics that explain how the money has been made.",
+    example: "25% 4-yr revenue CAGR",
+  },
+  {
+    layer: "Moat Analysis",
+    question: "Can it keep earning this?",
+    body:
+      "The competitive position, the structural advantages holding it up, and what would erode them.",
+    example: "Narrow moat",
+  },
+  {
+    layer: "Quarterly Score",
+    question: "Was this call better or worse than the last one?",
+    body:
+      "One score per concall with the reasoning printed beside it — the trail on this page is made of these.",
+    example: "8.2 this quarter",
+  },
+  {
+    layer: "Key Variables",
+    question: "Which few numbers actually move the story?",
+    body:
+      "The non-financial operating variables management keeps returning to, tracked call over call.",
+    example: "Volume +18%",
+  },
+  {
+    layer: "Future Growth",
+    question: "What has to happen next?",
+    body:
+      "Catalysts, scenarios, and the forward setup management has laid out — separated from what already happened.",
+    example: "Growth read 8.7",
+  },
+  {
+    layer: "Guidance Tracker",
+    question: "Do they do what they said they would?",
+    body:
+      "What management guided, what landed, and whether their credibility is building or leaking.",
+    example: "Guided 15%, hit 14%",
+  },
+];
+
+function TopStocksFallback() {
   return (
-    <section className="w-full">
-      <div className="rounded-xl border border-border bg-card p-4 h-80 animate-pulse" />
-    </section>
+    <div className="h-80 animate-pulse rounded border border-[var(--rule)] bg-[var(--paper-2)]" />
   );
 }
 
 export default async function Home() {
   const companies = await getCachedCompanySearchRows().catch(() => []);
 
-  const analysisFramework = [
-    {
-      title: "Business Snapshot",
-      eyebrow: "Business layer",
-      body:
-        "Break the company into segments, revenue drivers, business mix, and the historical economics that explain how it has made money.",
-      stripClass: "bg-emerald-500/80",
-      badge: { kind: "text" as const, label: "25% 4 yr CAGR" },
-    },
-    {
-      title: "Moat Analysis",
-      eyebrow: "Durability layer",
-      body:
-        "The durability layer: competitive position, structural advantages, and what could erode them.",
-      stripClass: "bg-emerald-500/80",
-      badge: { kind: "moat" as const, label: "Narrow Moat" },
-    },
-    {
-      title: "Quarterly Score",
-      eyebrow: "Score layer",
-      body:
-        "Get a compact read on the latest quarter so a beginner can orient quickly and an advanced investor can spot signal changes fast.",
-      stripClass: "bg-amber-500/80",
-      badge: { kind: "score" as const, value: 8.2 },
-    },
-    {
-      title: "Key Variables",
-      eyebrow: "Operating layer",
-      body:
-        "Track the few non-financial business variables that best explain whether growth quality is strengthening or weakening.",
-      stripClass: "bg-violet-500/80",
-      badge: { kind: "text" as const, label: "18% volume growth" },
-    },
-    {
-      title: "Future Growth",
-      eyebrow: "Forward layer",
-      body:
-        "Move from what has happened to what could happen next through catalysts, scenarios, and the forward setup.",
-      stripClass: "bg-sky-500/80",
-      badge: { kind: "score" as const, value: 8.7, scoreKind: "growth" as const },
-    },
-    {
-      title: "Guidance Tracker",
-      eyebrow: "Management layer",
-      body:
-        "See how management has guided over time, what changed, and whether credibility is strengthening or deteriorating.",
-      stripClass: "bg-amber-500/80",
-      badge: { kind: "text" as const, label: "15% growth" },
-    },
-  ];
-
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <main className="house relative min-h-screen">
       <QuarterTrackerBanner />
-      <div className={cn(PAGE_BACKGROUND_ATMOSPHERIC, "-top-28 h-[56rem]")} />
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-4 pb-6 sm:px-6 sm:pb-8 lg:gap-10 lg:px-10 lg:pb-10">
-        {/* Row 1 — full-viewport hero: title, subtitle, search, coverage strip */}
-        <section className="flex min-h-[calc(100svh-var(--global-navbar-height,4.25rem)-var(--quarter-tracker-banner-height,2.25rem))] flex-col items-center text-center">
-          <div className="flex w-full flex-1 flex-col items-center justify-center gap-7">
-            <div className="space-y-4">
-              <h1 className="mx-auto max-w-4xl text-4xl font-black leading-[0.95] tracking-[-0.04em] text-foreground sm:text-5xl lg:text-6xl">
-                Research, not just numbers.
-              </h1>
-              <p className="mx-auto max-w-2xl text-sm leading-7 text-foreground/78 sm:text-base">
-                Every concall, read for you — the quarter, in a minute.
-              </p>
-            </div>
 
-            <CompanySearch
-              className="w-full max-w-xl"
-              instanceId="hero-search"
-              initialCompanies={companies}
-            />
-
-            <Suspense fallback={<CoverageStripFallback />}>
-              <CoverageStrip />
-            </Suspense>
-          </div>
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-12 px-4 pb-16 sm:px-6 lg:gap-16 lg:px-10">
+        {/* The exhibit — one company's whole scored history, full viewport. */}
+        <section className="flex min-h-[calc(100svh-var(--global-navbar-height,4.25rem)-var(--quarter-tracker-banner-height,2.25rem))] flex-col justify-center py-6">
+          <Suspense fallback={<HeroExhibitFallback />}>
+            <HeroExhibit companies={companies} />
+          </Suspense>
 
           <a
-            href="#latest-updates"
-            className="flex flex-col items-center gap-1 pb-6 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
+            href="#wall"
+            className="house-data house-micro mt-6 flex items-center gap-3 text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]"
           >
-            <span>Latest updates</span>
-            <ChevronDown className="h-4 w-4 motion-safe:animate-bounce" />
+            <span className="h-px w-10 bg-[var(--rule)]" aria-hidden />
+            <span>Plate 02 — every company we cover</span>
           </a>
         </section>
 
-        {/* Row 2 — latest updates carousel */}
-        <section id="latest-updates" className="scroll-mt-24">
+        <div id="wall" className="scroll-mt-24">
+          <Suspense fallback={<TrailWallFallback />}>
+            <TrailWallSection />
+          </Suspense>
+        </div>
+
+        <section aria-labelledby="updates-heading" className="house-block">
           <Suspense fallback={<LatestUpdatesCarouselFallback />}>
-            <LatestUpdatesCarousel />
+            <LatestUpdatesCarousel
+              heading={
+                <div>
+                  <p className="house-data house-micro text-[var(--ink-soft)]">
+                    Plate 03 — Fresh reads
+                  </p>
+                  <h2 id="updates-heading" className="house-display mt-2 text-2xl sm:text-3xl">
+                    What landed most recently
+                  </h2>
+                </div>
+              }
+            />
           </Suspense>
         </section>
 
-        <section className="space-y-6">
-          <div className={cn(PANEL_CARD_NEUTRAL, "sm:p-6")}>
-            <div className="mb-5">
-              <h2 className="text-2xl font-bold leading-tight text-foreground">
-                Top-rated companies
-              </h2>
-            </div>
-            <Suspense fallback={<TopStocksHeroFallback />}>
+        <section aria-labelledby="leaders-heading" className="house-block">
+          <p className="house-data house-micro text-[var(--ink-soft)]">Plate 04 — Where the reads are strongest</p>
+          <h2 id="leaders-heading" className="house-display mt-2 text-2xl sm:text-3xl">
+            Top-rated right now
+          </h2>
+          <div className="mt-6">
+            <Suspense fallback={<TopStocksFallback />}>
               <TopStocks heroPanel />
             </Suspense>
           </div>
+        </section>
 
-          <div className={cn(PANEL_CARD_NEUTRAL, "sm:p-6 lg:p-8")}>
-            <div className="max-w-4xl">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Analysis framework
-              </p>
-              <h2 className="mt-2 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
-                6-layer framework
-              </h2>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4 sm:mt-8">
-              {analysisFramework.map((item) => (
-                <div
-                  key={item.title}
-                  className={cn(
-                    INNER_CARD,
-                    "group relative overflow-hidden p-4 transition-transform hover:-translate-y-0.5 sm:min-h-48 sm:p-5",
-                  )}
-                >
-                  <div className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 ${item.stripClass}`} />
-                  <div className="flex items-start justify-between gap-3 pt-1">
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        {item.eyebrow}
-                      </p>
-                      <h3 className="mt-2 text-base font-semibold leading-snug text-foreground">
-                        {item.title}
-                      </h3>
-                    </div>
-                    {item.badge.kind === "score" ? (
-                      <ConcallScore
-                        score={item.badge.value}
-                        size="sm"
-                        className="ring-2"
-                        kind={"scoreKind" in item.badge ? item.badge.scoreKind : "quarterly"}
-                      />
-                    ) : item.badge.kind === "moat" ? (
-                      <span className="shrink-0 rounded-full border border-violet-200/60 bg-violet-100/70 px-2.5 py-1 text-[10px] font-medium text-violet-800 dark:border-violet-700/35 dark:bg-violet-900/30 dark:text-violet-200">
-                        {item.badge.label}
-                      </span>
-                    ) : (
-                      <span className="shrink-0 rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-foreground">
-                        {item.badge.label}
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="mt-4 text-sm leading-5 text-muted-foreground">{item.body}</p>
-                </div>
-              ))}
-            </div>
+        <section aria-labelledby="reads-heading" className="house-block">
+          <div className="max-w-2xl">
+            <p className="house-data house-micro text-[var(--ink-soft)]">Plate 05 — What we publish</p>
+            <h2 id="reads-heading" className="house-display mt-2 text-2xl sm:text-3xl">
+              Six reads on the same documents
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+              Every company page is built from concall transcripts, investor presentations,
+              and annual reports — read six different ways.
+            </p>
           </div>
 
-          <div className={cn(PANEL_CARD_NEUTRAL, "overflow-hidden sm:p-7 lg:p-8")}>
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-3xl">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center rounded-full border border-rose-200/60 bg-rose-100/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-rose-800 dark:border-rose-700/35 dark:bg-rose-900/30 dark:text-rose-200">
-                    Video research
-                  </span>
-                  <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Company walkthroughs
-                  </span>
+          <div className="house-ledger">
+            <div className="house-ledger-row house-ledger-head house-data house-micro text-[var(--ink-soft)]">
+              <span>Read</span>
+              <span>What it answers</span>
+              <span className="md:text-right">Example output</span>
+            </div>
+            {READS.map((read) => (
+              <div key={read.layer} className="house-ledger-row">
+                <p className="house-display text-base">{read.layer}</p>
+                <div>
+                  <p className="text-sm font-medium text-[var(--ink)]">{read.question}</p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--ink-soft)]">{read.body}</p>
                 </div>
-                <h2 className="mt-4 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
-                  Watch the research in action
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-                  Company walkthroughs using Story of a Stock to connect business context,
-                  management commentary, and numbers.
+                <p className="house-data house-micro text-[var(--ink-soft)] md:text-right">
+                  {read.example}
                 </p>
               </div>
-              <a
-                href="https://www.youtube.com/@pranavyadav6958"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex w-full items-center justify-center rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-background shadow-sm transition-transform hover:-translate-y-0.5 hover:bg-foreground/90 sm:w-fit"
-              >
-                Watch on YouTube →
-              </a>
-            </div>
+            ))}
           </div>
         </section>
+
+        <section aria-labelledby="watch-heading" className="house-block">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="house-data house-micro text-[var(--ink-soft)]">Plate 06 — On video</p>
+              <h2 id="watch-heading" className="house-display mt-2 text-2xl sm:text-3xl">
+                Watch a company get read
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+                Walkthroughs that connect the business context, the management commentary,
+                and the numbers — the same route the site takes, narrated.
+              </p>
+            </div>
+            <a
+              href="https://www.youtube.com/@pranavyadav6958"
+              target="_blank"
+              rel="noreferrer"
+              className="house-data house-micro w-fit border-b-2 border-[var(--mark)] pb-1 text-[var(--ink)] transition-colors hover:text-[var(--signal)]"
+            >
+              Watch on YouTube →
+            </a>
+          </div>
+        </section>
+
+        <p className="house-data house-micro border-t border-[var(--rule)] pt-5 text-[var(--ink-soft)]">
+          Scores read documents, not prices.{" "}
+          <Link href="/how-scores-work" prefetch={false} className="house-link">
+            How scores work
+          </Link>
+        </p>
       </div>
     </main>
   );

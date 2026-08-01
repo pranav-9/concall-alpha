@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Bricolage_Grotesque, Geist, IBM_Plex_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
@@ -36,6 +36,23 @@ const geistSans = Geist({
   variable: "--font-geist-sans",
   display: "swap",
   subsets: ["latin"],
+});
+
+// House style (see globals.css → `.house`). Two roles only: a variable
+// grotesque that carries the voice, and a mono that carries every number and
+// label. Geist stays the body face, so the landing page reads as a development
+// of the portal rather than a different product.
+const houseDisplay = Bricolage_Grotesque({
+  variable: "--font-display",
+  display: "swap",
+  subsets: ["latin"],
+});
+
+const houseData = IBM_Plex_Mono({
+  variable: "--font-data",
+  display: "swap",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 async function NavbarWithUser() {
@@ -90,7 +107,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} min-h-screen bg-background text-foreground antialiased`}>
+      <body
+        className={`${geistSans.className} ${houseDisplay.variable} ${houseData.variable} min-h-screen bg-background text-foreground antialiased`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
