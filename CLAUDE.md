@@ -70,6 +70,7 @@ Read [skills/concall-alpha-ui-patterns/SKILL.md](skills/concall-alpha-ui-pattern
 - **`page_view_events.referrer` changed meaning 2026-07-17.** It now stores the client-reported external referrer (null = internal/direct); rows before that date hold the route's own Referer header — always the app itself — and are **not** acquisition data. Classify via `lib/attribution.ts` (`isInternalHost` treats all `*.vercel.app` as internal). Tracker payload fields beyond `path`/`companyCode` must stay optional (old cached bundles POST without them).
 - **PostHog** initializes in `instrumentation-client.ts` (browser-only, silently off when `NEXT_PUBLIC_POSTHOG_KEY` is empty) and is reverse-proxied through the `/ingest` rewrites in `next.config.ts`. `skipTrailingSlashRedirect: true` and the `ingest` exclusion in `middleware.ts`'s matcher both exist for this — don't remove either.
 - **Canonical origin comes from `NEXT_PUBLIC_SITE_URL`** via [lib/site-url.ts](lib/site-url.ts) (metadataBase, sitemap, robots, canonicals). It's a Vercel env var, not code — never hardcode the domain, and never use `VERCEL_URL` for anything canonical (it's the per-deployment preview URL).
+- **Share cards are site-wide via `app/opengraph-image.tsx` / `app/twitter-image.tsx`** (branded 1200×630). Per-route metadata composes with them — Journal posts add OG `article` + Article JSON-LD in `app/blog/[slug]/page.tsx`. If you set `twitter` metadata on a route, keep `card: "summary_large_image"`; plain `"summary"` silently downgrades shares to a small thumbnail.
 
 ## Where to look first
 
