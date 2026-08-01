@@ -6,7 +6,7 @@
 // user's own voice; this script only assembles ground-truth material so the
 // draft never invents a number or a reason.
 //
-// Run from concall-alpha/:  node scripts/x-post-candidates.mjs [--days N] [--top N] [--include-excluded] [--exclude-posted] [--daily] [--lane3-days N]
+// Run from concall-alpha/:  node scripts/x-post-candidates.mjs [--days N] [--top N] [--include-excluded] [--exclude-posted] [--daily] [--lane3-days N] [--takes-days N]
 //
 // --daily emits the DAILY POSTING SHEET instead of the flat candidate list:
 // Lane 1 (speed, cap 2, strategy selection order), Lane 2 nudge (evidence
@@ -28,6 +28,7 @@ const INCLUDE_EXCLUDED = args.includes("--include-excluded");
 const EXCLUDE_POSTED = args.includes("--exclude-posted");
 const DAILY = args.includes("--daily");
 const LANE3_DAYS = Number(getArg("--lane3-days", "10"));
+const TAKES_DAYS = Number(getArg("--takes-days", "21"));
 
 // --- already-posted ledger (data/x-posts/posted.jsonl) ---
 // We never re-pitch a company/quarter we've already said something about publicly.
@@ -50,6 +51,39 @@ if (fs.existsSync(LEDGER_PATH)) {
     if (!postedHistory.has(row.company)) postedHistory.set(row.company, []);
     postedHistory.get(row.company).push(row);
   }
+}
+
+// --- external-takes ledger (data/external-takes/ledger.jsonl) ---
+// What tracked peer accounts are saying about companies we cover, written by
+// /external-take-tracker. Shared by both modes: classic candidates carry the
+// fresh rows per company (chatter = the closest thing we have to "trending"),
+// daily mode filters the same rows down to Lane 3 dialogue candidates.
+const EXT_LEDGER = path.join(SCRIPT_DIR, "..", "data", "external-takes", "ledger.jsonl");
+const extTakes = [];
+let extNewestLoggedOn = null;
+if (fs.existsSync(EXT_LEDGER)) {
+  for (const line of fs.readFileSync(EXT_LEDGER, "utf8").split("\n")) {
+    const t = line.trim();
+    if (!t) continue;
+    let row;
+    try { row = JSON.parse(t); } catch { continue; }
+    if (!row.company) continue;
+    extTakes.push(row);
+    if (!extNewestLoggedOn || (row.logged_on || "") > extNewestLoggedOn) extNewestLoggedOn = row.logged_on;
+  }
+}
+const extLedgerAgeDays = extNewestLoggedOn
+  ? Math.floor((Date.now() - new Date(extNewestLoggedOn).getTime()) / 864e5)
+  : null;
+const takeAgeDays = (row) => {
+  const d = row.tweet_date || row.logged_on;
+  return d ? (Date.now() - new Date(d).getTime()) / 864e5 : Infinity;
+};
+const extFreshByCompany = new Map(); // company -> fresh rows (tweet within TAKES_DAYS)
+for (const row of extTakes) {
+  if (takeAgeDays(row) > TAKES_DAYS) continue;
+  if (!extFreshByCompany.has(row.company)) extFreshByCompany.set(row.company, []);
+  extFreshByCompany.get(row.company).push(row);
 }
 
 const envPath = path.join(SCRIPT_DIR, "..", ".env");
@@ -181,6 +215,18 @@ for (const r of fresh) {
     provider_mismatch_vs_prior: !!providerMismatch, // if true, QoQ delta is provider-confounded — do NOT frame as a "move"
     rescore_required: !!sm.rescore_required,
     rationale, // the ground-truth "why" — headings + details + direction, per v4 category
+    // fresh peer chatter about this company (tweet within --takes-days). A draft
+    // that lands in an active conversation travels further; a "disagree" row is
+    // also a Lane-3 reply candidate — consider replying instead of posting cold.
+    external_takes: (extFreshByCompany.get(r.company_code) || []).map((t) => ({
+      source: t.source,
+      tweet_date: t.tweet_date,
+      tweet_url: t.tweet_url,
+      their_stance: t.their_stance,
+      their_claim: t.their_claim,
+      verdict: t.verdict,
+      our_read: t.our_read,
+    })),
     guidance_update: guidanceFresh
       ? {
           generated_at: g.generated_at,
@@ -192,7 +238,7 @@ for (const r of fresh) {
   });
 }
 
-// --- rank: recency + move size + guidance freshness, discovery-listed first ---
+// --- rank: recency + move size + guidance freshness + peer chatter, discovery-listed first ---
 const score = (c) => {
   let s = 0;
   const ageDays = (Date.now() - new Date(c.scored_at).getTime()) / 864e5;
@@ -200,6 +246,10 @@ const score = (c) => {
   if (c.qoq_delta != null && !c.provider_mismatch_vs_prior) s += Math.abs(c.qoq_delta) * 2.5; // bigger clean move = better hook
   if (c.guidance_update) s += 4;
   if (c.discovery_listed) s += 3;
+  // active peer conversation = tailwind; a disagreement is the sharpest hook of
+  // all. Kept below the move-size weight so chatter biases, never overrides.
+  if (c.external_takes.length) s += 3;
+  if (c.external_takes.some((t) => t.verdict === "disagree")) s += 2;
   if (c.already_posted_this_quarter) s -= 100; // said publicly already — sink it
   return s;
 };
@@ -216,6 +266,17 @@ if (!DAILY) {
       {
         generated_for_window_days: LOOKBACK_DAYS,
         cutoff,
+        external_takes_meta: {
+          ledger_newest_logged_on: extNewestLoggedOn,
+          ledger_age_days: extLedgerAgeDays,
+          takes_window_days: TAKES_DAYS,
+          note:
+            extLedgerAgeDays == null
+              ? "external-takes ledger empty — run /external-take-tracker first for the chatter signal"
+              : extLedgerAgeDays > 7
+                ? "ledger older than 7 days — run /external-take-tracker before trusting the chatter signal"
+                : null,
+        },
         candidate_count: pool.length,
         already_posted_count: suppressed.length,
         already_posted: suppressed.map((c) => `${c.code} ${c.quarter}`),
@@ -288,19 +349,14 @@ const lane1Overflow = [...todayPool, ...rolloverPool]
   .slice(2, 7)
   .map((c) => `${c.code} ${c.quarter} (Δ${c.qoq_delta ?? "n/a"}${c.provider_mismatch_vs_prior ? " provider-confounded" : ""})`);
 
-// --- Lane 3: dialogue candidates from the external-takes ledger ---
-const EXT_LEDGER = path.join(SCRIPT_DIR, "..", "data", "external-takes", "ledger.jsonl");
+// --- Lane 3: dialogue candidates from the external-takes ledger (parsed once, up top) ---
 const repliedUrls = new Set();
 for (const rows of postedHistory.values())
   for (const r of rows) if (r.reply_to) repliedUrls.add(r.reply_to);
 const lane3 = [];
 let lane3Stale = 0;
-if (fs.existsSync(EXT_LEDGER)) {
-  for (const line of fs.readFileSync(EXT_LEDGER, "utf8").split("\n")) {
-    const t = line.trim();
-    if (!t) continue;
-    let row;
-    try { row = JSON.parse(t); } catch { continue; }
+{
+  for (const row of extTakes) {
     if (!row.postable) continue;
     if (row.tweet_url && repliedUrls.has(row.tweet_url)) continue;
     const tweetAge = row.tweet_date ? (Date.now() - new Date(row.tweet_date).getTime()) / 864e5 : Infinity;

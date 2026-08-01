@@ -22,6 +22,24 @@ it automatically — no manual lookup needed — and step 4 is where you write b
 
 ## Sequence
 
+### 0. Refresh and read the chatter first
+
+Before gathering candidates, get the peer-chatter signal current and **show it to the user
+before any drafts** (their explicit ask, 2026-08-01 — the intermediate output is part of the
+deliverable, not something to compress into a sentence):
+
+- If the external-takes ledger's newest `logged_on` is **older than ~7 days** (step 1's payload
+  reports this as `external_takes_meta.ledger_age_days`, or check
+  `data/external-takes/ledger.jsonl` directly), run **`/external-take-tracker`** first and come
+  back. A stale ledger means the "what's being talked about" signal is fiction.
+- Present a compact chatter picture before the drafts: which covered companies the tracked
+  accounts are currently talking about, their stance, and our verdict (agree / disagree /
+  adds-new-info). "Nothing fresh in the ledger" is itself the finding — say it, don't skip it.
+
+This is deliberately *niche* trending — what our peer group (`data/external-takes/handles.txt`)
+is discussing about companies we cover — not X-wide trends. The strategy's reach mechanism is
+being early + plain-text company names, so X-wide trend-surfing stays out of scope.
+
 ### 1. Gather candidates
 
 ```bash
@@ -30,9 +48,20 @@ node scripts/x-post-candidates.mjs --days 14 --top 12
 
 Emits ranked JSON: one candidate per company (its newest fresh print), with `score`,
 `qoq_delta` (vs `prior_quarter`), the ground-truth `rationale` (per-v4-category heading + detail
-+ `direction`), any fresh `guidance_update`, and provenance flags. Widen with `--days 30` when the
-window is quiet; `--include-excluded` to allow de-emphasised companies. Ranking already favours
-recency, clean move size, guidance freshness, and discovery-listed names.
++ `direction`), any fresh `guidance_update`, provenance flags, and `external_takes[]` — fresh
+peer-chatter rows for that company from the external-takes ledger (tweet within `--takes-days`,
+default 21). Widen with `--days 30` when the window is quiet; `--include-excluded` to allow
+de-emphasised companies. Ranking already favours recency, clean move size, guidance freshness,
+discovery-listed names, **and active chatter** (a company being discussed gets a modest boost; a
+logged `disagree` a bit more — chatter biases the ranking, it never overrides a real move).
+
+**Use `external_takes` in the drafts, not just the ranking.** When a candidate has fresh chatter,
+say so in its meta line (`· chatter: equities_samjho bullish, we disagree`) — a post that lands
+in an active conversation travels further. A fresh `disagree` row is often better spent as a
+**reply** to that tweet than as a cold post (Daily Desk Lane 3 discipline: engage the specific
+claim, peer tone) — offer the user both framings. `external_takes_meta` at the top of the payload
+tells you the ledger's age; if its `note` is non-null you skipped step 0 — go back and run
+`/external-take-tracker`.
 
 **Posted-ledger fields** (read these before drafting):
 - `already_posted_this_quarter: true` → a `status: "posted"` row exists for this exact
