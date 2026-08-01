@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 
+import { getSiteUrl } from "@/lib/site-url";
+
 import { CATEGORY_LABELS, getAllPostMeta, getPostBySlug } from "../posts";
 import { mdxComponents } from "../mdx-components";
 
@@ -22,6 +24,20 @@ export async function generateMetadata({
     title: `${post.title} – Story of a Stock`,
     description: post.summary,
     alternates: { canonical: `/blog/${slug}` },
+    openGraph: {
+      type: "article",
+      title: post.title,
+      description: post.summary,
+      url: `/blog/${slug}`,
+      siteName: "Story of a Stock",
+      publishedTime: post.date,
+      tags: post.tags,
+    },
+    twitter: {
+      card: "summary",
+      title: post.title,
+      description: post.summary,
+    },
   };
 }
 
@@ -30,8 +46,23 @@ export default async function BlogPostPage({ params }: PageProps) {
   const post = getPostBySlug(slug);
   if (!post) notFound();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.summary,
+    datePublished: post.date,
+    url: `${getSiteUrl()}/blog/${slug}`,
+    author: { "@type": "Person", name: "Pranav Yadav" },
+    publisher: { "@type": "Organization", name: "Story of a Stock" },
+  };
+
   return (
     <main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <article className="mx-auto w-full max-w-2xl px-4 py-10 sm:py-14">
         <Link
           href="/blog"
