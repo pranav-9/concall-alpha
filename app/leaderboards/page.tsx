@@ -172,9 +172,8 @@ export default async function LeaderboardsPage({
                 <p className="border-t border-border/35 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
                   The <span className="font-medium text-foreground">{belowCutCount}</span> greyed{" "}
                   {belowCutCount === 1 ? "company" : "companies"} at the bottom{" "}
-                  {belowCutCount === 1 ? "sits" : "sit"} below the coverage cut — still tracked, not
-                  in the ranked hundred, and not linked from this board. Their pages stay reachable
-                  through search.
+                  {belowCutCount === 1 ? "sits" : "sit"} below the coverage cut — still tracked and
+                  still open to read, just not in the ranked hundred.
                 </p>
               )}
             </div>

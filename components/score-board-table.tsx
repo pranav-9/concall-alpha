@@ -10,9 +10,10 @@
 // not have to relearn it on the other. They differ in exactly two ways, both
 // props:
 //   - `watchlistId` turns on the per-row Remove action.
-//   - `belowCut` on a row greys it and drops its link. Only the leaderboard sets
-//     it: watchlists are user-owned and deliberately unfiltered by the coverage
-//     policy, so a holding never gets greyed out on your own list.
+//   - `belowCut` on a row greys it (still linked — de-emphasized, not blocked).
+//     Only the leaderboard sets it: watchlists are user-owned and deliberately
+//     unfiltered by the coverage policy, so a holding never gets greyed out on
+//     your own list.
 // The `#` column means "rank on this board" in both cases — across the ranked
 // hundred on /leaderboards, within the list on /watchlists — which is why it is
 // derived from the rows passed in rather than read from a stored rank. Below-cut
@@ -62,7 +63,7 @@ export type ScoreBoardRow = {
   growthScore: number | null;
   /** ALREADY rescaled to 0-10 by the data layer (lib/valuation-band). */
   valuationScore: number | null;
-  /** Below the composite cut: rendered greyed and non-clickable. Never set on a watchlist. */
+  /** Below the composite cut: rendered greyed but still linked. Never set on a watchlist. */
   belowCut: boolean;
 };
 
@@ -575,13 +576,13 @@ export function ScoreBoardTable({
               return (
                 <TableRow
                   key={row.companyCode}
-                  // Below the cut: de-emphasized to ~55% and inert. The row still
-                  // carries its full data — this is "not in the ranked hundred",
-                  // not "no information". Its company page stays reachable through
-                  // search, which is where the coverage policy puts it. Never set
+                  // Below the cut: de-emphasized to ~55%. The row still carries
+                  // its full data — this is "not in the ranked hundred", not "no
+                  // information" — and its name still links: the coverage policy
+                  // de-emphasizes these pages, it doesn't block them. Never set
                   // on a watchlist: your own list is not subject to the cut.
-                  className={`group border-b border-border/45 transition-colors last:border-0 ${
-                    dim ? "opacity-55" : "hover:bg-accent/50"
+                  className={`group border-b border-border/45 transition-colors last:border-0 hover:bg-accent/50 ${
+                    dim ? "opacity-55" : ""
                   }`}
                 >
                   <TableCell className={`${STICKY_COL_BODY} z-10 px-3 py-3`}>
@@ -589,29 +590,22 @@ export function ScoreBoardTable({
                       <span className="w-7 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
                         {Number.isFinite(row.effectiveRank) ? row.effectiveRank : "—"}
                       </span>
-                      {dim ? (
-                        // Deliberately not a link. aria-disabled rather than a
-                        // disabled button: it's still readable content, just not
-                        // a destination from this board.
-                        <span
-                          aria-disabled
-                          title={`${row.companyName} — below the coverage cut`}
-                          className="min-w-0 cursor-default truncate font-semibold text-muted-foreground"
-                        >
-                          {row.companyName}
-                        </span>
-                      ) : (
-                        // min-w-0 lets truncate engage inside the flex row; only
-                        // bites under the sm cap.
-                        <Link
-                          href={`/company/${row.companyCode}`}
-                          prefetch={false}
-                          title={row.companyName}
-                          className="min-w-0 truncate font-semibold text-foreground hover:underline"
-                        >
-                          {row.companyName}
-                        </Link>
-                      )}
+                      {/* Below-cut rows link too: the coverage policy de-emphasizes
+                          these companies, it doesn't block their pages — search
+                          reaches them, so the board should as well. A 2026-08-01
+                          session replay showed a visitor rage-clicking the greyed
+                          names and leaving. min-w-0 lets truncate engage inside
+                          the flex row; only bites under the sm cap. */}
+                      <Link
+                        href={`/company/${row.companyCode}`}
+                        prefetch={false}
+                        title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}
+                        className={`min-w-0 truncate font-semibold hover:underline ${
+                          dim ? "text-muted-foreground" : "text-foreground"
+                        }`}
+                      >
+                        {row.companyName}
+                      </Link>
                     </div>
                   </TableCell>
                   <TableCell className="px-3 py-3">
