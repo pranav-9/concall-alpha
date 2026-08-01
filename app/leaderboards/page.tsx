@@ -164,15 +164,17 @@ export default async function LeaderboardsPage({
               <OverallTable rows={overallRows} />
               {belowCutCount > 0 && (
                 // The greyed rows need naming or they read as a rendering fault.
-                // Deliberately NOT "the last N": cut membership is a stored,
-                // reviewed flag while the order above is computed live, so a
-                // greyed row can sit mid-board until the next compute run. The
-                // copy has to be true in both states.
+                // They now pin to the bottom and carry no # under every sort
+                // (score-board-table), so the copy can say where they are —
+                // earlier it could not, because cut membership is a stored
+                // reviewed flag while the order above is computed live, which
+                // let a greyed row sit mid-board between compute runs.
                 <p className="border-t border-border/35 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
-                  <span className="font-medium text-foreground">{belowCutCount}</span>{" "}
-                  {belowCutCount === 1 ? "greyed company sits" : "greyed companies sit"} below the
-                  coverage cut — still tracked, not in the ranked hundred, and not linked from this
-                  board. Their pages stay reachable through search.
+                  The <span className="font-medium text-foreground">{belowCutCount}</span> greyed{" "}
+                  {belowCutCount === 1 ? "company" : "companies"} at the bottom{" "}
+                  {belowCutCount === 1 ? "sits" : "sit"} below the coverage cut — still tracked, not
+                  in the ranked hundred, and not linked from this board. Their pages stay reachable
+                  through search.
                 </p>
               )}
             </div>
