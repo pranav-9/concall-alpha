@@ -103,14 +103,14 @@ export default async function Home() {
           <Suspense fallback={<LatestUpdatesCarouselFallback />}>
             <LatestUpdatesCarousel
               heading={
-                <div>
+                <>
                   <p className="house-data house-micro text-[var(--ink-soft)]">
                     Plate 03 — Fresh reads
                   </p>
                   <h2 id="updates-heading" className="house-display mt-2 text-2xl sm:text-3xl">
                     What landed most recently
                   </h2>
-                </div>
+                </>
               }
             />
           </Suspense>
