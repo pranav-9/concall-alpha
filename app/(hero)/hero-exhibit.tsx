@@ -25,17 +25,19 @@ export default async function HeroExhibit({
   return (
     <ScorePlate trails={exhibits}>
       <div className="flex h-full flex-col justify-between gap-8">
+        {/* A first-time reader has to be told what this is before a score can
+         * mean anything to them. The line about what a trail's SHAPE implies is
+         * the plate's caption, not the page's opening claim. */}
         <div>
-          <h1 className="house-display text-[1.9rem] leading-[1.05] sm:text-[2.3rem] lg:text-[1.95rem] xl:text-[2.3rem]">
-            A 7 on the way up is a different stock from a 7 on the way down.
+          <h1 className="house-display text-[2.1rem] leading-[1.03] sm:text-[2.6rem] lg:text-[2.3rem] xl:text-[2.7rem]">
+            Every concall, read for you.
           </h1>
           <p className="mt-5 text-sm leading-6 text-[var(--ink-soft)]">
-            So we read every concall, score the quarter, and keep the trail.{" "}
-            <span className="house-data text-[var(--ink)]">{quarterCount}</span> quarters
-            read so far, across{" "}
+            We score each quarter from the company&apos;s own documents and keep the
+            trail. <span className="house-data text-[var(--ink)]">{quarterCount}</span>{" "}
+            quarters so far, across{" "}
             <span className="house-data text-[var(--ink)]">{companyCount}</span> mid- and
-            small-cap companies. Three of them are on this plate — same model,
-            three different shapes.
+            small-cap companies.
           </p>
         </div>
 
@@ -46,9 +48,9 @@ export default async function HeroExhibit({
             initialCompanies={companies}
           />
           <p className="house-data house-micro flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[var(--ink-soft)]">
-            <span>
-              {companyCount} companies · {sectorCount} sectors
-            </span>
+            {/* Company count lives in the paragraph above; repeating it here
+             * was the same number twice in one cell. */}
+            <span>{sectorCount} sectors</span>
             <Link href="/coverage" prefetch={false} className="house-link whitespace-nowrap">
               how coverage works
             </Link>

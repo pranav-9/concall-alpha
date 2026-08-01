@@ -259,7 +259,7 @@ export default function ScorePlate({
           Plate 01 — Quarterly read
         </span>
         <span className="house-data house-micro truncate text-[var(--ink)]">
-          {trails.length} companies · {trails.length} shapes
+          {trails.length} shapes
         </span>
       </figcaption>
 
@@ -280,10 +280,15 @@ export default function ScorePlate({
         </div>
       </div>
 
+      {/* The figure's caption, which is where this line belongs: it reads the
+       * three shapes above it instead of asking a stranger to decode "a 7"
+       * before they know a score exists. */}
       <div className="house-plate-foot house-data house-micro">
-        <span>{quarters} quarters behind these three lines</span>
+        <span className="text-[var(--ink)]">
+          A 7 on the way up is a different stock from a 7 on the way down
+        </span>
         <span aria-hidden className="hidden text-[var(--rule)] sm:inline">|</span>
-        <span>One scale on both axes — the shapes are the difference</span>
+        <span>{quarters} quarters, one scale</span>
       </div>
     </figure>
   );
