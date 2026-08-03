@@ -1,6 +1,7 @@
 import { DeployButton } from "@/components/deploy-button";
 import Link from "next/link";
 import Navbar from "../(hero)/navbar";
+import { currentReportingQuarter } from "@/lib/current-quarter";
 
 export default function ProtectedLayout({
   children,
@@ -21,7 +22,7 @@ export default function ProtectedLayout({
             {/* {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />} */}
           </div>
         </nav>
-        <Navbar></Navbar>
+        <Navbar quarterLabel={currentReportingQuarter().label} />
         <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
           {children}
         </div>

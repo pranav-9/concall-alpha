@@ -15,6 +15,7 @@ import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { getSiteUrl } from "@/lib/site-url";
 import { getActivePoll } from "@/lib/feedback-polls/queries";
 import { getAllPostMeta } from "@/app/blog/posts";
+import { currentReportingQuarter } from "@/lib/current-quarter";
 
 // Search Console verifies a URL-prefix property off this meta tag. The token is
 // public by design (it ships in the HTML); it's an env var only so a new property
@@ -68,6 +69,7 @@ async function NavbarWithUser() {
     <Navbar
       initialCompanies={initialCompanies}
       latestJournalDate={latestJournalDate}
+      quarterLabel={currentReportingQuarter().label}
       initialUser={
         user
           ? {

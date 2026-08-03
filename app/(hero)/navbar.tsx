@@ -43,17 +43,21 @@ const Navbar = ({
   initialUser = null,
   initialCompanies = [],
   latestJournalDate = null,
+  quarterLabel = null,
 }: {
   initialUser?: UserInfo;
   initialCompanies?: { code: string; name: string | null }[];
   latestJournalDate?: string | null;
+  // Computed server-side (lib/current-quarter) so the label rolls forward each
+  // season instead of freezing at whatever quarter was current when shipped.
+  quarterLabel?: string | null;
 }) => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
   const navItems = [
     { href: "/leaderboards", label: "Leaderboards" },
-    { href: "/sectors", label: "Sectors" },
+    ...(quarterLabel ? [{ href: "/quarter-tracker", label: quarterLabel }] : []),
     { href: "/watchlists", label: "Watchlists" },
     { href: "/blog", label: "Journal" },
   ];
