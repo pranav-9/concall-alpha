@@ -27,7 +27,9 @@ type QuarterInfo = {
 // source_status is pulled as a scalar JSON path for the same reason: the whole
 // point is to read one string out of scoring_meta without shipping the blob.
 const SCORE_COLUMNS =
-  "company_code, fy, qtr, quarter_label, score, updated_at, created_at, source_status:details->scoring_meta->>source_status";
+  "company_code, fy, qtr, quarter_label, score, updated_at, created_at, " +
+  "source_status:details->scoring_meta->>source_status, " +
+  "scored_at:details->scoring_meta->>scored_at";
 
 // PostgREST silently caps an unpaginated select at 1000 rows, so page through it.
 // concall_analysis passes 841 rows through the scoring_meta filter today and grows
@@ -42,6 +44,8 @@ type ScoreRow = Pick<
   created_at?: string | null;
   /** details.scoring_meta.source_status — "unofficial" or absent. */
   source_status?: string | null;
+  /** details.scoring_meta.scored_at — when THIS score was computed. */
+  scored_at?: string | null;
 };
 
 async function fetchScoreRows(

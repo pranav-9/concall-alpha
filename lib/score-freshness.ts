@@ -55,10 +55,24 @@ export function formatScoredAt(timestamp: string | null | undefined): string | n
   return `${ist.getUTCDate()} ${MONTHS[ist.getUTCMonth()]} ${ist.getUTCFullYear()}, ${hh}:${mm} IST`;
 }
 
-/** `updated_at` wins; `created_at` is the fallback for any row predating it. */
+/**
+ * When the score currently in the row was computed.
+ *
+ * `details.scoring_meta.scored_at` is the only field that answers this. The row's
+ * own `created_at`/`updated_at` record when the ROW was first inserted, and
+ * nothing bumps them on a re-score — concall_analysis upserts in place, so a
+ * quarter re-scored off the official transcript keeps the timestamp of the
+ * unofficial score it replaced. On 2026-08-03 that gap was 507 of 897 rows
+ * platform-wide and 33 of the 60 Q1 FY27 rows; ADANIPORTS was re-scored that
+ * morning and still carried a created_at of 30 Jul.
+ *
+ * scored_at is present on every row that has scoring_meta, and rows without
+ * scoring_meta are hidden portal-wide, so the fallbacks are belt-and-braces.
+ */
 export function scoreWrittenAt(row: {
+  scored_at?: string | null;
   updated_at?: string | null;
   created_at?: string | null;
 }): string | null {
-  return row.updated_at ?? row.created_at ?? null;
+  return row.scored_at ?? row.updated_at ?? row.created_at ?? null;
 }

@@ -76,8 +76,16 @@ export default async function QuarterTrackerPage({
   const activeMovement = isMovementKey(resolved?.movement) ? resolved!.movement : null;
   const activeSector = resolved?.sector ?? null;
 
-  const { target, entries, countsByBucket, sectors, totalCompanies, reportedCompanies } =
-    await getTrackerData();
+  const {
+    target,
+    entries,
+    countsByBucket,
+    sectors,
+    totalCompanies,
+    reportedCompanies,
+    unofficialCompanies,
+    freshCompanies,
+  } = await getTrackerData();
   const upcomingCompanies = countsByBucket.upcoming;
 
   const sectorFiltered = entries.filter((entry) => {
@@ -136,6 +144,31 @@ export default async function QuarterTrackerPage({
             </div>
 
             <BucketSummary countsByBucket={countsByBucket} />
+
+            {(unofficialCompanies > 0 || freshCompanies > 0) && (
+              // The score mix above says how good the quarter looks; this says
+              // how settled it is. During season a third of the board is priced
+              // off borrowed transcripts and still owes a re-score, which the
+              // band distribution has no way to show.
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                {unofficialCompanies > 0 && (
+                  <>
+                    <span className="font-medium text-foreground">
+                      {unofficialCompanies} of {reportedCompanies}
+                    </span>{" "}
+                    scored off a third-party transcript, inside the five working days an issuer
+                    has to file its own — each is re-scored when the official lands.{" "}
+                  </>
+                )}
+                {freshCompanies > 0 && (
+                  <>
+                    <span className="font-medium text-foreground">{freshCompanies}</span>{" "}
+                    {freshCompanies === 1 ? "was" : "were"} scored or re-scored in the last 24
+                    hours.
+                  </>
+                )}
+              </p>
+            )}
           </div>
         </section>
 

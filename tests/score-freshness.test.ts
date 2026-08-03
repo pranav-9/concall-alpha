@@ -32,11 +32,24 @@ import {
   assert.equal(isScoredWithin24h("2026-08-03T12:30:00Z", now), true, "clock skew stays fresh");
 }
 
-// updated_at wins; created_at only fills in for a row that has no updated_at.
+// scored_at wins over BOTH row timestamps. This is the whole point: a re-score
+// upserts in place, so created_at/updated_at still describe the superseded
+// score. ADANIPORTS on 2026-08-03 is the live case — row created 30 Jul,
+// re-scored that morning. Reading created_at would have called it four days old.
 {
+  assert.equal(
+    scoreWrittenAt({
+      scored_at: "2026-08-03T11:50:00Z",
+      updated_at: "2026-07-30T12:14:00Z",
+      created_at: "2026-07-30T12:14:00Z",
+    }),
+    "2026-08-03T11:50:00Z",
+    "scored_at beats a stale created_at/updated_at",
+  );
   assert.equal(
     scoreWrittenAt({ updated_at: "2026-08-03T11:58:00Z", created_at: "2026-07-01T00:00:00Z" }),
     "2026-08-03T11:58:00Z",
+    "no scored_at: updated_at is the next best",
   );
   assert.equal(scoreWrittenAt({ updated_at: null, created_at: "2026-07-01T00:00:00Z" }), "2026-07-01T00:00:00Z");
   assert.equal(scoreWrittenAt({}), null);

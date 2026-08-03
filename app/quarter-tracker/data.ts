@@ -1,4 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import {
+  isScoredWithin24h,
+  normalizeSourceStatus,
+  scoreWrittenAt,
+  type ScoreSourceStatus,
+} from "@/lib/score-freshness";
 import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import { BANDS, SCORE_BAND_ORDER, bandForScore, type BandKey } from "@/lib/score-band";
 import {
@@ -30,7 +36,17 @@ export type TrackerEntry = {
   priorScore: number | null;
   priorLabel: string | null;
   expectedDate: string | null;
-  createdAt: string | null;
+  /**
+   * When this score was computed (scoring_meta.scored_at), NOT when the row was
+   * inserted. During results season a company is scored off a third-party
+   * transcript and re-scored days later off the issuer's — the row is upserted
+   * in place, so created_at still points at the superseded score.
+   */
+  scoredAt: string | null;
+  /** null = issuer-filed transcript; "unofficial" = third-party source. */
+  sourceStatus: ScoreSourceStatus;
+  /** Server-computed against one clock for the whole render. */
+  scoredWithin24h: boolean;
 };
 
 type CompanyRow = {
@@ -48,6 +64,9 @@ type AnalysisRow = {
   fy: number;
   qtr: number;
   created_at: string | null;
+  updated_at: string | null;
+  source_status: string | null;
+  scored_at: string | null;
 };
 
 type CalendarRow = {
@@ -75,10 +94,16 @@ export type TrackerData = {
   sectors: string[];
   totalCompanies: number;
   reportedCompanies: number;
+  /** Reported this quarter off a third-party transcript — each owes a re-score. */
+  unofficialCompanies: number;
+  /** Scored (or re-scored) in the last 24 hours. */
+  freshCompanies: number;
 };
 
 export async function getTrackerData(): Promise<TrackerData> {
   const target = getTargetQuarter();
+  // One clock for the whole render, so two rows can't straddle the 24h edge.
+  const renderedAt = new Date();
   const supabase = await createClient();
   const [{ data: companyData }, { data: analysisData }, calendarResult] =
     await Promise.all([
@@ -87,7 +112,13 @@ export async function getTrackerData(): Promise<TrackerData> {
         .select(`code, name, sector, sub_sector, ${COVERAGE_SELECT}`),
       supabase
         .from("concall_analysis")
-        .select("company_code, score, fy, qtr, created_at")
+        // source_status and scored_at come back as scalar JSON paths so the
+        // whole details blob stays off the wire.
+        .select(
+          "company_code, score, fy, qtr, created_at, updated_at, " +
+            "source_status:details->scoring_meta->>source_status, " +
+            "scored_at:details->scoring_meta->>scored_at",
+        )
         // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
         .not("details->scoring_meta", "is", null),
       supabase
@@ -101,7 +132,10 @@ export async function getTrackerData(): Promise<TrackerData> {
   // de-emphasized companies (large-cap band / coverage cut) stay off it,
   // same as leaderboards and the homepage feed.
   const companies = ((companyData ?? []) as CompanyRow[]).filter(isDiscoveryListed);
-  const analysis = (analysisData ?? []) as AnalysisRow[];
+  // Double assertion: the generated Supabase types don't model JSON-path
+  // aliases in a select, so source_status/scored_at widen the row to an error
+  // union. Same shape as fetchScoreRows in app/company/get-concall-data.ts.
+  const analysis = (analysisData ?? []) as unknown as AnalysisRow[];
   // earnings_calendar may not yet exist in the DB — treat errors as empty.
   const calendarRows: CalendarRow[] =
     !calendarResult.error && Array.isArray(calendarResult.data)
@@ -169,6 +203,7 @@ export async function getTrackerData(): Promise<TrackerData> {
 
       const expectedDate =
         calendarByCompany.get(key) ?? calendarBySymbol.get(key) ?? null;
+      const scoredAt = target ? scoreWrittenAt(target) : null;
 
       return {
         code: c.code,
@@ -180,7 +215,9 @@ export async function getTrackerData(): Promise<TrackerData> {
         priorScore,
         priorLabel: prior ? quarterLabelFor(prior.fy, prior.qtr) : null,
         expectedDate,
-        createdAt: target?.created_at ?? null,
+        scoredAt,
+        sourceStatus: normalizeSourceStatus(target?.source_status),
+        scoredWithin24h: isScoredWithin24h(scoredAt, renderedAt),
       };
     })
     .filter((entry) => {
@@ -219,5 +256,7 @@ export async function getTrackerData(): Promise<TrackerData> {
     sectors,
     totalCompanies: entries.length,
     reportedCompanies: entries.length - countsByBucket.upcoming,
+    unofficialCompanies: entries.filter((e) => e.sourceStatus === "unofficial").length,
+    freshCompanies: entries.filter((e) => e.scoredWithin24h).length,
   };
 }
