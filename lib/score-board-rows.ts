@@ -45,6 +45,12 @@ export function buildScoreBoardRows(
       // moves the stored 0-100 integer onto the board's 0-10 scale.
       valuationScore: toValuationScale(toNumericValue(row.valuationScore)),
       belowCut: row.belowCut === true,
+      // Both already describe the score the Quarter cell renders, including the
+      // stale fallback above — getConcallData resolves them against the same
+      // record, so they can't end up qualifying a different quarter.
+      quarterSourceStatus: row.latestSourceStatus ?? null,
+      quarterScoredWithin24h: row.scoredWithin24h === true,
+      quarterScoredAt: row.latestScoredAt ?? null,
     };
   });
 }

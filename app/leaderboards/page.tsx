@@ -111,6 +111,13 @@ export default async function LeaderboardsPage({
   const overallBandCounts = computeBoardReadCounts(overallReads.map((r) => r.key));
   const overallScored = overallReads.filter((r) => r.key !== "no_read").length;
   const belowCutCount = overallRows.filter((row) => row.belowCut).length;
+  // Counted over the whole board including the greyed tail, unlike the Quarter
+  // tab — this board renders that tail, so a count that excluded it would not
+  // match what the reader can see.
+  const overallUnofficialCount = overallRows.filter(
+    (row) => row.quarterSourceStatus === "unofficial",
+  ).length;
+  const overallFreshCount = overallRows.filter((row) => row.quarterScoredWithin24h).length;
 
   return (
     <main className="relative isolate overflow-hidden">
@@ -170,6 +177,28 @@ export default async function LeaderboardsPage({
                 </p>
               </div>
               <OverallTable rows={overallRows} />
+              {(overallUnofficialCount > 0 || overallFreshCount > 0) && (
+                // The Read is computed FROM the quarter score, so an unofficial
+                // quarter makes the rank provisional too. That has to be said
+                // on the board that ranks on it, not only on the Quarter tab.
+                <p className="border-t border-border/35 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
+                  {overallUnofficialCount > 0 && (
+                    <>
+                      <span className="font-medium text-foreground">{overallUnofficialCount}</span>{" "}
+                      {overallUnofficialCount === 1 ? "row carries" : "rows carry"} an{" "}
+                      <span className="font-medium text-foreground">Unofficial</span> quarter score
+                      — read off a third-party transcript and re-scored when the issuer files, so
+                      the Read above it moves too.{" "}
+                    </>
+                  )}
+                  {overallFreshCount > 0 && (
+                    <>
+                      <span className="font-medium text-foreground">New · 24h</span> marks the{" "}
+                      {overallFreshCount} scored in the last twenty-four hours.
+                    </>
+                  )}
+                </p>
+              )}
               {belowCutCount > 0 && (
                 // The greyed rows need naming or they read as a rendering fault.
                 // They now pin to the bottom and carry no # under every sort

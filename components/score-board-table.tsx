@@ -50,7 +50,9 @@ import {
   classifyBoardRead,
   type BoardReadKey,
 } from "@/lib/board-read";
+import { FreshScoreChip, UnofficialChip } from "@/components/score-provenance-chips";
 import { BANDS, bandForScore } from "@/lib/score-band";
+import { formatScoredAt, type ScoreSourceStatus } from "@/lib/score-freshness";
 import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
 import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
 
@@ -65,6 +67,15 @@ export type ScoreBoardRow = {
   valuationScore: number | null;
   /** Below the composite cut: rendered greyed but still linked. Never set on a watchlist. */
   belowCut: boolean;
+  /**
+   * Provenance and recency of quarterScore. Optional because a watchlisted
+   * company with no scored quarter is built here as a placeholder row, and a
+   * placeholder has no score to qualify.
+   */
+  quarterSourceStatus?: ScoreSourceStatus;
+  quarterScoredWithin24h?: boolean;
+  /** ISO; feeds the chip titles only. */
+  quarterScoredAt?: string | null;
 };
 
 type DerivedRow = ScoreBoardRow & {
@@ -156,6 +167,16 @@ const COLUMN_INFO = {
       <p>
         <span className="font-medium text-foreground">as of Qx FYxx</span> means the company
         hasn&apos;t reported the board&apos;s latest quarter yet, so this is its own newest print.
+      </p>
+      <p>
+        <span className="font-medium text-foreground">Unofficial</span> means the score was read
+        off a third-party transcript, published inside the five working days an issuer has to
+        file its own. It is re-scored when the official one lands, so treat it as provisional —
+        including in the Read, which is computed from it.
+      </p>
+      <p>
+        <span className="font-medium text-foreground">New · 24h</span> means this score was
+        written or re-written in the last twenty-four hours.
       </p>
     </>
   ),
@@ -367,6 +388,7 @@ function ScoreCell({
   bandClass,
   note,
   dimmed,
+  chips,
 }: {
   score: number | null;
   bandLabel: string | null;
@@ -374,6 +396,8 @@ function ScoreCell({
   /** e.g. "as of Q4 FY26" — only the Quarter column uses this. */
   note?: string | null;
   dimmed: boolean;
+  /** Provenance / recency chips — only the Quarter column passes these. */
+  chips?: React.ReactNode;
 }) {
   if (score == null || bandLabel == null) {
     return <span className="text-muted-foreground">—</span>;
@@ -392,6 +416,10 @@ function ScoreCell({
           <span className="whitespace-nowrap text-[10px] text-muted-foreground">{note}</span>
         )}
       </div>
+      {/* Own line, not appended to the band row: this column can already carry
+          an "as of Qx FYxx" note, and a third item inline overflowed the cell
+          on the sticky-column mobile layout. */}
+      {chips && <div className="mt-1 flex flex-wrap items-center gap-1">{chips}</div>}
     </div>
   );
 }
@@ -619,6 +647,25 @@ export function ScoreBoardTable({
                       }
                       note={row.quarterAsOf ? `as of ${row.quarterAsOf}` : null}
                       dimmed={dim}
+                      chips={
+                        row.quarterSourceStatus === "unofficial" ||
+                        row.quarterScoredWithin24h ? (
+                          <>
+                            {row.quarterSourceStatus === "unofficial" && (
+                              <UnofficialChip
+                                scoredAt={formatScoredAt(row.quarterScoredAt)}
+                                dimmed={dim}
+                              />
+                            )}
+                            {row.quarterScoredWithin24h && (
+                              <FreshScoreChip
+                                scoredAt={formatScoredAt(row.quarterScoredAt)}
+                                dimmed={dim}
+                              />
+                            )}
+                          </>
+                        ) : null
+                      }
                     />
                   </TableCell>
                   <TableCell className="px-3 py-3">
