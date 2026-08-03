@@ -84,6 +84,14 @@ export default async function LeaderboardsPage({
         return Number.isFinite(n) ? n : null;
       })
     : [];
+  // Two facts about the Latest column the score itself can't carry: during
+  // results season a third of it is priced off third-party transcripts, and
+  // some of it moved since the reader last looked. Counted here so the legend
+  // below the table only appears when there is something to explain.
+  const quarterUnofficialCount = rankedRows.filter(
+    (r) => r.latestSourceStatus === "unofficial",
+  ).length;
+  const quarterFreshCount = rankedRows.filter((r) => r.scoredWithin24h === true).length;
   const quarterBandCounts = computeQuarterBandCounts(quarterLatestScores);
   const quarterScored = quarterLatestScores.filter((s): s is number => typeof s === "number").length;
   const growthBandCounts = computeGrowthBandCounts(growthEntries.map((e) => e.growthScore));
@@ -188,6 +196,26 @@ export default async function LeaderboardsPage({
               bandCounts={quarterBandCounts}
             />
             <LeaderboardTable quarterLabels={quarterLabels} data={rankedRows} />
+            {(quarterUnofficialCount > 0 || quarterFreshCount > 0) && (
+              <p className="px-1 text-[11px] leading-relaxed text-muted-foreground">
+                {quarterUnofficialCount > 0 && (
+                  <>
+                    <span className="font-medium text-foreground">Unofficial</span> marks the{" "}
+                    {quarterUnofficialCount} {quarterUnofficialCount === 1 ? "score" : "scores"}{" "}
+                    read off a third-party transcript, published inside the five working days an
+                    issuer has to file its own. Each one is re-scored when the official transcript
+                    lands.{" "}
+                  </>
+                )}
+                {quarterFreshCount > 0 && (
+                  <>
+                    <span className="font-medium text-foreground">New · 24h</span> marks the{" "}
+                    {quarterFreshCount} {quarterFreshCount === 1 ? "score" : "scores"} written in
+                    the last twenty-four hours.
+                  </>
+                )}
+              </p>
+            )}
           </TabsContent>
 
           <TabsContent value="growth" className="mt-4 space-y-3">

@@ -5,6 +5,11 @@ import {
   isAdmittedLargeCap,
   isBelowCoverageCut,
 } from "@/lib/coverage-policy";
+import {
+  isScoredWithin24h,
+  normalizeSourceStatus,
+  scoreWrittenAt,
+} from "@/lib/score-freshness";
 import { classifyTrajectory, quarterIndex } from "@/lib/score-trajectory";
 import { assessStaleness } from "@/lib/valuation-check/normalize";
 import type { ValuationVerdict } from "@/lib/valuation-check/types";
@@ -17,9 +22,12 @@ type QuarterInfo = {
   label: string;
 };
 
-// The leaderboard maths only reads these five fields. A bare .select() also drags
+// The leaderboard maths only reads these fields. A bare .select() also drags
 // down the `details` JSONB for every row — ~4 MB per request instead of ~70 KB.
-const SCORE_COLUMNS = "company_code, fy, qtr, quarter_label, score";
+// source_status is pulled as a scalar JSON path for the same reason: the whole
+// point is to read one string out of scoring_meta without shipping the blob.
+const SCORE_COLUMNS =
+  "company_code, fy, qtr, quarter_label, score, updated_at, created_at, source_status:details->scoring_meta->>source_status";
 
 // PostgREST silently caps an unpaginated select at 1000 rows, so page through it.
 // concall_analysis passes 841 rows through the scoring_meta filter today and grows
@@ -29,7 +37,12 @@ const PAGE_SIZE = 1000;
 type ScoreRow = Pick<
   QuarterData,
   "company_code" | "fy" | "qtr" | "quarter_label" | "score"
->;
+> & {
+  updated_at?: string | null;
+  created_at?: string | null;
+  /** details.scoring_meta.source_status — "unofficial" or absent. */
+  source_status?: string | null;
+};
 
 async function fetchScoreRows(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -176,6 +189,10 @@ export const getConcallData = async ({
     }
   }
 
+  // One clock for the whole render, so two rows can't straddle the 24h edge.
+  const renderedAt = new Date();
+  const boardLatest = selectedQuarters[0];
+
   const rows: CompanyRow[] = Array.from(recordsByCompany.entries()).map(
     ([companyCode, companyRecords]) => {
       const valuation = valuationByCompany.get(companyCode.toUpperCase());
@@ -208,6 +225,16 @@ export const getConcallData = async ({
         const match = recordsByQuarter.get(`${q.fy}-${q.qtr}`);
         row[q.label] = match?.score ?? null;
       });
+
+      // Provenance and recency describe the score the Latest cell actually
+      // renders — which is the board's newest quarter, or this company's own
+      // newest when it hasn't reported yet (the same fallback the cell uses).
+      const shownRecord = boardLatest
+        ? recordsByQuarter.get(`${boardLatest.fy}-${boardLatest.qtr}`) ?? ownLatest
+        : ownLatest;
+      row.latestSourceStatus = normalizeSourceStatus(shownRecord?.source_status);
+      row.latestScoredAt = shownRecord ? scoreWrittenAt(shownRecord) : null;
+      row.scoredWithin24h = isScoredWithin24h(row.latestScoredAt, renderedAt);
 
       // Trajectory classification (lib/score-trajectory owns all thresholds).
       // Gap detection over the 4-record window: a missing quarter (fy/qtr not

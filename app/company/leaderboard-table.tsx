@@ -9,7 +9,9 @@ import ConcallScore from "@/components/concall-score";
 import { Button } from "@/components/ui/button";
 import { ScoreBandPill } from "@/app/company/components/score-band-pill";
 import { TrendBadge } from "@/app/company/components/trend-badge";
+import { FreshScoreChip, UnofficialChip } from "@/components/score-provenance-chips";
 import { BANDS } from "@/lib/score-band";
+import { formatScoredAt, type ScoreSourceStatus } from "@/lib/score-freshness";
 import { trajectorySortRank, type TrajectoryKey } from "@/lib/score-trajectory";
 import type { ValuationVerdict } from "@/lib/valuation-check/types";
 import { DataTable } from "./data-table";
@@ -25,6 +27,12 @@ export type CompanyRow = {
   trendChange?: number;
   ownLatestScore?: number | null;
   ownLatestQuarterLabel?: string | null;
+  /** Provenance of the score in the Latest cell — "unofficial" or null (issuer-filed). */
+  latestSourceStatus?: ScoreSourceStatus;
+  /** When that score row was written. ISO; used for the chip's title only. */
+  latestScoredAt?: string | null;
+  /** Server-computed: the Latest score landed inside the last 24h. */
+  scoredWithin24h?: boolean;
   valuationVerdict?: ValuationVerdict | null;
   valuationScore?: number | null;
   // Dynamic quarter columns keyed by label, e.g. "Q1 FY26"
@@ -146,6 +154,20 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
                 </span>
               )}
             </div>
+            {/* Provenance and recency go on their own line rather than beside
+                the band: at 4 quarters + Trend + Valuation the row is already
+                wide, and these two must not push the band pill off a phone. */}
+            {(row.original.latestSourceStatus === "unofficial" ||
+              row.original.scoredWithin24h) && (
+              <div className="mt-1 flex flex-wrap items-center gap-1">
+                {row.original.latestSourceStatus === "unofficial" && (
+                  <UnofficialChip scoredAt={formatScoredAt(row.original.latestScoredAt)} />
+                )}
+                {row.original.scoredWithin24h && (
+                  <FreshScoreChip scoredAt={formatScoredAt(row.original.latestScoredAt)} />
+                )}
+              </div>
+            )}
           </div>
         );
       },
