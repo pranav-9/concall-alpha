@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import TopStocks from "./(hero)/top-stocks";
 import HeroExhibit, { HeroExhibitFallback } from "./(hero)/hero-exhibit";
-import TrailWallSection, { TrailWallFallback } from "./(hero)/trail-wall-section";
 import LatestUpdatesCarousel, {
   LatestUpdatesCarouselFallback,
 } from "./(hero)/latest-updates-carousel";
@@ -83,21 +82,7 @@ export default async function Home() {
           <Suspense fallback={<HeroExhibitFallback />}>
             <HeroExhibit companies={companies} />
           </Suspense>
-
-          <a
-            href="#wall"
-            className="house-data house-micro mt-6 flex items-center gap-3 text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)]"
-          >
-            <span className="h-px w-10 bg-[var(--rule)]" aria-hidden />
-            <span>Plate 02 — every company we cover</span>
-          </a>
         </section>
-
-        <div id="wall" className="scroll-mt-24">
-          <Suspense fallback={<TrailWallFallback />}>
-            <TrailWallSection />
-          </Suspense>
-        </div>
 
         <section aria-labelledby="updates-heading" className="house-block">
           <Suspense fallback={<LatestUpdatesCarouselFallback />}>
@@ -105,7 +90,7 @@ export default async function Home() {
               heading={
                 <>
                   <p className="house-data house-micro text-[var(--ink-soft)]">
-                    Plate 03 — Fresh reads
+                    Plate 02 — Fresh reads
                   </p>
                   <h2 id="updates-heading" className="house-display mt-2 text-2xl sm:text-3xl">
                     What landed most recently
@@ -117,7 +102,7 @@ export default async function Home() {
         </section>
 
         <section aria-labelledby="leaders-heading" className="house-block">
-          <p className="house-data house-micro text-[var(--ink-soft)]">Plate 04 — Where the reads are strongest</p>
+          <p className="house-data house-micro text-[var(--ink-soft)]">Plate 03 — Where the reads are strongest</p>
           <h2 id="leaders-heading" className="house-display mt-2 text-2xl sm:text-3xl">
             Top-rated right now
           </h2>
@@ -130,7 +115,7 @@ export default async function Home() {
 
         <section aria-labelledby="reads-heading" className="house-block">
           <div className="max-w-2xl">
-            <p className="house-data house-micro text-[var(--ink-soft)]">Plate 05 — What we publish</p>
+            <p className="house-data house-micro text-[var(--ink-soft)]">Plate 04 — What we publish</p>
             <h2 id="reads-heading" className="house-display mt-2 text-2xl sm:text-3xl">
               Six reads on the same documents
             </h2>
@@ -164,7 +149,7 @@ export default async function Home() {
         <section aria-labelledby="watch-heading" className="house-block">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <p className="house-data house-micro text-[var(--ink-soft)]">Plate 06 — On video</p>
+              <p className="house-data house-micro text-[var(--ink-soft)]">Plate 05 — On video</p>
               <h2 id="watch-heading" className="house-display mt-2 text-2xl sm:text-3xl">
                 Watch a company get read
               </h2>
