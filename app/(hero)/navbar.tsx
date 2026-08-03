@@ -56,8 +56,8 @@ const Navbar = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
   const navItems = [
-    { href: "/leaderboards", label: "Leaderboards" },
     ...(quarterLabel ? [{ href: "/quarter-tracker", label: quarterLabel }] : []),
+    { href: "/leaderboards", label: "Leaderboards" },
     { href: "/watchlists", label: "Watchlists" },
     { href: "/blog", label: "Journal" },
   ];
