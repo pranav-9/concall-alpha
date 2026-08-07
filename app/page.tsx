@@ -8,6 +8,7 @@ import LatestUpdatesCarousel, {
 } from "./(hero)/latest-updates-carousel";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { QuarterTrackerBanner } from "@/components/quarter-tracker-banner";
+import { HotThemesTeaser } from "./themes/hot-themes-teaser";
 
 // Title/description are inherited from the root layout; this exists only to
 // pin the canonical so query-string variants don't get indexed separately.
@@ -113,9 +114,13 @@ export default async function Home() {
           </div>
         </section>
 
+        <Suspense fallback={null}>
+          <HotThemesTeaser />
+        </Suspense>
+
         <section aria-labelledby="reads-heading" className="house-block">
           <div className="max-w-2xl">
-            <p className="house-data house-micro text-[var(--ink-soft)]">Plate 04 — What we publish</p>
+            <p className="house-data house-micro text-[var(--ink-soft)]">Plate 05 — What we publish</p>
             <h2 id="reads-heading" className="house-display mt-2 text-2xl sm:text-3xl">
               Six reads on the same documents
             </h2>
@@ -149,7 +154,7 @@ export default async function Home() {
         <section aria-labelledby="watch-heading" className="house-block">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <p className="house-data house-micro text-[var(--ink-soft)]">Plate 05 — On video</p>
+              <p className="house-data house-micro text-[var(--ink-soft)]">Plate 06 — On video</p>
               <h2 id="watch-heading" className="house-display mt-2 text-2xl sm:text-3xl">
                 Watch a company get read
               </h2>
