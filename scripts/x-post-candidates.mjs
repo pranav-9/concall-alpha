@@ -79,6 +79,17 @@ const takeAgeDays = (row) => {
   const d = row.tweet_date || row.logged_on;
   return d ? (Date.now() - new Date(d).getTime()) / 864e5 : Infinity;
 };
+// logged_on only says when WE recorded a take — a run that logs year-old tweets
+// makes the ledger look fresh while the chatter is stale (X's syndication timeline
+// truncates: on 2026-08-03 three tracked handles served nothing newer than Nov 2025).
+// Age the CHATTER by tweet_date, which is what the signal actually depends on.
+const extNewestTweetDate = extTakes.reduce(
+  (newest, r) => (r.tweet_date && (!newest || r.tweet_date > newest) ? r.tweet_date : newest),
+  null
+);
+const extChatterAgeDays = extNewestTweetDate
+  ? Math.floor((Date.now() - new Date(extNewestTweetDate).getTime()) / 864e5)
+  : null;
 const extFreshByCompany = new Map(); // company -> fresh rows (tweet within TAKES_DAYS)
 for (const row of extTakes) {
   if (takeAgeDays(row) > TAKES_DAYS) continue;
@@ -269,13 +280,18 @@ if (!DAILY) {
         external_takes_meta: {
           ledger_newest_logged_on: extNewestLoggedOn,
           ledger_age_days: extLedgerAgeDays,
+          chatter_newest_tweet_date: extNewestTweetDate,
+          chatter_age_days: extChatterAgeDays,
+          fresh_take_companies: extFreshByCompany.size,
           takes_window_days: TAKES_DAYS,
           note:
             extLedgerAgeDays == null
               ? "external-takes ledger empty — run /external-take-tracker first for the chatter signal"
               : extLedgerAgeDays > 7
                 ? "ledger older than 7 days — run /external-take-tracker before trusting the chatter signal"
-                : null,
+                : extChatterAgeDays != null && extChatterAgeDays > TAKES_DAYS
+                  ? `ledger was refreshed ${extLedgerAgeDays}d ago but its NEWEST TWEET is ${extChatterAgeDays}d old — no chatter inside the ${TAKES_DAYS}d window. Re-running /external-take-tracker will NOT help if the syndication timeline is truncating; use hydrate-tweet.mjs on pasted tweet URLs instead.`
+                  : null,
         },
         candidate_count: pool.length,
         already_posted_count: suppressed.length,

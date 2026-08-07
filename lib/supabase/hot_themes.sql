@@ -43,6 +43,42 @@ create table if not exists theme_membership (
 create index if not exists idx_theme_membership_theme
     on theme_membership (theme_slug);
 
+-- Public read, service-role write. These are editorial content: everyone reads,
+-- only the service role (SQL editor / admin) writes. RLS on with a permissive
+-- SELECT policy is the portal convention (see homepage_activity_feed.sql); no
+-- insert/update/delete policy, so the anon/authenticated roles cannot write.
+-- WITHOUT the SELECT policy, RLS-on returns zero rows to the app's anon client
+-- and /themes renders empty even though the rows exist.
+alter table public.theme enable row level security;
+alter table public.theme_membership enable row level security;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'theme'
+      and policyname = 'allow_read_theme'
+  ) then
+    create policy allow_read_theme
+      on public.theme
+      for select
+      to anon, authenticated
+      using (true);
+  end if;
+
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'theme_membership'
+      and policyname = 'allow_read_theme_membership'
+  ) then
+    create policy allow_read_theme_membership
+      on public.theme_membership
+      for select
+      to anon, authenticated
+      using (true);
+  end if;
+end $$;
+
 -- Integrity check to run after editing memberships (surfaces typo'd codes at edit time):
 --   select tm.theme_slug, tm.company_code
 --   from theme_membership tm

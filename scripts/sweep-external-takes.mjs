@@ -45,10 +45,22 @@ const overlap = {};  // code -> { name, our_read, accounts: Map(handle -> {date,
 const funnel = {};   // tag  -> { count, accounts:Set, in_db, example }
 const scanned = [], skipped = [];
 
+const handleHealth = [];   // per-handle: how the HTML came back + how far the timeline reaches
 for (const handle of handles) {
   let tweets;
   try { tweets = await fetchTimeline(handle); }
-  catch (e) { skipped.push(`${handle} (${e.message.slice(0, 40)})`); continue; }
+  catch (e) { handleHealth.push({ handle, source: "error", error: e.message.slice(0, 60) }); skipped.push(`${handle} (${e.message.slice(0, 40)})`); continue; }
+  const newest = tweets[0]?.created_at || null;
+  handleHealth.push({
+    handle,
+    source: tweets.fetchMeta?.source,
+    stale_cache: tweets.fetchMeta?.stale_cache ?? null,
+    cache_age_hours: tweets.fetchMeta?.cache_age_hours ?? null,
+    fetched: tweets.length,
+    newest_tweet_available: newest,
+    // months-old newest tweet = the endpoint truncates for this handle; re-scanning won't help
+    newest_tweet_age_days: newest ? Math.floor((Date.now() - Date.parse(newest)) / 864e5) : null,
+  });
   const recent = tweets.filter((t) => t.ts >= cutoff);
   if (!recent.length) { skipped.push(`${handle} (0 in window)`); continue; }
   scanned.push(`${handle} (${recent.length})`);
@@ -98,6 +110,8 @@ const funnelRows = Object.entries(funnel)
 console.log(JSON.stringify({
   window_days: DAYS,
   scanned, skipped,
+  handle_health: handleHealth,
+  handle_health_note: "source=cache-stale-after-error means a 429 was served from old cached HTML — those tweets predate this run. A large newest_tweet_age_days means X's syndication timeline is truncating for that handle; re-scanning won't help, use hydrate-tweet.mjs on pasted tweet URLs.",
   overlap_count: overlapRows.length,
   overlap: overlapRows,
   funnel_note: "cashtags/hashtags not matching a covered company. in_db:false = not in our company table at all (strongest new-name candidate). Eyeball before trusting — some are jargon the stoplist missed.",

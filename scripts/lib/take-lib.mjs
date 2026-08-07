@@ -18,17 +18,29 @@ export async function fetchTimeline(handle, opts = {}) {
   const cacheFile = path.join(cacheDir, `${handle}.html`);
   const TTL = 6 * 3600 * 1000;
   let html;
+  // How the HTML was obtained, so callers can tell a live fetch from a cache
+  // replay. A silent stale-ok fallback used to make a 429 look like a clean scan.
+  const cacheAgeHours = () =>
+    fs.existsSync(cacheFile)
+      ? Math.round(((Date.now() - fs.statSync(cacheFile).mtimeMs) / 36e5) * 10) / 10
+      : null;
+  let fetchMeta = { source: "live", stale_cache: false, cache_age_hours: null, http_status: null };
   if (opts.cacheFile) {
     html = fs.readFileSync(opts.cacheFile, "utf8");
+    fetchMeta = { source: "cache-file", stale_cache: false, cache_age_hours: null, http_status: null };
   } else if (fs.existsSync(cacheFile) && Date.now() - fs.statSync(cacheFile).mtimeMs < TTL) {
+    fetchMeta = { source: "cache-fresh", stale_cache: false, cache_age_hours: cacheAgeHours(), http_status: null };
     html = fs.readFileSync(cacheFile, "utf8");
   } else {
     const res = await fetch(`https://syndication.twitter.com/srv/timeline-profile/screen-name/${handle}`, {
       headers: { "User-Agent": "Mozilla/5.0" },
     });
     if (!res.ok) {
-      if (fs.existsSync(cacheFile)) { html = fs.readFileSync(cacheFile, "utf8"); } // stale-ok fallback
-      else throw new Error(`syndication ${handle} -> ${res.status} (handle wrong / rate-limited; no cache to fall back on)`);
+      if (fs.existsSync(cacheFile)) {
+        // stale-ok fallback — flagged, not silent: these tweets predate this run
+        fetchMeta = { source: "cache-stale-after-error", stale_cache: true, cache_age_hours: cacheAgeHours(), http_status: res.status };
+        html = fs.readFileSync(cacheFile, "utf8");
+      } else throw new Error(`syndication ${handle} -> ${res.status} (handle wrong / rate-limited; no cache to fall back on)`);
     } else {
       html = await res.text();
       fs.mkdirSync(cacheDir, { recursive: true });
@@ -38,7 +50,7 @@ export async function fetchTimeline(handle, opts = {}) {
   const m = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s);
   if (!m) throw new Error("no __NEXT_DATA__ (endpoint shape changed)");
   const entries = JSON.parse(m[1]).props?.pageProps?.timeline?.entries || [];
-  return entries.filter((e) => e.type === "tweet").map((e) => e.content?.tweet).filter(Boolean)
+  const tweets = entries.filter((e) => e.type === "tweet").map((e) => e.content?.tweet).filter(Boolean)
     .filter((t) => !t.in_reply_to_screen_name && !t.retweeted_status)
     .map((t) => ({
       id: t.id_str,
@@ -49,6 +61,9 @@ export async function fetchTimeline(handle, opts = {}) {
     }))
     .filter((t) => Number.isFinite(t.ts))
     .sort((a, b) => b.ts - a.ts);
+  // Non-enumerable so existing callers that iterate/serialize the array are unaffected.
+  Object.defineProperty(tweets, "fetchMeta", { value: fetchMeta, enumerable: false });
+  return tweets;
 }
 
 // Read the tracked-account watchlist (data/external-takes/handles.txt).

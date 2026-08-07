@@ -1,5 +1,21 @@
 # X accounts to track — one handle per line (no @). Blank lines / # comments ignored.
 # The tracker scans each and keeps only tweets about companies WE cover.
+#
+# TIMELINE REACH, measured 2026-08-03 (`sweep-external-takes.mjs` now reports this
+# per handle as `handle_health.newest_tweet_age_days` — re-read it, don't trust these
+# numbers to stay true). X's syndication endpoint truncates PER HANDLE, not globally:
+# some accounts serve today's tweets, others stop dead months back. A truncated handle
+# is NOT fixed by re-scanning — paste specific tweet URLs into hydrate-tweet.mjs instead.
+#
+#   soicfinance     current (served a same-day tweet)
+#   suru27          reaches ~Mar 2026; only 7 originals in 400d, 0 ever matched our coverage
+#   ishmohit1       truncated at 2025-11-25
+#   LearningEleven  truncated at 2025-11-08
+#   prabhakarkudva  truncated at 2025-11-07; 0 covered-company matches (macro commentary)
+#   equities_samjho 429 on every attempt 2026-08-03, no cache — reach unknown
+#
+# All six are kept in the scan list deliberately: a truncated or empty scan is cheap,
+# and the truncation may lift. Move a handle below only if it is permanently unreadable.
 equities_samjho
 ishmohit1
 soicfinance

@@ -42,6 +42,10 @@ for (const m of matched) {
 const out = {
   handle: HANDLE,
   window_days: DAYS,
+  fetch: tweets.fetchMeta,
+  // Newest tweet the endpoint served at all. If this is months old the timeline is
+  // truncating and no re-scan will fix it — paste tweet URLs into hydrate-tweet.mjs.
+  newest_tweet_available: tweets[0]?.created_at || null,
   fetched: tweets.length,
   in_window: recent.length,
   matched_covered: matched.length,

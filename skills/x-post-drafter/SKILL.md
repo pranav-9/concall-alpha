@@ -98,7 +98,8 @@ Respect these flags:
 ### 3. Draft 5 options
 
 Pick **5 different companies** for variety (don't post five downgrades in a row — mix
-improvements, declines, and a guidance-change note). Each draft:
+improvements, declines, and a guidance-change note). If several of them share one driver, a single
+**cross-company theme post** can beat five separate ones — see the Daily Desk Lane 2 note. Each draft:
 
 - **≤ 280 characters**, text-only, no links. **Default to zero hashtags and never a cashtag.**
   Measured 2026-07-27 across 708 tweets from the six accounts in `data/external-takes/handles.txt`:
@@ -183,10 +184,22 @@ All CLASSIC-mode rules apply (grounding, voice, provenance, ≤280 chars, no tag
   that engages the *specific claim* with our data. Peer tone, never adversarial — these accounts
   are the peer group. Honour the `recheck` note: verify the ledger's numbers against the current
   print before drafting. If empty, say so and suggest running `/external-take-tracker`.
-- **Lane 2:** if `nudge: true`, surface it with the thread candidates — don't draft the whole
-  thread unless asked (threads are a deliberate sit-down, not a morning-desk item).
-- Present the whole sheet compactly: Lane 1 drafts first, Lane 3 replies second, Lane 2 nudge as
-  a footer line. Ask which items are going out.
+- **Lane 2 — lead with the cross-company pattern.** If `nudge: true`, surface the thread
+  candidates (don't draft the whole thread unless asked — threads are a deliberate sit-down). But
+  **first scan the day's fresh prints for a shared driver.** When ~5+ of the quarter's recent
+  scores name the same force — a macro shock, a common margin lever, a sector move — a
+  cross-company synthesis is the strongest Lane 2 thread there is, and it can *absorb* that day's
+  Lane 1 speed posts rather than compete with them. It's the platform's edge: no single-stock
+  account can write it (it needs ~all the covered concalls read the same way). Find it by scanning
+  the quarter's rationale —
+  `select company_code, details->'rationale' from concall_analysis where fy=<fy> and qtr=<q>`, then
+  grep the heading+detail text for the theme keyword. Ground **every** named company in its OWN
+  rationale (never invent the link), lead with the *divergence* — who absorbed it vs who ate it —
+  not the raw count, and carry the provisional hedges. See `[[x-cross-company-pattern-posts]]`
+  (validated 2026-08-06: 22 of 86 Q1 FY27 concalls flagged the West Asia supply shock; POCL and
+  Gravita were the same Hormuz lead-scrap story line-for-line).
+- Present the whole sheet compactly: the cross-company thread up top when one is found, then Lane 1
+  drafts, Lane 3 replies, and the Lane 2 nudge as a footer line. Ask which items are going out.
 
 ### 2b. Read the performance loop
 
