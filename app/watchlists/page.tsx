@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { WatchlistCreateButton } from "@/components/watchlist-create-button";
+import { AnalyticsBeacon } from "@/components/analytics-beacon";
 import { createClient } from "@/lib/supabase/server";
 import {
   CHIP_BASE,
@@ -149,6 +150,7 @@ export default async function WatchlistsPage() {
       }
       actions={<WatchlistCreateButton />}
     >
+      <AnalyticsBeacon event="watchlist_view" count={totalCompanies} />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {rows.map((row) => {
           const count = itemCountFor(row);

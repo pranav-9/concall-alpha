@@ -146,6 +146,7 @@ function KeyVariablesDiscoveryDrawer({
         <Button
           variant="outline"
           size="sm"
+          data-drawer-type="variable-selection-context"
           className="h-8 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground shadow-none hover:bg-accent"
         >
           Variable selection context

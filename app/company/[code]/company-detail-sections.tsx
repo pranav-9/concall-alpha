@@ -17,6 +17,7 @@ import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import type { ValuationCheckRow } from "@/lib/valuation-check/types";
 import type { CompanyPageOverviewCacheRow } from "@/lib/company-overview-cache";
 
+import { AnalyticsBeacon } from "@/components/analytics-beacon";
 import { SectionCard } from "../components/section-card";
 import { BusinessSnapshotSection } from "../components/business-snapshot-section";
 import { FutureGrowthSection } from "../components/future-growth-section";
@@ -551,6 +552,27 @@ export async function ValuationCheckPanel({ overview }: CompanyDetailSectionProp
         ) : null
       }
     >
+      {!valuation ? (
+        <AnalyticsBeacon
+          event="empty_section"
+          sectionId="valuation-check"
+          companyCode={overview.company_code}
+          reason="no_valuation"
+        />
+      ) : staleness.stale ? (
+        <AnalyticsBeacon
+          event="stale_valuation"
+          companyCode={overview.company_code}
+          daysStale={staleness.ageDays ?? 0}
+        />
+      ) : !(valuation.rateable && valuation.verdict) ? (
+        <AnalyticsBeacon
+          event="empty_section"
+          sectionId="valuation-check"
+          companyCode={overview.company_code}
+          reason="unrated"
+        />
+      ) : null}
       {valuation ? (
         <ValuationCheckSection valuation={valuation} staleness={staleness} />
       ) : (

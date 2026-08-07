@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { identifyUser } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,11 +35,12 @@ export function LoginForm({
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
+      identifyUser(data.user?.id ?? email, { email: data.user?.email ?? email });
       router.refresh();
       router.push(nextPath || "/watchlists");
     } catch (error: unknown) {

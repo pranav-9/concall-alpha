@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import ConcallScore from "@/components/concall-score";
 import { INNER_CARD } from "@/lib/design/shell";
 import { cn } from "@/lib/utils";
+import { analytics } from "@/lib/analytics";
 
 export type CarouselUpdateItem = {
   id: string;
@@ -72,8 +73,16 @@ function UpdateCard({ item }: { item: CarouselUpdateItem }) {
   );
 
   if (!item.href) return <div className={CARD_CLASS}>{body}</div>;
+  const companyCode = item.href.startsWith("/company/")
+    ? item.href.slice("/company/".length)
+    : undefined;
   return (
-    <Link href={item.href} prefetch={false} className={CARD_CLASS}>
+    <Link
+      href={item.href}
+      prefetch={false}
+      onClick={() => analytics.homepageModuleClick("carousel", companyCode)}
+      className={CARD_CLASS}
+    >
       {body}
     </Link>
   );

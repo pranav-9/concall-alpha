@@ -453,11 +453,14 @@ export function ScoreBoardTable({
   const columnCount = 5 + (showRemove ? 1 : 0);
 
   const handleSort = (key: SortKey) => {
-    setSort((current) =>
-      current.key !== key
-        ? { key, direction: defaultDirectionForKey(key) }
-        : { key, direction: current.direction === "asc" ? "desc" : "asc" },
-    );
+    const nextDirection =
+      sort.key !== key
+        ? defaultDirectionForKey(key)
+        : sort.direction === "asc"
+          ? "desc"
+          : "asc";
+    analytics.leaderboardSort(showRemove ? "watchlist" : "overall", key, nextDirection);
+    setSort({ key, direction: nextDirection });
   };
 
   const sortDirectionLabel = (key: SortKey) =>
@@ -493,6 +496,7 @@ export function ScoreBoardTable({
       }
 
       if (payload?.removed || payload?.notFound) {
+        analytics.watchlistRemove(row.companyCode, "watchlist");
         router.refresh();
       }
     } finally {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeftRight } from "lucide-react";
 
 import ConcallScore from "@/components/concall-score";
+import { analytics } from "@/lib/analytics";
 import { Badge } from "@/components/ui/badge";
 
 type ListItem = {
@@ -144,7 +145,12 @@ function ListCard({ list }: { list: ListBlock }) {
         const showBadgeRow = item.isNew;
 
         return (
-          <Link key={`${item.code}-${index}`} href={`/company/${item.code}`} prefetch={false}>
+          <Link
+            key={`${item.code}-${index}`}
+            href={`/company/${item.code}`}
+            prefetch={false}
+            onClick={() => analytics.homepageModuleClick("topstocks_quarter", item.code)}
+          >
             <div className="flex items-start gap-2 rounded-2xl border border-border/50 bg-background/70 p-2.5 transition-colors hover:bg-accent/60">
               <p className="p-1 text-[11px] leading-snug text-muted-foreground">{index + 1}.</p>
               <div className="flex min-w-0 flex-1 items-start gap-2">
@@ -188,7 +194,12 @@ function GrowthListCard({ items }: { items: GrowthItem[] }) {
     <div className="flex flex-col gap-3">
       {visible.length === 0 && <p className="text-sm text-muted-foreground">No growth outlook data yet.</p>}
       {visible.map((item, index) => (
-        <Link key={`${item.company}-${index}`} href={`/company/${item.company}`} prefetch={false}>
+        <Link
+          key={`${item.company}-${index}`}
+          href={`/company/${item.company}`}
+          prefetch={false}
+          onClick={() => analytics.homepageModuleClick("topstocks_growth", item.company)}
+        >
           <div className="flex items-start gap-2 rounded-2xl border border-border/50 bg-background/70 p-2.5 transition-colors hover:bg-accent/60">
             <p className="p-1 text-[11px] leading-snug text-muted-foreground">
               {typeof item.rank === "number" ? `${item.rank}.` : `${index + 1}.`}
@@ -247,7 +258,12 @@ function MoatListCard({ items }: { items: MoatItem[] }) {
     <div className="flex flex-col gap-3">
       {visible.length === 0 && <p className="text-sm text-muted-foreground">No moat data yet.</p>}
       {visible.map((item, index) => (
-        <Link key={`${item.code}-${index}`} href={`/company/${item.code}`} prefetch={false}>
+        <Link
+          key={`${item.code}-${index}`}
+          href={`/company/${item.code}`}
+          prefetch={false}
+          onClick={() => analytics.homepageModuleClick("topstocks_moat", item.code)}
+        >
           <div className="flex items-start gap-2 rounded-2xl border border-border/50 bg-background/70 p-2.5 transition-colors hover:bg-accent/60">
             <p className="p-1 text-[11px] leading-snug text-muted-foreground">
               {index + 1}.

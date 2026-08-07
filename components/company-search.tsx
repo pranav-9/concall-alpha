@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Search } from "lucide-react";
+import { analytics } from "@/lib/analytics";
 
 type Result = {
   code: string;
@@ -209,6 +210,18 @@ export function CompanySearch({
     };
   }, [hasLocalCompanies, localCompanies, trimmedQuery]);
 
+  // One search_performed per *settled* query — fires ~700ms after the user stops
+  // typing (and after any in-flight fetch resolves), rather than once per
+  // keystroke, so counts and the zero_results coverage-demand signal aren't
+  // inflated by intermediate prefixes. Resets on every query/result change.
+  useEffect(() => {
+    if (!trimmedQuery || loading) return;
+    const t = setTimeout(() => {
+      analytics.searchPerformed(trimmedQuery, results.length);
+    }, 700);
+    return () => clearTimeout(t);
+  }, [trimmedQuery, results, loading]);
+
   const openResult = (result: Result | undefined) => {
     if (!result?.code) return;
     setOpen(false);
@@ -255,7 +268,9 @@ export function CompanySearch({
 
             if (e.key === "Enter") {
               e.preventDefault();
-              const item = activeIndex >= 0 ? results[activeIndex] : results[0];
+              const index = activeIndex >= 0 ? activeIndex : 0;
+              const item = results[index];
+              if (item?.code) analytics.searchResultClick(trimmedQuery, item.code, index);
               openResult(item);
             }
 
@@ -298,7 +313,10 @@ export function CompanySearch({
                       aria-selected={active}
                       type="button"
                       onMouseEnter={() => setActiveIndex(idx)}
-                      onClick={() => openResult(item)}
+                      onClick={() => {
+                        analytics.searchResultClick(trimmedQuery, item.code, idx);
+                        openResult(item);
+                      }}
                       className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left ${
                         active ? "bg-accent" : "hover:bg-accent/70"
                       }`}

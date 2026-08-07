@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { identifyUser } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -41,7 +42,7 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -51,6 +52,7 @@ export function SignUpForm({
         },
       });
       if (error) throw error;
+      identifyUser(data.user?.id ?? email, { email });
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");

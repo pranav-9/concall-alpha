@@ -17,6 +17,7 @@ import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import type { MoatAnalysisRow, MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
 import { createClient } from "@/lib/supabase/server";
 import { findSectorBySlug, slugifySector } from "@/app/sector/utils";
+import { AnalyticsBeacon } from "@/components/analytics-beacon";
 import { SectorTable, type SectorTableRow } from "./sector-table";
 import { SubSectorSelect } from "./sub-sector-select";
 
@@ -257,6 +258,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     <main className="relative isolate overflow-hidden">
       <div className={PAGE_BACKGROUND_CLASS} />
       <div className={PAGE_SHELL}>
+        <AnalyticsBeacon event="sector_view" sector={sectorName} />
         <section className={HERO_CARD}>
           <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
             {sectorName}
@@ -296,7 +298,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
           </div>
         </div>
 
-        <SectorTable rows={filteredRows} />
+        <SectorTable rows={filteredRows} sector={sectorName} />
       </div>
       </div>
     </main>

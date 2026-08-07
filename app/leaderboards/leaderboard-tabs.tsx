@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode } from "react";
 
 import { Tabs } from "@/components/ui/tabs";
+import { analytics } from "@/lib/analytics";
 
 type Props = {
   defaultTab: string;
@@ -17,6 +18,7 @@ export function LeaderboardTabs({ defaultTab, className, children }: Props) {
   const value = searchParams.get("tab") ?? defaultTab;
 
   const onValueChange = (next: string) => {
+    if (next !== value) analytics.leaderboardTabChange(value, next);
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", next);
     router.replace(`?${params.toString()}`, { scroll: false });

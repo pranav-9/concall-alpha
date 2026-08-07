@@ -7,7 +7,7 @@
 // a climb, a flat band and a V read as different stories at a glance, which is
 // an argument a single trail can only assert.
 
-import Link from "next/link";
+import { HomepageModuleLink } from "@/components/homepage-module-link";
 
 import type { CompanyTrail } from "@/lib/home-trails";
 import { INK, trajectoryInk } from "@/lib/trajectory-ink";
@@ -202,14 +202,15 @@ function Panel({
   return (
     <figure className="house-panel">
       <figcaption className="mb-2 flex items-baseline justify-between gap-2">
-        <Link
+        <HomepageModuleLink
+          module="scoreplate"
+          companyCode={trail.code}
           href={`/company/${trail.code}`}
-          prefetch={false}
           className="house-data house-micro min-w-0 truncate text-[var(--ink)] underline-offset-4 hover:underline"
           title={trail.name}
         >
           {trail.code}
-        </Link>
+        </HomepageModuleLink>
         <span className="house-data house-micro whitespace-nowrap" style={{ color: ink }}>
           {trail.trajectoryLabel}
         </span>

@@ -60,11 +60,54 @@ export function CompanyPageWorkspace({
     if (companyCode) analytics.companyPageView(companyCode);
   }, [companyCode]);
 
-  // section_view fires whenever a different section becomes active (initial +
-  // every tab navigation) — the real depth-of-engagement signal, since the
-  // workspace shows one panel at a time rather than a scroll of collapsibles.
+  // section_view + section_dwell. section_view fires whenever a different section
+  // becomes active (initial + every tab navigation) — the real depth signal,
+  // since the workspace shows one panel at a time. section_dwell fires for the
+  // section being left, carrying how long it was open (turns navigation into
+  // engagement). The final section's dwell is flushed on unmount below.
+  const dwellRef = React.useRef<{ id: string; t: number } | null>(null);
   React.useEffect(() => {
+    const prev = dwellRef.current;
+    if (prev && prev.id !== activeSectionId) {
+      analytics.sectionDwell(prev.id, performance.now() - prev.t, companyCode);
+    }
     analytics.sectionView(activeSectionId, companyCode);
+    dwellRef.current = { id: activeSectionId, t: performance.now() };
+  }, [activeSectionId, companyCode]);
+
+  React.useEffect(() => {
+    return () => {
+      const prev = dwellRef.current;
+      if (prev) analytics.sectionDwell(prev.id, performance.now() - prev.t, companyCode);
+    };
+  }, [companyCode]);
+
+  // Delegated click listener for evidence drawers and source links inside the
+  // active panel. Several section components are server components, so their
+  // Drawer triggers / source anchors can't call analytics inline — instead they
+  // carry `data-drawer-type` / `data-source-type` attributes and this listener,
+  // on the already-client workspace, fires with the active section + company code.
+  React.useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      const drawer = target?.closest<HTMLElement>("[data-drawer-type]");
+      if (drawer) {
+        analytics.drawerOpen(
+          activeSectionId,
+          drawer.dataset.drawerType ?? "unknown",
+          companyCode,
+        );
+        return;
+      }
+      const source = target?.closest<HTMLElement>("[data-source-type]");
+      if (source && companyCode) {
+        analytics.sourceLinkClick(activeSectionId, companyCode, source.dataset.sourceType);
+      }
+    };
+    el.addEventListener("click", onClick);
+    return () => el.removeEventListener("click", onClick);
   }, [activeSectionId, companyCode]);
 
   React.useEffect(() => {

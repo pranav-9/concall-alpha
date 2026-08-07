@@ -13,6 +13,7 @@ import {
   ReadDistributionLegend,
 } from "@/components/read-distribution-curve";
 import { ScoreBoardTable, type ScoreBoardRow } from "@/components/score-board-table";
+import { AnalyticsBeacon } from "@/components/analytics-beacon";
 import { BOARD_READS, classifyBoardRead } from "@/lib/board-read";
 import { COVERAGE_SELECT, isAdmittedLargeCap } from "@/lib/coverage-policy";
 import { computeBoardReadCounts } from "@/lib/leaderboard-distribution";
@@ -396,6 +397,7 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
             </div>
           </details>
         )}
+        <AnalyticsBeacon event="watchlist_view" count={tableRows.length} />
         <BandSummaryLine
           scored={readScored}
           total={tableRows.length}

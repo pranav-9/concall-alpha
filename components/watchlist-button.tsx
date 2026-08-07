@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { createClient } from "@/lib/supabase/client";
+import { analytics } from "@/lib/analytics";
 
 type WatchlistOption = {
   id: number;
@@ -119,6 +120,8 @@ export function WatchlistButton({
         return;
       }
 
+      if (nextChecked) analytics.watchlistAdd(companyCode, "company_page");
+      else analytics.watchlistRemove(companyCode, "company_page");
       router.refresh();
     } catch {
       setMembership(watchlist.id, previousIsMember);
@@ -176,6 +179,7 @@ export function WatchlistButton({
       }
 
       setMembership(newList.id, true);
+      analytics.watchlistAdd(companyCode, "company_page");
       router.refresh();
     } finally {
       setIsCreating(false);

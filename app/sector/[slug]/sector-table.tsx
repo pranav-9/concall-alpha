@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 
 import ConcallScore from "@/components/concall-score";
+import { analytics } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -241,7 +242,7 @@ function sortRows(rows: RankedSectorRow[], sort: SortState): RankedSectorRow[] {
   });
 }
 
-export function SectorTable({ rows }: { rows: SectorTableRow[] }) {
+export function SectorTable({ rows, sector }: { rows: SectorTableRow[]; sector: string }) {
   const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
   const rankedRows = rankRows(rows);
   const sortedRows = sortRows(rankedRows, sort);
@@ -342,6 +343,7 @@ export function SectorTable({ rows }: { rows: SectorTableRow[] }) {
                     <Link
                       href={`/company/${row.companyCode}`}
                       prefetch={false}
+                      onClick={() => analytics.sectorCompanyClick(sector, row.companyCode)}
                       className="font-semibold text-foreground hover:underline"
                     >
                       {row.companyName}

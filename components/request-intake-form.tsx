@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { INNER_CARD } from "@/lib/design/shell";
+import { analytics } from "@/lib/analytics";
 
 type RequestType = "feedback" | "stock_addition" | "bug_report";
 
@@ -97,6 +98,10 @@ export function RequestIntakeForm() {
         return;
       }
 
+      analytics.requestIntakeSubmit(
+        requestType === "stock_addition" ? subjectTarget.trim() : undefined,
+        message.trim().length,
+      );
       reset();
       router.push(`/request-submitted?id=${encodeURIComponent(payload.id)}`);
     } catch {

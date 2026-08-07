@@ -400,6 +400,7 @@ function GuidanceThreadCard({
   return (
     <article
       onClick={() => onSelect(item)}
+      data-drawer-type="guidance-thread"
       className={cn(
         nestedDetailClass,
         "relative cursor-pointer overflow-hidden p-3 transition-colors hover:bg-muted/30",
@@ -490,6 +491,7 @@ function GuidanceTableRow({
   return (
     <tr
       onClick={() => onSelect(item)}
+      data-drawer-type="guidance-thread"
       className={cn(
         "cursor-pointer transition-colors hover:bg-muted/30",
         isHistorical && "opacity-70",
@@ -1098,6 +1100,7 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
                         href={src.url}
                         target="_blank"
                         rel="noreferrer noopener"
+                        data-source-type={docType}
                         className="inline-flex items-center gap-1 rounded-md border border-border/40 bg-background/60 px-2 py-1 text-[11px] text-foreground/85 hover:border-border hover:bg-background hover:text-foreground"
                       >
                         {labelText} <span className="text-muted-foreground">↗</span>

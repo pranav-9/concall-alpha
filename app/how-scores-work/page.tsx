@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnalyticsBeacon } from "@/components/analytics-beacon";
 import {
   CHIP_BASE,
   CHIP_NEUTRAL,
@@ -123,6 +124,7 @@ export default async function HowScoresWorkPage() {
     <main className="relative isolate overflow-hidden">
       <div className={PAGE_BACKGROUND_CLASS} />
       <div className={PAGE_SHELL_CLASS}>
+        <AnalyticsBeacon event="how_scores_work_view" />
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-200">
             Score framework

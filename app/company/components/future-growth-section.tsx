@@ -393,6 +393,7 @@ export function FutureGrowthSection({
                               <button
                                 type="button"
                                 aria-label="View growth score breakdown"
+                                data-drawer-type="growth-score-breakdown"
                                 className="flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1 shadow-none transition-colors hover:bg-accent"
                               >
                                 {typeof growthScore === "number" && growthBand ? (
@@ -489,6 +490,7 @@ export function FutureGrowthSection({
                           <Button
                             variant="outline"
                             size="sm"
+                            data-drawer-type="other-catalysts"
                             className="h-7 rounded-full border-border/60 bg-background/70 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-none hover:bg-accent"
                           >
                             Other catalysts
@@ -638,6 +640,7 @@ export function FutureGrowthSection({
                                               variant="outline"
                                               size="icon-sm"
                                               aria-label="Open catalyst tracker"
+                                              data-drawer-type="catalyst-tracker"
                                               className="relative size-7 rounded-full border-border/60 bg-background/70 text-muted-foreground shadow-none hover:bg-accent hover:text-foreground"
                                             >
                                               <History className="size-3.5" />

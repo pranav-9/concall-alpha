@@ -5,6 +5,7 @@ import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { analytics } from "@/lib/analytics";
 
 type SectionHelpfulnessFooterProps = {
   companyCode: string;
@@ -107,6 +108,7 @@ export function SectionHelpfulnessFooter({
         );
       }
 
+      analytics.feedbackPollResponse(sectionId, answer, companyCode);
       setSubmittedAnswer(answer);
       toast.success("Feedback submitted");
     } catch {
