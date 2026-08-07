@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { CompanySidebarSectionItem } from "../constants";
 import { TopSectionTabs } from "./top-section-tabs";
+import { analytics } from "@/lib/analytics";
 
 type CompanyPageNavigationContextValue = {
   navigateToSection: (sectionId: string) => void;
@@ -17,6 +18,7 @@ export const useCompanyPageNavigation = () =>
 type CompanyPageWorkspaceProps = {
   sections: CompanySidebarSectionItem[];
   defaultSectionId?: string;
+  companyCode?: string;
   children: React.ReactNode;
 };
 
@@ -33,6 +35,7 @@ const getCssVariablePx = (name: string, fallback: number) => {
 export function CompanyPageWorkspace({
   sections,
   defaultSectionId,
+  companyCode,
   children,
 }: CompanyPageWorkspaceProps) {
   const contentRef = React.useRef<HTMLDivElement | null>(null);
@@ -51,6 +54,18 @@ export function CompanyPageWorkspace({
   );
 
   const [activeSectionId, setActiveSectionId] = React.useState<string>(fallbackSectionId);
+
+  // One company_page_view per page load; company_code is the join key to our data.
+  React.useEffect(() => {
+    if (companyCode) analytics.companyPageView(companyCode);
+  }, [companyCode]);
+
+  // section_view fires whenever a different section becomes active (initial +
+  // every tab navigation) — the real depth-of-engagement signal, since the
+  // workspace shows one panel at a time rather than a scroll of collapsibles.
+  React.useEffect(() => {
+    analytics.sectionView(activeSectionId, companyCode);
+  }, [activeSectionId, companyCode]);
 
   React.useEffect(() => {
     setActiveSectionId(resolveSectionId(window.location.hash));

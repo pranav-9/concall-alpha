@@ -337,7 +337,11 @@ export default async function Page({
         id="main-content"
         className="mx-auto flex w-full max-w-[1440px] min-w-0 flex-col gap-5 overflow-x-hidden"
       >
-        <CompanyPageWorkspace sections={sidebarSections} defaultSectionId="overview">
+        <CompanyPageWorkspace
+          sections={sidebarSections}
+          defaultSectionId="overview"
+          companyCode={overview.company_code}
+        >
           <div data-section-id="overview">
             <OverviewCard
               companyInfo={{

@@ -35,6 +35,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { ColumnInfo } from "@/app/company/components/column-info";
+import { analytics } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -627,6 +628,16 @@ export function ScoreBoardTable({
                       <Link
                         href={`/company/${row.companyCode}`}
                         prefetch={false}
+                        onClick={() =>
+                          analytics.leaderboardRowClick({
+                            companyCode: row.companyCode,
+                            board: showRemove ? "watchlist" : "overall",
+                            belowCut: dim,
+                            rank: Number.isFinite(row.effectiveRank)
+                              ? row.effectiveRank
+                              : undefined,
+                          })
+                        }
                         title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}
                         className={`min-w-0 truncate font-semibold hover:underline ${
                           dim ? "text-muted-foreground" : "text-foreground"
