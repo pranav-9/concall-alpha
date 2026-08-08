@@ -502,6 +502,16 @@
   animation: venn-lens-in 520ms ease-out var(--venn-delay, 80ms) forwards;
 }
 
+/* Circle fill is theme-aware: on near-black the 0.12 tint that reads in light
+ * mode all but vanishes, so the overlaps — the whole point of the Venn — stop
+ * building up. Bump it on dark so the three lenses visibly resolve at centre. */
+.venn-lens circle {
+  fill-opacity: 0.12;
+}
+.dark .venn-lens circle {
+  fill-opacity: 0.22;
+}
+
 .venn-verdict {
   opacity: 0;
   transform: scale(0.94);

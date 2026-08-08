@@ -29,6 +29,18 @@ export default function VerdictVenn({ featured }: { featured: FeaturedRead }) {
   const gBand = GROWTH_BANDS[bandForGrowthScore(g)];
   const vBand = VALUATION_BANDS[bandForValuationScore(v)];
 
+  // The verdict pill speaks the board-read taxonomy ("Aligned & cheap"), which
+  // compresses valuation to cheap/fair/rich. Show the valuation lens in that
+  // same register so the figure doesn't say "Undervalued" and "cheap" 200px
+  // apart for the same leg. (The precise band label still lives on the company
+  // page's Valuation section.)
+  const valuationWord =
+    vBand.key === "deep_value" || vBand.key === "undervalued"
+      ? "Cheap"
+      : vBand.key === "fair"
+        ? "Fair"
+        : "Rich";
+
   const ariaLabel =
     `${featured.name}: ConcallScore ${q.toFixed(1)}, Growth ${g.toFixed(1)}, ` +
     `Valuation ${vBand.label}. The three lenses resolve to a read of ` +
@@ -51,7 +63,7 @@ export default function VerdictVenn({ featured }: { featured: FeaturedRead }) {
   const lenses = [
     { label: "ConcallScore", value: q.toFixed(1), band: qBand },
     { label: "Growth", value: g.toFixed(1), band: gBand },
-    { label: "Valuation", value: vBand.label, band: vBand },
+    { label: "Valuation", value: valuationWord, band: vBand },
   ] as const;
 
   return (
@@ -76,13 +88,13 @@ export default function VerdictVenn({ featured }: { featured: FeaturedRead }) {
       <div className="mx-auto hidden w-full max-w-[24rem] sm:block">
         <svg viewBox="0 0 440 300" role="img" aria-label={ariaLabel} className="h-auto w-full">
           <g className={`${qBand.textClass} venn-lens`} style={{ ["--venn-delay" as string]: "80ms" }}>
-            <circle cx="220" cy="104" r="82" stroke="currentColor" strokeWidth="1.25" fill="currentColor" fillOpacity="0.11" />
+            <circle cx="220" cy="104" r="82" stroke="currentColor" strokeWidth="1.25" fill="currentColor" />
           </g>
           <g className={`${gBand.textClass} venn-lens`} style={{ ["--venn-delay" as string]: "220ms" }}>
-            <circle cx="164" cy="196" r="82" stroke="currentColor" strokeWidth="1.25" fill="currentColor" fillOpacity="0.11" />
+            <circle cx="164" cy="196" r="82" stroke="currentColor" strokeWidth="1.25" fill="currentColor" />
           </g>
           <g className={`${vBand.textClass} venn-lens`} style={{ ["--venn-delay" as string]: "360ms" }}>
-            <circle cx="276" cy="196" r="82" stroke="currentColor" strokeWidth="1.25" fill="currentColor" fillOpacity="0.11" />
+            <circle cx="276" cy="196" r="82" stroke="currentColor" strokeWidth="1.25" fill="currentColor" />
           </g>
 
           <g textAnchor="middle" className="house-data">
@@ -91,7 +103,7 @@ export default function VerdictVenn({ featured }: { featured: FeaturedRead }) {
             <text x="92" y="234" fontSize="11" letterSpacing="0.06em" fill="var(--ink-soft)">GROWTH</text>
             <text x="92" y="255" fontSize="17" fontWeight="700" fill="var(--ink)">{g.toFixed(1)}</text>
             <text x="348" y="234" fontSize="11" letterSpacing="0.06em" fill="var(--ink-soft)">VALUATION</text>
-            <text x="348" y="255" fontSize="14" fontWeight="700" fill="var(--ink)">{vBand.label}</text>
+            <text x="348" y="255" fontSize="17" fontWeight="700" fill="var(--ink)">{valuationWord}</text>
           </g>
 
           {/* Neutral verdict pill — the dominant, verdict-first element. It
