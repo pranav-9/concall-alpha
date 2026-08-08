@@ -23,6 +23,9 @@ import {
   computeAvgScore,
 } from "@/app/company/[code]/page-helpers";
 import { getGuidanceCredibilityVerdictDisplay } from "@/app/company/[code]/display-tokens";
+import { BOARD_READS, classifyBoardRead, type BoardReadKey } from "@/lib/board-read";
+import { toValuationScale } from "@/lib/valuation-band";
+import { assessStaleness } from "@/lib/valuation-check/normalize";
 
 type SupabaseQueryClient = Pick<Awaited<ReturnType<typeof createServerSupabaseClient>>, "from">;
 
@@ -54,6 +57,40 @@ export type OverviewTakeaways = {
   keyVariableTrend: string | null;
 };
 
+export type OverviewGrowthScenarios = {
+  bear: string | null;
+  base: string | null;
+  bull: string | null;
+};
+
+// "The Read": the leaderboard composite + descriptive label, rendered on the
+// company page so the two surfaces can never disagree (lib/board-read.ts). This
+// is DERIVED from the three leg scores on read, never persisted — a stored read
+// could drift from the legs it summarises.
+export type OverviewReadModel = {
+  score: number | null;
+  key: BoardReadKey;
+  label: string;
+  description: string;
+};
+
+// Single source of the read on both the cache-miss build path and the
+// cache-hit normalize path, so a persisted row and a freshly-built one produce
+// the identical verdict.
+function deriveOverviewRead(
+  quarterScore: number | null,
+  growthScore: number | null,
+  valuationScore: number | null,
+): OverviewReadModel {
+  const r = classifyBoardRead({ quarterScore, growthScore, valuationScore });
+  return {
+    score: r.score,
+    key: r.key,
+    label: BOARD_READS[r.key].label,
+    description: r.description,
+  };
+}
+
 export type CompanyPageOverviewCacheRow = {
   company_code: string;
   company_name: string;
@@ -62,6 +99,9 @@ export type CompanyPageOverviewCacheRow = {
   sub_sector: string | null;
   market_cap_band: string | null;
   latest_score: number | null;
+  quarter_label: string | null;
+  qoq_delta: number | null;
+  quarter_series: number[] | null;
   quarter_rank: number | null;
   quarter_total: number | null;
   quarter_percentile: number | null;
@@ -69,6 +109,10 @@ export type CompanyPageOverviewCacheRow = {
   growth_rank: number | null;
   growth_total: number | null;
   growth_percentile: number | null;
+  growth_scenarios: OverviewGrowthScenarios | null;
+  valuation_score: number | null;
+  valuation_priced_as_of: string | null;
+  valuation_stale: boolean;
   sector_rank: number | null;
   sector_total: number | null;
   sector_percentile: number | null;
@@ -82,6 +126,7 @@ export type CompanyPageOverviewCacheRow = {
   business_segment_mix: BusinessSegmentMixItem[] | null;
   overview_takeaways: OverviewTakeaways | null;
   section_availability: SectionAvailability;
+  read: OverviewReadModel;
   refreshed_at: string;
 };
 
@@ -149,7 +194,26 @@ const asOverviewTakeaways = (value: unknown): OverviewTakeaways | null => {
   return Object.values(takeaways).some((v) => v != null) ? takeaways : null;
 };
 
+const asNumberArray = (value: unknown): number[] | null => {
+  if (!Array.isArray(value)) return null;
+  const nums = value
+    .map((v) => toNumeric(v))
+    .filter((v): v is number => v != null);
+  return nums.length > 0 ? nums : null;
+};
+
+const asGrowthScenarios = (value: unknown): OverviewGrowthScenarios | null => {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+  const scenarios = { bear: str(raw.bear), base: str(raw.base), bull: str(raw.bull) };
+  return scenarios.bear || scenarios.base || scenarios.bull ? scenarios : null;
+};
+
 function normalizeCacheRow(row: Record<string, unknown>): CompanyPageOverviewCacheRow {
+  const latestScore = toNumeric(row.latest_score);
+  const growthScore = toNumeric(row.growth_score);
+  const valuationScore = toNumeric(row.valuation_score);
   return {
     company_code: String(row.company_code ?? ""),
     company_name: String(row.company_name ?? row.company_code ?? ""),
@@ -157,14 +221,22 @@ function normalizeCacheRow(row: Record<string, unknown>): CompanyPageOverviewCac
     sector: typeof row.sector === "string" ? row.sector : null,
     sub_sector: typeof row.sub_sector === "string" ? row.sub_sector : null,
     market_cap_band: typeof row.market_cap_band === "string" ? row.market_cap_band : null,
-    latest_score: toNumeric(row.latest_score),
+    latest_score: latestScore,
+    quarter_label: typeof row.quarter_label === "string" ? row.quarter_label : null,
+    qoq_delta: toNumeric(row.qoq_delta),
+    quarter_series: asNumberArray(row.quarter_series),
     quarter_rank: toNumeric(row.quarter_rank),
     quarter_total: toNumeric(row.quarter_total),
     quarter_percentile: toNumeric(row.quarter_percentile),
-    growth_score: toNumeric(row.growth_score),
+    growth_score: growthScore,
     growth_rank: toNumeric(row.growth_rank),
     growth_total: toNumeric(row.growth_total),
     growth_percentile: toNumeric(row.growth_percentile),
+    growth_scenarios: asGrowthScenarios(row.growth_scenarios),
+    valuation_score: valuationScore,
+    valuation_priced_as_of:
+      typeof row.valuation_priced_as_of === "string" ? row.valuation_priced_as_of : null,
+    valuation_stale: Boolean(row.valuation_stale),
     sector_rank: toNumeric(row.sector_rank),
     sector_total: toNumeric(row.sector_total),
     sector_percentile: toNumeric(row.sector_percentile),
@@ -181,6 +253,7 @@ function normalizeCacheRow(row: Record<string, unknown>): CompanyPageOverviewCac
     business_segment_mix: asSegmentMix(row.business_segment_mix),
     overview_takeaways: asOverviewTakeaways(row.overview_takeaways),
     section_availability: asAvailability(row.section_availability),
+    read: deriveOverviewRead(latestScore, growthScore, valuationScore),
     refreshed_at: String(row.refreshed_at ?? new Date().toISOString()),
   };
 }
@@ -273,7 +346,7 @@ export async function buildCompanyPageOverviewCacheRow(
     // unpublished valuation must leave the tab reading "Soon", not "Live".
     supabase
       .from("valuation_check")
-      .select("company_code")
+      .select("company_code, score, rateable, verdict, priced_as_of, price_at_run")
       .eq("company_code", normalizedCode)
       .eq("valuation_published", true)
       .limit(1)
@@ -309,6 +382,7 @@ export async function buildCompanyPageOverviewCacheRow(
     score?: unknown;
     fy?: unknown;
     qtr?: unknown;
+    quarter_label?: unknown;
   }>;
   if (!company && concallRows.length === 0) return null;
 
@@ -316,6 +390,26 @@ export async function buildCompanyPageOverviewCacheRow(
   const latestScore = toNumeric(latestQuarterData?.score);
   const companyLatestFy = latestQuarterData?.fy ?? null;
   const companyLatestQtr = latestQuarterData?.qtr ?? null;
+  const quarterLabel =
+    typeof latestQuarterData?.quarter_label === "string"
+      ? latestQuarterData.quarter_label
+      : null;
+  // concallRows are newest-first (fy desc, qtr desc). QoQ delta is this print
+  // minus the one before it; the sparkline is the newest ≤8 prints in
+  // chronological (oldest→newest) order so the last bar is the latest quarter.
+  const priorScore = toNumeric(concallRows[1]?.score);
+  const qoqDelta =
+    latestScore != null && priorScore != null
+      ? Math.round((latestScore - priorScore) * 10) / 10
+      : null;
+  const quarterSeries = (() => {
+    const series = concallRows
+      .slice(0, 8)
+      .map((r) => toNumeric(r.score))
+      .filter((v): v is number => v != null)
+      .reverse();
+    return series.length > 0 ? series : null;
+  })();
 
   const growthOutlookDetailPromise = supabase
     .from("growth_outlook")
@@ -619,6 +713,43 @@ export async function buildCompanyPageOverviewCacheRow(
   })();
   const hasIndustryAnalysis = Boolean(industryPreviewRows?.[0]);
 
+  // Valuation leg for The Read, mirroring the homepage hero / leaderboard: only
+  // a rateable, verdict-bearing, NOT-stale published row contributes a score.
+  // A stale row still surfaces its priced-as-of + stale flag so the gauge can
+  // show "Stale", but it does not feed the composite.
+  const valuationRow =
+    (valuationRows?.[0] as
+      | {
+          score?: number | null;
+          rateable?: boolean | null;
+          verdict?: string | null;
+          priced_as_of?: string | null;
+          price_at_run?: number | null;
+        }
+      | undefined) ?? null;
+  let valuationScore: number | null = null;
+  let valuationPricedAsOf: string | null = null;
+  let valuationStale = false;
+  if (valuationRow && valuationRow.rateable && valuationRow.verdict != null) {
+    valuationPricedAsOf = valuationRow.priced_as_of ?? null;
+    const { stale } = assessStaleness({
+      pricedAsOf: valuationRow.priced_as_of ?? null,
+      priceAtRun: valuationRow.price_at_run ?? null,
+    });
+    valuationStale = stale;
+    valuationScore = stale ? null : toValuationScale(valuationRow.score ?? null);
+  }
+
+  const growthScenarios: OverviewGrowthScenarios | null = (() => {
+    const bear = normalizedGrowthOutlook?.downsideGrowthPct?.trim() || null;
+    const base = normalizedGrowthOutlook?.baseGrowthPct?.trim() || null;
+    const bull = normalizedGrowthOutlook?.upsideGrowthPct?.trim() || null;
+    return bear || base || bull ? { bear, base, bull } : null;
+  })();
+
+  const growthScore = normalizedGrowthOutlook?.growthScore ?? null;
+  const read = deriveOverviewRead(latestScore, growthScore, valuationScore);
+
   return {
     company_code: normalizedCode,
     company_name: companyName,
@@ -627,13 +758,20 @@ export async function buildCompanyPageOverviewCacheRow(
     sub_sector: companySubSector,
     market_cap_band: companyMarketCapBand,
     latest_score: latestScore,
+    quarter_label: quarterLabel,
+    qoq_delta: qoqDelta,
+    quarter_series: quarterSeries,
     quarter_rank: quarterRankInfo?.rank ?? null,
     quarter_total: quarterRankInfo?.total ?? null,
     quarter_percentile: quarterRankInfo?.percentile ?? null,
-    growth_score: normalizedGrowthOutlook?.growthScore ?? null,
+    growth_score: growthScore,
     growth_rank: growthRankInfo?.rank ?? null,
     growth_total: growthRankInfo?.total ?? null,
     growth_percentile: growthRankInfo?.percentile ?? null,
+    growth_scenarios: growthScenarios,
+    valuation_score: valuationScore,
+    valuation_priced_as_of: valuationPricedAsOf,
+    valuation_stale: valuationStale,
     sector_rank: sectorRankInfo?.rank ?? null,
     sector_total: sectorRankInfo?.total ?? null,
     sector_percentile: sectorRankInfo?.percentile ?? null,
@@ -648,6 +786,7 @@ export async function buildCompanyPageOverviewCacheRow(
     revenue_guidance_label: revenueGuidanceLabel,
     business_segment_mix: businessSegmentMix,
     overview_takeaways: overviewTakeaways,
+    read,
     section_availability: {
       industryContext: hasIndustryAnalysis,
       subSector: hasIndustryAnalysis,
@@ -663,7 +802,7 @@ export async function buildCompanyPageOverviewCacheRow(
 }
 
 const selectColumns =
-  "company_code,company_name,is_new,sector,sub_sector,market_cap_band,latest_score,quarter_rank,quarter_total,quarter_percentile,growth_score,growth_rank,growth_total,growth_percentile,sector_rank,sector_total,sector_percentile,moat_label,moat_tier_label,key_variable_count,guidance_count,guidance_verdict_key,guidance_verdict_label,revenue_guidance_label,business_segment_mix,overview_takeaways,section_availability,refreshed_at";
+  "company_code,company_name,is_new,sector,sub_sector,market_cap_band,latest_score,quarter_label,qoq_delta,quarter_series,quarter_rank,quarter_total,quarter_percentile,growth_score,growth_rank,growth_total,growth_percentile,growth_scenarios,valuation_score,valuation_priced_as_of,valuation_stale,sector_rank,sector_total,sector_percentile,moat_label,moat_tier_label,key_variable_count,guidance_count,guidance_verdict_key,guidance_verdict_label,revenue_guidance_label,business_segment_mix,overview_takeaways,section_availability,refreshed_at";
 
 async function readCompanyOverview(code: string): Promise<CompanyPageOverviewCacheRow | null> {
   const normalizedCode = code.trim().toUpperCase();
@@ -691,7 +830,10 @@ export async function getCachedCompanyPageOverview(
 
   const read = unstable_cache(
     () => readCompanyOverview(normalizedCode),
-    ["company-page-overview", normalizedCode],
+    // v2: row shape gained `read` + valuation/qoq/series/scenarios fields (The
+    // Read redesign). Bumping the key invalidates stale pre-redesign entries so
+    // a deploy never serves a read-less object that throws in the component.
+    ["company-page-overview-v2", normalizedCode],
     {
       revalidate: 300,
       tags: [companyOverviewCacheTag(normalizedCode)],
@@ -702,8 +844,12 @@ export async function getCachedCompanyPageOverview(
 }
 
 export function toCompanyPageOverviewUpsert(row: CompanyPageOverviewCacheRow) {
+  // `read` is derived on read (deriveOverviewRead), never persisted — it has no
+  // column and a stored copy could drift from the legs it summarises.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { read: _read, ...persisted } = row;
   return {
-    ...row,
+    ...persisted,
     company_code: row.company_code.toUpperCase(),
     section_availability: row.section_availability ?? defaultAvailability,
     updated_at: row.refreshed_at,
