@@ -36,6 +36,11 @@ import { useState } from "react";
 
 import { ColumnInfo } from "@/app/company/components/column-info";
 import { analytics } from "@/lib/analytics";
+import {
+  STICKY_NAME_CELL,
+  STICKY_NAME_HEAD,
+  TABLE_SCROLL_HINT,
+} from "@/lib/design/shell";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -425,14 +430,11 @@ function ScoreCell({
   );
 }
 
-// Sticky first column so the company name stays visible while the score columns
-// scroll on narrow screens. The base must be fully opaque or scrolling cells
-// show through it, which also means it can't take the row's translucent hover
-// tint — STICKY_COL_BODY re-applies that as an overlay. The width cap is
-// load-bearing on mobile: uncapped, the longest company name sized this column
-// wider than a 364px viewport and pushed every score off screen.
-const STICKY_COL = "sticky left-0 max-w-[11.5rem] bg-background sm:max-w-none";
-const STICKY_COL_BODY = `${STICKY_COL} before:pointer-events-none before:absolute before:inset-0 before:bg-accent/50 before:opacity-0 before:transition-opacity group-hover:before:opacity-100`;
+// Sticky first column (name stays visible while score columns scroll on a
+// phone) lives in the shared shell tokens — STICKY_NAME_HEAD / STICKY_NAME_CELL
+// / TABLE_SCROLL_HINT — so this board and the four DataTable/section boards
+// share one implementation. The cell token carries the opaque base, the
+// group-hover tint overlay, the width cap, and the lg revert.
 
 export function ScoreBoardTable({
   rows,
@@ -509,10 +511,7 @@ export function ScoreBoardTable({
       {/* The only cue that more columns exist to the right — the scroll container
           carries no shadow, no mask and no scrollbar on touch. Hidden from lg up,
           where the table fits the shell without scrolling. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 right-0 z-30 w-10 bg-gradient-to-l from-background to-transparent lg:hidden"
-      />
+      <div aria-hidden className={TABLE_SCROLL_HINT} />
       <Table
         aria-label={
           showRemove
@@ -531,7 +530,7 @@ export function ScoreBoardTable({
                   ? sortDirectionLabel(sort.key)
                   : "none"
               }
-              className={`${STICKY_COL} z-20 px-3 py-3 text-foreground`}
+              className={`${STICKY_NAME_HEAD} px-3 py-3 text-foreground`}
             >
               <div className="flex items-baseline gap-3">
                 {renderSortHead({
@@ -618,7 +617,7 @@ export function ScoreBoardTable({
                     dim ? "opacity-55" : ""
                   }`}
                 >
-                  <TableCell className={`${STICKY_COL_BODY} z-10 px-3 py-3`}>
+                  <TableCell className={`${STICKY_NAME_CELL} px-3 py-3`}>
                     <div className="relative z-[1] flex items-baseline gap-2">
                       <span className="w-7 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
                         {Number.isFinite(row.effectiveRank) ? row.effectiveRank : "—"}

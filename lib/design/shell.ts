@@ -52,8 +52,12 @@ export const STICKY_NAME_HEAD =
 // Opaque base (scrolling cells must not show through) + a width cap so a long
 // name can't size the sticky column past a phone viewport and push every score
 // off screen. Both drop away at lg.
+// The bg-accent overlay restores the row's hover tint on the opaque sticky cell
+// for `group` rows (the score board); it no-ops on non-group boards and is
+// removed at lg (lg:before:hidden) where the cell reverts to a transparent
+// static cell and native row-hover shows through.
 export const STICKY_NAME_CELL =
-  "sticky left-0 z-10 max-w-[12rem] whitespace-normal break-words bg-background lg:static lg:z-auto lg:max-w-none lg:whitespace-nowrap lg:bg-transparent";
+  "sticky left-0 z-10 max-w-[12rem] whitespace-normal break-words bg-background before:pointer-events-none before:absolute before:inset-0 before:bg-accent/50 before:opacity-0 before:transition-opacity group-hover:before:opacity-100 lg:static lg:z-auto lg:max-w-none lg:whitespace-nowrap lg:bg-transparent lg:before:hidden";
 
 // Invisible 44px hit area for small standalone controls (compact pills, icon
 // buttons) that would otherwise fall below the touch floor. Keeps the visual
