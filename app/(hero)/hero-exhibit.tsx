@@ -32,7 +32,7 @@ function HeroCopy({
           A fundamental research platform
         </h1>
         <p className="house-display mt-3 text-lg text-[var(--ink)]">
-          Fundamental research on India&apos;s top 100 mid- &amp; small-cap companies.
+          Covering India&apos;s top 100 mid- &amp; small-cap companies.
         </p>
         <p className="mt-3 text-sm leading-6 text-[var(--ink-soft)]">
           Prices follow earnings — so we track each company&apos;s earnings trajectory, quarter by
