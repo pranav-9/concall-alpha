@@ -80,20 +80,6 @@ const buildColumns = (scoreLabel: string): ColumnDef<TrackerEntry>[] => [
     ),
   },
   {
-    id: "band",
-    header: "Band",
-    cell: ({ row }) => {
-      const s = row.original.score;
-      const b = s == null ? BANDS.upcoming : BANDS[bandForScore(s)];
-      return (
-        <span className="inline-flex items-center gap-1.5">
-          <span className={cn("h-1.5 w-1.5 rounded-full", b.barClass)} />
-          <span className={cn("text-[12px] font-medium", b.textClass)}>{b.label}</span>
-        </span>
-      );
-    },
-  },
-  {
     accessorKey: "score",
     header: ({ column }) => (
       <Button variant="ghost" className={headerBtnClass} onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
@@ -108,6 +94,20 @@ const buildColumns = (scoreLabel: string): ColumnDef<TrackerEntry>[] => [
       return (
         <span className={cn("text-[15px] font-bold tabular-nums", band.textClass)}>
           {s.toFixed(1)}
+        </span>
+      );
+    },
+  },
+  {
+    id: "band",
+    header: "Band",
+    cell: ({ row }) => {
+      const s = row.original.score;
+      const b = s == null ? BANDS.upcoming : BANDS[bandForScore(s)];
+      return (
+        <span className="inline-flex items-center gap-1.5">
+          <span className={cn("h-1.5 w-1.5 rounded-full", b.barClass)} />
+          <span className={cn("text-[12px] font-medium", b.textClass)}>{b.label}</span>
         </span>
       );
     },
