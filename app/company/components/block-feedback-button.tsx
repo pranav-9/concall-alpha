@@ -5,6 +5,7 @@ import { Flag } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { TOUCH_TARGET } from "@/lib/design/shell";
 import {
   Drawer,
   DrawerClose,
@@ -103,7 +104,7 @@ export function BlockFeedbackButton({
           type="button"
           variant="ghost"
           size="sm"
-          className="h-7 rounded-full px-2 text-[11px] text-muted-foreground hover:text-foreground"
+          className={`h-7 rounded-full px-2 text-[11px] text-muted-foreground hover:text-foreground ${TOUCH_TARGET}`}
           disabled={submitted}
         >
           <Flag className="h-3.5 w-3.5" />

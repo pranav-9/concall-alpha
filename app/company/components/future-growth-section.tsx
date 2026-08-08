@@ -9,6 +9,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { TOUCH_TARGET_ICON } from "@/lib/design/shell";
 import { History } from "lucide-react";
 import {
   Tooltip,
@@ -641,7 +642,7 @@ export function FutureGrowthSection({
                                               size="icon-sm"
                                               aria-label="Open catalyst tracker"
                                               data-drawer-type="catalyst-tracker"
-                                              className="relative size-7 rounded-full border-border/60 bg-background/70 text-muted-foreground shadow-none hover:bg-accent hover:text-foreground"
+                                              className={`size-7 rounded-full border-border/60 bg-background/70 text-muted-foreground shadow-none hover:bg-accent hover:text-foreground ${TOUCH_TARGET_ICON}`}
                                             >
                                               <History className="size-3.5" />
                                               <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full border border-background bg-sky-500 px-1 text-[10px] font-semibold leading-4 text-white">

@@ -55,6 +55,18 @@ export const STICKY_NAME_HEAD =
 export const STICKY_NAME_CELL =
   "sticky left-0 z-10 max-w-[12rem] whitespace-normal break-words bg-background lg:static lg:z-auto lg:max-w-none lg:whitespace-nowrap lg:bg-transparent";
 
+// Invisible 44px hit area for small standalone controls (compact pills, icon
+// buttons) that would otherwise fall below the touch floor. Keeps the visual
+// size; a centered pseudo-element carries the extra target and costs no layout.
+// Element-width only (TOUCH_TARGET) so adjacent controls in a row don't overlap;
+// TOUCH_TARGET_ICON is the 44x44 square variant for lone icon buttons. Both need
+// a non-clipping host (no overflow-hidden). Same idea as column-info.tsx.
+export const TOUCH_TARGET =
+  "relative before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']";
+
+export const TOUCH_TARGET_ICON =
+  "relative before:absolute before:left-1/2 before:top-1/2 before:size-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']";
+
 export const CHIP_BASE =
   "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors";
 

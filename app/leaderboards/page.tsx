@@ -6,6 +6,7 @@ import {
   PAGE_BACKGROUND_ATMOSPHERIC,
   PAGE_SHELL,
   TABLE_CARD_SKY,
+  TOUCH_TARGET,
 } from "@/lib/design/shell";
 import {
   computeBoardReadCounts,
@@ -36,7 +37,7 @@ const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 //   put two active-state languages on one screen and reached for a raw palette
 //   utility outside the four sanctioned sources of colour.
 const TAB_TRIGGER_CLASS =
-  "shrink-0 justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors sm:min-w-[6rem] data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm";
+  `shrink-0 justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors sm:min-w-[6rem] data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm ${TOUCH_TARGET}`;
 
 export default async function LeaderboardsPage({
   searchParams,

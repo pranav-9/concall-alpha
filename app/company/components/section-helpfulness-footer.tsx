@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { analytics } from "@/lib/analytics";
+import { TOUCH_TARGET } from "@/lib/design/shell";
 
 type SectionHelpfulnessFooterProps = {
   companyCode: string;
@@ -128,7 +129,7 @@ export function SectionHelpfulnessFooter({
           type="button"
           variant={submittedAnswer === "yes" ? "default" : "outline"}
           size="sm"
-          className="h-7 rounded-full px-2.5 text-[11px]"
+          className={`h-7 rounded-full px-2.5 text-[11px] ${TOUCH_TARGET}`}
           disabled={Boolean(submittedAnswer) || Boolean(submittingAnswer)}
           onClick={() => submitAnswer("yes")}
         >
@@ -139,7 +140,7 @@ export function SectionHelpfulnessFooter({
           type="button"
           variant={submittedAnswer === "no" ? "default" : "outline"}
           size="sm"
-          className="h-7 rounded-full px-2.5 text-[11px]"
+          className={`h-7 rounded-full px-2.5 text-[11px] ${TOUCH_TARGET}`}
           disabled={Boolean(submittedAnswer) || Boolean(submittingAnswer)}
           onClick={() => submitAnswer("no")}
         >
