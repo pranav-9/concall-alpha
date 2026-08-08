@@ -29,7 +29,7 @@ function HeroCopy({
     <div className="flex h-full flex-col justify-between gap-8">
       <div>
         <h1 className="house-display text-[2rem] leading-[1.05] sm:text-[2.4rem] lg:text-[2.1rem] xl:text-[2.5rem]">
-          We read the disclosures, not the share price.
+          A fundamental research platform
         </h1>
         <p className="house-display mt-3 text-lg text-[var(--ink)]">
           Fundamental research on India&apos;s top 100 mid- &amp; small-cap companies.
