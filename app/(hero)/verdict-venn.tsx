@@ -67,12 +67,13 @@ export default function VerdictVenn({ featured }: { featured: FeaturedRead }) {
           {featured.code}
           {featured.sector ? ` · ${featured.sector}` : ""}
         </HomepageModuleLink>
-        <span className="whitespace-nowrap">three lenses, one read</span>
+        <span className="whitespace-nowrap">latest read</span>
       </figcaption>
 
-      {/* Desktop / tablet: the Venn. Each circle takes its own band colour via
-       * currentColor; the verdict pill stays neutral and dominant. */}
-      <div className="hidden sm:block">
+      {/* Desktop / tablet: the Venn. Capped width so it doesn't balloon to the
+       * full 1fr cell (which pushed the exhibit past the viewport). Each circle
+       * takes its own band colour via currentColor; the pill stays neutral. */}
+      <div className="mx-auto hidden w-full max-w-[24rem] sm:block">
         <svg viewBox="0 0 440 300" role="img" aria-label={ariaLabel} className="h-auto w-full">
           <g className={`${qBand.textClass} venn-lens`} style={{ ["--venn-delay" as string]: "80ms" }}>
             <circle cx="220" cy="104" r="82" stroke="currentColor" strokeWidth="1.25" fill="currentColor" fillOpacity="0.11" />
