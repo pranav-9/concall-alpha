@@ -55,6 +55,8 @@ const Navbar = ({
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const menuPanelRef = useRef<HTMLDivElement | null>(null);
   const navItems = [
     ...(quarterLabel ? [{ href: "/quarter-tracker", label: quarterLabel }] : []),
     { href: "/leaderboards", label: "Leaderboards" },
@@ -127,13 +129,27 @@ const Navbar = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsMenuOpen(false);
+        // Escape is a keyboard dismissal — return focus to the trigger so the
+        // tab sequence resumes where it left off (outside-tap intentionally
+        // does not, since focus is already wherever the user tapped).
+        menuButtonRef.current?.focus();
       }
     };
+
+    // Lock background scroll so flicking to tap a menu item doesn't slide the
+    // page underneath the open panel.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    // Move focus into the panel so keyboard/AT users land on the menu instead
+    // of tabbing through the whole page first.
+    menuPanelRef.current?.focus();
 
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      document.body.style.overflow = previousOverflow;
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
@@ -210,9 +226,11 @@ const Navbar = ({
             </div>
 
             <button
+              ref={menuButtonRef}
               type="button"
               aria-label="Toggle navigation menu"
               aria-expanded={isMenuOpen}
+              aria-controls="global-navbar-mobile-menu"
               onClick={() => setIsMenuOpen((prev) => !prev)}
               className="min-[1200px]:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground/80"
             >
@@ -236,7 +254,14 @@ const Navbar = ({
         </div>
 
         {isMenuOpen && (
-          <div className="min-[1200px]:hidden absolute left-3 right-3 top-[calc(100%+0.5rem)] overflow-hidden rounded-[1.5rem] border border-border/60 bg-background shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/12 dark:bg-[hsl(0_0%_8%)] dark:shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)]">
+          <div
+            ref={menuPanelRef}
+            id="global-navbar-mobile-menu"
+            role="menu"
+            aria-label="Navigation menu"
+            tabIndex={-1}
+            className="min-[1200px]:hidden absolute left-3 right-3 top-[calc(100%+0.5rem)] max-h-[calc(100dvh-var(--global-navbar-height,4.25rem)-1.5rem)] overflow-y-auto overscroll-contain rounded-[1.5rem] border border-border/60 bg-background shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl outline-none dark:border-white/12 dark:bg-[hsl(0_0%_8%)] dark:shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)]"
+          >
             <div className="space-y-2 px-3 py-3">
               <CompanySearch
                 className="mb-1 w-full"
