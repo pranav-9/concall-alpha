@@ -41,12 +41,20 @@ export default async function ThemesPage() {
           </div>
         </section>
 
-        {blocks.length > 0 && (
+        {blocks.length > 0 ? (
           <div className="mt-8 flex flex-col gap-10">
             {blocks.map((block) => (
               <ThemeBlockView key={block.slug} block={block} quarterLabel={quarterLabel} />
             ))}
           </div>
+        ) : (
+          <p className="mt-8 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            No hot themes featured this quarter. Check back after results season — or explore the{" "}
+            <a href="/leaderboards" className="font-medium text-foreground underline underline-offset-2">
+              full leaderboard
+            </a>{" "}
+            in the meantime.
+          </p>
         )}
       </div>
     </main>

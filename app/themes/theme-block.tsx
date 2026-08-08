@@ -213,16 +213,56 @@ export function ThemeBlockView({
           {provisionalCount > 0 && ` · ${provisionalCount} provisional`}
         </p>
       )}
-      <ul className="mt-4">
-        {block.members.map((member) => {
-          // Below-cut rows carry no rank number, matching the board.
+      {/* Desktop column headers. Mobile rows carry per-cell Q/G/V/Read labels inline
+          instead, so the header is desktop-only — same grid template as MemberRow. */}
+      <div className="mt-4 hidden items-center gap-3 border-b border-border/45 pb-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70 sm:grid sm:grid-cols-[1.5rem_minmax(0,1fr)_3.25rem_3.25rem_3.5rem_3.75rem]">
+        <span aria-hidden="true" />
+        <span>Company</span>
+        <span className="text-right">Qtr</span>
+        <span className="text-right">Grw</span>
+        <span className="text-right">Val</span>
+        <span className="text-right text-foreground/70">Read</span>
+      </div>
+      {(() => {
+        // Rank every member first (below-cut / unscored carry none, matching the board),
+        // then show the top 3 by Read and collapse the rest behind a toggle. Collapse only
+        // when it saves more than one row, so a 4-member theme just shows all four.
+        const rows = block.members.map((member) => {
           const showRank = !member.belowCut && member.readScore != null;
           if (showRank) rank += 1;
-          return (
-            <MemberRow key={member.companyCode} member={member} rank={showRank ? rank : null} />
-          );
-        })}
-      </ul>
+          return { member, rank: showRank ? rank : null };
+        });
+        const VISIBLE = 3;
+        const collapse = rows.length > VISIBLE + 1;
+        const visible = collapse ? rows.slice(0, VISIBLE) : rows;
+        const hidden = collapse ? rows.slice(VISIBLE) : [];
+
+        return (
+          <>
+            <ul>
+              {visible.map(({ member, rank: rowRank }) => (
+                <MemberRow key={member.companyCode} member={member} rank={rowRank} />
+              ))}
+            </ul>
+            {hidden.length > 0 && (
+              <details className="group">
+                <summary className="flex cursor-pointer list-none items-center gap-1.5 border-t border-border/45 py-2.5 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+                  <span className="group-open:hidden">Show {hidden.length} more</span>
+                  <span className="hidden group-open:inline">Show fewer</span>
+                  <span aria-hidden="true" className="transition-transform group-open:rotate-180">
+                    ↓
+                  </span>
+                </summary>
+                <ul>
+                  {hidden.map(({ member, rank: rowRank }) => (
+                    <MemberRow key={member.companyCode} member={member} rank={rowRank} />
+                  ))}
+                </ul>
+              </details>
+            )}
+          </>
+        );
+      })()}
     </section>
   );
 }
