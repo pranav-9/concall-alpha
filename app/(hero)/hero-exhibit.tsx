@@ -2,8 +2,10 @@ import Link from "next/link";
 
 import { CompanySearch } from "@/components/company-search";
 import type { CompanySearchRow } from "@/lib/company-search-cache";
+import { getCachedFeaturedRead } from "@/lib/home-featured-read";
 import { getCachedHomeTrails } from "@/lib/home-trails";
 import ScorePlate from "./score-plate";
+import VerdictVenn from "./verdict-venn";
 
 export function HeroExhibitFallback() {
   return (
@@ -14,49 +16,103 @@ export function HeroExhibitFallback() {
   );
 }
 
-export default async function HeroExhibit({
+// The left cell — the platform's thesis in three lines, plus the search. Shared
+// by both the Venn hero and the trail fallback so the copy can't drift.
+function HeroCopy({
   companies,
+  sectorCount,
+  exampleCode,
 }: {
   companies: CompanySearchRow[];
+  sectorCount: number;
+  exampleCode: string | null;
 }) {
-  const { exhibits, companyCount, sectorCount, quarterCount } = await getCachedHomeTrails();
-  if (exhibits.length === 0) return <HeroExhibitFallback />;
-
   return (
-    <ScorePlate trails={exhibits}>
-      <div className="flex h-full flex-col justify-between gap-8">
-        {/* A first-time reader has to be told what this is before a score can
-         * mean anything to them. The line about what a trail's SHAPE implies is
-         * the plate's caption, not the page's opening claim. */}
-        <div>
-          <h1 className="house-display text-[2.1rem] leading-[1.03] sm:text-[2.6rem] lg:text-[2.3rem] xl:text-[2.7rem]">
-            Every concall, read for you.
-          </h1>
-          <p className="mt-5 text-sm leading-6 text-[var(--ink-soft)]">
-            We score each quarter from the company&apos;s own documents and keep the
-            trail. <span className="house-data text-[var(--ink)]">{quarterCount}</span>{" "}
-            quarters so far, across{" "}
-            <span className="house-data text-[var(--ink)]">{companyCount}</span> mid- and
-            small-cap companies.
-          </p>
+    <div className="flex h-full flex-col justify-between gap-8">
+      <div>
+        <h1 className="house-display text-[2rem] leading-[1.05] sm:text-[2.4rem] lg:text-[2.1rem] xl:text-[2.5rem]">
+          A fundamental research platform
+        </h1>
+        <p className="house-display mt-3 text-lg text-[var(--ink)]">
+          Covering India&apos;s top 100 mid- &amp; small-cap companies.
+        </p>
+        <p className="mt-3 text-sm leading-6 text-[var(--ink-soft)]">
+          Prices follow earnings — so we analyse the earnings trajectory of every company we
+          cover.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <CompanySearch className="w-full" instanceId="hero-search" initialCompanies={companies} />
+        <p className="house-data house-micro flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[var(--ink-soft)]">
+          <span>{sectorCount} sectors</span>
+          {exampleCode ? (
+            <Link
+              href={`/company/${exampleCode}`}
+              prefetch={false}
+              className="house-link whitespace-nowrap"
+            >
+              see an example →
+            </Link>
+          ) : null}
+          <Link href="/coverage" prefetch={false} className="house-link whitespace-nowrap">
+            how coverage works
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default async function HeroExhibit({ companies }: { companies: CompanySearchRow[] }) {
+  const [{ exhibits, sectorCount }, featured] = await Promise.all([
+    getCachedHomeTrails(),
+    getCachedFeaturedRead(),
+  ]);
+
+  if (!featured && exhibits.length === 0) return <HeroExhibitFallback />;
+
+  const copy = (
+    <HeroCopy
+      companies={companies}
+      sectorCount={sectorCount}
+      exampleCode={featured?.code ?? exhibits[0]?.code ?? null}
+    />
+  );
+
+  // Primary hero: the three-lens read. Present whenever at least one covered
+  // company has all three legs and a positive verdict.
+  if (featured) {
+    return (
+      <figure className="house-plate">
+        <figcaption className="house-plate-bar">
+          <span className="house-data house-micro whitespace-nowrap">Plate 01 — The read</span>
+          <span className="house-data house-micro truncate text-[var(--ink)]">
+            three lenses, one verdict
+          </span>
+        </figcaption>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
+          <div className="house-plate-cell border-b border-[var(--rule)] lg:border-b-0 lg:border-r">
+            {copy}
+          </div>
+          <div className="house-plate-cell">
+            <VerdictVenn featured={featured} />
+          </div>
         </div>
 
-        <div className="space-y-3">
-          <CompanySearch
-            className="w-full"
-            instanceId="hero-search"
-            initialCompanies={companies}
-          />
-          <p className="house-data house-micro flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[var(--ink-soft)]">
-            {/* Company count lives in the paragraph above; repeating it here
-             * was the same number twice in one cell. */}
-            <span>{sectorCount} sectors</span>
-            <Link href="/coverage" prefetch={false} className="house-link whitespace-nowrap">
-              how coverage works
-            </Link>
-          </p>
+        <div className="house-plate-foot house-data house-micro">
+          <span className="text-[var(--ink)]">The print, the outlook and the price — lined up</span>
+          <span aria-hidden className="hidden text-[var(--rule)] sm:inline">
+            |
+          </span>
+          <span>the same composite that ranks the leaderboard</span>
         </div>
-      </div>
-    </ScorePlate>
-  );
+      </figure>
+    );
+  }
+
+  // Fallback: no company currently clears all three legs (e.g. valuations went
+  // stale as a cohort). Show the scored-trail plate instead of an empty hero.
+  return <ScorePlate trails={exhibits}>{copy}</ScorePlate>;
 }
