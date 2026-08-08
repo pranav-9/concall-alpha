@@ -11,6 +11,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ColumnInfo } from "@/app/company/components/column-info";
+import {
+  STICKY_NAME_CELL,
+  STICKY_NAME_HEAD,
+  TABLE_SCROLL_HINT,
+} from "@/lib/design/shell";
+import { cn } from "@/lib/utils";
 import {
   moatTierClass,
   moatTierGradeClass,
@@ -77,20 +84,32 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
   }).filter((g) => g.rows.length > 0);
 
   return (
-    <div className={TABLE_CARD_SKY}>
+    <div className={cn(TABLE_CARD_SKY, "relative")}>
+      <div aria-hidden className={TABLE_SCROLL_HINT} />
       <Table aria-label="Companies grouped by moat rating" className="w-full text-sm">
         <TableHeader className="bg-background/70">
           <TableRow className="border-b border-border/35 bg-background/70">
             <TableHead className="w-12 px-3 py-3 text-foreground">#</TableHead>
-            <TableHead className="px-3 py-3 text-foreground">Company</TableHead>
+            <TableHead className={cn("px-3 py-3 text-foreground", STICKY_NAME_HEAD)}>
+              Company
+            </TableHead>
             <TableHead className="w-24 px-3 py-3 text-foreground">
-              <span title="Sub-grade within the moat rating (Strong / Mid / Weak)">
+              <span className="inline-flex items-center gap-1">
                 Strength
+                <ColumnInfo label="Strength">
+                  <p>Sub-grade within the moat rating (Strong / Mid / Weak).</p>
+                </ColumnInfo>
               </span>
             </TableHead>
             <TableHead className="w-40 px-3 py-3 text-foreground">
-              <span title="Moat sources where the company shows presence (out of total assessed)">
+              <span className="inline-flex items-center gap-1">
                 Active sources
+                <ColumnInfo label="Active sources">
+                  <p>
+                    Moat sources where the company shows presence, out of the
+                    total assessed.
+                  </p>
+                </ColumnInfo>
               </span>
             </TableHead>
             <TableHead className="w-32 px-3 py-3 text-foreground">Cycle-tested</TableHead>
@@ -131,7 +150,7 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
                       {row.leaderboardRank}
                     </span>
                   </TableCell>
-                  <TableCell className="px-3 py-3 align-middle">
+                  <TableCell className={cn("px-3 py-3 align-middle", STICKY_NAME_CELL)}>
                     <div className="flex items-center gap-1.5">
                       <Link
                         href={`/company/${row.companyCode}`}
