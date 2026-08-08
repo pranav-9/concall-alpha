@@ -30,7 +30,7 @@ const learnLinks: FooterLinkItem[] = [
   },
   {
     href: "https://x.com/pranav_handle",
-    label: "X",
+    label: "X (Twitter)",
     external: true,
   },
   { href: "/requests", label: "Submit Request" },
