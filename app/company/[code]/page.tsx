@@ -7,16 +7,11 @@ import {
 } from "@/lib/company-overview-cache";
 import { SECTION_MAP } from "../constants";
 import { CompanyPageWorkspace } from "../components/company-page-workspace";
-import { OverviewCard } from "../components/overview-card";
+import { TheReadOverview } from "../components/overview-the-read";
 import CompanyWatchlistSlot, {
   WatchlistSlotFallback,
 } from "../components/company-watchlist-slot";
 import { SectionLoading } from "../components/section-loading";
-import {
-  getGuidanceCredibilityVerdictDisplay,
-  getPercentileTone,
-  type OverviewBodyPillTone,
-} from "./display-tokens";
 import {
   BusinessSnapshotPanel,
   // CommunityPanel retired 2026-07 (no engagement) — re-import when re-enabling the tab.
@@ -53,33 +48,6 @@ export async function generateMetadata({
     description: `Quarterly earnings-call analysis for ${name}${sectorSuffix}: concall score, moat rating, guidance credibility, and key variables — sourced from company filings and transcripts.`,
     alternates: { canonical: `/company/${overview.company_code}` },
   };
-}
-
-function getMoatTone(label: string | null): OverviewBodyPillTone | undefined {
-  const normalized = label?.trim().toLowerCase() ?? "";
-  if (normalized.includes("wide")) return "emerald";
-  if (normalized.includes("narrow")) return "sky";
-  if (normalized.includes("risk")) return "amber";
-  if (normalized.includes("no moat")) return "rose";
-  return undefined;
-}
-
-function getGuidanceTone(verdictKey: string | null): OverviewBodyPillTone | undefined {
-  const normalized = verdictKey?.trim().toLowerCase().replace(/[\s-]+/g, "_") ?? null;
-  switch (normalized) {
-    case "high_trust":
-      return "emerald";
-    case "credible":
-      return "sky";
-    case "mixed":
-      return "amber";
-    case "low_trust":
-      return "rose";
-    case "not_assessable":
-      return "slate";
-    default:
-      return undefined;
-  }
 }
 
 function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
@@ -157,160 +125,6 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
   ];
 }
 
-function buildOverviewSectionGroups(overview: CompanyPageOverviewCacheRow) {
-  const availability = overview.section_availability;
-  const moatLabel =
-    overview.moat_label && overview.moat_tier_label
-      ? `${overview.moat_label} - ${overview.moat_tier_label}`
-      : overview.moat_label;
-  const guidanceDisplay =
-    overview.guidance_verdict_label ??
-    getGuidanceCredibilityVerdictDisplay(overview.guidance_verdict_key)?.label ??
-    null;
-
-  const takeaways = overview.overview_takeaways;
-  const businessTakeaway =
-    takeaways?.companyRevenueCagrPct != null
-      ? `Revenue ${Math.round(takeaways.companyRevenueCagrPct)}% 3-yr CAGR`
-      : null;
-  const growthTakeaway = takeaways?.growthBasePct
-    ? `${takeaways.growthFiscalYear ? `${takeaways.growthFiscalYear} ` : ""}base-case growth ${takeaways.growthBasePct}`
-    : null;
-  const keyVarTakeaway = takeaways?.keyVariableLead
-    ? `${takeaways.keyVariableLead}${takeaways.keyVariableTrend ? ` — ${takeaways.keyVariableTrend}` : ""}`
-    : null;
-  const moatTakeaway = takeaways?.moatHeadline ?? null;
-
-  const previews = [
-    {
-      title: "Business Snapshot",
-      href: "#business-overview",
-      takeaway: businessTakeaway,
-      media: overview.business_segment_mix
-        ? { kind: "segment-bar" as const, segments: overview.business_segment_mix }
-        : undefined,
-      indicator: availability.businessSnapshot
-        ? undefined
-        : { kind: "pill" as const, label: "Soon" },
-    },
-    {
-      title: "Moat Analysis",
-      href: "#moat-analysis",
-      takeaway: moatTakeaway,
-      indicator: moatLabel
-        ? {
-            kind: "pill" as const,
-            label: moatLabel,
-            tone: getMoatTone(overview.moat_label),
-          }
-        : { kind: "pill" as const, label: "Soon" },
-    },
-    {
-      title: "Key Variables",
-      href: "#key-variables",
-      takeaway: keyVarTakeaway,
-      indicator: availability.keyVariables
-        ? {
-            kind: "pill" as const,
-            label: `${overview.key_variable_count ?? 0} vars`,
-          }
-        : { kind: "pill" as const, label: "Soon" },
-    },
-    {
-      title: "Quarterly Score",
-      href: "#sentiment-score",
-      bodyPills:
-        overview.quarter_rank != null &&
-        overview.quarter_total != null &&
-        overview.quarter_percentile != null
-          ? [
-              {
-                label: `Q Rank ${overview.quarter_rank}/${overview.quarter_total}`,
-                tone: getPercentileTone(overview.quarter_percentile),
-              },
-              {
-                label: `Top ${Math.round(overview.quarter_percentile)}%`,
-                tone: getPercentileTone(overview.quarter_percentile),
-              },
-            ]
-          : undefined,
-      indicator:
-        overview.latest_score != null
-          ? { kind: "score" as const, score: overview.latest_score }
-          : { kind: "pill" as const, label: "Soon" },
-    },
-    {
-      title: "Growth Prospects",
-      href: "#future-growth",
-      takeaway: growthTakeaway,
-      bodyPills:
-        overview.growth_rank != null &&
-        overview.growth_total != null &&
-        overview.growth_percentile != null
-          ? [
-              {
-                label: `Growth Rank ${overview.growth_rank}/${overview.growth_total}`,
-                tone: getPercentileTone(overview.growth_percentile),
-              },
-              {
-                label: `Top ${Math.round(overview.growth_percentile)}%`,
-                tone: getPercentileTone(overview.growth_percentile),
-              },
-            ]
-          : undefined,
-      indicator:
-        overview.growth_score != null
-          ? { kind: "score" as const, score: overview.growth_score }
-          : { kind: "pill" as const, label: "Soon" },
-    },
-    {
-      title: "Guidance Tracker",
-      href: "#guidance-history",
-      bodyPills: overview.revenue_guidance_label
-        ? [{ label: overview.revenue_guidance_label, tone: "sky" as const }]
-        : undefined,
-      indicator: guidanceDisplay
-        ? {
-            kind: "pill" as const,
-            label: guidanceDisplay,
-            tone: getGuidanceTone(overview.guidance_verdict_key),
-          }
-        : overview.guidance_count != null && overview.guidance_count > 0
-          ? {
-              kind: "pill" as const,
-              label: `${overview.guidance_count} items`,
-            }
-          : availability.guidanceHistory
-            ? undefined
-            : { kind: "pill" as const, label: "Soon" },
-    },
-  ];
-
-  // Decision-ordered scorecard: what it is + how durable → how it's doing +
-  // where it's headed → can you trust management + what drives it. Balanced
-  // across sections; no single tab leads.
-  const [businessSnapshot, moat, keyVariables, quarterly, growth, guidance] =
-    previews;
-
-  return [
-    {
-      key: "business",
-      label: "Business & moat",
-      previews: [businessSnapshot, moat],
-    },
-    {
-      key: "performance",
-      label: "Performance & outlook",
-      previews: [quarterly, growth],
-    },
-    {
-      key: "management",
-      label: "Management & drivers",
-      previews: [guidance, keyVariables],
-    },
-  ];
-}
-
 export default async function Page({
   params,
 }: {
@@ -328,7 +142,6 @@ export default async function Page({
   }
 
   const sidebarSections = buildSidebarSections(overview);
-  const overviewSectionGroups = buildOverviewSectionGroups(overview);
 
   return (
     <div className="relative isolate w-full overflow-hidden px-3 py-3 pb-24 sm:px-4 sm:py-4 sm:pb-28 lg:px-8">
@@ -343,15 +156,8 @@ export default async function Page({
           companyCode={overview.company_code}
         >
           <div data-section-id="overview">
-            <OverviewCard
-              companyInfo={{
-                code: overview.company_code,
-                name: overview.company_name,
-                isNew: overview.is_new,
-                marketCapBand: overview.market_cap_band,
-                sector: overview.sector,
-              }}
-              sectionGroups={overviewSectionGroups}
+            <TheReadOverview
+              overview={overview}
               watchlistSlot={
                 <Suspense fallback={<WatchlistSlotFallback />}>
                   <CompanyWatchlistSlot companyCode={overview.company_code} />
