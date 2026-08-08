@@ -6,6 +6,7 @@ import {
   type ScoreSourceStatus,
 } from "@/lib/score-freshness";
 import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
+import type { ScorePoint } from "@/lib/score-path";
 import { BANDS, SCORE_BAND_ORDER, bandForScore, type BandKey } from "@/lib/score-band";
 import {
   currentReportingQuarter,
@@ -47,6 +48,12 @@ export type TrackerEntry = {
   sourceStatus: ScoreSourceStatus;
   /** Server-computed against one clock for the whole render. */
   scoredWithin24h: boolean;
+  /**
+   * Up to the last 7 scored quarters, oldest -> newest, for the inline
+   * sparkline. Missing/unscored quarters are dropped rather than gapped: the
+   * tracker only has one row per quarter here, so this is a dense series.
+   */
+  scorePath: ScorePoint[];
 };
 
 type CompanyRow = {
@@ -85,6 +92,25 @@ const isPriorTo = (row: { fy: number; qtr: number }, fy: number, qtr: number) =>
   if (row.fy < fy) return true;
   if (row.fy > fy) return false;
   return row.qtr < qtr;
+};
+
+const isAtOrBefore = (row: { fy: number; qtr: number }, fy: number, qtr: number) =>
+  row.fy < fy || (row.fy === fy && row.qtr <= qtr);
+
+// How many trailing quarters the inline sparkline shows.
+const SPARK_QUARTERS = 7;
+
+// Build the oldest->newest score series the sparkline draws. Dedupe by (fy,qtr)
+// keeping the last-seen row — a quarter can carry an unofficial then official
+// upsert, and we want a single point per quarter.
+const buildTrackerScorePath = (rows: AnalysisRow[] | undefined): ScorePoint[] => {
+  if (!rows || rows.length === 0) return [];
+  const byPeriod = new Map<number, AnalysisRow>();
+  for (const r of rows) byPeriod.set(r.fy * 10 + r.qtr, r);
+  return [...byPeriod.values()]
+    .sort((a, b) => a.fy - b.fy || a.qtr - b.qtr)
+    .slice(-SPARK_QUARTERS)
+    .map((r) => ({ period: quarterLabelFor(r.fy, r.qtr), value: toNumberOrNull(r.score) }));
 };
 
 export type TrackerData = {
@@ -165,6 +191,8 @@ export async function getTrackerData(): Promise<TrackerData> {
   const targetByCompany = new Map<string, AnalysisRow>();
   const priorBestByCompany = new Map<string, AnalysisRow>();
   const anyHistoryByCompany = new Set<string>();
+  // All rows at or before the target quarter, per company — feeds the sparkline.
+  const historyByCompany = new Map<string, AnalysisRow[]>();
 
   for (const row of analysis) {
     const key = row.company_code?.toUpperCase();
@@ -173,6 +201,11 @@ export async function getTrackerData(): Promise<TrackerData> {
       targetByCompany.set(key, row);
     }
     anyHistoryByCompany.add(key);
+    if (isAtOrBefore(row, target.fy, target.qtr)) {
+      const bucketRows = historyByCompany.get(key);
+      if (bucketRows) bucketRows.push(row);
+      else historyByCompany.set(key, [row]);
+    }
     if (isPriorTo(row, target.fy, target.qtr)) {
       const existing = priorBestByCompany.get(key);
       if (
@@ -218,6 +251,7 @@ export async function getTrackerData(): Promise<TrackerData> {
         scoredAt,
         sourceStatus: normalizeSourceStatus(target?.source_status),
         scoredWithin24h: isScoredWithin24h(scoredAt, renderedAt),
+        scorePath: buildTrackerScorePath(historyByCompany.get(key)),
       };
     })
     .filter((entry) => {

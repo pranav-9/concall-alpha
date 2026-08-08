@@ -5,33 +5,39 @@ import Link from "next/link";
 import { ArrowUpDown } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 
-import ConcallScore from "@/components/concall-score";
 import { FreshScoreChip } from "@/components/score-provenance-chips";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BANDS, bandForScore } from "@/lib/score-band";
+import { KpiSparkline } from "@/app/company/components/kpi-sparkline";
 import { DataTable } from "@/app/company/data-table";
 import type { TrackerEntry } from "./data";
 
 // Quarter tracker rendered with the SAME platform table (DataTable) the leaderboard
-// uses — band + sector as columns, and when the score was created as a column. Score
-// circle + colours come from the shared band scheme (lib/score-band), matching the platform.
+// uses. Market-terminal layout: a flat colour-coded score numeral, Δ QoQ, an inline
+// 7-quarter sparkline, and a relative "scored" time. Band/Source stay as their own
+// columns for the season-ops read. Colours come from the shared band scheme.
 
 const headerBtnClass =
   "h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none hover:bg-transparent hover:text-foreground";
 
-// scoredAt is a UTC timestamp; render in the viewer's local tz (this is a client component).
-const SCORED_FMT = new Intl.DateTimeFormat("en-IN", {
-  day: "2-digit",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-const formatScoredAt = (iso: string | null): string => {
+// scoredAt is a UTC timestamp; render as a relative label ("5h ago"). This is a
+// client component, so Date.now() runs on the viewer's clock. Kept coarse — the
+// tracker cares about "how recent", not the exact minute.
+const formatRelative = (iso: string | null): string => {
   if (!iso) return "—";
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : SCORED_FMT.format(d);
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "—";
+  const mins = Math.round((Date.now() - then) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.round(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.round(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  return `${Math.round(months / 12)}y ago`;
 };
 
 const buildColumns = (scoreLabel: string): ColumnDef<TrackerEntry>[] => [
@@ -39,8 +45,8 @@ const buildColumns = (scoreLabel: string): ColumnDef<TrackerEntry>[] => [
     id: "rank",
     header: "#",
     cell: ({ row }) => (
-      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        {row.index + 1}.
+      <span className="text-[11px] font-semibold tabular-nums tracking-[0.1em] text-muted-foreground">
+        {String(row.index + 1).padStart(2, "0")}
       </span>
     ),
   },
@@ -97,8 +103,61 @@ const buildColumns = (scoreLabel: string): ColumnDef<TrackerEntry>[] => [
     ),
     cell: ({ row }) => {
       const s = row.original.score;
-      return s == null ? <span className="text-muted-foreground">—</span> : <ConcallScore score={s} size="sm" />;
+      if (s == null) return <span className="text-muted-foreground">—</span>;
+      const band = BANDS[bandForScore(s)];
+      return (
+        <span className={cn("text-[15px] font-bold tabular-nums", band.textClass)}>
+          {s.toFixed(1)}
+        </span>
+      );
     },
+  },
+  {
+    id: "qoq",
+    // Δ vs the most recent prior scored quarter. undefined (no score or no
+    // prior) sorts last in both directions rather than reading as a big drop.
+    accessorFn: (e) =>
+      e.score != null && e.priorScore != null ? e.score - e.priorScore : undefined,
+    sortUndefined: "last",
+    header: ({ column }) => (
+      <Button variant="ghost" className={headerBtnClass} onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Δ QoQ
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const e = row.original;
+      if (e.score == null || e.priorScore == null) {
+        return <span className="text-[12px] text-muted-foreground">—</span>;
+      }
+      const d = e.score - e.priorScore;
+      const cls =
+        d > 0
+          ? "text-teal-700 dark:text-teal-300"
+          : d < 0
+            ? "text-red-700 dark:text-red-300"
+            : "text-muted-foreground";
+      return (
+        <span
+          className={cn("text-[12px] font-medium tabular-nums", cls)}
+          title={e.priorLabel ? `vs ${e.priorLabel}` : undefined}
+        >
+          {`${d >= 0 ? "+" : ""}${d.toFixed(1)}`}
+        </span>
+      );
+    },
+  },
+  {
+    id: "spark",
+    header: "7-Qtr",
+    enableSorting: false,
+    cell: ({ row }) => (
+      <KpiSparkline
+        points={row.original.scorePath}
+        className="h-6 w-16 shrink-0"
+        ariaLabel={`${row.original.name} score trajectory`}
+      />
+    ),
   },
   {
     id: "source",
@@ -145,8 +204,11 @@ const buildColumns = (scoreLabel: string): ColumnDef<TrackerEntry>[] => [
     ),
     cell: ({ row }) => (
       <span className="inline-flex flex-wrap items-center gap-1.5">
-        <span className="text-[12px] tabular-nums text-muted-foreground">
-          {formatScoredAt(row.original.scoredAt)}
+        <span
+          className="text-[12px] tabular-nums text-muted-foreground"
+          title={row.original.scoredAt ?? undefined}
+        >
+          {formatRelative(row.original.scoredAt)}
         </span>
         {row.original.scoredWithin24h && <FreshScoreChip />}
       </span>
