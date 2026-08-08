@@ -21,24 +21,22 @@ export function HeroExhibitFallback() {
 function HeroCopy({
   companies,
   sectorCount,
-  exampleCode,
 }: {
   companies: CompanySearchRow[];
   sectorCount: number;
-  exampleCode: string | null;
 }) {
   return (
     <div className="flex h-full flex-col justify-between gap-8">
       <div>
         <h1 className="house-display text-[2rem] leading-[1.05] sm:text-[2.4rem] lg:text-[2.1rem] xl:text-[2.5rem]">
-          A fundamental research platform
+          We read the disclosures, not the share price.
         </h1>
         <p className="house-display mt-3 text-lg text-[var(--ink)]">
-          Covering India&apos;s top 100 mid- &amp; small-cap companies.
+          Fundamental research on India&apos;s top 100 mid- &amp; small-cap companies.
         </p>
         <p className="mt-3 text-sm leading-6 text-[var(--ink-soft)]">
-          Prices follow earnings — so we analyse the earnings trajectory of every company we
-          cover.
+          Prices follow earnings — so we track each company&apos;s earnings trajectory, quarter by
+          quarter, from its concalls, presentations and filings.
         </p>
       </div>
 
@@ -46,15 +44,6 @@ function HeroCopy({
         <CompanySearch className="w-full" instanceId="hero-search" initialCompanies={companies} />
         <p className="house-data house-micro flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[var(--ink-soft)]">
           <span>{sectorCount} sectors</span>
-          {exampleCode ? (
-            <Link
-              href={`/company/${exampleCode}`}
-              prefetch={false}
-              className="house-link whitespace-nowrap"
-            >
-              see an example →
-            </Link>
-          ) : null}
           <Link href="/coverage" prefetch={false} className="house-link whitespace-nowrap">
             how coverage works
           </Link>
@@ -72,13 +61,7 @@ export default async function HeroExhibit({ companies }: { companies: CompanySea
 
   if (!featured && exhibits.length === 0) return <HeroExhibitFallback />;
 
-  const copy = (
-    <HeroCopy
-      companies={companies}
-      sectorCount={sectorCount}
-      exampleCode={featured?.code ?? exhibits[0]?.code ?? null}
-    />
-  );
+  const copy = <HeroCopy companies={companies} sectorCount={sectorCount} />;
 
   // Primary hero: the three-lens read. Present whenever at least one covered
   // company has all three legs and a positive verdict.
@@ -99,14 +82,6 @@ export default async function HeroExhibit({ companies }: { companies: CompanySea
           <div className="house-plate-cell">
             <VerdictVenn featured={featured} />
           </div>
-        </div>
-
-        <div className="house-plate-foot house-data house-micro">
-          <span className="text-[var(--ink)]">The print, the outlook and the price — lined up</span>
-          <span aria-hidden className="hidden text-[var(--rule)] sm:inline">
-            |
-          </span>
-          <span>the same composite that ranks the leaderboard</span>
         </div>
       </figure>
     );

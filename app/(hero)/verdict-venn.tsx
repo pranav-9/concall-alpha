@@ -9,8 +9,8 @@
 //     so the figure reuses the leaderboard's colour language. The verdict pill
 //     is NEUTRAL (ink on paper, --rule border) — no green-on-green clash.
 //   - Lenses carry text labels, never colour alone (colour-blind safe).
-//   - A lie-factor caption states the real weights, since equal circles imply
-//     equal weight and the composite is 0.88 quality / 0.12 price.
+//   - A lie-factor caption flags that equal circles imply equal weight, while
+//     the composite actually leans to quality over price (0.88 / 0.12).
 //   - Mobile (< sm): the Venn is dropped for a stacked "lens chips -> verdict
 //     card" translation — three overlapping circles never shrink legibly.
 //   - A proof sparkline of the company's own trail redeems the hero's copy
@@ -154,7 +154,7 @@ export default function VerdictVenn({ featured }: { featured: FeaturedRead }) {
 
       {/* Graphical-integrity caption: the circles are equal, the read is not. */}
       <p className="text-center house-data house-micro text-[var(--ink-soft)]">
-        Circles sized equal for clarity — the read weights quality 0.88 / price 0.12.
+        Circles sized equal for clarity — the read leans to quality over price.
       </p>
 
       {/* Proof: the featured company's own scored-quarter trail. */}
