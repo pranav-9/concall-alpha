@@ -60,6 +60,7 @@ const Navbar = ({
   const navItems = [
     ...(quarterLabel ? [{ href: "/quarter-tracker", label: quarterLabel }] : []),
     { href: "/leaderboards", label: "Leaderboards" },
+    { href: "/themes", label: "Themes" },
     { href: "/watchlists", label: "Watchlists" },
     { href: "/blog", label: "Journal" },
   ];

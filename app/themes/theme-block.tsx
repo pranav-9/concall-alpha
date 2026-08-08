@@ -81,6 +81,22 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
           Not yet scored
         </span>
       )}
+      {member.belowCut && (
+        <span
+          title="Below the coverage cut — de-emphasized on discovery surfaces, not ranked within the theme"
+          className="shrink-0 rounded-sm border border-amber-600/50 px-1.5 py-px text-[9px] font-medium uppercase tracking-[0.1em] text-amber-700 dark:border-amber-400/40 dark:text-amber-300"
+        >
+          Below cut
+        </span>
+      )}
+      {member.quarterSourceStatus === "unofficial" && (
+        <span
+          title="Scored off a third-party transcript inside the SEBI window — re-scored when the issuer files"
+          className="shrink-0 rounded-sm border border-sky-600/50 px-1.5 py-px text-[9px] font-medium uppercase tracking-[0.1em] text-sky-700 dark:border-sky-400/40 dark:text-sky-300"
+        >
+          Unofficial
+        </span>
+      )}
     </span>
   );
 
@@ -165,8 +181,17 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
   );
 }
 
-export function ThemeBlockView({ block }: { block: ThemeBlock }) {
+export function ThemeBlockView({
+  block,
+  quarterLabel,
+}: {
+  block: ThemeBlock;
+  quarterLabel?: string | null;
+}) {
   let rank = 0;
+  const provisionalCount = block.members.filter(
+    (member) => member.quarterSourceStatus === "unofficial",
+  ).length;
   return (
     <section className="border-t-2 border-foreground pt-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
@@ -180,6 +205,12 @@ export function ThemeBlockView({ block }: { block: ThemeBlock }) {
       {block.blurb && (
         <p className="mt-2 max-w-[66ch] text-sm leading-relaxed text-muted-foreground">
           {block.blurb}
+        </p>
+      )}
+      {quarterLabel && (
+        <p className="mt-2 font-mono text-[11px] tracking-[0.02em] text-muted-foreground/80">
+          Scores as of {quarterLabel}
+          {provisionalCount > 0 && ` · ${provisionalCount} provisional`}
         </p>
       )}
       <ul className="mt-4">

@@ -6,6 +6,7 @@
 
 import type { Metadata } from "next";
 
+import { currentReportingQuarter } from "@/lib/current-quarter";
 import { HERO_CARD, PAGE_BACKGROUND_ATMOSPHERIC, PAGE_SHELL } from "@/lib/design/shell";
 import { getFeaturedThemeBlocks } from "@/lib/themes/data";
 import { ThemeBlockView } from "./theme-block";
@@ -21,6 +22,7 @@ const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 
 export default async function ThemesPage() {
   const blocks = await getFeaturedThemeBlocks();
+  const quarterLabel = currentReportingQuarter().label;
 
   return (
     <main className="relative isolate overflow-hidden">
@@ -42,7 +44,7 @@ export default async function ThemesPage() {
         {blocks.length > 0 && (
           <div className="mt-8 flex flex-col gap-10">
             {blocks.map((block) => (
-              <ThemeBlockView key={block.slug} block={block} />
+              <ThemeBlockView key={block.slug} block={block} quarterLabel={quarterLabel} />
             ))}
           </div>
         )}
