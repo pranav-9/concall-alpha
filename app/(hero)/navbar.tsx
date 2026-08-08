@@ -115,6 +115,31 @@ const Navbar = ({
   };
 
   useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!navRef.current) return;
+      if (!navRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMenuOpen]);
+
+  useEffect(() => {
     const element = navRef.current;
     if (!element) return;
 
@@ -144,10 +169,10 @@ const Navbar = ({
     <nav
       ref={navRef}
       id="global-navbar"
-      className="sticky top-0 z-50 flex justify-center bg-background/38 backdrop-blur-lg"
+      className="sticky top-0 z-50 flex justify-center bg-background/38 backdrop-blur-lg dark:bg-background/70"
     >
       <div className="relative w-full max-w-[1440px] px-3 py-2 sm:px-6 lg:px-10">
-        <div className="flex min-h-[4.25rem] items-center justify-between gap-3 rounded-[1.5rem] border border-border/60 bg-background/82 px-3 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.45)] sm:px-4">
+        <div className="flex min-h-[4.25rem] items-center justify-between gap-3 rounded-[1.5rem] border border-border/60 bg-background/82 px-3 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.45)] dark:border-white/12 dark:bg-white/[0.05] dark:shadow-[0_18px_40px_-28px_rgba(0,0,0,0.9)] sm:px-4">
           <div className="min-w-0 shrink-0">
             <Link href="/" className="group inline-flex items-center gap-3">
               <BrandLogo size={40} showEyebrow />
@@ -189,7 +214,7 @@ const Navbar = ({
               aria-label="Toggle navigation menu"
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="min-[1200px]:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground"
+              className="min-[1200px]:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground/80"
             >
               {isMenuOpen ? (
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
@@ -211,7 +236,7 @@ const Navbar = ({
         </div>
 
         {isMenuOpen && (
-          <div className="min-[1200px]:hidden absolute left-3 right-3 top-[calc(100%+0.5rem)] overflow-hidden rounded-[1.5rem] border border-border/60 bg-background/96 shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl">
+          <div className="min-[1200px]:hidden absolute left-3 right-3 top-[calc(100%+0.5rem)] overflow-hidden rounded-[1.5rem] border border-border/60 bg-background shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/12 dark:bg-[hsl(0_0%_8%)] dark:shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)]">
             <div className="space-y-2 px-3 py-3">
               <CompanySearch
                 className="mb-1 w-full"
