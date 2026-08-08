@@ -180,7 +180,13 @@ for (const r of fresh) {
   seen.add(r.company_code);
 
   const h = histByCode.get(r.company_code) || [];
-  const prior = h.find((x) => !(x.fy === r.fy && x.qtr === r.qtr)); // next distinct quarter in desc order
+  // next distinct quarter in desc order — exclude same (fy,qtr) AND same label, so
+  // a duplicate row for THIS quarter (e.g. an un-superseded unofficial score sitting
+  // beside the official one, with drifted fy/qtr encoding) can't masquerade as the
+  // prior quarter and fabricate a QoQ "move" (the HFCL -3.8 phantom, 2026-08-07).
+  const prior = h.find(
+    (x) => x.quarter_label !== r.quarter_label && !(x.fy === r.fy && x.qtr === r.qtr)
+  );
   const delta = prior ? Number((r.score - prior.score).toFixed(1)) : null;
   const sm = r.details?.scoring_meta || {};
   const providerMismatch = prior && sm.provider && prior.provider && sm.provider !== prior.provider;
@@ -221,7 +227,7 @@ for (const r of fresh) {
     prior_score: prior?.score ?? null,
     qoq_delta: delta,
     scored_at: sm.scored_at || r.created_at,
-    source_status: sm.source_status || "unknown", // official | unofficial
+    source_status: sm.source_status || "official", // no marker on a scoring_meta row = official (a cleared rescore reads as official, not "unknown")
     provider: sm.provider || null,
     provider_mismatch_vs_prior: !!providerMismatch, // if true, QoQ delta is provider-confounded — do NOT frame as a "move"
     rescore_required: !!sm.rescore_required,
@@ -249,6 +255,88 @@ for (const r of fresh) {
   });
 }
 
+// --- backfill guard (shared by both modes) --------------------------------------
+// A candidate whose "prior" quarter is NOT strictly earlier than its own is not a
+// real QoQ move: either the sweep walked backwards and scored an old quarter
+// (prior chronologically LATER), or a duplicate row for the SAME quarter slipped
+// through (prior EQUAL). Both fabricate a delta. Never a Lane 1 pick, and dropped
+// from the CLASSIC list too (both observed 2026-07-xx / 2026-08-07).
+const qKey = (label) => {
+  const m = /^Q([1-4])FY(\d{2})$/.exec(label || "");
+  return m ? Number(m[2]) * 4 + Number(m[1]) : null;
+};
+const isBackfill = (c) => {
+  const cur = qKey(c.quarter);
+  const prev = qKey(c.prior_quarter);
+  return cur != null && prev != null && prev >= cur;
+};
+
+// --- Lane 2 pattern radar: shared drivers across the whole season quarter ---------
+// The platform's edge is spotting one macro force refracted across companies that
+// share no sector. Scan the ENTIRE current-season quarter (not just the 14-day
+// candidate window), cluster each row's rationale by recurring theme, and report
+// clusters of >=2 companies with the score spread — the divergence between who the
+// force lifted and who it sank. Hand-derived every run before this (2026-08-07).
+const seasonQuarter = (() => {
+  const counts = new Map();
+  for (const c of candidates) counts.set(c.quarter, (counts.get(c.quarter) || 0) + 1);
+  let best = null, n = -1;
+  for (const [q, k] of counts) if (k > n) { best = q; n = k; }
+  return best;
+})();
+let lane2Patterns = [];
+{
+  const m = /^Q([1-4])FY(\d{2})$/.exec(seasonQuarter || "");
+  if (m) {
+    const seasonFy = 2000 + Number(m[2]); // stored as e.g. 2027
+    const seasonQtr = Number(m[1]);
+    let seasonRows = [];
+    try {
+      seasonRows = await fetchAll(
+        `concall_analysis?select=company_code,score,details->rationale` +
+          `&fy=eq.${seasonFy}&qtr=eq.${seasonQtr}&details->scoring_meta=not.is.null`
+      );
+    } catch { /* pattern radar is best-effort — never block the sheet */ }
+    // curated macro drivers we keep seeing quarter to quarter — reliable, named.
+    const THEMES = [
+      { theme: "West Asia / geopolitical supply shock", re: /middle east|west asia|hormuz|red sea|jebel ali|geopolit|gulf (?:war|conflict|scrap)|strait of/i },
+      { theme: "AI data-centre buildout", re: /data cent|data center|hyperscale|liquid cool/i },
+      { theme: "Capex expansion cycle", re: /capex.{0,40}(?:doubl|increas|rais|up (?:from|to))|greenfield|brownfield expansion|doubling.{0,20}capacity/i },
+      { theme: "Customer / molecule concentration", re: /top \d+.{0,30}(?:customer|molecule)|customer concentration|molecule concentration|single (?:customer|client|molecule|fuel cell)/i },
+      { theme: "US tariffs / trade friction", re: /tariff|anti-dumping|section 232|non-chinese|china\s*\+\s*1|import substitut/i },
+      { theme: "Management evasive on numbers", re: /declined to (?:provide|quantify|disclose|give)|refused to|would not (?:provide|break|quantify)|evasi|deflect|not (?:break|disclose|analyze)[^.]{0,15}numbers|no (?:specific|numerical|concrete) (?:number|guidance|projection)/i },
+      { theme: "Guidance raised with conviction", re: /guidance raised|raised (?:its |the )?(?:fy\d+ )?(?:revenue |margin )?(?:target|guidance)|target raised|definitely beat|upgraded guidance/i },
+    ];
+    const byTheme = new Map();
+    for (const row of seasonRows) {
+      const rat = Array.isArray(row.rationale) ? row.rationale : [];
+      const text = rat.map((x) => `${x?.heading || ""} ${x?.detail || ""}`).join(" ");
+      for (const t of THEMES) {
+        if (!t.re.test(text)) continue;
+        const hit = rat.find((x) => t.re.test(`${x?.heading || ""} ${x?.detail || ""}`));
+        if (!byTheme.has(t.theme)) byTheme.set(t.theme, []);
+        byTheme.get(t.theme).push({ code: row.company_code, score: row.score, direction: hit?.direction ?? null });
+      }
+    }
+    lane2Patterns = [...byTheme.entries()]
+      .map(([theme, cos]) => {
+        const scores = cos.map((c) => c.score).filter((s) => s != null);
+        const lo = scores.length ? Math.min(...scores) : null;
+        const hi = scores.length ? Math.max(...scores) : null;
+        return {
+          theme,
+          company_count: cos.length,
+          score_min: lo,
+          score_max: hi,
+          score_spread: lo != null ? Number((hi - lo).toFixed(1)) : null,
+          companies: cos.sort((a, b) => (b.score ?? 0) - (a.score ?? 0)),
+        };
+      })
+      .filter((p) => p.company_count >= 2)
+      .sort((a, b) => b.company_count - a.company_count);
+  }
+}
+
 // --- rank: recency + move size + guidance freshness + peer chatter, discovery-listed first ---
 const score = (c) => {
   let s = 0;
@@ -272,6 +360,10 @@ const pool = EXCLUDE_POSTED
   : candidates;
 
 if (!DAILY) {
+  // drop phantom-move backfills here too (not just in --daily) — this is where the
+  // HFCL -3.8 duplicate surfaced as the #1 ranked candidate on 2026-08-07.
+  const classicDropped = pool.filter(isBackfill).map((c) => `${c.code} ${c.quarter} (prior ${c.prior_quarter}, Δ${c.qoq_delta ?? "n/a"})`);
+  const classicPool = pool.filter((c) => !isBackfill(c));
   console.log(
     JSON.stringify(
       {
@@ -293,10 +385,12 @@ if (!DAILY) {
                   ? `ledger was refreshed ${extLedgerAgeDays}d ago but its NEWEST TWEET is ${extChatterAgeDays}d old — no chatter inside the ${TAKES_DAYS}d window. Re-running /external-take-tracker will NOT help if the syndication timeline is truncating; use hydrate-tweet.mjs on pasted tweet URLs instead.`
                   : null,
         },
-        candidate_count: pool.length,
+        candidate_count: classicPool.length,
         already_posted_count: suppressed.length,
         already_posted: suppressed.map((c) => `${c.code} ${c.quarter}`),
-        candidates: pool.slice(0, TOP),
+        dropped_backfills: classicDropped,
+        lane2_patterns: lane2Patterns,
+        candidates: classicPool.slice(0, TOP),
       },
       null,
       2
@@ -338,18 +432,7 @@ const lane1Order = (a, b) => {
   return rank(a) - rank(b); // 3. better coverage rank
 };
 
-// A backfilled old quarter (prior_quarter chronologically LATER than the pick's
-// quarter — the BSE sweep walks backwards) is not news. Never a Lane 1 pick.
-const qKey = (label) => {
-  const m = /^Q([1-4])FY(\d{2})$/.exec(label || "");
-  return m ? Number(m[2]) * 4 + Number(m[1]) : null;
-};
-const isBackfill = (c) => {
-  const cur = qKey(c.quarter);
-  const prev = qKey(c.prior_quarter);
-  return cur != null && prev != null && prev > cur;
-};
-
+// qKey / isBackfill are hoisted above (shared with CLASSIC mode).
 const unposted = pool.filter((c) => !c.already_posted_this_quarter);
 const backfills = unposted.filter(isBackfill).map((c) => `${c.code} ${c.quarter} (prior ${c.prior_quarter})`);
 const lane1Eligible = unposted.filter((c) => !isBackfill(c));
@@ -462,6 +545,10 @@ console.log(
         days_since_last_thread: daysSinceThread,
         nudge: daysSinceThread == null || daysSinceThread > 6,
         thread_candidates: threadCandidates,
+        // shared drivers across this quarter's concalls — the cross-company thread
+        // material. Lead with the highest company_count / widest score_spread.
+        season_quarter: seasonQuarter,
+        patterns: lane2Patterns,
       },
       lane3_dialogue: {
         suggested_timing: "reply within hours of the source tweet — see per-candidate reply_urgency",

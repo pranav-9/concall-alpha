@@ -55,6 +55,13 @@ de-emphasised companies. Ranking already favours recency, clean move size, guida
 discovery-listed names, **and active chatter** (a company being discussed gets a modest boost; a
 logged `disagree` a bit more — chatter biases the ranking, it never overrides a real move).
 
+The CLASSIC payload also carries `lane2_patterns` (the same season-quarter cross-company driver
+clusters as Daily Desk — useful even outside a posting sheet) and `dropped_backfills` (phantom-move
+rows excluded from the candidate list; see the quarter-ordering note below). **CLASSIC is also the
+"more options" path:** Daily Desk caps Lane 1 at 2 by strategy, so when the user wants a wider set to
+choose from, run this with `--top 14` and draft the mix yourself — that's the intended fallback, not
+a workaround.
+
 **Use `external_takes` in the drafts, not just the ranking.** When a candidate has fresh chatter,
 say so in its meta line (`· chatter: equities_samjho bullish, we disagree`) — a post that lands
 in an active conversation travels further. A fresh `disagree` row is often better spent as a
@@ -74,10 +81,14 @@ tells you the ledger's age; if its `note` is non-null you skipped step 0 — go 
   they're fair to re-pitch.
 - Add `--exclude-posted` to drop suppressed candidates from the payload entirely.
 
-**Sanity-check the quarter ordering.** If a candidate's `prior_quarter` is *later* than its
-`quarter` (e.g. `Q2FY26` with prior `Q1FY27`), it's a backfilled old quarter, not a new print —
-its `qoq_delta` is meaningless as a "move" and the news is stale. Drop it and say why
-(`[[pipeline_bse_sweep_autochain_defects]]` — the sweep walks backwards).
+**Quarter-ordering is now guarded, but skim the drop list.** The script drops any candidate whose
+`prior_quarter` is not *strictly earlier* than its `quarter` — both the backfilled-old-quarter case
+(`prior` chronologically *later*, the sweep walking backwards) and the same-quarter-duplicate case
+(`prior` *equal*, an un-superseded unofficial row sitting beside the official with drifted `fy`/`qtr`
+encoding — this is what fabricated HFCL's phantom −3.8 on 2026-08-07). CLASSIC lists them under
+`dropped_backfills`, `--daily` under `lane1_speed.backfills_excluded`. They carry a real `qoq_delta`
+that means nothing as a "move" — glance at the list to confirm nothing legitimate got caught, but do
+**not** draft from it (`[[pipeline_bse_sweep_autochain_defects]]`).
 
 ### 2. Read the material — do not invent any of it
 
@@ -184,18 +195,20 @@ All CLASSIC-mode rules apply (grounding, voice, provenance, ≤280 chars, no tag
   that engages the *specific claim* with our data. Peer tone, never adversarial — these accounts
   are the peer group. Honour the `recheck` note: verify the ledger's numbers against the current
   print before drafting. If empty, say so and suggest running `/external-take-tracker`.
-- **Lane 2 — lead with the cross-company pattern.** If `nudge: true`, surface the thread
-  candidates (don't draft the whole thread unless asked — threads are a deliberate sit-down). But
-  **first scan the day's fresh prints for a shared driver.** When ~5+ of the quarter's recent
-  scores name the same force — a macro shock, a common margin lever, a sector move — a
-  cross-company synthesis is the strongest Lane 2 thread there is, and it can *absorb* that day's
-  Lane 1 speed posts rather than compete with them. It's the platform's edge: no single-stock
-  account can write it (it needs ~all the covered concalls read the same way). Find it by scanning
-  the quarter's rationale —
-  `select company_code, details->'rationale' from concall_analysis where fy=<fy> and qtr=<q>`, then
-  grep the heading+detail text for the theme keyword. Ground **every** named company in its OWN
-  rationale (never invent the link), lead with the *divergence* — who absorbed it vs who ate it —
-  not the raw count, and carry the provisional hedges. See `[[x-cross-company-pattern-posts]]`
+- **Lane 2 — lead with the cross-company pattern.** The sheet now does the scan for you:
+  `lane2_evidence.patterns` clusters the WHOLE season quarter's rationale by recurring driver
+  (`season_quarter` names it), each with `company_count`, the `companies` list (code + score +
+  direction), and `score_spread` — the divergence baked in. **Lead with the cluster that has the
+  highest count or the widest spread** (a 4.8-spread means the same force lifted one name to 9 and
+  sank another to 4 — that gap *is* the thread). This is the platform's edge: no single-stock
+  account writes it, because it needs ~all the covered concalls read the same way. A cross-company
+  synthesis can *absorb* that day's Lane 1 speed posts rather than compete with them.
+  The `patterns` block is a curated-theme radar, so for a *novel* driver it doesn't name, fall back
+  to scanning `select company_code, details->'rationale' from concall_analysis where fy=<fy> and
+  qtr=<q>` and grep the heading+detail text yourself. Either way: ground **every** named company in
+  its OWN rationale (never invent the link), lead with the *divergence* not the raw count, and carry
+  the provisional hedges. If `nudge: true`, also surface the `thread_candidates` (but don't draft the
+  whole thread unless asked — threads are a deliberate sit-down). See `[[x-cross-company-pattern-posts]]`
   (validated 2026-08-06: 22 of 86 Q1 FY27 concalls flagged the West Asia supply shock; POCL and
   Gravita were the same Hormuz lead-scrap story line-for-line).
 - Present the whole sheet compactly: the cross-company thread up top when one is found, then Lane 1
