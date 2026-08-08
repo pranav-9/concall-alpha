@@ -231,7 +231,11 @@ const Navbar = ({
               type="button"
               aria-label="Toggle navigation menu"
               aria-expanded={isMenuOpen}
-              aria-controls="global-navbar-mobile-menu"
+              // Only reference the panel while it exists (open). isMenuOpen is
+              // false on the server and first client render, so this stays absent
+              // on both — no hydration mismatch — and drops the dangling
+              // reference when the menu is closed.
+              aria-controls={isMenuOpen ? "global-navbar-mobile-menu" : undefined}
               onClick={() => setIsMenuOpen((prev) => !prev)}
               className="relative z-50 min-[1200px]:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground/80"
             >
