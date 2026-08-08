@@ -113,7 +113,7 @@ export function TopSectionTabs({
     activeTab?.scrollIntoView({
       behavior: "auto",
       block: "nearest",
-      inline: "center",
+      inline: "nearest",
     });
   }, [activeSectionId]);
 
@@ -133,11 +133,11 @@ export function TopSectionTabs({
         }}
       >
         <div className="relative rounded-[1.5rem] border border-border/70 bg-background/88 px-2 py-2 shadow-[0_18px_45px_-34px_rgba(15,23,42,0.42)] backdrop-blur-xl dark:bg-slate-950/82 sm:px-3">
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-10 rounded-l-[1.5rem] bg-gradient-to-r from-background/96 via-background/60 to-transparent dark:from-slate-950/96 dark:via-slate-950/50" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-10 rounded-r-[1.5rem] bg-gradient-to-l from-background/96 via-background/60 to-transparent dark:from-slate-950/96 dark:via-slate-950/50" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-8 rounded-l-[1.5rem] bg-gradient-to-r from-background/85 via-background/35 to-transparent dark:from-slate-950/85 dark:via-slate-950/30" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 rounded-r-[1.5rem] bg-gradient-to-l from-background/85 via-background/35 to-transparent dark:from-slate-950/85 dark:via-slate-950/30" />
 
-          <div className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <nav className="flex min-w-full items-center gap-2 whitespace-nowrap pr-2" aria-label="Company sections">
+          <div className="overflow-x-auto overscroll-x-contain scroll-px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <nav className="flex min-w-full items-center gap-2 whitespace-nowrap px-1" aria-label="Company sections">
               {sections.map((section) => {
                 const isActive = activeSectionId === section.id;
                 const shortLabel = SHORT_LABELS[section.id] ?? section.label;
