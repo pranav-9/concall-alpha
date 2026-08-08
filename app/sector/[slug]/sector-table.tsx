@@ -7,6 +7,12 @@ import { useState } from "react";
 
 import ConcallScore from "@/components/concall-score";
 import { analytics } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
+import {
+  STICKY_NAME_CELL,
+  STICKY_NAME_HEAD,
+  TABLE_SCROLL_HINT,
+} from "@/lib/design/shell";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -260,14 +266,18 @@ export function SectorTable({ rows, sector }: { rows: SectorTableRow[]; sector: 
     sort.key === key ? (sort.direction === "asc" ? "ascending" : "descending") : "none";
 
   return (
-    <div className="overflow-x-auto">
+    <div className="relative">
+      <div aria-hidden className={TABLE_SCROLL_HINT} />
       <Table className="min-w-[1100px] w-full text-sm">
         <TableHeader className="bg-background/70">
           <TableRow className="border-b border-border/35 bg-background/70">
             <TableHead aria-sort={sortDirectionLabel("rank")} className="w-12 px-3 py-3 text-foreground">
               {renderSortHead({ label: "#", columnKey: "rank", sort, onSort: handleSort })}
             </TableHead>
-            <TableHead aria-sort={sortDirectionLabel("companyName")} className="px-3 py-3 text-foreground">
+            <TableHead
+              aria-sort={sortDirectionLabel("companyName")}
+              className={cn("px-3 py-3 text-foreground", STICKY_NAME_HEAD)}
+            >
               {renderSortHead({ label: "Company", columnKey: "companyName", sort, onSort: handleSort })}
             </TableHead>
             <TableHead aria-sort={sortDirectionLabel("moatTag")} className="px-3 py-3 text-foreground">
@@ -338,7 +348,7 @@ export function SectorTable({ rows, sector }: { rows: SectorTableRow[]; sector: 
                     {row.leaderboardRank ?? "—"}
                   </span>
                 </TableCell>
-                <TableCell className="px-3 py-3">
+                <TableCell className={cn("px-3 py-3", STICKY_NAME_CELL)}>
                   <div className="flex items-center gap-1.5">
                     <Link
                       href={`/company/${row.companyCode}`}

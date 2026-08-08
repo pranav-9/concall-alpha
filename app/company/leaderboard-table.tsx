@@ -285,5 +285,12 @@ export function LeaderboardTable({
     return asNumber(item[latestQuarterLabel]);
   });
 
-  return <DataTable ariaLabel="Companies by latest quarter score" columns={columns} data={rankedData} />;
+  return (
+    <DataTable
+      ariaLabel="Companies by latest quarter score"
+      columns={columns}
+      data={rankedData}
+      stickyColId="company"
+    />
+  );
 }

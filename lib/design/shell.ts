@@ -38,6 +38,23 @@ export const INNER_CARD =
 export const PAGE_BACKGROUND_ATMOSPHERIC =
   "pointer-events-none absolute inset-x-0 top-0 -z-10 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.10),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_30%),linear-gradient(180deg,_rgba(255,255,255,0.78),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(15,23,42,0.34),_transparent_62%)]";
 
+// Dense-board mobile scroll pattern. On a phone the score columns scroll while
+// the company name must stay in view, and the only cue that more columns exist
+// is a right-edge fade. Sticky + fade below lg; on desktop the table fits the
+// shell, so the name column reverts to a normal (transparent) cell. Lifted from
+// components/score-board-table.tsx, which solved this first.
+export const TABLE_SCROLL_HINT =
+  "pointer-events-none absolute inset-y-0 right-0 z-30 w-10 rounded-r-[1.45rem] bg-gradient-to-l from-background to-transparent lg:hidden";
+
+export const STICKY_NAME_HEAD =
+  "sticky left-0 z-20 bg-background lg:static lg:z-auto lg:bg-transparent";
+
+// Opaque base (scrolling cells must not show through) + a width cap so a long
+// name can't size the sticky column past a phone viewport and push every score
+// off screen. Both drop away at lg.
+export const STICKY_NAME_CELL =
+  "sticky left-0 z-10 max-w-[12rem] whitespace-normal break-words bg-background lg:static lg:z-auto lg:max-w-none lg:whitespace-nowrap lg:bg-transparent";
+
 export const CHIP_BASE =
   "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors";
 
