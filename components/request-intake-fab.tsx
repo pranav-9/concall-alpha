@@ -11,7 +11,7 @@ export function RequestIntakeFab() {
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-40 sm:bottom-6 sm:right-6">
+    <div className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-5 z-40 sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))] sm:right-6">
       <Link
         href="/requests"
         prefetch={false}

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, IBM_Plex_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Suspense } from "react";
@@ -31,6 +31,12 @@ export const metadata: Metadata = {
   ...(googleSiteVerification
     ? { verification: { google: googleSiteVerification } }
     : {}),
+};
+
+// viewport-fit=cover lets env(safe-area-inset-*) resolve on notched devices so
+// fixed bottom UI (FAB, bottom sheets) can clear the home indicator.
+export const viewport: Viewport = {
+  viewportFit: "cover",
 };
 
 const geistSans = Geist({
