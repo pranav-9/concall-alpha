@@ -480,3 +480,41 @@
     animation: none;
   }
 }
+
+/* Verdict Venn entrance: the three lenses fade in one after another, then the
+ * verdict pill settles — "three lenses resolving into a read". Same discipline
+ * as the plate above: reduced-motion falls straight to the finished figure. */
+@keyframes venn-lens-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes venn-verdict-in {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.venn-lens {
+  opacity: 0;
+  animation: venn-lens-in 520ms ease-out var(--venn-delay, 80ms) forwards;
+}
+
+.venn-verdict {
+  opacity: 0;
+  transform: scale(0.94);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: venn-verdict-in 460ms cubic-bezier(0.2, 0.8, 0.2, 1) 560ms forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .venn-lens,
+  .venn-verdict {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
