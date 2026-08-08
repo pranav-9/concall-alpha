@@ -147,7 +147,7 @@ export function WalkTheTalkSection({ snapshot }: Props) {
             </p>
             <p className={subtleClass}>n = {snapshot.overall.totalCount}</p>
           </div>
-          <p className="text-[13px] leading-relaxed text-foreground/90">
+          <p className="text-sm leading-relaxed lg:text-[13px] text-foreground/90">
             {snapshot.overall.onTimeCount} of {snapshot.overall.totalCount}{" "}
             tracked commitments met on time
           </p>

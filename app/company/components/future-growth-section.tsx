@@ -695,7 +695,7 @@ export function FutureGrowthSection({
                                                       )}
                                                     </div>
                                                     {quote && (
-                                                      <p className="text-[12px] leading-relaxed text-foreground">
+                                                      <p className="text-[13px] leading-relaxed lg:text-[12px] text-foreground">
                                                         {quote}
                                                       </p>
                                                     )}
@@ -774,7 +774,7 @@ export function FutureGrowthSection({
                                       <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
                                         What&apos;s Changing
                                       </p>
-                                      <p className="text-[12px] leading-relaxed text-foreground">
+                                      <p className="text-[13px] leading-relaxed lg:text-[12px] text-foreground">
                                         {whatIsChanging}
                                       </p>
                                     </div>
@@ -786,7 +786,7 @@ export function FutureGrowthSection({
                                           Why It Matters
                                         </p>
                                       </div>
-                                      <p className="text-[12px] leading-relaxed text-foreground">
+                                      <p className="text-[13px] leading-relaxed lg:text-[12px] text-foreground">
                                         {whyItMatters}
                                       </p>
                                     </div>

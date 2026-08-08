@@ -126,7 +126,7 @@ function renderAboutBlock(
   const aboutDrawerText = aboutHeading && aboutSupportingText ? aboutSupportingText : null;
   const aboutMainTextClass = aboutHeading
     ? "text-base sm:text-lg font-semibold leading-snug text-foreground"
-    : "text-[13px] leading-relaxed text-foreground";
+    : "text-sm leading-relaxed lg:text-[13px] text-foreground";
 
   if (!aboutMainText) return null;
 
@@ -143,7 +143,7 @@ function renderAboutBlock(
               <span className="group-open/about-more:hidden">Read more</span>
               <span className="hidden group-open/about-more:inline">Hide</span>
             </summary>
-            <p className="mt-2 text-[13px] leading-relaxed text-foreground">{aboutDrawerText}</p>
+            <p className="mt-2 text-sm leading-relaxed lg:text-[13px] text-foreground">{aboutDrawerText}</p>
           </details>
         ) : null}
       </div>

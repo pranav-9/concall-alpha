@@ -372,7 +372,7 @@ function InsightList({ insights }: { insights: string[] }) {
       </p>
       <ul className="space-y-1.5">
         {insights.slice(0, 6).map((insight, index) => (
-          <li key={index} className="relative pl-3 text-[12px] leading-relaxed text-foreground">
+          <li key={index} className="relative pl-3 text-[13px] leading-relaxed lg:text-[12px] text-foreground">
             <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-sky-500/70" />
             {insight}
           </li>

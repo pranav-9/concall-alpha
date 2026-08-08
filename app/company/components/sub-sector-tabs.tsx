@@ -165,12 +165,12 @@ function SubSectorBody({
     <div className={cardClass}>
       <p className={labelClass}>Introduction</p>
       {entry.description && (
-        <p className="text-[12px] leading-relaxed text-muted-foreground">
+        <p className="text-[13px] leading-relaxed lg:text-[12px] text-muted-foreground">
           {entry.description}
         </p>
       )}
       {entry.relevanceRationale && (
-        <p className="text-[12px] leading-relaxed text-foreground">
+        <p className="text-[13px] leading-relaxed lg:text-[12px] text-foreground">
           <span className="font-semibold text-foreground">Why relevant: </span>
           {entry.relevanceRationale}
         </p>
@@ -306,7 +306,7 @@ function SubSectorBody({
           {capitalCycleRead && (
             <div className={cardClass}>
               <p className={labelClass}>Supply-side read</p>
-              <p className="text-[12px] leading-relaxed text-foreground/90">
+              <p className="text-[13px] leading-relaxed lg:text-[12px] text-foreground/90">
                 {capitalCycleRead}
               </p>
             </div>
@@ -314,7 +314,7 @@ function SubSectorBody({
           {evidenceInterpretation && (
             <div className={cardClass}>
               <p className={labelClass}>Evidence pack read</p>
-              <p className="text-[12px] leading-relaxed text-foreground/90">
+              <p className="text-[13px] leading-relaxed lg:text-[12px] text-foreground/90">
                 {evidenceInterpretation}
               </p>
             </div>

@@ -845,7 +845,7 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
           <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
             Coming soon
           </p>
-          <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground/70">
+          <p className="mt-2 text-[13px] leading-relaxed lg:text-[12px] text-muted-foreground/70">
             {FAMILY_TABS.find((t) => t.id === familyTab)?.label} guidance tracking is on the roadmap.
             We currently extract growth (revenue / EBITDA / PAT) commitments only.
           </p>

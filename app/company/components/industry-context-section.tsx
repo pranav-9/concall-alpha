@@ -570,7 +570,7 @@ export async function IndustryContextSection({
                           {(analysis.valueChainMap.structureType ||
                             analysis.valueChainMap.chainTypeRationale ||
                             analysis.valueChainMap.synthesis) && (
-                            <p className="text-[12px] leading-relaxed text-foreground/80">
+                            <p className="text-[13px] leading-relaxed lg:text-[12px] text-foreground/80">
                               {analysis.valueChainMap.structureType && (
                                 <span className="mr-1.5 font-semibold uppercase tracking-[0.14em] text-foreground">
                                   {formatCompactLabel(analysis.valueChainMap.structureType)}

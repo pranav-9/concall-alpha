@@ -43,8 +43,8 @@ const sourceCardAccentClass = "bg-emerald-500/75";
 
 const sectionTitleClass = "text-[13px] font-semibold leading-tight text-foreground";
 const sectionSubtitleClass = "text-[12px] leading-snug text-muted-foreground";
-const bulletTextClass = "text-[13px] leading-relaxed text-foreground/90";
-const mutedBulletClass = "text-[12px] leading-relaxed text-muted-foreground";
+const bulletTextClass = "text-sm leading-relaxed lg:text-[13px] text-foreground/90";
+const mutedBulletClass = "text-[13px] leading-relaxed lg:text-[12px] text-muted-foreground";
 const miniLabelClass = "text-[12px] font-semibold leading-tight text-foreground/90";
 const metadataClass =
   "text-[10px] uppercase tracking-[0.14em] text-muted-foreground";
@@ -484,7 +484,7 @@ export function MoatAnalysisSection({
                       key={i}
                       className={cn(
                         nestedDetailClass,
-                        "p-3 text-[13px] leading-relaxed text-foreground/90",
+                        "p-3 text-sm leading-relaxed lg:text-[13px] text-foreground/90",
                       )}
                     >
                       {trigger}

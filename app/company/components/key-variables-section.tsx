@@ -199,7 +199,7 @@ function KeyVariablesDiscoveryDrawer({
                         </span>
                       </div>
                       {item.whyFlagged ? (
-                        <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+                        <p className="mt-2 text-[13px] leading-relaxed lg:text-[12px] text-muted-foreground">
                           {item.whyFlagged}
                         </p>
                       ) : null}
@@ -375,7 +375,7 @@ export function KeyVariablesSection({
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                       Current Read
                     </p>
-                    <p className="text-[12px] leading-relaxed text-foreground">
+                    <p className="text-[13px] leading-relaxed lg:text-[12px] text-foreground">
                       {item.currentRead}
                     </p>
                   </div>
@@ -419,7 +419,7 @@ export function KeyVariablesSection({
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                       Trend Interpretation
                     </p>
-                    <p className="mt-1.5 text-[12px] leading-relaxed text-foreground">
+                    <p className="mt-1.5 text-[13px] leading-relaxed lg:text-[12px] text-foreground">
                       {item.trendInterpretation}
                     </p>
                   </div>
