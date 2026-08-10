@@ -1,0 +1,158 @@
+---
+title: "A stock can rally and get cheaper"
+date: "2026-08-10"
+dateLabel: "10 August 2026"
+summary: "Two weeks ago I started keeping every valuation reading instead of overwriting it. The biggest movers since include a stock whose price didn't budge and one that rose 9% while getting cheaper — because valuation moves for two different reasons, and only one of them is the price."
+category: "product"
+tags: ["Valuation score", "Implied growth"]
+---
+
+Every stock price is a forecast whether anyone admits it or not. Pay ₹1,800 for a company earning what Gravita earns, and you have implicitly agreed that it will grow at some particular rate for years. You may never have done that arithmetic. The price did it for you.
+
+The valuation section on this site runs that arithmetic backwards. Instead of asking *what is this worth*, it asks: **what growth does today's price already assume, and is that a bar this company can clear?** It prints a number out of 100 — high means the price assumes little, low means the price assumes a lot.
+
+Two weeks ago I changed one small thing. Until then, each time the section re-priced a company it overwrote the previous reading, so the number was always current and never had a memory. Now every reading is kept. This is the first look at what that memory contains — 612 readings across 152 companies since 28 July.
+
+The five biggest movers surprised me, and not for the reason I expected.
+
+## The bar, not the price
+
+Here is what the price was assuming for each of the five, then and now. One line per company, both ends measured the same way — the annual growth rate you would have to believe to justify that day's price.
+
+<figure className="my-6">
+  <svg viewBox="0 0 640 350" role="img" aria-label="Slope chart of the annual growth each share price implied on 28 July versus 10 August. TD Power Systems falls from 36.8 percent to 28.4 percent, Gravita from 25.3 to 16.0, CCL Products from 18.6 to 16.6, Vishnu Chemicals from 14.5 to 12.7, while Shivalik Bimetal rises from 19.8 to 23.1 percent." className="h-auto w-full">
+    <g className="text-muted-foreground" fill="currentColor" fontSize="12" fontWeight="600">
+      <text x="200" y="40" textAnchor="middle">28 July</text>
+      <text x="440" y="40" textAnchor="middle">10 August</text>
+    </g>
+    <g className="text-border" stroke="currentColor" strokeWidth="1">
+      <line x1="200" y1="52" x2="200" y2="310" />
+      <line x1="440" y1="52" x2="440" y2="310" />
+    </g>
+    <g fill="none" strokeWidth="2" strokeLinecap="round">
+      <polyline className="text-teal-700 dark:text-teal-400" stroke="currentColor" points="200,71 440,149.3" />
+      <polyline className="text-teal-700 dark:text-teal-400" stroke="currentColor" points="200,177.9 440,264.3" />
+      <polyline className="text-teal-700 dark:text-teal-400" stroke="currentColor" points="200,240.4 440,258.7" />
+      <polyline className="text-teal-700 dark:text-teal-400" stroke="currentColor" points="200,277.9 440,295" />
+      <polyline className="text-red-600 dark:text-red-400" stroke="currentColor" points="200,228.6 440,198.4" />
+    </g>
+    <g stroke="none">
+      <circle cx="200" cy="71" r="4" className="text-teal-700 dark:text-teal-400" fill="currentColor" />
+      <circle cx="440" cy="149.3" r="4" className="text-teal-700 dark:text-teal-400" fill="currentColor" />
+      <circle cx="200" cy="177.9" r="4" className="text-teal-700 dark:text-teal-400" fill="currentColor" />
+      <circle cx="440" cy="264.3" r="4" className="text-teal-700 dark:text-teal-400" fill="currentColor" />
+      <circle cx="200" cy="240.4" r="4" className="text-teal-700 dark:text-teal-400" fill="currentColor" />
+      <circle cx="440" cy="258.7" r="4" className="text-teal-700 dark:text-teal-400" fill="currentColor" />
+      <circle cx="200" cy="277.9" r="4" className="text-teal-700 dark:text-teal-400" fill="currentColor" />
+      <circle cx="440" cy="295" r="4" className="text-teal-700 dark:text-teal-400" fill="currentColor" />
+      <circle cx="200" cy="228.6" r="4" className="text-red-600 dark:text-red-400" fill="currentColor" />
+      <circle cx="440" cy="198.4" r="4" className="text-red-600 dark:text-red-400" fill="currentColor" />
+    </g>
+    <g fontSize="11.5" textAnchor="end">
+      <text x="190" y="75"><tspan className="text-foreground" fill="currentColor" fontWeight="600">TD Power </tspan><tspan className="text-muted-foreground" fill="currentColor">36.8%</tspan></text>
+      <text x="190" y="182"><tspan className="text-foreground" fill="currentColor" fontWeight="600">Gravita </tspan><tspan className="text-muted-foreground" fill="currentColor">25.3%</tspan></text>
+      <text x="190" y="226"><tspan className="text-foreground" fill="currentColor" fontWeight="600">Shivalik Bimetal </tspan><tspan className="text-muted-foreground" fill="currentColor">19.8%</tspan></text>
+      <text x="190" y="246"><tspan className="text-foreground" fill="currentColor" fontWeight="600">CCL Products </tspan><tspan className="text-muted-foreground" fill="currentColor">18.6%</tspan></text>
+      <text x="190" y="282"><tspan className="text-foreground" fill="currentColor" fontWeight="600">Vishnu Chemicals </tspan><tspan className="text-muted-foreground" fill="currentColor">14.5%</tspan></text>
+    </g>
+    <g fontSize="11.5">
+      <text x="450" y="153"><tspan className="text-foreground" fill="currentColor" fontWeight="600">28.4% </tspan><tspan className="text-muted-foreground" fill="currentColor">· score 2 → 28</tspan></text>
+      <text x="450" y="202"><tspan className="text-foreground" fill="currentColor" fontWeight="600">23.1% </tspan><tspan className="text-muted-foreground" fill="currentColor">· score 30 → 10</tspan></text>
+      <text x="450" y="255"><tspan className="text-foreground" fill="currentColor" fontWeight="600">16.6% </tspan><tspan className="text-muted-foreground" fill="currentColor">· score 26 → 50</tspan></text>
+      <text x="450" y="269"><tspan className="text-foreground" fill="currentColor" fontWeight="600">16.0% </tspan><tspan className="text-muted-foreground" fill="currentColor">· score 42 → 62</tspan></text>
+      <text x="450" y="298"><tspan className="text-foreground" fill="currentColor" fontWeight="600">12.7% </tspan><tspan className="text-muted-foreground" fill="currentColor">· score 38 → 58</tspan></text>
+    </g>
+    <g fontSize="11.5">
+      <circle cx="204" cy="333" r="4" className="text-teal-700 dark:text-teal-400" fill="currentColor" stroke="none" />
+      <text x="214" y="337" className="text-muted-foreground" fill="currentColor">bar fell — cheaper</text>
+      <circle cx="330" cy="333" r="4" className="text-red-600 dark:text-red-400" fill="currentColor" stroke="none" />
+      <text x="340" y="337" className="text-muted-foreground" fill="currentColor">bar rose — dearer</text>
+    </g>
+  </svg>
+  <figcaption className="mt-2 text-xs text-muted-foreground">
+    The annual growth each company&apos;s share price implied on 28 July and again on 10 August, with the valuation score out of 100 alongside. Four bars fell; one rose.
+  </figcaption>
+</figure>
+
+Now the part I didn't expect. Here is what those same five stocks actually *did* over the same fortnight:
+
+<div className="overflow-x-auto">
+  <table className="w-full border-collapse text-sm">
+    <thead>
+      <tr>
+        <th className="border-b border-border py-2 pr-3 text-left font-semibold text-foreground">Company</th>
+        <th className="border-b border-border py-2 px-3 text-right font-semibold text-foreground">Share price</th>
+        <th className="border-b border-border py-2 px-3 text-right font-semibold text-foreground">Growth the price assumed</th>
+        <th className="border-b border-border py-2 pl-3 text-right font-semibold text-foreground">Score</th>
+      </tr>
+    </thead>
+    <tbody className="text-muted-foreground">
+      <tr>
+        <td className="border-b border-border/60 py-2 pr-3 font-medium text-foreground">TD Power Systems</td>
+        <td className="border-b border-border/60 py-2 px-3 text-right tabular-nums">+9%</td>
+        <td className="border-b border-border/60 py-2 px-3 text-right tabular-nums">36.8% → 28.4%</td>
+        <td className="border-b border-border/60 py-2 pl-3 text-right tabular-nums">2 → 28</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border/60 py-2 pr-3 font-medium text-foreground">CCL Products</td>
+        <td className="border-b border-border/60 py-2 px-3 text-right tabular-nums">−3%</td>
+        <td className="border-b border-border/60 py-2 px-3 text-right tabular-nums">18.6% → 16.6%</td>
+        <td className="border-b border-border/60 py-2 pl-3 text-right tabular-nums">26 → 50</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border/60 py-2 pr-3 font-medium text-foreground">Gravita India</td>
+        <td className="border-b border-border/60 py-2 px-3 text-right tabular-nums">−0.5%</td>
+        <td className="border-b border-border/60 py-2 px-3 text-right tabular-nums">25.3% → 16.0%</td>
+        <td className="border-b border-border/60 py-2 pl-3 text-right tabular-nums">42 → 62</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border/60 py-2 pr-3 font-medium text-foreground">Vishnu Chemicals</td>
+        <td className="border-b border-border/60 py-2 px-3 text-right tabular-nums">−8%</td>
+        <td className="border-b border-border/60 py-2 px-3 text-right tabular-nums">14.5% → 12.7%</td>
+        <td className="border-b border-border/60 py-2 pl-3 text-right tabular-nums">38 → 58</td>
+      </tr>
+      <tr>
+        <td className="border-b border-border/60 py-2 pr-3 font-medium text-foreground">Shivalik Bimetal</td>
+        <td className="border-b border-border/60 py-2 px-3 text-right tabular-nums"><strong className="text-foreground">+40%</strong></td>
+        <td className="border-b border-border/60 py-2 px-3 text-right tabular-nums">19.8% → 23.1%</td>
+        <td className="border-b border-border/60 py-2 pl-3 text-right tabular-nums">30 → 10</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+Only Shivalik moved the way you'd assume a valuation score moves. It ran up 40% in a fortnight, the bar its price sets went from 19.8% growth to 23.1%, and the section marked it down from *expensive* to *richly priced*. Nothing subtle there: you are being asked to pay for more, so you are getting less.
+
+**Gravita is the opposite extreme, and it's the one that made me want to write this down. Its share price did not move at all** — half a percent, over two weeks. Yet the growth that price demanded collapsed from 25.3% a year to 16.0%. Nothing happened to the stock. What happened is that Gravita reported on 31 July, and the profits that same price is measured against are materially bigger. Same price, bigger business, lower bar. The section moved it from *fairly valued* to *undervalued* without the market doing anything at all.
+
+**TD Power is the strangest of the five.** Its price rose 9%, and the bar still fell, from an implausible 36.8% to a merely demanding 28.4%. That combination is only arithmetically possible one way: the profits underneath grew by more than the 9% the price added. A rising price and a falling bar at the same time is the signature of a business outrunning its own chart.
+
+CCL and Vishnu sit in between, and I'd rather say so than tidy it up. Both reported inside the fortnight — but both share prices also drifted *down*, 3% and 8%, and a falling price makes a stock cheaper all on its own. Some of those two moves is the business and some is the price, and I can't split it cleanly from what I store today. Only Gravita and TD Power are unambiguous.
+
+This is results season, which is exactly when this should happen. For most of the year a valuation score moves because prices move. For a few weeks each quarter it moves because the companies underneath it have just told everyone how they did.
+
+## The clearest case isn't in the top five
+
+There's a company further down the list that makes the point better than any of them.
+
+**[Neuland Laboratories](/blog/product-mix-shift-neuland) rose 17% over the fortnight and got cheaper.** Its score went from 30 to 38, and the multiple it trades on slipped from *expensive* to *in line* with its own five-year history. MTAR Technologies did the same thing on a 20% rally.
+
+That sounds like a bug and isn't. If a company's earnings grow faster than its share price over the same period, then the price has fallen relative to the business, no matter how good the chart looks. A rally does not make something expensive. A rally *outrunning the business* does.
+
+That's the whole reason I wanted the number on the site. Price direction is the most visible thing about a stock and one of the least informative. Everyone can see Neuland was up 17%. Almost nobody re-ran the arithmetic afterwards to see that it now assumes less than it did before.
+
+## What I'm not claiming
+
+The honest limits, because five hand-picked companies from a two-week window is exactly the shape of a chart that fools people:
+
+- **This is thirteen days.** It shows what moves the score, not whether the score is *right*. I have no evidence yet that companies this section calls undervalued go on to do better than the ones it calls richly priced — that takes quarters, not fortnights, and the history only started on 28 July. When there's enough of it, I'll publish that test the same way I published [the one on our quarterly call scores](/blog/the-market-voted), whichever way it lands.
+- **Most companies didn't move at all.** Of the 114 with two or more readings, **71 didn't shift by a single point**. That's deliberate — the score is built from broad bands so that ordinary daily noise doesn't reprice anything, and it means the movers above are the exception rather than a sample.
+- **Stickiness cuts both ways.** Six companies took a price swing of more than 10% and the score didn't budge. For four of them that's defensible — they were already sitting in the lowest band the model has at both readings, so there was very little room left to mark them down. Kaynes is the one that bothers me: up 19%, score unchanged at 74. That's a band too wide, and I'd rather say so than let you find it yourself.
+- **The section can't see everything.** It reads the price, the multiples, the company's own history and our growth work. It doesn't know what the market knows and it has no view on what's already priced in.
+- This is a note about how our own numbers behave, not investment advice.
+
+## Where this leaves us
+
+A fortnight ago the valuation number on this site was a snapshot with no memory — true today, gone tomorrow, impossible to audit. It now leaves a trail, and the first thing that trail shows is that the number moves for two quite different reasons, which look identical if you only ever see the latest reading.
+
+One is the market repricing a company. The other is a company earning its way into a price it already had. The second one is the one worth catching, and it happens for a few weeks each quarter, quietly, while the share price sits still.
