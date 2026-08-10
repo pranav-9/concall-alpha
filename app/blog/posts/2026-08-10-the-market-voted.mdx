@@ -2,7 +2,7 @@
 title: "We scored 121 earnings calls. Then the market voted."
 date: "2026-08-10"
 dateLabel: "10 August 2026"
-summary: "Calls our AI scored 8+ ran 20% ahead of the market in two weeks. Calls it scored below 6 fell behind and stayed there. All 121 companies that reported Q4 FY26, no cherry-picking."
+summary: "Calls our AI scored 8+ ran 20% ahead of the market in two weeks — and the gap kept widening for two months. Calls it scored below 6 fell behind and stayed there. All 121 companies that reported Q4 FY26, no cherry-picking."
 category: "product"
 tags: ["121-company test", "Score vs price"]
 ---
@@ -160,6 +160,67 @@ Or as a picture — every dot is one company, coloured by whether it beat the ma
 
 Nine of the eleven calls that scored 8+ beat the market over the fortnight. For the statistically minded: the score-to-return correlation is +0.43 across all 121 companies, with p under 0.001 — this is very unlikely to be luck.
 
+## Does it last, or does it just bounce?
+
+Two weeks is short. If the score is genuinely reading the business, the gap should hold or widen as that business plays out. If it's a knee-jerk reaction to a headline, it should close.
+
+Before the answer, a correction I owe you. Every company we cover is a mid- or small-cap, and mid-caps as a group beat the Nifty by about 13 points over these months. Across two weeks that's worth roughly a point — irrelevant, which is why the chart at the top stands. Across two months it would be most of the story. So for the longer test I stopped measuring against the Nifty and used the **Nifty Midcap 50**: a fairer yardstick, and a harder one.
+
+<figure className="my-6">
+  <svg viewBox="0 0 640 400" role="img" aria-label="Line chart: average stock move versus the Nifty Midcap 50 at one week, two weeks, one month and two months after results, by score bucket. The gap between the top and bottom groups widens at every step, from about 10 points at one week to about 19 points at two months." className="h-auto w-full">
+    <g className="text-border" stroke="currentColor" strokeWidth="1">
+      <line x1="60" y1="310.7" x2="500" y2="310.7" />
+      <line x1="60" y1="208.1" x2="500" y2="208.1" />
+      <line x1="60" y1="139.7" x2="500" y2="139.7" />
+      <line x1="60" y1="71.3" x2="500" y2="71.3" />
+    </g>
+    <line x1="60" y1="276.5" x2="500" y2="276.5" className="text-zinc-400 dark:text-zinc-500" stroke="currentColor" strokeWidth="1.5" strokeDasharray="5 4" />
+    <g className="text-muted-foreground" fill="currentColor" fontSize="11">
+      <text x="52" y="314.7" textAnchor="end">−5%</text>
+      <text x="52" y="280.5" textAnchor="end">0%</text>
+      <text x="52" y="212.1" textAnchor="end">+10%</text>
+      <text x="52" y="143.7" textAnchor="end">+20%</text>
+      <text x="52" y="75.3" textAnchor="end">+30%</text>
+      <text x="64" y="290.5" fontSize="10">the mid-cap market</text>
+      <text x="72" y="366" textAnchor="middle">1 week</text>
+      <text x="210" y="366" textAnchor="middle">2 weeks</text>
+      <text x="348" y="366" textAnchor="middle">1 month</text>
+      <text x="486" y="366" textAnchor="middle">2 months</text>
+    </g>
+    <g fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline className="text-red-600 dark:text-red-400" stroke="currentColor" points="72,318.9 210,312.7 348,296.3 486,279.9" />
+      <polyline className="text-zinc-500 dark:text-zinc-400" stroke="currentColor" points="72,270.3 210,272.4 348,249.8 486,249.1" />
+      <polyline className="text-teal-500" stroke="currentColor" points="72,262.1 210,248.4 348,204 486,168.4" />
+      <polyline className="text-teal-700 dark:text-teal-400" stroke="currentColor" points="72,197.8 210,149.3 348,126 486,57.7" />
+    </g>
+    <g stroke="none">
+      <circle cx="486" cy="57.7" r="3.5" className="text-teal-700 dark:text-teal-400" fill="currentColor" />
+      <circle cx="486" cy="168.4" r="3.5" className="text-teal-500" fill="currentColor" />
+      <circle cx="486" cy="249.1" r="3.5" className="text-zinc-500 dark:text-zinc-400" fill="currentColor" />
+      <circle cx="486" cy="279.9" r="3.5" className="text-red-600 dark:text-red-400" fill="currentColor" />
+    </g>
+    <g fontSize="11" fill="currentColor">
+      <text x="496" y="55" className="text-foreground" fontWeight="600">Scored 8+</text>
+      <text x="496" y="69" className="text-muted-foreground">+32%</text>
+      <text x="496" y="166" className="text-foreground" fontWeight="600">Scored 7–8</text>
+      <text x="496" y="180" className="text-muted-foreground">+16%</text>
+      <text x="496" y="246" className="text-foreground" fontWeight="600">Scored 6–7</text>
+      <text x="496" y="260" className="text-muted-foreground">+4%</text>
+      <text x="496" y="277" className="text-foreground" fontWeight="600">Below 6</text>
+      <text x="496" y="291" className="text-muted-foreground">−1%</text>
+    </g>
+  </svg>
+  <figcaption className="mt-2 text-xs text-muted-foreground">
+    Average move vs the Nifty Midcap 50 at each horizon after Q4 FY26 results, by score bucket. All 121 companies at every point shown.
+  </figcaption>
+</figure>
+
+It widens at every step. Two months after results, the calls that scored 8 or higher were **32% ahead of the mid-cap market**, while the below-6 group had gone precisely nowhere. The gap between best and worst grows from about 10 points at one week to 19 points at two months, and the four groups never swap order at any horizon.
+
+That is the opposite of what a knee-jerk reaction looks like. A market that overreacted to a headline and then thought better of it would show these lines converging.
+
+**What I won't claim: three months.** I can only measure that far for 50 of the 121 companies, because the rest reported too recently. Worse, 37 of those 50 had their *next* quarterly results land inside the three-month window — so any number there is partly measuring the following quarter's news rather than this one's call. The gap does keep widening. I'm not counting it as evidence, and neither should you.
+
 ## What the machine actually read
 
 The score isn't magic. It reads what management said and how they said it. The extremes from this quarter show exactly what that means.
@@ -182,6 +243,6 @@ An honest list, because one good chart can make anyone reckless:
 
 ## Where this leaves us
 
-The score set out to answer a modest question — *how did the quarter read?* — and it turns out the market's two-week verdict usually matches. I find the low end the most useful part: a bad call, scored honestly on the day, kept underperforming for two weeks. The market did not shrug bad quarters off.
+The score set out to answer a modest question — *how did the quarter read?* — and it turns out the market's verdict usually matches, not just on the day but for months afterward. I find the low end the most useful part: a bad call, scored honestly on the day it happened, kept underperforming. The market did not shrug bad quarters off.
 
 The platform scores these calls the day the transcript appears, often the day of the call itself. Next season's scores are going up on company pages right now — the same numbers this study just tested, printed before anyone knows how the market will vote.
