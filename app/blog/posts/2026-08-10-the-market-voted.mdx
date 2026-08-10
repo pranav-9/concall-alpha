@@ -2,30 +2,12 @@
 title: "We scored 121 earnings calls. Then the market voted."
 date: "2026-08-10"
 dateLabel: "10 August 2026"
-summary: "Every company on the platform that reported Q4 FY26 — all 121, no cherry-picking. We scored each earnings call, then watched what the stock did over the next two weeks. The market largely agreed with the machine."
+summary: "Calls our AI scored 8+ ran 20% ahead of the market in two weeks. Calls it scored below 6 fell behind and stayed there. All 121 companies that reported Q4 FY26, no cherry-picking."
 category: "product"
 tags: ["121-company test", "Score vs price"]
 ---
 
-Every quarter, listed companies hold a call where management explains the results and analysts push back. We feed the full transcript to an AI that reads it the way a careful investor would — the numbers, the guidance, how management handles hard questions — and it prints one score out of 10 for how the quarter *reads*. That score sits on every company page here.
-
-The obvious question a first-time visitor asks: **is that number real?** Or is it astrology with extra steps?
-
-[Last time](/blog/is-the-score-telling-us-anything) I tested the score against reported profits. This time I ran a simpler and harsher test, one anyone can understand: after a company announces results, does the stock *do* what the score said the quarter *read* like?
-
-## The experiment
-
-No cherry-picking. I took **every** company on the platform that reported January–March 2026 results (Q4 FY26) and had a results date on the exchange calendar — 121 companies. For each one:
-
-1. Note the day it announced results (from the NSE's own board-meeting calendar).
-2. Note the score our system gave that quarter's call.
-3. Measure the stock's move over the next two weeks, **minus the market's move** (if the market rose 1% and the stock rose 4%, the stock gets credit for 3%). This strips out good-market/bad-market luck.
-
-Two things worth stating plainly. The score is computed only from the call documents — it never sees the stock price. And the scores weren't tuned on this data; the scoring logic was frozen months before I ran this.
-
-## The one picture
-
-Group the 121 companies into four score buckets and track the average move against the market, day by day, for two trading weeks after results:
+This past results season, the 121 companies covered on this platform announced their January–March (Q4 FY26) numbers and held their earnings calls. An AI read all 121 transcripts and scored each call out of 10. Group the companies by that score, and here is what their stock prices did over the two weeks that followed:
 
 <figure className="my-6">
   <svg viewBox="0 0 640 400" role="img" aria-label="Line chart: average stock move versus Nifty over the 10 trading days after results, grouped by score bucket. Companies scoring 8 or more drift up to about +20%. Scores 7 to 8 reach about +6%. Scores 6 to 7 stay near +2%. Scores below 6 fall to about -4% and stay down." className="h-auto w-full">
@@ -77,9 +59,31 @@ Group the 121 companies into four score buckets and track the average move again
   </figcaption>
 </figure>
 
-The buckets never cross. Companies whose calls scored 8 or higher drifted to **+20% above the market** in two weeks. Calls scoring below 6 dropped about 4% behind the market in the first three days — **and stayed down**. The middle buckets sit in the middle, in order.
+The four lines never cross. Companies whose call scored 8 or higher ran **20% ahead of the market** within two weeks. Companies scoring below 6 fell about 4% behind in the first three days — **and stayed there**. The middle two sit in the middle, in order.
 
-The full numbers, since averages can hide sins:
+Nobody was trading on these scores. They were simply sitting on the website while all of this played out.
+
+## Wait — what score?
+
+Every quarter, each listed company holds an earnings call. Management explains the results, analysts push back, and a transcript of the whole thing gets published — usually 20 to 40 pages of it. Almost nobody reads them.
+
+We do. Every transcript, for every company we cover, goes to an AI that reads it the way a careful investor would: the reported numbers, what management promised, how they handled the uncomfortable questions. It prints one number out of 10 for how that quarter **reads**. That number sits on every company page here.
+
+The obvious question a first-time visitor asks is whether that number means anything, or whether it's astrology with extra steps. [Last time](/blog/is-the-score-telling-us-anything) I tested it against companies' reported profits. The chart above is the harsher test: after results are announced, does the stock actually *do* what the score said the quarter *read* like?
+
+## How I ran it
+
+No cherry-picking. I took **every** company on the platform that reported January–March 2026 results and had a results date on the exchange calendar — 121 of them. For each one:
+
+1. Note the day it announced results (from the NSE's own board-meeting calendar).
+2. Note the score our system had given that quarter's call.
+3. Measure the stock's move over the next two weeks, **minus the market's move** (if the market rose 1% and the stock rose 4%, the stock gets credit for 3%). That strips out good-market/bad-market luck.
+
+Two things worth stating plainly. The score is computed only from the call documents — it never sees the stock price. And the scores weren't tuned to fit this result; the scoring logic was frozen months before I ran the test.
+
+## The full numbers
+
+Averages can hide sins, so here is every bucket in full:
 
 <div className="overflow-x-auto">
   <table className="w-full border-collapse text-sm">
@@ -180,4 +184,4 @@ An honest list, because one good chart can make anyone reckless:
 
 The score set out to answer a modest question — *how did the quarter read?* — and it turns out the market's two-week verdict usually matches. I find the low end the most useful part: a bad call, scored honestly on the day, kept underperforming for two weeks. The market did not shrug bad quarters off.
 
-The platform scores these calls the day the transcript appears, often the day of the call itself. The scores in this study were sitting on company pages while those two-week windows played out. Next season's are appearing there now.
+The platform scores these calls the day the transcript appears, often the day of the call itself. Next season's scores are going up on company pages right now — the same numbers this study just tested, printed before anyone knows how the market will vote.
