@@ -18,6 +18,7 @@ function boardRow(
     companyCode,
     companyName,
     quarterScore,
+    fourQuarterScore: quarterScore,
     latestQuarterScore: quarterScore,
     latestQuarterLabel: null,
     growthScore,

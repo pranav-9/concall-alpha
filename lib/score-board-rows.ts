@@ -43,6 +43,10 @@ export function buildScoreBoardRows(
     // This feeds BOTH the Read number and its label (classifyBoardRead), so the
     // word and the number describe the same quarter by construction.
     const quarterScore = toNumericValue(row["Latest 4Q Blend"]);
+    // The flat trailing 4-quarter mean, shown in its own "4Q" column beside the
+    // single latest print. NOT what the Read ranks on (that's the blend above) —
+    // this is the stable trail the reader sees alongside the fresh print.
+    const fourQuarterScore = toNumericValue(row["Latest 4Q Avg"]);
 
     // The single latest print, carried separately as the "this quarter" marker.
     // It is the board's newest quarter for this company, or its own newest when
@@ -58,6 +62,7 @@ export function buildScoreBoardRows(
       companyCode: code,
       companyName: nameByCode.get(code) ?? code,
       quarterScore,
+      fourQuarterScore,
       latestQuarterScore,
       latestQuarterLabel,
       growthScore: growthScoreByCode.get(code) ?? null,

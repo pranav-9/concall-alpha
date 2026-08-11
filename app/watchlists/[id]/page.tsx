@@ -292,6 +292,7 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
         companyCode,
         companyName: companyNameByCode.get(companyCode) ?? companyCode,
         quarterScore: null,
+        fourQuarterScore: null,
         latestQuarterScore: null,
         latestQuarterLabel: null,
         growthScore: growthScoreByCode.get(companyCode) ?? null,
