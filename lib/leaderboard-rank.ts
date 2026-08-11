@@ -14,10 +14,21 @@ export type RankableRow = {
   companyCode: string;
   companyName: string;
   readScore: number | null;
+  /** Below the coverage cut. Greyed rows are numbered AFTER all kept rows. */
+  belowCut?: boolean;
 };
 
 export function computeBoardRanks(rows: ReadonlyArray<RankableRow>): Map<string, number> {
   const ordered = [...rows].sort((a, b) => {
+    // Kept rows first, then the below-cut tail: the # runs 1..K over the ranked
+    // set and continues K+1..N over the pinned greyed tail, so numbers are
+    // monotonic down the page. Ranking the whole universe by Read alone put a
+    // greyed row that out-ranks kept ones on the live Read (the cut is a stored
+    // 4Q composite, the Read is the live recency blend) at a LOW number sitting
+    // visually below a higher one — a rendering fault the pin can't hide.
+    const acut = a.belowCut ? 1 : 0;
+    const bcut = b.belowCut ? 1 : 0;
+    if (acut !== bcut) return acut - bcut;
     const av = a.readScore ?? Number.NEGATIVE_INFINITY;
     const bv = b.readScore ?? Number.NEGATIVE_INFINITY;
     if (av !== bv) return bv - av;

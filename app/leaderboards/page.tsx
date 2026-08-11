@@ -131,6 +131,7 @@ export default async function LeaderboardsPage({
       companyCode: row.companyCode,
       companyName: row.companyName,
       readScore: overallReads[i].score,
+      belowCut: row.belowCut,
     })),
   );
   const snapshotRows: RankSnapshotRow[] = overallRows.flatMap((row, i) => {
