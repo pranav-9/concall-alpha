@@ -293,6 +293,13 @@ function sortRows(rows: DerivedRow[], sort: SortState) {
         const ar = a.effectiveRank;
         const br = b.effectiveRank;
         diff = ar === br ? 0 : sort.direction === "asc" ? ar - br : br - ar;
+        // Below-cut rows all share effectiveRank = Infinity, so they tie here and
+        // would fall through to the alphabetical byName tie-breaker — the greyed
+        // tail read as A→Z, not worst-to-best. Order that tail by Read (desc) so
+        // it matches every other block on the default sort.
+        if (diff === 0 && a.belowCut && b.belowCut) {
+          diff = compareNumber(a.readScore, b.readScore, "desc");
+        }
         break;
       }
       case "companyName":
