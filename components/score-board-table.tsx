@@ -180,21 +180,21 @@ const COLUMN_INFO = {
   quarter: (
     <>
       <p>
-        The company&apos;s <span className="font-medium text-foreground">trailing four-quarter</span>{" "}
-        ConcallScore, 0–10 — the average of its four newest scored quarters, the same window the
-        coverage ranking uses. A standing read on how it has been doing, not a single print. The
-        word beneath is the band that average falls in.
+        The company&apos;s <span className="font-medium text-foreground">last four quarters</span>{" "}
+        of ConcallScore, 0–10, blended so the{" "}
+        <span className="font-medium text-foreground">latest counts double</span> any single earlier
+        quarter. A standing read that leans toward the freshest call without letting one quarter own
+        it. The word beneath is the band it falls in.
       </p>
       <p>
         Beneath it sits <span className="font-medium text-foreground">this quarter</span>: the
-        single latest print with its quarter label, so a fresh call is still visible without moving
-        the standing number four-to-one.
+        single latest print with its quarter label, so a fresh call is still visible on its own.
       </p>
       <p>
         <span className="font-medium text-foreground">Unofficial</span> on that latest print means
         the score was read off a third-party transcript, published inside the five working days an
         issuer has to file its own. It is re-scored when the official one lands, so treat it as
-        provisional — including in the Read, which the four-quarter average feeds.
+        provisional — including in the Read, which this quarter leg feeds.
       </p>
       <p>
         <span className="font-medium text-foreground">New · 24h</span> means that latest print was
@@ -229,8 +229,8 @@ const COLUMN_INFO = {
       <p>
         The synthesis, and the number the board is ranked by:{" "}
         <span className="font-medium text-foreground">0.88 × the average of Quarter and Growth,
-        plus 0.12 × Valuation</span> — where Quarter is the trailing four-quarter score above.
-        Quality counts roughly twice what price does.
+        plus 0.12 × Valuation</span> — where Quarter is the recency-weighted four-quarter score
+        above (latest counts double). Quality counts roughly twice what price does.
       </p>
       <p>
         The weights aren&apos;t round because they answer the spread of each input — valuation

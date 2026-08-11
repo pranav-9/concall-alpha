@@ -35,6 +35,10 @@ export type CompanyRow = {
   scoredWithin24h?: boolean;
   valuationVerdict?: ValuationVerdict | null;
   valuationScore?: number | null;
+  /** Flat trailing 4Q mean — Quarter tab + sector pages. */
+  "Latest 4Q Avg"?: number | null;
+  /** Recency-weighted 4Q leg ("latest counts double") — Overall board only. */
+  "Latest 4Q Blend"?: number | null;
   // Dynamic quarter columns keyed by label, e.g. "Q1 FY26"
   [key: string]: string | number | boolean | null | undefined;
 };

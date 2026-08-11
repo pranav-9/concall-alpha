@@ -11,7 +11,7 @@ import {
   scoreWrittenAt,
 } from "@/lib/score-freshness";
 import { classifyTrajectory, quarterIndex } from "@/lib/score-trajectory";
-import { mean4Q, meanLatestScored } from "@/lib/quarter-composite";
+import { blendQuarterLeg, mean4Q, meanLatestScored } from "@/lib/quarter-composite";
 import { assessStaleness } from "@/lib/valuation-check/normalize";
 import type { ValuationVerdict } from "@/lib/valuation-check/types";
 import type { CompanyRow } from "./leaderboard-table";
@@ -218,6 +218,10 @@ export const getConcallData = async ({
       const scoresNewestFirst = companyRecords.map((r) => r.score);
       row["Latest 4Q Avg"] = mean4Q(scoresNewestFirst);
       row["Latest 12Q Avg"] = meanLatestScored(scoresNewestFirst, 12);
+      // Recency-weighted leg for the Overall board ONLY (score-board-rows reads
+      // this; the Quarter tab and sector pages stay on the flat "Latest 4Q Avg").
+      // Latest counts double — see lib/quarter-composite blendQuarterLeg.
+      row["Latest 4Q Blend"] = blendQuarterLeg(scoresNewestFirst);
 
       selectedQuarters.forEach((q) => {
         const match = recordsByQuarter.get(`${q.fy}-${q.qtr}`);

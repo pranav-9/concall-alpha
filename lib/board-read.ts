@@ -23,15 +23,20 @@
 // The board's # column is derived from it (score-board-table.tsx ranks on
 // readScore), so # and Read can't disagree.
 //
-// It uses the SAME quarter leg as compute_composite_score.py's coverage cut: the
-// trailing 4-quarter mean (lib/quarter-composite), passed in by the caller. This
-// retired the old D2 split, where the live Read used the single latest quarter
-// while the cut used the 4Q mean — so a company greyed below the cut could still
-// out-rank kept ones on the board. Quarter and growth legs now reconcile by
-// construction. The VALUATION leg can still diverge: the live Read drops a
-// valuation once it goes stale (>4 days), while the cut keeps the last stored
-// one — so the reconciliation is quarter-leg, not total (tracked follow-up:
-// valuation-staleness split).
+// QUARTER LEG — live board vs coverage cut DIVERGE by design (2026-08-11). The
+// caller passes this Read a RECENCY-WEIGHTED 4Q leg ("latest counts double",
+// lib/quarter-composite blendQuarterLeg via score-board-rows), while
+// compute_composite_score.py's coverage cut stays on the flat 4Q mean. Recency
+// belongs in the live ORDERING; the cut's membership decision (which sits inside
+// the re-score noise floor at the 100/101 line) must stay stable. An earlier
+// unification onto the 4Q mean existed because a greyed company could out-rank
+// kept ones on the board — that symptom is now handled INDEPENDENTLY by the
+// greyed-tail pin (score-board-table.tsx sortRows), which holds every greyed row
+// at the bottom regardless of its live Read, so the split is safe to re-introduce.
+// The WEIGHTS (0.88/0.12) and the composite arithmetic still mirror the pipeline
+// and stay pinned by the cross-impl fixture; only the quarter INPUT differs. The
+// valuation leg also diverges (live Read drops a stale >4-day valuation; the cut
+// keeps the last stored one).
 
 import { bandForScore, type BandKey } from "@/lib/score-band";
 import { bandForGrowthScore, type GrowthBandKey } from "@/lib/growth-band";
@@ -195,7 +200,9 @@ const RICH: ReadonlySet<ValuationBandKey> = new Set<ValuationBandKey>([
 ]);
 
 export type BoardReadInput = {
-  /** Standing quarter leg: trailing 4-quarter mean ConcallScore, 0-10 (lib/quarter-composite). */
+  /** Standing quarter leg, 0-10. On the Overall board this is the recency-weighted
+   * 4Q blend (lib/quarter-composite blendQuarterLeg); other callers may pass a flat
+   * mean. The number AND the label are computed from whatever is passed here. */
   quarterScore: number | null;
   /** Growth outlook score, 0-10. */
   growthScore: number | null;

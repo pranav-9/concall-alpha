@@ -45,6 +45,50 @@ export function mean4Q(scores: ReadonlyArray<number | null | undefined>): number
   return meanLatestScored(scores, 4);
 }
 
+// RECENCY-WEIGHTED quarter leg — the LIVE OVERALL BOARD ordering leg (2026-08-11).
+//
+// "Latest counts double": the newest scored print weighs 0.4, each of the prior
+// three 0.2, so the latest carries exactly twice any single earlier quarter. The
+// 4Q mean (mean4Q) already CONTAINS the latest, so a naive 0.5*latest + 0.5*mean4Q
+// would put an effective 0.625 on the latest — this weight vector avoids that and
+// is honest about the emphasis.
+//
+// Weights RENORMALISE over however many scored prints exist: 3 -> 0.5/0.25/0.25,
+// 2 -> 0.667/0.333, 1 -> 1.0. A thin-history company is scored on what it has,
+// never on phantom quarters. Same FILTER-then-slice selection as meanLatestScored
+// (a null inside the newest 4 must not shrink the window). Caller passes scores
+// NEWEST-FIRST. Returns null when no scored value exists.
+//
+// DELIBERATELY diverges from the coverage cut, which stays on the flat 4Q mean
+// (concallyser/compute_composite_score.py): recency belongs in the live ORDERING,
+// not in the reviewed membership decision, whose 100/101 boundary sits inside the
+// re-score noise floor and must stay stable. The old live=latest / cut=4Q split
+// was retired in the WHY note above because a greyed company could out-rank kept
+// ones; this split is safe because the greyed-tail PIN (score-board-table.tsx)
+// now holds every greyed row at the bottom regardless of its live Read.
+export const RECENCY_WEIGHTS = [0.4, 0.2, 0.2, 0.2] as const;
+
+export function blendQuarterLeg(
+  scores: ReadonlyArray<number | null | undefined>,
+  weights: ReadonlyArray<number> = RECENCY_WEIGHTS,
+): number | null {
+  const scored: number[] = [];
+  for (const s of scores) {
+    if (typeof s === "number" && Number.isFinite(s)) {
+      scored.push(s);
+      if (scored.length === weights.length) break;
+    }
+  }
+  if (scored.length === 0) return null;
+  let weightSum = 0;
+  let acc = 0;
+  for (let i = 0; i < scored.length; i++) {
+    weightSum += weights[i];
+    acc += weights[i] * scored[i];
+  }
+  return acc / weightSum;
+}
+
 /**
  * The 4Q mean from an OLDEST→NEWEST series (the shape the overview cache persists
  * as quarter_series). Reverses to the newest-first order mean4Q expects. Used on

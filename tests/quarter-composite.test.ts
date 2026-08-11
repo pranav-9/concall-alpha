@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 
-import { mean4Q, mean4QFromSeries, meanLatestScored } from "../lib/quarter-composite";
+import {
+  blendQuarterLeg,
+  mean4Q,
+  mean4QFromSeries,
+  meanLatestScored,
+  RECENCY_WEIGHTS,
+} from "../lib/quarter-composite";
 
 // ---------------------------------------------------------------------------
 // Unit: the helper's own contract.
@@ -202,5 +208,49 @@ for (const { name, rows } of rowVectors) {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// blendQuarterLeg — the recency-weighted LIVE board leg (2026-08-11). "Latest
+// counts double": 0.4/0.2/0.2/0.2 over the newest 4 scored, renormalised over
+// however many exist. Same FILTER-then-slice selection as mean4Q.
+// ---------------------------------------------------------------------------
+
+// Weight vector is the intended shape: latest is exactly double each prior.
+assert.deepEqual([...RECENCY_WEIGHTS], [0.4, 0.2, 0.2, 0.2], "recency weights");
+assert.equal(RECENCY_WEIGHTS[0] / RECENCY_WEIGHTS[1], 2, "latest counts double a prior quarter");
+
+const approx = (a: number | null, b: number, msg: string) => {
+  assert.ok(a != null && Math.abs(a - b) < 1e-9, `${msg} (got ${a}, want ${b})`);
+};
+
+// Empty / all-null → null (a no-data company is unranked, never a phantom 0).
+assert.equal(blendQuarterLeg([]), null, "empty → null");
+assert.equal(blendQuarterLeg([null, undefined, Number.NaN]), null, "all non-finite → null");
+
+// 4 scored: exact 0.4/0.2/0.2/0.2. Latest=10, priors=0 → 4.0, NOT the flat mean 2.5.
+approx(blendQuarterLeg([10, 0, 0, 0]), 4, "latest carries 0.4, not 0.25");
+approx(blendQuarterLeg([8, 7, 6, 5]), 0.4 * 8 + 0.2 * (7 + 6 + 5), "4 scored weighted");
+// A single hot latest moves the leg only partway, not fully (spike-damping).
+approx(blendQuarterLeg([10, 5, 5, 5]), 0.4 * 10 + 0.2 * 15, "spike moves leg to 7, not 10");
+
+// Renormalise when fewer than 4 exist.
+approx(blendQuarterLeg([9]), 9, "1 print → itself (weight renormalised to 1.0)");
+approx(blendQuarterLeg([9, 3]), (0.4 * 9 + 0.2 * 3) / 0.6, "2 prints → 0.667/0.333");
+approx(blendQuarterLeg([9, 3, 3]), (0.4 * 9 + 0.2 * 3 + 0.2 * 3) / 0.8, "3 prints → 0.5/0.25/0.25");
+
+// More than 4 → only the newest 4 weighted; the 5th is ignored.
+approx(blendQuarterLeg([8, 7, 6, 5, 100]), 0.4 * 8 + 0.2 * (7 + 6 + 5), "5th print ignored");
+
+// FILTER-then-slice: a null inside the newest 4 must NOT shrink the window or
+// shift weights — it reaches to the next scored print (matches mean4Q).
+approx(
+  blendQuarterLeg([8, null, 7, 6, 5]),
+  0.4 * 8 + 0.2 * (7 + 6 + 5),
+  "null in window reaches past it (8,7,6,5)",
+);
+
+// Degenerate weight arg: no positive weight → guarded by scored.length check only,
+// so pass the default in practice. A custom flat vector reproduces the mean.
+approx(blendQuarterLeg([8, 6, 4, 2], [1, 1, 1, 1]), 5, "flat custom weights → mean");
 
 console.log("quarter-composite: all assertions passed");

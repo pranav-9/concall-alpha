@@ -3,11 +3,13 @@
 // watchlist so the two can't drift on the parts a reader would notice most: the
 // trailing-4Q quarter leg and the valuation rescale.
 //
-// The Quarter column shows the STANDING quarter score — the trailing 4-quarter
-// mean (getConcallData's "Latest 4Q Avg", one definition in lib/quarter-composite,
-// shared with compute_composite_score.py's coverage cut). The single latest print
-// rides alongside as `latestQuarterScore`, the "this quarter" marker the freshness
-// chips attach to, so a one-quarter badge never sits atop a four-quarter number.
+// The Quarter column shows the STANDING quarter score — the RECENCY-WEIGHTED 4Q
+// leg (getConcallData's "Latest 4Q Blend", "latest counts double", one definition
+// in lib/quarter-composite). This is the LIVE ordering leg and it deliberately
+// diverges from the coverage cut, which stays on the flat 4Q mean — recency lives
+// in the live board, membership stays stable. The single latest print rides
+// alongside as `latestQuarterScore`, the "this quarter" marker the freshness chips
+// attach to, so a one-quarter badge never sits atop the standing number.
 //
 // Moat and guidance are deliberately absent — the moat rating is categorical and
 // can't share the number+band format, so it keeps its own leaderboard tab. See
@@ -34,12 +36,13 @@ export function buildScoreBoardRows(
 ): ScoreBoardRow[] {
   return rows.map((row) => {
     const code = String(row.company).toUpperCase();
-    // The standing quarter leg: the trailing 4-quarter mean getConcallData
-    // computed under "Latest 4Q Avg" (lib/quarter-composite). It is robust to a
-    // company not having reported the board's newest quarter yet — the average
-    // still stands on the quarters it does have — so the old single-quarter
-    // stale fallback is no longer needed here.
-    const quarterScore = toNumericValue(row["Latest 4Q Avg"]);
+    // The standing quarter leg: the recency-weighted 4Q blend getConcallData
+    // computed under "Latest 4Q Blend" (lib/quarter-composite, latest-counts-
+    // double). It renormalises over the quarters a company actually has, so it is
+    // robust to a company not having reported the board's newest quarter yet.
+    // This feeds BOTH the Read number and its label (classifyBoardRead), so the
+    // word and the number describe the same quarter by construction.
+    const quarterScore = toNumericValue(row["Latest 4Q Blend"]);
 
     // The single latest print, carried separately as the "this quarter" marker.
     // It is the board's newest quarter for this company, or its own newest when
