@@ -169,10 +169,11 @@ export default async function LeaderboardsPage({
                 <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   Overall board
                 </h2>
-                {/* The sort key is coverage_rank, and the Read column now shows
-                    the very number it ranks on — so this line only has to say
-                    which way the weighting leans. The old caption existed
-                    because the rank was invisible; it isn't any more. */}
+                {/* The board sorts on the live Read (score-board-table.tsx ranks
+                    on readScore), and the Read column shows that very number — so
+                    this line only has to say which way the weighting leans. The
+                    backend's stored coverage_rank (a 4Q-mean composite) only
+                    decides which rows are GREYED, not the order. */}
                 <p className="text-[11px] text-muted-foreground">
                   Ranked by Read · quality weighted 2:1 over price
                 </p>

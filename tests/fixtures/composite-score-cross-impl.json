@@ -1,5 +1,5 @@
 {
-  "_comment": "Cross-implementation fixture. Generated from the LIVE Supabase legs by the same code path as concallyser/scripts/compute_composite_score.py, at full precision. concall-alpha's computeBoardComposite() must reproduce every composite here exactly, or the board ranks on one number and displays another.",
+  "_comment": "Cross-implementation fixture. The real-company rows were generated from the LIVE Supabase legs by the same code path as concallyser/scripts/compute_composite_score.py, at full precision. Both computeBoardComposite() (concall-alpha) and composite_score() (concallyser) must reproduce every composite here exactly, or the board ranks on one number and displays another. Rows whose code starts with '_' are SYNTHETIC edge vectors (an all-null and a price-only case) that pin the missing-side / no-read contract those two impls must agree on — a null composite means 'no read' (None/null), NOT 0.0 (decision D4, 2026-08-11).",
   "generated": "2026-07-30",
   "quality_weight": 0.88,
   "price_weight": 0.12,
@@ -122,6 +122,22 @@
       "growth": 7.4,
       "valuation": null,
       "composite": 7.4
+    },
+    {
+      "code": "_PRICE_ONLY",
+      "qtr": null,
+      "growth": null,
+      "valuation": 5.0,
+      "composite": 5.0,
+      "_note": "synthetic (D4): whole quality side absent -> score on price alone (weights renormalise)"
+    },
+    {
+      "code": "_ALL_NULL",
+      "qtr": null,
+      "growth": null,
+      "valuation": null,
+      "composite": null,
+      "_note": "synthetic (D4): no legs at all -> no read (null/None), NOT 0.0"
     }
   ]
 }

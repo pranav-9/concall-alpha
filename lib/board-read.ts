@@ -19,10 +19,13 @@
 // buy/sell call. The reader decides. (Founder stance, Journal: nothing here
 // forecasts, so we organize the known setup rather than predict a number.)
 //
-// THE NUMBER is the same composite that ranks the board, so the # column and
-// the Read column can never disagree — the board is literally sorted by the
-// last column. Weights are mirrored from concallyser's
-// scripts/compute_composite_score.py; see WEIGHT NOTE below.
+// THE NUMBER is this Read's own composite, computed live from the row's legs.
+// The board's # column is derived from it (score-board-table.tsx ranks on
+// readScore), so # and Read can't disagree. It is DELIBERATELY not the same
+// value as the backend's stored composite: the live Read uses the single latest
+// quarter (so it reconciles with the Quarter column shown), while
+// compute_composite_score.py uses the 4Q mean for the slow coverage cut. Same
+// formula (see WEIGHT NOTE), different quarter-leg input, on purpose (D2).
 
 import { bandForScore, type BandKey } from "@/lib/score-band";
 import { bandForGrowthScore, type GrowthBandKey } from "@/lib/growth-band";
@@ -36,9 +39,12 @@ import { bandForValuationScore, type ValuationBandKey } from "@/lib/valuation-ba
 // 0.67/0.33 split would have ranked the board 91% on cheapness. 0.88/0.12 is
 // what "quality counts twice what price counts" actually costs here.
 //
-// If you change these, change them THERE FIRST (that script writes the stored
-// coverage_rank the # column reads) and re-run it. A drift between the two files
-// shows up as a board whose rank column disagrees with its own Read column.
+// If you change these, change them in BOTH places — here and
+// compute_composite_score.py — and regenerate
+// tests/fixtures/composite-score-cross-impl.json; the contract test on each side
+// (board-read.test.ts / test_compute_composite.py) goes red if the two drift.
+// That script writes the stored composite + coverage_rank used to GREY the
+// below-cut tail; it does NOT feed this Read's # column (that's computed live).
 export const QUALITY_WEIGHT = 0.88;
 export const PRICE_WEIGHT = 0.12;
 

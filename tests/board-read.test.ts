@@ -60,7 +60,8 @@ const crossImpl = JSON.parse(
     qtr: number | null;
     growth: number | null;
     valuation: number | null;
-    composite: number;
+    // null on the synthetic no-read vectors (all legs absent, D4).
+    composite: number | null;
   }>;
 };
 
@@ -77,6 +78,7 @@ assert.equal(
 assert.ok(crossImpl.rows.length >= 10, "fixture should cover a spread of leg shapes");
 
 let checkedMissingValuation = 0;
+let checkedNoRead = 0;
 for (const row of crossImpl.rows) {
   const got = computeBoardComposite({
     quarterScore: row.qtr,
@@ -84,6 +86,12 @@ for (const row of crossImpl.rows) {
     valuationScore: row.valuation,
   });
   const expected = row.composite;
+  if (expected === null) {
+    // Synthetic no-read vector (D4): no legs → null, NOT 0.0. Both impls agree.
+    assert.equal(got, null, `${row.code}: all-null vector must return null, got ${got}`);
+    checkedNoRead += 1;
+    continue;
+  }
   assert.ok(got != null, `${row.code}: composite should not be null`);
   // 1e-6 — this is the same arithmetic in two languages, not an approximation.
   assert.ok(
@@ -96,6 +104,10 @@ for (const row of crossImpl.rows) {
 assert.ok(
   checkedMissingValuation > 0,
   "fixture must include rows with no valuation — that path is the one that changed",
+);
+assert.ok(
+  checkedNoRead > 0,
+  "fixture must include the all-null no-read vector (D4) so both impls stay pinned to null",
 );
 
 // A missing leg is neutral, never punitive — the whole reason the half-weight
