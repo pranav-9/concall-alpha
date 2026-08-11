@@ -116,7 +116,7 @@ export default async function HowScoresWorkPage() {
         return Number.isFinite(n) ? n : null;
       })
     : [];
-  const quarterScored = quarterLatestScores.filter((s): s is number => typeof s === "number").length;
+  const concallScored = quarterLatestScores.filter((s): s is number => typeof s === "number").length;
   const growthBandCounts = computeGrowthBandCounts(growthEntries.map((e) => e.growthScore));
   const growthScored = growthEntries.filter((e) => typeof e.growthScore === "number").length;
 
@@ -134,7 +134,7 @@ export default async function HowScoresWorkPage() {
           </h1>
           <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             Two lenses on the same company. <span className="text-foreground">Growth Score</span>{" "}
-            looks forward; <span className="text-foreground">Quarterly Score</span> measures how the
+            looks forward; <span className="text-foreground">ConcallScore</span> measures how the
             latest quarter actually went. Both sit on the same 1–10 scale.
           </p>
         </div>
@@ -146,7 +146,7 @@ export default async function HowScoresWorkPage() {
                 Growth Score
               </TabsTrigger>
               <TabsTrigger value="quarterly" className={TABS_TRIGGER_CLASS}>
-                Quarterly Score
+                ConcallScore
               </TabsTrigger>
             </TabsList>
 
@@ -332,7 +332,7 @@ export default async function HowScoresWorkPage() {
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="text-sm font-semibold text-foreground">Where companies land</p>
                       <span className="text-[11px] tabular-nums text-muted-foreground">
-                        {quarterScored} companies
+                        {concallScored} companies
                       </span>
                     </div>
                     <p className="mt-1 text-xs leading-relaxed text-muted-foreground">

@@ -1,7 +1,7 @@
 import type { TrajectoryKey } from "@/lib/score-trajectory";
 
 // "What to watch next quarter" — a downstream SYNTHESIS over data already on the
-// Quarter Score page. It is NOT a numeric prediction; it names the open
+// ConcallScore page. It is NOT a numeric prediction; it names the open
 // questions heading into next quarter and stays SILENT when there's nothing to
 // flag. Two of its three inputs (trajectory, score-vs-forward divergence) are
 // cross-quarter / cross-phase, so this can only live downstream of scoring.

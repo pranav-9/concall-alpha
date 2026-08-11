@@ -9,7 +9,7 @@ import type { ScoreBoardRow } from "../components/score-board-table";
 function boardRow(
   companyCode: string,
   companyName: string,
-  quarterScore: number | null,
+  concallScore: number | null,
   growthScore: number | null,
   valuationScore: number | null,
   belowCut = false,
@@ -17,9 +17,9 @@ function boardRow(
   return {
     companyCode,
     companyName,
-    quarterScore,
-    fourQuarterScore: quarterScore,
-    latestQuarterScore: quarterScore,
+    concallScore,
+    fourConcallScore: concallScore,
+    latestConcallScore: concallScore,
     latestQuarterLabel: null,
     growthScore,
     valuationScore,

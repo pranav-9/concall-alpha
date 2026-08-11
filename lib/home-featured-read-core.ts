@@ -29,7 +29,7 @@ export type FeaturedCandidate = {
   name: string;
   sector: string | null;
   /** Standing quarter leg: trailing 4-quarter mean ConcallScore, 0-10. */
-  quarterScore: number | null;
+  concallScore: number | null;
   /** Growth outlook score, 0-10. */
   growthScore: number | null;
   /** Valuation ALREADY rescaled to 0-10 (lib/valuation-band). */
@@ -42,7 +42,7 @@ export type FeaturedRead = {
   code: string;
   name: string;
   sector: string | null;
-  quarterScore: number;
+  concallScore: number;
   growthScore: number;
   valuationScore: number;
   readKey: BoardReadKey;
@@ -65,11 +65,11 @@ export function pickFeaturedRead(candidates: FeaturedCandidate[]): FeaturedRead 
   const qualified: FeaturedRead[] = [];
 
   for (const c of candidates) {
-    if (!finite(c.quarterScore) || !finite(c.growthScore) || !finite(c.valuationScore)) {
+    if (!finite(c.concallScore) || !finite(c.growthScore) || !finite(c.valuationScore)) {
       continue;
     }
     const read = classifyBoardRead({
-      quarterScore: c.quarterScore,
+      concallScore: c.concallScore,
       growthScore: c.growthScore,
       valuationScore: c.valuationScore,
     });
@@ -79,7 +79,7 @@ export function pickFeaturedRead(candidates: FeaturedCandidate[]): FeaturedRead 
       code: c.code,
       name: c.name,
       sector: c.sector,
-      quarterScore: c.quarterScore,
+      concallScore: c.concallScore,
       growthScore: c.growthScore,
       valuationScore: c.valuationScore,
       readKey: read.key,

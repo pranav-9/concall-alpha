@@ -72,18 +72,18 @@ export type ScoreBoardRow = {
    * reconstructable as 0.2·latest + 0.8·4Q from the two columns that ARE shown —
    * but it feeds classifyBoardRead (the Read number and its label).
    */
-  quarterScore: number | null;
+  concallScore: number | null;
   /**
    * The flat trailing 4-quarter mean, shown in the "4Q" column. The stable trail
    * beside the fresh print; does not feed the Read. Null when unscored.
    */
-  fourQuarterScore: number | null;
+  fourConcallScore: number | null;
   /**
    * The single latest print, shown in the "Latest" column with its quarter label.
    * The freshness / unofficial chips attach to THIS, so a one-quarter badge names
    * the one quarter it describes. Null when unscored.
    */
-  latestQuarterScore: number | null;
+  latestConcallScore: number | null;
   /** Label of that latest print, e.g. "Q1 FY27". */
   latestQuarterLabel: string | null;
   growthScore: number | null;
@@ -92,14 +92,14 @@ export type ScoreBoardRow = {
   /** Below the composite cut: rendered greyed but still linked. Never set on a watchlist. */
   belowCut: boolean;
   /**
-   * Provenance and recency of quarterScore. Optional because a watchlisted
+   * Provenance and recency of concallScore. Optional because a watchlisted
    * company with no scored quarter is built here as a placeholder row, and a
    * placeholder has no score to qualify.
    */
   quarterSourceStatus?: ScoreSourceStatus;
-  quarterScoredWithin24h?: boolean;
+  concallScoredWithin24h?: boolean;
   /** ISO; feeds the chip titles only. */
-  quarterScoredAt?: string | null;
+  concallScoredAt?: string | null;
 };
 
 type DerivedRow = ScoreBoardRow & {
@@ -151,7 +151,7 @@ function deriveRows(rows: ScoreBoardRow[]): DerivedRow[] {
   return assignEffectiveRanks(
     rows.map((row) => {
       const read = classifyBoardRead({
-        quarterScore: row.quarterScore,
+        concallScore: row.concallScore,
         growthScore: row.growthScore,
         valuationScore: row.valuationScore,
       });
@@ -214,7 +214,7 @@ const COLUMN_INFO = {
     <>
       <p>
         Price read, 0–10, where higher is more attractively valued — a lens on the current price,
-        independent of the quarter score.
+        independent of the ConcallScore.
       </p>
       <p>
         Only published, non-stale reads appear.{" "}
@@ -308,10 +308,10 @@ function sortRows(rows: DerivedRow[], sort: SortState) {
         if (diff === 0) diff = compareText(a.companyCode, b.companyCode, "asc");
         break;
       case "latestScore":
-        diff = compareNumber(a.latestQuarterScore, b.latestQuarterScore, sort.direction);
+        diff = compareNumber(a.latestConcallScore, b.latestConcallScore, sort.direction);
         break;
       case "fourQScore":
-        diff = compareNumber(a.fourQuarterScore, b.fourQuarterScore, sort.direction);
+        diff = compareNumber(a.fourConcallScore, b.fourConcallScore, sort.direction);
         break;
       case "growthScore":
         diff = compareNumber(a.growthScore, b.growthScore, sort.direction);
@@ -595,8 +595,8 @@ export function ScoreBoardTable({
       <Table
         aria-label={
           showRemove
-            ? "Watchlist companies by read, with quarter score, growth outlook and valuation"
-            : "Companies by overall rank, with quarter score, growth outlook, valuation and read"
+            ? "Watchlist companies by read, with ConcallScore, growth outlook and valuation"
+            : "Companies by overall rank, with ConcallScore, growth outlook, valuation and read"
         }
         className="min-w-[900px] w-full text-sm"
       >
@@ -790,20 +790,20 @@ export function ScoreBoardTable({
                       only place the freshness / unofficial chips live — a
                       one-quarter badge must name the one quarter it describes. */}
                   <TableCell className="px-3 py-3">
-                    {row.latestQuarterScore != null ? (
+                    {row.latestConcallScore != null ? (
                       <div className="leading-tight">
                         <div className="tabular-nums font-semibold text-foreground">
-                          {row.latestQuarterScore.toFixed(1)}
+                          {row.latestConcallScore.toFixed(1)}
                         </div>
                         <div className="flex items-baseline gap-1.5">
                           <span
                             className={`text-[10px] font-medium ${
                               dim
                                 ? "text-muted-foreground"
-                                : BANDS[bandForScore(row.latestQuarterScore)].textClass
+                                : BANDS[bandForScore(row.latestConcallScore)].textClass
                             }`}
                           >
-                            {BANDS[bandForScore(row.latestQuarterScore)].label}
+                            {BANDS[bandForScore(row.latestConcallScore)].label}
                           </span>
                           {row.latestQuarterLabel && (
                             <span className="whitespace-nowrap text-[10px] text-muted-foreground">
@@ -812,17 +812,17 @@ export function ScoreBoardTable({
                           )}
                         </div>
                         {(row.quarterSourceStatus === "unofficial" ||
-                          row.quarterScoredWithin24h) && (
+                          row.concallScoredWithin24h) && (
                           <div className="mt-1 flex flex-wrap items-center gap-1">
                             {row.quarterSourceStatus === "unofficial" && (
                               <UnofficialChip
-                                scoredAt={formatScoredAt(row.quarterScoredAt)}
+                                scoredAt={formatScoredAt(row.concallScoredAt)}
                                 dimmed={dim}
                               />
                             )}
-                            {row.quarterScoredWithin24h && (
+                            {row.concallScoredWithin24h && (
                               <FreshScoreChip
-                                scoredAt={formatScoredAt(row.quarterScoredAt)}
+                                scoredAt={formatScoredAt(row.concallScoredAt)}
                                 dimmed={dim}
                               />
                             )}
@@ -836,15 +836,15 @@ export function ScoreBoardTable({
                   {/* 4Q: the stable trailing average beside the fresh print. */}
                   <TableCell className="px-3 py-3">
                     <ScoreCell
-                      score={row.fourQuarterScore}
+                      score={row.fourConcallScore}
                       bandLabel={
-                        row.fourQuarterScore != null
-                          ? BANDS[bandForScore(row.fourQuarterScore)].label
+                        row.fourConcallScore != null
+                          ? BANDS[bandForScore(row.fourConcallScore)].label
                           : null
                       }
                       bandClass={
-                        row.fourQuarterScore != null
-                          ? BANDS[bandForScore(row.fourQuarterScore)].textClass
+                        row.fourConcallScore != null
+                          ? BANDS[bandForScore(row.fourConcallScore)].textClass
                           : ""
                       }
                       dimmed={dim}

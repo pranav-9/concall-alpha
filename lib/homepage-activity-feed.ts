@@ -114,7 +114,7 @@ const readHomepageActivityFeed = async (limit: number): Promise<UnifiedUpdate[]>
     if (error) throw error;
 
     // Collapse consecutive same-company runs so one company can't occupy
-    // several stacked rows (e.g. Business Snapshot + Quarter Score + Key
+    // several stacked rows (e.g. Business Snapshot + ConcallScore + Key
     // Variables for one name) — keeps the hero feed showing breadth.
     const updates = collapseConsecutiveSameCompanyUpdates(
       ((data ?? []) as HomepageActivityFeedRecord[])

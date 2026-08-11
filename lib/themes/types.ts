@@ -34,7 +34,7 @@ export type ThemeMembershipRow = z.infer<typeof themeMembershipRowSchema>;
 export type ThemeMember = {
   companyCode: string;
   companyName: string;
-  quarterScore: number | null;
+  concallScore: number | null;
   growthScore: number | null;
   valuationScore: number | null;
   /** Composite; null when there is no read (no quarter print / <2 legs). */
@@ -48,7 +48,7 @@ export type ThemeMember = {
   /** True when the company has no scored quarter at all — renders a "not yet scored" chip. */
   notYetScored: boolean;
   quarterSourceStatus?: ScoreSourceStatus;
-  quarterScoredWithin24h?: boolean;
+  concallScoredWithin24h?: boolean;
 };
 
 export type ThemeBlock = {

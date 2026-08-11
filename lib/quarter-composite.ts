@@ -1,7 +1,7 @@
 // The trailing-quarter mean: the ONE definition of "the latest N scored quarters,
 // averaged" shared by every surface that shows a standing quarter number — the
 // leaderboard board (app/company/get-concall-data.ts), the company-page Read and
-// its Qtr ring (lib/company-overview-cache.ts), and the homepage hero
+// its ConcallScore ring (lib/company-overview-cache.ts), and the homepage hero
 // (lib/home-featured-read.ts).
 //
 // WHY ONE HELPER. The quarter leg is also computed on the pipeline side by

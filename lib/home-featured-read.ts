@@ -85,7 +85,7 @@ async function fetchFeaturedRead(): Promise<FeaturedRead | null> {
       sector: trail.sector,
       // Standing quarter leg: trailing 4-quarter mean of this company's prints
       // (trail.points is oldest→newest). Matches the board and the company page.
-      quarterScore: mean4QFromSeries(trail.points.map((p) => p.score)),
+      concallScore: mean4QFromSeries(trail.points.map((p) => p.score)),
       growthScore: growthByCode.get(code) ?? null,
       valuationScore: valuationByCode.get(code) ?? null,
       trail,

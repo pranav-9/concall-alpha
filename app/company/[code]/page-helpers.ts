@@ -11,11 +11,11 @@ export type ThemeItemWithSource = NormalizedIndustryTheme & {
 export type CompanyIndustryAnalysisRowMaybe = CompanyIndustryAnalysisRow | null | undefined;
 
 export const computeAvgScore = (
-  latestQuarterScore: number | null,
+  latestConcallScore: number | null,
   growthScore: number | null,
-  avg4QuarterScore: number | null = null,
+  avg4ConcallScore: number | null = null,
 ) => {
-  const valid = [latestQuarterScore, growthScore, avg4QuarterScore].filter(
+  const valid = [latestConcallScore, growthScore, avg4ConcallScore].filter(
     (value): value is number => value != null,
   );
   if (valid.length === 0) return null;

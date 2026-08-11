@@ -26,7 +26,7 @@ import { V4CategoryCards, V4CoverageStrip } from "./quarterly-v4-section";
 
 import type { ChartDataPoint, QuarterData } from "../types";
 
-type QuarterlyScoreSectionProps = {
+type ConcallScoreSectionProps = {
   chartData: ChartDataPoint[];
   detailQuarters: QuarterData[];
   // Forward inputs for the "What to watch next quarter" block (threaded from the
@@ -282,12 +282,12 @@ const renderChartCard = ({
   </div>
 );
 
-export function QuarterlyScoreSection({
+export function ConcallScoreSection({
   chartData,
   detailQuarters,
   growthScore,
   swingVars,
-}: QuarterlyScoreSectionProps) {
+}: ConcallScoreSectionProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [range, setRange] = React.useState<ChartRange>(12);
   const chipRowRef = React.useRef<HTMLDivElement | null>(null);

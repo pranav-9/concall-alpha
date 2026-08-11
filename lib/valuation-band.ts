@@ -6,7 +6,7 @@
 // SCALE. valuation_check stores an integer 0-100 (schemas/valuation_check_v1.json:
 // "Higher = more attractively valued. Integer only; v14 calls half-points
 // spurious precision."). The board divides by 10 so the column sits on the same
-// 0-10 scale as Qtr and Growth — three cells in identical format, one of them
+// 0-10 scale as ConcallScore and Growth — three cells in identical format, one of them
 // silently on a 100-point scale, reads as a bug. Dividing by 10 adds no
 // precision the stored integer didn't have: 64 -> 6.4.
 //

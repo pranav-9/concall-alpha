@@ -28,7 +28,7 @@ import { GrowthTable, LeaderboardTable, MoatTable, OverallTable } from "./tables
 
 export const metadata: Metadata = {
   title: "Leaderboards – Story of a Stock",
-  description: "Quarter scores, growth outlook, and moat tier leaderboards.",
+  description: "ConcallScores, growth outlook, and moat tier leaderboards.",
   alternates: { canonical: "/leaderboards" },
 };
 
@@ -103,7 +103,7 @@ export default async function LeaderboardsPage({
   ).length;
   const quarterFreshCount = rankedRows.filter((r) => r.scoredWithin24h === true).length;
   const quarterBandCounts = computeQuarterBandCounts(quarterLatestScores);
-  const quarterScored = quarterLatestScores.filter((s): s is number => typeof s === "number").length;
+  const concallScored = quarterLatestScores.filter((s): s is number => typeof s === "number").length;
   const growthBandCounts = computeGrowthBandCounts(growthEntries.map((e) => e.growthScore));
   const growthScored = growthEntries.filter((e) => typeof e.growthScore === "number").length;
 
@@ -113,7 +113,7 @@ export default async function LeaderboardsPage({
   // configuration vocabulary, which is what the cells actually show.
   const overallReads = overallRows.map((row) =>
     classifyBoardRead({
-      quarterScore: row.quarterScore,
+      concallScore: row.concallScore,
       growthScore: row.growthScore,
       valuationScore: row.valuationScore,
     }),
@@ -147,7 +147,7 @@ export default async function LeaderboardsPage({
   const overallUnofficialCount = overallRows.filter(
     (row) => row.quarterSourceStatus === "unofficial",
   ).length;
-  const overallFreshCount = overallRows.filter((row) => row.quarterScoredWithin24h).length;
+  const overallFreshCount = overallRows.filter((row) => row.concallScoredWithin24h).length;
 
   return (
     <main className="relative isolate overflow-hidden">
@@ -175,7 +175,7 @@ export default async function LeaderboardsPage({
               Overall
             </TabsTrigger>
             <TabsTrigger value="quarter" className={TAB_TRIGGER_CLASS}>
-              Quarter
+              ConcallScore
             </TabsTrigger>
             <TabsTrigger value="growth" className={TAB_TRIGGER_CLASS}>
               Growth
@@ -218,7 +218,7 @@ export default async function LeaderboardsPage({
               </div>
               <OverallTable rows={overallRows} priorRankByCode={priorRankByCode} />
               {(overallUnofficialCount > 0 || overallFreshCount > 0) && (
-                // The Read is computed FROM the quarter score, so an unofficial
+                // The Read is computed FROM the ConcallScore, so an unofficial
                 // quarter makes the rank provisional too. That has to be said
                 // on the board that ranks on it, not only on the Quarter tab.
                 <p className="border-t border-border/35 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
@@ -226,7 +226,7 @@ export default async function LeaderboardsPage({
                     <>
                       <span className="font-medium text-foreground">{overallUnofficialCount}</span>{" "}
                       {overallUnofficialCount === 1 ? "row carries" : "rows carry"} an{" "}
-                      <span className="font-medium text-foreground">Unofficial</span> quarter score
+                      <span className="font-medium text-foreground">Unofficial</span> ConcallScore
                       — read off a third-party transcript and re-scored when the issuer files, so
                       the Read above it moves too.{" "}
                     </>
@@ -259,7 +259,7 @@ export default async function LeaderboardsPage({
           <TabsContent value="quarter" className="mt-4 space-y-3">
             <h2 className="sr-only">Quarter board</h2>
             <BandSummaryLine
-              scored={quarterScored}
+              scored={concallScored}
               total={rankedRows.length}
               scopeNote="scored this quarter"
               bandCounts={quarterBandCounts}

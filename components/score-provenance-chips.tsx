@@ -1,4 +1,4 @@
-// Two chips that sit under a quarter score on the boards: where the score came
+// Two chips that sit under a ConcallScore on the boards: where the score came
 // from, and whether it just landed. Both are neutral by construction — colour on
 // this portal is reserved for section tones, score bands and charts (see
 // docs/portal-design-system.md), and neither of these is a judgement about the

@@ -35,7 +35,7 @@ const READS = [
     example: "Narrow moat",
   },
   {
-    layer: "Quarterly Score",
+    layer: "ConcallScore",
     question: "Was this call better or worse than the last one?",
     body:
       "One score per concall with the reasoning printed beside it — the trail on this page is made of these.",

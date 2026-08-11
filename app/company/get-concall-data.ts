@@ -268,7 +268,7 @@ export const getConcallData = async ({
   );
 
   const latestLabel = selectedQuarters[0]?.label;
-  // Descending by latest-quarter score; a real 0 is a score, null is not —
+  // Descending by latest-ConcallScore; a real 0 is a score, null is not —
   // unscored rows sort last.
   const sortedRows = latestLabel
     ? rows.sort((a, b) => {

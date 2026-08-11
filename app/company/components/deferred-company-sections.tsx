@@ -16,16 +16,16 @@ const SectionPlaceholder = ({ label }: SectionPlaceholderProps) => (
   </div>
 );
 
-export const QuarterlyScoreSection = dynamic<{
+export const ConcallScoreSection = dynamic<{
   chartData: ChartDataPoint[];
   detailQuarters: QuarterData[];
   growthScore?: number | null;
   swingVars?: WatchSwingVar[];
 }>(
-  () => import("./quarterly-score-section").then((mod) => mod.QuarterlyScoreSection),
+  () => import("./concall-score-section").then((mod) => mod.ConcallScoreSection),
   {
     ssr: false,
-    loading: () => <SectionPlaceholder label="Loading quarterly score..." />,
+    loading: () => <SectionPlaceholder label="Loading ConcallScore..." />,
   },
 );
 

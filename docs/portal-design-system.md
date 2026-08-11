@@ -186,7 +186,7 @@ Tones are semantic, not decorative.
 
 - `sky` — industry, future growth, analysis, exploration
 - `emerald` — business snapshot, healthy operating context, positive momentum
-- `amber` — quarterly score, guidance, caution, watchfulness, mixed confidence
+- `amber` — ConcallScore, guidance, caution, watchfulness, mixed confidence
 - `violet` — key variables, analytical framing, model inputs
 - `rose` — community, user-generated or socially noisy surfaces, risk-adjacent accents
 - `slate` — fallback / neutral sections
@@ -598,7 +598,7 @@ The preferred order is:
 2. industry / context
 3. sub-sector analysis
 4. business snapshot
-5. quarterly score
+5. ConcallScore
 6. key variables
 7. future growth
 8. guidance
@@ -656,7 +656,7 @@ Should feel grounded, structured, and slightly greener than the rest.
 - mix-shift callout treated as a distinct sub-surface
 - inner cards use neutral L2/L3 tokens — never sky- or amber-tinted gradients (the section is emerald; tone is the shell's job)
 
-### Quarterly Score
+### ConcallScore
 
 Should feel like a status panel with a high-signal trend line.
 

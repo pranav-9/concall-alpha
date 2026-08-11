@@ -18,7 +18,7 @@ Current product sections include, depending on company coverage:
 - Industry context
 - Sub-sector analysis
 - Business snapshot
-- Quarterly score
+- ConcallScore
 - Future growth / growth outlook
 - Guidance history / guidance tracker
 - Key variables
@@ -221,7 +221,7 @@ This is a strong Decision Layer without overbuilding.
 
 The company page has multiple useful sections, but the investor has to mentally synthesize everything:
 
-- Quarterly score
+- ConcallScore
 - Business quality
 - Growth outlook
 - Guidance
@@ -280,7 +280,7 @@ Medium
 
 ## Problem
 
-A quarterly score tells the investor what the score is, but not necessarily why it changed.
+A ConcallScore tells the investor what the score is, but not necessarily why it changed.
 
 A score moving from 6.8 to 7.5 is useful only if the user knows whether the improvement came from:
 
@@ -552,7 +552,7 @@ Build only:
 |---:|---|---|
 | 1 | Investor Takeaway Card shell | Creates the visible decision layer container |
 | 2 | Guidance Read-Through | Uses existing guidance data; highest differentiation |
-| 3 | Why Score Moved | Makes quarterly score explainable |
+| 3 | Why Score Moved | Makes ConcallScore explainable |
 | 4 | What to Track Next | Creates repeat-use behavior |
 | 5 | Largest Dependency | Makes growth case sharper and more honest |
 
@@ -589,7 +589,7 @@ These provide variety across:
 - Diversified businesses
 - High-growth technology / manufacturing-style stories
 - Guidance-heavy companies
-- Companies with strong and weak quarterly scores
+- Companies with strong and weak ConcallScores
 
 This pilot will reveal whether the Decision Snapshot schema is sufficient.
 
@@ -609,7 +609,7 @@ The existing company sections should be assessed based on:
 | Business Snapshot | 10 | 8 | 8 | 6 | Core foundation |
 | Industry Context | 8 | 7 | 7.5 | 4 | Important, but not frequently revisited |
 | Sub-Sector Analysis | 8.5 | 8 | 7.5 | 5 | Very useful for multi-engine companies |
-| Quarterly Score | 9 | 9.5 | 8 | 9 | Very high priority |
+| ConcallScore | 9 | 9.5 | 8 | 9 | Very high priority |
 | Key Variables | 9.5 | 10 | 8.5 | 10 | One of the highest-value sections |
 | Future Growth | 10 | 10 | 8 | 8.5 | Highest-value forward section |
 | Guidance History | 10 | 9.5 | 10 | 9 | Strongest trust + decision section |
@@ -676,12 +676,12 @@ Improvement:
 
 ---
 
-# 14.4 Quarterly Score → Why Score Moved
+# 14.4 ConcallScore → Why Score Moved
 
 Improvement:
 
 ```text
-Quarterly Score: 7.6 / 10
+ConcallScore: 7.6 / 10
 Previous Quarter: 6.8 / 10
 Direction: Improving
 
@@ -874,7 +874,7 @@ The current weakness is that many sections expose a label, score, or status, but
 Example current mode:
 
 ```text
-This company has a 9.2 quarterly score, 8.7 growth score, 2 guidance items, and some sections ready.
+This company has a 9.2 ConcallScore, 8.7 growth score, 2 guidance items, and some sections ready.
 ```
 
 Desired mode:
@@ -892,7 +892,7 @@ This company’s story is improving because of X, forward growth depends on Y, m
 | Rank | Section | Current read |
 |---:|---|---|
 | 1 | Guidance Tracker | Strongest differentiated feature; already shows specific guidance + credibility labels |
-| 2 | Quarterly Score | Strong execution signal; high repeat-use value |
+| 2 | ConcallScore | Strong execution signal; high repeat-use value |
 | 3 | Future Growth | Strong forward lens with rankings; needs dependency/fragility layer |
 | 4 | Moat Analysis | Good durability label; needs visible reasoning |
 | 5 | Business Snapshot | Very useful where populated; coverage uneven |
@@ -943,7 +943,7 @@ Recommended order:
 
 | Role | Sections |
 |---|---|
-| Decision sections | Future Growth, Guidance, Quarterly Score, Key Variables, Watch Items |
+| Decision sections | Future Growth, Guidance, ConcallScore, Key Variables, Watch Items |
 | Understanding sections | Business Snapshot, Industry Context, Sub-Sector Analysis, Moat |
 | Trust sections | Source Evidence, Score Breakdown, Guidance Trail, Coverage Completeness |
 | Engagement sections | Comments, Watchlist, Requests |
@@ -1049,7 +1049,7 @@ The builder agent should treat this as the core implementation mandate:
 1. Add a new `decision_snapshot` object for company pages.
 2. Build a top-of-page UI card to surface this object.
 3. Start with 10 pilot companies before automating across all companies.
-4. Use existing research data first: quarterly scores, growth scores, guidance tracker, moat labels, key variables, and business snapshot.
+4. Use existing research data first: ConcallScores, growth scores, guidance tracker, moat labels, key variables, and business snapshot.
 5. Do not add more research sections initially.
 6. Convert existing research outputs into concise investor judgments.
 7. Keep the language decision-oriented, not promotional.

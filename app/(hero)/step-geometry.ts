@@ -1,6 +1,6 @@
 // Step-plot geometry, shared by the hero plate and the wall's small multiples.
 //
-// A quarterly score is a discrete judgement about one call, not a reading on a
+// A ConcallScore is a discrete judgement about one call, not a reading on a
 // continuous curve — so it is drawn as treads and risers. Joining the points
 // with a smooth line would imply values between quarters that were never read.
 

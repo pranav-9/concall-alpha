@@ -32,7 +32,7 @@ export const SECTIONS = [
   },
   {
     id: "sentiment-score",
-    label: "Quarterly Score",
+    label: "ConcallScore",
   },
   {
     id: "future-growth",
@@ -70,7 +70,7 @@ export const SECTION_MAP = {
   subSector: SECTIONS[2],
   businessSnapshot: SECTIONS[3],
   keyVariables: SECTIONS[4],
-  quarterlyScore: SECTIONS[5],
+  concallScore: SECTIONS[5],
   futureGrowth: SECTIONS[6],
   guidanceHistory: SECTIONS[7],
   moatAnalysis: SECTIONS[8],

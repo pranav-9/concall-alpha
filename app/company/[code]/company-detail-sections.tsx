@@ -35,7 +35,7 @@ import {
 import {
   CompanyCommentsSection,
   GuidanceHistorySection,
-  QuarterlyScoreSection,
+  ConcallScoreSection,
 } from "../components/deferred-company-sections";
 import { parseSummary, transformToChartData } from "../utils";
 import type { QuarterData } from "../types";
@@ -183,7 +183,7 @@ export async function MoatAnalysisPanel({ overview }: CompanyDetailSectionProps)
   );
 }
 
-export async function QuarterlyScorePanel({ overview }: CompanyDetailSectionProps) {
+export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps) {
   const supabase = await createClient();
   const [{ data, error }, { data: keyVarData }, { data: growthData }] = await Promise.all([
     supabase
@@ -244,7 +244,7 @@ export async function QuarterlyScorePanel({ overview }: CompanyDetailSectionProp
   return (
     <SectionCard
       id="sentiment-score"
-      title="Quarterly Score"
+      title="ConcallScore"
       feedbackEnabled
       feedbackCompanyCode={overview.company_code}
       feedbackCompanyName={overview.company_name}
@@ -268,7 +268,7 @@ export async function QuarterlyScorePanel({ overview }: CompanyDetailSectionProp
           : undefined
       }
     >
-      <QuarterlyScoreSection
+      <ConcallScoreSection
         chartData={chartData}
         detailQuarters={detailQuarters}
         growthScore={growthScore}

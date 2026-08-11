@@ -1,6 +1,6 @@
 // Provenance and recency of the score behind a leaderboard cell.
 //
-// Two facts a reader needs about a quarter score that the number alone can't
+// Two facts a reader needs about a ConcallScore that the number alone can't
 // carry: whether it was scored off the issuer's own transcript or a third
 // party's (the SEBI 5-working-day window means results season runs on borrowed
 // transcripts), and whether it landed since they last looked.

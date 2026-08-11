@@ -1,4 +1,4 @@
-// Diagrammatic explanation of the Phase 1 quarterly score model, for /how-scores-work.
+// Diagrammatic explanation of the Phase 1 ConcallScore model, for /how-scores-work.
 // Anchored to the real compute_score: six weighted categories, a -2..+2 lean each, a 5.5
 // baseline, and a 6.0 downside cap when any CORE category (Financials / Guidance /
 // Concentration) hits -2. See concallyser/app/phase1_sentiment/gemini_scorer.py.
@@ -267,7 +267,7 @@ export function QuarterlyBandLegend() {
   );
 }
 
-// Distribution of latest-quarter scores as a smooth density curve, filled with the band colours.
+// Distribution of latest-ConcallScores as a smooth density curve, filled with the band colours.
 const CURVE_REGIONS = [
   { key: "mildly_bearish", lo: 3, hi: 4.5 },
   { key: "neutral", lo: 4.5, hi: 6.5 },
@@ -338,7 +338,7 @@ export function QuarterlyDistributionCurve({
       viewBox={`0 0 ${W} ${H}`}
       className="h-auto w-full"
       role="img"
-      aria-label="Distribution of latest-quarter scores"
+      aria-label="Distribution of latest ConcallScores"
     >
       <defs>
         <clipPath id="qd-area">

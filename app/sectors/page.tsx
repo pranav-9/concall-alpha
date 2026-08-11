@@ -34,11 +34,11 @@ type SectorOverviewRow = {
   slug: string;
   companyCount: number;
   subSectorCount: number;
-  avgLatestQuarterScore: number | null;
+  avgLatestConcallScore: number | null;
   latestQuarterEligibleCount: number;
   avgGrowthScore: number | null;
   growthEligibleCount: number;
-  avgAvg4QuarterScore: number | null;
+  avgAvg4ConcallScore: number | null;
   avg4QuarterEligibleCount: number;
   avgBlendedScore: number | null;
   blendedEligibleCount: number;
@@ -60,7 +60,7 @@ const defaultDirectionForKey = (key: SectorSortKey): "asc" | "desc" =>
 
 export const metadata: Metadata = {
   title: "Sectors – Story of a Stock",
-  description: "Sector overview with company count, latest quarter score and growth score averages.",
+  description: "Sector overview with company count, latest ConcallScore and growth score averages.",
   alternates: { canonical: "/sectors" },
 };
 
@@ -140,12 +140,12 @@ export default async function SectorsPage({
 
   const concallScoreByCode = new Map<
     string,
-    { latestScore: number | null; avg4QuarterScore: number | null }
+    { latestScore: number | null; avg4ConcallScore: number | null }
   >();
   concallRows.forEach((row) => {
     concallScoreByCode.set(row.company.toUpperCase(), {
       latestScore: latestLabel ? toNumberOrNull(row[latestLabel]) : null,
-      avg4QuarterScore: toNumberOrNull(row["Latest 4Q Avg"]),
+      avg4ConcallScore: toNumberOrNull(row["Latest 4Q Avg"]),
     });
   });
 
@@ -167,9 +167,9 @@ export default async function SectorsPage({
     {
       companyCount: number;
       subSectors: Set<string>;
-      latestQuarterScores: number[];
+      latestConcallScores: number[];
       growthScores: number[];
-      avg4QuarterScores: number[];
+      avg4ConcallScores: number[];
       blendedScores: number[];
     }
   >();
@@ -180,19 +180,19 @@ export default async function SectorsPage({
 
     const codeKey = company.code.toUpperCase();
     const nameKey = (company.name ?? "").trim().toUpperCase();
-    const concallScore = concallScoreByCode.get(codeKey);
-    const quarterScore = concallScore?.latestScore ?? null;
-    const avg4QuarterScore = concallScore?.avg4QuarterScore ?? null;
+    const concallEntry = concallScoreByCode.get(codeKey);
+    const concallScore = concallEntry?.latestScore ?? null;
+    const avg4ConcallScore = concallEntry?.avg4ConcallScore ?? null;
     const growthScore = latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? null;
-    const blendedScore = blendCompany([quarterScore, growthScore, avg4QuarterScore]);
+    const blendedScore = blendCompany([concallScore, growthScore, avg4ConcallScore]);
 
     if (!sectorMap.has(sector)) {
       sectorMap.set(sector, {
         companyCount: 0,
         subSectors: new Set<string>(),
-        latestQuarterScores: [],
+        latestConcallScores: [],
         growthScores: [],
-        avg4QuarterScores: [],
+        avg4ConcallScores: [],
         blendedScores: [],
       });
     }
@@ -200,9 +200,9 @@ export default async function SectorsPage({
     const bucket = sectorMap.get(sector)!;
     bucket.companyCount += 1;
     if (company.sub_sector?.trim()) bucket.subSectors.add(company.sub_sector.trim());
-    if (quarterScore != null) bucket.latestQuarterScores.push(quarterScore);
+    if (concallScore != null) bucket.latestConcallScores.push(concallScore);
     if (growthScore != null) bucket.growthScores.push(growthScore);
-    if (avg4QuarterScore != null) bucket.avg4QuarterScores.push(avg4QuarterScore);
+    if (avg4ConcallScore != null) bucket.avg4ConcallScores.push(avg4ConcallScore);
     if (blendedScore != null) bucket.blendedScores.push(blendedScore);
   });
 
@@ -212,12 +212,12 @@ export default async function SectorsPage({
       slug: slugifySector(sector),
       companyCount: bucket.companyCount,
       subSectorCount: bucket.subSectors.size,
-      avgLatestQuarterScore: avg(bucket.latestQuarterScores),
-      latestQuarterEligibleCount: bucket.latestQuarterScores.length,
+      avgLatestConcallScore: avg(bucket.latestConcallScores),
+      latestQuarterEligibleCount: bucket.latestConcallScores.length,
       avgGrowthScore: avg(bucket.growthScores),
       growthEligibleCount: bucket.growthScores.length,
-      avgAvg4QuarterScore: avg(bucket.avg4QuarterScores),
-      avg4QuarterEligibleCount: bucket.avg4QuarterScores.length,
+      avgAvg4ConcallScore: avg(bucket.avg4ConcallScores),
+      avg4QuarterEligibleCount: bucket.avg4ConcallScores.length,
       avgBlendedScore: avg(bucket.blendedScores),
       blendedEligibleCount: bucket.blendedScores.length,
     }))
@@ -229,8 +229,8 @@ export default async function SectorsPage({
       (a.avgBlendedScore ?? Number.NEGATIVE_INFINITY);
     if (blendDiff !== 0) return blendDiff;
     const qtrDiff =
-      (b.avgLatestQuarterScore ?? Number.NEGATIVE_INFINITY) -
-      (a.avgLatestQuarterScore ?? Number.NEGATIVE_INFINITY);
+      (b.avgLatestConcallScore ?? Number.NEGATIVE_INFINITY) -
+      (a.avgLatestConcallScore ?? Number.NEGATIVE_INFINITY);
     if (qtrDiff !== 0) return qtrDiff;
     const growthDiff =
       (b.avgGrowthScore ?? Number.NEGATIVE_INFINITY) -
@@ -283,10 +283,10 @@ export default async function SectorsPage({
       const primary = compareNullLast(a.avgGrowthScore, b.avgGrowthScore, sortOrder);
       if (primary !== 0) return primary;
     } else if (sortBy === "latest_qtr") {
-      const primary = compareNullLast(a.avgLatestQuarterScore, b.avgLatestQuarterScore, sortOrder);
+      const primary = compareNullLast(a.avgLatestConcallScore, b.avgLatestConcallScore, sortOrder);
       if (primary !== 0) return primary;
     } else if (sortBy === "avg_4q") {
-      const primary = compareNullLast(a.avgAvg4QuarterScore, b.avgAvg4QuarterScore, sortOrder);
+      const primary = compareNullLast(a.avgAvg4ConcallScore, b.avgAvg4ConcallScore, sortOrder);
       if (primary !== 0) return primary;
     } else {
       const primary = compareNullLast(a.avgBlendedScore, b.avgBlendedScore, sortOrder);
@@ -295,7 +295,7 @@ export default async function SectorsPage({
 
     const tieB = compareNullLast(a.avgBlendedScore, b.avgBlendedScore, "desc");
     if (tieB !== 0) return tieB;
-    const tieQ = compareNullLast(a.avgLatestQuarterScore, b.avgLatestQuarterScore, "desc");
+    const tieQ = compareNullLast(a.avgLatestConcallScore, b.avgLatestConcallScore, "desc");
     if (tieQ !== 0) return tieQ;
     const tieG = compareNullLast(a.avgGrowthScore, b.avgGrowthScore, "desc");
     if (tieG !== 0) return tieG;
@@ -377,7 +377,7 @@ export default async function SectorsPage({
                   ["sector", "Sector"],
                   ["companies", "Companies"],
                   ["subsectors", "Sub-sectors"],
-                  ["latest_qtr", "Avg latest qtr score"],
+                  ["latest_qtr", "Avg latest ConcallScore"],
                   ["growth", "Avg growth score"],
                   ["avg_4q", "Avg 4Q score"],
                   ["blended", "Avg blended score"],
@@ -424,7 +424,7 @@ export default async function SectorsPage({
                     </th>
                     <th className="px-4 py-3 font-semibold text-foreground">
                       <Link href={headerHref("latest_qtr")} className="hover:underline" prefetch={false}>
-                        {headerLabel("latest_qtr", "Avg latest qtr score")}
+                        {headerLabel("latest_qtr", "Avg latest ConcallScore")}
                       </Link>
                     </th>
                     <th className="px-4 py-3 font-semibold text-foreground">
@@ -467,9 +467,9 @@ export default async function SectorsPage({
                       <td className="px-4 py-3 text-foreground">{row.companyCount}</td>
                       <td className="px-4 py-3 text-foreground">{row.subSectorCount}</td>
                       <td className="px-4 py-3">
-                        {row.avgLatestQuarterScore != null ? (
+                        {row.avgLatestConcallScore != null ? (
                           <div className="flex items-center gap-2">
-                            <ConcallScore score={row.avgLatestQuarterScore} size="sm" />
+                            <ConcallScore score={row.avgLatestConcallScore} size="sm" />
                             <span className="text-xs text-muted-foreground">
                               ({row.latestQuarterEligibleCount}/{row.companyCount})
                             </span>
@@ -491,9 +491,9 @@ export default async function SectorsPage({
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        {row.avgAvg4QuarterScore != null ? (
+                        {row.avgAvg4ConcallScore != null ? (
                           <div className="flex items-center gap-2">
-                            <ConcallScore score={row.avgAvg4QuarterScore} size="sm" />
+                            <ConcallScore score={row.avgAvg4ConcallScore} size="sm" />
                             <span className="text-xs text-muted-foreground">
                               ({row.avg4QuarterEligibleCount}/{row.companyCount})
                             </span>

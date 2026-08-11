@@ -15,7 +15,7 @@ const cand = (over: Partial<FeaturedCandidate>): FeaturedCandidate => ({
   code: "X",
   name: "X",
   sector: null,
-  quarterScore: 8,
+  concallScore: 8,
   growthScore: 8,
   valuationScore: 7,
   trail: stubTrail(over.code ?? "X"),
@@ -24,8 +24,8 @@ const cand = (over: Partial<FeaturedCandidate>): FeaturedCandidate => ({
 
 // 1. Highest composite among positive verdicts wins.
 {
-  const strong = cand({ code: "AAA", quarterScore: 8.6, growthScore: 8.6, valuationScore: 7 });
-  const weaker = cand({ code: "BBB", quarterScore: 8.0, growthScore: 8.0, valuationScore: 6 });
+  const strong = cand({ code: "AAA", concallScore: 8.6, growthScore: 8.6, valuationScore: 7 });
+  const weaker = cand({ code: "BBB", concallScore: 8.0, growthScore: 8.0, valuationScore: 6 });
   const got = pickFeaturedRead([weaker, strong]);
   assert.ok(got, "should pick a company");
   assert.equal(got.code, "AAA", "picks the highest composite");
@@ -33,7 +33,7 @@ const cand = (over: Partial<FeaturedCandidate>): FeaturedCandidate => ({
 
 // 2. A negative verdict is NEVER featured (soft print + soft outlook = cheap_weak).
 {
-  const negative = cand({ code: "WEAK", quarterScore: 2.5, growthScore: 2.5, valuationScore: 8 });
+  const negative = cand({ code: "WEAK", concallScore: 2.5, growthScore: 2.5, valuationScore: 8 });
   assert.equal(pickFeaturedRead([negative]), null, "negative verdict must not surface");
 }
 
@@ -52,7 +52,7 @@ assert.equal(pickFeaturedRead([]), null, "empty pool returns null");
 
 // 5. The returned verdict is always one of the positive families.
 {
-  const good = cand({ code: "GOOD", quarterScore: 8.6, growthScore: 8.6, valuationScore: 7 });
+  const good = cand({ code: "GOOD", concallScore: 8.6, growthScore: 8.6, valuationScore: 7 });
   const got = pickFeaturedRead([good]);
   assert.ok(got, "should pick a company");
   assert.ok(
@@ -64,8 +64,8 @@ assert.equal(pickFeaturedRead([]), null, "empty pool returns null");
 
 // 6. Selection is deterministic on ties (code order).
 {
-  const a = cand({ code: "ZZZ", quarterScore: 8.5, growthScore: 8.5, valuationScore: 7 });
-  const b = cand({ code: "AAA", quarterScore: 8.5, growthScore: 8.5, valuationScore: 7 });
+  const a = cand({ code: "ZZZ", concallScore: 8.5, growthScore: 8.5, valuationScore: 7 });
+  const b = cand({ code: "AAA", concallScore: 8.5, growthScore: 8.5, valuationScore: 7 });
   const got = pickFeaturedRead([a, b]);
   assert.equal(got?.code, "AAA", "ties break on code so the choice is stable");
 }

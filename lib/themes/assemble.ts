@@ -44,7 +44,7 @@ export function assembleThemeBlocks(
       }
 
       const read = classifyBoardRead({
-        quarterScore: board.quarterScore,
+        concallScore: board.concallScore,
         growthScore: board.growthScore,
         valuationScore: board.valuationScore,
       });
@@ -53,7 +53,7 @@ export function assembleThemeBlocks(
       members.push({
         companyCode: code,
         companyName: board.companyName,
-        quarterScore: board.quarterScore,
+        concallScore: board.concallScore,
         growthScore: board.growthScore,
         valuationScore: board.valuationScore,
         readScore: hasRead ? read.score : null,
@@ -61,9 +61,9 @@ export function assembleThemeBlocks(
         belowCut: board.belowCut === true,
         isBestRead: false, // assigned after the in-theme sort below
         rationale: m.rationale ?? null,
-        notYetScored: board.quarterScore == null,
+        notYetScored: board.concallScore == null,
         quarterSourceStatus: board.quarterSourceStatus,
-        quarterScoredWithin24h: board.quarterScoredWithin24h,
+        concallScoredWithin24h: board.concallScoredWithin24h,
       });
     }
 

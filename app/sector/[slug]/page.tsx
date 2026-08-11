@@ -168,12 +168,12 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
 
   const concallScoreByCode = new Map<
     string,
-    { latestScore: number | null; avg4QuarterScore: number | null }
+    { latestScore: number | null; avg4ConcallScore: number | null }
   >();
   concallRows.forEach((row) => {
     concallScoreByCode.set(row.company.toUpperCase(), {
       latestScore: latestLabel ? toNumberOrNull(row[latestLabel]) : null,
-      avg4QuarterScore: toNumberOrNull(row["Latest 4Q Avg"]),
+      avg4ConcallScore: toNumberOrNull(row["Latest 4Q Avg"]),
     });
   });
 
@@ -202,10 +202,10 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     const name = company.name?.trim() || company.code;
     const nameKey = name.toUpperCase();
     const concallScore = concallScoreByCode.get(codeKey);
-    const latestQuarterScore = concallScore?.latestScore ?? null;
+    const latestConcallScore = concallScore?.latestScore ?? null;
     const growthScore = latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? null;
-    const avg4QuarterScore = concallScore?.avg4QuarterScore ?? null;
-    const blendedScore = computeAverage([latestQuarterScore, growthScore, avg4QuarterScore]);
+    const avg4ConcallScore = concallScore?.avg4ConcallScore ?? null;
+    const blendedScore = computeAverage([latestConcallScore, growthScore, avg4ConcallScore]);
     const moat = latestMoatByCode.get(codeKey) ?? null;
 
     return {
@@ -213,9 +213,9 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
       companyName: name,
       subSector: company.sub_sector ?? null,
       isNew: isCompanyNew(company.created_at ?? null),
-      latestQuarterScore,
+      latestConcallScore,
       growthScore,
-      avg4QuarterScore,
+      avg4ConcallScore,
       blendedScore,
       moatLabel: moat?.moatLabel ?? null,
       moatRating: moat?.moatRating ?? null,
@@ -247,9 +247,9 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
 
   const latestQuarterLabel = latestLabel ?? null;
 
-  const cohortAvgLatestQuarter = computeAverage(filteredRows.map((row) => row.latestQuarterScore));
+  const cohortAvgLatestQuarter = computeAverage(filteredRows.map((row) => row.latestConcallScore));
   const cohortAvgGrowth = computeAverage(filteredRows.map((row) => row.growthScore));
-  const cohortAvg4Quarter = computeAverage(filteredRows.map((row) => row.avg4QuarterScore));
+  const cohortAvg4Quarter = computeAverage(filteredRows.map((row) => row.avg4ConcallScore));
   const cohortAvgBlended = computeAverage(filteredRows.map((row) => row.blendedScore));
 
   const sectorSlug = slugifySector(sectorName);
@@ -287,7 +287,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
               Blend {cohortAvgBlended != null ? cohortAvgBlended.toFixed(1) : "—"}
             </span>
             <span className={`${CHIP_BASE} ${CHIP_NEUTRAL}`}>
-              Qtr {cohortAvgLatestQuarter != null ? cohortAvgLatestQuarter.toFixed(1) : "—"}
+              ConcallScore {cohortAvgLatestQuarter != null ? cohortAvgLatestQuarter.toFixed(1) : "—"}
             </span>
             <span className={`${CHIP_BASE} ${CHIP_NEUTRAL}`}>
               Growth {cohortAvgGrowth != null ? cohortAvgGrowth.toFixed(1) : "—"}

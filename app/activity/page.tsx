@@ -24,7 +24,7 @@ type FilterKey = "all" | UpdateType | "quarter_latest";
 const FILTER_PILLS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "All" },
   { key: "quarter_latest", label: "Latest quarter" },
-  { key: "quarter", label: "Quarter scores" },
+  { key: "quarter", label: "ConcallScore" },
   { key: "growth", label: "Growth" },
   { key: "guidance_monitor", label: "Guidance" },
   { key: "business_snapshot", label: "Snapshots" },

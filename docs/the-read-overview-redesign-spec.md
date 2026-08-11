@@ -25,7 +25,7 @@ component.
 | The Read number + label + tooltip | `lib/board-read.ts` `computeBoardComposite` / `classifyBoardRead` / `BOARD_READS[].label/textClass` | ✅ reuse verbatim |
 | Valuation → 0–10 rescale | `lib/valuation-band` (leaderboard already does this per row) | ✅ reuse, wire into cache |
 | Valuation staleness (age + price-move) | `lib/valuation-check/normalize.ts` | ✅ reuse at read time |
-| Quarterly score / rank / percentile | overview cache `latest_score`, `quarter_rank/total/percentile` | ✅ cached |
+| ConcallScore / rank / percentile | overview cache `latest_score`, `quarter_rank/total/percentile` | ✅ cached |
 | Growth score / rank / scenarios | cache `growth_score/rank/total`; `lib/growth-outlook` `base/upside/downside_growth_pct`, `NormalizedGrowthScenario` | 🟡 fetched in builder, not in stored row |
 | Moat call + tier | cache `moat_label`, `moat_tier_label` | ✅ cached |
 | Key variables count + lead | cache `key_variable_count`, `overview_takeaways.keyVariableLead` | ✅ cached |
@@ -58,7 +58,7 @@ Two tiers: the **claim** (The Read) on top, the **receipts** below.
 └───────────────────────────────────────────────────────────────────┘
   SUPPORTING EVIDENCE
 ┌ Business ┐ ┌ Moat ┐ ┌ Key Variables ┐ ┌ Guidance ┐   ← 4 thin cards
-┌ Quarterly Score (wide) ──────┐ ┌ Future Growth (wide) ────────────┐
+┌ ConcallScore (wide) ──────┐ ┌ Future Growth (wide) ────────────┐
 │ 7.8 +0.3   sparkline         │ │ 8.1   bear|base|bull range slider │
 │ Q Rank 14/64 · Top 80%    →  │ │ Growth Rank 35/100 · scenarios →  │
 └──────────────────────────────┘ └───────────────────────────────────┘

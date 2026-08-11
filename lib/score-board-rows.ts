@@ -3,12 +3,12 @@
 // watchlist so the two can't drift on the parts a reader would notice most: the
 // trailing-4Q quarter leg and the valuation rescale.
 //
-// The Quarter column shows the STANDING quarter score — the RECENCY-WEIGHTED 4Q
+// The Quarter column shows the STANDING ConcallScore — the RECENCY-WEIGHTED 4Q
 // leg (getConcallData's "Latest 4Q Blend", "latest counts double", one definition
 // in lib/quarter-composite). This is the LIVE ordering leg and it deliberately
 // diverges from the coverage cut, which stays on the flat 4Q mean — recency lives
 // in the live board, membership stays stable. The single latest print rides
-// alongside as `latestQuarterScore`, the "this quarter" marker the freshness chips
+// alongside as `latestConcallScore`, the "this quarter" marker the freshness chips
 // attach to, so a one-quarter badge never sits atop the standing number.
 //
 // Moat and guidance are deliberately absent — the moat rating is categorical and
@@ -42,11 +42,11 @@ export function buildScoreBoardRows(
     // robust to a company not having reported the board's newest quarter yet.
     // This feeds BOTH the Read number and its label (classifyBoardRead), so the
     // word and the number describe the same quarter by construction.
-    const quarterScore = toNumericValue(row["Latest 4Q Blend"]);
+    const concallScore = toNumericValue(row["Latest 4Q Blend"]);
     // The flat trailing 4-quarter mean, shown in its own "4Q" column beside the
     // single latest print. NOT what the Read ranks on (that's the blend above) —
     // this is the stable trail the reader sees alongside the fresh print.
-    const fourQuarterScore = toNumericValue(row["Latest 4Q Avg"]);
+    const fourConcallScore = toNumericValue(row["Latest 4Q Avg"]);
 
     // The single latest print, carried separately as the "this quarter" marker.
     // It is the board's newest quarter for this company, or its own newest when
@@ -54,28 +54,28 @@ export function buildScoreBoardRows(
     // unofficial chips below qualify.
     const boardScore = latestLabel ? toNumericValue(row[latestLabel]) : null;
     const ownScore = toNumericValue(row.ownLatestScore);
-    const latestQuarterScore = boardScore ?? ownScore;
+    const latestConcallScore = boardScore ?? ownScore;
     const latestQuarterLabel =
       boardScore != null ? latestLabel : (row.ownLatestQuarterLabel ?? null);
 
     return {
       companyCode: code,
       companyName: nameByCode.get(code) ?? code,
-      quarterScore,
-      fourQuarterScore,
-      latestQuarterScore,
+      concallScore,
+      fourConcallScore,
+      latestConcallScore,
       latestQuarterLabel,
       growthScore: growthScoreByCode.get(code) ?? null,
       // getConcallData already applies the publish + staleness gates; this only
       // moves the stored 0-100 integer onto the board's 0-10 scale.
       valuationScore: toValuationScale(toNumericValue(row.valuationScore)),
       belowCut: row.belowCut === true,
-      // These describe the single latest print (latestQuarterScore above), which
+      // These describe the single latest print (latestConcallScore above), which
       // is the quarter the chips name — getConcallData resolves them against that
       // same record.
       quarterSourceStatus: row.latestSourceStatus ?? null,
-      quarterScoredWithin24h: row.scoredWithin24h === true,
-      quarterScoredAt: row.latestScoredAt ?? null,
+      concallScoredWithin24h: row.scoredWithin24h === true,
+      concallScoredAt: row.latestScoredAt ?? null,
     };
   });
 }

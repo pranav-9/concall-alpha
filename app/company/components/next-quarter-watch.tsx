@@ -3,7 +3,7 @@ import { Eye } from "lucide-react";
 import type { WatchView } from "@/lib/next-quarter-watch/types";
 import { nestedDetailClass } from "./surface-tokens";
 
-// Forward read on the Quarter Score page: the open questions heading into next
+// Forward read on the ConcallScore page: the open questions heading into next
 // quarter (divergence + falling trajectory + swing variables to monitor).
 // Derived downstream, attributed, never a numeric prediction. Quiet by design.
 export function NextQuarterWatch({

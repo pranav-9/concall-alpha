@@ -250,9 +250,9 @@ export function TheReadOverview({ overview, watchlistSlot = null }: TheReadOverv
       {/* THE READ band */}
       <div className="mt-5 rounded-2xl border border-border/50 bg-muted/25 p-4 sm:p-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          {/* No quarter suffix: the Read is a standing view (its Qtr leg is the
+          {/* No quarter suffix: the Read is a standing view (its ConcallScore leg is the
               trailing 4-quarter mean), not a single-quarter verdict. The latest
-              print and its label live on the Quarterly Score card below. */}
+              print and its label live on the ConcallScore card below. */}
           The Read
         </p>
         <div className="mt-2 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -274,8 +274,8 @@ export function TheReadOverview({ overview, watchlistSlot = null }: TheReadOverv
           <div className="flex items-center gap-5 sm:gap-6">
             {/* Standing quarter leg (trailing 4-quarter mean), the same leg The
                 Read is computed from — NOT the single latest print, which is the
-                Quarterly Score card below. */}
-            <RingGauge score={overview.quarter_4q_avg} kind="quarterly" label="Qtr" />
+                ConcallScore card below. */}
+            <RingGauge score={overview.quarter_4q_avg} kind="quarterly" label="Concall" />
             <RingGauge score={overview.growth_score} kind="growth" label="Growth" />
             <RingGauge
               score={overview.valuation_score}
@@ -376,7 +376,7 @@ export function TheReadOverview({ overview, watchlistSlot = null }: TheReadOverv
       <div className="mt-3 grid gap-3 lg:grid-cols-2">
         {/* Quarterly */}
         {overview.latest_score != null ? (
-          <EvidenceCard title="Quarterly Score" href="#sentiment-score" navigate={navigate}>
+          <EvidenceCard title="ConcallScore" href="#sentiment-score" navigate={navigate}>
             <div className="flex items-center gap-3">
               <span className="font-mono text-2xl font-bold tabular-nums text-foreground">
                 {overview.latest_score.toFixed(1)}
@@ -409,7 +409,7 @@ export function TheReadOverview({ overview, watchlistSlot = null }: TheReadOverv
           </EvidenceCard>
         ) : (
           <NotScoredCard
-            title="Quarterly Score"
+            title="ConcallScore"
             companyCode={overview.company_code}
             companyName={overview.company_name}
             sectionId="sentiment-score"

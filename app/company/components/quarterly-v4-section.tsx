@@ -1,4 +1,4 @@
-// v4-category breakdown UI pieces, composed INSIDE QuarterlyScoreSection's
+// v4-category breakdown UI pieces, composed INSIDE ConcallScoreSection's
 // selector-driven detail block (2026-05-23 UI pass v3). Exports:
 //   - V4CoverageStrip: the at-a-glance distribution (all 7 cats, state-colored)
 //   - V4CategoryCards: the ADDRESSED category cards only (absent + deferred are
@@ -79,7 +79,7 @@ export function V4CoverageStrip({ categories }: { categories: NormalizedCategory
   );
 }
 
-// Mirrors renderCard in quarterly-score-section.tsx: nestedDetailClass, accent-dot
+// Mirrors renderCard in concall-score-section.tsx: nestedDetailClass, accent-dot
 // uppercase label, amber dot-bullet list.
 // A single addressed category card. Exported so it can be placed outside the
 // breakdown grid (e.g. Quantitative decomposition rendered next to the chart).

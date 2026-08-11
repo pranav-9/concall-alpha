@@ -21,7 +21,7 @@ import {
   KeyVariablesPanel,
   MoatAnalysisPanel,
   ValuationCheckPanel,
-  QuarterlyScorePanel,
+  ConcallScorePanel,
   // WalkTheTalkPanel hidden for now — re-import when re-enabling the tab.
   // WalkTheTalkPanel,
 } from "./company-detail-sections";
@@ -73,7 +73,7 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
         : { kind: "text" as const, text: "Soon" },
     },
     {
-      ...SECTION_MAP.quarterlyScore,
+      ...SECTION_MAP.concallScore,
       meta: { kind: "score" as const, score: overview.latest_score },
     },
     {
@@ -179,8 +179,8 @@ export default async function Page({
           </div>
 
           <div data-section-id="sentiment-score">
-            <Suspense fallback={<SectionLoading id="sentiment-score" title="Quarterly Score" />}>
-              <QuarterlyScorePanel overview={overview} />
+            <Suspense fallback={<SectionLoading id="sentiment-score" title="ConcallScore" />}>
+              <ConcallScorePanel overview={overview} />
             </Suspense>
           </div>
 

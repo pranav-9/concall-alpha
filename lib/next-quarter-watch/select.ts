@@ -1,6 +1,6 @@
 import type { BuildWatchInput, WatchItem, WatchView } from "./types";
 
-// Quarter score (score-band) and forward score (growth-band) live on DIFFERENT
+// ConcallScore (score-band) and forward score (growth-band) live on DIFFERENT
 // distributions (growth clusters ~6.6-8.7), so we flag divergence by band
 // position, not raw subtraction — plus a raw-gap guard so band-edge wobble
 // inside the ±0.5 re-score noise floor never trips it.

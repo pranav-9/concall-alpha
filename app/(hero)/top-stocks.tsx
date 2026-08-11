@@ -310,7 +310,7 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
     .slice(0, 5);
 
   const latestTop: ListBlock = {
-    title: "Top Quarter Score (latest qtr)",
+    title: "Top ConcallScore (latest qtr)",
     items: companies
       .filter((c) => !Number.isNaN(c.latestScore))
       .sort((a, b) => b.latestScore - a.latestScore)
@@ -359,7 +359,7 @@ const buildLists = (records: CompanyRecord[], now: Date) => {
 
   const positiveTrendTwist: ListBlock = {
     title: "Positive Trend Twist",
-    subtitle: "Latest quarter score is above the prior 4-quarter average.",
+    subtitle: "Latest ConcallScore is above the prior 4-quarter average.",
     items: trendTwistItems
       .filter((item) => (item.twistPct ?? 0) > 0)
       .sort((a, b) => (b.twistPct ?? 0) - (a.twistPct ?? 0))
@@ -496,7 +496,7 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
           ...latestTop,
           title: `${latestLabel || "Latest qtr"} Top Performers`,
           subtitle:
-            "Highest latest-quarter scores across covered companies.",
+            "Highest latest ConcallScores across covered companies.",
         }
       : strength[0];
   const { sumMap, nameMap } = buildFourQSumMap(records);
@@ -565,7 +565,7 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
           title: "Positive Trend Twist",
           subtitle:
             positiveTrendTwist?.subtitle ??
-            "Latest quarter score is above the prior 4-quarter average.",
+            "Latest ConcallScore is above the prior 4-quarter average.",
         },
       },
       {
@@ -590,7 +590,7 @@ const TopStocks = async ({ heroPanel = false }: { heroPanel?: boolean } = {}) =>
           Concall Signals
         </p>
         <p className="text-xs sm:text-sm text-muted-foreground px-2">
-          Latest quarter: {latestLabel || "n/a"} · Quarter score uses latest/4Q values; Growth uses guidance %
+          Latest quarter: {latestLabel || "n/a"} · ConcallScore uses latest/4Q values; Growth uses guidance %
         </p>
       </div>
       <div className="w-full flex flex-col gap-6 sm:w-[90%]">
@@ -634,7 +634,7 @@ function ListCard({
           <span className="leading-tight">{list.title}</span>
           {list.signal && (
             <Badge variant="outline" className="text-xs px-2 py-0.5 border-border uppercase tracking-wide text-muted-foreground">
-              {list.signal === "sentiment" ? "Quarter" : "Growth"}
+              {list.signal === "sentiment" ? "ConcallScore" : "Growth"}
             </Badge>
           )}
         </div>

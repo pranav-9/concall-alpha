@@ -48,7 +48,7 @@ const SORT_HEADER_CLASS =
 
 // Higher score = cheaper, so cheap reads emerald and rich reads rose — the same direction
 // as the pills on the company page. Deliberately quieter than the ConcallScore chips: this
-// column is context beside a quarter score, not a second thing to rank on.
+// column is context beside a ConcallScore, not a second thing to rank on.
 const VALUATION_CLASS: Record<ValuationVerdict, string> = {
   "DEEPLY UNDERVALUED": "text-emerald-700 dark:text-emerald-300",
   UNDERVALUED: "text-emerald-700 dark:text-emerald-300",
@@ -291,7 +291,7 @@ export function LeaderboardTable({
 
   return (
     <DataTable
-      ariaLabel="Companies by latest quarter score"
+      ariaLabel="Companies by latest ConcallScore"
       columns={columns}
       data={rankedData}
       stickyColId="company"

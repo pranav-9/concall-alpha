@@ -24,7 +24,7 @@ import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
 import type { FeaturedRead } from "@/lib/home-featured-read";
 
 export default function VerdictVenn({ featured }: { featured: FeaturedRead }) {
-  const { quarterScore: q, growthScore: g, valuationScore: v } = featured;
+  const { concallScore: q, growthScore: g, valuationScore: v } = featured;
   const qBand = BANDS[bandForScore(q)];
   const gBand = GROWTH_BANDS[bandForGrowthScore(g)];
   const vBand = VALUATION_BANDS[bandForValuationScore(v)];

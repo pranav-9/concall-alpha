@@ -16,7 +16,7 @@ import { bandForValuationScore, toValuationScale } from "../lib/valuation-band";
 
 const read = (input: Partial<BoardReadInput>): BoardReadKey =>
   classifyBoardRead({
-    quarterScore: null,
+    concallScore: null,
     growthScore: null,
     valuationScore: null,
     ...input,
@@ -39,7 +39,7 @@ assert.equal(QUALITY_WEIGHT + PRICE_WEIGHT, 1, "weights must sum to 1");
 // Hand-computed: quality = (8.0 + 8.4)/2 = 8.2; 0.88*8.2 + 0.12*6.2 = 7.96
 assert.equal(
   Number(
-    computeBoardComposite({ quarterScore: 8.0, growthScore: 8.4, valuationScore: 6.2 })!.toFixed(2),
+    computeBoardComposite({ concallScore: 8.0, growthScore: 8.4, valuationScore: 6.2 })!.toFixed(2),
   ),
   7.96,
 );
@@ -81,7 +81,7 @@ let checkedMissingValuation = 0;
 let checkedNoRead = 0;
 for (const row of crossImpl.rows) {
   const got = computeBoardComposite({
-    quarterScore: row.qtr,
+    concallScore: row.qtr,
     growthScore: row.growth,
     valuationScore: row.valuation,
   });
@@ -114,25 +114,25 @@ assert.ok(
 // penalty was dropped. A company with no valuation must not score below an
 // otherwise identical company that has a good one.
 {
-  const noValuation = computeBoardComposite({ quarterScore: 7.5, growthScore: 7.5, valuationScore: null })!;
-  const withGoodValuation = computeBoardComposite({ quarterScore: 7.5, growthScore: 7.5, valuationScore: 9.0 })!;
-  const withBadValuation = computeBoardComposite({ quarterScore: 7.5, growthScore: 7.5, valuationScore: 1.0 })!;
+  const noValuation = computeBoardComposite({ concallScore: 7.5, growthScore: 7.5, valuationScore: null })!;
+  const withGoodValuation = computeBoardComposite({ concallScore: 7.5, growthScore: 7.5, valuationScore: 9.0 })!;
+  const withBadValuation = computeBoardComposite({ concallScore: 7.5, growthScore: 7.5, valuationScore: 1.0 })!;
   assert.equal(noValuation, 7.5, "no-price row scores on quality alone");
   assert.ok(withGoodValuation > noValuation, "a cheap price should help");
   assert.ok(withBadValuation < noValuation, "a rich price should hurt");
 }
 
 // Missing a whole side falls back to the side that exists.
-assert.equal(computeBoardComposite({ quarterScore: null, growthScore: null, valuationScore: 6.0 }), 6.0);
-assert.equal(computeBoardComposite({ quarterScore: 7.0, growthScore: null, valuationScore: null }), 7.0);
-assert.equal(computeBoardComposite({ quarterScore: null, growthScore: null, valuationScore: null }), null);
+assert.equal(computeBoardComposite({ concallScore: null, growthScore: null, valuationScore: 6.0 }), 6.0);
+assert.equal(computeBoardComposite({ concallScore: 7.0, growthScore: null, valuationScore: null }), 7.0);
+assert.equal(computeBoardComposite({ concallScore: null, growthScore: null, valuationScore: null }), null);
 
 // Quality is weighted ~2:1 over price in INFLUENCE, which given the measured
 // spreads means a lopsided nominal weight. Guard the direction: a full point of
 // quality must outweigh a full point of price.
 {
-  const qualityUp = computeBoardComposite({ quarterScore: 8, growthScore: 8, valuationScore: 5 })!;
-  const priceUp = computeBoardComposite({ quarterScore: 7, growthScore: 7, valuationScore: 6 })!;
+  const qualityUp = computeBoardComposite({ concallScore: 8, growthScore: 8, valuationScore: 5 })!;
+  const priceUp = computeBoardComposite({ concallScore: 7, growthScore: 7, valuationScore: 6 })!;
   assert.ok(qualityUp > priceUp, "a point of quality must beat a point of price");
 }
 
@@ -144,28 +144,28 @@ assert.equal(computeBoardComposite({ quarterScore: null, growthScore: null, valu
 expectRead("no quarter score", { growthScore: 8.5, valuationScore: 7.0 }, "no_read");
 
 // Divergences are checked first — they're what a plain average hides.
-expectRead("soft print, strong outlook", { quarterScore: 5.5, growthScore: 8.2, valuationScore: 3.0 }, "outlook_led");
-expectRead("strong print, cooling outlook", { quarterScore: 8.1, growthScore: 6.2, valuationScore: 7.0 }, "peaking");
+expectRead("soft print, strong outlook", { concallScore: 5.5, growthScore: 8.2, valuationScore: 3.0 }, "outlook_led");
+expectRead("strong print, cooling outlook", { concallScore: 8.1, growthScore: 6.2, valuationScore: 7.0 }, "peaking");
 
 // Quality holding on both legs: the question becomes what you pay.
-expectRead("strong and cheap", { quarterScore: 8.0, growthScore: 8.2, valuationScore: 7.0 }, "aligned_cheap");
-expectRead("strong and rich", { quarterScore: 8.0, growthScore: 8.2, valuationScore: 2.5 }, "priced_for_it");
-expectRead("strong, fairly priced", { quarterScore: 8.0, growthScore: 8.2, valuationScore: 5.0 }, "balanced");
+expectRead("strong and cheap", { concallScore: 8.0, growthScore: 8.2, valuationScore: 7.0 }, "aligned_cheap");
+expectRead("strong and rich", { concallScore: 8.0, growthScore: 8.2, valuationScore: 2.5 }, "priced_for_it");
+expectRead("strong, fairly priced", { concallScore: 8.0, growthScore: 8.2, valuationScore: 5.0 }, "balanced");
 
 // A missing price read is NOT a fair-value judgement. This is the distinction
 // that put 18 companies under the wrong word before the split — every label
 // that names a price must require one.
-expectRead("strong, no price read", { quarterScore: 8.0, growthScore: 8.2, valuationScore: null }, "unpriced");
-expectRead("soft, no price read", { quarterScore: 4.0, growthScore: 6.0, valuationScore: null }, "unpriced");
+expectRead("strong, no price read", { concallScore: 8.0, growthScore: 8.2, valuationScore: null }, "unpriced");
+expectRead("soft, no price read", { concallScore: 4.0, growthScore: 6.0, valuationScore: null }, "unpriced");
 
 // Soft on both legs.
-expectRead("soft and cheap", { quarterScore: 4.0, growthScore: 6.0, valuationScore: 7.5 }, "cheap_weak");
-expectRead("soft and rich", { quarterScore: 4.0, growthScore: 6.0, valuationScore: 1.5 }, "weak_rich");
+expectRead("soft and cheap", { concallScore: 4.0, growthScore: 6.0, valuationScore: 7.5 }, "cheap_weak");
+expectRead("soft and rich", { concallScore: 4.0, growthScore: 6.0, valuationScore: 1.5 }, "weak_rich");
 
 // The quality-divergence labels are price-agnostic statements, so they still
 // stand without a valuation — only the price-naming branches gate on it.
-expectRead("outlook-led, no price", { quarterScore: 5.5, growthScore: 8.2, valuationScore: null }, "outlook_led");
-expectRead("peaking, no price", { quarterScore: 8.1, growthScore: 6.2, valuationScore: null }, "peaking");
+expectRead("outlook-led, no price", { concallScore: 5.5, growthScore: 8.2, valuationScore: null }, "outlook_led");
+expectRead("peaking, no price", { concallScore: 8.1, growthScore: 6.2, valuationScore: null }, "peaking");
 
 // No label that names a price may be reachable without a valuation read.
 // "balanced" is checked separately below — it's the one residual that may stand
@@ -173,7 +173,7 @@ expectRead("peaking, no price", { quarterScore: 8.1, growthScore: 6.2, valuation
 const PRICE_NAMING: BoardReadKey[] = ["aligned_cheap", "priced_for_it", "cheap_weak", "weak_rich"];
 for (const qtrScore of [3.0, 4.6, 5.5, 6.7, 7.2, 8.4]) {
   for (const growthScore of [null, 6.0, 6.8, 7.2, 7.8, 8.6]) {
-    const key = read({ quarterScore: qtrScore, growthScore, valuationScore: null });
+    const key = read({ concallScore: qtrScore, growthScore, valuationScore: null });
     if (key === "balanced") {
       // Only the mid-band residual may say "Balanced" without a price, and it's
       // a statement about quality sitting mid-scale rather than about price.
@@ -194,12 +194,12 @@ for (const qtrScore of [3.0, 4.6, 5.5, 6.7, 7.2, 8.4]) {
 
 // The mildly-bullish band is neither strong nor soft — it must not trip either
 // divergence, or a 6.7 quarter would read as "cracking" by another name.
-expectRead("mid-band quarter", { quarterScore: 6.7, growthScore: 7.2, valuationScore: 5.0 }, "balanced");
+expectRead("mid-band quarter", { concallScore: 6.7, growthScore: 7.2, valuationScore: 5.0 }, "balanced");
 
 // The Read can never contradict the columns above it: a row labelled cheap must
 // have a valuation in a cheap band.
 for (const valuation of [6.0, 7.0, 7.9, 8.0, 9.5]) {
-  const key = read({ quarterScore: 8.0, growthScore: 8.2, valuationScore: valuation });
+  const key = read({ concallScore: 8.0, growthScore: 8.2, valuationScore: valuation });
   const band = bandForValuationScore(valuation);
   assert.equal(key, "aligned_cheap", `valuation ${valuation} (${band}) should read aligned_cheap`);
 }

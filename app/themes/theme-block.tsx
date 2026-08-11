@@ -51,7 +51,7 @@ function ScoreCell({
 function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null }) {
   const dim = member.belowCut;
   const read = BOARD_READS[member.readKey];
-  const quarterBand = member.quarterScore != null ? BANDS[bandForScore(member.quarterScore)] : null;
+  const quarterBand = member.concallScore != null ? BANDS[bandForScore(member.concallScore)] : null;
   const growthBand =
     member.growthScore != null ? GROWTH_BANDS[bandForGrowthScore(member.growthScore)] : null;
   const valuationBand =
@@ -108,13 +108,13 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
 
   return (
     <li className={`border-b border-border/45 py-2.5 last:border-0 ${dim ? "opacity-55" : ""}`}>
-      {/* Desktop: one grid row — # · Company · Qtr · Grw · Val · Read. */}
+      {/* Desktop: one grid row — # · Company · ConcallScore · Grw · Val · Read. */}
       <div className="hidden items-center gap-3 sm:grid sm:grid-cols-[1.5rem_minmax(0,1fr)_3.25rem_3.25rem_3.5rem_3.75rem]">
         {rankCell}
         {companyCell}
         <div className="text-right">
           <ScoreCell
-            score={member.quarterScore}
+            score={member.concallScore}
             bandLabel={quarterBand?.label ?? null}
             bandClass={quarterBand?.textClass ?? ""}
             dimmed={dim}
@@ -161,7 +161,7 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
         <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 pl-8 font-mono text-xs tabular-nums text-muted-foreground">
           <span>
             <span className="mr-1 text-[9px] uppercase tracking-wide text-muted-foreground/70">Q</span>
-            {fmt(member.quarterScore)}
+            {fmt(member.concallScore)}
           </span>
           <span>
             <span className="mr-1 text-[9px] uppercase tracking-wide text-muted-foreground/70">G</span>
@@ -218,7 +218,7 @@ export function ThemeBlockView({
       <div className="mt-4 hidden items-center gap-3 border-b border-border/45 pb-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground/70 sm:grid sm:grid-cols-[1.5rem_minmax(0,1fr)_3.25rem_3.25rem_3.5rem_3.75rem]">
         <span aria-hidden="true" />
         <span>Company</span>
-        <span className="text-right">Qtr</span>
+        <span className="text-right">Concall</span>
         <span className="text-right">Grw</span>
         <span className="text-right">Val</span>
         <span className="text-right text-foreground/70">Read</span>

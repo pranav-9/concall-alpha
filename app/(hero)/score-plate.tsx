@@ -83,7 +83,7 @@ function StepChart({
       className="h-auto w-full overflow-visible"
       style={{ ["--draw-delay" as string]: `${drawDelay}ms` }}
       role="img"
-      aria-label={`${trail.name} quarterly score, ${first.label} to ${latest.label}. ${trail.trajectoryDescription}`}
+      aria-label={`${trail.name} ConcallScore, ${first.label} to ${latest.label}. ${trail.trajectoryDescription}`}
     >
       {gridValues(geo.domain).map((value) => (
         <line

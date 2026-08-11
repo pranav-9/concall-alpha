@@ -203,7 +203,7 @@ export type BoardReadInput = {
   /** Standing quarter leg, 0-10. On the Overall board this is the recency-weighted
    * 4Q blend (lib/quarter-composite blendQuarterLeg); other callers may pass a flat
    * mean. The number AND the label are computed from whatever is passed here. */
-  quarterScore: number | null;
+  concallScore: number | null;
   /** Growth outlook score, 0-10. */
   growthScore: number | null;
   /** Valuation ALREADY rescaled to 0-10 (see lib/valuation-band). */
@@ -231,7 +231,7 @@ const finite = (n: number | null | undefined): n is number =>
  */
 export function computeBoardComposite(input: BoardReadInput): number | null {
   const quality: number[] = [];
-  if (finite(input.quarterScore)) quality.push(input.quarterScore);
+  if (finite(input.concallScore)) quality.push(input.concallScore);
   if (finite(input.growthScore)) quality.push(input.growthScore);
   // Bound to a local so the type guard narrows — a boolean flag doesn't carry
   // narrowing through to a later property access.
@@ -258,7 +258,7 @@ export function classifyBoardRead(input: BoardReadInput): BoardReadResult {
 
   // The quarter is the anchor: without a print there is no configuration to
   // name, however good the outlook looks.
-  if (!finite(input.quarterScore)) {
+  if (!finite(input.concallScore)) {
     return { key: "no_read", score, description: BOARD_READS.no_read.gloss };
   }
 
@@ -268,14 +268,14 @@ export function classifyBoardRead(input: BoardReadInput): BoardReadResult {
   // equilibrium off a single number. Defensive in practice (growth covers the
   // universe today), load-bearing the moment it doesn't.
   const legCount =
-    (finite(input.quarterScore) ? 1 : 0) +
+    (finite(input.concallScore) ? 1 : 0) +
     (finite(input.growthScore) ? 1 : 0) +
     (finite(input.valuationScore) ? 1 : 0);
   if (legCount < 2) {
     return { key: "no_read", score, description: BOARD_READS.no_read.gloss };
   }
 
-  const qtrBand = bandForScore(input.quarterScore);
+  const qtrBand = bandForScore(input.concallScore);
   const growthBand = finite(input.growthScore)
     ? bandForGrowthScore(input.growthScore)
     : null;
@@ -291,7 +291,7 @@ export function classifyBoardRead(input: BoardReadInput): BoardReadResult {
   const rich = valBand != null && RICH.has(valBand);
 
   const ctx = [
-    `Qtr ${input.quarterScore.toFixed(1)}`,
+    `ConcallScore ${input.concallScore.toFixed(1)}`,
     finite(input.growthScore) ? `growth ${input.growthScore.toFixed(1)}` : "no growth read",
     finite(input.valuationScore)
       ? `valuation ${input.valuationScore.toFixed(1)}`

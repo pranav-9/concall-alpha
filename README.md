@@ -11,7 +11,7 @@ This repository is no longer a starter template. The README below reflects the c
   - overview card
   - industry context
   - business snapshot
-  - quarterly score
+  - ConcallScore
   - future growth prospects
   - guidance history
   - community comments
@@ -26,7 +26,7 @@ This repository is no longer a starter template. The README below reflects the c
 
 ## Key product capabilities
 
-- Quarterly score and growth score workflows
+- ConcallScore and growth score workflows
 - Evidence-backed company research sections
 - Guidance tracking with trail-style history
 - Community comments, likes, and reports
@@ -175,5 +175,5 @@ It also includes recent-activity and moderation tables such as:
 - Company pages are organized around sectioned analysis rather than raw transcript dumps.
 - `Industry Context` and `Business Snapshot` are collapsed by default.
 - `Guidance History` now uses thread-style guidance trails instead of full comparison cards.
-- `Quarterly Score` uses a synced chart + one-card-at-a-time context carousel.
+- `ConcallScore` uses a synced chart + one-card-at-a-time context carousel.
 - Missing company sections can be requested inline with a one-click CTA.

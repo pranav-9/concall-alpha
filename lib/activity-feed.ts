@@ -82,7 +82,7 @@ export type UnifiedUpdate = {
 };
 
 export const UPDATE_TYPE_LABELS: Record<UpdateType, string> = {
-  quarter: "Quarter Score",
+  quarter: "ConcallScore",
   growth: "Growth Update",
   business_snapshot: "Business Snapshot",
   key_variables: "Key Variables",
@@ -341,7 +341,7 @@ export async function getUnifiedUpdates({
       priorScore: null,
       priorLabel: null,
       detail: quarterLabel,
-      sourceLabel: "Quarter Score",
+      sourceLabel: "ConcallScore",
       contextLabel: null,
       atRaw,
       atMs,

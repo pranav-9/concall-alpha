@@ -79,11 +79,11 @@ export type OverviewReadModel = {
 // cache-hit normalize path, so a persisted row and a freshly-built one produce
 // the identical verdict.
 function deriveOverviewRead(
-  quarterScore: number | null,
+  concallScore: number | null,
   growthScore: number | null,
   valuationScore: number | null,
 ): OverviewReadModel {
-  const r = classifyBoardRead({ quarterScore, growthScore, valuationScore });
+  const r = classifyBoardRead({ concallScore, growthScore, valuationScore });
   return {
     score: r.score,
     key: r.key,
@@ -102,7 +102,7 @@ export type CompanyPageOverviewCacheRow = {
   latest_score: number | null;
   /**
    * The STANDING quarter leg: trailing 4-quarter mean (lib/quarter-composite),
-   * the leg that feeds The Read and the Qtr ring. Derived on read from
+   * the leg that feeds The Read and the ConcallScore ring. Derived on read from
    * quarter_series, never persisted. latest_score stays the single latest print
    * (the "this quarter" card).
    */
@@ -675,19 +675,19 @@ export async function buildCompanyPageOverviewCacheRow(
     const sectorPeerAvgRows = sectorPeerRows.map((peer) => {
       const peerCode = String(peer.code ?? "").toUpperCase();
       const peerName = String(peer.name ?? "").toUpperCase();
-      const latestQuarterScore = latestQuarterByCode.get(peerCode) ?? null;
+      const latestConcallScore = latestQuarterByCode.get(peerCode) ?? null;
       const growthScore =
         latestGrowthByCompany.get(peerCode)?.growthScore ??
         latestGrowthByCompany.get(peerName)?.growthScore ??
         null;
-      const avg4QuarterScore = peer4QAvgByCode.get(peerCode) ?? null;
+      const avg4ConcallScore = peer4QAvgByCode.get(peerCode) ?? null;
       return {
         code: peerCode,
         name: String(peer.name ?? peer.code ?? "").trim() || peerCode,
-        avgScore: computeAvgScore(latestQuarterScore, growthScore, avg4QuarterScore),
-        latestQuarterScore,
+        avgScore: computeAvgScore(latestConcallScore, growthScore, avg4ConcallScore),
+        latestConcallScore,
         growthScore,
-        avg4QuarterScore,
+        avg4ConcallScore,
       };
     });
     const ranked = assignCompetitionRanks(
@@ -697,8 +697,8 @@ export async function buildCompanyPageOverviewCacheRow(
           const avgCompare = compareNullableNumbers(a.avgScore, b.avgScore, "desc");
           if (avgCompare !== 0) return avgCompare;
           const latestCompare = compareNullableNumbers(
-            a.latestQuarterScore,
-            b.latestQuarterScore,
+            a.latestConcallScore,
+            b.latestConcallScore,
             "desc",
           );
           if (latestCompare !== 0) return latestCompare;

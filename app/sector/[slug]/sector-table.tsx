@@ -37,9 +37,9 @@ export type SectorTableRow = {
   companyName: string;
   subSector: string | null;
   isNew: boolean;
-  latestQuarterScore: number | null;
+  latestConcallScore: number | null;
   growthScore: number | null;
-  avg4QuarterScore: number | null;
+  avg4ConcallScore: number | null;
   blendedScore: number | null;
   moatLabel: string | null;
   moatRating: MoatRatingKey | null;
@@ -61,9 +61,9 @@ type SortKey =
   | "rank"
   | "companyName"
   | "moatTag"
-  | "latestQuarterScore"
+  | "latestConcallScore"
   | "growthScore"
-  | "avg4QuarterScore"
+  | "avg4ConcallScore"
   | "blendedScore";
 
 type SortDirection = "asc" | "desc";
@@ -191,7 +191,7 @@ function rankRows(rows: SectorTableRow[]): RankedSectorRow[] {
   const sortedForRank = [...rows].sort((a, b) => {
     const blendDiff = compareNumber(a.blendedScore, b.blendedScore, "desc");
     if (blendDiff !== 0) return blendDiff;
-    const qtrDiff = compareNumber(a.latestQuarterScore, b.latestQuarterScore, "desc");
+    const qtrDiff = compareNumber(a.latestConcallScore, b.latestConcallScore, "desc");
     if (qtrDiff !== 0) return qtrDiff;
     const growthDiff = compareNumber(a.growthScore, b.growthScore, "desc");
     if (growthDiff !== 0) return growthDiff;
@@ -224,19 +224,19 @@ function sortRows(rows: RankedSectorRow[], sort: SortState): RankedSectorRow[] {
           diff = moatTierRank(a.moatTier) - moatTierRank(b.moatTier);
         }
         break;
-      case "latestQuarterScore":
-        diff = compareNumber(a.latestQuarterScore, b.latestQuarterScore, sort.direction);
+      case "latestConcallScore":
+        diff = compareNumber(a.latestConcallScore, b.latestConcallScore, sort.direction);
         break;
       case "growthScore":
         diff = compareNumber(a.growthScore, b.growthScore, sort.direction);
         break;
-      case "avg4QuarterScore":
-        diff = compareNumber(a.avg4QuarterScore, b.avg4QuarterScore, sort.direction);
+      case "avg4ConcallScore":
+        diff = compareNumber(a.avg4ConcallScore, b.avg4ConcallScore, sort.direction);
         break;
       case "blendedScore":
         diff = compareNumber(a.blendedScore, b.blendedScore, sort.direction);
         if (diff === 0) {
-          diff = compareNumber(a.latestQuarterScore, b.latestQuarterScore, "desc");
+          diff = compareNumber(a.latestConcallScore, b.latestConcallScore, "desc");
         }
         if (diff === 0) {
           diff = compareNumber(a.growthScore, b.growthScore, "desc");
@@ -290,12 +290,12 @@ export function SectorTable({ rows, sector }: { rows: SectorTableRow[]; sector: 
               })}
             </TableHead>
             <TableHead
-              aria-sort={sortDirectionLabel("latestQuarterScore")}
+              aria-sort={sortDirectionLabel("latestConcallScore")}
               className="px-3 py-3 text-foreground"
             >
               {renderSortHead({
-                label: "Qtr Score",
-                columnKey: "latestQuarterScore",
+                label: "ConcallScore",
+                columnKey: "latestConcallScore",
                 sort,
                 onSort: handleSort,
               })}
@@ -312,12 +312,12 @@ export function SectorTable({ rows, sector }: { rows: SectorTableRow[]; sector: 
               })}
             </TableHead>
             <TableHead
-              aria-sort={sortDirectionLabel("avg4QuarterScore")}
+              aria-sort={sortDirectionLabel("avg4ConcallScore")}
               className="px-3 py-3 text-foreground"
             >
               {renderSortHead({
                 label: "4Q Avg Score",
-                columnKey: "avg4QuarterScore",
+                columnKey: "avg4ConcallScore",
                 sort,
                 onSort: handleSort,
               })}
@@ -397,8 +397,8 @@ export function SectorTable({ rows, sector }: { rows: SectorTableRow[]; sector: 
                   )}
                 </TableCell>
                 <TableCell className="px-3 py-3">
-                  {row.latestQuarterScore != null ? (
-                    <ConcallScore score={row.latestQuarterScore} size="sm" />
+                  {row.latestConcallScore != null ? (
+                    <ConcallScore score={row.latestConcallScore} size="sm" />
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
@@ -411,8 +411,8 @@ export function SectorTable({ rows, sector }: { rows: SectorTableRow[]; sector: 
                   )}
                 </TableCell>
                 <TableCell className="px-3 py-3">
-                  {row.avg4QuarterScore != null ? (
-                    <ConcallScore score={row.avg4QuarterScore} size="sm" />
+                  {row.avg4ConcallScore != null ? (
+                    <ConcallScore score={row.avg4ConcallScore} size="sm" />
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}

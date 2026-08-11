@@ -2,7 +2,7 @@
 // collapses the five per-row decision signals (level, trajectory, current-vs-
 // baseline, forward outlook, moat) into ONE configuration label.
 //
-// Why this exists: the watchlist already shows Band / Qtr / Trend / Forward /
+// Why this exists: the watchlist already shows Band / ConcallScore / Trend / Forward /
 // Moat — five signals the reader has to integrate by eye on every row. For a
 // portfolio decision ("add / hold / trim / watch?") the value isn't another
 // signal, it's the *configuration across* them — especially where they diverge
@@ -47,9 +47,9 @@ export type StanceDef = {
 };
 
 // Thresholds (band-aligned to score-band.ts / growth-band.ts so the cuts agree
-// with what the Qtr and Forward columns already show the reader).
-const LEVEL_BULLISH = 7.0; // Qtr score at/above this is a "clearly strong quarter" (bullish band)
-const LEVEL_TOP = 8.0; // strongly-bullish band — the top of the Qtr scale in practice
+// with what the ConcallScore and Forward columns already show the reader).
+const LEVEL_BULLISH = 7.0; // ConcallScore at/above this is a "clearly strong quarter" (bullish band)
+const LEVEL_TOP = 8.0; // strongly-bullish band — the top of the ConcallScore scale in practice
 const LEVEL_DECENT = 6.5; // mildly-bullish+ : score is still respectable
 const FWD_STRONG_MIN = 7.5; // Forward "Solid" or better — a genuinely good outlook
 const FWD_SOFT_MAX = 7.0; // Forward below this is "Soft"/"Weak" — a real concern
@@ -128,7 +128,7 @@ export const STANCES: Record<StanceKey, StanceDef> = {
   no_read: {
     key: "no_read",
     label: "No read",
-    gloss: "No Qtr score, or fewer than 3 scored quarters — not enough to read a configuration.",
+    gloss: "No ConcallScore, or fewer than 3 scored quarters — not enough to read a configuration.",
     rank: 8,
     textClass: "text-muted-foreground",
   },
@@ -148,7 +148,7 @@ export const STANCE_ORDER: StanceKey[] = [
 ];
 
 export type StanceInput = {
-  latestQuarterScore: number | null;
+  latestConcallScore: number | null;
   /** Latest − 4Q avg (the Trend column's Δ); a real fall needs ≤ −0.5. */
   trendChange?: number | null;
   growthScore: number | null;
@@ -172,7 +172,7 @@ const fwdLabel = (fwd: number) =>
 // First match wins. Order is load-bearing: the divergence configs (outlook_led,
 // near_peak) are checked before the plain ones they'd otherwise collapse into.
 export function classifyStance(input: StanceInput): StanceResult {
-  const level = isFinite(input.latestQuarterScore) ? input.latestQuarterScore : null;
+  const level = isFinite(input.latestConcallScore) ? input.latestConcallScore : null;
   const traj: TrajectoryKey = input.trajectoryKey ?? "no_read";
   const fwd = isFinite(input.growthScore) ? input.growthScore : null;
   const trend = isFinite(input.trendChange) ? input.trendChange : null;
@@ -191,7 +191,7 @@ export function classifyStance(input: StanceInput): StanceResult {
 
   const fwdNote = fwd != null ? `forward ${fwd.toFixed(1)} (${fwdLabel(fwd)})` : "no forward read";
   const moatNote = hasMoat ? "moat backed" : "no moat read";
-  const ctx = `Qtr ${level.toFixed(1)}, ${traj}, ${fwdNote}, ${moatNote}.`;
+  const ctx = `ConcallScore ${level.toFixed(1)}, ${traj}, ${fwdNote}, ${moatNote}.`;
 
   // Opportunity divergence: a real downturn, but strong outlook + durable.
   if (down && fwdStrong && hasMoat) {

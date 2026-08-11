@@ -291,9 +291,9 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
       boardRowsByCode.get(companyCode) ?? {
         companyCode,
         companyName: companyNameByCode.get(companyCode) ?? companyCode,
-        quarterScore: null,
-        fourQuarterScore: null,
-        latestQuarterScore: null,
+        concallScore: null,
+        fourConcallScore: null,
+        latestConcallScore: null,
         latestQuarterLabel: null,
         growthScore: growthScoreByCode.get(companyCode) ?? null,
         valuationScore: null,
@@ -307,7 +307,7 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
   // the leaderboard runs above its Overall board.
   const reads = tableRows.map((row) =>
     classifyBoardRead({
-      quarterScore: row.quarterScore,
+      concallScore: row.concallScore,
       growthScore: row.growthScore,
       valuationScore: row.valuationScore,
     }),
@@ -325,7 +325,7 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
   boardRowsByCode.forEach((row, code) => {
     if (isAdmittedLargeCap(coverageByCode.get(code))) return;
     const read = classifyBoardRead({
-      quarterScore: row.quarterScore,
+      concallScore: row.concallScore,
       growthScore: row.growthScore,
       valuationScore: row.valuationScore,
     });
