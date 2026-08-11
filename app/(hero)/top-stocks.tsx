@@ -138,17 +138,35 @@ const fetchExcludedCompanyKeys = async (supabase: SupabaseServerClient) => {
   return keys;
 };
 
-const fetchAll = async (supabase: SupabaseServerClient) => {
-  const { data, error } = await supabase
-    .from("concall_analysis")
-    .select("company_code, score, fy, qtr, quarter_label, company(name, sector, sub_sector, created_at)")
-    // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
-    .not("details->scoring_meta", "is", null)
-    .order("fy", { ascending: false })
-    .order("qtr", { ascending: false });
+// PostgREST silently caps an unpaginated select at 1000 rows. concall_analysis
+// crossed that during Q1 FY27 season; page through it so no quarter is dropped.
+// (Ordered newest-first, so an unpaged fetch would only lose old history, but
+// paging keeps the sparklines whole as the table grows.)
+const FETCH_ALL_PAGE_SIZE = 1000;
 
-  if (error) throw error;
-  const normalized: CompanyRecord[] = (data ?? []).map((row) => {
+const fetchAll = async (supabase: SupabaseServerClient) => {
+  const raw: unknown[] = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from("concall_analysis")
+      .select("company_code, score, fy, qtr, quarter_label, company(name, sector, sub_sector, created_at)")
+      // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+      .not("details->scoring_meta", "is", null)
+      .order("fy", { ascending: false })
+      .order("qtr", { ascending: false })
+      // unique tiebreaker so ties don't shuffle between page requests (which
+      // would skip/duplicate rows across the .range() boundary)
+      .order("id", { ascending: true })
+      .range(from, from + FETCH_ALL_PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    raw.push(...page);
+    if (page.length < FETCH_ALL_PAGE_SIZE) break;
+    from += FETCH_ALL_PAGE_SIZE;
+  }
+
+  const normalized: CompanyRecord[] = raw.map((row) => {
     const r = row as RawConcallRow;
     return {
       company_code: r.company_code,

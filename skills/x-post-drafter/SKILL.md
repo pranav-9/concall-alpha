@@ -1,6 +1,6 @@
 ---
 name: x-post-drafter
-description: Use when the user wants ready-to-post X (Twitter) drafts about companies from our own coverage, prioritising the most recent quarter updates. Two modes. CLASSIC — 5 first-person, text-only options from the freshest ConcallScore prints; the user picks and posts. DAILY DESK — the full morning posting sheet per the 2026-07-31 Twitter strategy (Lane 1 speed posts capped at 2 with selection rules, Lane 3 disagreement replies, Lane 2 thread nudge, UTM first-reply links, provisional labels, compliance footer). Triggers on "X posts", "tweet ideas", "give me posts to share", "what should I post about", "draft tweets on recent quarters", "social posts about our companies"; daily desk on "daily posting sheet", "today's posts", "daily options", "posting desk", or when chained from /results-season-run.
+description: Use when the user wants ready-to-post X (Twitter) drafts about companies from our own coverage, prioritising the most recent quarter updates. Two modes. CLASSIC — the cross-company pattern radar (season-quarter driver clusters) plus 5 first-person, text-only single-stock options from the freshest ConcallScore prints; the user picks and posts. DAILY DESK — the full morning posting sheet per the 2026-07-31 Twitter strategy (Lane 1 speed posts capped at 2 with selection rules, Lane 3 disagreement replies, Lane 2 thread nudge, UTM first-reply links, provisional labels, compliance footer). Triggers on "X posts", "tweet ideas", "give me posts to share", "what should I post about", "draft tweets on recent quarters", "social posts about our companies"; daily desk on "daily posting sheet", "today's posts", "daily options", "posting desk", or when chained from /results-season-run.
 ---
 
 # X post drafter
@@ -18,7 +18,7 @@ Two decisions are baked in (the user chose them):
 
 **Never re-pitch something already posted.** `concall-alpha/data/x-posts/posted.jsonl` is the
 append-only record of what's gone out (schema in that dir's README). The candidates script reads
-it automatically — no manual lookup needed — and step 4 is where you write back to it.
+it automatically — no manual lookup needed — and step 5 is where you write back to it.
 
 ## Sequence
 
@@ -56,8 +56,8 @@ discovery-listed names, **and active chatter** (a company being discussed gets a
 logged `disagree` a bit more — chatter biases the ranking, it never overrides a real move).
 
 The CLASSIC payload also carries `lane2_patterns` (the same season-quarter cross-company driver
-clusters as Daily Desk — useful even outside a posting sheet) and `dropped_backfills` (phantom-move
-rows excluded from the candidate list; see the quarter-ordering note below). **CLASSIC is also the
+clusters as Daily Desk — **you present these every run; see step 3**) and `dropped_backfills`
+(phantom-move rows excluded from the candidate list; see the quarter-ordering note below). **CLASSIC is also the
 "more options" path:** Daily Desk caps Lane 1 at 2 by strategy, so when the user wants a wider set to
 choose from, run this with `--top 14` and draft the mix yourself — that's the intended fallback, not
 a workaround.
@@ -106,11 +106,43 @@ Respect these flags:
 - A clean `qoq_delta` (mismatch false) is the strongest hook — a score that fell 8.8→6.3 with the
   reason attached is a real post. Lead with the tension, not the number.
 
-### 3. Draft 5 options
+### 3. Present the cross-company pattern options (always)
+
+Before the single-stock drafts, show the user the **cross-company pattern radar** from the payload's
+`lane2_patterns` — the season-quarter driver clusters, each with `theme`, `company_count`,
+`score_min`/`score_max`/`score_spread`, and the `companies` list (code + score + direction). This is
+"lane b": the same cross-company synthesis Daily Desk leads with, and the platform's differentiated
+edge — no single-stock account writes it, because it needs ~all the covered concalls read the same
+way. **Presenting it is part of the CLASSIC deliverable, not an on-request extra** — surface it every
+run, even when the user only asked for "posts".
+
+- **Rank the clusters by the strategy rule:** highest `company_count` or widest `score_spread` first
+  — a wide spread means the same force lifted one name and sank another, and that divergence *is* the
+  thread.
+- **Dedupe against what's already gone out.** Grep the posted ledger for prior `THEME:` / `MULTI`
+  cross-company rows and mark any cluster whose theme already posted as **already out — don't
+  re-pitch** (a headline theme can be a week old; the strongest cluster may already be spent — as
+  West Asia + AI data-centre were on 2026-08-10).
+- **Present it as a compact table** (theme · count · spread · the divergence in one line), name the
+  top pick and why, and **offer to draft it as a thread** — but do **not** draft the whole thread
+  unless the user asks (threads are a deliberate sit-down; `[[x-cross-company-pattern-posts]]`).
+- **Grounding still binds if the user picks a theme.** Ground **every** named company in its OWN
+  `rationale` before drafting — re-query `concall_analysis` (`select company_code, fy, qtr, details`)
+  for names outside the top-`--top` candidate list. Lead with the divergence, not the raw count, and
+  carry each name's provenance hedge (unofficial = early read). Drop any name whose rationale doesn't
+  actually support the theme link: keyword clusters produce false positives (e.g. an "expense
+  guidance raised" row is not a *conviction* raise; a "raised to X" line with no prior figure can't
+  carry an old→new peek — don't invent the old number, swap in a name that states both).
+
+Then move to the single-stock drafts below. A strong cross-company thread can *replace* several of
+them rather than compete — say so when it does.
+
+### 4. Draft 5 single-stock options
 
 Pick **5 different companies** for variety (don't post five downgrades in a row — mix
 improvements, declines, and a guidance-change note). If several of them share one driver, a single
-**cross-company theme post** can beat five separate ones — see the Daily Desk Lane 2 note. Each draft:
+**cross-company theme post** can beat five separate ones — see step 3 and the Daily Desk Lane 2 note.
+Each draft:
 
 - **≤ 280 characters**, text-only, no links. **Default to zero hashtags and never a cashtag.**
   Measured 2026-07-27 across 708 tweets from the six accounts in `data/external-takes/handles.txt`:
@@ -137,7 +169,7 @@ Present them as a numbered list. Under each, add a one-line **meta** the user ca
 `— FCL Q1FY27 · 8.8→6.3 clean · unofficial (early read) · 241 chars`. Then ask which one(s) they
 want, or whether to regenerate with a wider window / different companies.
 
-### 4. Log to the posted ledger
+### 5. Log to the posted ledger
 
 Append one row per draft to `concall-alpha/data/x-posts/posted.jsonl` (schema in that dir's
 README). **Append-only** — never rewrite past rows.

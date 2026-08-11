@@ -82,6 +82,39 @@ type CalendarRow = {
   event_date: string;
 };
 
+// PostgREST silently caps an unpaginated select at 1000 rows, so page through
+// it. concall_analysis crossed 1000 rows through the scoring_meta filter during
+// Q1 FY27 season; without paging, the newest quarter's inserts (which sort last)
+// get dropped and their companies fall off the tracker. Mirrors fetchScoreRows
+// in app/company/get-concall-data.ts.
+const ANALYSIS_PAGE_SIZE = 1000;
+const ANALYSIS_COLUMNS =
+  "company_code, score, fy, qtr, created_at, updated_at, " +
+  "source_status:details->scoring_meta->>source_status, " +
+  "scored_at:details->scoring_meta->>scored_at";
+
+async function fetchAnalysisRows(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<AnalysisRow[]> {
+  const rows: AnalysisRow[] = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from("concall_analysis")
+      .select(ANALYSIS_COLUMNS)
+      // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+      .not("details->scoring_meta", "is", null)
+      .order("id", { ascending: true })
+      .range(from, from + ANALYSIS_PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = (data ?? []) as unknown as AnalysisRow[];
+    rows.push(...page);
+    if (page.length < ANALYSIS_PAGE_SIZE) break;
+    from += ANALYSIS_PAGE_SIZE;
+  }
+  return rows;
+}
+
 const toNumberOrNull = (val: unknown): number | null => {
   if (val == null) return null;
   const n = typeof val === "number" ? val : parseFloat(String(val));
@@ -131,22 +164,14 @@ export async function getTrackerData(): Promise<TrackerData> {
   // One clock for the whole render, so two rows can't straddle the 24h edge.
   const renderedAt = new Date();
   const supabase = await createClient();
-  const [{ data: companyData }, { data: analysisData }, calendarResult] =
+  const [{ data: companyData }, analysisRows, calendarResult] =
     await Promise.all([
       supabase
         .from("company")
         .select(`code, name, sector, sub_sector, ${COVERAGE_SELECT}`),
-      supabase
-        .from("concall_analysis")
-        // source_status and scored_at come back as scalar JSON paths so the
-        // whole details blob stays off the wire.
-        .select(
-          "company_code, score, fy, qtr, created_at, updated_at, " +
-            "source_status:details->scoring_meta->>source_status, " +
-            "scored_at:details->scoring_meta->>scored_at",
-        )
-        // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
-        .not("details->scoring_meta", "is", null),
+      // source_status and scored_at come back as scalar JSON paths so the whole
+      // details blob stays off the wire. Paged to dodge the 1000-row cap.
+      fetchAnalysisRows(supabase),
       supabase
         .from("earnings_calendar")
         .select("company_code, nse_symbol, event_date")
@@ -158,10 +183,7 @@ export async function getTrackerData(): Promise<TrackerData> {
   // de-emphasized companies (large-cap band / coverage cut) stay off it,
   // same as leaderboards and the homepage feed.
   const companies = ((companyData ?? []) as CompanyRow[]).filter(isDiscoveryListed);
-  // Double assertion: the generated Supabase types don't model JSON-path
-  // aliases in a select, so source_status/scored_at widen the row to an error
-  // union. Same shape as fetchScoreRows in app/company/get-concall-data.ts.
-  const analysis = (analysisData ?? []) as unknown as AnalysisRow[];
+  const analysis = analysisRows;
   // earnings_calendar may not yet exist in the DB — treat errors as empty.
   const calendarRows: CalendarRow[] =
     !calendarResult.error && Array.isArray(calendarResult.data)
