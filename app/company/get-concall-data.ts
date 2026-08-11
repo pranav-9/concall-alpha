@@ -11,6 +11,7 @@ import {
   scoreWrittenAt,
 } from "@/lib/score-freshness";
 import { classifyTrajectory, quarterIndex } from "@/lib/score-trajectory";
+import { mean4Q, meanLatestScored } from "@/lib/quarter-composite";
 import { assessStaleness } from "@/lib/valuation-check/normalize";
 import type { ValuationVerdict } from "@/lib/valuation-check/types";
 import type { CompanyRow } from "./leaderboard-table";
@@ -74,16 +75,6 @@ async function fetchScoreRows(
 
   return rows;
 }
-
-// Average over scored records only — a null score must not count as 0.
-const avgScore = (records: ScoreRow[]): number | null => {
-  const scores = records
-    .map((r) => r.score)
-    .filter((s): s is number => typeof s === "number" && Number.isFinite(s));
-  return scores.length > 0
-    ? scores.reduce((acc, s) => acc + s, 0) / scores.length
-    : null;
-};
 
 export const getConcallData = async ({
   excludeLargeCaps = false,
@@ -216,14 +207,17 @@ export const getConcallData = async ({
         ? (ownLatest.quarter_label ?? `Q${ownLatest.qtr} FY${ownLatest.fy}`)
         : null;
 
-      const latest4 = companyRecords.slice(0, 4);
-      const latest12 = companyRecords.slice(0, 12);
       const recordsByQuarter = new Map(
         companyRecords.map((record) => [`${record.fy}-${record.qtr}`, record] as const),
       );
 
-      row["Latest 4Q Avg"] = avgScore(latest4);
-      row["Latest 12Q Avg"] = avgScore(latest12);
+      // companyRecords is newest-first; mean4Q / meanLatestScored filter nulls
+      // then take the newest N, matching compute_composite_score.py's window
+      // (see lib/quarter-composite). This is the standing quarter leg the board's
+      // Quarter column and Read now use — NOT the single latest print.
+      const scoresNewestFirst = companyRecords.map((r) => r.score);
+      row["Latest 4Q Avg"] = mean4Q(scoresNewestFirst);
+      row["Latest 12Q Avg"] = meanLatestScored(scoresNewestFirst, 12);
 
       selectedQuarters.forEach((q) => {
         const match = recordsByQuarter.get(`${q.fy}-${q.qtr}`);

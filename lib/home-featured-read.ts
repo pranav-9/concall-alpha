@@ -2,8 +2,10 @@
 //
 // Sourcing (all through the cookie-free public-read client so the homepage stays
 // static/ISR — the leaderboard's own fetch is cookie-bound and can't be cached):
-//   - quarter leg: reused from the already-cached home-trails wall (trail.latest
-//     is each covered company's newest ConcallScore). No second scan.
+//   - quarter leg: the trailing 4-quarter mean (lib/quarter-composite), computed
+//     from the already-cached home-trails wall (trail.points). The SAME standing
+//     leg the leaderboard board and company page use, so the hero can't headline a
+//     company on a hot single quarter it ranks mid-board on. No second scan.
 //   - growth leg:  latest growth_outlook.growth_score per company.
 //   - valuation:   valuation_check, published + rateable + NOT stale, rescaled to
 //     0-10 with the same toValuationScale the leaderboard uses. Reusing
@@ -18,6 +20,7 @@ import { getCachedHomeTrails } from "./home-trails";
 import { createPublicReadClient } from "./supabase/public-read";
 import { toValuationScale } from "./valuation-band";
 import { assessStaleness } from "./valuation-check/normalize";
+import { mean4QFromSeries } from "./quarter-composite";
 import { pickFeaturedRead, type FeaturedCandidate, type FeaturedRead } from "./home-featured-read-core";
 
 export type { FeaturedRead } from "./home-featured-read-core";
@@ -80,7 +83,9 @@ async function fetchFeaturedRead(): Promise<FeaturedRead | null> {
       code: trail.code,
       name: trail.name,
       sector: trail.sector,
-      quarterScore: trail.latest,
+      // Standing quarter leg: trailing 4-quarter mean of this company's prints
+      // (trail.points is oldest→newest). Matches the board and the company page.
+      quarterScore: mean4QFromSeries(trail.points.map((p) => p.score)),
       growthScore: growthByCode.get(code) ?? null,
       valuationScore: valuationByCode.get(code) ?? null,
       trail,

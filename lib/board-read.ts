@@ -21,11 +21,17 @@
 //
 // THE NUMBER is this Read's own composite, computed live from the row's legs.
 // The board's # column is derived from it (score-board-table.tsx ranks on
-// readScore), so # and Read can't disagree. It is DELIBERATELY not the same
-// value as the backend's stored composite: the live Read uses the single latest
-// quarter (so it reconciles with the Quarter column shown), while
-// compute_composite_score.py uses the 4Q mean for the slow coverage cut. Same
-// formula (see WEIGHT NOTE), different quarter-leg input, on purpose (D2).
+// readScore), so # and Read can't disagree.
+//
+// It uses the SAME quarter leg as compute_composite_score.py's coverage cut: the
+// trailing 4-quarter mean (lib/quarter-composite), passed in by the caller. This
+// retired the old D2 split, where the live Read used the single latest quarter
+// while the cut used the 4Q mean — so a company greyed below the cut could still
+// out-rank kept ones on the board. Quarter and growth legs now reconcile by
+// construction. The VALUATION leg can still diverge: the live Read drops a
+// valuation once it goes stale (>4 days), while the cut keeps the last stored
+// one — so the reconciliation is quarter-leg, not total (tracked follow-up:
+// valuation-staleness split).
 
 import { bandForScore, type BandKey } from "@/lib/score-band";
 import { bandForGrowthScore, type GrowthBandKey } from "@/lib/growth-band";
@@ -189,7 +195,7 @@ const RICH: ReadonlySet<ValuationBandKey> = new Set<ValuationBandKey>([
 ]);
 
 export type BoardReadInput = {
-  /** Latest reported quarter ConcallScore, 0-10. */
+  /** Standing quarter leg: trailing 4-quarter mean ConcallScore, 0-10 (lib/quarter-composite). */
   quarterScore: number | null;
   /** Growth outlook score, 0-10. */
   growthScore: number | null;

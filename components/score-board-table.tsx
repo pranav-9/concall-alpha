@@ -65,9 +65,22 @@ import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
 export type ScoreBoardRow = {
   companyCode: string;
   companyName: string;
+  /**
+   * The STANDING quarter leg: the trailing 4-quarter mean (lib/quarter-composite),
+   * the same window compute_composite_score.py averages for the coverage cut, so
+   * the board's Quarter column and Read reconcile with the cut. This is what the
+   * column shows, sorts on, and feeds into classifyBoardRead — NOT the single
+   * latest print.
+   */
   quarterScore: number | null;
-  /** Set when quarterScore is the company's OWN newest quarter, not the board's. */
-  quarterAsOf: string | null;
+  /**
+   * The single latest print, shown as a separate "this quarter" marker below the
+   * standing number. The freshness / unofficial chips attach to THIS, so a
+   * one-quarter badge names the one quarter it describes. Null when unscored.
+   */
+  latestQuarterScore: number | null;
+  /** Label of that latest print, e.g. "Q1 FY27". */
+  latestQuarterLabel: string | null;
   growthScore: number | null;
   /** ALREADY rescaled to 0-10 by the data layer (lib/valuation-band). */
   valuationScore: number | null;
@@ -167,21 +180,24 @@ const COLUMN_INFO = {
   quarter: (
     <>
       <p>
-        The ConcallScore for the company&apos;s latest reported quarter, 0–10, read off that
-        quarter&apos;s concall. The word beneath is the band that score falls in.
+        The company&apos;s <span className="font-medium text-foreground">trailing four-quarter</span>{" "}
+        ConcallScore, 0–10 — the average of its four newest scored quarters, the same window the
+        coverage ranking uses. A standing read on how it has been doing, not a single print. The
+        word beneath is the band that average falls in.
       </p>
       <p>
-        <span className="font-medium text-foreground">as of Qx FYxx</span> means the company
-        hasn&apos;t reported the board&apos;s latest quarter yet, so this is its own newest print.
+        Beneath it sits <span className="font-medium text-foreground">this quarter</span>: the
+        single latest print with its quarter label, so a fresh call is still visible without moving
+        the standing number four-to-one.
       </p>
       <p>
-        <span className="font-medium text-foreground">Unofficial</span> means the score was read
-        off a third-party transcript, published inside the five working days an issuer has to
-        file its own. It is re-scored when the official one lands, so treat it as provisional —
-        including in the Read, which is computed from it.
+        <span className="font-medium text-foreground">Unofficial</span> on that latest print means
+        the score was read off a third-party transcript, published inside the five working days an
+        issuer has to file its own. It is re-scored when the official one lands, so treat it as
+        provisional — including in the Read, which the four-quarter average feeds.
       </p>
       <p>
-        <span className="font-medium text-foreground">New · 24h</span> means this score was
+        <span className="font-medium text-foreground">New · 24h</span> means that latest print was
         written or re-written in the last twenty-four hours.
       </p>
     </>
@@ -213,7 +229,8 @@ const COLUMN_INFO = {
       <p>
         The synthesis, and the number the board is ranked by:{" "}
         <span className="font-medium text-foreground">0.88 × the average of Quarter and Growth,
-        plus 0.12 × Valuation</span>. Quality counts roughly twice what price does.
+        plus 0.12 × Valuation</span> — where Quarter is the trailing four-quarter score above.
+        Quality counts roughly twice what price does.
       </p>
       <p>
         The weights aren&apos;t round because they answer the spread of each input — valuation
@@ -556,7 +573,7 @@ export function ScoreBoardTable({
                 columnKey: "quarterScore",
                 sort,
                 onSort: handleSort,
-                subtitle: "Latest reported qtr",
+                subtitle: "Trailing 4-qtr avg",
                 info: COLUMN_INFO.quarter,
               })}
             </TableHead>
@@ -651,36 +668,62 @@ export function ScoreBoardTable({
                     </div>
                   </TableCell>
                   <TableCell className="px-3 py-3">
-                    <ScoreCell
-                      score={row.quarterScore}
-                      bandLabel={
-                        row.quarterScore != null ? BANDS[bandForScore(row.quarterScore)].label : null
-                      }
-                      bandClass={
-                        row.quarterScore != null ? BANDS[bandForScore(row.quarterScore)].textClass : ""
-                      }
-                      note={row.quarterAsOf ? `as of ${row.quarterAsOf}` : null}
-                      dimmed={dim}
-                      chips={
-                        row.quarterSourceStatus === "unofficial" ||
-                        row.quarterScoredWithin24h ? (
-                          <>
-                            {row.quarterSourceStatus === "unofficial" && (
-                              <UnofficialChip
-                                scoredAt={formatScoredAt(row.quarterScoredAt)}
-                                dimmed={dim}
-                              />
+                    {row.quarterScore != null ? (
+                      <div className="leading-tight">
+                        {/* Standing number: the trailing four-quarter average. */}
+                        <div className="tabular-nums font-semibold text-foreground">
+                          {row.quarterScore.toFixed(1)}
+                        </div>
+                        <div
+                          className={`text-[10px] font-medium ${
+                            dim
+                              ? "text-muted-foreground"
+                              : BANDS[bandForScore(row.quarterScore)].textClass
+                          }`}
+                        >
+                          {BANDS[bandForScore(row.quarterScore)].label}
+                        </div>
+                        {/* "this quarter": the single latest print, and the only
+                            place the freshness / unofficial chips live — a
+                            one-quarter badge must name the one quarter it
+                            describes, not the four-quarter average above it. */}
+                        {(row.latestQuarterScore != null ||
+                          row.quarterSourceStatus === "unofficial" ||
+                          row.quarterScoredWithin24h) && (
+                          <div className="mt-1 flex flex-col gap-1">
+                            {row.latestQuarterScore != null && (
+                              <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                                {row.latestQuarterLabel
+                                  ? `${row.latestQuarterLabel} · `
+                                  : "latest · "}
+                                <span className="tabular-nums">
+                                  {row.latestQuarterScore.toFixed(1)}
+                                </span>
+                              </span>
                             )}
-                            {row.quarterScoredWithin24h && (
-                              <FreshScoreChip
-                                scoredAt={formatScoredAt(row.quarterScoredAt)}
-                                dimmed={dim}
-                              />
+                            {(row.quarterSourceStatus === "unofficial" ||
+                              row.quarterScoredWithin24h) && (
+                              <div className="flex flex-wrap items-center gap-1">
+                                {row.quarterSourceStatus === "unofficial" && (
+                                  <UnofficialChip
+                                    scoredAt={formatScoredAt(row.quarterScoredAt)}
+                                    dimmed={dim}
+                                  />
+                                )}
+                                {row.quarterScoredWithin24h && (
+                                  <FreshScoreChip
+                                    scoredAt={formatScoredAt(row.quarterScoredAt)}
+                                    dimmed={dim}
+                                  />
+                                )}
+                              </div>
                             )}
-                          </>
-                        ) : null
-                      }
-                    />
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="px-3 py-3">
                     <ScoreCell

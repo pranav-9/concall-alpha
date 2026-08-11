@@ -24,6 +24,7 @@ import {
 } from "@/app/company/[code]/page-helpers";
 import { getGuidanceCredibilityVerdictDisplay } from "@/app/company/[code]/display-tokens";
 import { BOARD_READS, classifyBoardRead, type BoardReadKey } from "@/lib/board-read";
+import { mean4QFromSeries } from "@/lib/quarter-composite";
 import { toValuationScale } from "@/lib/valuation-band";
 import { assessStaleness } from "@/lib/valuation-check/normalize";
 
@@ -99,6 +100,13 @@ export type CompanyPageOverviewCacheRow = {
   sub_sector: string | null;
   market_cap_band: string | null;
   latest_score: number | null;
+  /**
+   * The STANDING quarter leg: trailing 4-quarter mean (lib/quarter-composite),
+   * the leg that feeds The Read and the Qtr ring. Derived on read from
+   * quarter_series, never persisted. latest_score stays the single latest print
+   * (the "this quarter" card).
+   */
+  quarter_4q_avg: number | null;
   quarter_label: string | null;
   qoq_delta: number | null;
   quarter_series: number[] | null;
@@ -214,6 +222,14 @@ function normalizeCacheRow(row: Record<string, unknown>): CompanyPageOverviewCac
   const latestScore = toNumeric(row.latest_score);
   const growthScore = toNumeric(row.growth_score);
   const valuationScore = toNumeric(row.valuation_score);
+  const quarterSeries = asNumberArray(row.quarter_series);
+  // Recomputed from the persisted quarter_series so a served row matches a fresh
+  // build. FALLBACK to latest_score: cache rows written before quarter_series was
+  // populated store it as null — those would otherwise drop the whole quarter leg
+  // and read "no data". They show the single latest print (the old behaviour, no
+  // regression) until refresh-overview-cache rebuilds them, at which point the
+  // real 4Q mean takes over. Rows with a populated series never hit the fallback.
+  const quarter4qAvg = mean4QFromSeries(quarterSeries) ?? latestScore;
   return {
     company_code: String(row.company_code ?? ""),
     company_name: String(row.company_name ?? row.company_code ?? ""),
@@ -222,9 +238,10 @@ function normalizeCacheRow(row: Record<string, unknown>): CompanyPageOverviewCac
     sub_sector: typeof row.sub_sector === "string" ? row.sub_sector : null,
     market_cap_band: typeof row.market_cap_band === "string" ? row.market_cap_band : null,
     latest_score: latestScore,
+    quarter_4q_avg: quarter4qAvg,
     quarter_label: typeof row.quarter_label === "string" ? row.quarter_label : null,
     qoq_delta: toNumeric(row.qoq_delta),
-    quarter_series: asNumberArray(row.quarter_series),
+    quarter_series: quarterSeries,
     quarter_rank: toNumeric(row.quarter_rank),
     quarter_total: toNumeric(row.quarter_total),
     quarter_percentile: toNumeric(row.quarter_percentile),
@@ -253,7 +270,10 @@ function normalizeCacheRow(row: Record<string, unknown>): CompanyPageOverviewCac
     business_segment_mix: asSegmentMix(row.business_segment_mix),
     overview_takeaways: asOverviewTakeaways(row.overview_takeaways),
     section_availability: asAvailability(row.section_availability),
-    read: deriveOverviewRead(latestScore, growthScore, valuationScore),
+    // The Read runs on the STANDING quarter leg (4Q mean), not the single latest
+    // print — this is what reconciles the company page with the leaderboard board
+    // and the coverage cut.
+    read: deriveOverviewRead(quarter4qAvg, growthScore, valuationScore),
     refreshed_at: String(row.refreshed_at ?? new Date().toISOString()),
   };
 }
@@ -748,7 +768,13 @@ export async function buildCompanyPageOverviewCacheRow(
   })();
 
   const growthScore = normalizedGrowthOutlook?.growthScore ?? null;
-  const read = deriveOverviewRead(latestScore, growthScore, valuationScore);
+  // Standing quarter leg (4Q mean) from the same quarter_series the cache-hit
+  // path recomputes it from — so a freshly built row and a served one produce the
+  // identical Read. NOT latestScore, which is the single latest print. The
+  // `?? latestScore` mirrors the cache-hit fallback for symmetry; on this build
+  // path quarterSeries is always populated when any score exists, so it is inert.
+  const quarter4qAvg = mean4QFromSeries(quarterSeries) ?? latestScore;
+  const read = deriveOverviewRead(quarter4qAvg, growthScore, valuationScore);
 
   return {
     company_code: normalizedCode,
@@ -758,6 +784,7 @@ export async function buildCompanyPageOverviewCacheRow(
     sub_sector: companySubSector,
     market_cap_band: companyMarketCapBand,
     latest_score: latestScore,
+    quarter_4q_avg: quarter4qAvg,
     quarter_label: quarterLabel,
     qoq_delta: qoqDelta,
     quarter_series: quarterSeries,
@@ -844,10 +871,11 @@ export async function getCachedCompanyPageOverview(
 }
 
 export function toCompanyPageOverviewUpsert(row: CompanyPageOverviewCacheRow) {
-  // `read` is derived on read (deriveOverviewRead), never persisted — it has no
-  // column and a stored copy could drift from the legs it summarises.
+  // `read` and `quarter_4q_avg` are both derived on read — no column, and a stored
+  // copy could drift from the quarter_series they're computed from. quarter_series
+  // IS persisted, so the cache-hit path rebuilds both identically.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { read: _read, ...persisted } = row;
+  const { read: _read, quarter_4q_avg: _quarter4qAvg, ...persisted } = row;
   return {
     ...persisted,
     company_code: row.company_code.toUpperCase(),

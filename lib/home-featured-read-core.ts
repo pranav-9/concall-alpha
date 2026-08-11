@@ -28,7 +28,7 @@ export type FeaturedCandidate = {
   code: string;
   name: string;
   sector: string | null;
-  /** Latest ConcallScore, 0-10. */
+  /** Standing quarter leg: trailing 4-quarter mean ConcallScore, 0-10. */
   quarterScore: number | null;
   /** Growth outlook score, 0-10. */
   growthScore: number | null;

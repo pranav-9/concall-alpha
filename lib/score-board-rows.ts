@@ -1,7 +1,13 @@
 // Quarter substrate (getConcallData) + growth + valuation -> the four parallel
 // 0-10 scores the board renders. Shared by the leaderboard "Overall" tab and the
 // watchlist so the two can't drift on the parts a reader would notice most: the
-// stale-quarter fallback and the valuation rescale.
+// trailing-4Q quarter leg and the valuation rescale.
+//
+// The Quarter column shows the STANDING quarter score — the trailing 4-quarter
+// mean (getConcallData's "Latest 4Q Avg", one definition in lib/quarter-composite,
+// shared with compute_composite_score.py's coverage cut). The single latest print
+// rides alongside as `latestQuarterScore`, the "this quarter" marker the freshness
+// chips attach to, so a one-quarter badge never sits atop a four-quarter number.
 //
 // Moat and guidance are deliberately absent — the moat rating is categorical and
 // can't share the number+band format, so it keeps its own leaderboard tab. See
@@ -28,26 +34,37 @@ export function buildScoreBoardRows(
 ): ScoreBoardRow[] {
   return rows.map((row) => {
     const code = String(row.company).toUpperCase();
-    // A company that hasn't reported the board's latest quarter yet would show a
-    // bare "—", which empties the column at the start of every earnings season.
-    // Fall back to its own newest quarter and label it, the same way the
-    // /company board does (app/company/leaderboard-table.tsx).
+    // The standing quarter leg: the trailing 4-quarter mean getConcallData
+    // computed under "Latest 4Q Avg" (lib/quarter-composite). It is robust to a
+    // company not having reported the board's newest quarter yet — the average
+    // still stands on the quarters it does have — so the old single-quarter
+    // stale fallback is no longer needed here.
+    const quarterScore = toNumericValue(row["Latest 4Q Avg"]);
+
+    // The single latest print, carried separately as the "this quarter" marker.
+    // It is the board's newest quarter for this company, or its own newest when
+    // it hasn't reported that quarter yet — the same record the freshness /
+    // unofficial chips below qualify.
     const boardScore = latestLabel ? toNumericValue(row[latestLabel]) : null;
     const ownScore = toNumericValue(row.ownLatestScore);
-    const isStale = boardScore == null && ownScore != null;
+    const latestQuarterScore = boardScore ?? ownScore;
+    const latestQuarterLabel =
+      boardScore != null ? latestLabel : (row.ownLatestQuarterLabel ?? null);
+
     return {
       companyCode: code,
       companyName: nameByCode.get(code) ?? code,
-      quarterScore: boardScore ?? ownScore,
-      quarterAsOf: isStale ? (row.ownLatestQuarterLabel ?? null) : null,
+      quarterScore,
+      latestQuarterScore,
+      latestQuarterLabel,
       growthScore: growthScoreByCode.get(code) ?? null,
       // getConcallData already applies the publish + staleness gates; this only
       // moves the stored 0-100 integer onto the board's 0-10 scale.
       valuationScore: toValuationScale(toNumericValue(row.valuationScore)),
       belowCut: row.belowCut === true,
-      // Both already describe the score the Quarter cell renders, including the
-      // stale fallback above — getConcallData resolves them against the same
-      // record, so they can't end up qualifying a different quarter.
+      // These describe the single latest print (latestQuarterScore above), which
+      // is the quarter the chips name — getConcallData resolves them against that
+      // same record.
       quarterSourceStatus: row.latestSourceStatus ?? null,
       quarterScoredWithin24h: row.scoredWithin24h === true,
       quarterScoredAt: row.latestScoredAt ?? null,
