@@ -360,7 +360,7 @@ function SortButton({
       // bearing: the size variant carries has-[>svg]:px-3 and the sort chevron IS
       // a child svg, so plain px-0 loses to it and every label sits 12px right of
       // its own sub-label.
-      className="relative z-10 h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none has-[>svg]:px-0 hover:bg-transparent hover:text-foreground"
+      className="relative z-10 h-auto rounded-none border-0 bg-transparent px-0 py-0 text-[11px] font-bold uppercase tracking-[0.09em] text-current shadow-none has-[>svg]:px-0 hover:bg-transparent hover:text-current hover:opacity-80"
       onClick={onClick}
     >
       {children}
@@ -385,6 +385,7 @@ function renderSortHead({
   subtitle,
   ariaLabel,
   info,
+  emphasis,
 }: {
   label: string;
   columnKey: SortKey;
@@ -393,11 +394,16 @@ function renderSortHead({
   subtitle?: string;
   ariaLabel?: string;
   info?: ReactNode;
+  /** The Read column: label in the house signal-warn colour, not the muted ink. */
+  emphasis?: boolean;
 }) {
   const active = sort.key === columnKey;
   const direction = active ? sort.direction : defaultDirectionForKey(columnKey);
   return (
-    <div className="flex flex-col gap-0.5">
+    // Colour is set on the wrapper so the SortButton label (text-current) and its
+    // sort caret (currentColor) both inherit it — muted ink for a normal column,
+    // the warm signal for the Read.
+    <div className="flex flex-col gap-0.5" style={{ color: emphasis ? "var(--warn)" : "var(--ink-soft)" }}>
       <div className="flex items-center gap-0.5">
         <SortButton active={active} direction={direction} ariaLabel={ariaLabel} onClick={() => onSort(columnKey)}>
           {label}
@@ -405,7 +411,9 @@ function renderSortHead({
         {info ? <ColumnInfo label={label}>{info}</ColumnInfo> : null}
       </div>
       {subtitle ? (
-        <span className="text-[10px] font-medium text-muted-foreground normal-case">{subtitle}</span>
+        <span className="text-[10px] font-medium lowercase" style={{ color: "var(--ink-soft)", opacity: 0.7 }}>
+          {subtitle}
+        </span>
       ) : null}
     </div>
   );
@@ -592,8 +600,8 @@ export function ScoreBoardTable({
         }
         className="min-w-[900px] w-full text-sm"
       >
-        <TableHeader className="bg-background/70">
-          <TableRow className="border-b border-border/35 bg-background/70">
+        <TableHeader>
+          <TableRow className="border-b bg-transparent hover:bg-transparent" style={{ borderColor: "var(--rule)" }}>
             {/* Rank and Company are two sort keys in one cell, so aria-sort reports
                 whichever is active rather than hardwiring one of them. */}
             <TableHead
@@ -607,7 +615,8 @@ export function ScoreBoardTable({
               <div className="flex items-baseline gap-3">
                 {showDelta && (
                   <span
-                    className="w-8 shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+                    className="w-8 shrink-0 text-[11px] font-bold uppercase tracking-[0.09em]"
+                    style={{ color: "var(--ink-soft)" }}
                     title="Rank change vs the previous snapshot"
                   >
                     Δ
@@ -636,7 +645,7 @@ export function ScoreBoardTable({
                 columnKey: "latestScore",
                 sort,
                 onSort: handleSort,
-                subtitle: "Newest print",
+                subtitle: "newest print",
                 info: COLUMN_INFO.latest,
               })}
             </TableHead>
@@ -646,7 +655,7 @@ export function ScoreBoardTable({
                 columnKey: "fourQScore",
                 sort,
                 onSort: handleSort,
-                subtitle: "Trailing avg",
+                subtitle: "trailing avg",
                 info: COLUMN_INFO.fourQ,
               })}
             </TableHead>
@@ -656,7 +665,7 @@ export function ScoreBoardTable({
                 columnKey: "growthScore",
                 sort,
                 onSort: handleSort,
-                subtitle: "Forward outlook",
+                subtitle: "forward",
                 info: COLUMN_INFO.growth,
               })}
             </TableHead>
@@ -666,21 +675,23 @@ export function ScoreBoardTable({
                 columnKey: "valuationScore",
                 sort,
                 onSort: handleSort,
-                subtitle: "Higher = cheaper",
+                subtitle: "higher = cheaper",
                 info: COLUMN_INFO.valuation,
               })}
             </TableHead>
             <TableHead
               aria-sort={sortDirectionLabel("read")}
-              className="border-l border-border/70 bg-muted/30 px-3 py-3 text-foreground"
+              className="border-l px-3 py-3"
+              style={{ borderColor: "var(--rule)", backgroundColor: "rgba(180,83,9,0.06)" }}
             >
               {renderSortHead({
                 label: "Read",
                 columnKey: "read",
                 sort,
                 onSort: handleSort,
-                subtitle: "The three, combined",
+                subtitle: "the three, combined",
                 info: COLUMN_INFO.read,
+                emphasis: true,
               })}
             </TableHead>
             {showRemove && (
@@ -744,29 +755,35 @@ export function ScoreBoardTable({
                             session replay showed a visitor rage-clicking the greyed
                             names and leaving. min-w-0 lets truncate engage inside
                             the flex row; only bites under the sm cap. */}
-                        <Link
-                          href={`/company/${row.companyCode}`}
-                          prefetch={false}
-                          onClick={() =>
-                            analytics.leaderboardRowClick({
-                              companyCode: row.companyCode,
-                              board: showRemove ? "watchlist" : "overall",
-                              belowCut: dim,
-                              rank: Number.isFinite(row.effectiveRank)
-                                ? row.effectiveRank
-                                : undefined,
-                            })
-                          }
-                          title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}
-                          className={`min-w-0 truncate font-semibold hover:underline ${
-                            dim ? "text-muted-foreground" : "text-foreground"
-                          }`}
-                        >
-                          {row.companyName}
-                        </Link>
-                        <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70">
-                          {row.companyCode}
-                        </span>
+                        {/* Name on top, ticker beneath it (not inline) — the
+                            house company-cell shape. */}
+                        <div className="flex min-w-0 flex-col leading-tight">
+                          <Link
+                            href={`/company/${row.companyCode}`}
+                            prefetch={false}
+                            onClick={() =>
+                              analytics.leaderboardRowClick({
+                                companyCode: row.companyCode,
+                                board: showRemove ? "watchlist" : "overall",
+                                belowCut: dim,
+                                rank: Number.isFinite(row.effectiveRank)
+                                  ? row.effectiveRank
+                                  : undefined,
+                              })
+                            }
+                            title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}
+                            className="house-display min-w-0 truncate text-sm hover:underline"
+                            style={dim ? { color: "var(--ink-soft)" } : { color: "var(--ink)" }}
+                          >
+                            {row.companyName}
+                          </Link>
+                          <span
+                            className="font-mono text-[10px] uppercase tracking-wide"
+                            style={{ color: "var(--ink-soft)", opacity: 0.75 }}
+                          >
+                            {row.companyCode}
+                          </span>
+                        </div>
                       </div>
                     </TableCell>
                   {/* Latest: the single newest print, its quarter label, and the
@@ -865,7 +882,10 @@ export function ScoreBoardTable({
                       dimmed={dim}
                     />
                   </TableCell>
-                  <TableCell className="border-l border-border/70 bg-muted/20 px-3 py-3">
+                  <TableCell
+                    className="border-l px-3 py-3"
+                    style={{ borderColor: "var(--rule)", backgroundColor: "rgba(180,83,9,0.05)" }}
+                  >
                     <div className="leading-tight" title={row.readDescription}>
                       {row.readScore != null ? (
                         <div className="tabular-nums font-semibold text-foreground">
