@@ -32,7 +32,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowUpDown, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 import { ColumnInfo } from "@/app/company/components/column-info";
 import { analytics } from "@/lib/analytics";
@@ -61,6 +61,7 @@ import { BANDS, bandForScore } from "@/lib/score-band";
 import { formatScoredAt, type ScoreSourceStatus } from "@/lib/score-freshness";
 import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
 import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
+import { computeBoardRanks } from "@/lib/leaderboard-rank";
 
 export type ScoreBoardRow = {
   companyCode: string;
@@ -130,32 +131,19 @@ type DerivedRow = ScoreBoardRow & {
  *
  * It is also what lets a watchlist share this component: the same code numbers
  * 8 rows 1-8 by their Read without needing a universe to rank against.
+ *
+ * Below-cut rows ARE numbered here (redesign 2026-08-11): the board numbers the
+ * whole universe by Read and pins the greyed rows at the bottom, so a greyed row
+ * shows its true Read position (e.g. #118) rather than a bare "—". The ranking
+ * itself lives in lib/leaderboard-rank computeBoardRanks so the daily snapshot
+ * writer (which feeds the Δ column) ranks the identical universe the identical
+ * way — otherwise Δ would compare a rank to itself computed two ways.
  */
 function assignEffectiveRanks(rows: Array<Omit<DerivedRow, "effectiveRank">>): DerivedRow[] {
-  const ordered = [...rows].sort((a, b) => {
-    const av = a.readScore ?? Number.NEGATIVE_INFINITY;
-    const bv = b.readScore ?? Number.NEGATIVE_INFINITY;
-    if (av !== bv) return bv - av;
-    return a.companyName.localeCompare(b.companyName);
-  });
-  const positionByCode = new Map<string, number>();
-  let position = 0;
-  ordered.forEach((row) => {
-    // Unscored rows get no position — they can't be ranked on a missing number.
-    if (row.readScore == null) return;
-    // Nor do below-cut rows: the # column is a position in the ranked hundred,
-    // and these are by definition not in it. Numbering them interleaved was the
-    // visible contradiction — a greyed #40 sitting between two live rows — and
-    // it also pushed the genuine 100th name down to ~#103. Skipping them makes
-    // the ranked set number 1..N with no gaps, and pairs with the pin below so
-    // the greyed tail reads as a tail rather than as a rendering fault.
-    if (row.belowCut) return;
-    position += 1;
-    positionByCode.set(row.companyCode, position);
-  });
+  const rankByCode = computeBoardRanks(rows);
   return rows.map((row) => ({
     ...row,
-    effectiveRank: positionByCode.get(row.companyCode) ?? Number.POSITIVE_INFINITY,
+    effectiveRank: rankByCode.get(row.companyCode) ?? Number.POSITIVE_INFINITY,
   }));
 }
 
@@ -470,6 +458,36 @@ function ScoreCell({
   );
 }
 
+/**
+ * The Δ column: rank change vs ~7 days ago (lib/leaderboard-snapshot).
+ * delta = priorRank − currentRank, so POSITIVE means the company CLIMBED.
+ * null prior (no snapshot that old yet, or a company new since then) renders a
+ * quiet dot, not a zero — "we have no earlier rank", not "no movement".
+ */
+function DeltaCell({ delta, dimmed }: { delta: number | null; dimmed: boolean }) {
+  if (delta == null) {
+    return <span className="text-muted-foreground/40" aria-label="no prior rank">·</span>;
+  }
+  if (delta === 0) {
+    return <span className="text-muted-foreground" aria-label="no change">–</span>;
+  }
+  const up = delta > 0;
+  const tone = dimmed
+    ? "text-muted-foreground"
+    : up
+      ? "text-teal-600 dark:text-teal-400"
+      : "text-red-600 dark:text-red-400";
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 tabular-nums text-xs font-medium ${tone}`}
+      aria-label={`${up ? "up" : "down"} ${Math.abs(delta)} places since the previous snapshot`}
+    >
+      <span aria-hidden>{up ? "▲" : "▼"}</span>
+      {Math.abs(delta)}
+    </span>
+  );
+}
+
 // Sticky first column (name stays visible while score columns scroll on a
 // phone) lives in the shared shell tokens — STICKY_NAME_HEAD / STICKY_NAME_CELL
 // / TABLE_SCROLL_HINT — so this board and the four DataTable/section boards
@@ -479,6 +497,7 @@ function ScoreCell({
 export function ScoreBoardTable({
   rows,
   watchlistId,
+  priorRankByCode,
 }: {
   rows: ScoreBoardRow[];
   /**
@@ -486,13 +505,26 @@ export function ScoreBoardTable({
    * leaderboard: same board, whole universe, nothing to remove.
    */
   watchlistId?: number;
+  /**
+   * UPPERCASE code → rank from ~7 days ago (lib/leaderboard-snapshot). Drives the
+   * Δ column. A plain Record, not a Map — it crosses the server→client (ssr:false)
+   * boundary. Only the leaderboard passes it: a watchlist's rank is list-local, so
+   * its Δ would need its own snapshots. Absent → no Δ column.
+   */
+  priorRankByCode?: Record<string, number>;
 }) {
   const router = useRouter();
   const [sort, setSort] = useState<SortState>({ key: "coverageRank", direction: "asc" });
   const [removingCompanyCode, setRemovingCompanyCode] = useState<string | null>(null);
   const sortedRows = sortRows(deriveRows(rows), sort);
   const showRemove = watchlistId != null;
+  // Only show Δ once there is prior data to compare against — otherwise the first
+  // week (or forever, pre-DDL) would render a column of empty dots.
+  const showDelta = priorRankByCode != null && Object.keys(priorRankByCode).length > 0;
   const columnCount = 6 + (showRemove ? 1 : 0);
+  // Index of the first greyed row, so a "below the coverage cut" divider row can
+  // be dropped in just above the pinned tail. -1 when nothing is below the cut.
+  const firstBelowCutIndex = sortedRows.findIndex((row) => row.belowCut);
 
   const handleSort = (key: SortKey) => {
     const nextDirection =
@@ -573,6 +605,14 @@ export function ScoreBoardTable({
               className={`${STICKY_NAME_HEAD} px-3 py-3 text-foreground`}
             >
               <div className="flex items-baseline gap-3">
+                {showDelta && (
+                  <span
+                    className="w-8 shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
+                    title="Rank change vs the previous snapshot"
+                  >
+                    Δ
+                  </span>
+                )}
                 {renderSortHead({
                   label: "#",
                   columnKey: "coverageRank",
@@ -652,54 +692,83 @@ export function ScoreBoardTable({
         </TableHeader>
         <TableBody>
           {sortedRows.length ? (
-            sortedRows.map((row) => {
+            sortedRows.map((row, index) => {
               const dim = row.belowCut;
               const read = BOARD_READS[row.readKey];
+              // Δ = where it sat last week minus where it sits now, so a positive
+              // number is a climb. Null (no prior rank, or unranked now) → the
+              // quiet dot in DeltaCell, never a fake zero.
+              const prior = priorRankByCode?.[row.companyCode.toUpperCase()];
+              const delta =
+                prior != null && Number.isFinite(row.effectiveRank)
+                  ? prior - row.effectiveRank
+                  : null;
               return (
-                <TableRow
-                  key={row.companyCode}
-                  // Below the cut: de-emphasized to ~55%. The row still carries
-                  // its full data — this is "not in the ranked hundred", not "no
-                  // information" — and its name still links: the coverage policy
-                  // de-emphasizes these pages, it doesn't block them. Never set
-                  // on a watchlist: your own list is not subject to the cut.
-                  className={`group border-b border-border/45 transition-colors last:border-0 hover:bg-accent/50 ${
-                    dim ? "opacity-55" : ""
-                  }`}
-                >
-                  <TableCell className={`${STICKY_NAME_CELL} px-3 py-3`}>
-                    <div className="relative z-[1] flex items-baseline gap-2">
-                      <span className="w-7 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
-                        {Number.isFinite(row.effectiveRank) ? row.effectiveRank : "—"}
-                      </span>
-                      {/* Below-cut rows link too: the coverage policy de-emphasizes
-                          these companies, it doesn't block their pages — search
-                          reaches them, so the board should as well. A 2026-08-01
-                          session replay showed a visitor rage-clicking the greyed
-                          names and leaving. min-w-0 lets truncate engage inside
-                          the flex row; only bites under the sm cap. */}
-                      <Link
-                        href={`/company/${row.companyCode}`}
-                        prefetch={false}
-                        onClick={() =>
-                          analytics.leaderboardRowClick({
-                            companyCode: row.companyCode,
-                            board: showRemove ? "watchlist" : "overall",
-                            belowCut: dim,
-                            rank: Number.isFinite(row.effectiveRank)
-                              ? row.effectiveRank
-                              : undefined,
-                          })
-                        }
-                        title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}
-                        className={`min-w-0 truncate font-semibold hover:underline ${
-                          dim ? "text-muted-foreground" : "text-foreground"
-                        }`}
+                <Fragment key={row.companyCode}>
+                  {/* The one divider between the ranked universe and the pinned,
+                      greyed below-cut tail. Rendered once, just above the first
+                      greyed row. */}
+                  {index === firstBelowCutIndex && firstBelowCutIndex > 0 && (
+                    <TableRow className="border-b border-border/45 hover:bg-transparent">
+                      <TableCell
+                        colSpan={columnCount}
+                        className="px-3 py-1.5 text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
                       >
-                        {row.companyName}
-                      </Link>
-                    </div>
-                  </TableCell>
+                        — below the coverage cut · pinned —
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  <TableRow
+                    // Below the cut: de-emphasized to ~55%. The row still carries
+                    // its full data — this is "not in the ranked hundred", not "no
+                    // information" — and its name still links: the coverage policy
+                    // de-emphasizes these pages, it doesn't block them. Never set
+                    // on a watchlist: your own list is not subject to the cut.
+                    className={`group border-b border-border/45 transition-colors last:border-0 hover:bg-accent/50 ${
+                      dim ? "opacity-55" : ""
+                    }`}
+                  >
+                    <TableCell className={`${STICKY_NAME_CELL} px-3 py-3`}>
+                      <div className="relative z-[1] flex items-baseline gap-2">
+                        {showDelta && (
+                          <span className="w-8 shrink-0 text-right">
+                            <DeltaCell delta={delta} dimmed={dim} />
+                          </span>
+                        )}
+                        <span className="w-7 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                          {Number.isFinite(row.effectiveRank) ? row.effectiveRank : "—"}
+                        </span>
+                        {/* Below-cut rows link too: the coverage policy de-emphasizes
+                            these companies, it doesn't block their pages — search
+                            reaches them, so the board should as well. A 2026-08-01
+                            session replay showed a visitor rage-clicking the greyed
+                            names and leaving. min-w-0 lets truncate engage inside
+                            the flex row; only bites under the sm cap. */}
+                        <Link
+                          href={`/company/${row.companyCode}`}
+                          prefetch={false}
+                          onClick={() =>
+                            analytics.leaderboardRowClick({
+                              companyCode: row.companyCode,
+                              board: showRemove ? "watchlist" : "overall",
+                              belowCut: dim,
+                              rank: Number.isFinite(row.effectiveRank)
+                                ? row.effectiveRank
+                                : undefined,
+                            })
+                          }
+                          title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}
+                          className={`min-w-0 truncate font-semibold hover:underline ${
+                            dim ? "text-muted-foreground" : "text-foreground"
+                          }`}
+                        >
+                          {row.companyName}
+                        </Link>
+                        <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-muted-foreground/70">
+                          {row.companyCode}
+                        </span>
+                      </div>
+                    </TableCell>
                   {/* Latest: the single newest print, its quarter label, and the
                       only place the freshness / unofficial chips live — a
                       one-quarter badge must name the one quarter it describes. */}
@@ -826,7 +895,8 @@ export function ScoreBoardTable({
                       </button>
                     </TableCell>
                   )}
-                </TableRow>
+                  </TableRow>
+                </Fragment>
               );
             })
           ) : (

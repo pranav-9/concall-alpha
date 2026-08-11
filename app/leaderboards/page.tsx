@@ -5,7 +5,6 @@ import {
   HERO_CARD,
   PAGE_BACKGROUND_ATMOSPHERIC,
   PAGE_SHELL,
-  TABLE_CARD_SKY,
   TOUCH_TARGET,
 } from "@/lib/design/shell";
 import {
@@ -15,6 +14,13 @@ import {
 } from "@/lib/leaderboard-distribution";
 import { classifyBoardRead } from "@/lib/board-read";
 import { buildScoreBoardRows } from "@/lib/score-board-rows";
+import { computeBoardRanks } from "@/lib/leaderboard-rank";
+import {
+  readPriorRanks,
+  writeTodaySnapshotIfMissing,
+  type RankSnapshotRow,
+} from "@/lib/leaderboard-snapshot";
+import { after } from "next/server";
 import type { Metadata } from "next";
 import { fetchLeaderboardData } from "./data";
 import { LeaderboardTabs } from "./leaderboard-tabs";
@@ -59,11 +65,14 @@ export default async function LeaderboardsPage({
   const [
     { rows, latestLabel, quarterLabels },
     { growthEntries, moatEntries, growthScoreByCode, nameByCode },
+    priorRankByCode,
   ] = await Promise.all([
     // includeBelowCut: the Overall board renders the tail greyed out rather than
     // dropping it. Large caps are still excluded outright — two different gates.
     getConcallData({ excludeLargeCaps: true, includeBelowCut: true }),
     fetchLeaderboardData(),
+    // Ranks from ~7 days ago for the Δ column. Empty until history accrues.
+    readPriorRanks(),
   ]);
 
   const overallRows = buildScoreBoardRows(
@@ -112,6 +121,25 @@ export default async function LeaderboardsPage({
   const overallBandCounts = computeBoardReadCounts(overallReads.map((r) => r.key));
   const overallScored = overallReads.filter((r) => r.key !== "no_read").length;
   const belowCutCount = overallRows.filter((row) => row.belowCut).length;
+
+  // Δ column: rank the whole board by its live Read (the SAME helper the board
+  // renders with, so today's snapshot can't diverge from the live #), then record
+  // today's snapshot once per UTC day via after() so the write never blocks the
+  // response. The board itself gets priorRankByCode (read above) for the delta.
+  const currentRankByCode = computeBoardRanks(
+    overallRows.map((row, i) => ({
+      companyCode: row.companyCode,
+      companyName: row.companyName,
+      readScore: overallReads[i].score,
+    })),
+  );
+  const snapshotRows: RankSnapshotRow[] = overallRows.flatMap((row, i) => {
+    const rank = currentRankByCode.get(row.companyCode);
+    return rank != null
+      ? [{ companyCode: row.companyCode, rank, readScore: overallReads[i].score }]
+      : [];
+  });
+  after(() => writeTodaySnapshotIfMissing(snapshotRows));
   // Counted over the whole board including the greyed tail, unlike the Quarter
   // tab — this board renders that tail, so a count that excluded it would not
   // match what the reader can see.
@@ -164,21 +192,30 @@ export default async function LeaderboardsPage({
               scopeNote="with a read"
               bandCounts={overallBandCounts}
             />
-            <div className={TABLE_CARD_SKY}>
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
-                <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Overall board
+            {/* House-style board frame (2026-08-11): cream paper card + house
+                title bar, the leaderboard's move toward the homepage house look.
+                Scoped to `.house` so the palette vars resolve. The in-table cell
+                theming is a follow-up design pass. */}
+            <div
+              className="house overflow-hidden rounded-[1.45rem] border shadow-[0_18px_38px_-32px_rgba(15,23,42,0.24)]"
+              style={{ borderColor: "var(--rule)", background: "var(--paper)" }}
+            >
+              <div
+                className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3"
+                style={{ borderColor: "var(--rule)" }}
+              >
+                <h2 className="house-micro font-semibold" style={{ color: "var(--ink)" }}>
+                  Overall Board · {overallRows.length}
                 </h2>
                 {/* The board sorts on the live Read (score-board-table.tsx ranks
-                    on readScore), and the Read column shows that very number — so
-                    this line only has to say which way the weighting leans. The
-                    backend's stored coverage_rank (a 4Q-mean composite) only
-                    decides which rows are GREYED, not the order. */}
-                <p className="text-[11px] text-muted-foreground">
-                  Ranked by Read · quality weighted 2:1 over price
+                    on readScore), and the Read column shows that very number. The
+                    backend's stored coverage_rank only decides which rows are
+                    GREYED, not the order. */}
+                <p className="text-[11px]" style={{ color: "var(--ink-soft)" }}>
+                  Ranked by Read
                 </p>
               </div>
-              <OverallTable rows={overallRows} />
+              <OverallTable rows={overallRows} priorRankByCode={priorRankByCode} />
               {(overallUnofficialCount > 0 || overallFreshCount > 0) && (
                 // The Read is computed FROM the quarter score, so an unofficial
                 // quarter makes the rank provisional too. That has to be said

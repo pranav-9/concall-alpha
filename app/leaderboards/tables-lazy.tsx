@@ -56,7 +56,10 @@ export const MoatTable = dynamic<{ data: MoatRowTable[] }>(
 // over the whole mid/small universe, below-cut names included as a greyed tail.
 // The same board renders a watchlist (with a Remove column and nothing greyed) —
 // see components/score-board-table.tsx.
-export const OverallTable = dynamic<{ rows: ScoreBoardRow[] }>(
+export const OverallTable = dynamic<{
+  rows: ScoreBoardRow[];
+  priorRankByCode?: Record<string, number>;
+}>(
   () => import("@/components/score-board-table").then((mod) => mod.ScoreBoardTable),
   {
     ssr: false,
