@@ -86,6 +86,12 @@ export type ScoreBoardRow = {
   latestConcallScore: number | null;
   /** Label of that latest print, e.g. "Q1 FY27". */
   latestQuarterLabel: string | null;
+  /**
+   * True when the company hasn't reported the board's newest quarter, so its
+   * latest print is an older one. The quarter label is shown only then — a
+   * current-quarter print rides unlabeled.
+   */
+  latestIsStale?: boolean;
   growthScore: number | null;
   /** ALREADY rescaled to 0-10 by the data layer (lib/valuation-band). */
   valuationScore: number | null;
@@ -800,7 +806,7 @@ export function ScoreBoardTable({
                           >
                             {BANDS[bandForScore(row.latestConcallScore)].label}
                           </span>
-                          {row.latestQuarterLabel && (
+                          {row.latestIsStale && row.latestQuarterLabel && (
                             <span className="whitespace-nowrap text-[10px] text-muted-foreground">
                               {row.latestQuarterLabel}
                             </span>

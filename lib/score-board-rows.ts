@@ -57,6 +57,10 @@ export function buildScoreBoardRows(
     const latestConcallScore = boardScore ?? ownScore;
     const latestQuarterLabel =
       boardScore != null ? latestLabel : (row.ownLatestQuarterLabel ?? null);
+    // Stale = the company hasn't reported the board's newest quarter, so its
+    // latest print is an older one. The quarter label is only shown in that
+    // case (a "this is behind" marker); a current-quarter print goes unlabeled.
+    const latestIsStale = boardScore == null;
 
     return {
       companyCode: code,
@@ -65,6 +69,7 @@ export function buildScoreBoardRows(
       fourConcallScore,
       latestConcallScore,
       latestQuarterLabel,
+      latestIsStale,
       growthScore: growthScoreByCode.get(code) ?? null,
       // getConcallData already applies the publish + staleness gates; this only
       // moves the stored 0-100 integer onto the board's 0-10 scale.
