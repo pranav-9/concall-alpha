@@ -14,7 +14,7 @@ import {
 } from "@/lib/leaderboard-distribution";
 import { classifyBoardRead } from "@/lib/board-read";
 import { buildScoreBoardRows } from "@/lib/score-board-rows";
-import { computeBoardRanks } from "@/lib/leaderboard-rank";
+import { computeBoardRanks, COVERAGE_BOARD_SIZE } from "@/lib/leaderboard-rank";
 import {
   readPriorRanks,
   writeTodaySnapshotIfMissing,
@@ -115,7 +115,6 @@ export default async function LeaderboardsPage({
   );
   const overallBandCounts = computeBoardReadCounts(overallReads.map((r) => r.key));
   const overallScored = overallReads.filter((r) => r.key !== "no_read").length;
-  const belowCutCount = overallRows.filter((row) => row.belowCut).length;
 
   // Δ column: rank the whole board by its live Read (the SAME helper the board
   // renders with, so today's snapshot can't diverge from the live #), then record
@@ -126,9 +125,15 @@ export default async function LeaderboardsPage({
       companyCode: row.companyCode,
       companyName: row.companyName,
       readScore: overallReads[i].score,
-      belowCut: row.belowCut,
     })),
   );
+  // Greyed = ranks past the coverage line on the LIVE Read (matching the board's
+  // own `dim`), plus any unranked row (no Read → never in the top N). NOT the
+  // stored belowCut anymore — that governs homepage/sectors, not this board.
+  const belowCutCount = overallRows.reduce((n, row) => {
+    const rank = currentRankByCode.get(row.companyCode);
+    return n + (rank == null || rank > COVERAGE_BOARD_SIZE ? 1 : 0);
+  }, 0);
   const snapshotRows: RankSnapshotRow[] = overallRows.flatMap((row, i) => {
     const rank = currentRankByCode.get(row.companyCode);
     return rank != null
@@ -201,14 +206,19 @@ export default async function LeaderboardsPage({
                   Overall Board · {overallRows.length}
                 </h2>
                 {/* The board sorts on the live Read (score-board-table.tsx ranks
-                    on readScore), and the Read column shows that very number. The
-                    backend's stored coverage_rank only decides which rows are
-                    GREYED, not the order. */}
+                    on readScore), the Read column shows that very number, AND the
+                    grey tail is the same live rank past COVERAGE_BOARD_SIZE — one
+                    number decides order and greying, so they can't contradict. The
+                    stored coverage flag governs homepage/sectors, not this board. */}
                 <p className="text-[11px]" style={{ color: "var(--ink-soft)" }}>
                   Ranked by Read
                 </p>
               </div>
-              <OverallTable rows={overallRows} priorRankByCode={priorRankByCode} />
+              <OverallTable
+                rows={overallRows}
+                priorRankByCode={priorRankByCode}
+                coverageCutRank={COVERAGE_BOARD_SIZE}
+              />
               {overallFreshCount > 0 && (
                 <p className="border-t border-border/35 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
                   <span className="font-medium text-foreground">New · 24h</span> marks the{" "}
@@ -216,17 +226,15 @@ export default async function LeaderboardsPage({
                 </p>
               )}
               {belowCutCount > 0 && (
-                // The greyed rows need naming or they read as a rendering fault.
-                // They now pin to the bottom and carry no # under every sort
-                // (score-board-table), so the copy can say where they are —
-                // earlier it could not, because cut membership is a stored
-                // reviewed flag while the order above is computed live, which
-                // let a greyed row sit mid-board between compute runs.
+                // The greyed tail is simply the rows ranked past the top 100 on the
+                // live Read — greyed because they're lowest-ranked, so a greyed row
+                // can never sit above a kept one. Named here so it doesn't read as a
+                // rendering fault.
                 <p className="border-t border-border/35 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
                   The <span className="font-medium text-foreground">{belowCutCount}</span> greyed{" "}
                   {belowCutCount === 1 ? "company" : "companies"} at the bottom{" "}
-                  {belowCutCount === 1 ? "sits" : "sit"} below the coverage cut — still tracked and
-                  still open to read, just not in the ranked hundred.
+                  {belowCutCount === 1 ? "ranks" : "rank"} outside the top 100 by Read — still tracked
+                  and still open to read, just below the covered set.
                 </p>
               )}
             </div>

@@ -10,10 +10,10 @@
 // not have to relearn it on the other. They differ in exactly two ways, both
 // props:
 //   - `watchlistId` turns on the per-row Remove action.
-//   - `belowCut` on a row greys it (still linked — de-emphasized, not blocked).
-//     Only the leaderboard sets it: watchlists are user-owned and deliberately
-//     unfiltered by the coverage policy, so a holding never gets greyed out on
-//     your own list.
+//   - `coverageCutRank` greys every row whose LIVE Read rank falls past it (still
+//     linked — de-emphasized, not blocked). Only the leaderboard passes it:
+//     watchlists are user-owned and deliberately unfiltered by the coverage
+//     policy, so a holding never gets greyed out on your own list.
 // The `#` column means "rank on this board" in both cases — across the ranked
 // hundred on /leaderboards, within the list on /watchlists — which is why it is
 // derived from the rows passed in rather than read from a stored rank. Below-cut
@@ -95,7 +95,11 @@ export type ScoreBoardRow = {
   growthScore: number | null;
   /** ALREADY rescaled to 0-10 by the data layer (lib/valuation-band). */
   valuationScore: number | null;
-  /** Below the composite cut: rendered greyed but still linked. Never set on a watchlist. */
+  /**
+   * Stored composite-cut flag from the data layer. No longer drives greying on
+   * THIS board (greying is live now — see coverageCutRank / DerivedRow.dim); kept
+   * because the shared row type still carries it for other consumers.
+   */
   belowCut: boolean;
   /**
    * Provenance and recency of concallScore. Optional because a watchlisted
@@ -114,6 +118,12 @@ type DerivedRow = ScoreBoardRow & {
   readDescription: string;
   /** Position key for the default sort. See assignEffectiveRanks. */
   effectiveRank: number;
+  /**
+   * Greyed on this board: its LIVE Read rank is past the coverage line. True only
+   * when the caller passes coverageCutRank (the leaderboard); a watchlist omits it,
+   * so nothing greys there. Replaces the old stored `belowCut` as the grey source.
+   */
+  dim: boolean;
 };
 
 /**
@@ -131,9 +141,12 @@ type DerivedRow = ScoreBoardRow & {
  * rank, dangling below the greyed tail with a strong Read.
  *
  * Deriving it means # and Read agree by construction, always, with no compute
- * run required. The stored value still governs which companies are greyed out
- * (belowCut) — that's a reviewed membership decision and must not be recomputed
- * in the browser. The two converge once the script is re-run and applied.
+ * run required. Greying is now derived from this SAME live rank (dim = rank past
+ * coverageCutRank), NOT the stored cut — so a greyed row is always one that ranks
+ * below the coverage line on the number the board shows, and can never sit above
+ * a kept row it out-scores. The stored `excluded_from_discovery` flag still
+ * governs homepage / sectors (lib/coverage-policy.ts); it no longer touches this
+ * board. The two sets can differ near the line, which is invisible off-board.
  *
  * It is also what lets a watchlist share this component: the same code numbers
  * 8 rows 1-8 by their Read without needing a universe to rank against.
@@ -145,15 +158,25 @@ type DerivedRow = ScoreBoardRow & {
  * writer (which feeds the Δ column) ranks the identical universe the identical
  * way — otherwise Δ would compare a rank to itself computed two ways.
  */
-function assignEffectiveRanks(rows: Array<Omit<DerivedRow, "effectiveRank">>): DerivedRow[] {
+function assignEffectiveRanks(
+  rows: Array<Omit<DerivedRow, "effectiveRank" | "dim">>,
+  coverageCutRank?: number,
+): DerivedRow[] {
   const rankByCode = computeBoardRanks(rows);
-  return rows.map((row) => ({
-    ...row,
-    effectiveRank: rankByCode.get(row.companyCode) ?? Number.POSITIVE_INFINITY,
-  }));
+  return rows.map((row) => {
+    const effectiveRank = rankByCode.get(row.companyCode) ?? Number.POSITIVE_INFINITY;
+    return {
+      ...row,
+      effectiveRank,
+      // Greyed = ranks past the coverage line on the LIVE Read. An unranked row
+      // (no Read → effectiveRank Infinity) greys too: it is not in the top N.
+      // coverageCutRank absent (a watchlist) → nothing greys.
+      dim: coverageCutRank != null && effectiveRank > coverageCutRank,
+    };
+  });
 }
 
-function deriveRows(rows: ScoreBoardRow[]): DerivedRow[] {
+function deriveRows(rows: ScoreBoardRow[], coverageCutRank?: number): DerivedRow[] {
   return assignEffectiveRanks(
     rows.map((row) => {
       const read = classifyBoardRead({
@@ -168,6 +191,7 @@ function deriveRows(rows: ScoreBoardRow[]): DerivedRow[] {
         readDescription: read.description,
       };
     }),
+    coverageCutRank,
   );
 }
 
@@ -280,13 +304,13 @@ function sortRows(rows: DerivedRow[], sort: SortState) {
   const byName = (a: DerivedRow, b: DerivedRow) =>
     compareText(a.companyName, b.companyName, "asc");
   return [...rows].sort((a, b) => {
-    // Below-cut rows pin to the bottom under EVERY sort key and direction —
-    // they are not part of the ranked board, so they aren't competing for a
-    // position in it. Doing this only on the default sort would put the greyed
-    // tail back in the middle the moment a reader sorted by Quarter, which is
-    // the confusion this pin exists to remove. No-op on a watchlist, which
-    // never sets belowCut.
-    if (a.belowCut !== b.belowCut) return a.belowCut ? 1 : -1;
+    // Greyed rows (dim = ranked past the coverage line) pin to the bottom under
+    // EVERY sort key and direction — they are not part of the ranked hundred, so
+    // they aren't competing for a position in it. Doing this only on the default
+    // sort would put the greyed tail back in the middle the moment a reader
+    // sorted by Quarter, which is the confusion this pin exists to remove. No-op
+    // on a watchlist, which never sets dim.
+    if (a.dim !== b.dim) return a.dim ? 1 : -1;
     let diff = 0;
     switch (sort.key) {
       case "coverageRank": {
@@ -295,11 +319,11 @@ function sortRows(rows: DerivedRow[], sort: SortState) {
         const ar = a.effectiveRank;
         const br = b.effectiveRank;
         diff = ar === br ? 0 : sort.direction === "asc" ? ar - br : br - ar;
-        // Below-cut rows all share effectiveRank = Infinity, so they tie here and
+        // Unranked greyed rows (no Read → effectiveRank = Infinity) tie here and
         // would fall through to the alphabetical byName tie-breaker — the greyed
-        // tail read as A→Z, not worst-to-best. Order that tail by Read (desc) so
-        // it matches every other block on the default sort.
-        if (diff === 0 && a.belowCut && b.belowCut) {
+        // tail read as A→Z, not worst-to-best. Order any such tie by Read (desc)
+        // so the tail matches every other block on the default sort.
+        if (diff === 0 && a.dim && b.dim) {
           diff = compareNumber(a.readScore, b.readScore, "desc");
         }
         break;
@@ -507,6 +531,7 @@ export function ScoreBoardTable({
   rows,
   watchlistId,
   priorRankByCode,
+  coverageCutRank,
 }: {
   rows: ScoreBoardRow[];
   /**
@@ -521,19 +546,26 @@ export function ScoreBoardTable({
    * its Δ would need its own snapshots. Absent → no Δ column.
    */
   priorRankByCode?: Record<string, number>;
+  /**
+   * Grey every row whose LIVE Read rank falls past this position (the leaderboard
+   * passes COVERAGE_BOARD_SIZE). Absent on a watchlist, so nothing greys there —
+   * a user-owned list is not subject to the cut.
+   */
+  coverageCutRank?: number;
 }) {
   const router = useRouter();
   const [sort, setSort] = useState<SortState>({ key: "coverageRank", direction: "asc" });
   const [removingCompanyCode, setRemovingCompanyCode] = useState<string | null>(null);
-  const sortedRows = sortRows(deriveRows(rows), sort);
+  const sortedRows = sortRows(deriveRows(rows, coverageCutRank), sort);
   const showRemove = watchlistId != null;
   // Only show Δ once there is prior data to compare against — otherwise the first
   // week (or forever, pre-DDL) would render a column of empty dots.
   const showDelta = priorRankByCode != null && Object.keys(priorRankByCode).length > 0;
   const columnCount = 6 + (showRemove ? 1 : 0);
-  // Index of the first greyed row, so a "below the coverage cut" divider row can
-  // be dropped in just above the pinned tail. -1 when nothing is below the cut.
-  const firstBelowCutIndex = sortedRows.findIndex((row) => row.belowCut);
+  // Index of the first greyed row, so a divider row can be dropped in just above
+  // the pinned tail. -1 when nothing is greyed (e.g. a watchlist, or a board with
+  // ≤ coverageCutRank scored rows).
+  const firstBelowCutIndex = sortedRows.findIndex((row) => row.dim);
 
   const handleSort = (key: SortKey) => {
     const nextDirection =
@@ -705,7 +737,7 @@ export function ScoreBoardTable({
         <TableBody>
           {sortedRows.length ? (
             sortedRows.map((row, index) => {
-              const dim = row.belowCut;
+              const dim = row.dim;
               const read = BOARD_READS[row.readKey];
               // Δ = where it sat last week minus where it sits now, so a positive
               // number is a climb. Null (no prior rank, or unranked now) → the
@@ -717,16 +749,18 @@ export function ScoreBoardTable({
                   : null;
               return (
                 <Fragment key={row.companyCode}>
-                  {/* The one divider between the ranked universe and the pinned,
-                      greyed below-cut tail. Rendered once, just above the first
-                      greyed row. */}
+                  {/* The one divider between the top-ranked hundred and the greyed
+                      tail below it. Greying is now by LIVE Read rank, so every row
+                      past here simply ranks lower than every row above — no
+                      explanation needed. Rendered once, just above the first greyed
+                      row. */}
                   {index === firstBelowCutIndex && firstBelowCutIndex > 0 && (
                     <TableRow className="border-b border-border/45 hover:bg-transparent">
                       <TableCell
                         colSpan={columnCount}
                         className="px-3 py-1.5 text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
                       >
-                        — below the coverage cut · pinned —
+                        — below the top 100 by Read —
                       </TableCell>
                     </TableRow>
                   )}

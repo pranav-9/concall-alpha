@@ -1,34 +1,35 @@
 export type RankedItem<T> = T & { leaderboardRank: number };
 
+// How many companies the Overall board keeps "in" before it greys the tail.
+// Mirrors compute_composite_score.py's --target and the "handpicked ~100"
+// positioning — but the board applies it to the LIVE Read rank, so a greyed row
+// is always one that ranks below this line on the number the board actually
+// shows. The stored `excluded_from_discovery` flag still governs homepage /
+// sectors (lib/coverage-policy.ts); the two sets can differ near the line, and
+// that's fine — the board is the only surface that shows ranks side by side, so
+// it's the only one that needs the live version.
+export const COVERAGE_BOARD_SIZE = 100;
+
 // The Overall board's live ranking, in ONE place so the board (client) and the
 // daily snapshot writer (server, lib/leaderboard-snapshot.ts) can never rank the
 // same universe differently — if they did, the Δ column would compare a rank to
 // itself computed two ways and show phantom movement.
 //
-// Ranks by Read (descending), tie-broken by name for stability. A row with no
-// Read is unranked (it can't hold a position on a missing number). UNLIKE the old
-// behaviour, below-cut rows ARE ranked here: the redesigned board numbers the
-// whole universe 1..N and pins the below-cut ones at the bottom (dimmed), rather
-// than leaving them numberless — so a greyed row shows its true Read position.
+// Ranks the whole universe by Read (descending), tie-broken by CODE for
+// cross-runtime stability. A row with no Read is unranked (it can't hold a
+// position on a missing number). NOT tiered by the stored cut anymore (removed
+// 2026-08-12): tiering pinned a high-Read below-cut row to a low number that then
+// sat visually above a kept row it out-scored. Greying now keys off THIS live
+// rank (rank > COVERAGE_BOARD_SIZE), so a greyed row is always the lowest-ranked
+// and the bottom-pin has nothing to hide.
 export type RankableRow = {
   companyCode: string;
   companyName: string;
   readScore: number | null;
-  /** Below the coverage cut. Greyed rows are numbered AFTER all kept rows. */
-  belowCut?: boolean;
 };
 
 export function computeBoardRanks(rows: ReadonlyArray<RankableRow>): Map<string, number> {
   const ordered = [...rows].sort((a, b) => {
-    // Kept rows first, then the below-cut tail: the # runs 1..K over the ranked
-    // set and continues K+1..N over the pinned greyed tail, so numbers are
-    // monotonic down the page. Ranking the whole universe by Read alone put a
-    // greyed row that out-ranks kept ones on the live Read (the cut is a stored
-    // 4Q composite, the Read is the live recency blend) at a LOW number sitting
-    // visually below a higher one — a rendering fault the pin can't hide.
-    const acut = a.belowCut ? 1 : 0;
-    const bcut = b.belowCut ? 1 : 0;
-    if (acut !== bcut) return acut - bcut;
     const av = a.readScore ?? Number.NEGATIVE_INFINITY;
     const bv = b.readScore ?? Number.NEGATIVE_INFINITY;
     if (av !== bv) return bv - av;

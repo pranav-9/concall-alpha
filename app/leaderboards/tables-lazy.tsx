@@ -59,6 +59,7 @@ export const MoatTable = dynamic<{ data: MoatRowTable[] }>(
 export const OverallTable = dynamic<{
   rows: ScoreBoardRow[];
   priorRankByCode?: Record<string, number>;
+  coverageCutRank?: number;
 }>(
   () => import("@/components/score-board-table").then((mod) => mod.ScoreBoardTable),
   {

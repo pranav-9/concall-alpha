@@ -30,9 +30,10 @@
 // belongs in the live ORDERING; the cut's membership decision (which sits inside
 // the re-score noise floor at the 100/101 line) must stay stable. An earlier
 // unification onto the 4Q mean existed because a greyed company could out-rank
-// kept ones on the board — that symptom is now handled INDEPENDENTLY by the
-// greyed-tail pin (score-board-table.tsx sortRows), which holds every greyed row
-// at the bottom regardless of its live Read, so the split is safe to re-introduce.
+// kept ones on the board — that symptom is now handled INDEPENDENTLY: the
+// leaderboard greys by LIVE Read rank (rank > COVERAGE_BOARD_SIZE, score-board-
+// table.tsx), so a greyed row is always the lowest-ranked and can't out-score a
+// kept one. The split is therefore safe.
 // The WEIGHTS (0.88/0.12) and the composite arithmetic still mirror the pipeline
 // and stay pinned by the cross-impl fixture; only the quarter INPUT differs. The
 // valuation leg also diverges (live Read drops a stale >4-day valuation; the cut
@@ -54,8 +55,10 @@ import { bandForValuationScore, type ValuationBandKey } from "@/lib/valuation-ba
 // compute_composite_score.py — and regenerate
 // tests/fixtures/composite-score-cross-impl.json; the contract test on each side
 // (board-read.test.ts / test_compute_composite.py) goes red if the two drift.
-// That script writes the stored composite + coverage_rank used to GREY the
-// below-cut tail; it does NOT feed this Read's # column (that's computed live).
+// That script writes the stored composite + coverage_rank + excluded_from_
+// discovery flag that governs homepage/sectors; it no longer greys the
+// leaderboard tail (that's the live Read rank now) and never fed this Read's #
+// column (always computed live).
 export const QUALITY_WEIGHT = 0.88;
 export const PRICE_WEIGHT = 0.12;
 
