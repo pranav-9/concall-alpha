@@ -9,7 +9,7 @@ import ConcallScore from "@/components/concall-score";
 import { Button } from "@/components/ui/button";
 import { ScoreBandPill } from "@/app/company/components/score-band-pill";
 import { TrendBadge } from "@/app/company/components/trend-badge";
-import { FreshScoreChip, UnofficialChip } from "@/components/score-provenance-chips";
+import { FreshScoreChip } from "@/components/score-provenance-chips";
 import { BANDS } from "@/lib/score-band";
 import { formatScoredAt, type ScoreSourceStatus } from "@/lib/score-freshness";
 import { trajectorySortRank, type TrajectoryKey } from "@/lib/score-trajectory";
@@ -161,15 +161,9 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
             {/* Provenance and recency go on their own line rather than beside
                 the band: at 4 quarters + Trend + Valuation the row is already
                 wide, and these two must not push the band pill off a phone. */}
-            {(row.original.latestSourceStatus === "unofficial" ||
-              row.original.scoredWithin24h) && (
+            {row.original.scoredWithin24h && (
               <div className="mt-1 flex flex-wrap items-center gap-1">
-                {row.original.latestSourceStatus === "unofficial" && (
-                  <UnofficialChip scoredAt={formatScoredAt(row.original.latestScoredAt)} />
-                )}
-                {row.original.scoredWithin24h && (
-                  <FreshScoreChip scoredAt={formatScoredAt(row.original.latestScoredAt)} />
-                )}
+                <FreshScoreChip scoredAt={formatScoredAt(row.original.latestScoredAt)} />
               </div>
             )}
           </div>

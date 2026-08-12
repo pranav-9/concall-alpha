@@ -94,13 +94,8 @@ export default async function LeaderboardsPage({
         return Number.isFinite(n) ? n : null;
       })
     : [];
-  // Two facts about the Latest column the score itself can't carry: during
-  // results season a third of it is priced off third-party transcripts, and
-  // some of it moved since the reader last looked. Counted here so the legend
-  // below the table only appears when there is something to explain.
-  const quarterUnofficialCount = rankedRows.filter(
-    (r) => r.latestSourceStatus === "unofficial",
-  ).length;
+  // Some of the Latest column moved since the reader last looked. Counted here
+  // so the legend below the table only appears when there is something to explain.
   const quarterFreshCount = rankedRows.filter((r) => r.scoredWithin24h === true).length;
   const quarterBandCounts = computeQuarterBandCounts(quarterLatestScores);
   const concallScored = quarterLatestScores.filter((s): s is number => typeof s === "number").length;
@@ -144,9 +139,6 @@ export default async function LeaderboardsPage({
   // Counted over the whole board including the greyed tail, unlike the Quarter
   // tab — this board renders that tail, so a count that excluded it would not
   // match what the reader can see.
-  const overallUnofficialCount = overallRows.filter(
-    (row) => row.quarterSourceStatus === "unofficial",
-  ).length;
   const overallFreshCount = overallRows.filter((row) => row.concallScoredWithin24h).length;
 
   return (
@@ -217,26 +209,10 @@ export default async function LeaderboardsPage({
                 </p>
               </div>
               <OverallTable rows={overallRows} priorRankByCode={priorRankByCode} />
-              {(overallUnofficialCount > 0 || overallFreshCount > 0) && (
-                // The Read is computed FROM the ConcallScore, so an unofficial
-                // quarter makes the rank provisional too. That has to be said
-                // on the board that ranks on it, not only on the Quarter tab.
+              {overallFreshCount > 0 && (
                 <p className="border-t border-border/35 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
-                  {overallUnofficialCount > 0 && (
-                    <>
-                      <span className="font-medium text-foreground">{overallUnofficialCount}</span>{" "}
-                      {overallUnofficialCount === 1 ? "row carries" : "rows carry"} an{" "}
-                      <span className="font-medium text-foreground">Unofficial</span> ConcallScore
-                      — read off a third-party transcript and re-scored when the issuer files, so
-                      the Read above it moves too.{" "}
-                    </>
-                  )}
-                  {overallFreshCount > 0 && (
-                    <>
-                      <span className="font-medium text-foreground">New · 24h</span> marks the{" "}
-                      {overallFreshCount} scored in the last twenty-four hours.
-                    </>
-                  )}
+                  <span className="font-medium text-foreground">New · 24h</span> marks the{" "}
+                  {overallFreshCount} scored in the last twenty-four hours.
                 </p>
               )}
               {belowCutCount > 0 && (
@@ -265,24 +241,11 @@ export default async function LeaderboardsPage({
               bandCounts={quarterBandCounts}
             />
             <LeaderboardTable quarterLabels={quarterLabels} data={rankedRows} />
-            {(quarterUnofficialCount > 0 || quarterFreshCount > 0) && (
+            {quarterFreshCount > 0 && (
               <p className="px-1 text-[11px] leading-relaxed text-muted-foreground">
-                {quarterUnofficialCount > 0 && (
-                  <>
-                    <span className="font-medium text-foreground">Unofficial</span> marks the{" "}
-                    {quarterUnofficialCount} {quarterUnofficialCount === 1 ? "score" : "scores"}{" "}
-                    read off a third-party transcript, published inside the five working days an
-                    issuer has to file its own. Each one is re-scored when the official transcript
-                    lands.{" "}
-                  </>
-                )}
-                {quarterFreshCount > 0 && (
-                  <>
-                    <span className="font-medium text-foreground">New · 24h</span> marks the{" "}
-                    {quarterFreshCount} {quarterFreshCount === 1 ? "score" : "scores"} written in
-                    the last twenty-four hours.
-                  </>
-                )}
+                <span className="font-medium text-foreground">New · 24h</span> marks the{" "}
+                {quarterFreshCount} {quarterFreshCount === 1 ? "score" : "scores"} written in the
+                last twenty-four hours.
               </p>
             )}
           </TabsContent>

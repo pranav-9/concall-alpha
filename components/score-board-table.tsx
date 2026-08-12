@@ -56,7 +56,7 @@ import {
   classifyBoardRead,
   type BoardReadKey,
 } from "@/lib/board-read";
-import { FreshScoreChip, UnofficialChip } from "@/components/score-provenance-chips";
+import { FreshScoreChip } from "@/components/score-provenance-chips";
 import { BANDS, bandForScore } from "@/lib/score-band";
 import { formatScoredAt, type ScoreSourceStatus } from "@/lib/score-freshness";
 import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
@@ -175,11 +175,6 @@ const COLUMN_INFO = {
         The company&apos;s <span className="font-medium text-foreground">single newest</span>{" "}
         ConcallScore, 0–10, with its quarter label — the freshest print on its own, before it is
         averaged into anything. The word beneath is the band it falls in.
-      </p>
-      <p>
-        <span className="font-medium text-foreground">Unofficial</span> means the score was read off
-        a third-party transcript, published inside the five working days an issuer has to file its
-        own. It is re-scored when the official one lands, so treat it as provisional.
       </p>
       <p>
         <span className="font-medium text-foreground">New · 24h</span> means this print was written
@@ -811,21 +806,12 @@ export function ScoreBoardTable({
                             </span>
                           )}
                         </div>
-                        {(row.quarterSourceStatus === "unofficial" ||
-                          row.concallScoredWithin24h) && (
+                        {row.concallScoredWithin24h && (
                           <div className="mt-1 flex flex-wrap items-center gap-1">
-                            {row.quarterSourceStatus === "unofficial" && (
-                              <UnofficialChip
-                                scoredAt={formatScoredAt(row.concallScoredAt)}
-                                dimmed={dim}
-                              />
-                            )}
-                            {row.concallScoredWithin24h && (
-                              <FreshScoreChip
-                                scoredAt={formatScoredAt(row.concallScoredAt)}
-                                dimmed={dim}
-                              />
-                            )}
+                            <FreshScoreChip
+                              scoredAt={formatScoredAt(row.concallScoredAt)}
+                              dimmed={dim}
+                            />
                           </div>
                         )}
                       </div>
