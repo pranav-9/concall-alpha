@@ -636,21 +636,21 @@ export function ScoreBoardTable({
             </TableHead>
             <TableHead aria-sort={sortDirectionLabel("latestScore")} className="px-3 py-3 text-foreground">
               {renderSortHead({
-                label: "Latest",
+                label: "ConcallScore",
                 columnKey: "latestScore",
                 sort,
                 onSort: handleSort,
-                subtitle: "newest print",
+                subtitle: "Latest",
                 info: COLUMN_INFO.latest,
               })}
             </TableHead>
             <TableHead aria-sort={sortDirectionLabel("fourQScore")} className="px-3 py-3 text-foreground">
               {renderSortHead({
-                label: "4Q",
+                label: "Trailing ConcallScore",
                 columnKey: "fourQScore",
                 sort,
                 onSort: handleSort,
-                subtitle: "trailing avg",
+                subtitle: "4Q Avg",
                 info: COLUMN_INFO.fourQ,
               })}
             </TableHead>
