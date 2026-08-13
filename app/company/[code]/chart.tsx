@@ -243,17 +243,23 @@ export function ChartLineLabel({
 
   useEffect(() => {
     const mobileQuery = window.matchMedia("(max-width: 640px)");
-    const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => {
-      setIsMobile(mobileQuery.matches);
-      setIsDark(darkQuery.matches);
-    };
-    update();
-    mobileQuery.addEventListener("change", update);
-    darkQuery.addEventListener("change", update);
+    const updateMobile = () => setIsMobile(mobileQuery.matches);
+    updateMobile();
+    mobileQuery.addEventListener("change", updateMobile);
+
+    // The active theme is next-themes' class on <html> (attribute="class"),
+    // NOT the OS preference — an OS-dark user browsing the site in light mode
+    // otherwise gets the dark palette (near-white line + labels) on a white
+    // card. Observe the class so the in-app theme toggle repaints the chart.
+    const root = document.documentElement;
+    const updateDark = () => setIsDark(root.classList.contains("dark"));
+    updateDark();
+    const observer = new MutationObserver(updateDark);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+
     return () => {
-      mobileQuery.removeEventListener("change", update);
-      darkQuery.removeEventListener("change", update);
+      mobileQuery.removeEventListener("change", updateMobile);
+      observer.disconnect();
     };
   }, []);
 
