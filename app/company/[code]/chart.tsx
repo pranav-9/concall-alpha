@@ -6,6 +6,7 @@ import {
   LabelList,
   Line,
   LineChart,
+  ReferenceArea,
   ReferenceLine,
   XAxis,
   YAxis,
@@ -19,6 +20,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { chartColorFor } from "@/components/concall-score";
+import { BANDS, SCORE_BAND_RANGES, type BandKey } from "@/lib/score-band";
 
 const chartConfig = {
   score: {
@@ -30,6 +32,50 @@ const chartConfig = {
     color: "#94a3b8",
   },
 } satisfies ChartConfig;
+
+// Background zone bands — compact labels + a readable text tint per theme.
+// Fill comes from each band's chartHex, so the zones stay on the platform's
+// diverging teal<->red ramp (strongest band = deepest tint, like the mockup).
+const ZONE_LABELS: Partial<Record<BandKey, string>> = {
+  strongly_bullish: "STRONGLY BULLISH ≥ 8",
+  bullish: "BULLISH 7–8",
+  mildly_bullish: "MILDLY BULLISH 6.5–7",
+  neutral: "NEUTRAL 4.5–6.5",
+  mildly_bearish: "MILDLY BEARISH 3–4.5",
+  strongly_bearish: "STRONGLY BEARISH < 3",
+};
+
+const ZONE_LABEL_HEX: Partial<Record<BandKey, { light: string; dark: string }>> = {
+  strongly_bullish: { light: "#0f766e", dark: "#5eead4" },
+  bullish: { light: "#0d9488", dark: "#2dd4bf" },
+  mildly_bullish: { light: "#0d9488", dark: "#99f6e4" },
+  neutral: { light: "#b45309", dark: "#fbbf24" },
+  mildly_bearish: { light: "#c2410c", dark: "#fb923c" },
+  strongly_bearish: { light: "#b91c1c", dark: "#f87171" },
+};
+
+const ZoneLabel = (props: {
+  viewBox?: { x?: number; y?: number; width?: number; height?: number };
+  text: string;
+  fill: string;
+}) => {
+  const vb = props.viewBox;
+  if (!vb || typeof vb.x !== "number" || typeof vb.y !== "number") return <g />;
+  // A band clipped to a thin sliver by the fitted y-domain can't fit a label.
+  if (typeof vb.height !== "number" || vb.height < 18) return <g />;
+  return (
+    <text
+      x={vb.x + 6}
+      y={vb.y + 13}
+      fill={props.fill}
+      fontSize={9}
+      fontWeight={700}
+      letterSpacing="0.06em"
+    >
+      {props.text}
+    </text>
+  );
+};
 
 type ChartPoint = {
   qtr: string;
@@ -280,6 +326,13 @@ export function ChartLineLabel({
   const yTicks: number[] = [];
   for (let t = yMin; t <= yMax; t += 1) yTicks.push(t);
 
+  // Sentiment zones clipped to the fitted y-domain; bands fully outside it drop.
+  const zones = SCORE_BAND_RANGES.map((z) => ({
+    ...z,
+    y1: Math.max(z.min, yMin),
+    y2: Math.min(z.max, yMax),
+  })).filter((z) => z.y2 > z.y1);
+
   return (
     <Card className="w-full bg-transparent border-0 shadow-none">
       <CardContent className="pt-0 px-0">
@@ -294,6 +347,39 @@ export function ChartLineLabel({
               bottom: 12,
             }}
           >
+            {zones.map((z) => {
+              const labelText = ZONE_LABELS[z.key];
+              const labelHex = ZONE_LABEL_HEX[z.key];
+              return (
+                <ReferenceArea
+                  key={z.key}
+                  y1={z.y1}
+                  y2={z.y2}
+                  fill={BANDS[z.key].chartHex}
+                  fillOpacity={isDark ? 0.1 : 0.07}
+                  stroke="none"
+                  ifOverflow="hidden"
+                  label={
+                    !isMobile && labelText && labelHex
+                      ? (labelProps: {
+                          viewBox?: {
+                            x?: number;
+                            y?: number;
+                            width?: number;
+                            height?: number;
+                          };
+                        }) => (
+                          <ZoneLabel
+                            viewBox={labelProps.viewBox}
+                            text={labelText}
+                            fill={isDark ? labelHex.dark : labelHex.light}
+                          />
+                        )
+                      : undefined
+                  }
+                />
+              );
+            })}
             <CartesianGrid vertical={false} stroke={gridStroke} />
             {selectedQuarter && (
               <ReferenceLine

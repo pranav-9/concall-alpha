@@ -140,6 +140,21 @@ export const SCORE_BAND_ORDER: BandKey[] = [
   "upcoming",
 ];
 
+// Numeric extents per band on the 0-10 scale — must mirror bandForScore's cuts.
+// Consumed by the score chart's background zones. Best -> worst.
+export const SCORE_BAND_RANGES: {
+  key: Exclude<BandKey, "upcoming">;
+  min: number;
+  max: number;
+}[] = [
+  { key: "strongly_bullish", min: 8, max: 10 },
+  { key: "bullish", min: 7, max: 8 },
+  { key: "mildly_bullish", min: 6.5, max: 7 },
+  { key: "neutral", min: 4.5, max: 6.5 },
+  { key: "mildly_bearish", min: 3, max: 4.5 },
+  { key: "strongly_bearish", min: 0, max: 3 },
+];
+
 // Score -> band. FIXED cuts (>=8 / 7 / 6.5 / 4.5 / 3). Never returns "upcoming".
 export function bandForScore(score: number): Exclude<BandKey, "upcoming"> {
   if (score >= 8) return "strongly_bullish";
