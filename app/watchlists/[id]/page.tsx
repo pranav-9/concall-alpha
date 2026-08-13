@@ -17,6 +17,7 @@ import { AnalyticsBeacon } from "@/components/analytics-beacon";
 import { BOARD_READS, classifyBoardRead } from "@/lib/board-read";
 import { COVERAGE_SELECT, isAdmittedLargeCap } from "@/lib/coverage-policy";
 import { computeBoardReadCounts } from "@/lib/leaderboard-distribution";
+import { computeBoardRanks, type RankableRow } from "@/lib/leaderboard-rank";
 import { buildReadDistribution } from "@/lib/read-distribution";
 import { buildScoreBoardRows } from "@/lib/score-board-rows";
 import { createClient } from "@/lib/supabase/server";
@@ -306,13 +307,15 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
   const readBandCounts = computeBoardReadCounts(reads.map((r) => r.key));
   const readScored = reads.filter((r) => r.key !== "no_read").length;
 
-  // The reference population for the curve. Only the ADMISSION gate applies:
-  // large caps are outside the positioning entirely, but the below-the-cut tail
-  // is still ours and belongs in a picture of the universe — the same population
-  // the leaderboard's Overall board renders (excludeLargeCaps + includeBelowCut).
-  // Note this is the covered universe, not the watchlist's own peers: a holding
-  // that's a large cap still gets a needle, it just isn't in the shape.
+  // The reference population for the curve AND the overall-rank chips. Only the
+  // ADMISSION gate applies: large caps are outside the positioning entirely, but
+  // the below-the-cut tail is still ours and belongs in a picture of the universe
+  // — the same population the leaderboard's Overall board renders
+  // (excludeLargeCaps + includeBelowCut). Note this is the covered universe, not
+  // the watchlist's own peers: a holding that's a large cap still gets a needle,
+  // it just isn't in the shape (and carries no overall rank).
   const universeReadScores: number[] = [];
+  const universeRankableRows: RankableRow[] = [];
   boardRowsByCode.forEach((row, code) => {
     if (isAdmittedLargeCap(coverageByCode.get(code))) return;
     const read = classifyBoardRead({
@@ -320,11 +323,20 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
       growthScore: row.growthScore,
       valuationScore: row.valuationScore,
     });
+    universeRankableRows.push({
+      companyCode: code,
+      companyName: row.companyName,
+      readScore: read.key === "no_read" ? null : read.score,
+    });
     // "Has a read" is the same test the summary line above the board uses, so
     // the two counts on this page can't mean different things.
     if (read.key === "no_read" || read.score == null) return;
     universeReadScores.push(read.score);
   });
+  // Each holding's live # on the leaderboard's Overall board — the same ranking
+  // fn over the same universe, so the chip can never disagree with the board. A
+  // plain Record: it crosses into the client table component.
+  const overallRankByCode = Object.fromEntries(computeBoardRanks(universeRankableRows));
 
   const readDistribution = buildReadDistribution(
     universeReadScores,
@@ -409,7 +421,11 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
               Ranked by Read · quality weighted 2:1 over price
             </p>
           </div>
-          <ScoreBoardTable rows={tableRows} watchlistId={watchlist.id} />
+          <ScoreBoardTable
+            rows={tableRows}
+            watchlistId={watchlist.id}
+            overallRankByCode={overallRankByCode}
+          />
         </div>
       </div>
     </WatchlistShell>

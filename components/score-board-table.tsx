@@ -532,6 +532,7 @@ export function ScoreBoardTable({
   watchlistId,
   priorRankByCode,
   coverageCutRank,
+  overallRankByCode,
 }: {
   rows: ScoreBoardRow[];
   /**
@@ -552,6 +553,15 @@ export function ScoreBoardTable({
    * a user-owned list is not subject to the cut.
    */
   coverageCutRank?: number;
+  /**
+   * UPPERCASE code → the company's live rank on the leaderboard's Overall board
+   * (a plain Record — it crosses the server→client boundary). Only a watchlist
+   * passes it: this board's own # IS list-local there, so the chip beside the
+   * ticker restates where the holding sits in the ranked universe. Absent (the
+   * leaderboard, where # already says it) → no chip. A code with no entry (an
+   * admitted large cap, or no Read yet) renders no chip either.
+   */
+  overallRankByCode?: Record<string, number>;
 }) {
   const router = useRouter();
   const [sort, setSort] = useState<SortState>({ key: "coverageRank", direction: "asc" });
@@ -812,11 +822,22 @@ export function ScoreBoardTable({
                           >
                             {row.companyName}
                           </Link>
-                          <span
-                            className="font-mono text-[10px] uppercase tracking-wide"
-                            style={{ color: "var(--ink-soft)", opacity: 0.75 }}
-                          >
-                            {row.companyCode}
+                          <span className="flex items-baseline gap-1.5">
+                            <span
+                              className="font-mono text-[10px] uppercase tracking-wide"
+                              style={{ color: "var(--ink-soft)", opacity: 0.75 }}
+                            >
+                              {row.companyCode}
+                            </span>
+                            {overallRankByCode?.[row.companyCode.toUpperCase()] != null && (
+                              <span
+                                className="whitespace-nowrap font-mono text-[10px] tabular-nums"
+                                style={{ color: "var(--ink-soft)", opacity: 0.75 }}
+                                title="Rank on the Overall leaderboard"
+                              >
+                                · #{overallRankByCode[row.companyCode.toUpperCase()]} overall
+                              </span>
+                            )}
                           </span>
                         </div>
                       </div>
