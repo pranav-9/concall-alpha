@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { createPublicReadClient } from "@/lib/supabase/public-read";
 import {
   isScoredWithin24h,
   normalizeSourceStatus,
@@ -94,7 +95,7 @@ const ANALYSIS_COLUMNS =
   "scored_at:details->scoring_meta->>scored_at";
 
 async function fetchAnalysisRows(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createPublicReadClient>,
 ): Promise<AnalysisRow[]> {
   const rows: AnalysisRow[] = [];
   let from = 0;
@@ -159,11 +160,21 @@ export type TrackerData = {
   freshCompanies: number;
 };
 
-export async function getTrackerData(): Promise<TrackerData> {
-  const target = getTargetQuarter();
-  // One clock for the whole render, so two rows can't straddle the 24h edge.
-  const renderedAt = new Date();
-  const supabase = await createClient();
+// Everything time-INdependent lives in this cached fetch; the 24h-freshness
+// flags are stamped per request in getTrackerData below. Cached because the
+// fetch pages through the whole scoring_meta-filtered concall_analysis table
+// (1000+ rows, serial round-trips) — done on every request it put the page's
+// TTFB at 1.1–1.7s. The target quarter is an argument (not derived inside) so
+// it participates in the cache key and a season rollover can't serve the old
+// quarter for a revalidate window.
+type CachedTrackerEntry = Omit<TrackerEntry, "scoredWithin24h">;
+
+type CachedTrackerData = Omit<TrackerData, "entries" | "freshCompanies"> & {
+  entries: CachedTrackerEntry[];
+};
+
+async function fetchTrackerData(target: ReportingQuarter): Promise<CachedTrackerData> {
+  const supabase = createPublicReadClient();
   const [{ data: companyData }, analysisRows, calendarResult] =
     await Promise.all([
       supabase
@@ -240,7 +251,7 @@ export async function getTrackerData(): Promise<TrackerData> {
     }
   }
 
-  const entries: TrackerEntry[] = companies
+  const entries: CachedTrackerEntry[] = companies
     .filter((c) => c.code)
     .map((c) => {
       const key = c.code.toUpperCase();
@@ -272,7 +283,6 @@ export async function getTrackerData(): Promise<TrackerData> {
         expectedDate,
         scoredAt,
         sourceStatus: normalizeSourceStatus(target?.source_status),
-        scoredWithin24h: isScoredWithin24h(scoredAt, renderedAt),
         scorePath: buildTrackerScorePath(historyByCompany.get(key)),
       };
     })
@@ -313,6 +323,30 @@ export async function getTrackerData(): Promise<TrackerData> {
     totalCompanies: entries.length,
     reportedCompanies: entries.length - countsByBucket.upcoming,
     unofficialCompanies: entries.filter((e) => e.sourceStatus === "unofficial").length,
+  };
+}
+
+const getCachedTrackerData = unstable_cache(
+  fetchTrackerData,
+  // Bump the version whenever TrackerEntry's shape changes — the cached payload
+  // is JSON on disk, and a stale entry would arrive missing the new fields.
+  ["quarter-tracker-v1"],
+  { revalidate: 300 },
+);
+
+export async function getTrackerData(): Promise<TrackerData> {
+  const data = await getCachedTrackerData(getTargetQuarter());
+  // The 24h flag is stamped per request, never cached: a cached true would keep
+  // a row "fresh" for a whole revalidate window past the edge. One clock for
+  // the whole render, so two rows can't straddle the 24h edge.
+  const renderedAt = new Date();
+  const entries: TrackerEntry[] = data.entries.map((entry) => ({
+    ...entry,
+    scoredWithin24h: isScoredWithin24h(entry.scoredAt, renderedAt),
+  }));
+  return {
+    ...data,
+    entries,
     freshCompanies: entries.filter((e) => e.scoredWithin24h).length,
   };
 }
