@@ -150,7 +150,9 @@ expectRead("strong print, cooling outlook", { concallScore: 8.1, growthScore: 6.
 // Quality holding on both legs: the question becomes what you pay.
 expectRead("strong and cheap", { concallScore: 8.0, growthScore: 8.2, valuationScore: 7.0 }, "aligned_cheap");
 expectRead("strong and rich", { concallScore: 8.0, growthScore: 8.2, valuationScore: 2.5 }, "priced_for_it");
-expectRead("strong, fairly priced", { concallScore: 8.0, growthScore: 8.2, valuationScore: 5.0 }, "balanced");
+// Split 2026-08-13: strong-on-both-legs at a fair price is its own read, not
+// "Balanced" — the old gloss called this quality "middling".
+expectRead("strong, fairly priced", { concallScore: 8.0, growthScore: 8.2, valuationScore: 5.0 }, "quality_fair");
 
 // A missing price read is NOT a fair-value judgement. This is the distinction
 // that put 18 companies under the wrong word before the split — every label
@@ -167,34 +169,35 @@ expectRead("soft and rich", { concallScore: 4.0, growthScore: 6.0, valuationScor
 expectRead("outlook-led, no price", { concallScore: 5.5, growthScore: 8.2, valuationScore: null }, "outlook_led");
 expectRead("peaking, no price", { concallScore: 8.1, growthScore: 6.2, valuationScore: null }, "peaking");
 
-// No label that names a price may be reachable without a valuation read.
-// "balanced" is checked separately below — it's the one residual that may stand
-// without a price, and only when a quality leg is genuinely mid-band.
-const PRICE_NAMING: BoardReadKey[] = ["aligned_cheap", "priced_for_it", "cheap_weak", "weak_rich"];
+// No label that names a price may be reachable without a valuation read. Since
+// the 2026-08-13 residual reroute this includes "balanced" itself (its gloss
+// asserts a fair price): with no valuation, the only reachable words are the
+// price-agnostic divergences, "No price read", and "No read".
+const PRICE_AGNOSTIC: BoardReadKey[] = ["outlook_led", "peaking", "unpriced", "no_read"];
 for (const qtrScore of [3.0, 4.6, 5.5, 6.7, 7.2, 8.4]) {
   for (const growthScore of [null, 6.0, 6.8, 7.2, 7.8, 8.6]) {
     const key = read({ concallScore: qtrScore, growthScore, valuationScore: null });
-    if (key === "balanced") {
-      // Only the mid-band residual may say "Balanced" without a price, and it's
-      // a statement about quality sitting mid-scale rather than about price.
-      const qtrIsMidBand = qtrScore >= 6.5 && qtrScore < 7.0;
-      const growthIsMidBand = growthScore != null && growthScore >= 7.0 && growthScore < 7.5;
-      assert.ok(
-        qtrIsMidBand || growthIsMidBand,
-        `qtr ${qtrScore} / growth ${growthScore} with no price must not read "Balanced"`,
-      );
-    } else {
-      assert.ok(
-        !PRICE_NAMING.includes(key),
-        `qtr ${qtrScore} / growth ${growthScore} with no price reached price-naming "${key}"`,
-      );
-    }
+    assert.ok(
+      PRICE_AGNOSTIC.includes(key),
+      `qtr ${qtrScore} / growth ${growthScore} with no price reached price-naming "${key}"`,
+    );
   }
 }
 
 // The mildly-bullish band is neither strong nor soft — it must not trip either
 // divergence, or a 6.7 quarter would read as "cracking" by another name.
 expectRead("mid-band quarter", { concallScore: 6.7, growthScore: 7.2, valuationScore: 5.0 }, "balanced");
+
+// The residual makes the same price check as every other branch (2026-08-13):
+// a mid-quality row with an extreme price must not shrug it off as "Balanced",
+// or the Read contradicts the Valuation cell beside it. Leg values are the real
+// rows that motivated the split (WINDLAS / POKARNA / mid-with-no-valuation).
+expectRead("mid quality, cheap", { concallScore: 6.7, growthScore: 7.8, valuationScore: 6.2 }, "cheap_forming");
+expectRead("mid quality, rich", { concallScore: 5.6, growthScore: 7.1, valuationScore: 2.6 }, "priced_ahead");
+expectRead("mid quality, no price", { concallScore: 5.8, growthScore: 7.2, valuationScore: null }, "unpriced");
+// Strong print, moderate outlook, rich price also lands in the residual — the
+// reason the rich lean's label is print-agnostic ("Priced ahead of it").
+expectRead("strong print, moderate outlook, rich", { concallScore: 7.5, growthScore: 7.2, valuationScore: 1.8 }, "priced_ahead");
 
 // The Read can never contradict the columns above it: a row labelled cheap must
 // have a valuation in a cheap band.

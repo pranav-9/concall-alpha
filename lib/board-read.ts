@@ -64,11 +64,14 @@ export const PRICE_WEIGHT = 0.12;
 
 export type BoardReadKey =
   | "aligned_cheap"
+  | "quality_fair"
   | "priced_for_it"
   | "outlook_led"
   | "peaking"
+  | "cheap_forming"
   | "balanced"
   | "unpriced"
+  | "priced_ahead"
   | "cheap_weak"
   | "weak_rich"
   | "no_read";
@@ -90,12 +93,24 @@ export const BOARD_READS: Record<BoardReadKey, BoardReadDef> = {
     rank: 0,
     textClass: "text-teal-700 dark:text-teal-300",
   },
+  // Split out of "Balanced" 2026-08-13. Strong-on-both-legs at a FAIR price was
+  // falling through to the residual and reading "quality middling" — the one
+  // configuration a quality-first reader most wants surfaced, misdescribed by
+  // the label least likely to make them look.
+  quality_fair: {
+    key: "quality_fair",
+    label: "Quality at a fair price",
+    gloss:
+      "Strong on both the print and the outlook, and the price is still fair — you're paying about what you can see, not a premium for it.",
+    rank: 1,
+    textClass: "text-teal-700 dark:text-teal-300",
+  },
   priced_for_it: {
     key: "priced_for_it",
     label: "Priced for it",
     gloss:
       "Quality is real on both the print and the outlook, but the price already reflects it. You're paying for what you can see.",
-    rank: 1,
+    rank: 2,
     textClass: "text-teal-700 dark:text-teal-300",
   },
   outlook_led: {
@@ -103,7 +118,7 @@ export const BOARD_READS: Record<BoardReadKey, BoardReadDef> = {
     label: "Outlook-led",
     gloss:
       "The print is soft but the forward read is strong — the case rests on what's ahead, not what just happened.",
-    rank: 2,
+    rank: 3,
     textClass: "text-teal-700 dark:text-teal-300",
   },
   peaking: {
@@ -111,35 +126,61 @@ export const BOARD_READS: Record<BoardReadKey, BoardReadDef> = {
     label: "Peaking",
     gloss:
       "A strong quarter with a cooler outlook behind it — the good news may already be in the print.",
-    rank: 3,
+    rank: 4,
+    textClass: "text-amber-700 dark:text-amber-300",
+  },
+  // The residual's cheap lean (2026-08-13). Mixed/mid quality legs with a low
+  // price used to read "Balanced", hiding the one leg that WAS pulling — the
+  // Valuation cell two columns left said "Undervalued" while the Read shrugged.
+  cheap_forming: {
+    key: "cheap_forming",
+    label: "Cheap, quality forming",
+    gloss:
+      "The price is low while the quality legs are mixed — not the broken kind of cheap, but the case still has to form.",
+    rank: 5,
     textClass: "text-amber-700 dark:text-amber-300",
   },
   balanced: {
     key: "balanced",
     label: "Balanced",
-    gloss: "Nothing pulling hard in any direction — quality and price both middling.",
-    rank: 4,
+    gloss:
+      "Nothing pulling hard in any direction — the quality legs sit mid-scale and the price is fair.",
+    rank: 6,
     textClass: "text-muted-foreground",
   },
   // Split out of "Balanced" 2026-07-30. 18 of 52 Balanced rows had no valuation
   // at all, so the label was asserting a fair-value judgement we hadn't made —
   // the same conflation the Valuation column itself is careful to avoid ("—"
   // means no verdict, not an average one). Quality is legible on these rows;
-  // only the price leg is missing.
+  // only the price leg is missing. Since 2026-08-13 the residual routes here
+  // too, so NO label that names a price is reachable without a valuation.
   unpriced: {
     key: "unpriced",
     label: "No price read",
     gloss:
       "The quarter and outlook are readable, but there's no valuation we'd stand behind — so this says nothing about what you'd pay.",
-    rank: 5,
+    rank: 7,
     textClass: "text-muted-foreground",
+  },
+  // The residual's rich lean (2026-08-13). Named as the sibling of "Priced for
+  // it": there the quality is visible and paid for; here the price is ahead of
+  // what the legs currently show. Deliberately print-agnostic ("ahead of it",
+  // not "rich for a soft print") because a strong print with only a moderate
+  // outlook lands here too.
+  priced_ahead: {
+    key: "priced_ahead",
+    label: "Priced ahead of it",
+    gloss:
+      "The price is rich while the print and outlook don't fully back it — you're paying ahead of what the legs show.",
+    rank: 8,
+    textClass: "text-orange-700 dark:text-orange-300",
   },
   cheap_weak: {
     key: "cheap_weak",
     label: "Cheap & weak",
     gloss:
       "Priced low, and the quarter and outlook show why. Cheap is the only leg working.",
-    rank: 6,
+    rank: 9,
     textClass: "text-orange-700 dark:text-orange-300",
   },
   weak_rich: {
@@ -147,25 +188,28 @@ export const BOARD_READS: Record<BoardReadKey, BoardReadDef> = {
     label: "Weak & rich",
     gloss:
       "Soft on both the print and the outlook, and still not cheap — no leg supporting it.",
-    rank: 7,
+    rank: 10,
     textClass: "text-red-700 dark:text-red-300",
   },
   no_read: {
     key: "no_read",
     label: "No read",
     gloss: "Not enough scored legs to name a configuration.",
-    rank: 8,
+    rank: 11,
     textClass: "text-muted-foreground",
   },
 };
 
 export const BOARD_READ_ORDER: BoardReadKey[] = [
   "aligned_cheap",
+  "quality_fair",
   "priced_for_it",
   "outlook_led",
   "peaking",
+  "cheap_forming",
   "balanced",
   "unpriced",
+  "priced_ahead",
   "cheap_weak",
   "weak_rich",
   "no_read",
@@ -293,8 +337,10 @@ export function classifyBoardRead(input: BoardReadInput): BoardReadResult {
   const cheap = valBand != null && CHEAP.has(valBand);
   const rich = valBand != null && RICH.has(valBand);
 
+  // "quarter", not "ConcallScore": on the Overall board this leg is the
+  // recency-weighted 4Q blend, not the single latest print that word names.
   const ctx = [
-    `ConcallScore ${input.concallScore.toFixed(1)}`,
+    `quarter ${input.concallScore.toFixed(1)}`,
     finite(input.growthScore) ? `growth ${input.growthScore.toFixed(1)}` : "no growth read",
     finite(input.valuationScore)
       ? `valuation ${input.valuationScore.toFixed(1)}`
@@ -323,7 +369,7 @@ export function classifyBoardRead(input: BoardReadInput): BoardReadResult {
     // label. Everything from here down that would name a price has to check.
     return valBand == null
       ? { key: "unpriced", score, description: withCtx(BOARD_READS.unpriced) }
-      : { key: "balanced", score, description: withCtx(BOARD_READS.balanced) };
+      : { key: "quality_fair", score, description: withCtx(BOARD_READS.quality_fair) };
   }
 
   // Quality soft on both legs: cheap is either the consolation or absent.
@@ -339,10 +385,22 @@ export function classifyBoardRead(input: BoardReadInput): BoardReadResult {
       : { key: "balanced", score, description: withCtx(BOARD_READS.balanced) };
   }
 
-  // Mid-band residual: neither side diverging. "Balanced" here is a statement
-  // about quality sitting mid-scale, not about price, so it stands with or
-  // without a valuation.
-  return { key: "balanced", score, description: withCtx(BOARD_READS.balanced) };
+  // Mid-band residual: at least one quality leg sits mid-band, so neither the
+  // strong nor the soft family fires. Before 2026-08-13 everything here read
+  // "Balanced" regardless of price — which put "Balanced" on rows whose
+  // Valuation cell said Expensive or Undervalued, breaking the no-contradiction
+  // contract at the top of this file. Now the residual makes the same price
+  // check every other branch makes; "Balanced" is left meaning exactly what its
+  // gloss says: mid quality AND a fair price.
+  if (cheap) {
+    return { key: "cheap_forming", score, description: withCtx(BOARD_READS.cheap_forming) };
+  }
+  if (rich) {
+    return { key: "priced_ahead", score, description: withCtx(BOARD_READS.priced_ahead) };
+  }
+  return valBand == null
+    ? { key: "unpriced", score, description: withCtx(BOARD_READS.unpriced) }
+    : { key: "balanced", score, description: withCtx(BOARD_READS.balanced) };
 }
 
 /** Sort rank; no_read is "no signal", not "worst signal", so it pins last both ways. */

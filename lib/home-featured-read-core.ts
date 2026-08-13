@@ -17,9 +17,10 @@
 import { BOARD_READS, classifyBoardRead, type BoardReadKey } from "./board-read";
 import type { CompanyTrail } from "./home-trails";
 
-/** The verdict families the hero is allowed to feature (board-read ranks 0-2). */
+/** The verdict families the hero is allowed to feature (board-read ranks 0-3). */
 const POSITIVE_READS: ReadonlySet<BoardReadKey> = new Set<BoardReadKey>([
   "aligned_cheap",
+  "quality_fair",
   "priced_for_it",
   "outlook_led",
 ]);
