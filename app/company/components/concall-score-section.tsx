@@ -216,6 +216,7 @@ const renderChartCard = ({
   onRangeChange,
   showRangeToggle,
   trajectory,
+  title = "Where it's heading · whole series",
 }: {
   chartData: ChartDataPoint[];
   selectedQuarterLabel: string;
@@ -226,12 +227,13 @@ const renderChartCard = ({
   // Series-level trajectory (as of the latest quarter) — same classification the
   // leaderboard/watchlist Trend column uses. Labels the chart, not a single quarter.
   trajectory: TrajectoryResult;
+  title?: string;
 }) => (
   <div className={`${nestedDetailClass} flex min-w-0 flex-col gap-2 p-2.5`}>
     <div className="flex items-center justify-between gap-2">
       <div className="flex items-center gap-2">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Score trend
+          {title}
         </p>
         {trajectory.key !== "no_read" && (
           <TrendBadge
@@ -405,6 +407,22 @@ export function ConcallScoreSection({
     }
   };
 
+  // Net category lean for the selected quarter — summed from the v4
+  // score_breakdown (-2..+2 per discussed category) the deterministic
+  // composite is built from. Null for legacy rows without a breakdown.
+  const leanSummary = React.useMemo(() => {
+    const bd = quarterContext?.details?.score_breakdown;
+    if (!bd) return null;
+    const vals = Object.values(bd).filter(
+      (v): v is number => typeof v === "number" && Number.isFinite(v),
+    );
+    if (vals.length === 0) return null;
+    const net = vals.reduce((a, b) => a + b, 0);
+    const pos = vals.filter((v) => v > 0).reduce((a, b) => a + b, 0);
+    const neg = vals.filter((v) => v < 0).reduce((a, b) => a + Math.abs(b), 0);
+    return { net, pos, neg, count: vals.length };
+  }, [quarterContext]);
+
   const cards: Record<string, SectionCard> = quarterContext
     ? {
         resultsSummary: {
@@ -484,54 +502,100 @@ export function ConcallScoreSection({
 
         {quarterContext ? (
           <>
-            {/* Body: the verdict — "Why this score" (score circle + reasoning, the
-                one second-order read kept) next to the score-trend chart. */}
+            {/* Reconciling headline — the two orthogonal reads named in one line */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1">
+              <p className="text-[14px] font-semibold text-foreground">
+                Two reads on one score:{" "}
+                <span className="text-teal-700 dark:text-teal-300">where it sits</span> and{" "}
+                <span className="text-teal-700 dark:text-teal-300">where it&apos;s heading</span>.
+              </p>
+              <span className="text-[12px] text-muted-foreground">
+                A 7 on the way up is a different stock from a 7 on the way down.
+              </span>
+            </div>
+
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
-              <div className={`${nestedDetailClass} flex flex-col p-3`}>
-                {/* Title: score circle + sentiment band (derived from the score, no LLM). */}
-                <div className="mb-4 flex items-center gap-2.5">
+              {/* LEFT — Where it sits: verdict (circle + band) → lean meter → rationale. */}
+              <div className={`${nestedDetailClass} flex flex-col gap-3 p-3`}>
+                <div className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Where it sits · this quarter
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
                   <ConcallScore
                     score={quarterContext.detailScore}
-                    size="sm"
+                    size="md"
                     className="shrink-0 shadow-none ring-1"
                   />
-                  <span className={`text-[14px] font-semibold ${quarterContext.band.tone}`}>
-                    {quarterContext.band.label}
-                  </span>
+                  <div>
+                    <div className={`text-[18px] font-bold ${quarterContext.band.tone}`}>
+                      {quarterContext.band.label}
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">
+                      Band {BANDS[bandForScore(quarterContext.detailScore)].description} · fixed cuts
+                    </div>
+                  </div>
                 </div>
-                {/* Sub-label introducing the score drivers. */}
-                <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  Why this score
-                </p>
-                {quarterContext.rationale.length > 0 ? (
-                  <ul className="flex flex-1 flex-col justify-between gap-3">
-                    {quarterContext.rationale.map((item, i) => (
-                      <li
-                        key={i}
-                        className="flex gap-2 text-[12px] leading-snug text-foreground/85"
-                      >
-                        {item.direction === "positive" ? (
-                          <ArrowUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                        ) : item.direction === "negative" ? (
-                          <ArrowDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-400" />
-                        ) : (
-                          <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400/80" />
+                {leanSummary && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground">Category leans</span>
+                      <span
+                        className={cn(
+                          chipClass(leanSummary.net >= 0 ? "emerald" : "rose"),
+                          "px-2 py-0.5 text-[10px]",
                         )}
-                        <span>
-                          {item.heading && (
-                            <span className="font-semibold text-foreground">{item.heading}</span>
-                          )}
-                          {item.heading && item.detail ? " — " : ""}
-                          {item.detail}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-[11px] italic text-muted-foreground">
-                    No rationale for this quarter.
-                  </p>
+                      >
+                        Net {leanSummary.net >= 0 ? "+" : "−"}
+                        {Math.abs(leanSummary.net)}
+                      </span>
+                    </div>
+                    <div
+                      className="flex h-1.5 gap-px overflow-hidden rounded-full bg-muted"
+                      role="img"
+                      aria-label={`Category leans net ${leanSummary.net >= 0 ? "plus" : "minus"} ${Math.abs(leanSummary.net)} across ${leanSummary.count} discussed`}
+                    >
+                      <div className="bg-emerald-500" style={{ flexGrow: leanSummary.pos || 0 }} />
+                      <div className="bg-rose-400" style={{ flexGrow: leanSummary.neg || 0 }} />
+                    </div>
+                  </div>
                 )}
+                <div className="flex flex-1 flex-col border-t border-border/40 pt-3">
+                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Why this score
+                  </p>
+                  {quarterContext.rationale.length > 0 ? (
+                    <ul className="flex flex-1 flex-col justify-between gap-3">
+                      {quarterContext.rationale.map((item, i) => (
+                        <li
+                          key={i}
+                          className="flex gap-2 text-[12px] leading-snug text-foreground/85"
+                        >
+                          {item.direction === "positive" ? (
+                            <ArrowUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                          ) : item.direction === "negative" ? (
+                            <ArrowDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-400" />
+                          ) : (
+                            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400/80" />
+                          )}
+                          <span>
+                            {item.heading && (
+                              <span className="font-semibold text-foreground">{item.heading}</span>
+                            )}
+                            {item.heading && item.detail ? " — " : ""}
+                            {item.detail}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-[11px] italic text-muted-foreground">
+                      No rationale for this quarter.
+                    </p>
+                  )}
+                </div>
               </div>
               {renderChartCard({
                 chartData: visibleChartData,
@@ -576,6 +640,9 @@ export function ConcallScoreSection({
             </span>
             <span className="text-[11px] tabular-nums text-muted-foreground">
               {quarterContext.detailQuarterLabel}
+              {leanSummary
+                ? ` · ${leanSummary.count} discussed · net ${leanSummary.net >= 0 ? "+" : "−"}${Math.abs(leanSummary.net)}`
+                : ""}
             </span>
           </summary>
 
