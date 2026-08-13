@@ -195,9 +195,16 @@ function deltaTone(delta: number) {
 export interface TheReadOverviewProps {
   overview: CompanyPageOverviewCacheRow;
   watchlistSlot?: ReactNode;
+  /** Server-rendered live Overall-board rank (overall-rank-slot.tsx), streamed
+   * in behind Suspense — a slot so this client component stays board-math-free. */
+  overallRankSlot?: ReactNode;
 }
 
-export function TheReadOverview({ overview, watchlistSlot = null }: TheReadOverviewProps) {
+export function TheReadOverview({
+  overview,
+  watchlistSlot = null,
+  overallRankSlot = null,
+}: TheReadOverviewProps) {
   const navigation = useCompanyPageNavigation();
   const navigate = (href: string) => {
     const id = href.startsWith("#") ? href.slice(1) : href;
@@ -269,6 +276,7 @@ export function TheReadOverview({ overview, watchlistSlot = null }: TheReadOverv
                   {overview.overview_takeaways.moatHeadline}
                 </p>
               )}
+              {overallRankSlot}
             </div>
           </div>
           <div className="flex items-center gap-5 sm:gap-6">

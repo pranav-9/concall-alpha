@@ -8,6 +8,7 @@ import {
 import { SECTION_MAP } from "../constants";
 import { CompanyPageWorkspace } from "../components/company-page-workspace";
 import { TheReadOverview } from "../components/overview-the-read";
+import { CompanyOverallRankSlot } from "../components/overall-rank-slot";
 import CompanyWatchlistSlot, {
   WatchlistSlotFallback,
 } from "../components/company-watchlist-slot";
@@ -161,6 +162,11 @@ export default async function Page({
               watchlistSlot={
                 <Suspense fallback={<WatchlistSlotFallback />}>
                   <CompanyWatchlistSlot companyCode={overview.company_code} />
+                </Suspense>
+              }
+              overallRankSlot={
+                <Suspense fallback={null}>
+                  <CompanyOverallRankSlot companyCode={overview.company_code} />
                 </Suspense>
               }
             />
