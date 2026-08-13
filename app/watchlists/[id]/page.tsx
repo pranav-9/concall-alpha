@@ -105,15 +105,6 @@ function WatchlistShell({
               </div>
               {actions ? <div className="shrink-0">{actions}</div> : null}
             </div>
-            <p className="mt-4 text-xs">
-              <Link
-                href="/watchlists"
-                prefetch={false}
-                className="text-muted-foreground hover:text-foreground hover:underline"
-              >
-                ← All watchlists
-              </Link>
-            </p>
           </section>
 
           {children}
