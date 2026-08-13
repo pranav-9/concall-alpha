@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { ChevronDown, History, LayoutGrid, TableProperties } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -118,6 +117,58 @@ const STATUS_STYLES: Record<
     accentClass: "bg-muted-foreground",
   },
 };
+
+// 5-bucket delivery language for rows and the credibility band. The 8-key
+// status vocabulary (STATUS_STYLES) survives in the drawer header; on the
+// page the reader only needs the delivery verdict.
+type DeliveryBucket = "delivered" | "on_track" | "revised" | "missed" | "too_early";
+
+export const STATUS_TO_BUCKET: Record<NormalizedGuidanceStatusKey, DeliveryBucket> = {
+  met: "delivered",
+  active: "on_track",
+  revised: "revised",
+  delayed: "revised",     // slipped/changed reads as one bucket to a user
+  missed: "missed",
+  dropped: "missed",      // both = commitment not delivered
+  not_yet_clear: "too_early",
+  unknown: "too_early",
+};
+
+const DELIVERY_STATUS: Record<
+  DeliveryBucket,
+  { label: string; glyph: string; pill: string; ink: string }
+> = {
+  delivered: { label: "Delivered", glyph: "✓", ink: "text-emerald-800 dark:text-emerald-200",
+    pill: "border-emerald-200/90 bg-emerald-100 dark:border-emerald-700/40 dark:bg-emerald-900/30" },
+  on_track:  { label: "On track",  glyph: "●", ink: "text-sky-800 dark:text-sky-200",
+    pill: "border-sky-200/90 bg-sky-100 dark:border-sky-700/40 dark:bg-sky-900/30" },
+  revised:   { label: "Revised",   glyph: "↻", ink: "text-amber-800 dark:text-amber-200",
+    pill: "border-amber-200/95 bg-amber-100 dark:border-amber-700/40 dark:bg-amber-900/30" },
+  missed:    { label: "Missed",    glyph: "✗", ink: "text-rose-800 dark:text-rose-200",
+    pill: "border-rose-200/95 bg-rose-100 dark:border-rose-700/40 dark:bg-rose-900/30" },
+  too_early: { label: "Too early", glyph: "○", ink: "text-slate-600 dark:text-slate-300",
+    pill: "border-dashed border-border/70 bg-muted/60" },
+};
+
+export const bucketOf = (item: Pick<NormalizedGuidanceItem, "statusKey">): DeliveryBucket =>
+  STATUS_TO_BUCKET[item.statusKey] ?? "too_early";
+
+function StatusPill({ item }: { item: NormalizedGuidanceItem }) {
+  const s = DELIVERY_STATUS[bucketOf(item)];
+  return (
+    <span
+      aria-label={`${s.label} (${item.statusLabel})`}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10.5px] font-semibold",
+        s.pill,
+        s.ink,
+      )}
+    >
+      <span aria-hidden="true">{s.glyph}</span>
+      {s.label}
+    </span>
+  );
+}
 
 const TRACKER_OVERVIEW_CLASS = `${elevatedBlockClass} p-4`;
 
@@ -262,6 +313,26 @@ const formatTargetBadge = (item: ValueBadgeFields): string | null => {
 const formatValueBadge = (item: NormalizedGuidanceItem): string | null =>
   formatPercentBadge(item) ?? formatTargetBadge(item);
 
+// One Target cell: prefer an absolute target; fall back to the %; show
+// "prior → current" when a revised thread carries both. Prior comes from the
+// newest trail step whose value differs from the current one (trail is
+// chronological, so scan from the end).
+function targetCellText(item: NormalizedGuidanceItem): string | null {
+  const current = formatTargetBadge(item) ?? formatPercentBadge(item);
+  if (!current) return null;
+  if (bucketOf(item) === "revised") {
+    const prior = [...item.trail]
+      .reverse()
+      .map((t) => formatTargetBadge(t) ?? formatPercentBadge(t))
+      .find((v) => v && v !== current);
+    if (prior) return `${prior} → ${current}`;
+  }
+  return current;
+}
+
+const TARGET_CHIP_CLASS =
+  "inline-flex rounded-full border border-sky-200 bg-sky-100 px-2.5 py-0.5 text-[11px] font-semibold text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200";
+
 const getTrailMentionBadgeClass = (mentionType: string | null) => {
   const normalized = mentionType?.trim().toLowerCase().replace(/\s+/g, "_");
 
@@ -392,9 +463,7 @@ function GuidanceThreadCard({
   onSelect: (item: NormalizedGuidanceItem) => void;
 }) {
   const supportText = getGuidanceSupportText(item);
-  const statusStyle = STATUS_STYLES[item.statusKey];
-  const percentBadge = formatPercentBadge(item);
-  const targetBadge = formatTargetBadge(item);
+  const target = targetCellText(item);
   const isHistorical = isHistoricalGuidanceItem(item, currentFy);
 
   return (
@@ -424,15 +493,8 @@ function GuidanceThreadCard({
                   {item.horizonLabel}
                 </span>
               ) : null}
-              {percentBadge ? (
-                <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
-                  {percentBadge}
-                </span>
-              ) : null}
-              {targetBadge ? (
-                <span className="rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
-                  {targetBadge}
-                </span>
+              {target ? (
+                <span className={TARGET_CHIP_CLASS}>{target}</span>
               ) : null}
               {isHistorical ? (
                 <span className="px-1 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
@@ -452,15 +514,7 @@ function GuidanceThreadCard({
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:justify-end">
-            <Badge
-              variant="outline"
-              className={cn(
-                "h-fit shrink-0 px-2 py-0.5 text-[10px] font-semibold",
-                statusStyle.cardBadgeClass,
-              )}
-            >
-              {item.statusLabel}
-            </Badge>
+            <StatusPill item={item} />
             <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
               <History className="size-3" />
               {item.trail.length}
@@ -483,10 +537,9 @@ function GuidanceTableRow({
   onSelect: (item: NormalizedGuidanceItem) => void;
   showSegmentColumn: boolean;
 }) {
-  const statusStyle = STATUS_STYLES[item.statusKey];
-  const percentBadge = formatPercentBadge(item);
-  const targetBadge = formatTargetBadge(item);
   const isHistorical = isHistoricalGuidanceItem(item, currentFy);
+  const target = targetCellText(item);
+  const support = getGuidanceSupportText(item);
 
   return (
     <tr
@@ -497,60 +550,103 @@ function GuidanceTableRow({
         isHistorical && "opacity-70",
       )}
     >
-      <td className="whitespace-nowrap px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        {item.metricLabel ?? "—"}
+      <td className="px-3 py-3 align-top">
+        <p className="text-[13px] font-semibold leading-snug text-foreground">
+          {item.guidanceText}
+        </p>
+        {support ? (
+          <p className="mt-0.5 line-clamp-1 text-[11px] leading-snug text-muted-foreground">
+            {support}
+          </p>
+        ) : null}
       </td>
       {showSegmentColumn ? (
-        <td className="px-3 py-2.5 text-[12px] leading-snug text-foreground">
+        <td className="whitespace-nowrap px-3 py-3 align-top text-[12px] text-foreground">
           {item.segment ?? <span className="text-muted-foreground/60">—</span>}
         </td>
       ) : null}
-      <td className="whitespace-nowrap px-3 py-2.5 text-[12px] leading-snug text-foreground">
-        {item.horizonLabel ?? <span className="text-muted-foreground/60">—</span>}
+      <td className="whitespace-nowrap px-3 py-3 align-top text-[12px] text-muted-foreground">
+        {item.horizonLabel ?? "—"}
       </td>
-      <td className="whitespace-nowrap px-3 py-2.5 text-[12px]">
-        {percentBadge ? (
-          <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
-            {percentBadge}
-          </span>
+      <td className="whitespace-nowrap px-3 py-3 align-top">
+        {target ? (
+          <span className={TARGET_CHIP_CLASS}>{target}</span>
         ) : (
           <span className="text-muted-foreground/60">—</span>
         )}
       </td>
-      <td className="whitespace-nowrap px-3 py-2.5 text-[12px]">
-        {targetBadge ? (
-          <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200">
-            {targetBadge}
-          </span>
-        ) : (
-          <span className="text-muted-foreground/60">—</span>
-        )}
+      <td className="whitespace-nowrap px-3 py-3 align-top">
+        <StatusPill item={item} />
       </td>
-      <td className="whitespace-nowrap px-3 py-2.5">
-        <div className="flex items-center gap-1.5">
-          <Badge
-            variant="outline"
-            className={cn(
-              "h-fit shrink-0 px-2 py-0.5 text-[10px] font-semibold",
-              statusStyle.cardBadgeClass,
-            )}
-          >
-            {item.statusLabel}
-          </Badge>
-          {isHistorical ? (
-            <span className="text-[9px] font-medium uppercase tracking-[0.14em] text-muted-foreground/60">
-              Past
-            </span>
-          ) : null}
-        </div>
-      </td>
-      <td className="whitespace-nowrap px-3 py-2.5 text-right">
+      <td className="whitespace-nowrap px-3 py-3 align-top text-right">
         <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
           <History className="size-3" />
           {item.trail.length}
         </span>
       </td>
     </tr>
+  );
+}
+
+function GuidanceCredibilityBand({ items }: { items: NormalizedGuidanceItem[] }) {
+  const counts = items.reduce(
+    (acc, i) => {
+      acc[bucketOf(i)] += 1;
+      return acc;
+    },
+    { delivered: 0, on_track: 0, revised: 0, missed: 0, too_early: 0 } as Record<
+      DeliveryBucket,
+      number
+    >,
+  );
+  const resolved = counts.delivered + counts.missed + counts.revised;
+  // Grade the lead phrase by the actual delivery ratio — "Management
+  // delivers" over a 0-of-4 count would assert the opposite of the data.
+  const ratio = resolved > 0 ? counts.delivered / resolved : null;
+  const verdict =
+    ratio == null ? null : ratio >= 2 / 3 ? "Management delivers" : ratio >= 1 / 3 ? "Mixed delivery" : "Weak delivery";
+  const verdictInk =
+    ratio == null
+      ? ""
+      : ratio >= 2 / 3
+        ? "text-emerald-700 dark:text-emerald-300"
+        : ratio >= 1 / 3
+          ? "text-amber-700 dark:text-amber-300"
+          : "text-rose-700 dark:text-rose-300";
+  const order: DeliveryBucket[] = ["delivered", "on_track", "revised", "missed"];
+  return (
+    <div className={cn(elevatedBlockClass, "flex flex-wrap items-center justify-between gap-4 p-4")}>
+      <div className="space-y-0.5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          Track record
+        </p>
+        <p className="text-[13px] font-semibold text-foreground">
+          {verdict ? (
+            <>
+              {verdict} —{" "}
+              <span className={verdictInk}>
+                {counts.delivered} of {resolved} resolved commitments met
+              </span>
+              .
+            </>
+          ) : (
+            "No resolved commitments yet — all threads still live."
+          )}
+        </p>
+      </div>
+      <div className="flex gap-5">
+        {order.map((b) => (
+          <div key={b} className="text-center">
+            <div className={cn("text-xl font-bold leading-none", DELIVERY_STATUS[b].ink)}>
+              {counts[b]}
+            </div>
+            <div className="mt-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+              {DELIVERY_STATUS[b].label}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -567,6 +663,16 @@ function GuidanceDrawerBody({ item }: { item: NormalizedGuidanceItem }) {
         </DrawerTitle>
         <DrawerDescription>
           <span className="flex flex-wrap items-center gap-1.5 text-[11px]">
+            {/* Precise 8-label status — the page rows show only the 5-bucket
+               delivery verdict; the drawer is where the exact label lives. */}
+            <span
+              className={cn(
+                "rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                STATUS_STYLES[item.statusKey].badgeClass,
+              )}
+            >
+              {item.statusLabel}
+            </span>
             {item.metricLabel ? (
               <span className="rounded-full border border-border/60 bg-muted/35 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 {item.metricLabel}
@@ -692,6 +798,15 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
     [items, familyTab],
   );
 
+  // Family tabs render only when ≥2 families actually carry data (today:
+  // never — only "growth" populates). When hidden, familyTab stays at its
+  // "growth" default so filteredItems is unchanged.
+  const activeFamilies = React.useMemo(
+    () => FAMILY_TABS.filter((t) => familyCounts[t.id] > 0),
+    [familyCounts],
+  );
+  const showFamilyTabs = activeFamilies.length > 1;
+
   const currentFy = currentFiscalYear();
 
   // Flat ordered list rendered as a 2-col grid. Two zones:
@@ -794,7 +909,9 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
 
   return (
     <div className={TRACKER_ROOT_CLASS}>
+      {showFamilyTabs || (totalSourceMentions > 0 && familyTab === "growth") ? (
       <div className={TRACKER_OVERVIEW_CLASS}>
+        {showFamilyTabs ? (
         <ToggleGroup
           type="single"
           value={familyTab}
@@ -830,15 +947,22 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
             );
           })}
         </ToggleGroup>
+        ) : null}
 
         {totalSourceMentions > 0 && familyTab === "growth" ? (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/30 pt-3">
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-1.5",
+              showFamilyTabs && "mt-3 border-t border-border/30 pt-3",
+            )}
+          >
             <span className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
               {totalSourceMentions} mention{totalSourceMentions === 1 ? "" : "s"}
             </span>
           </div>
         ) : null}
       </div>
+      ) : null}
 
       {filteredItems.length === 0 ? (
         <div className={cn(elevatedBlockClass, "p-8 text-center")}>
@@ -854,6 +978,8 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
 
       {filteredItems.length > 0 ? (
         <>
+      <GuidanceCredibilityBand items={filteredItems} />
+
       <div className="flex justify-end">
         <ToggleGroup
           type="single"
@@ -937,9 +1063,8 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
                     <table className="w-full text-[12px]">
                       <thead className="bg-muted/30 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                         <tr>
-                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Metric</th>
+                          <th scope="col" className="px-3 py-2 text-left">Metric</th>
                           <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Horizon</th>
-                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">% Growth</th>
                           <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Target</th>
                           <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Status</th>
                           <th scope="col" className="whitespace-nowrap px-3 py-2 text-right">Trail</th>
@@ -950,7 +1075,7 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
                           <React.Fragment key={item.guidanceKey}>
                             {idx === overallFirstHistoricalIdx && overallFirstHistoricalIdx > 0 ? (
                               <tr aria-hidden="true">
-                                <td colSpan={6} className="border-t-2 border-border/40 p-0" />
+                                <td colSpan={5} className="border-t-2 border-border/40 p-0" />
                               </tr>
                             ) : null}
                             <GuidanceTableRow
@@ -974,10 +1099,9 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
                     <table className="w-full text-[12px]">
                       <thead className="bg-muted/30 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                         <tr>
-                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Metric</th>
-                          <th scope="col" className="px-3 py-2 text-left">Segment</th>
+                          <th scope="col" className="px-3 py-2 text-left">Metric</th>
+                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Segment</th>
                           <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Horizon</th>
-                          <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">% Growth</th>
                           <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Target</th>
                           <th scope="col" className="whitespace-nowrap px-3 py-2 text-left">Status</th>
                           <th scope="col" className="whitespace-nowrap px-3 py-2 text-right">Trail</th>
@@ -988,7 +1112,7 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
                           <React.Fragment key={item.guidanceKey}>
                             {idx === segmentedFirstHistoricalIdx && segmentedFirstHistoricalIdx > 0 ? (
                               <tr aria-hidden="true">
-                                <td colSpan={7} className="border-t-2 border-border/40 p-0" />
+                                <td colSpan={6} className="border-t-2 border-border/40 p-0" />
                               </tr>
                             ) : null}
                             <GuidanceTableRow
