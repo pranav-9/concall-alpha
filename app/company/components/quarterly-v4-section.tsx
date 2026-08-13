@@ -37,6 +37,83 @@ function leanChip(
   }
 }
 
+// Compact labels for the leans strip — the full CATEGORY_LABELS don't fit a
+// proportional segment ("Financial results" at flexGrow 1 truncates to nothing).
+const STRIP_LABELS: Record<string, string> = {
+  cat_1_quantitative_decomposition: "Results",
+  cat_2_forward_guidance: "Guidance",
+  cat_3_strategy_capital_allocation: "Strategy",
+  cat_4_industry_context: "Industry",
+  cat_5_concentration_dependencies: "Conc.",
+  cat_6_management_quality: "Mgmt",
+  cat_7_qa_signals: "Q&A",
+};
+
+// Segment tone by lean magnitude: ±2 saturates deeper than ±1 so the strip
+// reads strength without a legend.
+const SEGMENT_TONE: Record<number, string> = {
+  [-2]: "bg-rose-400 text-rose-950 dark:bg-rose-500/80 dark:text-rose-50",
+  [-1]: "bg-rose-300 text-rose-950 dark:bg-rose-400/60 dark:text-rose-50",
+  [1]: "bg-emerald-500 text-white dark:bg-emerald-600/80",
+  [2]: "bg-emerald-600 text-white dark:bg-emerald-700/90",
+};
+
+/**
+ * Proportional leans strip: one segment per discussed category with a nonzero
+ * lean, width ∝ |lean|, negatives left (detracts) → positives right (supports).
+ * Zero-lean ("in line") cats carry no width so they appear only in the cards.
+ * Each segment is a button; onSelect receives the category key so the parent
+ * can open that category's card.
+ */
+export function V4LeansStrip({
+  categories,
+  onSelect,
+}: {
+  categories: NormalizedCategory[];
+  onSelect?: (key: NormalizedCategory["key"]) => void;
+}) {
+  const segments = categories
+    .filter(
+      (cat): cat is NormalizedCategory & { lean: number } =>
+        cat.state === "addressed" && typeof cat.lean === "number" && cat.lean !== 0,
+    )
+    .sort((a, b) => {
+      if (a.lean < 0 !== b.lean < 0) return a.lean < 0 ? -1 : 1;
+      return a.lean < 0 ? a.lean - b.lean : b.lean - a.lean;
+    });
+  if (segments.length === 0) return null;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="shrink-0 text-[10px] text-muted-foreground">← detracts</span>
+      <div className="flex h-6 min-w-0 flex-1 gap-1" role="group" aria-label="Per-category leans">
+        {segments.map((cat) => {
+          const sign = cat.lean > 0 ? "+" : "−";
+          return (
+            <button
+              key={cat.key}
+              type="button"
+              onClick={() => onSelect?.(cat.key)}
+              title={`${cat.label} ${sign}${Math.abs(cat.lean)} — open this category's detail`}
+              aria-label={`${cat.label} lean ${cat.lean > 0 ? "plus" : "minus"} ${Math.abs(cat.lean)}; open category detail`}
+              className={cn(
+                "flex min-w-0 items-center justify-center overflow-hidden rounded-md px-1.5 text-[10px] font-semibold transition-opacity hover:opacity-80",
+                SEGMENT_TONE[cat.lean],
+              )}
+              style={{ flexGrow: Math.abs(cat.lean), flexBasis: 0 }}
+            >
+              <span className="truncate">
+                {STRIP_LABELS[cat.key] ?? cat.label} {sign}
+                {Math.abs(cat.lean)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <span className="shrink-0 text-[10px] text-muted-foreground">supports →</span>
+    </div>
+  );
+}
+
 // Accent dot per state. Addressed uses the section's amber (matches the old
 // rationale/results/guidance/risks cards); absent + deferred are muted.
 const STATE_DOT: Record<NormalizedCategory["state"], string> = {
@@ -83,10 +160,21 @@ export function V4CoverageStrip({ categories }: { categories: NormalizedCategory
 // uppercase label, amber dot-bullet list.
 // A single addressed category card. Exported so it can be placed outside the
 // breakdown grid (e.g. Quantitative decomposition rendered next to the chart).
-export function V4Card({ cat }: { cat: NormalizedCategory }) {
+export function V4Card({
+  cat,
+  id,
+  highlighted = false,
+}: {
+  cat: NormalizedCategory;
+  id?: string;
+  highlighted?: boolean;
+}) {
   const chip = leanChip(cat.lean);
   return (
-    <div className={cn(nestedDetailClass, "p-3")}>
+    <div
+      id={id}
+      className={cn(nestedDetailClass, "scroll-mt-24 p-3", highlighted && "ring-2 ring-amber-400/60")}
+    >
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", STATE_DOT.addressed)} />
@@ -127,16 +215,25 @@ export function V4Card({ cat }: { cat: NormalizedCategory }) {
 export function V4CategoryCards({
   categories,
   omit = [],
+  focusKey = null,
 }: {
   categories: NormalizedCategory[];
   omit?: string[];
+  // Category key selected via the leans strip — that card gets an anchor id
+  // (scroll target) and a highlight ring.
+  focusKey?: string | null;
 }) {
   return (
     <>
       {categories
         .filter((cat) => cat.state === "addressed" && !omit.includes(cat.key))
         .map((cat) => (
-          <V4Card key={cat.key} cat={cat} />
+          <V4Card
+            key={cat.key}
+            cat={cat}
+            id={`v4-cat-${cat.key}`}
+            highlighted={cat.key === focusKey}
+          />
         ))}
     </>
   );

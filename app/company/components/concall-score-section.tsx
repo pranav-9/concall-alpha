@@ -22,7 +22,7 @@ import {
   normalizeQuarterlyV4Categories,
   type NormalizedQuarterlyV4,
 } from "@/lib/quarterly-v4/normalize";
-import { V4CategoryCards, V4CoverageStrip } from "./quarterly-v4-section";
+import { V4CategoryCards, V4CoverageStrip, V4LeansStrip } from "./quarterly-v4-section";
 
 import type { ChartDataPoint, QuarterData } from "../types";
 
@@ -292,10 +292,22 @@ export function ConcallScoreSection({
 }: ConcallScoreSectionProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [range, setRange] = React.useState<ChartRange>(12);
+  // Quarter-breakdown disclosure is controlled (not a native <details>) so the
+  // leans strip can stay visible while collapsed and a segment click can both
+  // expand and focus its category card.
+  const [breakdownOpen, setBreakdownOpen] = React.useState(false);
+  const [focusCategoryKey, setFocusCategoryKey] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setSelectedIndex(0);
   }, [detailQuarters]);
+
+  // Collapse + clear the category focus when the quarter changes — the strip
+  // (and card set) belongs to the newly selected quarter.
+  React.useEffect(() => {
+    setBreakdownOpen(false);
+    setFocusCategoryKey(null);
+  }, [selectedIndex, detailQuarters]);
 
   const selectedQuarter = detailQuarters[selectedIndex];
   const quarterContext = selectedQuarter ? buildDetailQuarterContext(selectedQuarter) : null;
@@ -381,6 +393,14 @@ export function ConcallScoreSection({
     return { net, pos, neg, count: vals.length };
   }, [quarterContext]);
 
+  // Whether the proportional leans strip has anything to draw — zero-lean and
+  // lean-less cats carry no segment, so the strip (and its caption) hide.
+  const hasLeanSegments = Boolean(
+    quarterContext?.v4?.categories.some(
+      (cat) => cat.state === "addressed" && typeof cat.lean === "number" && cat.lean !== 0,
+    ),
+  );
+
   const cards: Record<string, SectionCard> = quarterContext
     ? {
         resultsSummary: {
@@ -455,30 +475,6 @@ export function ConcallScoreSection({
                     </div>
                   </div>
                 </div>
-                {leanSummary && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground">Category leans</span>
-                      <span
-                        className={cn(
-                          chipClass(leanSummary.net >= 0 ? "emerald" : "rose"),
-                          "px-2 py-0.5 text-[10px]",
-                        )}
-                      >
-                        Net {leanSummary.net >= 0 ? "+" : "−"}
-                        {Math.abs(leanSummary.net)}
-                      </span>
-                    </div>
-                    <div
-                      className="flex h-1.5 gap-px overflow-hidden rounded-full bg-muted"
-                      role="img"
-                      aria-label={`Category leans net ${leanSummary.net >= 0 ? "plus" : "minus"} ${Math.abs(leanSummary.net)} across ${leanSummary.count} discussed`}
-                    >
-                      <div className="bg-emerald-500" style={{ flexGrow: leanSummary.pos || 0 }} />
-                      <div className="bg-rose-400" style={{ flexGrow: leanSummary.neg || 0 }} />
-                    </div>
-                  </div>
-                )}
                 <div className="flex flex-1 flex-col border-t border-border/40 pt-3">
                   <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                     Why this score
@@ -547,41 +543,86 @@ export function ConcallScoreSection({
     </div>
 
       {quarterContext && (
-        <details className={`group ${elevatedBlockClass} p-2.5`}>
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
-            <span className="flex items-center gap-2">
+        <div className={`${elevatedBlockClass} p-2.5`}>
+          <button
+            type="button"
+            onClick={() => setBreakdownOpen((open) => !open)}
+            aria-expanded={breakdownOpen}
+            className="flex w-full cursor-pointer items-center justify-between gap-3 text-left"
+          >
+            <span className="flex min-w-0 flex-wrap items-center gap-2">
               <h3 className="text-[13px] font-semibold text-foreground">
                 Quarter breakdown by category
               </h3>
-              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+              {leanSummary && (
+                <span
+                  className={cn(
+                    chipClass(leanSummary.net >= 0 ? "emerald" : "rose"),
+                    "px-2 py-0.5 text-[10px]",
+                  )}
+                >
+                  Net {leanSummary.net >= 0 ? "+" : "−"}
+                  {Math.abs(leanSummary.net)} · {leanSummary.count} discussed
+                </span>
+              )}
             </span>
-            <span className="text-[11px] tabular-nums text-muted-foreground">
-              {quarterContext.detailQuarterLabel}
-              {leanSummary
-                ? ` · ${leanSummary.count} discussed · net ${leanSummary.net >= 0 ? "+" : "−"}${Math.abs(leanSummary.net)}`
-                : ""}
+            <span className="flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span className="tabular-nums">{quarterContext.detailQuarterLabel}</span>
+              <span className="font-medium text-foreground/80">
+                {breakdownOpen ? "Collapse" : "Expand"}
+              </span>
+              <ChevronDown
+                className={cn("h-4 w-4 transition-transform", breakdownOpen && "rotate-180")}
+              />
             </span>
-          </summary>
+          </button>
+
+          {/* The leans strip lives here (moved from the verdict card) so the
+              quarter's category tilt reads at a glance even while collapsed. */}
+          {quarterContext.v4 && hasLeanSegments && (
+            <div className="mt-2.5 space-y-1.5">
+              <V4LeansStrip
+                categories={quarterContext.v4.categories}
+                onSelect={(key) => {
+                  setBreakdownOpen(true);
+                  setFocusCategoryKey(key);
+                  requestAnimationFrame(() => {
+                    document
+                      .getElementById(`v4-cat-${key}`)
+                      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  });
+                }}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Click a segment to open that category&rsquo;s detail; expand for all cards.
+              </p>
+            </div>
+          )}
 
           {/* First-order extraction: the category cards (cat_1 included). "Why this
               score" + Quarter summary live in the verdict block above; risks is folded
               into cat_5 (Concentration/dependencies). Legacy rows with no v4 keep the
               old flat cards so no data is lost. */}
-          <div className="mt-3">
-            {quarterContext.v4 && <V4CoverageStrip categories={quarterContext.v4.categories} />}
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-start">
-              {quarterContext.v4 ? (
-                <V4CategoryCards categories={quarterContext.v4.categories} />
-              ) : (
-                <>
-                  {renderCard(cards.resultsSummary)}
-                  {renderCard(cards.guidance)}
-                  {renderCard(cards.risks)}
-                </>
-              )}
+          {breakdownOpen && (
+            <div className="mt-3">
+              {quarterContext.v4 && <V4CoverageStrip categories={quarterContext.v4.categories} />}
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-start">
+                {quarterContext.v4 ? (
+                  <V4CategoryCards
+                    categories={quarterContext.v4.categories}
+                    focusKey={focusCategoryKey}
+                  />
+                ) : (
+                  <>
+                    {renderCard(cards.resultsSummary)}
+                    {renderCard(cards.guidance)}
+                    {renderCard(cards.risks)}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        </details>
+          )}
+        </div>
       )}
       <NextQuarterWatch view={watchView} trajectoryLabel={watchTrajectoryLabel} />
     </div>
