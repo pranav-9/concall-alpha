@@ -502,18 +502,6 @@ export function ConcallScoreSection({
 
         {quarterContext ? (
           <>
-            {/* Reconciling headline — the two orthogonal reads named in one line */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1">
-              <p className="text-[14px] font-semibold text-foreground">
-                Two reads on one score:{" "}
-                <span className="text-teal-700 dark:text-teal-300">where it sits</span> and{" "}
-                <span className="text-teal-700 dark:text-teal-300">where it&apos;s heading</span>.
-              </p>
-              <span className="text-[12px] text-muted-foreground">
-                A 7 on the way up is a different stock from a 7 on the way down.
-              </span>
-            </div>
-
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
               {/* LEFT — Where it sits: verdict (circle + band) → lean meter → rationale. */}
               <div className={`${nestedDetailClass} flex flex-col gap-3 p-3`}>
