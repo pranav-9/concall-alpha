@@ -139,11 +139,42 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
     redirect(`/auth/login?next=/watchlists/${watchlistId}`);
   }
 
-  const { data: allWatchlistRows, error: watchlistError } = await supabase
-    .from("watchlists")
-    .select("id, name, created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: true });
+  // One parallel batch instead of a query waterfall: this page previously ran
+  // watchlists -> items -> (universe fetches) as three sequential Supabase
+  // round trips, which is what made the nav click feel dead. The items query
+  // can key on the URL id before ownership is verified because nothing renders
+  // until the ownership check below passes (a foreign id hits notFound first),
+  // and the universe fetches aren't user-scoped at all.
+  const [
+    { data: allWatchlistRows, error: watchlistError },
+    { data: watchlistItemsData, error: watchlistItemsError },
+    { rows, latestLabel },
+    { data: companyNameRows },
+    { data: growthRows },
+  ] = await Promise.all([
+    supabase
+      .from("watchlists")
+      .select("id, name, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("watchlist_items")
+      .select("company_code")
+      .eq("watchlist_id", watchlistId)
+      .order("created_at", { ascending: true }),
+    // getConcallData() with no options on purpose: the coverage gates are a
+    // discovery-surface policy, and a watchlist is user-owned. A holding that's a
+    // large cap or below the composite cut still renders in full, ungreyed.
+    getConcallData(),
+    // Coverage columns ride along on a select this page already makes: the
+    // board itself is unfiltered (user-owned), but the distribution behind it
+    // needs to know which companies form the covered reference population.
+    supabase.from("company").select(`code, name, ${COVERAGE_SELECT}`),
+    supabase
+      .from("growth_outlook")
+      .select("company, growth_score, run_timestamp")
+      .order("run_timestamp", { ascending: false }),
+  ]);
 
   if (watchlistError) {
     return (
@@ -171,12 +202,6 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
   if (!watchlist) notFound();
 
   const tabsNode = <WatchlistTabs watchlists={allWatchlists} activeId={watchlist.id} />;
-
-  const { data: watchlistItemsData, error: watchlistItemsError } = await supabase
-    .from("watchlist_items")
-    .select("company_code")
-    .eq("watchlist_id", watchlist.id)
-    .order("created_at", { ascending: true });
 
   if (watchlistItemsError) {
     return (
@@ -229,22 +254,6 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
       </WatchlistShell>
     );
   }
-
-  // getConcallData() with no options on purpose: the coverage gates are a
-  // discovery-surface policy, and a watchlist is user-owned. A holding that's a
-  // large cap or below the composite cut still renders in full, ungreyed.
-  const [{ rows, latestLabel }, { data: companyNameRows }, { data: growthRows }] =
-    await Promise.all([
-      getConcallData(),
-      // Coverage columns ride along on a select this page already makes: the
-      // board itself is unfiltered (user-owned), but the distribution behind it
-      // needs to know which companies form the covered reference population.
-      supabase.from("company").select(`code, name, ${COVERAGE_SELECT}`),
-      supabase
-        .from("growth_outlook")
-        .select("company, growth_score, run_timestamp")
-        .order("run_timestamp", { ascending: false }),
-    ]);
 
   const latestGrowthByCompany = new Map<string, GrowthRankRow>();
   ((growthRows ?? []) as GrowthRankRow[]).forEach((row) => {

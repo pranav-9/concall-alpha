@@ -4,12 +4,13 @@
 // through buildScoreBoardRows — factored out so /themes can filter it to a theme's
 // members without a second, drifting assembly.
 //
-// Wrapped in React `cache()` for REQUEST-scoped dedupe only. It is deliberately
-// NOT unstable_cache: getConcallData / fetchLeaderboardData use the cookie-based
-// server client, which unstable_cache forbids inside its callback. Cross-request
-// caching is a tracked fast-follow (move the board fetch onto createPublicReadClient,
-// then wrap it) — see TODOS.md. Until then /themes pays a board build per request,
-// the same cost /leaderboards already pays today.
+// Wrapped in React `cache()` for REQUEST-scoped dedupe only. getConcallData is
+// now cross-request cached internally (public-read client + unstable_cache,
+// 2026-08-13), so the quarter substrate is cheap here; fetchLeaderboardData
+// still uses the cookie-based server client, which unstable_cache forbids
+// inside its callback. Moving it onto createPublicReadClient and caching the
+// whole assembly is the remaining half of the tracked fast-follow — see
+// TODOS.md. Until then /themes pays a growth+moat fetch per request.
 
 import { cache } from "react";
 

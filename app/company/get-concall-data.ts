@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { buildNewCompanySet } from "@/lib/company-freshness";
 import {
   COVERAGE_SELECT,
@@ -50,7 +51,7 @@ type ScoreRow = Pick<
 };
 
 async function fetchScoreRows(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createPublicReadClient>,
 ): Promise<ScoreRow[]> {
   const rows: ScoreRow[] = [];
   let from = 0;
@@ -76,10 +77,7 @@ async function fetchScoreRows(
   return rows;
 }
 
-export const getConcallData = async ({
-  excludeLargeCaps = false,
-  includeBelowCut = false,
-}: {
+type ConcallDataOptions = {
   excludeLargeCaps?: boolean;
   /**
    * Keep companies below the composite cut in the result, flagged `belowCut`,
@@ -89,8 +87,13 @@ export const getConcallData = async ({
    * caps are never part of the tail (see lib/coverage-policy).
    */
   includeBelowCut?: boolean;
-} = {}) => {
-  const supabase = await createClient();
+};
+
+async function fetchConcallData({
+  excludeLargeCaps = false,
+  includeBelowCut = false,
+}: ConcallDataOptions = {}) {
+  const supabase = createPublicReadClient();
   const [scoreRows, { data: companyRows }, { data: valuationRows }] = await Promise.all([
     fetchScoreRows(supabase),
     supabase.from("company").select(`code, created_at, ${COVERAGE_SELECT}`),
@@ -184,8 +187,6 @@ export const getConcallData = async ({
     }
   }
 
-  // One clock for the whole render, so two rows can't straddle the 24h edge.
-  const renderedAt = new Date();
   const boardLatest = selectedQuarters[0];
 
   const rows: CompanyRow[] = Array.from(recordsByCompany.entries()).map(
@@ -236,7 +237,9 @@ export const getConcallData = async ({
         : ownLatest;
       row.latestSourceStatus = normalizeSourceStatus(shownRecord?.source_status);
       row.latestScoredAt = shownRecord ? scoreWrittenAt(shownRecord) : null;
-      row.scoredWithin24h = isScoredWithin24h(row.latestScoredAt, renderedAt);
+      // scoredWithin24h is deliberately NOT computed here: this body runs inside
+      // unstable_cache, and a cached true would keep a row "fresh" for a whole
+      // revalidate window past the edge. getConcallData stamps it per request.
 
       // Trajectory classification (lib/score-trajectory owns all thresholds).
       // Gap detection over the 4-record window: a missing quarter (fy/qtr not
@@ -292,5 +295,36 @@ export const getConcallData = async ({
     quarterLabels: selectedQuarters.map((q) => q.label),
     latestLabel,
     previousLabel: selectedQuarters[1]?.label,
+  };
+}
+
+// Cross-request cache. Score/company/valuation data is user-independent (the
+// cookie-based server client saw exactly what the anon key sees), so every
+// surface that joins against the universe — leaderboards, sectors, watchlists,
+// themes — shares one 5-minute snapshot instead of each request re-pulling
+// ~900 score rows. unstable_cache keys on the options object, so the three
+// gate combinations cache separately. Bump the version whenever the returned
+// row shape changes — the cached payload is JSON on disk.
+const getCachedConcallData = unstable_cache(fetchConcallData, ["concall-data-v1"], {
+  revalidate: 300,
+});
+
+export const getConcallData = async (options: ConcallDataOptions = {}) => {
+  const data = await getCachedConcallData({
+    // Normalize before the cache boundary so `{}`, `{excludeLargeCaps: false}`
+    // and undefined all hit the same cache entry.
+    excludeLargeCaps: options.excludeLargeCaps ?? false,
+    includeBelowCut: options.includeBelowCut ?? false,
+  });
+  // One clock for the whole render, so two rows can't straddle the 24h edge.
+  const renderedAt = new Date();
+  return {
+    ...data,
+    rows: data.rows.map(
+      (row): CompanyRow => ({
+        ...row,
+        scoredWithin24h: isScoredWithin24h(row.latestScoredAt ?? null, renderedAt),
+      }),
+    ),
   };
 };
