@@ -35,6 +35,11 @@ deliverable, not something to compress into a sentence):
 - Present a compact chatter picture before the drafts: which covered companies the tracked
   accounts are currently talking about, their stance, and our verdict (agree / disagree /
   adds-new-info). "Nothing fresh in the ledger" is itself the finding — say it, don't skip it.
+- If anything went out since the last run, refresh our own numbers too:
+  `node scripts/x-post-performance.mjs` (**both modes**, not just Daily Desk — the performance
+  loop only learns when it runs). Chase any `posted_rows_missing_url` it reports *before*
+  drafting: a posted row without its tweet URL is invisible to the loop. The 2026-08-13 audit
+  found every posted row URL-less and the loop dead — a manual Chrome scrape had to substitute.
 
 This is deliberately *niche* trending — what our peer group (`data/external-takes/handles.txt`)
 is discussing about companies we cover — not X-wide trends. The strategy's reach mechanism is
@@ -126,6 +131,12 @@ run, even when the user only asked for "posts".
 - **Present it as a compact table** (theme · count · spread · the divergence in one line), name the
   top pick and why, and **offer to draft it as a thread** — but do **not** draft the whole thread
   unless the user asks (threads are a deliberate sit-down; `[[x-cross-company-pattern-posts]]`).
+- **Thread shape (measured 2026-08-13): 3–4 tweets max, the two strongest names with their numbers
+  in the ROOT, portal link to close.** Both campaign threads bled 70–90% of root views by tweet 3
+  — the per-company detail in parts 4+ was seen by almost nobody, and the one tail that beat its
+  own root led with the most concrete claim ("raw materials"). Front-load the divergence; an
+  "all N reads here →" closer replaces the unseen tail *and* feeds the UTM funnel, which is the
+  metric the strategy actually scores on.
 - **Grounding still binds if the user picks a theme.** Ground **every** named company in its OWN
   `rationale` before drafting — re-query `concall_analysis` (`select company_code, fy, qtr, details`)
   for names outside the top-`--top` candidate list. Lead with the divergence, not the raw count, and
@@ -162,12 +173,22 @@ Each draft:
 - **Insight first, number as support.** The interesting thing is the *tension* the concall
   surfaced (record sales but guidance refused; margin up but concentration rising), not the raw
   0–10. The score can appear, but it's the evidence, not the headline.
+- **First line carries a concrete number or a named contrast.** Measured 2026-08-13: every
+  top-third post opened with ≥2 named companies, or one company plus a number/rating contrast;
+  enthusiasm-only posts ("super impressed with…", 42 views) died in the same slots where
+  number-led posts of the same species pulled 4×. If the hook's first line has neither, the hook
+  isn't ready.
 - **No overclaiming.** State what the documents said, not a price call or a conviction we don't
   hold (`[[project_overview_page_verdict_card]]` — we don't manufacture bullishness).
 
 Present them as a numbered list. Under each, add a one-line **meta** the user can scan:
 `— FCL Q1FY27 · 8.8→6.3 clean · unofficial (early read) · 241 chars`. Then ask which one(s) they
 want, or whether to regenerate with a wider window / different companies.
+
+Frame the list as an **evening queue (18:00–21:00 IST)**. Measured 2026-08-13: every original
+above 150 views went out 16:30–21:15 IST; all four midday originals died (9–42 views), including
+a well-built one the clock alone killed. n is small — treat it like step 2b's engagement data,
+a bias not a rule — but midday slots belong to replies, not originals.
 
 ### 5. Log to the posted ledger
 
@@ -176,12 +197,23 @@ README). **Append-only** — never rewrite past rows.
 
 - Log all 5 as `status: "drafted"` at the end of the run, so the offer itself is on record.
 - When the user says which they posted, append a `status: "posted"` row for those — that's what
-  blocks a re-draft next time. Add the tweet `url` if they paste it; `null` is fine.
+  blocks a re-draft next time — and **ask for the tweet URL in the same exchange**. The URL is
+  the key the performance loop hydrates by; a posted row with `url: null` is invisible to it.
+  (The 2026-08-13 audit found all 15 posted rows URL-less — the loop had never once run.) `null`
+  only with a stated reason; it lands in `posted_rows_missing_url` and gets chased next run.
+- **Log off-sheet activity too.** Anything that went out from the account belongs in the ledger —
+  replies to other accounts (with `reply_to`), casual takes, ad-hoc posts the skill never drafted.
+  Ask "did anything else go out since last time?" at logging time. The campaign's best-reach post
+  (a 45-char reply, 734 views) was invisible to the ledger because only skill-drafted content was
+  logged — and off-ledger posts also bypass the compliance gate below.
 - Explicitly rejected hooks go in as `status: "skipped"` with the `angle`, so the same idea
   doesn't get re-pitched.
 
 Write a real date into `posted_on` (today's, from the environment) — never a guessed one. Fill
 `angle` with the *hook*, not a summary of the company: it's the field that decides future dedupe.
+Also set `angle_type` — one of `tension | guidance | candor | theme | track-record | social |
+reply` — so performance-by-angle-type is computable (step 2b wants to bias toward angle types
+that pulled engagement; free-text angles can't be aggregated).
 
 There is **no scraper for our own timeline** — X's unauthenticated syndication endpoint returns
 empty for accounts under ~10k followers (`[[reference_unofficial_transcript_retrieval]]`'s sibling
@@ -224,9 +256,15 @@ All CLASSIC-mode rules apply (grounding, voice, provenance, ≤280 chars, no tag
   the `first_reply_disclaimer` from the sheet. `provisional: true` → the score must be framed
   "(early read, provisional)" — lead with what the documents said, score as support.
 - **Lane 3 (cold-start co-primary — never silently skip):** for each candidate, a reply draft
-  that engages the *specific claim* with our data. Peer tone, never adversarial — these accounts
-  are the peer group. Honour the `recheck` note: verify the ledger's numbers against the current
-  print before drafting. If empty, say so and suggest running `/external-take-tracker`.
+  in the mode the sheet's `reply_mode` names — `disagree` rows engage the *specific claim* with
+  our data; `agree`/`adds-new-info` rows get an **add-our-datapoint presence reply**. Don't
+  reserve the lane for disagreements: the campaign's measured reach winner (2026-08-13) was a
+  45-char presence reply in a big account's thread — 734 views, more than any original at ~2% of
+  the effort. Peer tone, never adversarial — these accounts are the peer group. Honour the
+  `recheck` note: verify the ledger's numbers against the current print before drafting. If
+  empty, say so and suggest running `/external-take-tracker`. Watch `replies_last_7_days`: the
+  strategy made this lane co-primary, yet the first campaign ran 2 outbound replies in 17 days —
+  when the counter nudges, say so out loud.
 - **Lane 2 — lead with the cross-company pattern.** The sheet now does the scan for you:
   `lane2_evidence.patterns` clusters the WHOLE season quarter's rationale by recurring driver
   (`season_quarter` names it), each with `company_count`, the `companies` list (code + score +

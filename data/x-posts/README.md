@@ -31,6 +31,7 @@ ranking, and `--exclude-posted` drops them entirely.
   "company": "APARINDS",
   "quarter": "Q1FY27",
   "angle": "record quarter, all guidance questions declined on a securities notice",
+  "angle_type": "tension",                // tension | guidance | candor | theme | track-record | social | reply
   "score_at_post": 5.5,
   "qoq_at_post": -1.3,
   "source_status": "unofficial",          // provenance at the time of posting
@@ -60,7 +61,18 @@ ranking, and `--exclude-posted` drops them entirely.
 
 `angle` matters more than `text` for dedupe: the same company can be posted about twice in a
 quarter if the hook is genuinely different (the print, then a guidance revision). Read the angle
-before deciding it's a repeat.
+before deciding it's a repeat. `angle_type` (added 2026-08-13) is the aggregatable sibling —
+performance-by-angle-type is what the drafter's step 2b biases on, and free text can't be grouped.
+
+**Two rules learned from the 2026-08-13 performance audit:**
+
+- **A `posted` row needs its `url`.** The performance loop hydrates tweet-by-tweet from this
+  field; every URL-less posted row is invisible to it. Ask for the URL at confirmation time —
+  `null` only with a stated reason.
+- **Off-sheet activity gets logged too** — replies to other accounts (`angle_type: "reply"`,
+  with `reply_to`), casual takes, ad-hoc posts the drafter never produced. The campaign's
+  best-reach post was an unlogged 45-char reply; a ledger that only sees skill-drafted content
+  measures the wrong thing and lets posts bypass the compliance gate.
 
 `source_status` records provenance **at post time**. A post written off an `unofficial` transcript
 that later re-scores is worth revisiting — that's a follow-up post, not a correction, unless the

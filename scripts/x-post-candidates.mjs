@@ -471,6 +471,12 @@ let lane3Stale = 0;
       their_stance: row.their_stance,
       their_claim: row.their_claim,
       verdict: row.verdict,
+      // disagree = engage the claim; agree/adds-new-info = presence reply. The measured
+      // reach winner (2026-08-13) was a presence reply, not a disagreement — don't
+      // reserve the lane for disagreements.
+      reply_mode: row.verdict === "disagree"
+        ? "engage the specific claim with our data"
+        : "add our datapoint to their thread (presence reply)",
       our_read: row.our_read,
       our_score: row.our_score,
       note: row.note,
@@ -503,6 +509,20 @@ for (const rows of postedHistory.values())
   for (const r of rows) if (r.status === "posted" && !r.url) postedNoUrl.push(`${r.company} ${r.quarter}`);
 const topPerf = [...perfLatest.values()].sort((a, b) => (b.views ?? b.likes ?? 0) - (a.views ?? a.likes ?? 0))[0];
 
+// --- Lane 3 cadence: replies in the last 7 days (symmetric to the Lane 2 thread
+// nudge — the lane is co-primary by strategy but drifted to 2 replies in 17 days
+// on the first campaign, 2026-08-13 audit) ---
+let repliesLast7 = 0;
+for (const rows of postedHistory.values())
+  for (const r of rows)
+    if (
+      r.status === "posted" &&
+      (r.lane === "dialogue" || r.reply_to) &&
+      r.posted_on &&
+      (Date.now() - new Date(r.posted_on).getTime()) / 864e5 <= 7
+    )
+      repliesLast7++;
+
 // --- Lane 2 nudge: ~1 evidence thread/week ---
 let lastThreadOn = null;
 for (const rows of postedHistory.values())
@@ -532,10 +552,11 @@ console.log(
         first_reply_disclaimer: "Not investment advice or research — I read the filings and transcripts. How the scores work: " + SITE_BASE + "/how-scores-work",
         cold_start: "Lane 1 and Lane 3 are co-primary until ~500 followers; Lane 2 drops first under time pressure",
         provisional_rule: "provisional: true => label the score '(early read, provisional)' — official transcript may move it",
+        posting_window: "originals 18:00-21:00 IST; midday slots are for replies only (measured 2026-08-13: every original >150 views went out 16:30-21:15 IST, all four midday originals died — n small, bias not rule)",
       },
       lane1_speed: {
         cap: 2,
-        suggested_timing: "post 9:30-11:00 IST same day — market-open window, still days ahead of the official transcript",
+        suggested_timing: "draft in the morning, post 18:00-21:00 IST same day — still days ahead of the official transcript; the market-open slot measured dead for originals (2026-08-13)",
         picks: lane1Picks,
         overflow_rolls_to_tomorrow: lane1Overflow,
         backfills_excluded: backfills,
@@ -554,7 +575,9 @@ console.log(
         suggested_timing: "reply within hours of the source tweet — see per-candidate reply_urgency",
         candidates: lane3,
         stale_skipped: lane3Stale,
-        note: lane3.length === 0 ? "no fresh postable disagreements — run /external-take-tracker to rescan" : null,
+        replies_last_7_days: repliesLast7,
+        nudge: repliesLast7 === 0,
+        note: lane3.length === 0 ? "no fresh postable takes — run /external-take-tracker to rescan" : null,
       },
       recent_performance: {
         note: perfRows.length === 0
