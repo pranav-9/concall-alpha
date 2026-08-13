@@ -292,52 +292,10 @@ export function ConcallScoreSection({
 }: ConcallScoreSectionProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [range, setRange] = React.useState<ChartRange>(12);
-  const chipRowRef = React.useRef<HTMLDivElement | null>(null);
-  const [chipOverflow, setChipOverflow] = React.useState({ left: false, right: false });
 
   React.useEffect(() => {
     setSelectedIndex(0);
   }, [detailQuarters]);
-
-  // Keep the active chip visible when selection comes from the chart (the
-  // selected quarter can otherwise sit far off-screen in the scroll row).
-  React.useEffect(() => {
-    const active = chipRowRef.current?.querySelector<HTMLButtonElement>(
-      'button[aria-pressed="true"]',
-    );
-    active?.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
-  }, [selectedIndex]);
-
-  // Edge fades signal that more quarters exist beyond the visible row.
-  const updateChipOverflow = React.useCallback(() => {
-    const el = chipRowRef.current;
-    if (!el) return;
-    setChipOverflow({
-      left: el.scrollLeft > 2,
-      right: el.scrollLeft + el.clientWidth < el.scrollWidth - 2,
-    });
-  }, []);
-
-  React.useEffect(() => {
-    updateChipOverflow();
-    const el = chipRowRef.current;
-    if (!el) return;
-    el.addEventListener("scroll", updateChipOverflow, { passive: true });
-    window.addEventListener("resize", updateChipOverflow);
-    return () => {
-      el.removeEventListener("scroll", updateChipOverflow);
-      window.removeEventListener("resize", updateChipOverflow);
-    };
-  }, [updateChipOverflow, detailQuarters.length]);
-
-  const chipMaskClass =
-    chipOverflow.left && chipOverflow.right
-      ? "[mask-image:linear-gradient(to_right,transparent,black_24px,black_calc(100%-24px),transparent)]"
-      : chipOverflow.left
-        ? "[mask-image:linear-gradient(to_right,transparent,black_24px)]"
-        : chipOverflow.right
-          ? "[mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)]"
-          : "";
 
   const selectedQuarter = detailQuarters[selectedIndex];
   const quarterContext = selectedQuarter ? buildDetailQuarterContext(selectedQuarter) : null;
@@ -450,66 +408,37 @@ export function ConcallScoreSection({
     <div className="flex flex-col gap-3">
     <div className={`${elevatedBlockClass} p-2.5`}>
       <div className="flex flex-col gap-3">
-        {detailQuarters.length > 0 && (
-          <div className={`${nestedDetailClass} flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2`}>
-            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Quarter
-            </span>
-            <div
-              ref={chipRowRef}
-              aria-label="Quarter selector"
-              className={cn(
-                "flex min-w-0 flex-1 items-center gap-1 overflow-x-auto",
-                chipMaskClass,
-              )}
-            >
-              {detailQuarters.map((quarter, index) => {
-                const labelContext = buildDetailQuarterContext(quarter);
-                const isActive = index === selectedIndex;
-                return (
-                  <button
-                    key={`${quarter.fy}-${quarter.qtr}-${index}`}
-                    type="button"
-                    aria-pressed={isActive}
-                    aria-label={`Select ${labelContext.detailQuarterLabel}`}
-                    onClick={() => {
-                      setSelectedIndex(index);
-                      expandRangeFor(index);
-                    }}
-                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium transition-colors ${
-                      isActive
-                        ? "bg-foreground text-background shadow-sm"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    }`}
-                  >
-                    {labelContext.detailQuarterLabel}
-                    {index === 0 && !isActive && (
-                      <span
-                        className={cn(
-                          chipClass("sky"),
-                          "px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em]",
-                        )}
-                      >
-                        Latest
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {quarterContext ? (
           <>
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
               {/* LEFT — Where it sits: verdict (circle + band) → lean meter → rationale. */}
               <div className={`${nestedDetailClass} flex flex-col gap-3 p-3`}>
-                <div className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Where it sits · this quarter
-                  </p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Where it sits
+                    </p>
+                  </div>
+                  {/* Quarter picker — the full label list lives here (and via
+                     chart dot/axis clicks), replacing the old chip row. */}
+                  <select
+                    aria-label="Select quarter"
+                    value={selectedIndex}
+                    onChange={(e) => {
+                      const index = Number(e.target.value);
+                      setSelectedIndex(index);
+                      expandRangeFor(index);
+                    }}
+                    className="h-7 cursor-pointer rounded-md border border-border/60 bg-background px-2 text-[11px] font-medium text-foreground shadow-none transition-colors hover:bg-accent"
+                  >
+                    {detailQuarters.map((quarter, index) => (
+                      <option key={`${quarter.fy}-${quarter.qtr}-${index}`} value={index}>
+                        {buildDetailQuarterContext(quarter).detailQuarterLabel}
+                        {index === 0 ? " · latest" : ""}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex items-center gap-3">
                   <ConcallScore
