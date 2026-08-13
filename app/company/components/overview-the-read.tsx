@@ -13,6 +13,7 @@ import { colorPalette as segmentColorPalette } from "./business-segment-mix-cons
 import { useCompanyPageNavigation } from "./company-page-workspace";
 import { MissingSectionRequestButton } from "./missing-section-request-button";
 import { nestedDetailClass } from "./surface-tokens";
+import { topShareLabel } from "../[code]/display-tokens";
 
 // "The Read" overview. Renders entirely from the OverviewReadModel the cache
 // layer assembles (lib/company-overview-cache.ts) — no board-read math, no band
@@ -210,7 +211,6 @@ export function TheReadOverview({ overview, watchlistSlot = null }: TheReadOverv
 
   const { read, section_availability: availability } = overview;
   const readLabelClass = BOARD_READS[read.key].textClass;
-  const percentile = (p: number | null) => (p != null ? `Top ${Math.round(p)}%` : null);
 
   return (
     <div
@@ -400,9 +400,7 @@ export function TheReadOverview({ overview, watchlistSlot = null }: TheReadOverv
             {overview.quarter_rank != null && overview.quarter_total != null && (
               <span className="text-[11px] text-muted-foreground">
                 Q Rank {overview.quarter_rank}/{overview.quarter_total}
-                {percentile(overview.quarter_percentile)
-                  ? ` · ${percentile(overview.quarter_percentile)}`
-                  : ""}{" "}
+                {` · ${topShareLabel(overview.quarter_rank, overview.quarter_total)}`}{" "}
                 · full breakdown
               </span>
             )}

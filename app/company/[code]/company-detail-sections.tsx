@@ -42,6 +42,7 @@ import type { QuarterData } from "../types";
 import { formatShortDate } from "./page-helpers";
 import {
   getPercentileTone,
+  topShareLabel,
 } from "./display-tokens";
 import { slugifySector } from "@/app/sector/utils";
 
@@ -232,13 +233,11 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
   }));
   const chartData = transformToChartData(quarters, 24);
   const detailQuarters = quarters.slice(0, 24);
-  // The "Trend" pill was always shown (the old calculateTrend never returned
-  // falsy); keep that behavior — it advertises the section, independent of
-  // whether a trajectory label is readable for this company.
+  // Header chips mirror the section's two named axes (1b redesign) so the
+  // advertisement matches the card titles inside.
   const headerPills = [
-    chartData.length > 0 ? "Score trend" : null,
-    detailQuarters.length > 0 ? "Quarter detail" : null,
-    quarters.length > 0 ? "Trend" : null,
+    detailQuarters.length > 0 ? "Where it sits" : null,
+    chartData.length > 0 ? "Where it's heading" : null,
   ].filter((value): value is string => Boolean(value));
 
   return (
@@ -260,7 +259,7 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
                 href: "/leaderboards?tab=quarter",
               },
               {
-                label: `Top ${Math.round(overview.quarter_percentile)}%`,
+                label: topShareLabel(overview.quarter_rank, overview.quarter_total),
                 tone: getPercentileTone(overview.quarter_percentile),
                 href: "/leaderboards?tab=quarter",
               },

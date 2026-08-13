@@ -31,6 +31,7 @@ import {
   getCatalystStatusDisplay,
   getGrowthScoreComponentLabel,
   getPercentileTone,
+  topShareLabel,
   getTimelineStageDisplay,
   splitCatalystQuantifiedLabel,
   toDisplayLabel,
@@ -248,7 +249,7 @@ function buildGrowthRankPills(
       href: rankInfo.href,
     },
     {
-      label: `Top ${Math.round(rankInfo.percentile)}%`,
+      label: topShareLabel(rankInfo.rank, rankInfo.total),
       tone,
       href: rankInfo.href,
     },

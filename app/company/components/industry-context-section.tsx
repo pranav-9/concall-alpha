@@ -21,6 +21,7 @@ import {
   getImpactDirectionDisplay,
   getMarginQualityTone,
   getPercentileTone,
+  topShareLabel,
   getTimeHorizonDisplay,
   marginQualityPillClass,
 } from "../[code]/display-tokens";
@@ -498,7 +499,7 @@ function buildIndustryRankPills(
       href: rankInfo.href,
     },
     {
-      label: `Top ${Math.round(rankInfo.percentile)}%`,
+      label: topShareLabel(rankInfo.rank, rankInfo.total),
       tone,
       href: rankInfo.href,
     },

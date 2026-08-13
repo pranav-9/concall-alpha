@@ -8,6 +8,13 @@ export type DisplayBadge = {
   className: string;
 };
 
+// "Top N%" from rank/total so the label matches a cold reader's intuition
+// (rank 11/81 → "Top 14%"). The stored percentile columns hold the INVERSE
+// convention (share of the universe at-or-below you, rank 11/81 → 87.7) and
+// still feed getPercentileTone — never put that number after the word "Top".
+export const topShareLabel = (rank: number, total: number): string =>
+  `Top ${Math.max(1, Math.round((rank / total) * 100))}%`;
+
 export const getPercentileTone = (percentile: number): OverviewBodyPillTone => {
   if (percentile >= 90) return "emerald";
   if (percentile >= 75) return "sky";
