@@ -52,6 +52,14 @@ export function SignUpForm({
         },
       });
       if (error) throw error;
+      // Supabase obfuscates duplicate sign-ups: an existing email returns a
+      // "success" with an empty identities array instead of an error.
+      if (data.user && data.user.identities?.length === 0) {
+        setError(
+          "An account with this email already exists. Log in instead — if you never confirmed your email, we've just re-sent the confirmation link.",
+        );
+        return;
+      }
       identifyUser(data.user?.id ?? email, { email });
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {

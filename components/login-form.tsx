@@ -26,6 +26,10 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">(
+    "idle",
+  );
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -33,6 +37,8 @@ export function LoginForm({
     const supabase = createClient();
     setIsLoading(true);
     setError(null);
+    setNeedsConfirmation(false);
+    setResendState("idle");
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -44,9 +50,44 @@ export function LoginForm({
       router.refresh();
       router.push(nextPath || "/watchlists");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      const code = (error as { code?: string })?.code;
+      const message = error instanceof Error ? error.message : "";
+      if (
+        code === "email_not_confirmed" ||
+        message.toLowerCase().includes("not confirmed")
+      ) {
+        setNeedsConfirmation(true);
+        setError(
+          "Your email hasn't been confirmed yet. Find the confirmation link in your inbox (check spam too), or resend it below.",
+        );
+      } else if (code === "invalid_credentials") {
+        setError("Incorrect email or password.");
+      } else {
+        setError(message || "An error occurred");
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    const supabase = createClient();
+    setResendState("sending");
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(
+          nextPath || "/watchlists",
+        )}`,
+      },
+    });
+    if (error) {
+      setResendState("idle");
+      setError(error.message);
+    } else {
+      setResendState("sent");
+      setError(null);
     }
   };
 
@@ -92,6 +133,25 @@ export function LoginForm({
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
+              {resendState === "sent" && (
+                <p className="text-sm text-muted-foreground">
+                  Confirmation email sent. Open the link in it, then log in
+                  here.
+                </p>
+              )}
+              {needsConfirmation && resendState !== "sent" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={resendState === "sending"}
+                  onClick={handleResendConfirmation}
+                >
+                  {resendState === "sending"
+                    ? "Sending..."
+                    : "Resend confirmation email"}
+                </Button>
+              )}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
