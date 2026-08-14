@@ -3,6 +3,10 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { identifyUser } from "@/lib/analytics";
+import {
+  AuthDivider,
+  GoogleSignInButton,
+} from "@/components/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -100,7 +104,9 @@ export function LoginForm({
             Enter your email below to login to your account
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-6">
+          <GoogleSignInButton nextPath={nextPath} />
+          <AuthDivider />
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
