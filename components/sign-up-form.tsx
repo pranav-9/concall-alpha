@@ -61,6 +61,13 @@ export function SignUpForm({
         return;
       }
       identifyUser(data.user?.id ?? email, { email });
+      // With email confirmation disabled, signUp returns a live session —
+      // the user is already signed in, so skip the "check your email" page.
+      if (data.session) {
+        router.refresh();
+        router.push(nextPath || "/watchlists");
+        return;
+      }
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
