@@ -1,5 +1,7 @@
-// Mirrors schemas/valuation_check_v1.json — the schema is the structural authority, this
-// file follows it. Phase 12 (Business Analysis Framework v14 Section 6).
+// Mirrors schemas/valuation_check_v2.json — the schema is the structural authority, this
+// file follows it. Phase 12 (Business Analysis Framework v14 Section 6). v1 rows still
+// exist in the table until the next fleet refresh; v2-only fields are optional here and
+// consumers gate on their presence, not on schema_version.
 
 export type ValuationLensId = "pe" | "pbv" | "ev_ebitda" | "mcap_sales";
 
@@ -74,7 +76,11 @@ export type ValuationCheckRow = {
   rateable: boolean;
   primary_lens: ValuationLensId | null;
   source: Record<string, unknown> | null;
-  market_data: Record<string, number | null> | null;
+  /**
+   * Mostly numeric levels; since Phase D (v2+) also carries `eps_summary` (object) and
+   * `peak_earnings_flag` (boolean) — hence the widened value type.
+   */
+  market_data: Record<string, unknown> | null;
   lens_selection: {
     primary: ValuationLensId | null;
     cross_check: ValuationLensId | null;
@@ -90,13 +96,42 @@ export type ValuationCheckRow = {
     industry_n?: number | null;
     industry_median_pe?: number | null;
     context_only?: boolean;
+    /** Phase C peer pill (v2+): current multiple vs the whole-industry median row. */
+    pill?: ValuationPill | null;
+    ratio_to_industry_median?: number | null;
+    pill_basis?: string | null;
+    pill_skipped_reason?: string | null;
   } | null;
   reverse_dcf: {
     anchor_variable: string | null;
+    /**
+     * v2 semantics (growth fade, 2026-08-15): the fade path's implied FY+2 CAGR —
+     * the number the zone is graded on. v1 rows stored a 10-year constant-rate
+     * solve here; tell them apart by schema_version.
+     */
     implied_cagr: number | null;
     implied_cagr_pct: number | null;
+    /** Year-1 rate of the linear fade (v2+ only). */
+    implied_year1_cagr?: number | null;
+    implied_year1_cagr_pct?: number | null;
+    /** Explicit duplicate of the graded FY+2 number (v2+ only). */
+    implied_fy2_cagr?: number | null;
+    /** Retired v1 constant-rate solve — bridge field, dropped after one cycle. */
+    implied_cagr_flat_legacy?: number | null;
     solve_status: string;
     zone_vs_phase5: ValuationZone;
+    /** What the zone was graded against (v2+): phase5_scenarios | delivered_cagr | delivered_roe. */
+    zone_basis?: string | null;
+    /** Phase D (v2+): which earnings the model priced — "ttm" | "normalized_5y_median_eps"(_trough). */
+    earnings_basis?: string | null;
+    /** For normalized cyclical solves: what TTM earnings would have implied. */
+    ttm_alternative?: {
+      implied_fy2_cagr?: number | null;
+      zone_vs_phase5?: string | null;
+      solve_status?: string | null;
+    } | null;
+    /** Phase F (v2+): delivered revenue CAGR, percent units — fallback ladder / narrator context. */
+    delivered_cagr?: Record<string, number | null> | null;
     reading?: string;
     held_constant?: Record<string, number | string | null>;
     phase5_scenarios?: { downside?: number | null; base?: number | null; upside?: number | null };
