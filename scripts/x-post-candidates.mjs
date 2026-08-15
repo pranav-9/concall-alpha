@@ -285,6 +285,7 @@ const seasonQuarter = (() => {
   return best;
 })();
 let lane2Patterns = [];
+let guidanceWatch = null;
 {
   const m = /^Q([1-4])FY(\d{2})$/.exec(seasonQuarter || "");
   if (m) {
@@ -293,7 +294,7 @@ let lane2Patterns = [];
     let seasonRows = [];
     try {
       seasonRows = await fetchAll(
-        `concall_analysis?select=company_code,score,details->rationale` +
+        `concall_analysis?select=company_code,score,details->rationale,details->scoring_meta` +
           `&fy=eq.${seasonFy}&qtr=eq.${seasonQtr}&details->scoring_meta=not.is.null`
       );
     } catch { /* pattern radar is best-effort — never block the sheet */ }
@@ -305,7 +306,9 @@ let lane2Patterns = [];
       { theme: "Customer / molecule concentration", re: /top \d+.{0,30}(?:customer|molecule)|customer concentration|molecule concentration|single (?:customer|client|molecule|fuel cell)/i },
       { theme: "US tariffs / trade friction", re: /tariff|anti-dumping|section 232|non-chinese|china\s*\+\s*1|import substitut/i },
       { theme: "Management evasive on numbers", re: /declined to (?:provide|quantify|disclose|give)|refused to|would not (?:provide|break|quantify)|evasi|deflect|not (?:break|disclose|analyze)[^.]{0,15}numbers|no (?:specific|numerical|concrete) (?:number|guidance|projection)/i },
-      { theme: "Guidance raised with conviction", re: /guidance raised|raised (?:its |the )?(?:fy\d+ )?(?:revenue |margin )?(?:target|guidance)|target raised|definitely beat|upgraded guidance/i },
+      // "raised" may sit up to ~3 words from "guidance/target" ("Raised distribution
+      // volume guidance" — AEGISLOG Q1FY27 slipped through the tighter form)
+      { theme: "Guidance raised with conviction", re: /guidance raised|raised (?:[\w&-]+ ){0,3}(?:target|guidance)|target raised|(?:target|guidance) (?:revised|lifted) up|definitely beat|upgraded guidance/i },
     ];
     const byTheme = new Map();
     for (const row of seasonRows) {
@@ -334,6 +337,50 @@ let lane2Patterns = [];
       })
       .filter((p) => p.company_count >= 2)
       .sort((a, b) => b.company_count - a.company_count);
+
+    // --- guidance-raise watch: INDIVIDUAL post candidates, season-wide ---
+    // The user's preferred post type (2026-08-15). Same regex as the lane-2
+    // "Guidance raised with conviction" cluster, but emitted per company with
+    // provenance and ledger dedupe so each raise is draftable as a standalone
+    // post the day it prints — not only as thread material.
+    const RAISE_RE = THEMES.find((t) => t.theme === "Guidance raised with conviction").re;
+    const seenGw = new Set();
+    const gwFresh = [];
+    const gwPosted = [];
+    for (const row of seasonRows) {
+      if (seenGw.has(row.company_code)) continue; // one entry per company
+      const rat = Array.isArray(row.rationale) ? row.rationale : [];
+      const hits = rat.filter((x) => RAISE_RE.test(`${x?.heading || ""} ${x?.detail || ""}`));
+      if (!hits.length) continue;
+      seenGw.add(row.company_code);
+      const sm = row.scoring_meta || {};
+      const posted = (postedHistory.get(row.company_code) || []).some(
+        (r) => r.status === "posted" && r.quarter === seasonQuarter
+      );
+      const entry = {
+        code: row.company_code,
+        name: meta.get(row.company_code)?.name ?? null,
+        quarter: seasonQuarter,
+        score: row.score,
+        scored_at: sm.scored_at ?? null,
+        source_status: sm.source_status ?? "official",
+        rescore_required: sm.rescore_required === true,
+        discovery_listed: isDiscoveryListed(row.company_code),
+        // the matched rationale rows — the ground truth the draft must trace to
+        guidance_hits: hits.map((x) => ({ heading: x?.heading, detail: x?.detail, direction: x?.direction })),
+        has_positive_hit: hits.some((x) => x?.direction === "positive"),
+      };
+      if (posted) gwPosted.push(`${entry.code} ${seasonQuarter}`);
+      else gwFresh.push(entry);
+    }
+    gwFresh.sort((a, b) => (b.scored_at || "").localeCompare(a.scored_at || ""));
+    guidanceWatch = {
+      season_quarter: seasonQuarter,
+      note:
+        "regex screen over the season's rationale — false positives possible (an 'expense guidance raised' row is not a conviction raise; a 'raised to X' line with no prior figure can't carry an old->new peek). Ground every draft in guidance_hits + the full rationale; direction!=positive hits need extra scrutiny.",
+      fresh: gwFresh,
+      already_posted: gwPosted,
+    };
   }
 }
 
@@ -390,6 +437,7 @@ if (!DAILY) {
         already_posted: suppressed.map((c) => `${c.code} ${c.quarter}`),
         dropped_backfills: classicDropped,
         lane2_patterns: lane2Patterns,
+        guidance_watch: guidanceWatch,
         candidates: classicPool.slice(0, TOP),
       },
       null,
@@ -571,6 +619,7 @@ console.log(
         season_quarter: seasonQuarter,
         patterns: lane2Patterns,
       },
+      guidance_watch: guidanceWatch,
       lane3_dialogue: {
         suggested_timing: "reply within hours of the source tweet — see per-candidate reply_urgency",
         candidates: lane3,

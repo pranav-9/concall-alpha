@@ -61,7 +61,8 @@ discovery-listed names, **and active chatter** (a company being discussed gets a
 logged `disagree` a bit more — chatter biases the ranking, it never overrides a real move).
 
 The CLASSIC payload also carries `lane2_patterns` (the same season-quarter cross-company driver
-clusters as Daily Desk — **you present these every run; see step 3**) and `dropped_backfills`
+clusters as Daily Desk — **you present these every run; see step 3**), `guidance_watch`
+(individual guidance-raise candidates, season-wide, ledger-deduped — see step 3b) and `dropped_backfills`
 (phantom-move rows excluded from the candidate list; see the quarter-ordering note below). **CLASSIC is also the
 "more options" path:** Daily Desk caps Lane 1 at 2 by strategy, so when the user wants a wider set to
 choose from, run this with `--top 14` and draft the mix yourself — that's the intended fallback, not
@@ -137,6 +138,10 @@ run, even when the user only asked for "posts".
   own root led with the most concrete claim ("raw materials"). Front-load the divergence; an
   "all N reads here →" closer replaces the unseen tail *and* feeds the UTM funnel, which is the
   metric the strategy actually scores on.
+- **The link-closer is optional — offer it, don't push** (user dropped it 2026-08-15: "portal
+  promotion is not needed on every tweet", `[[feedback-no-portal-link-every-tweet]]`). Keep the
+  link out of the root/middle tweets so the closer detaches cleanly, and if the compliance
+  disclaimer rode the closer, offer it as a standalone reply when the closer is dropped.
 - **Grounding still binds if the user picks a theme.** Ground **every** named company in its OWN
   `rationale` before drafting — re-query `concall_analysis` (`select company_code, fy, qtr, details`)
   for names outside the top-`--top` candidate list. Lead with the divergence, not the raw count, and
@@ -147,6 +152,25 @@ run, even when the user only asked for "posts".
 
 Then move to the single-stock drafts below. A strong cross-company thread can *replace* several of
 them rather than compete — say so when it does.
+
+### 3b. Guidance-raise watch (the user's favourite post type)
+
+Both payloads also carry `guidance_watch` (added 2026-08-15): every print in the season quarter
+whose rationale contains a guidance raise, as **individual** post candidates — `fresh[]` (newest
+`scored_at` first, with `guidance_hits`, provenance, and `has_positive_hit`) and
+`already_posted[]` (company+quarter posted rows suppress, including names covered inside a
+posted thread). The user has said explicitly they love these ("I love guidance raised posts",
+2026-08-15) — when `fresh[]` is non-empty, surface it as its own short list, not buried in the
+general candidates.
+
+- It's a regex screen, so the step-3 false-positive discipline binds **per candidate**: an
+  "expense guidance raised" or "capex raised" hit is not a conviction raise
+  (`has_positive_hit: false` is the first tell, but a positive capex row passes that check too —
+  read the `guidance_hits` text); a "raised to X" line with no prior figure can't carry an
+  old→new peek — don't invent the old number.
+- Several fresh raises can bundle into a follow-up thread ("the raises haven't stopped", sequel
+  framing gives repeat readers a reason to open it) — the 2026-08-15 thread absorbed 3 singles
+  that way. Same thread rules as step 3.
 
 ### 4. Draft 5 single-stock options
 
@@ -197,7 +221,11 @@ README). **Append-only** — never rewrite past rows.
 
 - Log all 5 as `status: "drafted"` at the end of the run, so the offer itself is on record.
 - When the user says which they posted, append a `status: "posted"` row for those — that's what
-  blocks a re-draft next time — and **ask for the tweet URL in the same exchange**. The URL is
+  blocks a re-draft next time. **When a posted thread names companies with their numbers, also
+  append one per-company `posted` row per name** (angle pointing back at the THEME row) — a
+  theme-only row leaves those company+quarters looking unposted, and the 8/10 guidance thread's
+  six names had to be backfilled on 2026-08-15 for exactly this reason. And **ask for the tweet
+  URL in the same exchange**. The URL is
   the key the performance loop hydrates by; a posted row with `url: null` is invisible to it.
   (The 2026-08-13 audit found all 15 posted rows URL-less — the loop had never once run.) `null`
   only with a stated reason; it lands in `posted_rows_missing_url` and gets chased next run.
@@ -282,7 +310,9 @@ All CLASSIC-mode rules apply (grounding, voice, provenance, ≤280 chars, no tag
   (validated 2026-08-06: 22 of 86 Q1 FY27 concalls flagged the West Asia supply shock; POCL and
   Gravita were the same Hormuz lead-scrap story line-for-line).
 - Present the whole sheet compactly: the cross-company thread up top when one is found, then Lane 1
-  drafts, Lane 3 replies, and the Lane 2 nudge as a footer line. Ask which items are going out.
+  drafts, Lane 3 replies, and the Lane 2 nudge as a footer line. The sheet also carries the same
+  `guidance_watch` block as CLASSIC — when its `fresh[]` has a genuine raise not already in a
+  Lane 1 pick, surface it as an extra line (step 3b rules apply). Ask which items are going out.
 
 ### 2b. Read the performance loop
 
