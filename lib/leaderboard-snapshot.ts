@@ -12,9 +12,9 @@ import { logger } from "@/lib/logger";
 
 const SNAPSHOT_TABLE = "leaderboard_rank_snapshot";
 // Δ compares to the newest snapshot at least this old, so it reads as "moved
-// this week" rather than jittering on same-day re-renders. Gaps are tolerated —
+// recently" rather than jittering on same-day re-renders. Gaps are tolerated —
 // we take the nearest snapshot ≤ this age, not an exact calendar day.
-const DELTA_WINDOW_DAYS = 7;
+const DELTA_WINDOW_DAYS = 3;
 
 export type RankSnapshotRow = {
   companyCode: string;

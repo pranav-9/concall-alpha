@@ -492,7 +492,7 @@ function ScoreCell({
 }
 
 /**
- * The Δ column: rank change vs ~7 days ago (lib/leaderboard-snapshot).
+ * The Δ column: rank change vs the prior snapshot window (lib/leaderboard-snapshot).
  * delta = priorRank − currentRank, so POSITIVE means the company CLIMBED.
  * null prior (no snapshot that old yet, or a company new since then) renders a
  * quiet dot, not a zero — "we have no earlier rank", not "no movement".
@@ -541,7 +541,7 @@ export function ScoreBoardTable({
    */
   watchlistId?: number;
   /**
-   * UPPERCASE code → rank from ~7 days ago (lib/leaderboard-snapshot). Drives the
+   * UPPERCASE code → rank from the prior snapshot window (lib/leaderboard-snapshot). Drives the
    * Δ column. A plain Record, not a Map — it crosses the server→client (ssr:false)
    * boundary. Only the leaderboard passes it: a watchlist's rank is list-local, so
    * its Δ would need its own snapshots. Absent → no Δ column.
@@ -749,7 +749,7 @@ export function ScoreBoardTable({
             sortedRows.map((row, index) => {
               const dim = row.dim;
               const read = BOARD_READS[row.readKey];
-              // Δ = where it sat last week minus where it sits now, so a positive
+              // Δ = where it sat at the prior snapshot minus where it sits now, so a positive
               // number is a climb. Null (no prior rank, or unranked now) → the
               // quiet dot in DeltaCell, never a fake zero.
               const prior = priorRankByCode?.[row.companyCode.toUpperCase()];

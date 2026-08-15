@@ -71,7 +71,7 @@ export default async function LeaderboardsPage({
     // dropping it. Large caps are still excluded outright — two different gates.
     getConcallData({ excludeLargeCaps: true, includeBelowCut: true }),
     fetchLeaderboardData(),
-    // Ranks from ~7 days ago for the Δ column. Empty until history accrues.
+    // Ranks from the prior snapshot window for the Δ column. Empty until history accrues.
     readPriorRanks(),
   ]);
 
