@@ -62,6 +62,13 @@ import { bandForValuationScore, type ValuationBandKey } from "@/lib/valuation-ba
 export const QUALITY_WEIGHT = 0.88;
 export const PRICE_WEIGHT = 0.12;
 
+// TODOS #40 (decided 2026-08-15): a missing valuation leg imputes the fair midpoint —
+// 5.0 on the 0-10 LEG scale used here (the stored 0-100 valuation score 50) — never
+// the company's own quality. Mirrors MISSING_VALUATION_ANCHOR in
+// compute_composite_score.py — see its comment for the measurement and the
+// fixed-5.0-over-universe-median decision. Pinned by the cross-impl fixture.
+export const MISSING_VALUATION_ANCHOR = 5;
+
 export type BoardReadKey =
   | "aligned_cheap"
   | "quality_fair"
@@ -269,12 +276,14 @@ const finite = (n: number | null | undefined): n is number =>
   typeof n === "number" && Number.isFinite(n);
 
 /**
- * The composite: quality (mean of the legs present) tilted against price.
+ * The composite: quality (mean of the quality legs present) tilted against price.
  *
- * A missing leg is NEUTRAL, not punitive — it neither helps nor hurts. This
- * mirrors compute_composite_score.py, where the old half-weight penalty was
- * dropped because it demoted companies for a valuation we simply hadn't
- * refreshed, ranking our own pipeline upkeep instead of the business.
+ * A missing QUALITY leg is NEUTRAL, not punitive — it neither helps nor hurts
+ * (the old half-weight penalty demoted companies for a valuation we simply
+ * hadn't refreshed). A missing VALUATION leg imputes MISSING_VALUATION_ANCHOR
+ * (TODOS #40): the old quality-only fallback was arithmetically an own-quality
+ * imputation, letting a no-valuation company out-rank an identical one with a
+ * mediocre valuation. Mirrors compute_composite_score.py exactly.
  */
 export function computeBoardComposite(input: BoardReadInput): number | null {
   const quality: number[] = [];
@@ -287,11 +296,11 @@ export function computeBoardComposite(input: BoardReadInput): number | null {
   const qualityMean =
     quality.length > 0 ? quality.reduce((a, b) => a + b, 0) / quality.length : null;
 
-  if (qualityMean != null && price != null) {
-    return QUALITY_WEIGHT * qualityMean + PRICE_WEIGHT * price;
+  if (qualityMean != null) {
+    const effectivePrice = price != null ? price : MISSING_VALUATION_ANCHOR;
+    return QUALITY_WEIGHT * qualityMean + PRICE_WEIGHT * effectivePrice;
   }
-  // Missing a whole side: scored on the side that exists (weights renormalise).
-  if (qualityMean != null) return qualityMean;
+  // Whole quality side missing: scored on price alone (weights renormalise).
   return price;
 }
 

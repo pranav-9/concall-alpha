@@ -7,6 +7,7 @@ import {
   boardReadSortRank,
   classifyBoardRead,
   computeBoardComposite,
+  MISSING_VALUATION_ANCHOR,
   PRICE_WEIGHT,
   QUALITY_WEIGHT,
   type BoardReadInput,
@@ -48,13 +49,14 @@ assert.equal(
 // code path (see the file's _comment). Deliberately NOT the numbers printed in
 // the dry-run report — those are rounded to one decimal for display, and
 // comparing against them passes a formula that is quietly wrong in the third
-// place. Regenerate with the snippet in the fixture's _comment if the weights
+// place. Regenerate via the 3-step ritual in compute_composite_score.py's weight-change comment if the weights
 // change on the Python side.
 const crossImpl = JSON.parse(
   readFileSync(new URL("./fixtures/composite-score-cross-impl.json", import.meta.url), "utf8"),
 ) as {
   quality_weight: number;
   price_weight: number;
+  missing_valuation_anchor: number;
   rows: Array<{
     code: string;
     qtr: number | null;
@@ -74,6 +76,11 @@ assert.equal(
   crossImpl.price_weight,
   PRICE_WEIGHT,
   "PRICE_WEIGHT has drifted from compute_composite_score.py",
+);
+assert.equal(
+  crossImpl.missing_valuation_anchor,
+  MISSING_VALUATION_ANCHOR,
+  "MISSING_VALUATION_ANCHOR has drifted from compute_composite_score.py",
 );
 assert.ok(crossImpl.rows.length >= 10, "fixture should cover a spread of leg shapes");
 
@@ -110,21 +117,37 @@ assert.ok(
   "fixture must include the all-null no-read vector (D4) so both impls stay pinned to null",
 );
 
-// A missing leg is neutral, never punitive — the whole reason the half-weight
-// penalty was dropped. A company with no valuation must not score below an
-// otherwise identical company that has a good one.
+// TODOS #40 (2026-08-15): a missing valuation imputes the fair midpoint
+// (MISSING_VALUATION_ANCHOR), never the company's own quality. The old
+// quality-only fallback let a no-valuation company out-rank an identical one
+// holding a merely-mediocre valuation (GRSE over JSLL, live in the fixture).
 {
   const noValuation = computeBoardComposite({ concallScore: 7.5, growthScore: 7.5, valuationScore: null })!;
+  const anchored = computeBoardComposite({ concallScore: 7.5, growthScore: 7.5, valuationScore: 5.0 })!;
   const withGoodValuation = computeBoardComposite({ concallScore: 7.5, growthScore: 7.5, valuationScore: 9.0 })!;
+  const withMediocreValuation = computeBoardComposite({ concallScore: 7.5, growthScore: 7.5, valuationScore: 6.2 })!;
   const withBadValuation = computeBoardComposite({ concallScore: 7.5, growthScore: 7.5, valuationScore: 1.0 })!;
-  assert.equal(noValuation, 7.5, "no-price row scores on quality alone");
+  assert.equal(noValuation, anchored, "no-valuation must equal an explicit fair-midpoint valuation");
   assert.ok(withGoodValuation > noValuation, "a cheap price should help");
   assert.ok(withBadValuation < noValuation, "a rich price should hurt");
+  assert.ok(
+    withMediocreValuation > noValuation,
+    "the GRSE bug: a mediocre-but-above-fair valuation must BEAT having no valuation at all",
+  );
+  // Boundary: a valuation of 0 is a REAL (worst-possible) price, not a missing one —
+  // pins `price != null` against a `price ||` refactor that would silently impute.
+  const withZeroValuation = computeBoardComposite({ concallScore: 7.5, growthScore: 7.5, valuationScore: 0 })!;
+  assert.equal(withZeroValuation, 0.88 * 7.5);
+  assert.ok(withZeroValuation < noValuation, "a zero valuation must score BELOW a missing one");
 }
 
-// Missing a whole side falls back to the side that exists.
+// No quality side falls back to price alone (the anchor applies only to the
+// valuation leg); quality-present rows are anchored, not quality-alone.
 assert.equal(computeBoardComposite({ concallScore: null, growthScore: null, valuationScore: 6.0 }), 6.0);
-assert.equal(computeBoardComposite({ concallScore: 7.0, growthScore: null, valuationScore: null }), 7.0);
+assert.equal(
+  computeBoardComposite({ concallScore: 7.0, growthScore: null, valuationScore: null }),
+  0.88 * 7.0 + 0.12 * 5.0,
+);
 assert.equal(computeBoardComposite({ concallScore: null, growthScore: null, valuationScore: null }), null);
 
 // Quality is weighted ~2:1 over price in INFLUENCE, which given the measured
