@@ -62,8 +62,9 @@ import { bandForValuationScore, type ValuationBandKey } from "@/lib/valuation-ba
 export const QUALITY_WEIGHT = 0.88;
 export const PRICE_WEIGHT = 0.12;
 
-// TODOS #40 (decided 2026-08-15): a missing valuation leg imputes the fair midpoint
-// (score 50), never the company's own quality. Mirrors MISSING_VALUATION_ANCHOR in
+// TODOS #40 (decided 2026-08-15): a missing valuation leg imputes the fair midpoint —
+// 5.0 on the 0-10 LEG scale used here (the stored 0-100 valuation score 50) — never
+// the company's own quality. Mirrors MISSING_VALUATION_ANCHOR in
 // compute_composite_score.py — see its comment for the measurement and the
 // fixed-5.0-over-universe-median decision. Pinned by the cross-impl fixture.
 export const MISSING_VALUATION_ANCHOR = 5;

@@ -120,10 +120,14 @@ export type ValuationCheckRow = {
     implied_cagr_flat_legacy?: number | null;
     solve_status: string;
     zone_vs_phase5: ValuationZone;
-    /** What the zone was graded against (v2+): phase5_scenarios | delivered_cagr | delivered_roe. */
-    zone_basis?: string | null;
-    /** Phase D (v2+): which earnings the model priced — "ttm" | "normalized_5y_median_eps"(_trough). */
-    earnings_basis?: string | null;
+    /** What the zone was graded against (v2+) — mirrors the schema enum. */
+    zone_basis?: "phase5_scenarios" | "delivered_cagr" | "delivered_roe" | null;
+    /** Phase D (v2+): which earnings the model priced — mirrors the schema enum. */
+    earnings_basis?:
+      | "ttm"
+      | "normalized_5y_median_eps"
+      | "normalized_5y_median_eps_trough"
+      | null;
     /** For normalized cyclical solves: what TTM earnings would have implied. */
     ttm_alternative?: {
       implied_fy2_cagr?: number | null;
