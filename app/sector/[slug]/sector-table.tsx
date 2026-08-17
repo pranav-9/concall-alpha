@@ -5,7 +5,6 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp, Minus } from "
 import type { ReactNode } from "react";
 import { useState } from "react";
 
-import ConcallScore from "@/components/concall-score";
 import { analytics } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import {
@@ -31,16 +30,29 @@ import {
   moatTierGradeLabel,
 } from "@/lib/moat-analysis/tier-class";
 import type { MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
+import { bandForScore, BANDS } from "@/lib/score-band";
+import { bandForGrowthScore, GROWTH_BANDS } from "@/lib/growth-band";
+import { bandForValuationScore, VALUATION_BANDS } from "@/lib/valuation-band";
+import {
+  BOARD_READS,
+  classifyBoardRead,
+  type BoardReadKey,
+} from "@/lib/board-read";
 
 export type SectorTableRow = {
   companyCode: string;
   companyName: string;
   subSector: string | null;
   isNew: boolean;
+  /** Single latest print (the "this quarter" marker). */
   latestConcallScore: number | null;
   growthScore: number | null;
+  /** Flat trailing 4-quarter mean, shown in the Trailing column. */
   avg4ConcallScore: number | null;
-  blendedScore: number | null;
+  /** Recency-weighted 4Q blend — the quarter leg the Read ranks on. */
+  blendQuarterScore: number | null;
+  /** Valuation already rescaled to 0-10 (higher = cheaper). */
+  valuationScore: number | null;
   moatLabel: string | null;
   moatRating: MoatRatingKey | null;
   moatTier: MoatTier | null;
@@ -57,14 +69,59 @@ const tierIconFor = (tier: MoatTier) => {
   }
 };
 
+// Number-over-band-word cell, in the app's shared band grammar — same as the
+// /sectors listing and the Overall leaderboard.
+function quarterBand(score: number) {
+  const def = BANDS[bandForScore(score)];
+  return { label: def.label, textClass: def.textClass };
+}
+function growthBand(score: number) {
+  const def = GROWTH_BANDS[bandForGrowthScore(score)];
+  return { label: def.label, textClass: def.textClass };
+}
+function valuationBand(score: number) {
+  const def = VALUATION_BANDS[bandForValuationScore(score)];
+  return { label: def.label, textClass: def.textClass };
+}
+
+function ScoreCell({
+  score,
+  band,
+  className = "",
+}: {
+  score: number | null;
+  band: (s: number) => { label: string; textClass: string };
+  className?: string;
+}) {
+  if (score == null) {
+    return (
+      <TableCell className={cn("px-3 py-3 text-right align-middle", className)}>
+        <span className="text-muted-foreground">—</span>
+      </TableCell>
+    );
+  }
+  const b = band(score);
+  return (
+    <TableCell className={cn("px-3 py-3 text-right align-middle", className)}>
+      <div className="flex flex-col items-end leading-tight">
+        <span className="text-[15px] font-semibold tabular-nums text-foreground">
+          {score.toFixed(1)}
+        </span>
+        <span className={`text-[11px] font-medium ${b.textClass}`}>{b.label}</span>
+      </div>
+    </TableCell>
+  );
+}
+
 type SortKey =
   | "rank"
   | "companyName"
   | "moatTag"
   | "latestConcallScore"
-  | "growthScore"
   | "avg4ConcallScore"
-  | "blendedScore";
+  | "growthScore"
+  | "valuationScore"
+  | "read";
 
 type SortDirection = "asc" | "desc";
 
@@ -74,7 +131,7 @@ type SortState = {
 };
 
 const DEFAULT_SORT: SortState = {
-  key: "blendedScore",
+  key: "read",
   direction: "desc",
 };
 
@@ -128,28 +185,38 @@ function SortButton({
   direction,
   children,
   onClick,
+  align = "left",
 }: {
   active: boolean;
   direction: SortDirection;
   children: ReactNode;
   onClick: () => void;
+  align?: "left" | "right";
 }) {
   return (
     <Button
       type="button"
       variant="ghost"
-      className="h-auto rounded-none border-0 bg-transparent px-0 py-0 text-sm font-semibold text-foreground shadow-none hover:bg-transparent hover:text-foreground"
+      className={cn(
+        "h-auto rounded-none border-0 bg-transparent px-0 py-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground shadow-none hover:bg-transparent hover:text-foreground",
+        align === "right" && "flex-row-reverse",
+      )}
       onClick={onClick}
     >
       {children}
       {active ? (
         direction === "asc" ? (
-          <ChevronUp className="ml-2 h-4 w-4" />
+          <ChevronUp className={align === "right" ? "mr-1 h-3.5 w-3.5" : "ml-1 h-3.5 w-3.5"} />
         ) : (
-          <ChevronDown className="ml-2 h-4 w-4" />
+          <ChevronDown className={align === "right" ? "mr-1 h-3.5 w-3.5" : "ml-1 h-3.5 w-3.5"} />
         )
       ) : (
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <ArrowUpDown
+          className={cn(
+            "h-3.5 w-3.5 opacity-50",
+            align === "right" ? "mr-1" : "ml-1",
+          )}
+        />
       )}
     </Button>
   );
@@ -161,23 +228,25 @@ function renderSortHead({
   sort,
   onSort,
   subtitle,
+  align = "left",
 }: {
   label: string;
   columnKey: SortKey;
   sort: SortState;
   onSort: (key: SortKey) => void;
   subtitle?: string;
+  align?: "left" | "right";
 }) {
   const active = sort.key === columnKey;
   const direction = active ? sort.direction : defaultDirectionForKey(columnKey);
 
   return (
-    <div className="flex flex-col gap-0.5">
-      <SortButton active={active} direction={direction} onClick={() => onSort(columnKey)}>
+    <div className={cn("flex flex-col gap-0.5", align === "right" && "items-end")}>
+      <SortButton active={active} direction={direction} onClick={() => onSort(columnKey)} align={align}>
         {label}
       </SortButton>
       {subtitle ? (
-        <span className="text-[10px] font-medium text-muted-foreground normal-case">
+        <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
           {subtitle}
         </span>
       ) : null}
@@ -185,30 +254,42 @@ function renderSortHead({
   );
 }
 
-type RankedSectorRow = SectorTableRow & { leaderboardRank: number | null };
+type EnrichedRow = SectorTableRow & {
+  readScore: number | null;
+  readKey: BoardReadKey;
+  leaderboardRank: number | null;
+};
 
-function rankRows(rows: SectorTableRow[]): RankedSectorRow[] {
-  const sortedForRank = [...rows].sort((a, b) => {
-    const blendDiff = compareNumber(a.blendedScore, b.blendedScore, "desc");
-    if (blendDiff !== 0) return blendDiff;
-    const qtrDiff = compareNumber(a.latestConcallScore, b.latestConcallScore, "desc");
-    if (qtrDiff !== 0) return qtrDiff;
-    const growthDiff = compareNumber(a.growthScore, b.growthScore, "desc");
-    if (growthDiff !== 0) return growthDiff;
+function enrichRows(rows: SectorTableRow[]): EnrichedRow[] {
+  // Per-company Read, computed exactly as the Overall board does it
+  // (lib/board-read): the recency-weighted quarter blend tilted against price.
+  const withRead = rows.map((row) => {
+    const read = classifyBoardRead({
+      concallScore: row.blendQuarterScore,
+      growthScore: row.growthScore,
+      valuationScore: row.valuationScore,
+    });
+    return { ...row, readScore: read.score, readKey: read.key };
+  });
+
+  const sortedForRank = [...withRead].sort((a, b) => {
+    const readDiff = compareNumber(a.readScore, b.readScore, "desc");
+    if (readDiff !== 0) return readDiff;
     return compareText(a.companyName, b.companyName, "asc");
   });
-  const rankedSorted = assignCompetitionRanks(sortedForRank, (row) => row.blendedScore);
+  const ranked = assignCompetitionRanks(sortedForRank, (row) => row.readScore);
   const rankByCode = new Map<string, number>();
-  rankedSorted.forEach((row) => {
-    if (row.blendedScore != null) rankByCode.set(row.companyCode, row.leaderboardRank);
+  ranked.forEach((row) => {
+    if (row.readScore != null) rankByCode.set(row.companyCode, row.leaderboardRank);
   });
-  return rows.map((row) => ({
+
+  return withRead.map((row) => ({
     ...row,
     leaderboardRank: rankByCode.get(row.companyCode) ?? null,
   }));
 }
 
-function sortRows(rows: RankedSectorRow[], sort: SortState): RankedSectorRow[] {
+function sortRows(rows: EnrichedRow[], sort: SortState): EnrichedRow[] {
   return [...rows].sort((a, b) => {
     let diff = 0;
     switch (sort.key) {
@@ -227,31 +308,31 @@ function sortRows(rows: RankedSectorRow[], sort: SortState): RankedSectorRow[] {
       case "latestConcallScore":
         diff = compareNumber(a.latestConcallScore, b.latestConcallScore, sort.direction);
         break;
-      case "growthScore":
-        diff = compareNumber(a.growthScore, b.growthScore, sort.direction);
-        break;
       case "avg4ConcallScore":
         diff = compareNumber(a.avg4ConcallScore, b.avg4ConcallScore, sort.direction);
         break;
-      case "blendedScore":
-        diff = compareNumber(a.blendedScore, b.blendedScore, sort.direction);
-        if (diff === 0) {
-          diff = compareNumber(a.latestConcallScore, b.latestConcallScore, "desc");
-        }
-        if (diff === 0) {
-          diff = compareNumber(a.growthScore, b.growthScore, "desc");
-        }
+      case "growthScore":
+        diff = compareNumber(a.growthScore, b.growthScore, sort.direction);
+        break;
+      case "valuationScore":
+        diff = compareNumber(a.valuationScore, b.valuationScore, sort.direction);
+        break;
+      case "read":
+        diff = compareNumber(a.readScore, b.readScore, sort.direction);
         break;
     }
     if (diff !== 0) return diff;
+    // Tie-break: Read, then name.
+    const tie = compareNumber(a.readScore, b.readScore, "desc");
+    if (tie !== 0) return tie;
     return compareText(a.companyName, b.companyName, "asc");
   });
 }
 
 export function SectorTable({ rows, sector }: { rows: SectorTableRow[]; sector: string }) {
   const [sort, setSort] = useState<SortState>(DEFAULT_SORT);
-  const rankedRows = rankRows(rows);
-  const sortedRows = sortRows(rankedRows, sort);
+  const enrichedRows = enrichRows(rows);
+  const sortedRows = sortRows(enrichedRows, sort);
 
   const handleSort = (key: SortKey) => {
     setSort((current) => {
@@ -265,10 +346,12 @@ export function SectorTable({ rows, sector }: { rows: SectorTableRow[]; sector: 
   const sortDirectionLabel = (key: SortKey) =>
     sort.key === key ? (sort.direction === "asc" ? "ascending" : "descending") : "none";
 
+  const READ_HEAD_TINT = "bg-amber-50/40 dark:bg-amber-950/[0.12]";
+
   return (
     <div className="relative">
       <div aria-hidden className={TABLE_SCROLL_HINT} />
-      <Table className="min-w-[1100px] w-full text-sm">
+      <Table className="min-w-[1180px] w-full text-sm">
         <TableHeader className="bg-background/70">
           <TableRow className="border-b border-border/35 bg-background/70">
             <TableHead aria-sort={sortDirectionLabel("rank")} className="w-12 px-3 py-3 text-foreground">
@@ -286,154 +369,162 @@ export function SectorTable({ rows, sector }: { rows: SectorTableRow[]; sector: 
                 columnKey: "moatTag",
                 sort,
                 onSort: handleSort,
-                subtitle: "Rating label",
+                subtitle: "rating label",
               })}
             </TableHead>
             <TableHead
               aria-sort={sortDirectionLabel("latestConcallScore")}
-              className="px-3 py-3 text-foreground"
+              className="px-3 py-3 text-right text-foreground"
             >
               {renderSortHead({
                 label: "ConcallScore",
                 columnKey: "latestConcallScore",
                 sort,
                 onSort: handleSort,
-              })}
-            </TableHead>
-            <TableHead
-              aria-sort={sortDirectionLabel("growthScore")}
-              className="px-3 py-3 text-foreground"
-            >
-              {renderSortHead({
-                label: "Growth Score",
-                columnKey: "growthScore",
-                sort,
-                onSort: handleSort,
+                subtitle: "latest",
+                align: "right",
               })}
             </TableHead>
             <TableHead
               aria-sort={sortDirectionLabel("avg4ConcallScore")}
-              className="px-3 py-3 text-foreground"
+              className="px-3 py-3 text-right text-foreground"
             >
               {renderSortHead({
-                label: "4Q Avg Score",
+                label: "Trailing",
                 columnKey: "avg4ConcallScore",
                 sort,
                 onSort: handleSort,
+                subtitle: "4Q avg",
+                align: "right",
               })}
             </TableHead>
             <TableHead
-              aria-sort={sortDirectionLabel("blendedScore")}
-              className="border-l border-border/70 px-3 py-3 text-foreground"
+              aria-sort={sortDirectionLabel("growthScore")}
+              className="px-3 py-3 text-right text-foreground"
             >
               {renderSortHead({
-                label: "Avg Score",
-                columnKey: "blendedScore",
+                label: "Growth",
+                columnKey: "growthScore",
                 sort,
                 onSort: handleSort,
-                subtitle: "Derived from first 3",
+                subtitle: "forward",
+                align: "right",
+              })}
+            </TableHead>
+            <TableHead
+              aria-sort={sortDirectionLabel("valuationScore")}
+              className="px-3 py-3 text-right text-foreground"
+            >
+              {renderSortHead({
+                label: "Valuation",
+                columnKey: "valuationScore",
+                sort,
+                onSort: handleSort,
+                subtitle: "higher = cheaper",
+                align: "right",
+              })}
+            </TableHead>
+            <TableHead
+              aria-sort={sortDirectionLabel("read")}
+              className={cn("border-l border-border/70 px-3 py-3 text-right text-foreground", READ_HEAD_TINT)}
+            >
+              {renderSortHead({
+                label: "Read",
+                columnKey: "read",
+                sort,
+                onSort: handleSort,
+                subtitle: "the three, combined",
+                align: "right",
               })}
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedRows.length ? (
-            sortedRows.map((row) => (
-              <TableRow
-                key={row.companyCode}
-                className="border-b border-border/45 transition-colors last:border-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
-              >
-                <TableCell className="px-3 py-3">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            sortedRows.map((row) => {
+              const readDef = BOARD_READS[row.readKey];
+              return (
+                <TableRow
+                  key={row.companyCode}
+                  className="border-b border-border/45 transition-colors last:border-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
+                >
+                  <TableCell className="px-3 py-3 align-middle text-sm font-semibold tabular-nums text-muted-foreground">
                     {row.leaderboardRank ?? "—"}
-                  </span>
-                </TableCell>
-                <TableCell className={cn("px-3 py-3", STICKY_NAME_CELL)}>
-                  <div className="flex items-center gap-1.5">
-                    <Link
-                      href={`/company/${row.companyCode}`}
-                      prefetch={false}
-                      onClick={() => analytics.sectorCompanyClick(sector, row.companyCode)}
-                      className="font-semibold text-foreground hover:underline"
-                    >
-                      {row.companyName}
-                    </Link>
-                    {row.isNew && (
-                      <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
-                        New
+                  </TableCell>
+                  <TableCell className={cn("px-3 py-3 align-middle", STICKY_NAME_CELL)}>
+                    <div className="flex items-center gap-1.5">
+                      <Link
+                        href={`/company/${row.companyCode}`}
+                        prefetch={false}
+                        onClick={() => analytics.sectorCompanyClick(sector, row.companyCode)}
+                        className="font-semibold text-foreground hover:underline"
+                      >
+                        {row.companyName}
+                      </Link>
+                      {row.isNew && (
+                        <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200">
+                          New
+                        </span>
+                      )}
+                    </div>
+                    {row.subSector && (
+                      <span className="mt-1 inline-flex items-center rounded-full border border-border/60 bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                        {row.subSector}
                       </span>
                     )}
-                  </div>
-                  {row.subSector && (
-                    <span className="mt-1 inline-flex items-center rounded-full border border-border/60 bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                      {row.subSector}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="px-3 py-3">
-                  {row.moatLabel ? (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span
-                        className={`${moatTierClass(row.moatRating)} inline-flex w-fit max-w-[11rem] items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]`}
-                        title={row.moatLabel}
-                      >
-                        {row.moatLabel}
+                  </TableCell>
+                  <TableCell className="px-3 py-3 align-middle">
+                    {row.moatLabel ? (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span
+                          className={`${moatTierClass(row.moatRating)} inline-flex w-fit max-w-[11rem] items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]`}
+                          title={row.moatLabel}
+                        >
+                          {row.moatLabel}
+                        </span>
+                        {row.moatTier &&
+                          (() => {
+                            const TierIcon = tierIconFor(row.moatTier);
+                            return (
+                              <span
+                                className={`${moatTierGradeClass()} inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em]`}
+                              >
+                                <TierIcon className={`h-3 w-3 ${moatTierGradeIconClass(row.moatTier)}`} />
+                                {moatTierGradeLabel(row.moatTier)}
+                              </span>
+                            );
+                          })()}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <ScoreCell score={row.latestConcallScore} band={quarterBand} />
+                  <ScoreCell score={row.avg4ConcallScore} band={quarterBand} />
+                  <ScoreCell score={row.growthScore} band={growthBand} />
+                  <ScoreCell score={row.valuationScore} band={valuationBand} />
+                  <TableCell
+                    className={cn("border-l border-border/70 px-3 py-3 align-middle", READ_HEAD_TINT)}
+                  >
+                    <div className="flex flex-col items-end leading-tight">
+                      {row.readScore != null ? (
+                        <span className="text-[15px] font-semibold tabular-nums text-foreground">
+                          {row.readScore.toFixed(1)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                      <span className={`text-[11px] font-medium ${readDef.textClass}`}>
+                        {readDef.label}
                       </span>
-                      {row.moatTier &&
-                        (() => {
-                          const TierIcon = tierIconFor(row.moatTier);
-                          return (
-                            <span
-                              className={`${moatTierGradeClass()} inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em]`}
-                            >
-                              <TierIcon className={`h-3 w-3 ${moatTierGradeIconClass(row.moatTier)}`} />
-                              {moatTierGradeLabel(row.moatTier)}
-                            </span>
-                          );
-                        })()}
                     </div>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="px-3 py-3">
-                  {row.latestConcallScore != null ? (
-                    <ConcallScore score={row.latestConcallScore} size="sm" />
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="px-3 py-3">
-                  {row.growthScore != null ? (
-                    <ConcallScore score={row.growthScore} size="sm" kind="growth" />
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="px-3 py-3">
-                  {row.avg4ConcallScore != null ? (
-                    <ConcallScore score={row.avg4ConcallScore} size="sm" />
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="border-l border-border/70 px-3 py-3">
-                  {row.blendedScore != null ? (
-                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/80 px-2.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-emerald-700/40 dark:bg-emerald-950/20">
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
-                        Blend
-                      </span>
-                      <ConcallScore score={row.blendedScore} size="sm" />
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))
+                  </TableCell>
+                </TableRow>
+              );
+            })
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                 No companies match the current filter.
               </TableCell>
             </TableRow>
