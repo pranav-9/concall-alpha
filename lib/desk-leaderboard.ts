@@ -274,16 +274,28 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
   // (sector, sparkline, filed) from the concall rows built above. Skip names
   // that are off discovery (large-cap / below-cut).
   const rowByCode = new Map(rows.map((r) => [upper(r.code), r]));
+  const rowByName = new Map(rows.map((r) => [upper(r.name), r]));
   const moatLeaders: DeskRow[] = moat
-    .filter((m) => !coverage.excludedKeys.has(upper(m.companyCode)))
+    // Resolve by code OR name: moat_analysis sometimes stores a different
+    // company_code (an internal id, e.g. "S00003") than concall_analysis, which
+    // would otherwise blank the score/sparkline and produce a dead /company link.
+    .filter(
+      (m) =>
+        !coverage.excludedKeys.has(upper(m.companyCode)) &&
+        !coverage.excludedKeys.has(upper(m.companyName ?? "")),
+    )
     .slice(0, 12)
     .map((m) => {
-      const key = upper(m.companyCode);
-      const enriched = rowByCode.get(key);
-      const info = coverage.byCode.get(key);
+      const enriched =
+        rowByCode.get(upper(m.companyCode)) ??
+        (m.companyName ? rowByName.get(upper(m.companyName)) : undefined);
+      const info =
+        coverage.byCode.get(upper(m.companyCode)) ??
+        (m.companyName ? coverage.byCode.get(upper(m.companyName)) : undefined);
       return {
-        code: m.companyCode,
-        name: m.companyName ?? enriched?.name ?? m.companyCode,
+        // Prefer the resolved concall/company code so the /company link works.
+        code: enriched?.code ?? m.companyCode,
+        name: enriched?.name ?? m.companyName ?? m.companyCode,
         sector: enriched?.sector ?? info?.sector ?? null,
         isNew: enriched?.isNew ?? false,
         latestScore: enriched?.latestScore ?? null,
