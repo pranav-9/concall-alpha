@@ -98,7 +98,19 @@ export function normalizeGuidanceSnapshot(
     row.guidance_items,
   );
   const details = parseJsonObjectLike(row.details);
-  const sourceFiles = parseJsonArrayLike(row.source_files);
+  // Strip local filesystem provenance before the payload can reach the
+  // client: `local_path` (and any non-http `url`) would ship inside the RSC
+  // flight data, where crawlers discover the /Users/... strings as
+  // site-relative URLs (GSC 404s, 2026-08-17).
+  const sourceFiles = parseJsonArrayLike(row.source_files).map((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return entry;
+    const rest = { ...(entry as Record<string, unknown>) };
+    delete rest.local_path;
+    if (typeof rest.url === "string" && !/^https?:\/\//i.test(rest.url)) {
+      rest.url = null;
+    }
+    return rest;
+  });
 
   if (guidanceItems.length === 0) {
     return null;

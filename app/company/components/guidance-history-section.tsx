@@ -743,7 +743,10 @@ const asRichSourceFile = (entry: unknown): RichSourceFile | null => {
     fy: typeof e.fy === "number" ? e.fy : null,
     qtr: typeof e.qtr === "number" ? e.qtr : null,
     doc_type: typeof e.doc_type === "string" ? e.doc_type : null,
-    url: typeof e.url === "string" && e.url.length > 0 ? e.url : null,
+    // Some pipeline rows carry a local filesystem path in `url` instead of a
+    // web URL; anything non-http(s) must not render as an href (it resolves
+    // site-relative and leaks crawlable /Users/... 404s).
+    url: typeof e.url === "string" && /^https?:\/\//i.test(e.url) ? e.url : null,
     local_path:
       typeof e.local_path === "string" && e.local_path.length > 0 ? e.local_path : null,
   };
