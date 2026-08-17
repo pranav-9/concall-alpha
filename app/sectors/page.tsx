@@ -2,11 +2,22 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { createClient } from "@/lib/supabase/server";
-import ConcallScore from "@/components/concall-score";
 import { slugifySector } from "@/app/sector/utils";
 import { getConcallData } from "@/app/company/get-concall-data";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
+import {
+  BOARD_READS,
+  classifyBoardRead,
+  type BoardReadKey,
+} from "@/lib/board-read";
+import { bandForScore, BANDS } from "@/lib/score-band";
+import { bandForGrowthScore, GROWTH_BANDS } from "@/lib/growth-band";
+import {
+  bandForValuationScore,
+  toValuationScale,
+  VALUATION_BANDS,
+} from "@/lib/valuation-band";
 import {
   PAGE_BACKGROUND_ATMOSPHERIC,
   PAGE_SHELL,
@@ -29,38 +40,41 @@ type GrowthOutlookRow = {
   run_timestamp?: string | null;
 };
 
-type SectorOverviewRow = {
+type SectorRow = {
   sector: string;
   slug: string;
   companyCount: number;
   subSectorCount: number;
-  avgLatestConcallScore: number | null;
-  latestQuarterEligibleCount: number;
-  avgGrowthScore: number | null;
-  growthEligibleCount: number;
-  avgAvg4ConcallScore: number | null;
-  avg4QuarterEligibleCount: number;
-  avgBlendedScore: number | null;
-  blendedEligibleCount: number;
+  reportedCount: number;
+  avgLatest: number | null;
+  avg4Q: number | null;
+  avgGrowth: number | null;
+  avgValuation: number | null;
+  valuationCount: number;
+  // The leaderboard's Read: composite number + configuration word.
+  readScore: number | null;
+  readKey: BoardReadKey;
+  readLabel: string;
   rank: number | null;
 };
 
+// Read is the canonical order; the rest let a reader re-sort a single leg.
 type SectorSortKey =
-  | "rank"
+  | "read"
   | "sector"
   | "companies"
-  | "subsectors"
-  | "blended"
   | "latest_qtr"
+  | "avg_4q"
   | "growth"
-  | "avg_4q";
+  | "valuation";
 
 const defaultDirectionForKey = (key: SectorSortKey): "asc" | "desc" =>
-  key === "sector" || key === "rank" ? "asc" : "desc";
+  key === "sector" ? "asc" : "desc";
 
 export const metadata: Metadata = {
   title: "Sectors – Story of a Stock",
-  description: "Sector overview with company count, latest ConcallScore and growth score averages.",
+  description:
+    "Every sector on the same scores as the leaderboard — the quarter, the trailing four, the outlook, and what you pay for it — folded into one Read.",
   alternates: { canonical: "/sectors" },
 };
 
@@ -73,16 +87,59 @@ const toNumberOrNull = (value: unknown): number | null => {
   return null;
 };
 
-const avg = (values: number[]) => {
-  if (!values.length) return null;
-  return values.reduce((sum, v) => sum + v, 0) / values.length;
-};
+const avg = (values: number[]): number | null =>
+  values.length ? values.reduce((sum, v) => sum + v, 0) / values.length : null;
 
 const PAGE_BACKGROUND_CLASS = `h-[30rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 
-const PANEL_CARD_CLASS = PANEL_CARD_NEUTRAL;
+// ── Band-cell helpers ──────────────────────────────────────────────────────
+// Each numeric leg renders as a number over its band word, in the app's shared
+// band grammar (score-band / growth-band / valuation-band), so a sector reads on
+// exactly the same vocabulary as a company row on the leaderboard.
 
-const TABLE_CARD_CLASS = TABLE_CARD_SKY;
+function quarterBand(score: number) {
+  const def = BANDS[bandForScore(score)];
+  return { label: def.label, textClass: def.textClass };
+}
+function growthBand(score: number) {
+  const def = GROWTH_BANDS[bandForGrowthScore(score)];
+  return { label: def.label, textClass: def.textClass };
+}
+function valuationBand(score: number) {
+  const def = VALUATION_BANDS[bandForValuationScore(score)];
+  return { label: def.label, textClass: def.textClass };
+}
+
+function ScoreCell({
+  score,
+  band,
+  className = "",
+}: {
+  score: number | null;
+  band: ((s: number) => { label: string; textClass: string }) | null;
+  className?: string;
+}) {
+  if (score == null) {
+    return (
+      <td className={`px-4 py-3 text-right align-middle ${className}`}>
+        <span className="text-muted-foreground">—</span>
+      </td>
+    );
+  }
+  const b = band ? band(score) : null;
+  return (
+    <td className={`px-4 py-3 text-right align-middle ${className}`}>
+      <div className="flex flex-col items-end leading-tight">
+        <span className="text-[15px] font-semibold tabular-nums text-foreground">
+          {score.toFixed(1)}
+        </span>
+        {b ? (
+          <span className={`text-[11px] font-medium ${b.textClass}`}>{b.label}</span>
+        ) : null}
+      </div>
+    </td>
+  );
+}
 
 export default async function SectorsPage({
   searchParams,
@@ -90,16 +147,20 @@ export default async function SectorsPage({
   searchParams?: Promise<{ sort?: SectorSortKey; order?: "asc" | "desc" }>;
 }) {
   const resolvedSearchParams = await searchParams;
-  const sortBy: SectorSortKey =
-    resolvedSearchParams?.sort === "rank" ||
-    resolvedSearchParams?.sort === "sector" ||
-    resolvedSearchParams?.sort === "companies" ||
-    resolvedSearchParams?.sort === "subsectors" ||
-    resolvedSearchParams?.sort === "growth" ||
-    resolvedSearchParams?.sort === "latest_qtr" ||
-    resolvedSearchParams?.sort === "avg_4q"
-      ? resolvedSearchParams.sort
-      : "blended";
+  const sortKeys: SectorSortKey[] = [
+    "read",
+    "sector",
+    "companies",
+    "latest_qtr",
+    "avg_4q",
+    "growth",
+    "valuation",
+  ];
+  const sortBy: SectorSortKey = sortKeys.includes(
+    resolvedSearchParams?.sort as SectorSortKey,
+  )
+    ? (resolvedSearchParams!.sort as SectorSortKey)
+    : "read";
   const sortOrder: "asc" | "desc" =
     resolvedSearchParams?.order === "asc" || resolvedSearchParams?.order === "desc"
       ? resolvedSearchParams.order
@@ -130,7 +191,7 @@ export default async function SectorsPage({
       <main className="relative isolate overflow-hidden">
         <div className={PAGE_BACKGROUND_CLASS} />
         <div className={PAGE_SHELL}>
-          <div className={PANEL_CARD_CLASS}>
+          <div className={PANEL_CARD_NEUTRAL}>
             <p className="text-sm text-muted-foreground">No sector data available yet.</p>
           </div>
         </div>
@@ -138,14 +199,26 @@ export default async function SectorsPage({
     );
   }
 
-  const concallScoreByCode = new Map<
+  // Per-company legs, all on the 0-10 scale. The quarter LEG that feeds the Read
+  // is the recency-weighted 4Q blend ("Latest 4Q Blend") — the leaderboard's own
+  // quarter leg — while the two displayed quarter columns keep the single latest
+  // print and the flat 4Q mean for transparency. Valuation is the published,
+  // non-stale, rateable read getConcallData already gated, rescaled 0-100 -> 0-10.
+  const legByCode = new Map<
     string,
-    { latestScore: number | null; avg4ConcallScore: number | null }
+    {
+      latest: number | null;
+      avg4Q: number | null;
+      blend: number | null;
+      valuation: number | null;
+    }
   >();
   concallRows.forEach((row) => {
-    concallScoreByCode.set(row.company.toUpperCase(), {
-      latestScore: latestLabel ? toNumberOrNull(row[latestLabel]) : null,
-      avg4ConcallScore: toNumberOrNull(row["Latest 4Q Avg"]),
+    legByCode.set(row.company.toUpperCase(), {
+      latest: latestLabel ? toNumberOrNull(row[latestLabel]) : null,
+      avg4Q: toNumberOrNull(row["Latest 4Q Avg"]),
+      blend: toNumberOrNull(row["Latest 4Q Blend"]),
+      valuation: toValuationScale(toNumberOrNull(row.valuationScore)),
     });
   });
 
@@ -156,21 +229,16 @@ export default async function SectorsPage({
     latestGrowthByKey.set(key, toNumberOrNull(row.growth_score));
   });
 
-  const blendCompany = (values: Array<number | null>) => {
-    const valid = values.filter((value): value is number => value != null);
-    if (valid.length === 0) return null;
-    return valid.reduce((sum, value) => sum + value, 0) / valid.length;
-  };
-
   const sectorMap = new Map<
     string,
     {
       companyCount: number;
       subSectors: Set<string>;
-      latestConcallScores: number[];
-      growthScores: number[];
-      avg4ConcallScores: number[];
-      blendedScores: number[];
+      latest: number[];
+      avg4Q: number[];
+      blend: number[];
+      growth: number[];
+      valuation: number[];
     }
   >();
 
@@ -180,74 +248,81 @@ export default async function SectorsPage({
 
     const codeKey = company.code.toUpperCase();
     const nameKey = (company.name ?? "").trim().toUpperCase();
-    const concallEntry = concallScoreByCode.get(codeKey);
-    const concallScore = concallEntry?.latestScore ?? null;
-    const avg4ConcallScore = concallEntry?.avg4ConcallScore ?? null;
-    const growthScore = latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? null;
-    const blendedScore = blendCompany([concallScore, growthScore, avg4ConcallScore]);
+    const leg = legByCode.get(codeKey);
+    const growth =
+      latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? null;
 
     if (!sectorMap.has(sector)) {
       sectorMap.set(sector, {
         companyCount: 0,
         subSectors: new Set<string>(),
-        latestConcallScores: [],
-        growthScores: [],
-        avg4ConcallScores: [],
-        blendedScores: [],
+        latest: [],
+        avg4Q: [],
+        blend: [],
+        growth: [],
+        valuation: [],
       });
     }
-
     const bucket = sectorMap.get(sector)!;
     bucket.companyCount += 1;
     if (company.sub_sector?.trim()) bucket.subSectors.add(company.sub_sector.trim());
-    if (concallScore != null) bucket.latestConcallScores.push(concallScore);
-    if (growthScore != null) bucket.growthScores.push(growthScore);
-    if (avg4ConcallScore != null) bucket.avg4ConcallScores.push(avg4ConcallScore);
-    if (blendedScore != null) bucket.blendedScores.push(blendedScore);
+    if (leg?.latest != null) bucket.latest.push(leg.latest);
+    if (leg?.avg4Q != null) bucket.avg4Q.push(leg.avg4Q);
+    if (leg?.blend != null) bucket.blend.push(leg.blend);
+    if (growth != null) bucket.growth.push(growth);
+    if (leg?.valuation != null) bucket.valuation.push(leg.valuation);
   });
 
-  const unrankedRows = Array.from(sectorMap.entries())
-    .map(([sector, bucket]) => ({
-      sector,
-      slug: slugifySector(sector),
-      companyCount: bucket.companyCount,
-      subSectorCount: bucket.subSectors.size,
-      avgLatestConcallScore: avg(bucket.latestConcallScores),
-      latestQuarterEligibleCount: bucket.latestConcallScores.length,
-      avgGrowthScore: avg(bucket.growthScores),
-      growthEligibleCount: bucket.growthScores.length,
-      avgAvg4ConcallScore: avg(bucket.avg4ConcallScores),
-      avg4QuarterEligibleCount: bucket.avg4ConcallScores.length,
-      avgBlendedScore: avg(bucket.blendedScores),
-      blendedEligibleCount: bucket.blendedScores.length,
-    }))
-    .filter((row) => row.companyCount > 1);
+  const unranked: Omit<SectorRow, "rank">[] = Array.from(sectorMap.entries())
+    .filter(([, bucket]) => bucket.companyCount > 1)
+    .map(([sector, bucket]) => {
+      const avgBlend = avg(bucket.blend);
+      const avgGrowth = avg(bucket.growth);
+      const avgValuation = avg(bucket.valuation);
+      // Sector-averaged legs -> the leaderboard's own composite + config word,
+      // computed exactly as a company row is (lib/board-read).
+      const read = classifyBoardRead({
+        concallScore: avgBlend,
+        growthScore: avgGrowth,
+        valuationScore: avgValuation,
+      });
+      return {
+        sector,
+        slug: slugifySector(sector),
+        companyCount: bucket.companyCount,
+        subSectorCount: bucket.subSectors.size,
+        reportedCount: bucket.latest.length,
+        avgLatest: avg(bucket.latest),
+        avg4Q: avg(bucket.avg4Q),
+        avgGrowth,
+        avgValuation,
+        valuationCount: bucket.valuation.length,
+        readScore: read.score,
+        readKey: read.key,
+        readLabel: BOARD_READS[read.key].label,
+      };
+    });
 
-  const rankSorted = [...unrankedRows].sort((a, b) => {
-    const blendDiff =
-      (b.avgBlendedScore ?? Number.NEGATIVE_INFINITY) -
-      (a.avgBlendedScore ?? Number.NEGATIVE_INFINITY);
-    if (blendDiff !== 0) return blendDiff;
-    const qtrDiff =
-      (b.avgLatestConcallScore ?? Number.NEGATIVE_INFINITY) -
-      (a.avgLatestConcallScore ?? Number.NEGATIVE_INFINITY);
-    if (qtrDiff !== 0) return qtrDiff;
-    const growthDiff =
-      (b.avgGrowthScore ?? Number.NEGATIVE_INFINITY) -
-      (a.avgGrowthScore ?? Number.NEGATIVE_INFINITY);
-    if (growthDiff !== 0) return growthDiff;
-    return a.sector.localeCompare(b.sector);
-  });
-  const ranked = assignCompetitionRanks(rankSorted, (row) => row.avgBlendedScore);
+  // Rank 1 = strongest board overall by Read (competition ranks, ties share a
+  // rank). No-read sectors get no rank.
+  const rankSorted = [...unranked].sort(
+    (a, b) =>
+      (b.readScore ?? Number.NEGATIVE_INFINITY) -
+        (a.readScore ?? Number.NEGATIVE_INFINITY) ||
+      a.sector.localeCompare(b.sector),
+  );
+  const ranked = assignCompetitionRanks(rankSorted, (row) => row.readScore);
   const rankBySector = new Map<string, number>();
   ranked.forEach((row) => {
-    if (row.avgBlendedScore != null) rankBySector.set(row.sector, row.leaderboardRank);
+    if (row.readScore != null) rankBySector.set(row.sector, row.leaderboardRank);
   });
 
-  const rows: SectorOverviewRow[] = unrankedRows.map((row) => ({
+  const rows: SectorRow[] = unranked.map((row) => ({
     ...row,
     rank: rankBySector.get(row.sector) ?? null,
   }));
+
+  const totalCompanies = rows.reduce((sum, row) => sum + row.companyCount, 0);
 
   const compareNullLast = (
     a: number | null,
@@ -261,268 +336,236 @@ export default async function SectorsPage({
   };
 
   const sortedRows = [...rows].sort((a, b) => {
-    if (sortBy === "rank") {
-      const primary = compareNullLast(a.rank, b.rank, sortOrder);
-      if (primary !== 0) return primary;
-    } else if (sortBy === "sector") {
-      const primary = sortOrder === "asc"
-        ? a.sector.localeCompare(b.sector)
-        : b.sector.localeCompare(a.sector);
-      if (primary !== 0) return primary;
+    let primary = 0;
+    if (sortBy === "sector") {
+      primary =
+        sortOrder === "asc"
+          ? a.sector.localeCompare(b.sector)
+          : b.sector.localeCompare(a.sector);
     } else if (sortBy === "companies") {
-      const primary = sortOrder === "asc"
-        ? a.companyCount - b.companyCount
-        : b.companyCount - a.companyCount;
-      if (primary !== 0) return primary;
-    } else if (sortBy === "subsectors") {
-      const primary = sortOrder === "asc"
-        ? a.subSectorCount - b.subSectorCount
-        : b.subSectorCount - a.subSectorCount;
-      if (primary !== 0) return primary;
-    } else if (sortBy === "growth") {
-      const primary = compareNullLast(a.avgGrowthScore, b.avgGrowthScore, sortOrder);
-      if (primary !== 0) return primary;
+      primary =
+        sortOrder === "asc"
+          ? a.companyCount - b.companyCount
+          : b.companyCount - a.companyCount;
     } else if (sortBy === "latest_qtr") {
-      const primary = compareNullLast(a.avgLatestConcallScore, b.avgLatestConcallScore, sortOrder);
-      if (primary !== 0) return primary;
+      primary = compareNullLast(a.avgLatest, b.avgLatest, sortOrder);
     } else if (sortBy === "avg_4q") {
-      const primary = compareNullLast(a.avgAvg4ConcallScore, b.avgAvg4ConcallScore, sortOrder);
-      if (primary !== 0) return primary;
+      primary = compareNullLast(a.avg4Q, b.avg4Q, sortOrder);
+    } else if (sortBy === "growth") {
+      primary = compareNullLast(a.avgGrowth, b.avgGrowth, sortOrder);
+    } else if (sortBy === "valuation") {
+      primary = compareNullLast(a.avgValuation, b.avgValuation, sortOrder);
     } else {
-      const primary = compareNullLast(a.avgBlendedScore, b.avgBlendedScore, sortOrder);
-      if (primary !== 0) return primary;
+      primary = compareNullLast(a.readScore, b.readScore, sortOrder);
     }
-
-    const tieB = compareNullLast(a.avgBlendedScore, b.avgBlendedScore, "desc");
-    if (tieB !== 0) return tieB;
-    const tieQ = compareNullLast(a.avgLatestConcallScore, b.avgLatestConcallScore, "desc");
-    if (tieQ !== 0) return tieQ;
-    const tieG = compareNullLast(a.avgGrowthScore, b.avgGrowthScore, "desc");
-    if (tieG !== 0) return tieG;
-    if (b.companyCount !== a.companyCount) return b.companyCount - a.companyCount;
+    if (primary !== 0) return primary;
+    // Tie-break: always fall back to Read, then name.
+    const tie = compareNullLast(a.readScore, b.readScore, "desc");
+    if (tie !== 0) return tie;
     return a.sector.localeCompare(b.sector);
   });
 
   const headerHref = (key: SectorSortKey) => {
     const keyDefault = defaultDirectionForKey(key);
     const nextOrder: "asc" | "desc" =
-      sortBy === key
-        ? sortOrder === "desc"
-          ? "asc"
-          : "desc"
-        : keyDefault;
+      sortBy === key ? (sortOrder === "desc" ? "asc" : "desc") : keyDefault;
     const query = new URLSearchParams();
-    if (key !== "blended") query.set("sort", key);
+    if (key !== "read") query.set("sort", key);
     if (nextOrder !== keyDefault) query.set("order", nextOrder);
     const qs = query.toString();
     return qs ? `/sectors?${qs}` : "/sectors";
   };
 
-  const headerLabel = (key: SectorSortKey, text: string) => {
-    const active = sortBy === key || (key === "blended" && !resolvedSearchParams?.sort);
-    const arrow = active ? (sortOrder === "desc" ? "↓" : "↑") : "↕";
-    return `${text} ${arrow}`;
-  };
+  const arrowFor = (key: SectorSortKey) =>
+    sortBy === key ? (sortOrder === "desc" ? "↓" : "↑") : "";
 
-  const sortLabel =
-    sortBy === "rank"
-      ? "Rank"
-      : sortBy === "sector"
-        ? "Sector"
-        : sortBy === "companies"
-          ? "Companies"
-          : sortBy === "subsectors"
-            ? "Sub-sectors"
-            : sortBy === "growth"
-              ? "Growth score"
-              : sortBy === "latest_qtr"
-                ? "Latest qtr"
-                : sortBy === "avg_4q"
-                  ? "4Q avg"
-                  : "Blended";
+  // A sortable, two-line column header: label (link) over a quiet descriptor.
+  const ColHead = ({
+    sortKey,
+    label,
+    hint,
+    align = "right",
+    className = "",
+  }: {
+    sortKey: SectorSortKey;
+    label: string;
+    hint?: string;
+    align?: "left" | "right";
+    className?: string;
+  }) => (
+    <th className={`px-4 py-3 align-bottom ${className}`}>
+      <Link
+        href={headerHref(sortKey)}
+        prefetch={false}
+        className={`group flex flex-col ${
+          align === "right" ? "items-end text-right" : "items-start text-left"
+        }`}
+      >
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground group-hover:underline">
+          {label}
+          {arrowFor(sortKey) ? (
+            <span className="ml-1 text-muted-foreground">{arrowFor(sortKey)}</span>
+          ) : null}
+        </span>
+        {hint ? (
+          <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
+            {hint}
+          </span>
+        ) : null}
+      </Link>
+    </th>
+  );
 
   return (
     <main className="relative isolate overflow-hidden">
       <div className={PAGE_BACKGROUND_CLASS} />
       <div className={PAGE_SHELL}>
+        <header className="flex flex-col gap-4 px-1 pt-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-2xl space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+              Sectors
+            </h1>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Every sector on the same scores as the leaderboard — the quarter just
+              reported, the trailing four, the outlook ahead, and what you pay for it —
+              folded into one Read. Ranked by Read; rank&nbsp;1 is the strongest board
+              overall.
+            </p>
+          </div>
+          <div className="shrink-0 text-left text-xs text-muted-foreground sm:text-right">
+            <p className="font-medium text-foreground">
+              {totalCompanies} companies · {rows.length} sectors
+            </p>
+            {latestLabel ? <p>scores as of {latestLabel}</p> : null}
+          </div>
+        </header>
+
         {sortedRows.length === 0 ? (
-          <div className={PANEL_CARD_CLASS}>
+          <div className={PANEL_CARD_NEUTRAL}>
             <p className="text-sm text-muted-foreground">
-              No sectors with more than 1 company available.
+              No sectors with more than one company available.
             </p>
           </div>
         ) : (
-          <section className={TABLE_CARD_CLASS}>
-            <div className="flex flex-col gap-3 border-b border-border/35 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-1">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Sector rankings
-                </p>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Ranked by blended score (latest quarter, growth, and 4Q average). Click any column to re-sort.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 font-medium text-muted-foreground">
-                  Current: {sortLabel} {sortOrder}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 border-b border-border/30 px-4 py-3 text-xs">
-              <span className="text-muted-foreground">Sort:</span>
-              {(
-                [
-                  ["rank", "#"],
-                  ["sector", "Sector"],
-                  ["companies", "Companies"],
-                  ["subsectors", "Sub-sectors"],
-                  ["latest_qtr", "Avg latest ConcallScore"],
-                  ["growth", "Avg growth score"],
-                  ["avg_4q", "Avg 4Q score"],
-                  ["blended", "Avg blended score"],
-                ] as Array<[SectorSortKey, string]>
-              ).map(([key, label]) => (
-                <Link
-                  key={key}
-                  href={headerHref(key)}
-                  className={`rounded-full border px-2.5 py-1 transition-colors hover:bg-accent ${
-                    sortBy === key
-                      ? "border-sky-300 bg-sky-100 text-sky-800 dark:border-sky-700/40 dark:bg-sky-900/30 dark:text-sky-200"
-                      : "border-border/60 bg-background/80 text-muted-foreground"
-                  }`}
-                  prefetch={false}
-                >
-                  {headerLabel(key, label)}
-                </Link>
-              ))}
+          <section className={TABLE_CARD_SKY}>
+            <div className="flex flex-col gap-1 border-b border-border/35 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-semibold text-foreground">Sector rankings</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Ranked by Read · the leaderboard&apos;s composite
+              </p>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="border-b border-border/35 bg-background/70">
-                  <tr className="text-left">
-                    <th className="w-12 px-4 py-3 font-semibold text-foreground">
-                      <Link href={headerHref("rank")} className="hover:underline" prefetch={false}>
-                        {headerLabel("rank", "#")}
-                      </Link>
+                  <tr>
+                    <th className="w-10 px-4 py-3 text-left align-bottom text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      #
                     </th>
-                    <th className="px-4 py-3 font-semibold text-foreground">
-                      <Link href={headerHref("sector")} className="hover:underline" prefetch={false}>
-                        {headerLabel("sector", "Sector")}
-                      </Link>
-                    </th>
-                    <th className="px-4 py-3 font-semibold text-foreground">
-                      <Link href={headerHref("companies")} className="hover:underline" prefetch={false}>
-                        {headerLabel("companies", "Companies")}
-                      </Link>
-                    </th>
-                    <th className="px-4 py-3 font-semibold text-foreground">
-                      <Link href={headerHref("subsectors")} className="hover:underline" prefetch={false}>
-                        {headerLabel("subsectors", "Sub-sectors")}
-                      </Link>
-                    </th>
-                    <th className="px-4 py-3 font-semibold text-foreground">
-                      <Link href={headerHref("latest_qtr")} className="hover:underline" prefetch={false}>
-                        {headerLabel("latest_qtr", "Avg latest ConcallScore")}
-                      </Link>
-                    </th>
-                    <th className="px-4 py-3 font-semibold text-foreground">
-                      <Link href={headerHref("growth")} className="hover:underline" prefetch={false}>
-                        {headerLabel("growth", "Avg growth score")}
-                      </Link>
-                    </th>
-                    <th className="px-4 py-3 font-semibold text-foreground">
-                      <Link href={headerHref("avg_4q")} className="hover:underline" prefetch={false}>
-                        {headerLabel("avg_4q", "Avg 4Q score")}
-                      </Link>
-                    </th>
-                    <th className="border-l border-border/70 px-4 py-3 font-semibold text-foreground">
-                      <Link href={headerHref("blended")} className="hover:underline" prefetch={false}>
-                        {headerLabel("blended", "Avg blended score")}
+                    <ColHead sortKey="sector" label="Sector" align="left" />
+                    <ColHead sortKey="latest_qtr" label="ConcallScore" hint="latest" />
+                    <ColHead sortKey="avg_4q" label="Trailing" hint="4Q avg" />
+                    <ColHead sortKey="growth" label="Growth" hint="forward" />
+                    <ColHead
+                      sortKey="valuation"
+                      label="Valuation"
+                      hint="higher = cheaper"
+                    />
+                    <th className="border-l border-border/70 bg-amber-50/40 px-4 py-3 text-right align-bottom dark:bg-amber-950/[0.12]">
+                      <Link
+                        href={headerHref("read")}
+                        prefetch={false}
+                        className="group flex flex-col items-end text-right"
+                      >
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground group-hover:underline">
+                          Read
+                          {arrowFor("read") ? (
+                            <span className="ml-1 text-muted-foreground">
+                              {arrowFor("read")}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
+                          the three, combined
+                        </span>
                       </Link>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                {sortedRows.map((row) => (
-                    <tr
-                      key={row.slug}
-                      className="border-b border-border/45 transition-colors last:border-b-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
-                    >
-                      <td className="px-4 py-3">
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  {sortedRows.map((row) => {
+                    const readDef = BOARD_READS[row.readKey];
+                    return (
+                      <tr
+                        key={row.slug}
+                        className="border-b border-border/45 transition-colors last:border-b-0 hover:bg-sky-50/25 dark:hover:bg-sky-950/10"
+                      >
+                        <td className="px-4 py-3 align-middle text-sm font-semibold tabular-nums text-muted-foreground">
                           {row.rank ?? "—"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/sector/${row.slug}`}
-                          className="font-medium text-foreground underline-offset-4 hover:underline"
-                          prefetch={false}
-                        >
-                          {row.sector}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 text-foreground">{row.companyCount}</td>
-                      <td className="px-4 py-3 text-foreground">{row.subSectorCount}</td>
-                      <td className="px-4 py-3">
-                        {row.avgLatestConcallScore != null ? (
-                          <div className="flex items-center gap-2">
-                            <ConcallScore score={row.avgLatestConcallScore} size="sm" />
-                            <span className="text-xs text-muted-foreground">
-                              ({row.latestQuarterEligibleCount}/{row.companyCount})
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {row.avgGrowthScore != null ? (
-                          <div className="flex items-center gap-2">
-                            <ConcallScore score={row.avgGrowthScore} size="sm" />
-                            <span className="text-xs text-muted-foreground">
-                              ({row.growthEligibleCount}/{row.companyCount})
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {row.avgAvg4ConcallScore != null ? (
-                          <div className="flex items-center gap-2">
-                            <ConcallScore score={row.avgAvg4ConcallScore} size="sm" />
-                            <span className="text-xs text-muted-foreground">
-                              ({row.avg4QuarterEligibleCount}/{row.companyCount})
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="border-l border-border/70 px-4 py-3">
-                        {row.avgBlendedScore != null ? (
-                          <div className="flex items-center gap-2">
-                            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/80 px-2.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-emerald-700/40 dark:bg-emerald-950/20">
-                              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
-                                Blend
+                        </td>
+                        <td className="px-4 py-3 align-middle">
+                          <Link
+                            href={`/sector/${row.slug}`}
+                            prefetch={false}
+                            className="font-medium text-foreground underline-offset-4 hover:underline"
+                          >
+                            {row.sector}
+                          </Link>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            {row.companyCount} companies
+                            {row.subSectorCount > 0
+                              ? ` · ${row.subSectorCount} sub-sector${
+                                  row.subSectorCount === 1 ? "" : "s"
+                                }`
+                              : ""}
+                            {row.reportedCount > 0
+                              ? ` · ${row.reportedCount} reported`
+                              : ""}
+                          </p>
+                        </td>
+                        <ScoreCell score={row.avgLatest} band={quarterBand} />
+                        <ScoreCell score={row.avg4Q} band={quarterBand} />
+                        <ScoreCell score={row.avgGrowth} band={growthBand} />
+                        <ScoreCell score={row.avgValuation} band={valuationBand} />
+                        <td className="border-l border-border/70 bg-amber-50/40 px-4 py-3 align-middle dark:bg-amber-950/[0.12]">
+                          {row.readScore != null ? (
+                            <div className="flex flex-col items-end leading-tight">
+                              <span className="text-[15px] font-semibold tabular-nums text-foreground">
+                                {row.readScore.toFixed(1)}
                               </span>
-                              <ConcallScore score={row.avgBlendedScore} size="sm" />
+                              <span
+                                className={`text-[11px] font-medium ${readDef.textClass}`}
+                              >
+                                {row.readLabel}
+                              </span>
                             </div>
-                            <span className="text-xs text-muted-foreground">
-                              ({row.blendedEligibleCount}/{row.companyCount})
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                          ) : (
+                            <div className="flex flex-col items-end leading-tight">
+                              <span className="text-muted-foreground">—</span>
+                              <span className="text-[11px] font-medium text-muted-foreground">
+                                {row.readLabel}
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
+            </div>
+
+            <div className="border-t border-border/35 px-4 py-3">
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Read = 0.88 × the average of the quarter leg and Growth, + 0.12 ×
+                Valuation — the leaderboard&apos;s exact formula. The quarter leg is the
+                recency-weighted trailing four quarters (latest counts double); the
+                ConcallScore and Trailing columns show the latest print and the flat 4Q
+                mean beside it. Each sector figure averages its covered companies;
+                Valuation covers only companies with a current, rateable read. The word
+                names the configuration the three legs make — it describes the setup, it
+                is not a buy or sell call.
+              </p>
             </div>
           </section>
         )}
