@@ -19,6 +19,8 @@ export type DeskTableRow = {
   filedLabel: string;
   moatLabel: string | null;
   growthLabel: string | null;
+  growthDownside: string | null;
+  growthUpside: string | null;
   growthScore: number | null;
 };
 
@@ -91,13 +93,17 @@ export default function DeskLeaderboardTable({
         <span className="house-data house-micro text-[var(--ink-soft)]">{caption} ↓</span>
       </div>
 
-      {/* Column heads — columnar only from md up */}
+      {/* Column heads — columnar only from md up. The middle three columns
+          re-label per tab: the growth tab is a bear/base/bull scenario read,
+          not a concall trajectory, so its heads say so. */}
       <div className="hidden items-baseline gap-4 px-1 pb-2 pt-3 md:grid md:grid-cols-[minmax(0,1fr)_8rem_3.25rem_3.5rem_4.75rem_4.25rem]">
         <HeadCell>Company</HeadCell>
-        <HeadCell>Sector</HeadCell>
+        <HeadCell>
+          {tab === "moat" ? "Moat" : tab === "growth" ? "Base growth" : "Sector"}
+        </HeadCell>
         <HeadCell>Score</HeadCell>
-        <HeadCell>Δ QoQ</HeadCell>
-        <HeadCell>7-qtr</HeadCell>
+        <HeadCell>{tab === "growth" ? "Bear" : "Δ QoQ"}</HeadCell>
+        <HeadCell>{tab === "growth" ? "Bull" : "7-qtr"}</HeadCell>
         <HeadCell className="md:text-right">Filed</HeadCell>
       </div>
 
@@ -155,26 +161,35 @@ function Row({ row, rank, tab }: { row: DeskTableRow; rank: number; tab: TabKey 
               </span>
             ) : null}
           </span>
-          {/* Mobile-only supporting line: sector + delta + moat */}
+          {/* Mobile-only supporting line. The growth tab shows its scenario
+              read (base/bear/bull); every other tab shows sector + concall Δ. */}
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[var(--ink-soft)] md:hidden">
-            {row.sector ? <span className="text-xs">{row.sector}</span> : null}
-            <MobileDelta value={row.delta} />
-            {tab === "moat" && row.moatLabel ? (
-              <span className="house-data house-micro">{row.moatLabel}</span>
-            ) : null}
-            {tab === "growth" && row.growthLabel ? (
-              <span className="house-data house-micro">{row.growthLabel} base growth</span>
-            ) : null}
+            {tab === "growth" ? (
+              <span className="house-data house-micro">
+                {row.growthLabel ? `Base ${row.growthLabel}` : "Base —"}
+                {row.growthDownside ? ` · Bear ${row.growthDownside}` : ""}
+                {row.growthUpside ? ` · Bull ${row.growthUpside}` : ""}
+              </span>
+            ) : (
+              <>
+                {row.sector ? <span className="text-xs">{row.sector}</span> : null}
+                <MobileDelta value={row.delta} />
+                {tab === "moat" && row.moatLabel ? (
+                  <span className="house-data house-micro">{row.moatLabel}</span>
+                ) : null}
+              </>
+            )}
           </span>
         </span>
       </div>
 
-      {/* Sector (or the active tab's leg label) */}
+      {/* Sector (or the active tab's leg label). Growth shows base growth here;
+          the header column reads "Base growth", so no redundant suffix. */}
       <span className="hidden truncate text-xs text-[var(--ink-soft)] md:block">
         {tab === "moat" && row.moatLabel
           ? row.moatLabel
-          : tab === "growth" && row.growthLabel
-            ? `${row.growthLabel} base`
+          : tab === "growth"
+            ? (row.growthLabel ?? "—")
             : (row.sector ?? "—")}
       </span>
 
@@ -194,14 +209,23 @@ function Row({ row, rank, tab }: { row: DeskTableRow; rank: number; tab: TabKey 
         )}
       </span>
 
-      {/* Delta (desktop cell) */}
+      {/* Δ QoQ / bear — growth swaps the concall delta for the bear-case
+          growth, since a growth-ranked row has no quarterly trajectory. */}
       <span className="hidden md:block">
-        <DeltaValue value={row.delta} twist={tab === "twist" ? row.twistPct : null} />
+        {tab === "growth" ? (
+          <ScenarioValue value={row.growthDownside} />
+        ) : (
+          <DeltaValue value={row.delta} twist={tab === "twist" ? row.twistPct : null} />
+        )}
       </span>
 
-      {/* Sparkline */}
+      {/* 7-qtr / bull — growth swaps the concall sparkline for the bull case. */}
       <span className="hidden md:block">
-        <Sparkline points={row.sparkPoints} />
+        {tab === "growth" ? (
+          <ScenarioValue value={row.growthUpside} />
+        ) : (
+          <Sparkline points={row.sparkPoints} />
+        )}
       </span>
 
       {/* Filed */}
@@ -210,6 +234,13 @@ function Row({ row, rank, tab }: { row: DeskTableRow; rank: number; tab: TabKey 
       </span>
     </Link>
   );
+}
+
+// A growth-scenario figure (bear/bull) shown in the desktop metric columns on
+// the growth tab. Plain text — it's a forward estimate, not a signed move.
+function ScenarioValue({ value }: { value: string | null }) {
+  if (!value) return <span className="house-data text-xs text-[var(--ink-soft)]">—</span>;
+  return <span className="house-data text-xs text-[var(--ink)]">{value}</span>;
 }
 
 function DeltaValue({ value, twist }: { value: number | null; twist: number | null }) {
