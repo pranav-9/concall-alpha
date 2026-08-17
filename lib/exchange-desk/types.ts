@@ -14,6 +14,56 @@ export type ExchangeCategory =
 
 export type RecencyBucketKey = "today" | "week" | "earlier";
 
+/**
+ * Signed impact axis — how a reader should weigh the news. Ordered strongest-
+ * positive to strongest-negative. Drives the coloured badge on each row.
+ */
+export type ExchangeImpact =
+  | "transformative"
+  | "positive"
+  | "neutral"
+  | "negative"
+  | "severe";
+
+/**
+ * Badge display per impact tier. `className` styles the pill: the extremes get a
+ * filled tint + weight, the middle tiers a plain coloured word, all on the house
+ * signal/alarm/ink tokens so it reads correctly in both themes.
+ */
+export const IMPACT_META: Record<
+  ExchangeImpact,
+  { label: string; className: string }
+> = {
+  transformative: {
+    label: "Transformative",
+    className:
+      "border-transparent bg-[color-mix(in_srgb,var(--signal)_16%,transparent)] text-[var(--signal)] font-semibold",
+  },
+  positive: {
+    label: "Positive",
+    className: "border-[var(--rule)] text-[var(--signal)]",
+  },
+  neutral: {
+    label: "Routine",
+    className: "border-[var(--rule)] text-[var(--ink-soft)]",
+  },
+  negative: {
+    label: "Negative",
+    className: "border-[var(--rule)] text-[var(--alarm)]",
+  },
+  severe: {
+    label: "Severe",
+    className:
+      "border-transparent bg-[color-mix(in_srgb,var(--alarm)_16%,transparent)] text-[var(--alarm)] font-semibold",
+  },
+};
+
+export function coerceImpact(value: string | null | undefined): ExchangeImpact {
+  return value != null && value in IMPACT_META
+    ? (value as ExchangeImpact)
+    : "neutral";
+}
+
 /** Display metadata per category, in the order tabs should appear. */
 export const CATEGORY_META: { key: ExchangeCategory; label: string }[] = [
   { key: "order_win", label: "Order Wins" },
@@ -45,6 +95,8 @@ export type ExchangeUpdate = {
   companyName: string;
   category: ExchangeCategory;
   categoryLabel: string;
+  /** Signed impact tier — good/bad read at a glance. */
+  impact: ExchangeImpact;
   /** Plain-English one-liner from the classifier. */
   summary: string;
   headline: string;

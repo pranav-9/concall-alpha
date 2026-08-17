@@ -6,6 +6,7 @@ import { formatRelativeActivityTime } from "@/lib/activity-feed";
 import {
   CATEGORY_META,
   categoryLabel,
+  coerceImpact,
   isKnownCategory,
   type ExchangeCategory,
   type ExchangeDeskData,
@@ -50,6 +51,7 @@ type AnnouncementRow = {
   subject: string | null;
   attachment_url: string | null;
   category: string;
+  impact: string | null;
   summary: string | null;
 };
 
@@ -104,7 +106,7 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
       supabase
         .from("bse_announcements")
         .select(
-          "announcement_id, company_code, filed_at, headline, subject, attachment_url, category, summary",
+          "announcement_id, company_code, filed_at, headline, subject, attachment_url, category, impact, summary",
         )
         .eq("is_material", true)
         .gte("filed_at", cutoff.toISOString())
@@ -132,6 +134,7 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
         companyName: coverage.nameByCode.get(key) ?? row.company_code,
         category,
         categoryLabel: categoryLabel(category),
+        impact: coerceImpact(row.impact),
         summary,
         headline: (row.headline ?? "").trim(),
         attachmentUrl: row.attachment_url,
