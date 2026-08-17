@@ -1,14 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import TopStocks from "./(hero)/top-stocks";
 import HeroExhibit, { HeroExhibitFallback } from "./(hero)/hero-exhibit";
-import LatestUpdatesCarousel, {
-  LatestUpdatesCarouselFallback,
-} from "./(hero)/latest-updates-carousel";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { QuarterTrackerBanner } from "@/components/quarter-tracker-banner";
-import { HotThemesTeaser } from "./themes/hot-themes-teaser";
 
 // Title/description are inherited from the root layout; this exists only to
 // pin the canonical so query-string variants don't get indexed separately.
@@ -64,12 +59,6 @@ const READS = [
   },
 ];
 
-function TopStocksFallback() {
-  return (
-    <div className="h-80 animate-pulse rounded border border-[var(--rule)] bg-[var(--paper-2)]" />
-  );
-}
-
 export default async function Home() {
   const companies = await getCachedCompanySearchRows().catch(() => []);
 
@@ -83,44 +72,24 @@ export default async function Home() {
           <Suspense fallback={<HeroExhibitFallback />}>
             <HeroExhibit companies={companies} />
           </Suspense>
-        </section>
 
-        <section aria-labelledby="updates-heading" className="house-block">
-          <Suspense fallback={<LatestUpdatesCarouselFallback />}>
-            <LatestUpdatesCarousel
-              heading={
-                <>
-                  <p className="house-data house-micro text-[var(--ink-soft)]">
-                    Plate 02 — Fresh reads
-                  </p>
-                  <h2 id="updates-heading" className="house-display mt-2 text-2xl sm:text-3xl">
-                    What landed most recently
-                  </h2>
-                </>
-              }
-            />
-          </Suspense>
-        </section>
-
-        <section aria-labelledby="leaders-heading" className="house-block">
-          <p className="house-data house-micro text-[var(--ink-soft)]">Plate 03 — Where the reads are strongest</p>
-          <h2 id="leaders-heading" className="house-display mt-2 text-2xl sm:text-3xl">
-            Top-rated right now
-          </h2>
-          <div className="mt-6">
-            <Suspense fallback={<TopStocksFallback />}>
-              <TopStocks heroPanel />
-            </Suspense>
+          {/* Primary path off the hero: into the working surface. */}
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Link
+              href="/desk"
+              className="house-data house-micro inline-flex items-center gap-2 rounded border border-[var(--ink)] bg-[var(--ink)] px-4 py-2.5 text-[var(--paper-2)] transition-colors hover:bg-transparent hover:text-[var(--ink)]"
+            >
+              Open the Desk →
+            </Link>
+            <span className="text-sm text-[var(--ink-soft)]">
+              Every covered company, ranked by ConcallScore and read from the documents.
+            </span>
           </div>
         </section>
 
-        <Suspense fallback={null}>
-          <HotThemesTeaser />
-        </Suspense>
-
         <section aria-labelledby="reads-heading" className="house-block">
           <div className="max-w-2xl">
-            <p className="house-data house-micro text-[var(--ink-soft)]">Plate 05 — What we publish</p>
+            <p className="house-data house-micro text-[var(--ink-soft)]">Plate 02 — What we publish</p>
             <h2 id="reads-heading" className="house-display mt-2 text-2xl sm:text-3xl">
               Six reads on the same documents
             </h2>
@@ -154,7 +123,7 @@ export default async function Home() {
         <section aria-labelledby="watch-heading" className="house-block">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <p className="house-data house-micro text-[var(--ink-soft)]">Plate 06 — On video</p>
+              <p className="house-data house-micro text-[var(--ink-soft)]">Plate 03 — On video</p>
               <h2 id="watch-heading" className="house-display mt-2 text-2xl sm:text-3xl">
                 Watch a company get read
               </h2>

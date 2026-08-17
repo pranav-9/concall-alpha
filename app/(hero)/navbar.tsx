@@ -43,13 +43,12 @@ const Navbar = ({
   initialUser = null,
   initialCompanies = [],
   latestJournalDate = null,
-  quarterLabel = null,
 }: {
   initialUser?: UserInfo;
   initialCompanies?: { code: string; name: string | null }[];
   latestJournalDate?: string | null;
-  // Computed server-side (lib/current-quarter) so the label rolls forward each
-  // season instead of freezing at whatever quarter was current when shipped.
+  // Accepted for backwards-compat with the layout wiring; the quarter tracker is
+  // now reached from the LIVE banner, not a nav tab.
   quarterLabel?: string | null;
 }) => {
   const pathname = usePathname();
@@ -58,10 +57,13 @@ const Navbar = ({
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
   const navItems = [
-    ...(quarterLabel ? [{ href: "/quarter-tracker", label: quarterLabel }] : []),
-    { href: "/leaderboards", label: "Leaderboards" },
+    { href: "/desk", label: "Desk" },
     { href: "/themes", label: "Themes" },
-    { href: "/watchlists", label: "Watchlists" },
+    { href: "/leaderboards", label: "Leaderboards" },
+    { href: "/sectors", label: "Sectors" },
+    // Watchlists are user-owned — only surface the tab when signed in, so the
+    // signed-out nav stays lean (matches the desk design).
+    ...(initialUser ? [{ href: "/watchlists", label: "Watchlists" }] : []),
     { href: "/blog", label: "Journal" },
   ];
 
