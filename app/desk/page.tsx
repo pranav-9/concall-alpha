@@ -34,6 +34,7 @@ const toTableRow = (row: DeskRow): DeskTableRow => ({
   filedLabel: row.filedRaw ? formatRelativeActivityTime(row.filedRaw) : "—",
   moatLabel: row.moatLabel,
   growthLabel: row.growthLabel,
+  growthScore: row.growthScore,
 });
 
 export default async function DeskPage() {

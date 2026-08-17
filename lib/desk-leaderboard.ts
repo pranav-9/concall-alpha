@@ -38,6 +38,8 @@ export type DeskRow = {
   moatLabel: string | null;
   /** Base forward-growth display (e.g. "18%"), only populated on growth-leader rows. */
   growthLabel: string | null;
+  /** Growth score (0–10, growth-band scale), only populated on growth-leader rows. */
+  growthScore: number | null;
 };
 
 export type DeskLeaderboard = {
@@ -309,6 +311,7 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
       filedRaw: latest.scored_at,
       moatLabel: null,
       growthLabel: null,
+      growthScore: null,
     });
   });
 
@@ -363,6 +366,7 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
         filedRaw: enriched?.filedRaw ?? null,
         moatLabel: m.moatRatingLabel,
         growthLabel: null,
+        growthScore: null,
       };
     });
 
@@ -395,6 +399,7 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
         filedRaw: enriched?.filedRaw ?? null,
         moatLabel: null,
         growthLabel: g.baseDisplay,
+        growthScore: g.growthScore,
       };
     });
 

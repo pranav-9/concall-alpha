@@ -19,6 +19,7 @@ export type DeskTableRow = {
   filedLabel: string;
   moatLabel: string | null;
   growthLabel: string | null;
+  growthScore: number | null;
 };
 
 type TabKey = "latest" | "quarter" | "twist" | "growth" | "moat";
@@ -177,9 +178,16 @@ function Row({ row, rank, tab }: { row: DeskTableRow; rank: number; tab: TabKey 
             : (row.sector ?? "—")}
       </span>
 
-      {/* Score */}
+      {/* Score — the growth tab leads with the growth score (the metric it's
+          ranked by); every other tab shows the ConcallScore. */}
       <span className="shrink-0">
-        {row.latestScore != null ? (
+        {tab === "growth" ? (
+          row.growthScore != null ? (
+            <ConcallScore score={row.growthScore} kind="growth" size="sm" />
+          ) : (
+            <span className="house-data text-xs text-[var(--ink-soft)]">—</span>
+          )
+        ) : row.latestScore != null ? (
           <ConcallScore score={row.latestScore} size="sm" />
         ) : (
           <span className="house-data text-xs text-[var(--ink-soft)]">—</span>
