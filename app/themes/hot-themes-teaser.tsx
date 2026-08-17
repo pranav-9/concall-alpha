@@ -1,7 +1,7 @@
-// Homepage teaser for /themes, in the homepage "house" skin (not the atmospheric
-// shell the /themes page itself wears). Counts only — no board build — so it never
-// adds a full scoreboard assembly to a homepage render. Renders the whole section
-// or nothing: with no featured themes it returns null, leaving no empty shell.
+// Themes teaser (Desk section), in the "house" skin (not the atmospheric shell
+// the /themes page itself wears). Counts only — no board build — so it never adds
+// a full scoreboard assembly to the render. Renders the whole section or nothing:
+// with no featured themes it returns null, leaving no empty shell.
 
 import Link from "next/link";
 
@@ -13,7 +13,7 @@ export async function HotThemesTeaser() {
 
   return (
     <section aria-labelledby="themes-heading" className="house-block">
-      <p className="house-data house-micro text-[var(--ink-soft)]">Plate 04 — What&apos;s working now</p>
+      <p className="house-data house-micro text-[var(--ink-soft)]">What&apos;s working now</p>
       <h2 id="themes-heading" className="house-display mt-2 text-2xl sm:text-3xl">
         Hot themes
       </h2>
