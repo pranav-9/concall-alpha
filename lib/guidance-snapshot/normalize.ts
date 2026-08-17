@@ -99,14 +99,21 @@ export function normalizeGuidanceSnapshot(
   );
   const details = parseJsonObjectLike(row.details);
   // Strip local filesystem provenance before the payload can reach the
-  // client: `local_path` (and any non-http `url`) would ship inside the RSC
-  // flight data, where crawlers discover the /Users/... strings as
-  // site-relative URLs (GSC 404s, 2026-08-17).
+  // client: any path-like string would ship inside the RSC flight data,
+  // where crawlers discover the /Users/... strings as site-relative URLs
+  // (GSC 404s, 2026-08-17). Key-agnostic on purpose — stored entries use
+  // local_path, local_pdf_path, and file_uri depending on which phase
+  // wrote them.
   const sourceFiles = parseJsonArrayLike(row.source_files).map((entry) => {
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) return entry;
     const rest = { ...(entry as Record<string, unknown>) };
-    delete rest.local_path;
-    if (typeof rest.url === "string" && !/^https?:\/\//i.test(rest.url)) {
+    for (const [key, value] of Object.entries(rest)) {
+      if (typeof value !== "string" || /^https?:\/\//i.test(value)) continue;
+      if (value.startsWith("/") || value.startsWith("file:") || value.includes("/Users/")) {
+        delete rest[key];
+      }
+    }
+    if (typeof rest.url !== "string") {
       rest.url = null;
     }
     return rest;
