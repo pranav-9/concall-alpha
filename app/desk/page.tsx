@@ -35,6 +35,8 @@ const toTableRow = (row: DeskRow): DeskTableRow => ({
   filedLabel: row.filedRaw ? formatRelativeActivityTime(row.filedRaw) : "—",
   moatLabel: row.moatLabel,
   growthLabel: row.growthLabel,
+  growthDownside: row.growthDownside,
+  growthUpside: row.growthUpside,
   growthScore: row.growthScore,
 });
 

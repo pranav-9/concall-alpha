@@ -38,6 +38,10 @@ export type DeskRow = {
   moatLabel: string | null;
   /** Base forward-growth display (e.g. "18%"), only populated on growth-leader rows. */
   growthLabel: string | null;
+  /** Bear-case growth display, only populated on growth-leader rows. */
+  growthDownside: string | null;
+  /** Bull-case growth display, only populated on growth-leader rows. */
+  growthUpside: string | null;
   /** Growth score (0–10, growth-band scale), only populated on growth-leader rows. */
   growthScore: number | null;
 };
@@ -197,6 +201,10 @@ type GrowthLeader = {
   companyName: string | null;
   /** Base forward-growth display text (e.g. "18%" or "15-18%"). */
   baseDisplay: string | null;
+  /** Bear-case (downside) growth display text. */
+  downsideDisplay: string | null;
+  /** Bull-case (upside) growth display text. */
+  upsideDisplay: string | null;
   /** Growth score, the primary sort key. */
   growthScore: number | null;
 };
@@ -207,13 +215,17 @@ type GrowthLeader = {
 async function fetchGrowthLeaders(supabase: SupabaseServerClient): Promise<GrowthLeader[]> {
   const { data, error } = await supabase
     .from("growth_outlook")
-    .select("company, run_timestamp, base_growth_pct, growth_score")
+    .select(
+      "company, run_timestamp, base_growth_pct, upside_growth_pct, downside_growth_pct, growth_score",
+    )
     .order("run_timestamp", { ascending: false });
   if (error) throw error;
 
   type GrowthOutlookRow = {
     company: string | null;
     base_growth_pct?: string | number | null;
+    upside_growth_pct?: string | number | null;
+    downside_growth_pct?: string | number | null;
     growth_score?: string | number | null;
   };
 
@@ -227,6 +239,8 @@ async function fetchGrowthLeaders(supabase: SupabaseServerClient): Promise<Growt
       companyCode: row.company ?? "",
       companyName: row.company ?? null,
       baseDisplay: normalizeGrowthPct(row.base_growth_pct).rawText,
+      downsideDisplay: normalizeGrowthPct(row.downside_growth_pct).rawText,
+      upsideDisplay: normalizeGrowthPct(row.upside_growth_pct).rawText,
       growthScore: scoreNum != null && Number.isFinite(scoreNum) ? scoreNum : null,
     });
   });
@@ -311,6 +325,8 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
       filedRaw: latest.scored_at,
       moatLabel: null,
       growthLabel: null,
+      growthDownside: null,
+      growthUpside: null,
       growthScore: null,
     });
   });
@@ -366,6 +382,8 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
         filedRaw: enriched?.filedRaw ?? null,
         moatLabel: m.moatRatingLabel,
         growthLabel: null,
+        growthDownside: null,
+        growthUpside: null,
         growthScore: null,
       };
     });
@@ -399,6 +417,8 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
         filedRaw: enriched?.filedRaw ?? null,
         moatLabel: null,
         growthLabel: g.baseDisplay,
+        growthDownside: g.downsideDisplay,
+        growthUpside: g.upsideDisplay,
         growthScore: g.growthScore,
       };
     });
