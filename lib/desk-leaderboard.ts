@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { currentReportingQuarter } from "@/lib/current-quarter";
+import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
 import type { MoatAnalysisRow, NormalizedMoatAnalysis } from "@/lib/moat-analysis/types";
@@ -35,6 +36,8 @@ export type DeskRow = {
   filedRaw: string | null;
   /** Moat label, only populated on moat-leader rows. */
   moatLabel: string | null;
+  /** Base forward-growth display (e.g. "18%"), only populated on growth-leader rows. */
+  growthLabel: string | null;
 };
 
 export type DeskLeaderboard = {
@@ -52,6 +55,7 @@ export type DeskLeaderboard = {
   latestReads: DeskRow[];
   quarterLeaders: DeskRow[];
   positiveTwist: DeskRow[];
+  growthLeaders: DeskRow[];
   moatLeaders: DeskRow[];
 };
 
@@ -186,15 +190,68 @@ async function fetchMoatLeaders(supabase: SupabaseServerClient) {
   });
 }
 
+type GrowthLeader = {
+  companyCode: string;
+  companyName: string | null;
+  /** Base forward-growth display text (e.g. "18%" or "15-18%"). */
+  baseDisplay: string | null;
+  /** Growth score, the primary sort key. */
+  growthScore: number | null;
+};
+
+// Latest growth_outlook row per company, ranked by growth score (base growth as
+// the tiebreaker). Mirrors the /leaderboards Growth ordering, trimmed to what a
+// desk row needs. Off-discovery names are dropped by the caller via excludedKeys.
+async function fetchGrowthLeaders(supabase: SupabaseServerClient): Promise<GrowthLeader[]> {
+  const { data, error } = await supabase
+    .from("growth_outlook")
+    .select("company, run_timestamp, base_growth_pct, growth_score")
+    .order("run_timestamp", { ascending: false });
+  if (error) throw error;
+
+  type GrowthOutlookRow = {
+    company: string | null;
+    base_growth_pct?: string | number | null;
+    growth_score?: string | number | null;
+  };
+
+  const latestByCompany = new Map<string, GrowthLeader>();
+  ((data ?? []) as GrowthOutlookRow[]).forEach((row) => {
+    const key = upper(row.company);
+    if (!key || latestByCompany.has(key)) return; // rows are newest-first
+    const scoreNum =
+      row.growth_score == null ? null : Number(row.growth_score);
+    latestByCompany.set(key, {
+      companyCode: row.company ?? "",
+      companyName: row.company ?? null,
+      baseDisplay: normalizeGrowthPct(row.base_growth_pct).rawText,
+      growthScore: scoreNum != null && Number.isFinite(scoreNum) ? scoreNum : null,
+    });
+  });
+
+  return Array.from(latestByCompany.values()).sort((a, b) => {
+    const aScore = a.growthScore;
+    const bScore = b.growthScore;
+    if (aScore != null && bScore != null && bScore !== aScore) return bScore - aScore;
+    if (aScore != null && bScore == null) return -1;
+    if (aScore == null && bScore != null) return 1;
+    const aBase = normalizeGrowthPct(a.baseDisplay).sortValue ?? Number.NEGATIVE_INFINITY;
+    const bBase = normalizeGrowthPct(b.baseDisplay).sortValue ?? Number.NEGATIVE_INFINITY;
+    if (bBase !== aBase) return bBase - aBase;
+    return (a.companyName ?? a.companyCode).localeCompare(b.companyName ?? b.companyCode);
+  });
+}
+
 export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
   const supabase = await createClient();
   const now = new Date();
   const quarter = currentReportingQuarter(now);
 
-  const [coverage, concallRows, moat] = await Promise.all([
+  const [coverage, concallRows, moat, growth] = await Promise.all([
     fetchCoverage(supabase),
     fetchConcallRows(supabase),
     fetchMoatLeaders(supabase),
+    fetchGrowthLeaders(supabase),
   ]);
 
   // Group each covered company's reads, newest-first.
@@ -251,6 +308,7 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
       sparkPoints,
       filedRaw: latest.scored_at,
       moatLabel: null,
+      growthLabel: null,
     });
   });
 
@@ -304,6 +362,39 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
         sparkPoints: enriched?.sparkPoints ?? [],
         filedRaw: enriched?.filedRaw ?? null,
         moatLabel: m.moatRatingLabel,
+        growthLabel: null,
+      };
+    });
+
+  // Growth leaders: same enrich-from-concall-history shape as moat leaders, so
+  // the row carries a score/sparkline/filed date and a live /company link. Drop
+  // off-discovery names (large-cap / below-cut) and label with base FY growth.
+  const growthLeaders: DeskRow[] = growth
+    .filter(
+      (g) =>
+        !coverage.excludedKeys.has(upper(g.companyCode)) &&
+        !coverage.excludedKeys.has(upper(g.companyName ?? "")),
+    )
+    .slice(0, 12)
+    .map((g) => {
+      const enriched =
+        rowByCode.get(upper(g.companyCode)) ??
+        (g.companyName ? rowByName.get(upper(g.companyName)) : undefined);
+      const info =
+        coverage.byCode.get(upper(g.companyCode)) ??
+        (g.companyName ? coverage.byCode.get(upper(g.companyName)) : undefined);
+      return {
+        code: enriched?.code ?? g.companyCode,
+        name: enriched?.name ?? g.companyName ?? g.companyCode,
+        sector: enriched?.sector ?? info?.sector ?? null,
+        isNew: enriched?.isNew ?? false,
+        latestScore: enriched?.latestScore ?? null,
+        delta: enriched?.delta ?? null,
+        twistPct: enriched?.twistPct ?? null,
+        sparkPoints: enriched?.sparkPoints ?? [],
+        filedRaw: enriched?.filedRaw ?? null,
+        moatLabel: null,
+        growthLabel: g.baseDisplay,
       };
     });
 
@@ -315,6 +406,7 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
     latestReads,
     quarterLeaders,
     positiveTwist,
+    growthLeaders,
     moatLeaders,
   };
 }

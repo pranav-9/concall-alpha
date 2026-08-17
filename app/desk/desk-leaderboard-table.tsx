@@ -18,14 +18,16 @@ export type DeskTableRow = {
   sparkPoints: number[];
   filedLabel: string;
   moatLabel: string | null;
+  growthLabel: string | null;
 };
 
-type TabKey = "latest" | "quarter" | "twist" | "moat";
+type TabKey = "latest" | "quarter" | "twist" | "growth" | "moat";
 
 const TABS: { key: TabKey; label: string; caption: string }[] = [
   { key: "latest", label: "Latest reads", caption: "sorted by filed" },
   { key: "quarter", label: "Quarter leaders", caption: "sorted by score" },
   { key: "twist", label: "Positive twist", caption: "latest vs prior 4Q avg" },
+  { key: "growth", label: "Growth leaders", caption: "by growth outlook" },
   { key: "moat", label: "Moat leaders", caption: "by moat strength" },
 ];
 
@@ -33,12 +35,14 @@ export default function DeskLeaderboardTable({
   latestReads,
   quarterLeaders,
   positiveTwist,
+  growthLeaders,
   moatLeaders,
   seeAllCount,
 }: {
   latestReads: DeskTableRow[];
   quarterLeaders: DeskTableRow[];
   positiveTwist: DeskTableRow[];
+  growthLeaders: DeskTableRow[];
   moatLeaders: DeskTableRow[];
   seeAllCount: number;
 }) {
@@ -48,6 +52,7 @@ export default function DeskLeaderboardTable({
     latest: latestReads,
     quarter: quarterLeaders,
     twist: positiveTwist,
+    growth: growthLeaders,
     moat: moatLeaders,
   };
   const rows = byTab[tab];
@@ -156,13 +161,20 @@ function Row({ row, rank, tab }: { row: DeskTableRow; rank: number; tab: TabKey 
             {tab === "moat" && row.moatLabel ? (
               <span className="house-data house-micro">{row.moatLabel}</span>
             ) : null}
+            {tab === "growth" && row.growthLabel ? (
+              <span className="house-data house-micro">{row.growthLabel} base growth</span>
+            ) : null}
           </span>
         </span>
       </div>
 
-      {/* Sector */}
+      {/* Sector (or the active tab's leg label) */}
       <span className="hidden truncate text-xs text-[var(--ink-soft)] md:block">
-        {tab === "moat" && row.moatLabel ? row.moatLabel : (row.sector ?? "—")}
+        {tab === "moat" && row.moatLabel
+          ? row.moatLabel
+          : tab === "growth" && row.growthLabel
+            ? `${row.growthLabel} base`
+            : (row.sector ?? "—")}
       </span>
 
       {/* Score */}
