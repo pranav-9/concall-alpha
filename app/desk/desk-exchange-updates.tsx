@@ -28,6 +28,10 @@ const BUCKET_ORDER: { key: RecencyBucketKey; label: string }[] = [
   { key: "earlier", label: "Earlier" },
 ];
 
+// The feed can run to a few hundred filings over the window; show the most recent
+// slice by default so the section stays a scannable tape, not an endless scroll.
+const MAX_COLLAPSED = 18;
+
 type Filter = "all" | ExchangeCategory;
 
 function CategoryTab({
@@ -134,20 +138,28 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
 
 export default function DeskExchangeUpdates({ data }: { data: ExchangeDeskData }) {
   const [filter, setFilter] = useState<Filter>("all");
+  const [expanded, setExpanded] = useState(false);
+
+  // Changing the category should always start from the collapsed view.
+  const selectFilter = (next: Filter) => {
+    setFilter(next);
+    setExpanded(false);
+  };
 
   const filtered = useMemo(
     () => (filter === "all" ? data.updates : data.updates.filter((u) => u.category === filter)),
     [data.updates, filter],
   );
 
-  const buckets = useMemo(
-    () =>
-      BUCKET_ORDER.map((b) => ({
-        ...b,
-        items: filtered.filter((u) => u.bucketKey === b.key),
-      })).filter((b) => b.items.length > 0),
-    [filtered],
-  );
+  const buckets = useMemo(() => {
+    const visible = expanded ? filtered : filtered.slice(0, MAX_COLLAPSED);
+    return BUCKET_ORDER.map((b) => ({
+      ...b,
+      items: visible.filter((u) => u.bucketKey === b.key),
+    })).filter((b) => b.items.length > 0);
+  }, [filtered, expanded]);
+
+  const hiddenCount = Math.max(0, filtered.length - MAX_COLLAPSED);
 
   // Nothing material in the window (or the feed isn't wired yet) — render nothing.
   if (data.total === 0) return null;
@@ -174,7 +186,7 @@ export default function DeskExchangeUpdates({ data }: { data: ExchangeDeskData }
           active={filter === "all"}
           label="All"
           count={data.total}
-          onClick={() => setFilter("all")}
+          onClick={() => selectFilter("all")}
         />
         {data.categories.map((c) => (
           <CategoryTab
@@ -182,7 +194,7 @@ export default function DeskExchangeUpdates({ data }: { data: ExchangeDeskData }
             active={filter === c.key}
             label={c.label}
             count={c.count}
-            onClick={() => setFilter(c.key)}
+            onClick={() => selectFilter(c.key)}
           />
         ))}
       </div>
@@ -210,6 +222,17 @@ export default function DeskExchangeUpdates({ data }: { data: ExchangeDeskData }
           ))
         )}
       </div>
+
+      {hiddenCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className={cn("house-link mt-4 inline-block", ROW_FOCUS)}
+        >
+          {expanded ? "Show fewer" : `Show all ${filtered.length} filings →`}
+        </button>
+      )}
     </section>
   );
 }
