@@ -8,6 +8,7 @@ import DeskRecencyLedger, {
   DeskRecencyLedgerFallback,
 } from "./desk-recency-ledger";
 import { DeskHotThemes } from "./desk-hot-themes";
+import DeskExchangeSection from "./desk-exchange-section";
 import DeskLeaderboardTable, {
   type DeskTableRow,
 } from "./desk-leaderboard-table";
@@ -34,6 +35,8 @@ const toTableRow = (row: DeskRow): DeskTableRow => ({
   filedLabel: row.filedRaw ? formatRelativeActivityTime(row.filedRaw) : "—",
   moatLabel: row.moatLabel,
   growthLabel: row.growthLabel,
+  growthDownside: row.growthDownside,
+  growthUpside: row.growthUpside,
   growthScore: row.growthScore,
 });
 
@@ -110,6 +113,12 @@ export default async function DeskPage() {
         <div className="mt-14">
           <Suspense fallback={<DeskRecencyLedgerFallback />}>
             <DeskRecencyLedger quarterLabel={board.quarterLabel} />
+          </Suspense>
+        </div>
+
+        <div className="mt-12">
+          <Suspense fallback={null}>
+            <DeskExchangeSection />
           </Suspense>
         </div>
 
