@@ -16,7 +16,7 @@ import DeskTopOfBook from "./desk-top-of-book";
 export const metadata: Metadata = {
   title: "The Desk — every covered company, ranked and read",
   description:
-    "The working surface: India's covered mid- & small-caps ranked by ConcallScore, quarter leaders, positive trend twists, and moat leaders — read from the documents.",
+    "The working surface: India's covered mid- & small-caps ranked by ConcallScore, quarter leaders, positive trend twists, growth outlook, and moat leaders — read from the documents.",
   alternates: { canonical: "/desk" },
 };
 
@@ -33,6 +33,7 @@ const toTableRow = (row: DeskRow): DeskTableRow => ({
   sparkPoints: row.sparkPoints,
   filedLabel: row.filedRaw ? formatRelativeActivityTime(row.filedRaw) : "—",
   moatLabel: row.moatLabel,
+  growthLabel: row.growthLabel,
 });
 
 export default async function DeskPage() {
@@ -41,6 +42,7 @@ export default async function DeskPage() {
   const latestReads = board.latestReads.map(toTableRow);
   const quarterLeaders = board.quarterLeaders.map(toTableRow);
   const positiveTwist = board.positiveTwist.map(toTableRow);
+  const growthLeaders = board.growthLeaders.map(toTableRow);
   const moatLeaders = board.moatLeaders.map(toTableRow);
 
   return (
@@ -86,6 +88,7 @@ export default async function DeskPage() {
                 latestReads={latestReads}
                 quarterLeaders={quarterLeaders}
                 positiveTwist={positiveTwist}
+                growthLeaders={growthLeaders}
                 moatLeaders={moatLeaders}
                 seeAllCount={board.coveredCount}
               />
