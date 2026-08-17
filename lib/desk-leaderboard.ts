@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import { COVERAGE_SELECT, isAdmittedLargeCap, isBelowCoverageCut } from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { currentReportingQuarter } from "@/lib/current-quarter";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
@@ -9,11 +9,6 @@ import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
 import type { MoatAnalysisRow, NormalizedMoatAnalysis } from "@/lib/moat-analysis/types";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
-
-// The coverage-cut target: compute_composite_score.py --target 100 keeps the
-// ranked hundred; companies below it are still covered (reachable) but greyed.
-// Shown in the desk eyebrow as "N OF 100 CALLS READ".
-const COVERAGE_CUT_TARGET = 100;
 
 // How many quarters of score history a row's sparkline draws.
 const SPARK_QUARTERS = 7;
@@ -28,7 +23,6 @@ export type DeskRow = {
   name: string;
   sector: string | null;
   isNew: boolean;
-  belowCut: boolean;
   /** Latest ConcallScore; null when the company has a moat row but no score. */
   latestScore: number | null;
   /** The company's own latest-minus-previous quarter delta. */
@@ -45,10 +39,12 @@ export type DeskRow = {
 
 export type DeskLeaderboard = {
   quarterLabel: string;
-  /** Companies past the admission gate (not large cap) — the "104". */
+  /**
+   * The discovery-listed universe (the ranked hundred). Kept in step with the
+   * LIVE banner, which counts the same set, so the eyebrow's "N of coveredCount
+   * calls read" can't disagree with "N reported" in the banner.
+   */
   coveredCount: number;
-  /** The ranked-hundred target (100), shown in the eyebrow. */
-  targetCount: number;
   /** Distinct sectors with more than one covered company (matches /sectors). */
   sectorCount: number;
   /** Covered companies with a current-quarter read. */
@@ -84,7 +80,6 @@ type CoverageInfo = {
   name: string | null;
   sector: string | null;
   createdAt: string | null;
-  belowCut: boolean;
 };
 
 const upper = (value: string | null | undefined) => (value ?? "").toUpperCase();
@@ -93,9 +88,10 @@ const embeddedCompany = (row: ConcallRow) =>
   Array.isArray(row.company) ? row.company[0] ?? null : row.company ?? null;
 
 /**
- * Coverage keyed by uppercased company code. Large-cap admissions are dropped
- * (outside the mid/small positioning); below-cut companies are kept and flagged
- * so the board can grey them (decision 2026-08-01: de-emphasise, never drop).
+ * Discovery-listed coverage keyed by uppercased code and name. Companies off
+ * discovery — large-cap admissions (outside the mid/small positioning) and
+ * below-cut names — are collected into `excludedKeys` and dropped, matching the
+ * homepage/banner convention (isDiscoveryListed).
  */
 async function fetchCoverage(supabase: SupabaseServerClient) {
   const { data, error } = await supabase
@@ -104,24 +100,22 @@ async function fetchCoverage(supabase: SupabaseServerClient) {
   if (error) throw error;
 
   const byCode = new Map<string, CoverageInfo>();
-  const largeKeys = new Set<string>();
+  const excludedKeys = new Set<string>();
   const sectorCounts = new Map<string, number>();
   let coveredCount = 0;
 
   (data ?? []).forEach((raw) => {
     const row = raw as CoverageRow;
-    if (isAdmittedLargeCap(row)) {
-      if (row.code) largeKeys.add(upper(row.code));
-      if (row.name) largeKeys.add(upper(row.name));
+    if (!isDiscoveryListed(row)) {
+      if (row.code) excludedKeys.add(upper(row.code));
+      if (row.name) excludedKeys.add(upper(row.name));
       return;
     }
-    // Past the admission gate — one of the covered universe.
     coveredCount += 1;
     const info: CoverageInfo = {
       name: row.name,
       sector: row.sector,
       createdAt: row.created_at,
-      belowCut: isBelowCoverageCut(row),
     };
     if (row.code) byCode.set(upper(row.code), info);
     if (row.name) byCode.set(upper(row.name), info);
@@ -134,7 +128,7 @@ async function fetchCoverage(supabase: SupabaseServerClient) {
   // app/sectors/page.tsx, which drops companyCount <= 1).
   const sectorCount = Array.from(sectorCounts.values()).filter((n) => n > 1).length;
 
-  return { byCode, largeKeys, coveredCount, sectorCount };
+  return { byCode, excludedKeys, coveredCount, sectorCount };
 }
 
 async function fetchConcallRows(supabase: SupabaseServerClient) {
@@ -207,7 +201,7 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
   const byCompany = new Map<string, ConcallRow[]>();
   concallRows.forEach((row) => {
     const key = upper(row.company_code);
-    if (coverage.largeKeys.has(key)) return; // large cap — off discovery
+    if (coverage.excludedKeys.has(key)) return; // off discovery
     if (!byCompany.has(key)) byCompany.set(key, []);
     byCompany.get(key)!.push(row);
   });
@@ -251,7 +245,6 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
       name,
       sector,
       isNew: isCompanyNew(createdAt, now),
-      belowCut: info?.belowCut ?? false,
       latestScore: Number.isNaN(latestScore) ? null : latestScore,
       delta,
       twistPct,
@@ -278,10 +271,11 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
     .slice(0, 12);
 
   // Moat leaders: enrich the moat ordering with each company's score history
-  // (sector, sparkline, filed) from the concall rows built above.
+  // (sector, sparkline, filed) from the concall rows built above. Skip names
+  // that are off discovery (large-cap / below-cut).
   const rowByCode = new Map(rows.map((r) => [upper(r.code), r]));
   const moatLeaders: DeskRow[] = moat
-    .filter((m) => !coverage.largeKeys.has(upper(m.companyCode)))
+    .filter((m) => !coverage.excludedKeys.has(upper(m.companyCode)))
     .slice(0, 12)
     .map((m) => {
       const key = upper(m.companyCode);
@@ -292,7 +286,6 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
         name: m.companyName ?? enriched?.name ?? m.companyCode,
         sector: enriched?.sector ?? info?.sector ?? null,
         isNew: enriched?.isNew ?? false,
-        belowCut: enriched?.belowCut ?? info?.belowCut ?? false,
         latestScore: enriched?.latestScore ?? null,
         delta: enriched?.delta ?? null,
         twistPct: enriched?.twistPct ?? null,
@@ -305,7 +298,6 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
   return {
     quarterLabel: quarter.label,
     coveredCount: coverage.coveredCount,
-    targetCount: COVERAGE_CUT_TARGET,
     sectorCount: coverage.sectorCount,
     reportedCount,
     latestReads,

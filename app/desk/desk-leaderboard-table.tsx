@@ -12,7 +12,6 @@ export type DeskTableRow = {
   name: string;
   sector: string | null;
   isNew: boolean;
-  belowCut: boolean;
   latestScore: number | null;
   delta: number | null;
   twistPct: number | null;
@@ -133,9 +132,7 @@ function Row({ row, rank, tab }: { row: DeskTableRow; rank: number; tab: TabKey 
     <Link
       href={`/company/${row.code}`}
       prefetch={false}
-      className={`flex items-center gap-3 border-b border-[var(--rule)] px-1 py-3 transition-colors hover:bg-[var(--paper-2)] md:grid md:grid-cols-[minmax(0,1fr)_8rem_3.25rem_3.5rem_4.75rem_4.25rem] md:gap-4 ${
-        row.belowCut ? "opacity-55" : ""
-      }`}
+      className="flex items-center gap-3 border-b border-[var(--rule)] px-1 py-3 transition-colors hover:bg-[var(--paper-2)] md:grid md:grid-cols-[minmax(0,1fr)_8rem_3.25rem_3.5rem_4.75rem_4.25rem] md:gap-4"
     >
       {/* Company */}
       <div className="flex min-w-0 flex-1 items-baseline gap-2 md:flex-none">

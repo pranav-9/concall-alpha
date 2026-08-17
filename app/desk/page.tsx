@@ -27,7 +27,6 @@ const toTableRow = (row: DeskRow): DeskTableRow => ({
   name: row.name,
   sector: row.sector,
   isNew: row.isNew,
-  belowCut: row.belowCut,
   latestScore: row.latestScore,
   delta: row.delta,
   twistPct: row.twistPct,
@@ -63,7 +62,7 @@ export default async function DeskPage() {
                   <span>{board.quarterLabel}</span>
                   <span aria-hidden>·</span>
                   <span>
-                    {board.reportedCount} of {board.targetCount} calls read
+                    {board.reportedCount} of {board.coveredCount} calls read
                   </span>
                 </p>
                 <h1 className="house-display mt-3 max-w-xl text-3xl leading-[1.05] sm:text-4xl lg:text-[2.75rem]">
