@@ -4,10 +4,10 @@ import { Suspense } from "react";
 import { QuarterTrackerBanner } from "@/components/quarter-tracker-banner";
 import { formatRelativeActivityTime } from "@/lib/activity-feed";
 import { getDeskLeaderboard, type DeskRow } from "@/lib/desk-leaderboard";
-import LatestUpdatesCarousel, {
-  LatestUpdatesCarouselFallback,
-} from "@/app/(hero)/latest-updates-carousel";
-import { HotThemesTeaser } from "@/app/themes/hot-themes-teaser";
+import DeskRecencyLedger, {
+  DeskRecencyLedgerFallback,
+} from "./desk-recency-ledger";
+import { DeskHotThemes } from "./desk-hot-themes";
 import DeskLeaderboardTable, {
   type DeskTableRow,
 } from "./desk-leaderboard-table";
@@ -103,21 +103,15 @@ export default async function DeskPage() {
           </aside>
         </div>
 
-        <section aria-labelledby="desk-updates" className="mt-14 border-t border-[var(--rule)] pt-8">
-          <Suspense fallback={<LatestUpdatesCarouselFallback />}>
-            <LatestUpdatesCarousel
-              heading={
-                <h2 id="desk-updates" className="house-display text-2xl sm:text-3xl">
-                  What landed most recently
-                </h2>
-              }
-            />
+        <div className="mt-14">
+          <Suspense fallback={<DeskRecencyLedgerFallback />}>
+            <DeskRecencyLedger quarterLabel={board.quarterLabel} />
           </Suspense>
-        </section>
+        </div>
 
         <div className="mt-12">
           <Suspense fallback={null}>
-            <HotThemesTeaser />
+            <DeskHotThemes />
           </Suspense>
         </div>
       </div>
