@@ -8,6 +8,7 @@ import DeskRecencyLedger, {
   DeskRecencyLedgerFallback,
 } from "./desk-recency-ledger";
 import { DeskHotThemes } from "./desk-hot-themes";
+import DeskExchangeSection from "./desk-exchange-section";
 import DeskLeaderboardTable, {
   type DeskTableRow,
 } from "./desk-leaderboard-table";
@@ -110,6 +111,12 @@ export default async function DeskPage() {
         <div className="mt-14">
           <Suspense fallback={<DeskRecencyLedgerFallback />}>
             <DeskRecencyLedger quarterLabel={board.quarterLabel} />
+          </Suspense>
+        </div>
+
+        <div className="mt-12">
+          <Suspense fallback={null}>
+            <DeskExchangeSection />
           </Suspense>
         </div>
 
