@@ -15,6 +15,8 @@ import {
 } from "@/lib/design/shell";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import type { MoatAnalysisRow, MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
+import { BOARD_READS, classifyBoardRead } from "@/lib/board-read";
+import { toValuationScale } from "@/lib/valuation-band";
 import { createClient } from "@/lib/supabase/server";
 import { findSectorBySlug, slugifySector } from "@/app/sector/utils";
 import { AnalyticsBeacon } from "@/components/analytics-beacon";
@@ -168,12 +170,21 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
 
   const concallScoreByCode = new Map<
     string,
-    { latestScore: number | null; avg4ConcallScore: number | null }
+    {
+      latestScore: number | null;
+      avg4ConcallScore: number | null;
+      blendQuarterScore: number | null;
+      valuationScore: number | null;
+    }
   >();
   concallRows.forEach((row) => {
     concallScoreByCode.set(row.company.toUpperCase(), {
       latestScore: latestLabel ? toNumberOrNull(row[latestLabel]) : null,
       avg4ConcallScore: toNumberOrNull(row["Latest 4Q Avg"]),
+      // The leaderboard's own quarter leg (recency-weighted 4Q blend) — feeds the
+      // Read, exactly as on the sectors listing and the Overall board.
+      blendQuarterScore: toNumberOrNull(row["Latest 4Q Blend"]),
+      valuationScore: toValuationScale(toNumberOrNull(row.valuationScore)),
     });
   });
 
@@ -205,7 +216,8 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     const latestConcallScore = concallScore?.latestScore ?? null;
     const growthScore = latestGrowthByKey.get(codeKey) ?? latestGrowthByKey.get(nameKey) ?? null;
     const avg4ConcallScore = concallScore?.avg4ConcallScore ?? null;
-    const blendedScore = computeAverage([latestConcallScore, growthScore, avg4ConcallScore]);
+    const blendQuarterScore = concallScore?.blendQuarterScore ?? null;
+    const valuationScore = concallScore?.valuationScore ?? null;
     const moat = latestMoatByCode.get(codeKey) ?? null;
 
     return {
@@ -216,7 +228,8 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
       latestConcallScore,
       growthScore,
       avg4ConcallScore,
-      blendedScore,
+      blendQuarterScore,
+      valuationScore,
       moatLabel: moat?.moatLabel ?? null,
       moatRating: moat?.moatRating ?? null,
       moatTier: moat?.moatTier ?? null,
@@ -250,7 +263,15 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
   const cohortAvgLatestQuarter = computeAverage(filteredRows.map((row) => row.latestConcallScore));
   const cohortAvgGrowth = computeAverage(filteredRows.map((row) => row.growthScore));
   const cohortAvg4Quarter = computeAverage(filteredRows.map((row) => row.avg4ConcallScore));
-  const cohortAvgBlended = computeAverage(filteredRows.map((row) => row.blendedScore));
+  const cohortAvgValuation = computeAverage(filteredRows.map((row) => row.valuationScore));
+  // The cohort Read: sector-averaged legs through the leaderboard's own composite,
+  // same construction as a sector row on the /sectors listing.
+  const cohortRead = classifyBoardRead({
+    concallScore: computeAverage(filteredRows.map((row) => row.blendQuarterScore)),
+    growthScore: cohortAvgGrowth,
+    valuationScore: cohortAvgValuation,
+  });
+  const cohortReadLabel = BOARD_READS[cohortRead.key].label;
 
   const sectorSlug = slugifySector(sectorName);
 
@@ -283,17 +304,23 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className={`${CHIP_BASE} ${CHIP_NEUTRAL}`}>
-              Blend {cohortAvgBlended != null ? cohortAvgBlended.toFixed(1) : "—"}
+            <span
+              className={`${CHIP_BASE} border-amber-300/60 bg-amber-50/70 text-amber-800 dark:border-amber-700/40 dark:bg-amber-950/20 dark:text-amber-200`}
+              title={cohortReadLabel}
+            >
+              Read {cohortRead.score != null ? cohortRead.score.toFixed(1) : "—"}
             </span>
             <span className={`${CHIP_BASE} ${CHIP_NEUTRAL}`}>
               ConcallScore {cohortAvgLatestQuarter != null ? cohortAvgLatestQuarter.toFixed(1) : "—"}
             </span>
             <span className={`${CHIP_BASE} ${CHIP_NEUTRAL}`}>
+              Trailing {cohortAvg4Quarter != null ? cohortAvg4Quarter.toFixed(1) : "—"}
+            </span>
+            <span className={`${CHIP_BASE} ${CHIP_NEUTRAL}`}>
               Growth {cohortAvgGrowth != null ? cohortAvgGrowth.toFixed(1) : "—"}
             </span>
             <span className={`${CHIP_BASE} ${CHIP_NEUTRAL}`}>
-              4Q {cohortAvg4Quarter != null ? cohortAvg4Quarter.toFixed(1) : "—"}
+              Valuation {cohortAvgValuation != null ? cohortAvgValuation.toFixed(1) : "—"}
             </span>
           </div>
         </div>
