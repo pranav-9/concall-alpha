@@ -11,11 +11,12 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
-import type {
-  ExchangeCategory,
-  ExchangeDeskData,
-  ExchangeUpdate,
-  RecencyBucketKey,
+import {
+  IMPACT_META,
+  type ExchangeCategory,
+  type ExchangeDeskData,
+  type ExchangeUpdate,
+  type RecencyBucketKey,
 } from "@/lib/exchange-desk/types";
 
 const ROW_FOCUS =
@@ -64,6 +65,20 @@ function CategoryTab({
   );
 }
 
+function ImpactBadge({ item }: { item: ExchangeUpdate }) {
+  const meta = IMPACT_META[item.impact];
+  return (
+    <span
+      className={cn(
+        "house-data house-micro inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 leading-none",
+        meta.className,
+      )}
+    >
+      {meta.label}
+    </span>
+  );
+}
+
 function UpdateRow({ item }: { item: ExchangeUpdate }) {
   return (
     <div
@@ -72,8 +87,8 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
         ROW_HOVER,
       )}
     >
-      {/* Desktop: time · company · category · summary · filing */}
-      <div className="hidden items-center gap-4 sm:grid sm:grid-cols-[3.25rem_minmax(9rem,1fr)_9rem_minmax(0,1.6fr)_5rem]">
+      {/* Desktop: time · company · impact · category · summary · filing */}
+      <div className="hidden items-center gap-4 sm:grid sm:grid-cols-[3.25rem_minmax(8rem,1fr)_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]">
         <span className="house-data house-micro text-[var(--ink-soft)]">{item.filedLabel}</span>
         <Link
           href={`/company/${item.companyCode}`}
@@ -85,7 +100,10 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
         >
           {item.companyName}
         </Link>
-        <span className="house-data house-micro truncate text-[var(--signal)]">
+        <span>
+          <ImpactBadge item={item} />
+        </span>
+        <span className="house-data house-micro truncate text-[var(--ink-soft)]">
           {item.categoryLabel}
         </span>
         <span className="truncate text-sm text-[var(--ink-soft)]">{item.summary}</span>
@@ -103,7 +121,7 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
         </span>
       </div>
 
-      {/* Mobile: (1) time + company + filing, (2) category · summary */}
+      {/* Mobile: (1) time + company + impact + filing, (2) category · summary */}
       <div className="sm:hidden">
         <div className="flex items-center gap-3">
           <span className="house-data house-micro shrink-0 text-[var(--ink-soft)]">{item.filedLabel}</span>
@@ -114,6 +132,7 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
           >
             {item.companyName}
           </Link>
+          <ImpactBadge item={item} />
           {item.attachmentUrl ? (
             <a
               href={item.attachmentUrl}
@@ -126,7 +145,7 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
           ) : null}
         </div>
         <div className="mt-1 flex items-baseline gap-2 pl-[3.5rem]">
-          <span className="house-data house-micro shrink-0 text-[var(--signal)]">
+          <span className="house-data house-micro shrink-0 text-[var(--ink-soft)]">
             {item.categoryLabel}
           </span>
           <span className="truncate text-xs text-[var(--ink-soft)]">{item.summary}</span>
