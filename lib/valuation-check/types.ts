@@ -212,6 +212,21 @@ export type NormalizedValuationCheck = {
   caveats: string[];
   pricedAsOf: string | null;
   priceAtRun: number | null;
+  /**
+   * PEG lenses — display-only context, NEVER an input to the score or verdict. Present only
+   * when P/E is positive and at least one growth leg computes; either leg can be independently
+   * null (e.g. NOT-RATED lenders carry no base case, so `forward` drops while `trailing` may
+   * survive).
+   *   - trailing: current P/E ÷ trailing 5-yr EPS CAGR — textbook PEG. `hasLossYear` warns when
+   *     a loss inside the window makes the growth rate (and this ratio) unreliable.
+   *   - forward: current P/E ÷ Phase 5 base-case growth. That base case is a REVENUE CAGR, not
+   *     an EPS forecast (we don't forecast EPS), so it is directional, not a textbook PEG.
+   */
+  peg: {
+    pe: number;
+    trailing: { ratio: number; growthPct: number; hasLossYear: boolean } | null;
+    forward: { ratio: number; growthPct: number } | null;
+  } | null;
   peerContext: {
     medianPe: number | null;
     industryN: number | null;
