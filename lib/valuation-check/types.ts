@@ -101,6 +101,14 @@ export type ValuationCheckRow = {
     ratio_to_industry_median?: number | null;
     pill_basis?: string | null;
     pill_skipped_reason?: string | null;
+    /**
+     * Approach A (2026-08-18): deterministic, code-built ROCE-context sentence, present only
+     * when the peer pill is Expensive/Stretched AND the company out-earns its industry-median
+     * ROCE by >25%. Neutral disclosure — states two facts, asserts no causal verdict. Null when
+     * the gate does not fire.
+     */
+    quality_context_note?: string | null;
+    roce_ratio?: number | null;
   } | null;
   reverse_dcf: {
     anchor_variable: string | null;
@@ -204,5 +212,9 @@ export type NormalizedValuationCheck = {
   caveats: string[];
   pricedAsOf: string | null;
   priceAtRun: number | null;
-  peerContext: { medianPe: number | null; industryN: number | null } | null;
+  peerContext: {
+    medianPe: number | null;
+    industryN: number | null;
+    qualityContextNote: string | null;
+  } | null;
 };

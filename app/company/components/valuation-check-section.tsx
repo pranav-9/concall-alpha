@@ -251,6 +251,11 @@ export function ValuationCheckSection({ valuation, staleness, scoreHistory }: Pr
               badges above.
             </p>
           ) : null}
+          {valuation.peerContext?.qualityContextNote ? (
+            <p className="mt-1.5 text-[12px] leading-snug text-foreground/90">
+              {valuation.peerContext.qualityContextNote}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

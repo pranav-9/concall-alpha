@@ -107,6 +107,7 @@ export function normalizeValuationCheck(
       ? {
           medianPe: toNumber(row.peers.industry_median_pe),
           industryN: toNumber(row.peers.industry_n),
+          qualityContextNote: row.peers.quality_context_note ?? null,
         }
       : null,
   };
