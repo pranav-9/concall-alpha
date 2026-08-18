@@ -15,6 +15,10 @@ import type { KeyVariablesSnapshotRow } from "@/lib/key-variables-snapshot/types
 import type { WatchSwingVar } from "@/lib/next-quarter-watch/types";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import type { ValuationCheckRow } from "@/lib/valuation-check/types";
+import {
+  buildValuationScoreHistory,
+  type ValuationScoreHistoryRow,
+} from "@/lib/valuation-check/history";
 import type { CompanyPageOverviewCacheRow } from "@/lib/company-overview-cache";
 
 import { AnalyticsBeacon } from "@/components/analytics-beacon";
@@ -532,6 +536,25 @@ export async function ValuationCheckPanel({ overview }: CompanyDetailSectionProp
   const valuation = normalizeValuationCheck(
     (data?.[0] as ValuationCheckRow | undefined) ?? null,
   );
+
+  // The score-over-time series for the sparkline. Separate query, and deliberately
+  // non-fatal: if `valuation_check_history` errors (e.g. schema not migrated) the
+  // destructure yields null, the series is empty, and the sparkline simply hides —
+  // the verdict block above is unaffected.
+  // `published` was added in the 2026-08-15 ledger migration, so the bulk of history
+  // predates it and is NULL — not "unpublished", just "written before the column
+  // existed" (0 rows are explicitly false). We include NULL and exclude only an
+  // explicit false (an `--unpublish` event), so legacy pricings still plot.
+  const { data: historyRows } = await supabase
+    .from("valuation_check_history")
+    .select("priced_as_of, recorded_at, score")
+    .eq("company_code", overview.company_code)
+    .not("published", "is", false)
+    .order("priced_as_of", { ascending: true });
+
+  const scoreHistory = buildValuationScoreHistory(
+    (historyRows as ValuationScoreHistoryRow[] | null) ?? null,
+  );
   // Staleness is assessed at render time, not at write time: the row is fine, it is the
   // price underneath it that ages. Without a live quote only the age bound applies.
   const staleness = valuation
@@ -573,7 +596,11 @@ export async function ValuationCheckPanel({ overview }: CompanyDetailSectionProp
         />
       ) : null}
       {valuation ? (
-        <ValuationCheckSection valuation={valuation} staleness={staleness} />
+        <ValuationCheckSection
+          valuation={valuation}
+          staleness={staleness}
+          scoreHistory={scoreHistory}
+        />
       ) : (
         missingSectionState(
           overview,
