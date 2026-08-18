@@ -13,6 +13,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
   IMPACT_META,
+  isRiskFlagged,
   type ExchangeCategory,
   type ExchangeDeskData,
   type ExchangeUpdate,
@@ -65,15 +66,22 @@ function CategoryTab({
   );
 }
 
-function ImpactBadge({ item }: { item: ExchangeUpdate }) {
+// Risk-tail flag: rendered ONLY for the severe/negative tail (isRiskFlagged gates
+// it); positive/transformative/neutral render nothing. Icon + word + colour, never
+// colour alone, so it reads for a cold or colour-blind viewer. Reuses the house
+// alarm styling from IMPACT_META. Descriptive wording, never advisory — disclosure,
+// not a call.
+function RiskFlag({ item }: { item: ExchangeUpdate }) {
+  if (!isRiskFlagged(item.impact)) return null;
   const meta = IMPACT_META[item.impact];
   return (
     <span
       className={cn(
-        "house-data house-micro inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 leading-none",
+        "house-data house-micro inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 leading-none",
         meta.className,
       )}
     >
+      <span aria-hidden>⚑</span>
       {meta.label}
     </span>
   );
@@ -87,8 +95,8 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
         ROW_HOVER,
       )}
     >
-      {/* Desktop: time · company · impact · category · summary · filing */}
-      <div className="hidden items-center gap-4 sm:grid sm:grid-cols-[3.25rem_minmax(8rem,1fr)_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]">
+      {/* Desktop: time · company · category · summary (+risk flag) · filing */}
+      <div className="hidden items-center gap-4 sm:grid sm:grid-cols-[3.25rem_minmax(8rem,1fr)_8rem_minmax(0,1.6fr)_4.5rem]">
         <span className="house-data house-micro text-[var(--ink-soft)]">{item.filedLabel}</span>
         <Link
           href={`/company/${item.companyCode}`}
@@ -100,13 +108,13 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
         >
           {item.companyName}
         </Link>
-        <span>
-          <ImpactBadge item={item} />
-        </span>
         <span className="house-data house-micro truncate text-[var(--ink-soft)]">
           {item.categoryLabel}
         </span>
-        <span className="truncate text-sm text-[var(--ink-soft)]">{item.summary}</span>
+        <span className="flex min-w-0 items-center gap-2">
+          <RiskFlag item={item} />
+          <span className="truncate text-sm text-[var(--ink-soft)]">{item.summary}</span>
+        </span>
         <span className="justify-self-end">
           {item.attachmentUrl ? (
             <a
@@ -121,7 +129,7 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
         </span>
       </div>
 
-      {/* Mobile: (1) time + company + impact + filing, (2) category · summary */}
+      {/* Mobile: (1) time + company + filing, (2) category · risk flag · summary */}
       <div className="sm:hidden">
         <div className="flex items-center gap-3">
           <span className="house-data house-micro shrink-0 text-[var(--ink-soft)]">{item.filedLabel}</span>
@@ -132,7 +140,6 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
           >
             {item.companyName}
           </Link>
-          <ImpactBadge item={item} />
           {item.attachmentUrl ? (
             <a
               href={item.attachmentUrl}
@@ -144,10 +151,11 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
             </a>
           ) : null}
         </div>
-        <div className="mt-1 flex items-baseline gap-2 pl-[3.5rem]">
+        <div className="mt-1 flex items-center gap-2 pl-[3.5rem]">
           <span className="house-data house-micro shrink-0 text-[var(--ink-soft)]">
             {item.categoryLabel}
           </span>
+          <RiskFlag item={item} />
           <span className="truncate text-xs text-[var(--ink-soft)]">{item.summary}</span>
         </div>
       </div>

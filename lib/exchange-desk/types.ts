@@ -64,6 +64,19 @@ export function coerceImpact(value: string | null | undefined): ExchangeImpact {
     : "neutral";
 }
 
+/**
+ * The risk tail of the impact axis. The desk surfaces a flag ONLY for these two
+ * tiers; positive, transformative, and neutral render nothing — a green verdict on
+ * every filing sits too close to a buy steer (no-SEBI-RA guardrail), and good news
+ * already reads from the headline. This is an allowlist: coerceImpact() maps
+ * null/unknown -> "neutral", so a missing or future-unknown read can never flag.
+ */
+export function isRiskFlagged(
+  impact: ExchangeImpact,
+): impact is "negative" | "severe" {
+  return impact === "negative" || impact === "severe";
+}
+
 /** Display metadata per category, in the order tabs should appear. */
 export const CATEGORY_META: { key: ExchangeCategory; label: string }[] = [
   { key: "order_win", label: "Order Wins" },
