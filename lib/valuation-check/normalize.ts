@@ -70,6 +70,36 @@ export function normalizeValuationCheck(
   const scenarios = rdcf?.phase5_scenarios ?? {};
   const verdictBlock = row.verdict_block ?? null;
 
+  // PEG lenses, derived purely for display (never an input to the score). Read the P/E level
+  // from relative.pe directly, not from `lenses` — pe may exist even when it isn't the
+  // primary/cross-check lens. Both legs divide the same P/E; each is independently gated.
+  //   - trailing: 5-yr EPS CAGR (fraction; already null unless earnings ran positive-to-
+  //     positive, so a present value is genuine positive growth). Textbook PEG.
+  //   - forward: Phase 5 base case, which is a REVENUE CAGR — directional, not a real PEG.
+  const epsSummary = ((row.market_data ?? {}) as Record<string, unknown>).eps_summary as
+    | { cagr_5y?: number | null; has_loss_year?: boolean }
+    | null
+    | undefined;
+  const pegPe = toNumber(relative.pe?.current);
+  const epsCagr = toNumber(epsSummary?.cagr_5y);
+  const baseCagr = toNumber(scenarios.base);
+  const trailing =
+    pegPe !== null && pegPe > 0 && epsCagr !== null && epsCagr > 0
+      ? {
+          ratio: pegPe / (epsCagr * 100),
+          growthPct: epsCagr * 100,
+          hasLossYear: Boolean(epsSummary?.has_loss_year),
+        }
+      : null;
+  const forward =
+    pegPe !== null && pegPe > 0 && baseCagr !== null && baseCagr > 0
+      ? { ratio: pegPe / (baseCagr * 100), growthPct: baseCagr * 100 }
+      : null;
+  const peg =
+    pegPe !== null && pegPe > 0 && (trailing || forward)
+      ? { pe: pegPe, trailing, forward }
+      : null;
+
   return {
     companyCode: row.company_code,
     lensStatement: lensSelection?.statement ?? null,
@@ -103,6 +133,7 @@ export function normalizeValuationCheck(
     caveats: row.caveats ?? [],
     pricedAsOf: row.priced_as_of ?? null,
     priceAtRun: toNumber(row.price_at_run),
+    peg,
     peerContext: row.peers
       ? {
           medianPe: toNumber(row.peers.industry_median_pe),
