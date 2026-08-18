@@ -4,18 +4,29 @@
 //
 // Phase 12 / Business Analysis Framework v14 Section 6.
 //
-// Two things shape this layout more than anything else:
-//
-//   1. The reverse DCF leads, not the multiple table. It is the block that says what the
-//      *price* is assuming, which is the part a reader cannot get from a screener.
-//   2. NOT RATED is a designed state, not an empty state. 34 of 139 covered companies land
-//      there — lenders the framework forbids a DCF for, and companies with no multiple
-//      history — so the unrated path shows the lenses it does have and explains the gap.
-import { AlertTriangle, Info, Minus, TrendingDown, TrendingUp } from "lucide-react";
+// Layout is verdict-led and visual (redesign 2026-08-18):
+//   1. The VERDICT hero leads — chip, score, a templated one-line thesis, the reasoning, and the
+//      score spectrum bar (with the score-history sparkline in its top-right slot). NOT RATED /
+//      stale is a designed state that replaces the hero, not an empty one.
+//   2. The reverse DCF ("what the price is assuming") is the block that says what the *price*
+//      assumes — the part a reader cannot get from a screener — shown as a horizon bar.
+//   3. Own-history multiples render as boxplots; overlay + "what would change the call" sit beside.
+//   4. "How this score was built" is a footer disclosure.
+import {
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
+  Info,
+  Minus,
+  Plus,
+} from "lucide-react";
 
 import { chipBaseClass, chipClass, type ChipTone } from "./chip-tone";
 import { KpiSparkline } from "./kpi-sparkline";
+import { MultipleBoxplot } from "./multiple-boxplot";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
+import { ValuationHorizonBar, ValuationHorizonLegend } from "./valuation-horizon-bar";
+import { ValuationSpectrumBar } from "./valuation-spectrum-bar";
 import type { ValuationScorePoint } from "@/lib/valuation-check/history";
 import type { ValuationStaleness } from "@/lib/valuation-check/normalize";
 import type {
@@ -23,7 +34,6 @@ import type {
   NormalizedValuationLens,
   ValuationPill,
   ValuationVerdict,
-  ValuationZone,
 } from "@/lib/valuation-check/types";
 import { cn } from "@/lib/utils";
 
@@ -46,13 +56,13 @@ const VERDICT_TONE: Record<ValuationVerdict, ChipTone> = {
   "RICHLY PRICED": "rose",
 };
 
-const ZONE_LABEL: Record<ValuationZone, string> = {
-  below_bear: "below the downside case",
-  bear_to_base: "between downside and base",
-  at_base: "at the base case",
-  base_to_bull: "between base and upside",
-  above_bull: "above the upside case",
-  unknown: "not comparable",
+// Verdict-only fallback thesis when the pills/zone can't be combined into a sharper one.
+const VERDICT_HEADLINE_FALLBACK: Record<ValuationVerdict, string> = {
+  "DEEPLY UNDERVALUED": "Trading well below what the fundamentals support.",
+  UNDERVALUED: "Trading below what the fundamentals support.",
+  "FAIRLY VALUED": "Priced roughly in line with the fundamentals.",
+  EXPENSIVE: "Priced above what the fundamentals support.",
+  "RICHLY PRICED": "Priced well above what the fundamentals support.",
 };
 
 const formatMultiple = (value: number | null) =>
@@ -64,6 +74,92 @@ const formatMultiple = (value: number | null) =>
 const formatPct = (value: number | null) =>
   value === null ? "—" : `${value.toFixed(1)}%`;
 
+/**
+ * Deterministic one-line thesis, templated portal-side (the pipeline emits no headline — only the
+ * multi-sentence `reasoning`). It combines two grounded reads: what the OWN-HISTORY multiples say
+ * (the lens pills) and what the PRICE assumes (the reverse-DCF zone). When they disagree it draws
+ * the tension out; otherwise it states the aligned read. Falls back to a verdict-word sentence.
+ */
+function buildHeadline(v: NormalizedValuationCheck): string | null {
+  if (!v.verdict) return null;
+
+  const pills = v.lenses.map((l) => l.pill).filter((p): p is ValuationPill => Boolean(p));
+  const cheapish = pills.some((p) => p === "Cheap" || p === "In-line");
+  const richish = pills.some((p) => p === "Expensive" || p === "Stretched");
+
+  let multiplesClause: string | null = null;
+  if (pills.length) {
+    if (richish && !cheapish) multiplesClause = "Expensive on its own multiples";
+    else if (cheapish && !richish)
+      multiplesClause = pills.every((p) => p === "Cheap")
+        ? "Cheap on its own multiples"
+        : "In line with its own history";
+    else multiplesClause = "Mixed against its own history";
+  }
+
+  // Only the DCF path carries a zone worth reading against.
+  let priceClause: string | null = null;
+  if (v.reverseDcfApplicable) {
+    switch (v.zone) {
+      case "above_bull":
+        priceClause = "the price banks on growth above anything it has delivered";
+        break;
+      case "base_to_bull":
+        priceClause = "the price leans on growth above its base case";
+        break;
+      case "at_base":
+        priceClause = "the price sits at our base case";
+        break;
+      case "bear_to_base":
+        priceClause = "the price assumes growth below our base case";
+        break;
+      case "below_bear":
+        priceClause = "the price assumes less growth than even our downside case";
+        break;
+      default:
+        priceClause = null;
+    }
+  }
+
+  if (multiplesClause && priceClause) {
+    const priceAggressive = v.zone === "above_bull" || v.zone === "base_to_bull";
+    const priceCheap = v.zone === "below_bear" || v.zone === "bear_to_base";
+    // "but" when the two reads pull apart; "and" when they agree.
+    const disagree =
+      (cheapish && !richish && priceAggressive) || (richish && priceCheap);
+    const joiner = disagree ? " — but " : ", and ";
+    return `${multiplesClause}${joiner}${priceClause}.`;
+  }
+  if (priceClause) {
+    const lead = priceClause.charAt(0).toUpperCase() + priceClause.slice(1);
+    return `${lead}.`;
+  }
+  if (multiplesClause) return `${multiplesClause}.`;
+  return VERDICT_HEADLINE_FALLBACK[v.verdict];
+}
+
+// Best-effort direction for a "what would change the call" item, from grounded keywords. Neutral
+// is the safe fallback — this is presentation only, never asserted as an input to the score.
+type CallDirection = "cheaper" | "richer" | "new" | "neutral";
+function callDirection(item: string): CallDirection {
+  if (/forensic|credibilit|publish|disclos|coverage/i.test(item)) return "new";
+  const cheaper = /\bcheap|undervalued|de-?rate/i.test(item);
+  const richer = /\brich|expensive|stretch|widen|overvalued/i.test(item);
+  if (cheaper && !richer) return "cheaper";
+  if (richer && !cheaper) return "richer";
+  return "neutral";
+}
+
+const CALL_MARK: Record<
+  CallDirection,
+  { Icon: typeof ArrowUpRight; className: string }
+> = {
+  cheaper: { Icon: ArrowUpRight, className: "text-emerald-600 dark:text-emerald-400" },
+  richer: { Icon: ArrowDownRight, className: "text-rose-600 dark:text-rose-400" },
+  new: { Icon: Plus, className: "text-violet-600 dark:text-violet-400" },
+  neutral: { Icon: Minus, className: "text-muted-foreground" },
+};
+
 type Props = {
   valuation: NormalizedValuationCheck;
   staleness: ValuationStaleness;
@@ -71,6 +167,58 @@ type Props = {
    * a one- or two-dot line reads as broken, not as a trend. */
   scoreHistory?: ValuationScorePoint[];
 };
+
+/** The reverse-DCF hero: what the current price is assuming, against our growth cases. */
+function ImpliedGrowth({ valuation }: { valuation: NormalizedValuationCheck }) {
+  if (!valuation.reverseDcfApplicable) {
+    return (
+      <div className={cn(elevatedBlockClass, "px-4 py-3")}>
+        <p className={sectionTitleClass}>What the price is assuming</p>
+        <p className="mt-1.5 text-[12px] leading-snug text-muted-foreground">
+          {valuation.reverseDcfNote ??
+            "A cash-flow model is not the right tool for this business type."}
+        </p>
+      </div>
+    );
+  }
+
+  const { impliedCagrPct, scenarios } = valuation;
+  const hasBar = impliedCagrPct !== null;
+
+  return (
+    <div className={cn(elevatedBlockClass, "px-4 py-3")}>
+      <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
+        <p className={sectionTitleClass}>What the price is assuming</p>
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-semibold tabular-nums text-foreground">
+            {formatPct(impliedCagrPct)}
+          </span>
+          <span className="text-[11px] leading-tight text-muted-foreground">
+            growth a year, implied
+            <br className="hidden sm:block" /> by today&apos;s price
+          </span>
+        </div>
+      </div>
+
+      {hasBar ? (
+        <div className="mt-3 space-y-2">
+          <ValuationHorizonBar
+            impliedPct={impliedCagrPct}
+            scenarios={scenarios}
+            delivered={valuation.deliveredCagr}
+          />
+          <ValuationHorizonLegend hasDelivered={valuation.deliveredCagr.length > 0} />
+        </div>
+      ) : null}
+
+      {valuation.plausibilityCheck ? (
+        <p className="mt-3 text-[12px] leading-snug text-muted-foreground">
+          {valuation.plausibilityCheck}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 function LensRow({ lens }: { lens: NormalizedValuationLens }) {
   const band = lens.band;
@@ -92,19 +240,21 @@ function LensRow({ lens }: { lens: NormalizedValuationLens }) {
         )}
       </div>
 
-      <div className="mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px]">
-        <span className="text-foreground">
-          now <span className="font-semibold">{formatMultiple(lens.current ?? lens.levelWithoutBand)}</span>
-        </span>
-        {band ? (
-          <span className="text-muted-foreground">
-            own {band.years}-yr {formatMultiple(band.p25)}–{formatMultiple(band.p75)}
-            <span className="opacity-70"> (median {formatMultiple(band.median)})</span>
+      {band ? (
+        <div className="mt-2">
+          <MultipleBoxplot band={band} current={lens.current ?? lens.levelWithoutBand} />
+        </div>
+      ) : (
+        <div className="mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px]">
+          <span className="text-foreground">
+            now{" "}
+            <span className="font-semibold">
+              {formatMultiple(lens.current ?? lens.levelWithoutBand)}
+            </span>
           </span>
-        ) : (
           <span className="text-muted-foreground">no multiple history available</span>
-        )}
-      </div>
+        </div>
+      )}
 
       {lens.interpretation ? (
         <p className="mt-1.5 text-[12px] leading-snug text-muted-foreground">
@@ -128,67 +278,13 @@ function LensRow({ lens }: { lens: NormalizedValuationLens }) {
   );
 }
 
-/** The hero block: what the current price is assuming, against our own growth case. */
-function ImpliedGrowth({ valuation }: { valuation: NormalizedValuationCheck }) {
-  const { impliedCagrPct, scenarios, zone } = valuation;
-  const basePct = scenarios.base === null ? null : scenarios.base * 100;
-  const gap = impliedCagrPct !== null && basePct !== null ? impliedCagrPct - basePct : null;
-  const Icon = gap === null ? Minus : gap > 0 ? TrendingUp : TrendingDown;
-
-  if (!valuation.reverseDcfApplicable) {
-    return (
-      <div className={cn(elevatedBlockClass, "px-4 py-3")}>
-        <p className={sectionTitleClass}>What the price is assuming</p>
-        <p className="mt-1.5 text-[12px] leading-snug text-muted-foreground">
-          {valuation.reverseDcfNote ??
-            "A cash-flow model is not the right tool for this business type."}
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className={cn(elevatedBlockClass, "px-4 py-3")}>
-      <p className={sectionTitleClass}>What the price is assuming</p>
-      <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="text-2xl font-semibold tabular-nums text-foreground">
-          {formatPct(impliedCagrPct)}
-        </span>
-        <span className="text-[12px] text-muted-foreground">
-          growth a year, implied by today&apos;s price
-        </span>
-      </div>
-      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px]">
-        <Icon
-          className={cn(
-            "h-3.5 w-3.5",
-            gap === null
-              ? "text-muted-foreground"
-              : gap > 0
-                ? "text-amber-600 dark:text-amber-400"
-                : "text-emerald-600 dark:text-emerald-400",
-          )}
-        />
-        <span className="text-muted-foreground">
-          our base case is <span className="font-medium text-foreground">{formatPct(basePct)}</span>
-          {" — "}
-          {ZONE_LABEL[zone]}
-        </span>
-      </div>
-      {valuation.plausibilityCheck ? (
-        <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
-          {valuation.plausibilityCheck}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
 function Overlay({ valuation }: { valuation: NormalizedValuationCheck }) {
   if (!valuation.overlayRows.length) return null;
   return (
     <div>
-      <p className={sectionTitleClass}>Quality and risk</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        Quality &amp; risk overlay
+      </p>
       <div className="mt-2 space-y-1.5">
         {valuation.overlayRows.map((row) => {
           const unavailable =
@@ -196,19 +292,21 @@ function Overlay({ valuation }: { valuation: NormalizedValuationCheck }) {
           return (
             <div
               key={row.source}
-              className="flex flex-col gap-0.5 text-[12px] sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-2"
+              className={cn(
+                nestedDetailClass,
+                "flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 px-3 py-2 text-[12px]",
+              )}
             >
-              <span className="text-muted-foreground">{row.source}</span>
+              <span className="font-medium text-foreground">{row.source}</span>
               <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span
                   className={cn(
-                    "font-medium",
                     unavailable ? "text-muted-foreground/70 italic" : "text-foreground",
                   )}
                 >
                   {row.verdict}
                 </span>
-                <span className="text-muted-foreground/80">{row.impact}</span>
+                <span className="text-[11px] text-muted-foreground/80">{row.impact}</span>
               </span>
             </div>
           );
@@ -269,9 +367,44 @@ function PegBlock({ peg }: { peg: NonNullable<NormalizedValuationCheck["peg"]> }
   );
 }
 
+/** "What would change the call" — presentation-only directional cues; never an input to the score. */
+function WhatWouldChange({ items }: { items: string[] }) {
+  if (!items.length) return null;
+  return (
+    <div>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        What would change the call
+      </p>
+      <ul className="mt-2 space-y-1.5">
+        {items.map((item) => {
+          const { Icon, className } = CALL_MARK[callDirection(item)];
+          return (
+            <li key={item} className="flex items-start gap-1.5 text-[12px] leading-snug text-muted-foreground">
+              <Icon className={cn("mt-[1px] h-3.5 w-3.5 shrink-0", className)} />
+              <span>{item}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export function ValuationCheckSection({ valuation, staleness, scoreHistory }: Props) {
   const showVerdict = valuation.rateable && Boolean(valuation.verdict) && !staleness.stale;
+  const headline = showVerdict ? buildHeadline(valuation) : null;
+  // A one- or two-dot line reads as broken, not a trend.
   const showScoreTrend = (scoreHistory?.length ?? 0) >= 3;
+  const scoreTrend = showScoreTrend ? (
+    <div className="flex items-center gap-1.5">
+      <KpiSparkline
+        points={scoreHistory!}
+        ariaLabel={`Valuation score trend across ${scoreHistory!.length} readings`}
+        className="h-6 w-16"
+      />
+      <span className="text-[10px] text-muted-foreground">{scoreHistory!.length} readings</span>
+    </div>
+  ) : null;
 
   return (
     <div className="space-y-4">
@@ -279,66 +412,31 @@ export function ValuationCheckSection({ valuation, staleness, scoreHistory }: Pr
         <p className={sectionSubtitleClass}>{valuation.lensStatement}</p>
       ) : null}
 
-      <ImpliedGrowth valuation={valuation} />
-
-      {valuation.lenses.length ? (
-        <div>
-          <p className={sectionTitleClass}>Against its own history</p>
-          <div className="mt-2 space-y-2">
-            {valuation.lenses.map((lens) => (
-              <LensRow key={lens.id} lens={lens} />
-            ))}
-          </div>
-          {valuation.peerContext?.medianPe ? (
-            <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-              Industry median P/E is {valuation.peerContext.medianPe.toFixed(1)}x across{" "}
-              {valuation.peerContext.industryN} companies — shown as context only. It is a
-              whole-industry median, not a size-matched peer set, so it does not drive the
-              badges above.
-            </p>
-          ) : null}
-          {valuation.peerContext?.qualityContextNote ? (
-            <p className="mt-1.5 text-[12px] leading-snug text-foreground/90">
-              {valuation.peerContext.qualityContextNote}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-
-      {valuation.peg ? <PegBlock peg={valuation.peg} /> : null}
-
-      <Overlay valuation={valuation} />
-
+      {/* 1. Verdict hero — or the designed NOT-RATED / stale state. */}
       {showVerdict ? (
-        <div className={cn(elevatedBlockClass, "px-4 py-3")}>
-          <div className="flex flex-wrap items-center gap-2">
+        <div className={cn(elevatedBlockClass, "space-y-3 px-4 py-3")}>
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
             <span className={chipClass(VERDICT_TONE[valuation.verdict!])}>
               {valuation.verdict}
             </span>
             <span className="text-[12px] text-muted-foreground">
-              {valuation.score}/100 — higher is cheaper
+              <span className="text-base font-semibold tabular-nums text-foreground">
+                {valuation.score}
+              </span>
+              /100 — higher is cheaper
             </span>
           </div>
-          {showScoreTrend ? (
-            <div className="mt-2 flex items-center gap-2">
-              <KpiSparkline
-                points={scoreHistory!}
-                ariaLabel={`Valuation score trend across ${scoreHistory!.length} readings`}
-                className="h-7 w-24"
-              />
-              <span className="text-[11px] text-muted-foreground">
-                Score trend · last {scoreHistory!.length} readings
-              </span>
-            </div>
+
+          {headline ? (
+            <p className="text-base font-medium leading-relaxed text-foreground">{headline}</p>
           ) : null}
+
           {valuation.reasoning ? (
-            <p className="mt-2 text-[12px] leading-snug text-foreground/90">
-              {valuation.reasoning}
-            </p>
+            <p className="text-[12px] leading-snug text-foreground/90">{valuation.reasoning}</p>
           ) : null}
 
           {valuation.capsApplied.length ? (
-            <ul className="mt-2 space-y-1">
+            <ul className="space-y-1">
               {valuation.capsApplied.map((cap) => (
                 <li
                   key={cap}
@@ -351,35 +449,15 @@ export function ValuationCheckSection({ valuation, staleness, scoreHistory }: Pr
             </ul>
           ) : null}
 
-          {valuation.whatWouldChangeTheCall.length ? (
-            <div className="mt-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                What would change the call
-              </p>
-              <ul className="mt-1 list-disc space-y-1 pl-4 text-[12px] leading-snug text-muted-foreground">
-                {valuation.whatWouldChangeTheCall.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+          {valuation.score !== null ? (
+            <div className="pt-1">
+              <ValuationSpectrumBar score={valuation.score} trend={scoreTrend} />
             </div>
-          ) : null}
-
-          {valuation.derivation.length ? (
-            <details className="mt-3 group">
-              <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
-                How this score was built
-              </summary>
-              <ol className="mt-1.5 list-decimal space-y-0.5 pl-4 text-[11px] leading-snug text-muted-foreground">
-                {valuation.derivation.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-            </details>
           ) : null}
         </div>
       ) : (
         // Designed state, not an empty one — the reader is told what is missing and why,
-        // and still gets whatever lenses did compute above.
+        // and still gets whatever lenses / reverse DCF computed below.
         <div className={cn(elevatedBlockClass, "px-4 py-3")}>
           <div className="flex flex-wrap items-center gap-2">
             <span className={cn(chipBaseClass, "border-dashed border-border/60 text-muted-foreground")}>
@@ -397,11 +475,70 @@ export function ValuationCheckSection({ valuation, staleness, scoreHistory }: Pr
         </div>
       )}
 
-      {valuation.pricedAsOf ? (
-        <p className="text-[11px] text-muted-foreground">
-          Priced as of {valuation.pricedAsOf}. Unlike the rest of this page, a valuation read
-          goes out of date as the price moves.
-        </p>
+      {/* 2. What the price is assuming — the reverse DCF horizon bar. */}
+      <ImpliedGrowth valuation={valuation} />
+
+      {/* 3. Own history (boxplots) beside quality overlay + what-would-change. */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {valuation.lenses.length ? (
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Against its own history
+            </p>
+            <div className="mt-2 space-y-2">
+              {valuation.lenses.map((lens) => (
+                <LensRow key={lens.id} lens={lens} />
+              ))}
+            </div>
+            {valuation.peerContext?.medianPe ? (
+              <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+                Industry median P/E is {valuation.peerContext.medianPe.toFixed(1)}x across{" "}
+                {valuation.peerContext.industryN} companies — shown as context only. It is a
+                whole-industry median, not a size-matched peer set, so it does not drive the
+                badges above.
+              </p>
+            ) : null}
+            {valuation.peerContext?.qualityContextNote ? (
+              <p className="mt-1.5 text-[12px] leading-snug text-foreground/90">
+                {valuation.peerContext.qualityContextNote}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="space-y-4">
+          <Overlay valuation={valuation} />
+          <WhatWouldChange items={valuation.whatWouldChangeTheCall} />
+        </div>
+      </div>
+
+      {/* PEG — display-only context, kept when present. */}
+      {valuation.peg ? <PegBlock peg={valuation.peg} /> : null}
+
+      {/* 4. Footer: pricing note + derivation disclosure. */}
+      {valuation.pricedAsOf || valuation.derivation.length ? (
+        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 pt-1">
+          {valuation.pricedAsOf ? (
+            <p className="max-w-[46ch] text-[11px] text-muted-foreground">
+              Priced as of {valuation.pricedAsOf}. Unlike the rest of this page, a valuation read
+              goes out of date as the price moves.
+            </p>
+          ) : (
+            <span />
+          )}
+          {valuation.derivation.length ? (
+            <details className="group text-right">
+              <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
+                How this score was built
+              </summary>
+              <ol className="mt-1.5 list-decimal space-y-0.5 pl-4 text-left text-[11px] leading-snug text-muted-foreground">
+                {valuation.derivation.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </details>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

@@ -194,6 +194,12 @@ export type NormalizedValuationCheck = {
   zone: ValuationZone;
   zoneReading: string | null;
   scenarios: { downside: number | null; base: number | null; upside: number | null };
+  /**
+   * Delivered revenue CAGR markers for the reverse-DCF horizon bar, from
+   * `reverse_dcf.delivered_cagr` (percent units). Empty when the payload carries none. Sorted
+   * longest-window-first; `label` is a display string ("5-yr delivered", "TTM", …).
+   */
+  deliveredCagr: { key: string; label: string; pct: number }[];
   plausibilityCheck: string | null;
   reverseDcfApplicable: boolean;
   reverseDcfNote: string | null;

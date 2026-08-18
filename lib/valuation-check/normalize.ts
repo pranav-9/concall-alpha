@@ -26,6 +26,37 @@ export const VALUATION_STALE_AFTER_MOVE_PCT = 10;
 const toNumber = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
 
+// Display labels + ordering weight for the delivered-CAGR markers on the horizon bar. Unknown
+// keys still render (label falls back to "<key> delivered") but sort last.
+const DELIVERED_CAGR_META: Record<string, { label: string; order: number }> = {
+  "10y": { label: "10-yr delivered", order: 0 },
+  "5y": { label: "5-yr delivered", order: 1 },
+  "3y": { label: "3-yr delivered", order: 2 },
+  "1y": { label: "TTM", order: 3 },
+  ttm: { label: "TTM", order: 3 },
+};
+
+const normalizeDeliveredCagr = (
+  raw: Record<string, number | null> | null | undefined,
+): { key: string; label: string; pct: number }[] => {
+  if (!raw) return [];
+  return Object.entries(raw)
+    .map(([key, value]) => {
+      const pct = toNumber(value);
+      if (pct === null) return null;
+      const meta = DELIVERED_CAGR_META[key];
+      return {
+        key,
+        label: meta?.label ?? `${key} delivered`,
+        pct,
+        order: meta?.order ?? 99,
+      };
+    })
+    .filter((m): m is { key: string; label: string; pct: number; order: number } => m !== null)
+    .sort((a, b) => a.order - b.order)
+    .map(({ key, label, pct }) => ({ key, label, pct }));
+};
+
 const normalizeLens = (
   id: ValuationLensId,
   row: ValuationLensRow | undefined,
@@ -113,6 +144,7 @@ export function normalizeValuationCheck(
       base: toNumber(scenarios.base),
       upside: toNumber(scenarios.upside),
     },
+    deliveredCagr: normalizeDeliveredCagr(rdcf?.delivered_cagr),
     plausibilityCheck: rdcf?.plausibility_check ?? null,
     // v14 §9.3 rules a cash-flow DCF out for lenders, insurers and asset managers; the block
     // is returned not-applicable rather than run anyway.
