@@ -218,6 +218,52 @@ function Overlay({ valuation }: { valuation: NormalizedValuationCheck }) {
   );
 }
 
+/** PEG lenses — display-only context, never an input to the score. */
+function PegBlock({ peg }: { peg: NonNullable<NormalizedValuationCheck["peg"]> }) {
+  return (
+    <div className={cn(nestedDetailClass, "px-3 py-2.5")}>
+      <p className="text-[12px] font-semibold text-foreground">
+        PEG <span className="font-normal text-muted-foreground">— P/E {formatMultiple(peg.pe)} per unit of growth</span>
+      </p>
+      <div className="mt-2 space-y-1.5">
+        {peg.trailing ? (
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-[12px]">
+            <span className="text-muted-foreground">
+              Trailing <span className="opacity-70">÷ {peg.trailing.growthPct.toFixed(0)}% delivered 5-yr EPS growth</span>
+            </span>
+            <span className="font-semibold tabular-nums text-foreground">
+              {peg.trailing.ratio.toFixed(2)}
+            </span>
+          </div>
+        ) : null}
+        {peg.forward ? (
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-[12px]">
+            <span className="text-muted-foreground">
+              Forward <span className="opacity-70">÷ {peg.forward.growthPct.toFixed(0)}% base-case growth</span>
+            </span>
+            <span className="font-semibold tabular-nums text-foreground">
+              {peg.forward.ratio.toFixed(2)}
+            </span>
+          </div>
+        ) : null}
+      </div>
+      <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+        Context only — neither feeds the score below.
+        {peg.forward
+          ? " The forward leg divides an earnings multiple by our base-case revenue growth (we don't forecast EPS), so read it as directional."
+          : ""}
+      </p>
+      {peg.trailing?.hasLossYear ? (
+        <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-snug text-amber-700 dark:text-amber-300">
+          <Info className="mt-[1px] h-3 w-3 shrink-0" />
+          A loss year sits inside the 5-year window, so the trailing growth rate — and its PEG —
+          are unreliable.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function ValuationCheckSection({ valuation, staleness }: Props) {
   const showVerdict = valuation.rateable && Boolean(valuation.verdict) && !staleness.stale;
 
@@ -245,8 +291,15 @@ export function ValuationCheckSection({ valuation, staleness }: Props) {
               badges above.
             </p>
           ) : null}
+          {valuation.peerContext?.qualityContextNote ? (
+            <p className="mt-1.5 text-[12px] leading-snug text-foreground/90">
+              {valuation.peerContext.qualityContextNote}
+            </p>
+          ) : null}
         </div>
       ) : null}
+
+      {valuation.peg ? <PegBlock peg={valuation.peg} /> : null}
 
       <Overlay valuation={valuation} />
 

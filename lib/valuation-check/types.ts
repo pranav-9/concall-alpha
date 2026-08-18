@@ -101,6 +101,14 @@ export type ValuationCheckRow = {
     ratio_to_industry_median?: number | null;
     pill_basis?: string | null;
     pill_skipped_reason?: string | null;
+    /**
+     * Approach A (2026-08-18): deterministic, code-built ROCE-context sentence, present only
+     * when the peer pill is Expensive/Stretched AND the company out-earns its industry-median
+     * ROCE by >25%. Neutral disclosure — states two facts, asserts no causal verdict. Null when
+     * the gate does not fire.
+     */
+    quality_context_note?: string | null;
+    roce_ratio?: number | null;
   } | null;
   reverse_dcf: {
     anchor_variable: string | null;
@@ -204,5 +212,24 @@ export type NormalizedValuationCheck = {
   caveats: string[];
   pricedAsOf: string | null;
   priceAtRun: number | null;
-  peerContext: { medianPe: number | null; industryN: number | null } | null;
+  /**
+   * PEG lenses — display-only context, NEVER an input to the score or verdict. Present only
+   * when P/E is positive and at least one growth leg computes; either leg can be independently
+   * null (e.g. NOT-RATED lenders carry no base case, so `forward` drops while `trailing` may
+   * survive).
+   *   - trailing: current P/E ÷ trailing 5-yr EPS CAGR — textbook PEG. `hasLossYear` warns when
+   *     a loss inside the window makes the growth rate (and this ratio) unreliable.
+   *   - forward: current P/E ÷ Phase 5 base-case growth. That base case is a REVENUE CAGR, not
+   *     an EPS forecast (we don't forecast EPS), so it is directional, not a textbook PEG.
+   */
+  peg: {
+    pe: number;
+    trailing: { ratio: number; growthPct: number; hasLossYear: boolean } | null;
+    forward: { ratio: number; growthPct: number } | null;
+  } | null;
+  peerContext: {
+    medianPe: number | null;
+    industryN: number | null;
+    qualityContextNote: string | null;
+  } | null;
 };
