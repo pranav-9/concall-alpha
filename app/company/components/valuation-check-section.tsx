@@ -14,7 +14,9 @@
 import { AlertTriangle, Info, Minus, TrendingDown, TrendingUp } from "lucide-react";
 
 import { chipBaseClass, chipClass, type ChipTone } from "./chip-tone";
+import { KpiSparkline } from "./kpi-sparkline";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
+import type { ValuationScorePoint } from "@/lib/valuation-check/history";
 import type { ValuationStaleness } from "@/lib/valuation-check/normalize";
 import type {
   NormalizedValuationCheck,
@@ -65,6 +67,9 @@ const formatPct = (value: number | null) =>
 type Props = {
   valuation: NormalizedValuationCheck;
   staleness: ValuationStaleness;
+  /** Published score readings over time. Sparkline is shown only at >=3 points —
+   * a one- or two-dot line reads as broken, not as a trend. */
+  scoreHistory?: ValuationScorePoint[];
 };
 
 function LensRow({ lens }: { lens: NormalizedValuationLens }) {
@@ -218,8 +223,9 @@ function Overlay({ valuation }: { valuation: NormalizedValuationCheck }) {
   );
 }
 
-export function ValuationCheckSection({ valuation, staleness }: Props) {
+export function ValuationCheckSection({ valuation, staleness, scoreHistory }: Props) {
   const showVerdict = valuation.rateable && Boolean(valuation.verdict) && !staleness.stale;
+  const showScoreTrend = (scoreHistory?.length ?? 0) >= 3;
 
   return (
     <div className="space-y-4">
@@ -260,6 +266,18 @@ export function ValuationCheckSection({ valuation, staleness }: Props) {
               {valuation.score}/100 — higher is cheaper
             </span>
           </div>
+          {showScoreTrend ? (
+            <div className="mt-2 flex items-center gap-2">
+              <KpiSparkline
+                points={scoreHistory!}
+                ariaLabel={`Valuation score trend across ${scoreHistory!.length} readings`}
+                className="h-7 w-24"
+              />
+              <span className="text-[11px] text-muted-foreground">
+                Score trend · last {scoreHistory!.length} readings
+              </span>
+            </div>
+          ) : null}
           {valuation.reasoning ? (
             <p className="mt-2 text-[12px] leading-snug text-foreground/90">
               {valuation.reasoning}
