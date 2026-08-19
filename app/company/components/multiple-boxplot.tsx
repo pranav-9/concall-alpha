@@ -53,6 +53,14 @@ export function MultipleBoxplot({
           ? "end"
           : "middle";
 
+  // The "now" label and a range-end label share the same baseline row, so when the current marker
+  // sits in the outer third of the track (common: a multiple resting near the low end of its range)
+  // the two texts collide. Suppress that end's label — the "now" value already reads that end.
+  const nowFrac =
+    current === null ? 0.5 : (x(current) - PLOT_LEFT) / (PLOT_RIGHT - PLOT_LEFT);
+  const hideLoLabel = current !== null && nowFrac < 0.34;
+  const hideHiLabel = current !== null && nowFrac > 0.66;
+
   const ariaLabel =
     (current !== null ? `Now ${fmt(current)}. ` : "") +
     `${band.years}-year range ${fmt(whiskerLo)} to ${fmt(whiskerHi)}, ` +
@@ -89,13 +97,17 @@ export function MultipleBoxplot({
         med
       </text>
 
-      {/* Range end labels. */}
-      <text x={x(whiskerLo)} y={END_LABEL_Y} textAnchor="start" className="fill-muted-foreground tabular-nums" fontSize={8}>
-        {fmt(whiskerLo)}
-      </text>
-      <text x={x(whiskerHi)} y={END_LABEL_Y} textAnchor="end" className="fill-muted-foreground tabular-nums" fontSize={8}>
-        {fmt(whiskerHi)}
-      </text>
+      {/* Range end labels — the one nearest the "now" marker is suppressed to avoid a collision. */}
+      {hideLoLabel ? null : (
+        <text x={x(whiskerLo)} y={END_LABEL_Y} textAnchor="start" className="fill-muted-foreground tabular-nums" fontSize={8}>
+          {fmt(whiskerLo)}
+        </text>
+      )}
+      {hideHiLabel ? null : (
+        <text x={x(whiskerHi)} y={END_LABEL_Y} textAnchor="end" className="fill-muted-foreground tabular-nums" fontSize={8}>
+          {fmt(whiskerHi)}
+        </text>
+      )}
 
       {/* "Now" marker. */}
       {current !== null ? (

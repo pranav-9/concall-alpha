@@ -4,14 +4,16 @@
 //
 // Phase 12 / Business Analysis Framework v14 Section 6.
 //
-// Layout is verdict-led and visual (redesign 2026-08-18):
-//   1. The VERDICT hero leads — chip, score, a templated one-line thesis, the reasoning, and the
-//      score spectrum bar (with the score-history sparkline in its top-right slot). NOT RATED /
-//      stale is a designed state that replaces the hero, not an empty one.
-//   2. The reverse DCF ("what the price is assuming") is the block that says what the *price*
-//      assumes — the part a reader cannot get from a screener — shown as a horizon bar.
-//   3. Own-history multiples render as boxplots; overlay + "what would change the call" sit beside.
-//   4. "How this score was built" is a footer disclosure.
+// Layout is an editorial "plate" (redesign 2026-08-19), adapted into the portal's theme-aware
+// research tokens — NOT the light-only mockup literally:
+//   1. THE READ hero leads — an eyebrow, the verdict word set large in its band colour, a big score,
+//      the templated one-line thesis, the score spectrum, then the reasoning. NOT RATED / stale is a
+//      designed state that replaces the hero, not an empty one.
+//   2. Lower half is two columns. Left: REVERSE DCF (what growth the price banks on — implied CAGR
+//      vs our cases + delivered, NOT a rupee fair value, which the pipeline does not produce) and
+//      MULTIPLES (own history as boxplots). Right: PEG (four-band meters, display-only) and SCORE
+//      HISTORY (the reading trend).
+//   3. Quality/risk overlay + "what would change the call" sit below, then the footer disclosure.
 import {
   AlertTriangle,
   ArrowDownRight,
@@ -20,14 +22,17 @@ import {
   Minus,
   Plus,
 } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { chipBaseClass, chipClass, type ChipTone } from "./chip-tone";
-import { KpiSparkline } from "./kpi-sparkline";
 import { MultipleBoxplot } from "./multiple-boxplot";
+import { PegMeter, PegMeterLegend, pegBandFor, type PegBandKey } from "./valuation-peg-meter";
+import { ValuationScoreHistory } from "./valuation-score-history";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 import { ValuationHorizonBar, ValuationHorizonLegend } from "./valuation-horizon-bar";
 import { ValuationSpectrumBar } from "./valuation-spectrum-bar";
 import type { ValuationScorePoint } from "@/lib/valuation-check/history";
+import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
 import type { ValuationStaleness } from "@/lib/valuation-check/normalize";
 import type {
   NormalizedValuationCheck,
@@ -37,8 +42,8 @@ import type {
 } from "@/lib/valuation-check/types";
 import { cn } from "@/lib/utils";
 
-const sectionTitleClass = "text-[13px] font-semibold leading-tight text-foreground";
-const sectionSubtitleClass = "text-[12px] leading-snug text-muted-foreground";
+const eyebrowClass =
+  "text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground";
 
 const PILL_TONE: Record<ValuationPill, ChipTone> = {
   Cheap: "emerald",
@@ -47,13 +52,13 @@ const PILL_TONE: Record<ValuationPill, ChipTone> = {
   Stretched: "rose",
 };
 
-// Higher score = cheaper, so the tone runs the same way as the pills.
-const VERDICT_TONE: Record<ValuationVerdict, ChipTone> = {
-  "DEEPLY UNDERVALUED": "emerald",
-  UNDERVALUED: "emerald",
-  "FAIRLY VALUED": "slate",
-  EXPENSIVE: "amber",
-  "RICHLY PRICED": "rose",
+// Verdict word, Title-cased for the hero (the stored value is SHOUTED all-caps).
+const VERDICT_DISPLAY: Record<ValuationVerdict, string> = {
+  "DEEPLY UNDERVALUED": "Deeply undervalued",
+  UNDERVALUED: "Undervalued",
+  "FAIRLY VALUED": "Fairly valued",
+  EXPENSIVE: "Expensive",
+  "RICHLY PRICED": "Richly priced",
 };
 
 // Verdict-only fallback thesis when the pills/zone can't be combined into a sharper one.
@@ -65,8 +70,27 @@ const VERDICT_HEADLINE_FALLBACK: Record<ValuationVerdict, string> = {
   "RICHLY PRICED": "Priced well above what the fundamentals support.",
 };
 
+const PEG_CHIP_TONE: Record<PegBandKey, ChipTone> = {
+  cheap: "emerald",
+  fair: "slate",
+  rich: "amber",
+  expensive: "rose",
+};
+
 const formatMultiple = (value: number | null) =>
   value === null ? "—" : `${value.toFixed(1)}x`;
+
+/** Section label in the plate's grammar: an eyebrow with an optional right-aligned sub-label. */
+function PlateLabel({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+      <p className={eyebrowClass}>{children}</p>
+      {sub ? (
+        <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">{sub}</p>
+      ) : null}
+    </div>
+  );
+}
 
 /**
  * Deterministic one-line thesis, templated portal-side (the pipeline emits no headline — only the
@@ -157,18 +181,18 @@ const CALL_MARK: Record<
 type Props = {
   valuation: NormalizedValuationCheck;
   staleness: ValuationStaleness;
-  /** Published score readings over time. Sparkline is shown only at >=3 points —
-   * a one- or two-dot line reads as broken, not as a trend. */
+  /** Published score readings over time. Shown only at >=3 points — a one- or two-dot line reads
+   * as broken, not as a trend. */
   scoreHistory?: ValuationScorePoint[];
 };
 
-/** The reverse-DCF hero: what the current price is assuming, against our growth cases. */
+/** REVERSE DCF — what growth the price banks on (implied CAGR vs our cases + delivered). */
 function ImpliedGrowth({ valuation }: { valuation: NormalizedValuationCheck }) {
   if (!valuation.reverseDcfApplicable) {
     return (
-      <div className={cn(elevatedBlockClass, "px-4 py-3")}>
-        <p className={sectionTitleClass}>What the price is assuming</p>
-        <p className="mt-1.5 text-[12px] leading-snug text-muted-foreground">
+      <div className={cn(elevatedBlockClass, "px-4 py-3.5")}>
+        <PlateLabel sub="not applicable">Reverse DCF</PlateLabel>
+        <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
           {valuation.reverseDcfNote ??
             "A cash-flow model is not the right tool for this business type."}
         </p>
@@ -180,13 +204,8 @@ function ImpliedGrowth({ valuation }: { valuation: NormalizedValuationCheck }) {
   const hasBar = impliedCagrPct !== null;
 
   return (
-    <div className={cn(elevatedBlockClass, "px-4 py-3")}>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <p className={sectionTitleClass}>What the price is assuming</p>
-        <span className="text-[11px] leading-tight text-muted-foreground">
-          revenue growth a year, implied by today&apos;s price
-        </span>
-      </div>
+    <div className={cn(elevatedBlockClass, "px-4 py-3.5")}>
+      <PlateLabel sub="what growth the price banks on">Reverse DCF</PlateLabel>
 
       {hasBar ? (
         <div className="mt-3 space-y-2">
@@ -266,13 +285,38 @@ function LensRow({ lens }: { lens: NormalizedValuationLens }) {
   );
 }
 
+/** MULTIPLES — own-history boxplots, with the P/E industry median as block-level context. */
+function MultiplesBlock({ valuation }: { valuation: NormalizedValuationCheck }) {
+  if (!valuation.lenses.length) return null;
+  return (
+    <div className={cn(elevatedBlockClass, "px-4 py-3.5")}>
+      <PlateLabel sub="own history vs industry">Multiples</PlateLabel>
+      <div className="mt-3 space-y-2">
+        {valuation.lenses.map((lens) => (
+          <LensRow key={lens.id} lens={lens} />
+        ))}
+      </div>
+      {valuation.peerContext?.medianPe ? (
+        <p className="mt-2.5 text-[11px] leading-snug text-muted-foreground">
+          Industry median P/E is {valuation.peerContext.medianPe.toFixed(1)}x across{" "}
+          {valuation.peerContext.industryN} companies — shown as context only. It is a
+          whole-industry median, not a size-matched peer set, so it does not drive the badges above.
+        </p>
+      ) : null}
+      {valuation.peerContext?.qualityContextNote ? (
+        <p className="mt-1.5 text-[12px] leading-snug text-foreground/90">
+          {valuation.peerContext.qualityContextNote}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function Overlay({ valuation }: { valuation: NormalizedValuationCheck }) {
   if (!valuation.overlayRows.length) return null;
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        Quality &amp; risk overlay
-      </p>
+      <p className={eyebrowClass}>Quality &amp; risk overlay</p>
       <div className="mt-2 space-y-1.5">
         {valuation.overlayRows.map((row) => {
           const unavailable =
@@ -309,37 +353,65 @@ function Overlay({ valuation }: { valuation: NormalizedValuationCheck }) {
   );
 }
 
-/** PEG lenses — display-only context, never an input to the score. */
-function PegBlock({ peg }: { peg: NonNullable<NormalizedValuationCheck["peg"]> }) {
+/** One PEG leg — big ratio, band badge, meter, and the derivation caption. */
+function PegLeg({
+  title,
+  ratio,
+  caption,
+}: {
+  title: string;
+  ratio: number;
+  caption: string;
+}) {
+  const band = pegBandFor(ratio);
   return (
-    <div className={cn(nestedDetailClass, "px-3 py-2.5")}>
-      <p className="text-[12px] font-semibold text-foreground">
-        PEG <span className="font-normal text-muted-foreground">— P/E {formatMultiple(peg.pe)} per unit of growth</span>
-      </p>
-      <div className="mt-2 space-y-1.5">
-        {peg.trailing ? (
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-[12px]">
-            <span className="text-muted-foreground">
-              Trailing <span className="opacity-70">÷ {peg.trailing.growthPct.toFixed(0)}% delivered 5-yr EPS growth</span>
-            </span>
-            <span className="font-semibold tabular-nums text-foreground">
-              {peg.trailing.ratio.toFixed(2)}
-            </span>
-          </div>
-        ) : null}
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          {title}
+        </span>
+        <span className={chipClass(PEG_CHIP_TONE[band.key])}>{band.label}</span>
+      </div>
+      <div className="mt-1 flex items-baseline gap-2">
+        <span className={cn("text-2xl font-bold leading-none tabular-nums", band.textClass)}>
+          {ratio.toFixed(1)}
+        </span>
+        <span className="text-[11px] leading-snug text-muted-foreground">{caption}</span>
+      </div>
+      <div className="mt-2">
+        <PegMeter ratio={ratio} />
+      </div>
+    </div>
+  );
+}
+
+/** PEG — display-only context, never an input to the score. */
+function PegBlock({ peg }: { peg: NonNullable<NormalizedValuationCheck["peg"]> }) {
+  const pe = formatMultiple(peg.pe);
+  return (
+    <div className={cn(elevatedBlockClass, "px-4 py-3.5")}>
+      <PlateLabel sub="price paid for growth">PEG</PlateLabel>
+      <div className="mt-3 space-y-3.5">
         {peg.forward ? (
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-[12px]">
-            <span className="text-muted-foreground">
-              Forward <span className="opacity-70">÷ {peg.forward.growthPct.toFixed(0)}% base-case growth</span>
-            </span>
-            <span className="font-semibold tabular-nums text-foreground">
-              {peg.forward.ratio.toFixed(2)}
-            </span>
-          </div>
+          <PegLeg
+            title="Forward"
+            ratio={peg.forward.ratio}
+            caption={`P/E ${pe} ÷ ${peg.forward.growthPct.toFixed(0)}% base-case growth`}
+          />
+        ) : null}
+        {peg.trailing ? (
+          <PegLeg
+            title="Trailing"
+            ratio={peg.trailing.ratio}
+            caption={`P/E ${pe} ÷ ${peg.trailing.growthPct.toFixed(0)}% delivered 5-yr EPS growth`}
+          />
         ) : null}
       </div>
+      <div className="mt-3">
+        <PegMeterLegend />
+      </div>
       <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-        Context only — neither feeds the score below.
+        Context only — neither feeds the score.
         {peg.forward
           ? " The forward leg divides an earnings multiple by our base-case revenue growth (we don't forecast EPS), so read it as directional."
           : ""}
@@ -355,14 +427,24 @@ function PegBlock({ peg }: { peg: NonNullable<NormalizedValuationCheck["peg"]> }
   );
 }
 
+/** SCORE HISTORY — the reading trend, its own panel. Only shown at >=3 points. */
+function ScoreHistoryBlock({ points }: { points: ValuationScorePoint[] }) {
+  return (
+    <div className={cn(elevatedBlockClass, "px-4 py-3.5")}>
+      <PlateLabel sub={`${points.length} readings`}>Score history</PlateLabel>
+      <div className="mt-3">
+        <ValuationScoreHistory points={points} />
+      </div>
+    </div>
+  );
+}
+
 /** "What would change the call" — presentation-only directional cues; never an input to the score. */
 function WhatWouldChange({ items }: { items: string[] }) {
   if (!items.length) return null;
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        What would change the call
-      </p>
+      <p className={eyebrowClass}>What would change the call</p>
       <ul className="mt-2 space-y-1.5">
         {items.map((item) => {
           const { Icon, className } = CALL_MARK[callDirection(item)];
@@ -383,48 +465,68 @@ export function ValuationCheckSection({ valuation, staleness, scoreHistory }: Pr
   const headline = showVerdict ? buildHeadline(valuation) : null;
   // A one- or two-dot line reads as broken, not a trend.
   const showScoreTrend = (scoreHistory?.length ?? 0) >= 3;
-  const scoreTrend = showScoreTrend ? (
-    <div className="flex items-center gap-1.5">
-      <KpiSparkline
-        points={scoreHistory!}
-        ariaLabel={`Valuation score trend across ${scoreHistory!.length} readings`}
-        className="h-6 w-16"
-      />
-      <span className="text-[10px] text-muted-foreground">{scoreHistory!.length} readings</span>
-    </div>
-  ) : null;
+
+  // The verdict word is set in the band colour that matches the score's position on the spectrum.
+  const heroBand =
+    valuation.score !== null
+      ? VALUATION_BANDS[bandForValuationScore(valuation.score / 10)]
+      : null;
+  const verdictColorClass = heroBand?.textClass ?? "text-foreground";
+
+  const hasLowerLeft = valuation.reverseDcfApplicable || valuation.lenses.length > 0;
+  const hasLowerRight = Boolean(valuation.peg) || showScoreTrend;
 
   return (
     <div className="space-y-4">
       {valuation.lensStatement ? (
-        <p className={sectionSubtitleClass}>{valuation.lensStatement}</p>
+        <p className="text-[12px] leading-snug text-muted-foreground">{valuation.lensStatement}</p>
       ) : null}
 
-      {/* 1. Verdict hero — or the designed NOT-RATED / stale state. */}
+      {/* 1. THE READ hero — or the designed NOT-RATED / stale state. */}
       {showVerdict ? (
-        <div className={cn(elevatedBlockClass, "space-y-3 px-4 py-3")}>
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
-            <span className={chipClass(VERDICT_TONE[valuation.verdict!])}>
-              {valuation.verdict}
-            </span>
-            <span className="text-[12px] text-muted-foreground">
-              <span className="text-base font-semibold tabular-nums text-foreground">
-                {valuation.score}
-              </span>
-              /100 — higher is cheaper
-            </span>
+        <div className={cn(elevatedBlockClass, "px-4 py-4 sm:px-5")}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className={eyebrowClass}>The read</p>
+              <p
+                className={cn(
+                  "mt-1 text-[2rem] font-bold leading-none tracking-[-0.01em] sm:text-4xl",
+                  verdictColorClass,
+                )}
+              >
+                {VERDICT_DISPLAY[valuation.verdict!]}
+              </p>
+            </div>
+            {valuation.score !== null ? (
+              <div className="shrink-0 text-right">
+                <p className="text-[2rem] font-bold leading-none tabular-nums text-foreground sm:text-4xl">
+                  {valuation.score}
+                </p>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                  of 100 · higher is cheaper
+                </p>
+              </div>
+            ) : null}
           </div>
 
           {headline ? (
-            <p className="text-base font-medium leading-relaxed text-foreground">{headline}</p>
+            <p className="mt-3 text-[15px] font-medium leading-snug text-foreground">{headline}</p>
+          ) : null}
+
+          {valuation.score !== null ? (
+            <div className="mt-4">
+              <ValuationSpectrumBar score={valuation.score} hideHeader />
+            </div>
           ) : null}
 
           {valuation.reasoning ? (
-            <p className="text-[12px] leading-snug text-foreground/90">{valuation.reasoning}</p>
+            <p className="mt-4 text-[12px] leading-relaxed text-foreground/85">
+              {valuation.reasoning}
+            </p>
           ) : null}
 
           {valuation.capsApplied.length ? (
-            <ul className="space-y-1">
+            <ul className="mt-3 space-y-1">
               {valuation.capsApplied.map((cap) => (
                 <li
                   key={cap}
@@ -436,18 +538,13 @@ export function ValuationCheckSection({ valuation, staleness, scoreHistory }: Pr
               ))}
             </ul>
           ) : null}
-
-          {valuation.score !== null ? (
-            <div className="pt-1">
-              <ValuationSpectrumBar score={valuation.score} trend={scoreTrend} />
-            </div>
-          ) : null}
         </div>
       ) : (
         // Designed state, not an empty one — the reader is told what is missing and why,
         // and still gets whatever lenses / reverse DCF computed below.
-        <div className={cn(elevatedBlockClass, "px-4 py-3")}>
-          <div className="flex flex-wrap items-center gap-2">
+        <div className={cn(elevatedBlockClass, "px-4 py-4 sm:px-5")}>
+          <p className={eyebrowClass}>The read</p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <span className={cn(chipBaseClass, "border-dashed border-border/60 text-muted-foreground")}>
               No verdict
             </span>
@@ -463,45 +560,32 @@ export function ValuationCheckSection({ valuation, staleness, scoreHistory }: Pr
         </div>
       )}
 
-      {/* 2. What the price is assuming — the reverse DCF horizon bar. */}
-      <ImpliedGrowth valuation={valuation} />
-
-      {/* 3. Own history (boxplots) beside quality overlay + what-would-change. */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {valuation.lenses.length ? (
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Against its own history
-            </p>
-            <div className="mt-2 space-y-2">
-              {valuation.lenses.map((lens) => (
-                <LensRow key={lens.id} lens={lens} />
-              ))}
+      {/* 2. Lower half — two columns. Left: reverse DCF + multiples. Right: PEG + score history. */}
+      {hasLowerLeft || hasLowerRight ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {hasLowerLeft ? (
+            <div className="space-y-4">
+              <ImpliedGrowth valuation={valuation} />
+              <MultiplesBlock valuation={valuation} />
             </div>
-            {valuation.peerContext?.medianPe ? (
-              <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-                Industry median P/E is {valuation.peerContext.medianPe.toFixed(1)}x across{" "}
-                {valuation.peerContext.industryN} companies — shown as context only. It is a
-                whole-industry median, not a size-matched peer set, so it does not drive the
-                badges above.
-              </p>
-            ) : null}
-            {valuation.peerContext?.qualityContextNote ? (
-              <p className="mt-1.5 text-[12px] leading-snug text-foreground/90">
-                {valuation.peerContext.qualityContextNote}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
+          ) : null}
 
-        <div className="space-y-4">
+          {hasLowerRight ? (
+            <div className="space-y-4">
+              {valuation.peg ? <PegBlock peg={valuation.peg} /> : null}
+              {showScoreTrend ? <ScoreHistoryBlock points={scoreHistory!} /> : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* 3. Quality/risk overlay + what-would-change. */}
+      {valuation.overlayRows.length || valuation.whatWouldChangeTheCall.length ? (
+        <div className="grid gap-4 sm:grid-cols-2">
           <Overlay valuation={valuation} />
           <WhatWouldChange items={valuation.whatWouldChangeTheCall} />
         </div>
-      </div>
-
-      {/* PEG — display-only context, kept when present. */}
-      {valuation.peg ? <PegBlock peg={valuation.peg} /> : null}
+      ) : null}
 
       {/* 4. Footer: pricing note + derivation disclosure. */}
       {valuation.pricedAsOf || valuation.derivation.length ? (

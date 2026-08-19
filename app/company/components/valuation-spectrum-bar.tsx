@@ -23,10 +23,14 @@ const RAMP: ValuationBandKey[] = [
 export function ValuationSpectrumBar({
   score,
   trend,
+  hideHeader = false,
 }: {
   score: number;
   /** Optional score-history sparkline, rendered in the reserved top-right slot. */
   trend?: ReactNode;
+  /** Hide the "Score · higher is cheaper" header row — the plate hero already carries the score
+   * and that caption, so repeating it above the ramp is redundant. */
+  hideHeader?: boolean;
 }) {
   // Stored 0–100. Clamp so an out-of-range value can't push the pointer off the track.
   const clamped = Math.max(0, Math.min(100, score));
@@ -34,12 +38,14 @@ export function ValuationSpectrumBar({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          Score · higher is cheaper
-        </p>
-        {trend ? <div className="shrink-0">{trend}</div> : null}
-      </div>
+      {!hideHeader ? (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            Score · higher is cheaper
+          </p>
+          {trend ? <div className="shrink-0">{trend}</div> : null}
+        </div>
+      ) : null}
 
       <div
         role="img"
