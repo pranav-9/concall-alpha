@@ -1,0 +1,170 @@
+{
+  "pkg": "concall-alpha",
+  "globalName": "PortalDS",
+  "projectId": "6064e2ac-c269-4a7a-aeae-5000b77ef444",
+  "shape": "package",
+  "srcDir": "components",
+  "tsconfig": ".design-sync/tsconfig.ds.json",
+  "buildCmd": "node .design-sync/build-css.mjs && node .design-sync/build-types.mjs",
+  "cssEntry": ".design-sync/build/ds.css",
+  "docsDir": ".design-sync/docs",
+  "componentSrcMap": {
+    "Avatar": "components/ui/avatar.tsx",
+    "Badge": "components/ui/badge.tsx",
+    "BandSummaryLine": "components/band-summary-line.tsx",
+    "BrandLogo": "components/brand/logo.tsx",
+    "BrandMark": "components/brand/logo.tsx",
+    "Breadcrumb": "components/ui/breadcrumb.tsx",
+    "BusinessSegmentMixBar": "app/company/components/business-segment-mix-bar.tsx",
+    "BusinessSegmentsMosaic": "app/company/components/business-segments-mosaic.tsx",
+    "BusinessSnapshotSection": "app/company/components/business-snapshot-section.tsx",
+    "Button": "components/ui/button.tsx",
+    "Card": "components/ui/card.tsx",
+    "Carousel": "components/ui/carousel.tsx",
+    "ChartContainer": "components/ui/chart.tsx",
+    "Checkbox": "components/ui/checkbox.tsx",
+    "ColumnInfo": "app/company/components/column-info.tsx",
+    "CompetitiveStrategyDisplay": "app/company/components/competitive-strategy-display.tsx",
+    "ConcallScore": "components/concall-score.tsx",
+    "ConcallScoreSection": "app/company/components/concall-score-section.tsx",
+    "Drawer": "components/ui/drawer.tsx",
+    "DropdownMenu": "components/ui/dropdown-menu.tsx",
+    "ExpandableText": "app/company/components/expandable-text.tsx",
+    "FreshScoreChip": "components/score-provenance-chips.tsx",
+    "FutureGrowthSection": "app/company/components/future-growth-section.tsx",
+    "GuidanceHistorySection": "app/company/components/guidance-history-section.tsx",
+    "HistoricalEconomicsDataPack": "app/company/components/historical-economics-data-pack.tsx",
+    "Input": "components/ui/input.tsx",
+    "KeyVariablesSection": "app/company/components/key-variables-section.tsx",
+    "KpiSparkline": "app/company/components/kpi-sparkline.tsx",
+    "Label": "components/ui/label.tsx",
+    "MissingSectionState": "app/company/components/missing-section-state.tsx",
+    "MoatAnalysisSection": "app/company/components/moat-analysis-section.tsx",
+    "NextQuarterWatch": "app/company/components/next-quarter-watch.tsx",
+    "OverviewCard": "app/company/components/overview-card.tsx",
+    "Popover": "components/ui/popover.tsx",
+    "ReadDistributionCurve": "components/read-distribution-curve.tsx",
+    "ScoreBandPill": "app/company/components/score-band-pill.tsx",
+    "ScoreDelta": "components/score-delta.tsx",
+    "SectionCard": "app/company/components/section-card.tsx",
+    "SectionLoading": "app/company/components/section-loading.tsx",
+    "SegmentHistoryPanel": "app/company/components/segment-history-panel.tsx",
+    "SegmentRevenueDisplay": "app/company/components/segment-revenue-display.tsx",
+    "Select": "components/ui/select.tsx",
+    "Separator": "components/ui/separator.tsx",
+    "Sheet": "components/ui/sheet.tsx",
+    "Sidebar": "components/ui/sidebar.tsx",
+    "SidebarNavigation": "app/company/components/sidebar-navigation.tsx",
+    "Skeleton": "components/ui/skeleton.tsx",
+    "StanceBadge": "app/company/components/stance-badge.tsx",
+    "SubSectorTabs": "app/company/components/sub-sector-tabs.tsx",
+    "Table": "components/ui/table.tsx",
+    "Tabs": "components/ui/tabs.tsx",
+    "TheReadOverview": "app/company/components/overview-the-read.tsx",
+    "ThemeSwitcher": "components/theme-switcher.tsx",
+    "Toaster": "components/ui/sonner.tsx",
+    "Toggle": "components/ui/toggle.tsx",
+    "ToggleGroup": "components/ui/toggle-group.tsx",
+    "Tooltip": "components/ui/tooltip.tsx",
+    "TopSectionTabs": "app/company/components/top-section-tabs.tsx",
+    "TopStrategiesDisplay": "app/company/components/top-strategies-display.tsx",
+    "TrendBadge": "app/company/components/trend-badge.tsx",
+    "UnofficialChip": "components/score-provenance-chips.tsx",
+    "V4CategoryCards": "app/company/components/quarterly-v4-section.tsx",
+    "ValuationCheckSection": "app/company/components/valuation-check-section.tsx",
+    "WalkTheTalkSection": "app/company/components/walk-the-talk-section.tsx"
+  },
+  "overrides": {
+    "DropdownMenu": {
+      "cardMode": "single",
+      "primaryStory": "CompanyKebabMenu"
+    },
+    "Popover": {
+      "cardMode": "single",
+      "primaryStory": "ColumnExplainer"
+    },
+    "Tooltip": {
+      "cardMode": "single",
+      "primaryStory": "ColumnHeaderTooltip"
+    },
+    "Drawer": {
+      "cardMode": "single",
+      "primaryStory": "KeyVariablesDiscovery"
+    },
+    "Sheet": {
+      "cardMode": "single",
+      "primaryStory": "MobileNav"
+    },
+    "Sidebar": {
+      "cardMode": "column"
+    },
+    "Table": {
+      "cardMode": "column"
+    },
+    "SidebarNavigation": {
+      "viewport": "1280x900",
+      "cardMode": "column"
+    },
+    "TopSectionTabs": {
+      "viewport": "1280x900",
+      "cardMode": "single",
+      "primaryStory": "CompanySectionSwitcher"
+    },
+    "CompetitiveStrategyDisplay": {
+      "cardMode": "column"
+    },
+    "SegmentHistoryPanel": {
+      "cardMode": "column"
+    },
+    "BusinessSnapshotSection": {
+      "cardMode": "column",
+      "viewport": "900x1100"
+    },
+    "HistoricalEconomicsDataPack": {
+      "cardMode": "column",
+      "viewport": "900x850"
+    },
+    "MoatAnalysisSection": {
+      "viewport": "900x1500"
+    },
+    "GuidanceHistorySection": {
+      "cardMode": "column"
+    },
+    "FutureGrowthSection": {
+      "cardMode": "column",
+      "viewport": "900x1000"
+    },
+    "ValuationCheckSection": {
+      "viewport": "900x1000"
+    },
+    "ConcallScoreSection": {
+      "viewport": "900x1000",
+      "cardMode": "column"
+    },
+    "TheReadOverview": {
+      "viewport": "900x1000"
+    },
+    "BrandLogo": {
+      "cardMode": "column"
+    },
+    "BrandMark": {
+      "cardMode": "column"
+    },
+    "TopStrategiesDisplay": {
+      "cardMode": "column"
+    },
+    "ChartContainer": {
+      "cardMode": "column"
+    },
+    "Skeleton": {
+      "cardMode": "column"
+    },
+    "Tabs": {
+      "cardMode": "column"
+    },
+    "ThemeSwitcher": {
+      "cardMode": "column"
+    }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}
