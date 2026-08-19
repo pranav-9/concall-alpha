@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@/lib/utils": [
+        "./.design-sync/shims/lib-utils.ts"
+      ],
+      "@/lib/analytics": [
+        "./.design-sync/shims/lib-analytics.ts"
+      ],
+      "next/link": [
+        "./.design-sync/shims/next-link.tsx"
+      ],
+      "next/image": [
+        "./.design-sync/shims/next-image.tsx"
+      ],
+      "next/navigation": [
+        "./.design-sync/shims/next-navigation.ts"
+      ],
+      "next/dynamic": [
+        "./.design-sync/shims/next-dynamic.tsx"
+      ],
+      "@/*": [
+        "./*"
+      ]
+    }
+  }
+}

@@ -41,3 +41,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .gstack/
+
+# /design-sync (claude.ai/design export)
+/.ds-sync/
+/ds-bundle/
+/dist/
+/.design-sync/.cache/
+/.design-sync/learnings/
+/.design-sync/node_modules
+/.design-sync/build/
+/.design-sync/.srcmap.json

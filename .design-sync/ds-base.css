@@ -1,0 +1,17 @@
+/* Base layer the Next.js app applies on <body> rather than in globals.css, so a
+ * plain Tailwind compile drops it. app/layout.tsx puts geistSans.className plus
+ * the two font variables on <body>; this reproduces that for any design built
+ * with this system. Colors are NOT repeated here — globals.css already carries
+ * `body { @apply bg-background text-foreground }` into the compiled output.
+ */
+:root {
+  --font-geist-sans: "Geist";
+  --font-display: "Bricolage Grotesque";
+  --font-data: "IBM Plex Mono";
+}
+
+body {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
