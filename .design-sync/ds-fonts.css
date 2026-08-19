@@ -1,0 +1,12 @@
+/* The portal loads its three faces through next/font/google, which only exists
+ * inside a Next build. A design-system export has no such step, so the same
+ * families are pulled from Google Fonts directly and bound to the very
+ * custom properties app/layout.tsx sets (--font-geist-sans, --font-display,
+ * --font-data). Without this block every design renders in a fallback face and
+ * nothing downstream catches it.
+ *
+ * Geist        -> body text          (app/layout.tsx: geistSans)
+ * Bricolage    -> --font-display     (.house-display, landing headlines)
+ * IBM Plex Mono-> --font-data        (.house-data, tabular figures)
+ */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap");
