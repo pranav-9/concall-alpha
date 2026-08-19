@@ -68,12 +68,6 @@ const VERDICT_HEADLINE_FALLBACK: Record<ValuationVerdict, string> = {
 const formatMultiple = (value: number | null) =>
   value === null ? "—" : `${value.toFixed(1)}x`;
 
-// One decimal, not zero: the payload carries 5.5% and the narrator prose quotes 5.5%, so an
-// integer headline rendered "6%" directly above a paragraph saying "5.5%" — the section
-// disagreeing with its own explanation.
-const formatPct = (value: number | null) =>
-  value === null ? "—" : `${value.toFixed(1)}%`;
-
 /**
  * Deterministic one-line thesis, templated portal-side (the pipeline emits no headline — only the
  * multi-sentence `reasoning`). It combines two grounded reads: what the OWN-HISTORY multiples say
@@ -187,17 +181,11 @@ function ImpliedGrowth({ valuation }: { valuation: NormalizedValuationCheck }) {
 
   return (
     <div className={cn(elevatedBlockClass, "px-4 py-3")}>
-      <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <p className={sectionTitleClass}>What the price is assuming</p>
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-semibold tabular-nums text-foreground">
-            {formatPct(impliedCagrPct)}
-          </span>
-          <span className="text-[11px] leading-tight text-muted-foreground">
-            growth a year, implied
-            <br className="hidden sm:block" /> by today&apos;s price
-          </span>
-        </div>
+        <span className="text-[11px] leading-tight text-muted-foreground">
+          revenue growth a year, implied by today&apos;s price
+        </span>
       </div>
 
       {hasBar ? (
