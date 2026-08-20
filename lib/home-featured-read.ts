@@ -21,7 +21,7 @@ import { createPublicReadClient } from "./supabase/public-read";
 import { toValuationScale } from "./valuation-band";
 import { assessStaleness } from "./valuation-check/normalize";
 import { mean4QFromSeries } from "./quarter-composite";
-import { pickFeaturedRead, type FeaturedCandidate, type FeaturedRead } from "./home-featured-read-core";
+import { pickFeaturedReads, type FeaturedCandidate, type FeaturedRead } from "./home-featured-read-core";
 
 export type { FeaturedRead } from "./home-featured-read-core";
 
@@ -35,7 +35,7 @@ type ValuationRow = {
   price_at_run: number | null;
 };
 
-async function fetchFeaturedRead(): Promise<FeaturedRead | null> {
+async function fetchFeaturedReads(): Promise<FeaturedRead[]> {
   const supabase = createPublicReadClient();
 
   const [{ wall }, growthRes, valuationRes] = await Promise.all([
@@ -92,9 +92,23 @@ async function fetchFeaturedRead(): Promise<FeaturedRead | null> {
     };
   });
 
-  return pickFeaturedRead(candidates);
+  // The full ranked list: the equation hero takes [0], the compare-sectors
+  // table takes the top slice. One fetch, one cache entry serves both.
+  return pickFeaturedReads(candidates);
 }
 
-export const getCachedFeaturedRead = unstable_cache(fetchFeaturedRead, ["home-featured-read-v1"], {
+const getCachedFeaturedReadsAll = unstable_cache(fetchFeaturedReads, ["home-featured-reads-v1"], {
   revalidate: 600,
 });
+
+/** The ranked featured reads (highest composite first). Empty when no company
+ *  clears all three legs with a positive verdict. */
+export async function getCachedFeaturedReads(): Promise<FeaturedRead[]> {
+  return getCachedFeaturedReadsAll();
+}
+
+/** The single featured read (rank 0), or null. Derived from the same cached
+ *  list so it can't disagree with the compare table. */
+export async function getCachedFeaturedRead(): Promise<FeaturedRead | null> {
+  return (await getCachedFeaturedReadsAll())[0] ?? null;
+}
