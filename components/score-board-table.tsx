@@ -230,7 +230,7 @@ const COLUMN_INFO = {
     <>
       <p>
         Growth outlook, 0–10 — a forward read rather than a print. Band cuts are fixed and
-        absolute (Exceptional ≥ 8.5 down to Weak), not percentiles of the cohort, so they stay
+        absolute (Exceptional ≥ 7.8 down to Weak), not percentiles of the cohort, so they stay
         comparable across companies and over time.
       </p>
     </>

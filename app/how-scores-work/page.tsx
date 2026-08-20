@@ -67,12 +67,12 @@ const growthScenarioReadPoints = [
 ];
 
 const growthBands = [
-  { label: "Exceptional", cut: "≥ 8.5", body: "Top-conviction outlook: strong base, well-supported scenarios, durable catalysts." },
-  { label: "Strong", cut: "8.0 – 8.4", body: "Solid base growth and supportive scenarios; visible execution path." },
-  { label: "Solid", cut: "7.5 – 7.9", body: "Clearly positive outlook with reasonable conviction; some moving parts to monitor." },
-  { label: "Moderate", cut: "7.0 – 7.4", body: "Mixed conviction or lower base growth; needs further evidence to firm up." },
-  { label: "Soft", cut: "6.5 – 6.9", body: "Weak conviction or downside-heavy scenarios; growth is unclear." },
-  { label: "Weak", cut: "< 6.5", body: "Material concerns on growth visibility or execution." },
+  { label: "Exceptional", cut: "≥ 7.8", body: "Top-conviction outlook: strong base, well-supported scenarios, durable catalysts." },
+  { label: "Strong", cut: "7.2 – 7.7", body: "Solid base growth and supportive scenarios; visible execution path." },
+  { label: "Solid", cut: "6.5 – 7.1", body: "Clearly positive outlook with reasonable conviction; some moving parts to monitor." },
+  { label: "Moderate", cut: "5.8 – 6.4", body: "Mixed conviction or lower base growth; needs further evidence to firm up." },
+  { label: "Soft", cut: "5.0 – 5.7", body: "Weak conviction or downside-heavy scenarios; growth is unclear." },
+  { label: "Weak", cut: "< 5.0", body: "Material concerns on growth visibility or execution." },
 ];
 
 const growthReturnedFields = [

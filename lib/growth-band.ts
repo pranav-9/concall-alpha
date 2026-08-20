@@ -1,13 +1,19 @@
 // Growth-specific score → band classification + colours. Sibling to score-band.ts
 // (Quarterly / sentiment bands). Kept separate because the Growth Score is a
-// forward outlook, not a sentiment read — and the observed distribution lives in
-// a much tighter window (~6.6–8.7 today) than Quarterly, so sentiment bands
-// collapsed 97% of companies into 2 buckets.
+// forward outlook, not a sentiment read.
+//
+// Cuts retuned 2026-08-20 for the growth-score v5 recalibration (scenario-led,
+// frozen spread stretch): the fleet now spans ~2.9–8.3 (median 6.5, sd 0.79),
+// where the pre-v5 leg was crushed into ~6.6–8.7 (sd 0.40) and left "Exceptional"
+// permanently empty and half the fleet mislabelled "Weak". The teal/amber break
+// sits at the median (≥6.5 = teal-positive; below = amber→red caution), so the
+// bands split the live distribution ~5/15/32/30/16/1%.
 //
 // FIXED absolute cuts (not percentile-of-cohort) so labels stay stable over
-// time and comparable across companies, matching score-band.ts's philosophy.
+// time and comparable across companies, matching score-band.ts's philosophy —
+// which means these cuts must be re-measured if the v5 composite is reweighted.
 // Palette mirrors the teal ramp from score-band so growth and quarterly badges
-// share a visual identity; "Weak" reuses the bearish red since a sub-6.5 growth
+// share a visual identity; "Weak" reuses the bearish red since a sub-5.0 growth
 // score does signal real concern.
 
 export type GrowthBandKey =
@@ -35,7 +41,7 @@ export const GROWTH_BANDS: Record<GrowthBandKey, GrowthBandDef> = {
   exceptional: {
     key: "exceptional",
     label: "Exceptional",
-    description: "≥ 8.5",
+    description: "≥ 7.8",
     tone: "text-teal-400",
     barClass: "bg-teal-700",
     textClass: "text-teal-700 dark:text-teal-300",
@@ -47,7 +53,7 @@ export const GROWTH_BANDS: Record<GrowthBandKey, GrowthBandDef> = {
   strong: {
     key: "strong",
     label: "Strong",
-    description: "8.0 – 8.4",
+    description: "7.2 – 7.7",
     tone: "text-teal-400",
     barClass: "bg-teal-500",
     textClass: "text-teal-700 dark:text-teal-300",
@@ -59,7 +65,7 @@ export const GROWTH_BANDS: Record<GrowthBandKey, GrowthBandDef> = {
   solid: {
     key: "solid",
     label: "Solid",
-    description: "7.5 – 7.9",
+    description: "6.5 – 7.1",
     tone: "text-teal-400",
     barClass: "bg-teal-300",
     textClass: "text-teal-700 dark:text-teal-300",
@@ -71,7 +77,7 @@ export const GROWTH_BANDS: Record<GrowthBandKey, GrowthBandDef> = {
   moderate: {
     key: "moderate",
     label: "Moderate",
-    description: "7.0 – 7.4",
+    description: "5.8 – 6.4",
     tone: "text-amber-400",
     barClass: "bg-amber-400",
     textClass: "text-amber-700 dark:text-amber-300",
@@ -83,7 +89,7 @@ export const GROWTH_BANDS: Record<GrowthBandKey, GrowthBandDef> = {
   soft: {
     key: "soft",
     label: "Soft",
-    description: "6.5 – 6.9",
+    description: "5.0 – 5.7",
     tone: "text-rose-400",
     barClass: "bg-orange-500",
     textClass: "text-orange-700 dark:text-orange-300",
@@ -95,7 +101,7 @@ export const GROWTH_BANDS: Record<GrowthBandKey, GrowthBandDef> = {
   weak: {
     key: "weak",
     label: "Weak",
-    description: "< 6.5",
+    description: "< 5.0",
     tone: "text-rose-400",
     barClass: "bg-red-600",
     textClass: "text-red-700 dark:text-red-300",
@@ -116,10 +122,10 @@ export const GROWTH_BAND_ORDER: GrowthBandKey[] = [
 ];
 
 export function bandForGrowthScore(score: number): GrowthBandKey {
-  if (score >= 8.5) return "exceptional";
-  if (score >= 8) return "strong";
-  if (score >= 7.5) return "solid";
-  if (score >= 7) return "moderate";
-  if (score >= 6.5) return "soft";
+  if (score >= 7.8) return "exceptional";
+  if (score >= 7.2) return "strong";
+  if (score >= 6.5) return "solid";
+  if (score >= 5.8) return "moderate";
+  if (score >= 5.0) return "soft";
   return "weak";
 }
