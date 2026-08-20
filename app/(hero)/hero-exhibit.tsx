@@ -29,7 +29,7 @@ export function HeroExhibitFallback() {
 const DeskCta = () => (
   <Link
     href="/desk"
-    className="house-data house-micro inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-5 py-3 text-[var(--paper-2)] transition-opacity hover:opacity-90"
+    className="house-data inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-8 py-4 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--paper-2)] shadow-[0_18px_40px_-14px_rgba(0,0,0,0.55)] ring-1 ring-black/5 transition-transform hover:-translate-y-0.5"
   >
     Open the Desk →
   </Link>

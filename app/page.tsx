@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import HeroExhibit, { HeroExhibitFallback } from "./(hero)/hero-exhibit";
+import { DeskStickyCta } from "./(hero)/desk-sticky-cta";
 import { QuarterTrackerBanner } from "@/components/quarter-tracker-banner";
 
 // Title/description are inherited from the root layout; this exists only to
@@ -112,6 +113,8 @@ export default async function Home() {
           </Link>
         </p>
       </div>
+
+      <DeskStickyCta />
     </main>
   );
 }
