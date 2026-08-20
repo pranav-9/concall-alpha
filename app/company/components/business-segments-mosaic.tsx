@@ -50,56 +50,57 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
     return (
       <div
         key={`${entry.name}-${variant}-${idx}`}
-        className={`rounded-xl border border-border/20 bg-background/25 ${
-          isVisible ? "h-full p-3" : "p-2"
+        className={`flex h-full flex-col rounded-xl border border-border/20 bg-background/25 ${
+          isVisible ? "p-3 sm:p-3.5" : "p-2.5"
         }`}
       >
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 space-y-1.5">
-            <div className="flex flex-wrap items-center gap-1.5">
-              {accentColor && (
-                <span
-                  style={{
-                    display: "inline-block",
-                    width: isVisible ? "8px" : "6px",
-                    height: isVisible ? "8px" : "6px",
-                    borderRadius: "50%",
-                    backgroundColor: accentColor,
-                    flexShrink: 0,
-                  }}
-                />
-              )}
-              <p
-                className={`${
-                  isVisible ? "text-[13px]" : "text-[11px]"
-                } font-medium leading-snug text-foreground`}
-              >
-                {entry.name}
-              </p>
-            </div>
-            {entry.description && (
-              <p
-                className={`${
-                  isVisible ? "text-[12px]" : "text-[11px]"
-                } leading-relaxed text-muted-foreground`}
-              >
-                {entry.description}
-              </p>
-            )}
-          </div>
-          {entry.revenueSharePercent != null && (
-            <span className="shrink-0 rounded-full border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] text-foreground">
-              {formatPctLabel(entry.revenueSharePercent)}
-            </span>
+        {/* Label row: colour dot + uppercase segment name. */}
+        <div className="flex items-start gap-1.5">
+          {accentColor && (
+            <span
+              style={{
+                display: "inline-block",
+                width: "7px",
+                height: "7px",
+                borderRadius: "50%",
+                backgroundColor: accentColor,
+                flexShrink: 0,
+                marginTop: "4px",
+              }}
+            />
           )}
+          <p className="min-w-0 text-[10px] font-semibold uppercase leading-tight tracking-[0.1em] text-muted-foreground">
+            {entry.name}
+          </p>
         </div>
+
+        {/* Hero share number. */}
+        {entry.revenueSharePercent != null && (
+          <p
+            className={`${
+              isVisible ? "text-2xl sm:text-[26px]" : "text-xl"
+            } mt-1.5 font-semibold leading-none tracking-tight text-foreground`}
+          >
+            {formatPctLabel(entry.revenueSharePercent)}
+          </p>
+        )}
+
+        {entry.description && (
+          <p
+            className={`${
+              entry.revenueSharePercent != null ? "mt-2" : "mt-1.5"
+            } text-[11px] leading-relaxed text-muted-foreground`}
+          >
+            {entry.description}
+          </p>
+        )}
       </div>
     );
   };
 
   const cardsSurface = (
-    <div className="min-w-0 rounded-xl border border-border/20 bg-background/25 p-3">
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+    <div className="min-w-0 rounded-xl border border-border/20 bg-background/25 p-2.5 sm:p-3">
+      <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
         {visibleEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "visible"))}
       </div>
       {extraEntries.length > 0 && (
@@ -110,7 +111,7 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
               <span className="text-muted-foreground">({extraEntries.length})</span>
             </div>
           </summary>
-          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:gap-2.5">
             {extraEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "extra"))}
           </div>
         </details>
