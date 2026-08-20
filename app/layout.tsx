@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Geist, IBM_Plex_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Caveat, Geist, IBM_Plex_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
@@ -62,6 +62,15 @@ const houseData = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
 });
 
+// The homepage hero's handwritten voice (see the approved mockup). Scoped to the
+// hero headline/subhead via `.house-hand`; the rest of the site keeps the grotesque.
+const houseHand = Caveat({
+  variable: "--font-hand",
+  display: "swap",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
 async function NavbarWithUser() {
   const supabase = await createClient();
   const [userResult, initialCompanies] = await Promise.all([
@@ -116,7 +125,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.className} ${houseDisplay.variable} ${houseData.variable} min-h-screen bg-background text-foreground antialiased`}
+        className={`${geistSans.className} ${houseDisplay.variable} ${houseData.variable} ${houseHand.variable} min-h-screen bg-background text-foreground antialiased`}
       >
         <ThemeProvider
           attribute="class"

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import HeroExhibit, { HeroExhibitFallback, HeroSecondBand } from "./(hero)/hero-exhibit";
-import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
+import HeroExhibit, { HeroExhibitFallback } from "./(hero)/hero-exhibit";
 import { QuarterTrackerBanner } from "@/components/quarter-tracker-banner";
 
 // Title/description are inherited from the root layout; this exists only to
@@ -60,39 +59,18 @@ const READS = [
 ];
 
 export default async function Home() {
-  const companies = await getCachedCompanySearchRows().catch(() => []);
-
   return (
     <main className="house relative min-h-screen">
       <QuarterTrackerBanner />
 
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-12 px-4 pb-16 sm:px-6 lg:gap-16 lg:px-10">
-        {/* The exhibit — one company's whole scored history, full viewport. */}
-        <section className="flex min-h-[calc(100svh-var(--global-navbar-height,4.25rem)-var(--quarter-tracker-banner-height,2.25rem))] flex-col justify-center py-6">
+        {/* The hero — one centered composition on the soft canvas: the read
+            equation, why it's different, a cross-sector compare, and the CTA. */}
+        <section className="py-6">
           <Suspense fallback={<HeroExhibitFallback />}>
-            <HeroExhibit companies={companies} />
+            <HeroExhibit />
           </Suspense>
-
-          {/* Primary path off the hero: into the working surface. */}
-          <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Link
-              href="/desk"
-              className="house-data house-micro inline-flex items-center gap-2 rounded border border-[var(--ink)] bg-[var(--ink)] px-4 py-2.5 text-[var(--paper-2)] transition-colors hover:bg-transparent hover:text-[var(--ink)]"
-            >
-              Open the Desk →
-            </Link>
-            <span className="text-sm text-[var(--ink-soft)]">
-              Every covered company, ranked by ConcallScore and read from the documents.
-            </span>
-          </div>
         </section>
-
-        {/* Band 02 — why it's different + a cross-sector comparison. Renders
-            nothing when no company clears all three legs (matches the hero
-            fallback). */}
-        <Suspense fallback={null}>
-          <HeroSecondBand />
-        </Suspense>
 
         <section aria-labelledby="reads-heading" className="house-block">
           <div className="max-w-2xl">

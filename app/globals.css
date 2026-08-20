@@ -169,6 +169,57 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The hero's handwritten voice (approved mockup). Caveat runs small, so the
+ * hero bumps the size; the fallback grotesque keeps it legible before swap. */
+.house-hand {
+  font-family: var(--font-hand), "Bricolage Grotesque", ui-rounded, cursive;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.08;
+  color: var(--ink);
+}
+
+/* The hero canvas — the soft mint→blue panel from the mockup, theme-aware so the
+ * site's dark mode doesn't ship a glaring light box. */
+.hero-canvas {
+  border: 1px solid var(--rule);
+  border-radius: 28px;
+  background: linear-gradient(158deg, #e7f4ef 0%, #e9f1fb 52%, #f4f7fb 100%);
+  padding: clamp(1.75rem, 4vw, 3.5rem);
+}
+
+.dark .hero-canvas {
+  background: linear-gradient(158deg, #0c1614 0%, #0b1017 58%, #0a0f14 100%);
+}
+
+/* The green eyebrow pill. */
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--signal) 45%, transparent);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  color: var(--signal);
+  background: color-mix(in srgb, var(--signal) 8%, transparent);
+}
+
+/* The blue "quality at a fair price" badge under THE READ. */
+.hero-verdict-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: color-mix(in srgb, #3b82f6 14%, transparent);
+}
+
+.dark .hero-verdict-badge {
+  color: #93c5fd;
+  background: color-mix(in srgb, #60a5fa 18%, transparent);
+}
+
 .house-micro {
   font-size: 0.625rem;
   line-height: 1.4;

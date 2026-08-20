@@ -31,7 +31,7 @@ export default function CompareSectors({ reads }: { reads: FeaturedRead[] }) {
         </span>
       </div>
 
-      <div className="mt-3 border-t border-[var(--rule)]">
+      <div className="mt-3 rounded-2xl border border-[var(--rule)] bg-[var(--paper-2)] px-4">
         {/* Column head — the letters sit over the score cluster via matched cell widths. */}
         <div className="flex items-center justify-between gap-3 border-b border-[var(--rule)] py-2">
           <span className="house-data house-micro text-[var(--ink-soft)]">Company</span>
@@ -62,7 +62,7 @@ export default function CompareSectors({ reads }: { reads: FeaturedRead[] }) {
               companyCode={read.code}
               href={`/company/${read.code}`}
               title={read.name}
-              className="flex items-center justify-between gap-3 border-b border-[var(--rule)] py-2.5 transition-colors hover:bg-[var(--paper-2)] focus-visible:bg-[var(--paper-2)]"
+              className="flex items-center justify-between gap-3 border-b border-[var(--rule)] py-2.5 transition-colors last:border-b-0 hover:bg-[color-mix(in_srgb,var(--signal)_7%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--signal)_7%,transparent)]"
             >
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-[var(--ink)]">
