@@ -77,6 +77,7 @@ Read [skills/concall-alpha-ui-patterns/SKILL.md](skills/concall-alpha-ui-pattern
 
 - Feature planning: [skills/concall-alpha-feature-planner/SKILL.md](skills/concall-alpha-feature-planner/SKILL.md)
 - UI conventions: [skills/concall-alpha-ui-patterns/SKILL.md](skills/concall-alpha-ui-patterns/SKILL.md)
+- Hot Themes editorial tables gone stale / need a health check or new members: [skills/themes-refresh/SKILL.md](skills/themes-refresh/SKILL.md) — `/themes-refresh`, `scripts/themes-refresh.mjs` (report → gated membership upsert → seed regen). Themes store no score; membership only, large-cap adds refused (they don't render)
 - Visual system: [docs/portal-design-system.md](docs/portal-design-system.md)
 - Surface classes: [app/company/components/surface-tokens.ts](app/company/components/surface-tokens.ts)
 - Section reference: [app/company/components/moat-analysis-section.tsx](app/company/components/moat-analysis-section.tsx)

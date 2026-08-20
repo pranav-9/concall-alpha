@@ -79,6 +79,10 @@ begin
   end if;
 end $$;
 
+-- Preferred maintenance path: `/themes-refresh` (scripts/themes-refresh.mjs) runs the
+-- checks below plus missing-linkage suggestions and a gated membership upsert. Use raw
+-- SQL for theme lifecycle (create / is_featured / sort / blurb), which the skill omits.
+--
 -- Integrity check to run after editing memberships (surfaces typo'd codes at edit time):
 --   select tm.theme_slug, tm.company_code
 --   from theme_membership tm
