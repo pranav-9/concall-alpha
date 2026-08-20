@@ -266,7 +266,7 @@ const Navbar = ({
             aria-label="Close navigation menu"
             tabIndex={-1}
             onClick={() => setIsMenuOpen(false)}
-            className="min-[1200px]:hidden fixed inset-0 z-40 cursor-default"
+            className="min-[1200px]:hidden fixed inset-0 z-40 cursor-default bg-foreground/10 backdrop-blur-[2px]"
           />
         )}
 

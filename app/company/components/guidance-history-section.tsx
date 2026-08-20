@@ -17,6 +17,7 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   currentFiscalYear,
   extractFyYear,
@@ -774,9 +775,15 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
   // <tr> in a separate Drawer (which would break <table> DOM semantics).
   const [selectedThread, setSelectedThread] = React.useState<NormalizedGuidanceItem | null>(null);
 
-  // Two view modes: "table" (dense, default) and "cards" (looser, original).
-  // Both share the same hoisted Drawer for thread details.
-  const [viewMode, setViewMode] = React.useState<"table" | "cards">("table");
+  // Two view modes: "table" (dense) and "cards" (looser). Both share the same
+  // hoisted Drawer for thread details. Until the user explicitly picks a mode,
+  // the effective view follows the viewport — cards on mobile (the dense table
+  // clips its Status column off-screen there), table on desktop. Once the user
+  // toggles, their choice sticks regardless of viewport.
+  const isMobile = useIsMobile();
+  const [viewMode, setViewMode] = React.useState<"table" | "cards" | null>(null);
+  const effectiveViewMode: "table" | "cards" =
+    viewMode ?? (isMobile ? "cards" : "table");
 
   // Counts per family — drives the tab badges. Today every count except
   // "growth" is 0; the tabs still render so users can preview the structure.
@@ -986,7 +993,7 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
       <div className="flex justify-end">
         <ToggleGroup
           type="single"
-          value={viewMode}
+          value={effectiveViewMode}
           onValueChange={(v) => {
             // ToggleGroup emits "" when the active item is re-clicked;
             // ignore that to keep one view always active.
@@ -1039,7 +1046,7 @@ export function GuidanceHistorySection({ items, sourceFiles }: GuidanceHistorySe
         const showSegmentLabel =
           firstConsolidatedIdx >= 0 && firstSegmentedIdx >= 0;
 
-        if (viewMode === "table") {
+        if (effectiveViewMode === "table") {
           // Split into two tables for cleaner reading: Overall (no segment
           // column — every row would be em-dash) and Segment-level (full
           // columns). Each table renders its current rows followed by a

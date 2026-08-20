@@ -63,7 +63,7 @@ function ReadValue({ read }: { read: number }) {
 function FeaturedTheme({ theme }: { theme: ScoredTheme }) {
   return (
     <div className="rounded-lg border border-[var(--rule)] border-l-2 border-l-[var(--signal)] bg-[var(--paper-2)] p-5 sm:p-6">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_15rem]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_15rem]">
         <div className="min-w-0">
           <p className="house-data house-micro text-[var(--signal)]">#1 hottest · this quarter</p>
           <h3 className="house-display mt-2 text-xl sm:text-2xl">

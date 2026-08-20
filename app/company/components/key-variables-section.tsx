@@ -6,6 +6,7 @@ import type {
 } from "@/lib/key-variables-snapshot/types";
 import { Button } from "@/components/ui/button";
 import { KpiSparkline } from "./kpi-sparkline-lazy";
+import { ScrollToLatest } from "./scroll-to-latest";
 import {
   Drawer,
   DrawerClose,
@@ -229,7 +230,7 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
 
   return (
     <div className={snapshotSubsectionClass}>
-      <div className="overflow-x-auto">
+      <ScrollToLatest>
         <table className="min-w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-border/20">
@@ -302,7 +303,7 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
             })}
           </tbody>
         </table>
-      </div>
+      </ScrollToLatest>
     </div>
   );
 }

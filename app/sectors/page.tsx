@@ -23,6 +23,7 @@ import {
   PAGE_SHELL,
   PANEL_CARD_NEUTRAL,
   TABLE_CARD_SKY,
+  TABLE_SCROLL_HINT,
 } from "@/lib/design/shell";
 
 type CompanyRow = {
@@ -455,8 +456,9 @@ export default async function SectorsPage({
               </p>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="relative">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-sm">
                 <thead className="border-b border-border/35 bg-background/70">
                   <tr>
                     <th className="w-10 px-4 py-3 text-left align-bottom text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -553,6 +555,8 @@ export default async function SectorsPage({
                   })}
                 </tbody>
               </table>
+              </div>
+              <div aria-hidden className={TABLE_SCROLL_HINT} />
             </div>
 
             <div className="border-t border-border/35 px-4 py-3">
