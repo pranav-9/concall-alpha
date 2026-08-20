@@ -1,26 +1,34 @@
-// The hero's anchor: one featured company's three lenses read out loud as an
-// equation — Concall + Growth + Valuation = THE READ — resolving into the same
-// composite verdict the leaderboard ranks by. Laid out per the approved mockup:
-// each leg is a score circle with its label UNDER it, joined by + and =, and the
-// read sits in its own card with a plain-language verdict badge.
+// The hero's anchor: an ILLUSTRATIVE read equation — Concall + Growth +
+// Valuation = THE READ — laid out per the approved mockup. The numbers are a
+// fixed example, deliberately NOT tied to any live company, so the hero reads as
+// "here's how the four lenses combine", not a standing call on a real name. The
+// live, per-company version of this lives on each company page and the compare
+// table below.
 //
-// Every number is live (FeaturedRead, the same substrate as the compare table
-// and the leaderboard Read column) and the subject links to a real company page.
+// Each leg is a score circle with its label under it, joined by + and =, and the
+// read sits in its own card with a plain-language verdict badge. Circle colours
+// still come from the real band ramp so the example stays truthful to the system.
 //
 // Motion: the legs fade in left→right, then the READ card settles. CSS-only
-// (eq-leg / eq-read in globals.css) with a prefers-reduced-motion guard, so this
-// stays a server component — no client JS.
+// (eq-leg / eq-read in globals.css) with a prefers-reduced-motion guard.
 
-import { HomepageModuleLink } from "@/components/homepage-module-link";
 import { BANDS, bandForScore } from "@/lib/score-band";
 import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
 import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
-import type { FeaturedRead } from "@/lib/home-featured-read";
 
 import { LegCircle } from "./leg-circle";
 
-export default function ReadEquation({ featured }: { featured: FeaturedRead }) {
-  const { concallScore: q, growthScore: g, valuationScore: v, readScore: r } = featured;
+// Example figures (match the mockup). Not live data — see the header comment.
+const EXAMPLE = {
+  concall: 8.2,
+  growth: 8.7,
+  valuation: 7.4,
+  read: 8.1,
+  verdict: "Quality at a fair price",
+} as const;
+
+export default function ReadEquation() {
+  const { concall: q, growth: g, valuation: v, read: r } = EXAMPLE;
 
   const legs = [
     { key: "concall", label: "Concall", value: q, band: BANDS[bandForScore(q)] },
@@ -31,9 +39,8 @@ export default function ReadEquation({ featured }: { featured: FeaturedRead }) {
   const readBand = BANDS[bandForScore(r)];
 
   const ariaLabel =
-    `${featured.name}: Concall ${q.toFixed(1)} plus Growth ${g.toFixed(1)} plus ` +
-    `Valuation ${v.toFixed(1)} resolve to a read of ${featured.readLabel}, ` +
-    `${r.toFixed(1)} out of 10.`;
+    `Example read: Concall ${q} plus Growth ${g} plus Valuation ${v} ` +
+    `resolve to a read of ${EXAMPLE.verdict}, ${r} out of 10.`;
 
   const Operator = ({ symbol }: { symbol: string }) => (
     <span aria-hidden className="house-data select-none text-2xl font-light text-[var(--ink-soft)]">
@@ -56,12 +63,12 @@ export default function ReadEquation({ featured }: { featured: FeaturedRead }) {
     <div className="eq-read flex flex-col items-center gap-2 rounded-2xl border border-[var(--rule)] bg-[var(--paper-2)] px-5 py-4">
       <span className="house-data house-micro text-[var(--ink-soft)]">The read</span>
       <LegCircle value={r} band={readBand} size="lg" legLabel="The read" />
-      <span className="house-data hero-verdict-badge text-[0.7rem]">{featured.readLabel}</span>
+      <span className="house-data hero-verdict-badge text-[0.7rem]">{EXAMPLE.verdict}</span>
     </div>
   );
 
   return (
-    <figure aria-label={ariaLabel} className="flex flex-col items-center gap-3">
+    <figure aria-label={ariaLabel} className="flex flex-col items-center">
       {/* Desktop / tablet: the equation on one line, centered. */}
       <div className="hidden flex-wrap items-center justify-center gap-x-5 gap-y-4 sm:flex">
         <Leg leg={legs[0]} i={0} />
@@ -91,18 +98,6 @@ export default function ReadEquation({ featured }: { featured: FeaturedRead }) {
         </div>
         <ReadCard />
       </div>
-
-      {/* The subject — real, and reachable. */}
-      <HomepageModuleLink
-        module="read-equation"
-        companyCode={featured.code}
-        href={`/company/${featured.code}`}
-        className="house-data house-micro text-[var(--ink-soft)] underline-offset-4 hover:text-[var(--ink)] hover:underline"
-        title={featured.name}
-      >
-        {featured.code}
-        {featured.sector ? ` · ${featured.sector}` : ""} · latest read
-      </HomepageModuleLink>
     </figure>
   );
 }

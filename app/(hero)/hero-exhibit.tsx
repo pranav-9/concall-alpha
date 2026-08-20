@@ -59,7 +59,7 @@ export default async function HeroExhibit() {
         </div>
 
         <div className="mt-10">
-          <ReadEquation featured={reads[0]} />
+          <ReadEquation />
         </div>
 
         <hr className="mx-auto my-10 max-w-5xl border-[var(--rule)]" />
