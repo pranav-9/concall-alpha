@@ -56,13 +56,20 @@ const finite = (n: number | null | undefined): n is number =>
   typeof n === "number" && Number.isFinite(n);
 
 /**
- * Pick the single company the hero should feature, or null when none qualifies
- * (empty pool → the hero falls back to a score-trail plate).
+ * Rank every qualifying company the hero may feature, highest composite first
+ * (ties break on code so the order is deterministic within a cache window).
  *
- * Highest composite wins; ties break on code so the choice is deterministic
- * within a cache window.
+ * A company qualifies only with all three legs present AND a positive verdict —
+ * the same gate `pickFeaturedRead` enforces, so the equation hero (rank 0) and
+ * the compare-sectors table (the top slice) can never disagree with each other
+ * or with the leaderboard's Read column.
+ *
+ * `limit` caps the returned slice; omit it for the full ranked list.
  */
-export function pickFeaturedRead(candidates: FeaturedCandidate[]): FeaturedRead | null {
+export function pickFeaturedReads(
+  candidates: FeaturedCandidate[],
+  limit?: number,
+): FeaturedRead[] {
   const qualified: FeaturedRead[] = [];
 
   for (const c of candidates) {
@@ -91,5 +98,14 @@ export function pickFeaturedRead(candidates: FeaturedCandidate[]): FeaturedRead 
   }
 
   qualified.sort((a, b) => b.readScore - a.readScore || a.code.localeCompare(b.code));
-  return qualified[0] ?? null;
+  return typeof limit === "number" ? qualified.slice(0, limit) : qualified;
+}
+
+/**
+ * Pick the single company the hero should feature, or null when none qualifies
+ * (empty pool → the hero falls back to a score-trail plate). Thin wrapper over
+ * `pickFeaturedReads` so the two can never diverge on the gate or the ordering.
+ */
+export function pickFeaturedRead(candidates: FeaturedCandidate[]): FeaturedRead | null {
+  return pickFeaturedReads(candidates, 1)[0] ?? null;
 }

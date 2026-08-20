@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
-import HeroExhibit, { HeroExhibitFallback } from "./(hero)/hero-exhibit";
+import HeroExhibit, { HeroExhibitFallback, HeroSecondBand } from "./(hero)/hero-exhibit";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { QuarterTrackerBanner } from "@/components/quarter-tracker-banner";
 
@@ -86,6 +86,13 @@ export default async function Home() {
             </span>
           </div>
         </section>
+
+        {/* Band 02 — why it's different + a cross-sector comparison. Renders
+            nothing when no company clears all three legs (matches the hero
+            fallback). */}
+        <Suspense fallback={null}>
+          <HeroSecondBand />
+        </Suspense>
 
         <section aria-labelledby="reads-heading" className="house-block">
           <div className="max-w-2xl">
