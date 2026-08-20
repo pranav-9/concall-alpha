@@ -70,6 +70,9 @@ export default function DeskMostViewed({
               ) : null}
             </Link>
           ))}
+          <p className="house-data house-micro mt-2 text-[var(--ink-soft)]">
+            Score shown is the latest ConcallScore.
+          </p>
         </div>
       )}
     </section>
