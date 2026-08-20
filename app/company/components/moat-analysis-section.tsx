@@ -348,12 +348,20 @@ export function MoatAnalysisSection({
           <p className="text-2xl font-bold leading-tight text-foreground sm:text-[26px]">
             {edgePhrase(analysis.moatRating, analysis.moatTier)}
           </p>
-          <p className={cn(sectionSubtitleClass, "max-w-xl text-[13px]")}>
-            {verdictSentence(analysis.moatRating, analysis.moatTier, name)}
+          <div className="max-w-xl space-y-1">
+            {/* Real per-company one-liner (payload.headline) when we have it;
+                the (rating, tier) template is only a fallback for the
+                missing/deprecated-payload path. */}
+            <p className="text-sm leading-snug text-foreground/90 lg:text-[13.5px]">
+              {payload?.headline ??
+                verdictSentence(analysis.moatRating, analysis.moatTier, name)}
+            </p>
             {appliesCount != null && ruledOutCount != null && (
-              <> {countsSentence(appliesCount, ruledOutCount)}</>
+              <p className={cn(sectionSubtitleClass, "text-[12px]")}>
+                {countsSentence(appliesCount, ruledOutCount)}
+              </p>
             )}
-          </p>
+          </div>
         </div>
         {analysis.moatTier && (
           <div className="shrink-0">
@@ -438,7 +446,11 @@ export function MoatAnalysisSection({
                 )}
               >
                 {source.applies
-                  ? advantageMeaning(source.source_type, source.subcategory)
+                  ? // Real per-company evidence (the lead presence claim);
+                    // fall back to the generic type description only if the
+                    // payload left presence empty.
+                    source.presence?.[0] ??
+                    advantageMeaning(source.source_type, source.subcategory)
                   : source.does_not_apply_reason ||
                     "Not a factor for this kind of business."}
               </p>
