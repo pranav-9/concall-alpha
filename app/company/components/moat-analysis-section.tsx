@@ -5,27 +5,21 @@
 import {
   AlertCircle,
   AlertTriangle,
-  ArrowDown,
-  ArrowUp,
   ChevronDown,
   Clock,
-  Minus,
   ShieldCheck,
   Target,
+  Users,
 } from "lucide-react";
 
-import { chipBaseClass, chipClass } from "./chip-tone";
+import { chipClass } from "./chip-tone";
+import type { ChipTone } from "./chip-tone";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
-import {
-  moatTierClass,
-  moatTierGradeClass,
-  moatTierGradeIconClass,
-  moatTierGradeLabel,
-} from "@/lib/moat-analysis/tier-class";
 import type {
-  V15Gatekeeper,
+  MoatRatingKey,
   MoatTier,
   NormalizedMoatAnalysis,
+  V15Gatekeeper,
   V15Source,
 } from "@/lib/moat-analysis/types";
 import { cn } from "@/lib/utils";
@@ -34,8 +28,6 @@ type MoatAnalysisSectionProps = {
   analysis: NormalizedMoatAnalysis;
   generatedAtShort: string | null;
 };
-
-const dashedDetailClass = cn(nestedDetailClass, "border-dashed border-border/50");
 
 // Mirrors SECTION_TONE_BY_ID["moat-analysis"] = "emerald" in section-card.tsx.
 // If the section tone changes there, update this too.
@@ -49,52 +41,175 @@ const miniLabelClass = "text-[12px] font-semibold leading-tight text-foreground/
 const metadataClass =
   "text-[10px] uppercase tracking-[0.14em] text-muted-foreground";
 
-const tierIconFor = (tier: MoatTier) => {
-  switch (tier) {
-    case "strong":
-      return ArrowUp;
-    case "mid":
-      return Minus;
-    case "weak":
-      return ArrowDown;
-  }
-};
+// ---------------------------------------------------------------------------
+// Plain-language maps. These translate the stored framework enums into
+// retail-first copy. They are static (rating/tier/source_type/subcategory are
+// controlled vocabularies) — no stored prose is invented here. Company-specific
+// per-source one-liners and per-source strength come from a later pipeline
+// upgrade (Phase 2); until then the advantages table shows a generic true
+// description of each advantage type.
+// ---------------------------------------------------------------------------
 
-const barrierStrengthLabel = (
-  strength: V15Gatekeeper["barrier_strength"],
-) => {
-  switch (strength) {
-    case "strong":
-      return { label: "Strong", tone: "emerald" as const };
-    case "moderate":
-      return { label: "Moderate", tone: "sky" as const };
-    case "weak":
-      return { label: "Weak", tone: "amber" as const };
-    case "none":
-      return { label: "None", tone: "rose" as const };
+// The one-line verdict phrase, from (rating, tier). Trajectory intentionally
+// omitted — no history is stored, so we never claim "widening" / "was weaker".
+const edgePhrase = (rating: MoatRatingKey, tier: MoatTier | null): string => {
+  switch (rating) {
+    case "no_moat":
+      return "No real edge";
+    case "moat_at_risk":
+      return "Edge under threat";
+    case "wide_moat":
+      return tier === "strong" ? "Wide, well-protected edge" : "Wide edge";
+    case "narrow_moat":
+      if (tier === "strong") return "Solid, defensible edge";
+      if (tier === "weak") return "Slim edge";
+      return "Moderate edge";
     default:
-      return { label: strength, tone: "slate" as const };
+      return "Edge unclear";
   }
 };
 
-// Plain-English gloss for the pipeline's `posture` enum, so the reader sees a
-// claim rather than the internal "excess returns" vocabulary. Unmapped values
-// fall through unchanged.
-const postureLabel = (posture: string): string => {
-  switch (posture) {
-    case "Confirmed excess returns":
-      return "Returns prove the moat";
-    case "Mediocre excess returns":
-      return "Returns are middling";
-    case "Untested excess returns":
-      return "Returns not yet proven";
+// The plain sentence under the phrase — naturally worded per rating/tier so we
+// never have to glue an article onto the phrase.
+const verdictSentence = (
+  rating: MoatRatingKey,
+  tier: MoatTier | null,
+  name: string,
+): string => {
+  switch (rating) {
+    case "no_moat":
+      return `${name} has little that stops rivals from competing away its profits.`;
+    case "moat_at_risk":
+      return `${name} had an edge, but it is now under real threat.`;
+    case "wide_moat":
+      return `${name} has a strong, hard-to-attack advantage over rivals.`;
+    case "narrow_moat":
+      if (tier === "strong")
+        return `${name} has a real and fairly durable advantage over rivals.`;
+      if (tier === "weak") return `${name} has only a slim advantage over rivals.`;
+      return `${name} has a real but moderate advantage over rivals.`;
     default:
-      return posture;
+      return `${name}'s competitive advantage is not clear yet.`;
   }
 };
 
-// Render a list of atomic bullets (one of the 8 v15 array fields). Each
-// bullet is one short claim ≤25 words; render as a tight disc list.
+const NUM_WORDS = ["zero", "one", "two", "three", "four"] as const;
+const numWord = (n: number): string => NUM_WORDS[n] ?? String(n);
+const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
+// "Two things protect it; two common advantages don't apply." — derived purely
+// from the applies/ruled-out counts (both real).
+const countsSentence = (applies: number, ruled: number): string => {
+  if (applies === 0) {
+    return "None of the four common advantages apply here.";
+  }
+  const head = `${cap(numWord(applies))} ${
+    applies === 1 ? "thing protects" : "things protect"
+  } it`;
+  if (ruled === 0) return `${head}.`;
+  return `${head}; ${numWord(ruled)} common ${
+    ruled === 1 ? "advantage doesn't" : "advantages don't"
+  } apply.`;
+};
+
+// Plain name for each of the 4 moat sources (refined by subcategory where it
+// changes the plain meaning).
+const advantageLabel = (
+  type: V15Source["source_type"],
+  sub: V15Source["subcategory"],
+): string => {
+  switch (type) {
+    case "Switching Costs":
+      return "Hard to switch away";
+    case "Cost Advantages":
+      return "Lower cost to produce";
+    case "Network Effects":
+      return "Network effects";
+    case "Intangible Assets":
+      if (sub === "Patent") return "Protected by patents";
+      if (sub === "Regulatory licence") return "Licence protection";
+      if (sub === "Brand") return "Brand power";
+      return "Brand & reputation";
+    default:
+      return type;
+  }
+};
+
+// Generic, true description of the advantage TYPE (not a company-specific
+// claim). Phase 2 replaces this with the pipeline's per-company lay one-liner.
+const advantageMeaning = (
+  type: V15Source["source_type"],
+  sub: V15Source["subcategory"],
+): string => {
+  switch (type) {
+    case "Switching Costs":
+      return "Customers face real cost or disruption to move to a rival.";
+    case "Cost Advantages":
+      return "It can make the same product for less than competitors.";
+    case "Network Effects":
+      return "The product gets more useful as more people use it.";
+    case "Intangible Assets":
+      if (sub === "Patent") return "Patents legally block rivals from copying it.";
+      if (sub === "Regulatory licence")
+        return "Licences or approvals keep most rivals out.";
+      if (sub === "Brand") return "A trusted brand lets it charge more or win buyers.";
+      return "Reputation and know-how are hard for rivals to match.";
+    default:
+      return "A real advantage that is hard for rivals to copy.";
+  }
+};
+
+// The "Will the edge last?" verdict, from the two durability inputs (both real).
+const durabilityRead = (
+  cycleTested: boolean,
+  barrier: V15Gatekeeper["barrier_strength"],
+): { word: string; tone: ChipTone } => {
+  if (barrier === "none") return { word: "Unlikely", tone: "rose" };
+  if (barrier === "weak" || !cycleTested) return { word: "Mixed", tone: "amber" };
+  return { word: "Likely", tone: "emerald" };
+};
+
+// ---------------------------------------------------------------------------
+// Small presentational pieces
+// ---------------------------------------------------------------------------
+
+const STRENGTH_SEGMENTS = [
+  { idx: 1, label: "Weak" },
+  { idx: 2, label: "Moderate" },
+  { idx: 3, label: "Strong" },
+] as const;
+
+const StrengthMeter = ({ tier }: { tier: MoatTier }) => {
+  const level = tier === "strong" ? 3 : tier === "mid" ? 2 : 1;
+  return (
+    <div className="space-y-1.5">
+      <p className={metadataClass}>How strong</p>
+      <div className="grid w-[150px] grid-cols-3 gap-1.5">
+        {STRENGTH_SEGMENTS.map((s) => (
+          <div key={s.idx} className="space-y-1">
+            <span
+              className={cn(
+                "block h-1.5 rounded-full",
+                s.idx <= level ? "bg-emerald-500" : "bg-muted",
+              )}
+            />
+            <span
+              className={cn(
+                "block text-center text-[10px]",
+                s.idx === level
+                  ? "font-semibold text-emerald-600 dark:text-emerald-400"
+                  : "text-muted-foreground",
+              )}
+            >
+              {s.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const BulletList = ({
   items,
   className,
@@ -133,7 +248,8 @@ const SourceEvidenceRow = ({
   );
 };
 
-// Render a single source card (presence + durability).
+// Detailed per-source card (presence + durability) — lives inside the "Full
+// analysis" drawer, for readers who want the raw evidence.
 const SourceCard = ({ source }: { source: V15Source }) => {
   const hasPresence = Boolean(source.presence?.length);
   const hasDurability = Boolean(source.durability?.length);
@@ -144,7 +260,7 @@ const SourceCard = ({ source }: { source: V15Source }) => {
       <div className="flex flex-wrap items-start justify-between gap-2 p-3 pb-0">
         <div className="min-w-0 space-y-1">
           <p className="text-[13px] font-semibold leading-snug text-foreground">
-            {source.source_type}
+            {advantageLabel(source.source_type, source.subcategory)}
           </p>
           {source.subcategory && (
             <span className={chipClass("slate")}>{source.subcategory}</span>
@@ -175,8 +291,7 @@ const SourceCard = ({ source }: { source: V15Source }) => {
   );
 };
 
-// Render the deprecated/missing schema notice — used when payload doesn't
-// validate against v15.
+// Deprecated/missing payload notice.
 const SchemaNotice = ({
   status,
   generatedAtShort,
@@ -205,334 +320,288 @@ const SchemaNotice = ({
   );
 };
 
+// ---------------------------------------------------------------------------
+// Section
+// ---------------------------------------------------------------------------
+
 export function MoatAnalysisSection({
   analysis,
   generatedAtShort,
 }: MoatAnalysisSectionProps) {
   const { payload, schemaStatus } = analysis;
+  const name = payload?.name ?? analysis.companyName ?? "This company";
 
-  // Render the badge row regardless of payload status — it's derived from
-  // promoted DB columns. The detail block falls back to a notice when
-  // payload is missing/deprecated.
-  const tierIcon = analysis.moatTier ? tierIconFor(analysis.moatTier) : null;
-  const TierIcon = tierIcon;
+  // Verdict header — renders from promoted columns (rating/tier), so it works
+  // even when the detailed payload is missing/deprecated. Counts are added only
+  // when the payload is present.
+  const appliesCount = payload
+    ? payload.sources.filter((s) => s.applies).length
+    : null;
+  const ruledOutCount = payload
+    ? payload.sources.filter((s) => !s.applies).length
+    : null;
 
-  // Hero card — always renders with badges.
-  const heroCard = (
-    <div className={cn(elevatedBlockClass, "space-y-3 p-4")}>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span
-          className={cn(
-            chipBaseClass,
-            moatTierClass(analysis.moatRating),
-            "px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.14em]",
-          )}
-        >
-          {analysis.moatRatingLabel}
-        </span>
-        {analysis.moatTier && TierIcon && (
-          <span
-            className={cn(
-              chipBaseClass,
-              moatTierGradeClass(),
-              "gap-1 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em]",
+  const verdictHeader = (
+    <div className={cn(elevatedBlockClass, "p-4 sm:p-5")}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <p className="text-2xl font-bold leading-tight text-foreground sm:text-[26px]">
+            {edgePhrase(analysis.moatRating, analysis.moatTier)}
+          </p>
+          <p className={cn(sectionSubtitleClass, "max-w-xl text-[13px]")}>
+            {verdictSentence(analysis.moatRating, analysis.moatTier, name)}
+            {appliesCount != null && ruledOutCount != null && (
+              <> {countsSentence(appliesCount, ruledOutCount)}</>
             )}
-          >
-            <span className="font-medium text-muted-foreground">Strength</span>
-            <TierIcon
-              className={cn("h-3 w-3", moatTierGradeIconClass(analysis.moatTier))}
-            />
-            {moatTierGradeLabel(analysis.moatTier)}
-          </span>
+          </p>
+        </div>
+        {analysis.moatTier && (
+          <div className="shrink-0">
+            <StrengthMeter tier={analysis.moatTier} />
+          </div>
         )}
       </div>
-
-      {payload?.headline && (
-        <p className="max-w-4xl text-base font-medium leading-relaxed text-foreground">
-          {payload.headline}
-        </p>
-      )}
     </div>
   );
 
   if (!payload) {
     return (
       <div className="space-y-4">
-        {heroCard}
-        <SchemaNotice status={schemaStatus as "deprecated" | "missing"} generatedAtShort={generatedAtShort} />
+        {verdictHeader}
+        <SchemaNotice
+          status={schemaStatus as "deprecated" | "missing"}
+          generatedAtShort={generatedAtShort}
+        />
       </div>
     );
   }
 
   // ---- v15 detail rendering ----
 
+  const orderedSources: V15Source[] = [
+    ...payload.sources.filter((s) => s.applies),
+    ...payload.sources.filter((s) => !s.applies),
+  ];
   const appliesSources = payload.sources.filter((s) => s.applies);
-  const ruledOutSources = payload.sources.filter((s) => !s.applies);
-  const moreEvidenceMetadata = [
-    generatedAtShort ? `Generated ${generatedAtShort}` : null,
-  ].filter(Boolean);
-  const hasMoreEvidence =
-    payload.why_this_tier.length > 0 ||
-    payload.what_would_change_the_call.length > 0 ||
-    payload.financial_check.data_limitations.length > 0 ||
-    moreEvidenceMetadata.length > 0;
+
+  const durability = durabilityRead(
+    payload.financial_check.cycle_tested,
+    payload.gatekeeper.barrier_strength,
+  );
+  const provenPart = payload.financial_check.cycle_tested
+    ? "Proven in the numbers"
+    : "Not yet proven in the numbers";
+  const copyPart =
+    payload.gatekeeper.barrier_strength === "strong" ||
+    payload.gatekeeper.barrier_strength === "moderate"
+      ? "hard to copy quickly"
+      : "easier to copy";
+  const provenCardTitle = payload.financial_check.cycle_tested
+    ? "Proven in the numbers"
+    : "Not yet proven";
+  const copyCardTitle =
+    payload.gatekeeper.barrier_strength === "strong" ||
+    payload.gatekeeper.barrier_strength === "moderate"
+      ? "Hard to copy fast"
+      : "Easier to copy";
 
   return (
     <div className="space-y-4">
-      {heroCard}
+      {verdictHeader}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Economic proof */}
-        <div className={cn(elevatedBlockClass, "p-4 space-y-3")}>
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="space-y-0.5">
-              <p className={sectionTitleClass}>Returns check</p>
-              <p className={sectionSubtitleClass}>
-                Whether multi-year returns back up the moat call.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className={chipClass("violet")}>
-                {postureLabel(payload.step_0.posture)}
-              </span>
-              <span
-                className={chipClass(
-                  payload.financial_check.cycle_tested ? "emerald" : "rose",
+      {/* Advantages table — all four sources, applies first, ruled out greyed.
+          Per-source strength (the ●●○ dots) and company-specific one-liners land
+          in the Phase 2 pipeline upgrade. */}
+      <div className={cn(elevatedBlockClass, "overflow-hidden")}>
+        <div className="hidden grid-cols-[minmax(150px,220px)_1fr] gap-4 border-b border-border/50 px-4 py-2.5 md:grid">
+          <p className={metadataClass}>Advantage</p>
+          <p className={metadataClass}>What it means</p>
+        </div>
+        <div className="divide-y divide-border/40">
+          {orderedSources.map((source) => (
+            <div
+              key={source.source_type}
+              className="grid grid-cols-1 gap-1 px-4 py-3 md:grid-cols-[minmax(150px,220px)_1fr] md:gap-4"
+            >
+              <p
+                className={cn(
+                  "text-sm font-semibold leading-snug",
+                  source.applies ? "text-foreground" : "text-muted-foreground/70",
                 )}
               >
-                Held up in a downturn · {payload.financial_check.cycle_tested ? "Yes" : "No"}
-              </span>
-            </div>
-          </div>
-
-          <p className="text-sm font-medium leading-relaxed text-foreground">
-            {payload.step_0.headline}
-          </p>
-
-          <details className={cn(dashedDetailClass, "group/economic-proof overflow-hidden")}>
-            <summary className="list-none cursor-pointer select-none px-3 py-2 [&::-webkit-details-marker]:hidden">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className={miniLabelClass}>Evidence</span>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-[12px] font-medium text-muted-foreground group-open/economic-proof:hidden">
-                    Show details
-                  </span>
-                  <span className="hidden text-[12px] font-medium text-muted-foreground group-open/economic-proof:inline">
-                    Hide details
-                  </span>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open/economic-proof:rotate-180" />
-                </div>
-              </div>
-            </summary>
-            <div className="border-t border-border/25 px-3 py-2.5">
-              <BulletList items={payload.step_0.evidence} className={bulletTextClass} />
-            </div>
-          </details>
-        </div>
-
-        {/* Gatekeeper */}
-        <div className={cn(elevatedBlockClass, "p-4 space-y-3")}>
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="space-y-0.5">
-              <p className={sectionTitleClass}>Barriers to entry</p>
-              <p className={sectionSubtitleClass}>
-                Could a well-funded rival replicate the moat within a decade?
+                {advantageLabel(source.source_type, source.subcategory)}
+              </p>
+              <p
+                className={cn(
+                  "text-sm leading-relaxed lg:text-[13px]",
+                  source.applies ? "text-foreground/90" : "text-muted-foreground/70",
+                )}
+              >
+                {source.applies
+                  ? advantageMeaning(source.source_type, source.subcategory)
+                  : source.does_not_apply_reason ||
+                    "Not a factor for this kind of business."}
               </p>
             </div>
-            {(() => {
-              const verdict = barrierStrengthLabel(payload.gatekeeper.barrier_strength);
-              return (
-                <span className={chipClass(verdict.tone)}>Barrier · {verdict.label}</span>
-              );
-            })()}
-          </div>
-          <p className={cn(bulletTextClass, "text-[13.5px]")}>
-            {payload.gatekeeper.rationale}
+          ))}
+        </div>
+      </div>
+
+      {/* Will the edge last? */}
+      <div className={cn(elevatedBlockClass, "p-4 sm:p-5 space-y-3")}>
+        <div className="space-y-1">
+          <p className="text-lg font-bold leading-tight text-foreground">
+            Will the edge last?
           </p>
-          <div className="space-y-1.5">
-            <p className={miniLabelClass}>Potential challengers</p>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {payload.gatekeeper.attackers.map((attacker, i) => (
-                <span key={i} className={chipClass("slate")}>
-                  {attacker}
-                </span>
-              ))}
-            </div>
+          <p className="text-sm leading-snug">
+            <span
+              className={cn(
+                "font-semibold",
+                durability.tone === "emerald" &&
+                  "text-emerald-600 dark:text-emerald-400",
+                durability.tone === "amber" && "text-amber-600 dark:text-amber-400",
+                durability.tone === "rose" && "text-rose-600 dark:text-rose-400",
+              )}
+            >
+              {durability.word}.
+            </span>{" "}
+            <span className="text-muted-foreground">
+              {provenPart}, and {copyPart}.
+            </span>
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className={cn(nestedDetailClass, "p-3 space-y-1.5")}>
+            <p className={metadataClass}>{provenCardTitle}</p>
+            <p className={bulletTextClass}>{payload.step_0.headline}</p>
+          </div>
+          <div className={cn(nestedDetailClass, "p-3 space-y-1.5")}>
+            <p className={metadataClass}>{copyCardTitle}</p>
+            <p className={bulletTextClass}>{payload.gatekeeper.rationale}</p>
           </div>
         </div>
       </div>
 
-      {/* Moat sources */}
-      <div className={cn(elevatedBlockClass, "p-3 space-y-3")}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="space-y-0.5">
-            <p className={sectionTitleClass}>Where the moat comes from</p>
-            <p className={sectionSubtitleClass}>
-              {appliesSources.length} {appliesSources.length === 1 ? "source applies" : "sources apply"}
-              {ruledOutSources.length > 0 ? ` · ${ruledOutSources.length} ruled out` : ""}
-            </p>
+      {/* Full analysis — the dense evidence, one collapse. */}
+      <details className={cn(elevatedBlockClass, "group/moat-full overflow-hidden")}>
+        <summary className="list-none cursor-pointer select-none p-4 [&::-webkit-details-marker]:hidden">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0 space-y-0.5">
+              <p className={sectionTitleClass}>Full analysis</p>
+              <p className={sectionSubtitleClass}>
+                The evidence behind each advantage, why the rating sits here, what
+                would change it, and the limits.
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="text-[12px] font-medium text-muted-foreground group-open/moat-full:hidden">
+                Show details
+              </span>
+              <span className="hidden text-[12px] font-medium text-muted-foreground group-open/moat-full:inline">
+                Hide details
+              </span>
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open/moat-full:rotate-180" />
+            </div>
           </div>
-        </div>
+        </summary>
+        <div className="space-y-4 border-t border-border/40 p-4 pt-3">
+          {appliesSources.length > 0 && (
+            <div className="space-y-2">
+              <p className={sectionTitleClass}>Evidence for each advantage</p>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {appliesSources.map((source) => (
+                  <SourceCard key={source.source_type} source={source} />
+                ))}
+              </div>
+            </div>
+          )}
 
-        {appliesSources.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {appliesSources.map((source) => (
-              <SourceCard key={source.source_type} source={source} />
-            ))}
-          </div>
-        ) : (
-          <div className={cn(dashedDetailClass, "p-3 text-[12px] text-muted-foreground")}>
-            All four moat sources were considered and ruled out — this is a
-            genuinely undifferentiated business.
-          </div>
-        )}
-
-        {ruledOutSources.length > 0 && (
-          <details className={cn(dashedDetailClass, "group/ruled-out overflow-hidden")}>
-            <summary className="list-none cursor-pointer select-none p-3 [&::-webkit-details-marker]:hidden">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+          {payload.why_this_tier.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <Target className="mt-0.5 h-4 w-4 shrink-0 text-foreground/70" />
                 <div className="space-y-0.5">
-                  <p className={miniLabelClass}>Also considered</p>
+                  <p className={sectionTitleClass}>Why this rating</p>
                   <p className={sectionSubtitleClass}>
-                    {ruledOutSources.length} source
-                    {ruledOutSources.length === 1 ? "" : "s"} ruled out.
+                    Why the call sits here and not one notch higher or lower.
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-[12px] font-medium text-muted-foreground group-open/ruled-out:hidden">
-                    Show details
-                  </span>
-                  <span className="hidden text-[12px] font-medium text-muted-foreground group-open/ruled-out:inline">
-                    Hide details
-                  </span>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open/ruled-out:rotate-180" />
+              </div>
+              <BulletList items={payload.why_this_tier} className={bulletTextClass} />
+            </div>
+          )}
+
+          {payload.what_would_change_the_call.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <Target className="mt-0.5 h-4 w-4 shrink-0 text-foreground/70" />
+                <div className="space-y-0.5">
+                  <p className={sectionTitleClass}>What would change the call</p>
+                  <p className={sectionSubtitleClass}>
+                    Observable upgrade and downgrade triggers.
+                  </p>
                 </div>
               </div>
-            </summary>
-            <ul className="space-y-2">
-              {ruledOutSources.map((source) => (
-                <li
-                  key={source.source_type}
-                  className="border-t border-border/25 px-3 py-2.5"
-                >
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <p className="text-[12px] font-semibold text-foreground/85">
-                      {source.source_type}
-                    </p>
-                    {source.subcategory && (
-                      <span className={chipClass("slate")}>{source.subcategory}</span>
+              <ul className="space-y-2">
+                {payload.what_would_change_the_call.map((trigger, i) => (
+                  <li
+                    key={i}
+                    className={cn(
+                      nestedDetailClass,
+                      "p-3 text-sm leading-relaxed lg:text-[13px] text-foreground/90",
                     )}
-                  </div>
-                  {source.does_not_apply_reason ? (
-                    <p className={cn(mutedBulletClass, "mt-1.5")}>
-                      {source.does_not_apply_reason}
-                    </p>
-                  ) : (
-                    <p className={cn(mutedBulletClass, "mt-1.5 italic")}>
-                      No rationale captured.
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
-      </div>
+                  >
+                    {trigger}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-      {hasMoreEvidence && (
-        <details className={cn(elevatedBlockClass, "group/moat-more overflow-hidden")}>
-          <summary className="list-none cursor-pointer select-none p-4 [&::-webkit-details-marker]:hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0 space-y-0.5">
-                <p className={sectionTitleClass}>More evidence</p>
-                <p className={sectionSubtitleClass}>
-                  Why this rating, what would change it, and the limits of the evidence.
-                </p>
+          {payload.gatekeeper.attackers.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <Users className="mt-0.5 h-4 w-4 shrink-0 text-foreground/70" />
+                <div className="space-y-0.5">
+                  <p className={sectionTitleClass}>Who could challenge it</p>
+                  <p className={sectionSubtitleClass}>
+                    The most credible would-be attackers.
+                  </p>
+                </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {payload.what_would_change_the_call.length > 0 && (
-                  <span className={chipClass("slate")}>
-                    {payload.what_would_change_the_call.length} trigger
-                    {payload.what_would_change_the_call.length === 1 ? "" : "s"}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {payload.gatekeeper.attackers.map((attacker, i) => (
+                  <span key={i} className={chipClass("slate")}>
+                    {attacker}
                   </span>
-                )}
-                <span className="text-[12px] font-medium text-muted-foreground group-open/moat-more:hidden">
-                  Show details
-                </span>
-                <span className="hidden text-[12px] font-medium text-muted-foreground group-open/moat-more:inline">
-                  Hide details
-                </span>
-                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open/moat-more:rotate-180" />
+                ))}
               </div>
             </div>
-          </summary>
-          <div className="space-y-4 border-t border-border/40 p-4 pt-3">
-            {payload.why_this_tier.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-start gap-2">
-                  <Target className="mt-0.5 h-4 w-4 shrink-0 text-foreground/70" />
-                  <div className="space-y-0.5">
-                    <p className={sectionTitleClass}>Why this rating</p>
-                    <p className={sectionSubtitleClass}>
-                      Why the call sits here and not one notch higher or lower.
-                    </p>
-                  </div>
-                </div>
-                <BulletList items={payload.why_this_tier} className={bulletTextClass} />
-              </div>
-            )}
+          )}
 
-            {payload.what_would_change_the_call.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-start gap-2">
-                  <Target className="mt-0.5 h-4 w-4 shrink-0 text-foreground/70" />
-                  <div className="space-y-0.5">
-                    <p className={sectionTitleClass}>What would change the call</p>
-                    <p className={sectionSubtitleClass}>
-                      Observable upgrade and downgrade triggers.
-                    </p>
-                  </div>
+          {payload.financial_check.data_limitations.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <div className="space-y-0.5">
+                  <p className={sectionTitleClass}>Limits of evidence</p>
+                  <p className={sectionSubtitleClass}>
+                    Known gaps in the source base or financial record.
+                  </p>
                 </div>
-                <ul className="space-y-2">
-                  {payload.what_would_change_the_call.map((trigger, i) => (
-                    <li
-                      key={i}
-                      className={cn(
-                        nestedDetailClass,
-                        "p-3 text-sm leading-relaxed lg:text-[13px] text-foreground/90",
-                      )}
-                    >
-                      {trigger}
-                    </li>
-                  ))}
-                </ul>
               </div>
-            )}
+              <BulletList
+                items={payload.financial_check.data_limitations}
+                className={mutedBulletClass}
+              />
+            </div>
+          )}
 
-            {payload.financial_check.data_limitations.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                  <div className="space-y-0.5">
-                    <p className={sectionTitleClass}>Limits of evidence</p>
-                    <p className={sectionSubtitleClass}>
-                      Known gaps in the source base or financial record.
-                    </p>
-                  </div>
-                </div>
-                <BulletList
-                  items={payload.financial_check.data_limitations}
-                  className={mutedBulletClass}
-                />
-              </div>
-            )}
-
-            {moreEvidenceMetadata.length > 0 && (
-              <p className={metadataClass}>{moreEvidenceMetadata.join(" · ")}</p>
-            )}
-          </div>
-        </details>
-      )}
+          {generatedAtShort && (
+            <p className={metadataClass}>Generated {generatedAtShort}</p>
+          )}
+        </div>
+      </details>
     </div>
   );
 }
