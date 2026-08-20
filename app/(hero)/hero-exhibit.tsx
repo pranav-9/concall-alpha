@@ -50,10 +50,10 @@ export default async function HeroExhibit() {
       <div className="hero-canvas">
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 text-center">
           <span className="hero-eyebrow house-data house-micro">Smart research · AI-read</span>
-          <h1 className="house-hand text-[2.6rem] leading-[1.05] sm:text-6xl">
+          <h1 className="house-display text-4xl leading-[1.08] sm:text-5xl">
             Go beyond the numbers. A fundamental research platform
           </h1>
-          <p className="house-hand text-2xl text-[var(--ink-soft)] sm:text-3xl">
+          <p className="max-w-xl text-lg leading-7 text-[var(--ink-soft)] sm:text-xl">
             Ranking India&apos;s top 100 mid- &amp; small-cap companies
           </p>
         </div>
@@ -81,10 +81,10 @@ export default async function HeroExhibit() {
   const fallbackCopy = (
     <div className="flex h-full flex-col justify-center gap-3">
       <span className="hero-eyebrow house-data house-micro w-fit">Smart research · AI-read</span>
-      <h1 className="house-hand text-4xl leading-[1.05] sm:text-5xl">
+      <h1 className="house-display text-4xl leading-[1.08] sm:text-5xl">
         Go beyond the numbers. A fundamental research platform
       </h1>
-      <p className="house-hand text-2xl text-[var(--ink-soft)]">
+      <p className="text-lg leading-7 text-[var(--ink-soft)]">
         Ranking India&apos;s top 100 mid- &amp; small-cap companies
       </p>
       <div className="mt-2">
