@@ -48,6 +48,8 @@ export default async function DeskPage() {
   const positiveTwist = board.positiveTwist.map(toTableRow);
   const growthLeaders = board.growthLeaders.map(toTableRow);
   const moatLeaders = board.moatLeaders.map(toTableRow);
+  const mostViewedWeek = board.mostViewedWeek.map(toTableRow);
+  const mostViewedMonth = board.mostViewedMonth.map(toTableRow);
 
   return (
     <main className="house relative min-h-screen">
@@ -105,7 +107,9 @@ export default async function DeskPage() {
             <DeskTopOfBook
               quarterLabel={board.quarterLabel}
               topPerformers={quarterLeaders.slice(0, 5)}
-              positiveTwist={positiveTwist.slice(0, 5)}
+              mostViewedWeek={mostViewedWeek.slice(0, 5)}
+              mostViewedMonth={mostViewedMonth.slice(0, 5)}
+              mostViewedInitial={board.mostViewedInitial}
             />
           </aside>
         </div>

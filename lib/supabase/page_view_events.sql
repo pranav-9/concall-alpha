@@ -94,3 +94,40 @@ $$;
 
 grant execute on function public.count_unique_visitors(timestamptz) to service_role;
 grant execute on function public.get_top_company_views(timestamptz, int) to service_role;
+
+-- Public "most viewed companies" for the /desk right rail. Ranks by DISTINCT
+-- visitor_id (not raw rows) so self-reloads don't inflate. security definer +
+-- anon grant so the cookie-free public-read client can call it without a SELECT
+-- policy on page_view_events (RLS there is insert-only). Returns only the
+-- aggregate (code + count), never raw rows. Migration 2026-08: run in the
+-- Supabase SQL editor, then: notify pgrst, 'reload schema';
+create or replace function public.get_top_company_visitors(
+  start_ts timestamptz,
+  limit_n int default 20
+)
+returns table (company_code text, unique_visitors bigint, last_viewed timestamptz)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    p.company_code,
+    count(distinct p.visitor_id)::bigint as unique_visitors,
+    max(p.created_at) as last_viewed
+  from public.page_view_events p
+  where p.company_code is not null
+    and p.created_at >= start_ts
+  group by p.company_code
+  -- full deterministic tie-break so a public ranking can't shuffle on ties
+  order by unique_visitors desc, last_viewed desc, p.company_code asc
+  -- clamp: never let a caller force an unbounded scan/return
+  limit least(greatest(limit_n, 1), 100);
+$$;
+
+grant execute on function public.get_top_company_visitors(timestamptz, int) to anon, authenticated;
+
+-- Matches the get_top_company_visitors access pattern: filter created_at >=,
+-- group by company_code, count distinct visitor_id.
+create index if not exists idx_page_view_events_created_company_visitor
+  on public.page_view_events (created_at, company_code, visitor_id);
