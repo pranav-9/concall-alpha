@@ -13,6 +13,7 @@ import {
   computeQuarterBandCounts,
 } from "@/lib/leaderboard-distribution";
 import { classifyBoardRead } from "@/lib/board-read";
+import { resolveLeaderboardTab } from "@/lib/leaderboard-tab";
 import { buildScoreBoardRows } from "@/lib/score-board-rows";
 import { computeBoardRanks, COVERAGE_BOARD_SIZE } from "@/lib/leaderboard-rank";
 import {
@@ -51,17 +52,10 @@ export default async function LeaderboardsPage({
   searchParams?: Promise<{ tab?: string }>;
 }) {
   const resolved = await searchParams;
-  const tabParam = resolved?.tab;
-  // "Overall" is the default landing tab. "sentiment" preserved as an alias for
-  // back-compat with old bookmarks that pointed at the prior default (Quarter).
-  const defaultTab =
-    tabParam === "quarter" || tabParam === "sentiment"
-      ? "quarter"
-      : tabParam === "growth"
-        ? "growth"
-        : tabParam === "moat"
-          ? "moat"
-          : "overall";
+  // Default landing tab, resolved through the shared helper (handles the
+  // "sentiment" back-compat alias and unknown values). Same resolver the client
+  // tab strip reconciles with, so the two can't drift.
+  const defaultTab = resolveLeaderboardTab(resolved?.tab);
   const [
     { rows, latestLabel, quarterLabels },
     { growthEntries, moatEntries, growthScoreByCode, nameByCode },
