@@ -120,29 +120,6 @@ export default async function Home() {
           </div>
         </section>
 
-        <section aria-labelledby="watch-heading" className="house-block">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="house-data house-micro text-[var(--ink-soft)]">Plate 03 — On video</p>
-              <h2 id="watch-heading" className="house-display mt-2 text-2xl sm:text-3xl">
-                Watch a company get read
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-                Walkthroughs that connect the business context, the management commentary,
-                and the numbers — the same route the site takes, narrated.
-              </p>
-            </div>
-            <a
-              href="https://www.youtube.com/@pranavyadav6958"
-              target="_blank"
-              rel="noreferrer"
-              className="house-data house-micro w-fit border-b-2 border-[var(--mark)] pb-1 text-[var(--ink)] transition-colors hover:text-[var(--signal)]"
-            >
-              Watch on YouTube →
-            </a>
-          </div>
-        </section>
-
         <p className="house-data house-micro border-t border-[var(--rule)] pt-5 text-[var(--ink-soft)]">
           Scores read documents, not prices.{" "}
           <Link href="/how-scores-work" prefetch={false} className="house-link">

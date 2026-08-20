@@ -23,12 +23,6 @@ const exploreLinks: FooterLinkItem[] = [
 
 const learnLinks: FooterLinkItem[] = [
   {
-    href: "https://www.youtube.com/@pranavyadav6958",
-    label: "YouTube",
-    external: true,
-    highlight: true,
-  },
-  {
     href: "https://x.com/pranav_handle",
     label: "X (Twitter)",
     external: true,
