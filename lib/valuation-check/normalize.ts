@@ -139,6 +139,12 @@ export function normalizeValuationCheck(
     impliedCagrPct: toNumber(rdcf?.implied_cagr_pct),
     zone: rdcf?.zone_vs_phase5 ?? "unknown",
     zoneReading: rdcf?.reading ?? null,
+    // Phase E: a financial priced on the reverse residual-income model. zone_basis is the
+    // discriminator every downstream reader keys on; the implied/delivered figures are RoE, not
+    // growth, so the block relabels and the horizon axis compares implied vs delivered RoE.
+    isResidualIncome: rdcf?.zone_basis === "delivered_roe",
+    impliedRoePct: toNumber(rdcf?.residual_income?.implied_roe_pct),
+    deliveredRoePct: toNumber(rdcf?.residual_income?.delivered_roe_pct),
     scenarios: {
       downside: toNumber(scenarios.downside),
       base: toNumber(scenarios.base),

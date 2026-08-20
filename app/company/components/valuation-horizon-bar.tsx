@@ -75,10 +75,14 @@ export function ValuationHorizonBar({
   impliedPct,
   scenarios,
   delivered,
+  metric = "growth",
 }: {
   impliedPct: number;
   scenarios: { downside: number | null; base: number | null; upside: number | null };
   delivered: { key: string; label: string; pct: number }[];
+  /** "growth" = reverse-DCF implied revenue CAGR (default). "roe" = reverse residual-income
+   * implied sustainable return on equity (Phase E) — only the axis wording changes. */
+  metric?: "growth" | "roe";
 }) {
   const markers: Marker[] = [];
   // Scenarios are fractions (0.23) — scale to percent.
@@ -121,9 +125,12 @@ export function ValuationHorizonBar({
   const rowCount = Math.max(1, rowsRight.length);
   const H = BELOW_FIRST_ROW_Y + rowCount * ROW_H;
 
+  const impliedPhrase =
+    metric === "roe"
+      ? `Today's price implies a ${fmtPct(impliedPct)} sustainable return on equity. `
+      : `Today's price implies ${fmtPct(impliedPct)} revenue growth a year. `;
   const ariaLabel =
-    `Today's price implies ${fmtPct(impliedPct)} revenue growth a year. ` +
-    below.map((m) => `${m.label} ${fmtPct(m.pct)}`).join(", ") + ".";
+    impliedPhrase + below.map((m) => `${m.label} ${fmtPct(m.pct)}`).join(", ") + ".";
 
   return (
     <svg
@@ -231,18 +238,28 @@ export function ValuationHorizonBar({
   );
 }
 
-/** Legend row for the horizon bar, matching the three marker encodings. */
-export function ValuationHorizonLegend({ hasDelivered }: { hasDelivered: boolean }) {
+/** Legend row for the horizon bar, matching the marker encodings. For the residual-income read
+ * there are no fair-value cases — only the delivered RoE and the ask (Phase E). */
+export function ValuationHorizonLegend({
+  hasDelivered,
+  metric = "growth",
+}: {
+  hasDelivered: boolean;
+  metric?: "growth" | "roe";
+}) {
+  const ri = metric === "roe";
   return (
     <div className="mx-auto flex max-w-2xl flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-      <span className="inline-flex items-center gap-1.5">
-        <span className="h-2 w-2 rounded-full bg-violet-500" />
-        our fair-value cases
-      </span>
+      {!ri ? (
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-violet-500" />
+          our fair-value cases
+        </span>
+      ) : null}
       {hasDelivered ? (
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-teal-500" />
-          what it&apos;s delivered
+          {ri ? "return on equity it earns" : "what it's delivered"}
         </span>
       ) : null}
       <span className="inline-flex items-center gap-1.5">

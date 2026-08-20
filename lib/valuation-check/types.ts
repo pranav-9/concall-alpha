@@ -148,6 +148,18 @@ export type ValuationCheckRow = {
     held_constant?: Record<string, number | string | null>;
     phase5_scenarios?: { downside?: number | null; base?: number | null; upside?: number | null };
     plausibility_check?: string | null;
+    /** Phase E (financials): the reverse residual-income model rides in this block, disambiguated
+     * by zone_basis="delivered_roe". implied_cagr(_pct) carries the implied RoE, not a CAGR. */
+    pricing_model?: "reverse_dcf" | "residual_income" | null;
+    residual_income?: {
+      price_to_book?: number | null;
+      implied_roe_pct?: number | null;
+      delivered_roe_pct?: number | null;
+      delivered_roe_basis?: string | null;
+      cost_of_equity_pct?: number | null;
+      sustainable_growth_pct?: number | null;
+      roe_gap_pp?: number | null;
+    } | null;
   } | null;
   overlay: {
     rows: ValuationOverlayRow[];
@@ -193,6 +205,11 @@ export type NormalizedValuationCheck = {
   impliedCagrPct: number | null;
   zone: ValuationZone;
   zoneReading: string | null;
+  /** Phase E: true when the pricing block is a reverse residual-income read (financials) — the
+   * block relabels and the implied/delivered figures below are a return on equity, not growth. */
+  isResidualIncome: boolean;
+  impliedRoePct: number | null;
+  deliveredRoePct: number | null;
   scenarios: { downside: number | null; base: number | null; upside: number | null };
   /**
    * Delivered revenue CAGR markers for the reverse-DCF horizon bar, from

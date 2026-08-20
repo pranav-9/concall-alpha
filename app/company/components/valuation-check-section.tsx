@@ -115,9 +115,30 @@ function buildHeadline(v: NormalizedValuationCheck): string | null {
     else multiplesClause = "Mixed against its own history";
   }
 
-  // Only the DCF path carries a zone worth reading against.
+  // Only the pricing block carries a zone worth reading against. For financials that block is a
+  // residual-income read, so the clause is about return on equity, not growth (Phase E).
   let priceClause: string | null = null;
-  if (v.reverseDcfApplicable) {
+  if (v.reverseDcfApplicable && v.isResidualIncome) {
+    switch (v.zone) {
+      case "above_bull":
+        priceClause = "the price banks on a return on equity above what it earns";
+        break;
+      case "base_to_bull":
+        priceClause = "the price leans on a return on equity above what it earns";
+        break;
+      case "at_base":
+        priceClause = "the price sits near the return on equity it earns";
+        break;
+      case "bear_to_base":
+        priceClause = "the price implies a return on equity below what it earns";
+        break;
+      case "below_bear":
+        priceClause = "the price implies a return on equity well below what it earns";
+        break;
+      default:
+        priceClause = null;
+    }
+  } else if (v.reverseDcfApplicable) {
     switch (v.zone) {
       case "above_bull":
         priceClause = "the price banks on growth above anything it has delivered";
@@ -186,16 +207,59 @@ type Props = {
   scoreHistory?: ValuationScorePoint[];
 };
 
-/** REVERSE DCF — what growth the price banks on (implied CAGR vs our cases + delivered). */
+/**
+ * The §9.4 pricing block. For most companies this is the reverse DCF (implied growth CAGR vs our
+ * cases + delivered). For financials it is the reverse residual-income model (Phase E): the implied
+ * SUSTAINABLE RETURN ON EQUITY the price bakes in, placed against the RoE the business delivers.
+ */
 function ImpliedGrowth({ valuation }: { valuation: NormalizedValuationCheck }) {
+  const ri = valuation.isResidualIncome;
+  const blockLabel = ri ? "Residual income" : "Reverse DCF";
+
   if (!valuation.reverseDcfApplicable) {
     return (
       <div className={cn(elevatedBlockClass, "px-4 py-3.5")}>
-        <PlateLabel sub="not applicable">Reverse DCF</PlateLabel>
+        <PlateLabel sub="not applicable">{blockLabel}</PlateLabel>
         <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
           {valuation.reverseDcfNote ??
             "A cash-flow model is not the right tool for this business type."}
         </p>
+      </div>
+    );
+  }
+
+  if (ri) {
+    const impliedRoe = valuation.impliedRoePct;
+    const deliveredRoe = valuation.deliveredRoePct;
+    const hasRoeBar = impliedRoe !== null;
+    // The residual-income read compares the implied RoE against the ONE RoE the business
+    // delivers — no bear/base/bull scenarios. Feed the delivered RoE as the single "delivered"
+    // marker and drop the scenario cases.
+    const deliveredMarker =
+      deliveredRoe !== null
+        ? [{ key: "roe", label: `Delivered RoE ${deliveredRoe.toFixed(1)}%`, pct: deliveredRoe }]
+        : [];
+    return (
+      <div className={cn(elevatedBlockClass, "px-4 py-3.5")}>
+        <PlateLabel sub="the return on equity the price implies">{blockLabel}</PlateLabel>
+
+        {hasRoeBar ? (
+          <div className="mt-3 space-y-2">
+            <ValuationHorizonBar
+              impliedPct={impliedRoe}
+              scenarios={{ downside: null, base: null, upside: null }}
+              delivered={deliveredMarker}
+              metric="roe"
+            />
+            <ValuationHorizonLegend hasDelivered={deliveredMarker.length > 0} metric="roe" />
+          </div>
+        ) : null}
+
+        {valuation.plausibilityCheck ? (
+          <p className="mt-3 text-[12px] leading-snug text-muted-foreground">
+            {valuation.plausibilityCheck}
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -205,7 +269,7 @@ function ImpliedGrowth({ valuation }: { valuation: NormalizedValuationCheck }) {
 
   return (
     <div className={cn(elevatedBlockClass, "px-4 py-3.5")}>
-      <PlateLabel sub="what growth the price banks on">Reverse DCF</PlateLabel>
+      <PlateLabel sub="what growth the price banks on">{blockLabel}</PlateLabel>
 
       {hasBar ? (
         <div className="mt-3 space-y-2">
