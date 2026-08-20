@@ -77,6 +77,22 @@ const barrierStrengthLabel = (
   }
 };
 
+// Plain-English gloss for the pipeline's `posture` enum, so the reader sees a
+// claim rather than the internal "excess returns" vocabulary. Unmapped values
+// fall through unchanged.
+const postureLabel = (posture: string): string => {
+  switch (posture) {
+    case "Confirmed excess returns":
+      return "Returns prove the moat";
+    case "Mediocre excess returns":
+      return "Returns are middling";
+    case "Untested excess returns":
+      return "Returns not yet proven";
+    default:
+      return posture;
+  }
+};
+
 // Render a list of atomic bullets (one of the 8 v15 array fields). Each
 // bullet is one short claim ≤25 words; render as a tight disc list.
 const BulletList = ({
@@ -134,20 +150,19 @@ const SourceCard = ({ source }: { source: V15Source }) => {
             <span className={chipClass("slate")}>{source.subcategory}</span>
           )}
         </div>
-        <span className={chipClass("emerald")}>Applies</span>
       </div>
 
       <div className="space-y-2 p-3">
         <SourceEvidenceRow
           icon={ShieldCheck}
           iconClassName="text-emerald-600 dark:text-emerald-400"
-          label="Presence"
+          label="Evidence it's real"
           items={source.presence}
         />
         <SourceEvidenceRow
           icon={Clock}
           iconClassName="text-sky-600 dark:text-sky-400"
-          label="Durability"
+          label="Evidence it lasts"
           items={source.durability}
         />
         {!hasPresence && !hasDurability && (
@@ -171,14 +186,15 @@ const SchemaNotice = ({
 }) => {
   const message =
     status === "deprecated"
-      ? "Assessment uses a deprecated schema. Regenerate with the v15 conversational pipeline to view the full moat breakdown."
-      : "No assessment payload available. Regenerate with the v15 conversational pipeline to view the full moat breakdown.";
+      ? "This moat read is being refreshed to our latest format. The full breakdown will be back shortly."
+      : "We haven't published a moat read for this company yet.";
+  const title = status === "deprecated" ? "Being refreshed" : "Not available yet";
   return (
     <div className={cn(elevatedBlockClass, "p-4")}>
       <div className="flex items-start gap-2">
         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
         <div className="min-w-0 space-y-1">
-          <p className={sectionTitleClass}>Schema mismatch</p>
+          <p className={sectionTitleClass}>{title}</p>
           <p className={mutedBulletClass}>{message}</p>
           {generatedAtShort && (
             <p className={metadataClass}>Last generated {generatedAtShort}</p>
@@ -222,6 +238,7 @@ export function MoatAnalysisSection({
               "gap-1 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em]",
             )}
           >
+            <span className="font-medium text-muted-foreground">Strength</span>
             <TierIcon
               className={cn("h-3 w-3", moatTierGradeIconClass(analysis.moatTier))}
             />
@@ -253,7 +270,6 @@ export function MoatAnalysisSection({
   const ruledOutSources = payload.sources.filter((s) => !s.applies);
   const moreEvidenceMetadata = [
     generatedAtShort ? `Generated ${generatedAtShort}` : null,
-    analysis.assessmentVersion ? `Schema ${analysis.assessmentVersion}` : null,
   ].filter(Boolean);
   const hasMoreEvidence =
     payload.why_this_tier.length > 0 ||
@@ -270,22 +286,21 @@ export function MoatAnalysisSection({
         <div className={cn(elevatedBlockClass, "p-4 space-y-3")}>
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="space-y-0.5">
-              <p className={sectionTitleClass}>Economic Proof</p>
+              <p className={sectionTitleClass}>Returns check</p>
               <p className={sectionSubtitleClass}>
-                Whether multi-year returns support the moat call.
+                Whether multi-year returns back up the moat call.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className={chipClass("violet")}>{payload.step_0.posture}</span>
+              <span className={chipClass("violet")}>
+                {postureLabel(payload.step_0.posture)}
+              </span>
               <span
                 className={chipClass(
                   payload.financial_check.cycle_tested ? "emerald" : "rose",
                 )}
               >
-                Cycle-tested · {payload.financial_check.cycle_tested ? "Yes" : "No"}
-              </span>
-              <span className={chipClass("slate")}>
-                {payload.step_0.tier_anchor_phrase}
+                Held up in a downturn · {payload.financial_check.cycle_tested ? "Yes" : "No"}
               </span>
             </div>
           </div>
@@ -319,9 +334,9 @@ export function MoatAnalysisSection({
         <div className={cn(elevatedBlockClass, "p-4 space-y-3")}>
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="space-y-0.5">
-              <p className={sectionTitleClass}>Gatekeeper</p>
+              <p className={sectionTitleClass}>Barriers to entry</p>
               <p className={sectionSubtitleClass}>
-                Could a well-funded attacker replicate the moat in a decade?
+                Could a well-funded rival replicate the moat within a decade?
               </p>
             </div>
             {(() => {
@@ -335,7 +350,7 @@ export function MoatAnalysisSection({
             {payload.gatekeeper.rationale}
           </p>
           <div className="space-y-1.5">
-            <p className={miniLabelClass}>Credible attackers</p>
+            <p className={miniLabelClass}>Potential challengers</p>
             <div className="flex flex-wrap items-center gap-1.5">
               {payload.gatekeeper.attackers.map((attacker, i) => (
                 <span key={i} className={chipClass("slate")}>
@@ -351,9 +366,9 @@ export function MoatAnalysisSection({
       <div className={cn(elevatedBlockClass, "p-3 space-y-3")}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="space-y-0.5">
-            <p className={sectionTitleClass}>Moat sources</p>
+            <p className={sectionTitleClass}>Where the moat comes from</p>
             <p className={sectionSubtitleClass}>
-              {appliesSources.length} applies
+              {appliesSources.length} {appliesSources.length === 1 ? "source applies" : "sources apply"}
               {ruledOutSources.length > 0 ? ` · ${ruledOutSources.length} ruled out` : ""}
             </p>
           </div>
@@ -431,7 +446,7 @@ export function MoatAnalysisSection({
               <div className="min-w-0 space-y-0.5">
                 <p className={sectionTitleClass}>More evidence</p>
                 <p className={sectionSubtitleClass}>
-                  Tier rationale, change triggers, limits of evidence, and metadata.
+                  Why this rating, what would change it, and the limits of the evidence.
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
@@ -457,9 +472,9 @@ export function MoatAnalysisSection({
                 <div className="flex items-start gap-2">
                   <Target className="mt-0.5 h-4 w-4 shrink-0 text-foreground/70" />
                   <div className="space-y-0.5">
-                    <p className={sectionTitleClass}>Why this tier</p>
+                    <p className={sectionTitleClass}>Why this rating</p>
                     <p className={sectionSubtitleClass}>
-                      Why the call sits at this tier and not the next one.
+                      Why the call sits here and not one notch higher or lower.
                     </p>
                   </div>
                 </div>

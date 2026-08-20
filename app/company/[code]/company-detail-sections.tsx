@@ -181,7 +181,7 @@ export async function MoatAnalysisPanel({ overview }: CompanyDetailSectionProps)
           overview,
           "moat-analysis",
           "Moat Analysis",
-          "We have not generated a competitive moat analysis for this company yet.",
+          "We haven't published a moat read for this company yet.",
         )
       )}
     </SectionCard>
