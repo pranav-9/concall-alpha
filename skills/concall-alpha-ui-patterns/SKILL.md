@@ -65,21 +65,39 @@ Avoid using downside-only labels for neutral or mixed content. For moat analysis
 
 ## Moat Section Rules
 
-For moat UI changes, keep the initial display focused on:
+The moat section is plain-language and verdict-first. A first-time reader should
+get the answer from the top of the section without knowing framework vocabulary.
+Do not surface the raw framework enums (`WIDE/NARROW MOAT`, `STRONG/MID/WEAK`,
+`posture`, `tier_anchor_phrase`, `barrier_strength`, source-type names like
+"Switching Costs") as the primary reader-facing copy. Translate them via the
+static plain-language maps in `moat-analysis-section.tsx`
+(`edgePhrase`, `advantageLabel`, `advantageMeaning`, `durabilityRead`).
 
-- rating and tier
-- economic proof
-- why this tier
-- applicable moat sources
-- gatekeeper
+Default (always-visible) display, in order:
 
-Put these in a collapsed supporting block by default:
+- Verdict header — plain edge phrase (from `rating`×`tier`), a plain sentence,
+  and the "How strong" Weak/Moderate/Strong meter (from `tier`).
+- Advantages table — all four sources, applies-first, ruled-out greyed with the
+  real `does_not_apply_reason`.
+- "Will the edge last?" — a `Likely/Mixed/Unlikely` read derived from
+  `cycle_tested` + `gatekeeper.barrier_strength`, with the two real prose cards
+  (`step_0.headline`, `gatekeeper.rationale`).
 
-- `What would change the call`
-- `Limits of evidence`
-- generated date and schema metadata
+Put everything else in ONE collapsed "Full analysis" `<details>` (discoverable by
+label): per-source `presence`/`durability` bullets, `why_this_tier`,
+`what_would_change_the_call`, credible attackers, `data_limitations`, generated
+date. Do not surface schema/version metadata to the reader.
 
-Show `cycle_tested` near the economic proof or rating summary because it materially affects the meaning of WIDE/NARROW calls.
+Do NOT invent data the payload does not carry:
+
+- No moat **trajectory** ("widening" / "was weaker") — the table stores one
+  overwritten row per company, so there is no history. (Deferred to a future
+  moat-history capture.)
+- No per-source **strength** rating (●●○ dots) or company-specific per-source
+  one-liner — the v15 schema has no per-source strength, and `presence[]` is
+  dense analyst prose. Both are pipeline-provided in a later schema bump; until
+  then the advantages table shows the generic `advantageMeaning` template and
+  omits the strength column.
 
 Validate that the frontend schema does not accept payloads the pipeline would reject. In particular, source rendering assumes:
 

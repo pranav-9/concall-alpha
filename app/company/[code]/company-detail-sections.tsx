@@ -161,7 +161,8 @@ export async function MoatAnalysisPanel({ overview }: CompanyDetailSectionProps)
   return (
     <SectionCard
       id="moat-analysis"
-      title="Moat Analysis"
+      title="Moat"
+      headerDescription="How protected it is from competition"
       feedbackEnabled={Boolean(normalizedMoatAnalysis)}
       feedbackCompanyCode={overview.company_code}
       feedbackCompanyName={overview.company_name}
