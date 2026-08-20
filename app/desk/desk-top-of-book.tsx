@@ -2,17 +2,22 @@ import Link from "next/link";
 
 import ConcallScore from "@/components/concall-score";
 import type { DeskTableRow } from "./desk-leaderboard-table";
+import DeskMostViewed from "./desk-most-viewed";
 
 // The right rail: two ranked blocks the mockup calls "Top of the book" — the
-// quarter's highest reads and the biggest positive trend twists.
+// quarter's highest reads and the companies readers are viewing most.
 export default function DeskTopOfBook({
   quarterLabel,
   topPerformers,
-  positiveTwist,
+  mostViewedWeek,
+  mostViewedMonth,
+  mostViewedInitial,
 }: {
   quarterLabel: string;
   topPerformers: DeskTableRow[];
-  positiveTwist: DeskTableRow[];
+  mostViewedWeek: DeskTableRow[];
+  mostViewedMonth: DeskTableRow[];
+  mostViewedInitial: "week" | "month";
 }) {
   return (
     <div className="space-y-8 lg:sticky lg:top-24">
@@ -37,30 +42,11 @@ export default function DeskTopOfBook({
         ))}
       </Block>
 
-      <Block title="Positive trend twist">
-        {positiveTwist.map((row) => (
-          <Link
-            key={row.code}
-            href={`/company/${row.code}`}
-            prefetch={false}
-            className="flex items-center gap-3 border-b border-[var(--rule)] py-2.5 last:border-b-0 transition-colors hover:bg-[var(--paper-2)]"
-          >
-            <span className="min-w-0 flex-1">
-              <span className="house-display block truncate text-sm text-[var(--ink)]">
-                {row.name}
-              </span>
-              {row.twistPct != null ? (
-                <span className="house-data house-micro text-[var(--ink-soft)]">
-                  +{row.twistPct.toFixed(1)}% vs prev 4Q avg
-                </span>
-              ) : null}
-            </span>
-            {row.latestScore != null ? (
-              <ConcallScore score={row.latestScore} size="sm" />
-            ) : null}
-          </Link>
-        ))}
-      </Block>
+      <DeskMostViewed
+        week={mostViewedWeek}
+        month={mostViewedMonth}
+        initialWindow={mostViewedInitial}
+      />
     </div>
   );
 }

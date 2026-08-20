@@ -1,6 +1,10 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
+
 import { createClient } from "@/lib/supabase/server";
+import { createPublicReadClient } from "@/lib/supabase/public-read";
+import { selectMostViewed } from "@/lib/desk-most-viewed";
 import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { currentReportingQuarter } from "@/lib/current-quarter";
@@ -63,6 +67,12 @@ export type DeskLeaderboard = {
   positiveTwist: DeskRow[];
   growthLeaders: DeskRow[];
   moatLeaders: DeskRow[];
+  /** Most-viewed covered companies over the trailing 7 days (unique visitors). */
+  mostViewedWeek: DeskRow[];
+  /** Most-viewed covered companies over the trailing 30 days (unique visitors). */
+  mostViewedMonth: DeskRow[];
+  /** Which window the right-rail block opens on — Week unless it's empty. */
+  mostViewedInitial: "week" | "month";
 };
 
 type ConcallRow = {
@@ -258,16 +268,66 @@ async function fetchGrowthLeaders(supabase: SupabaseServerClient): Promise<Growt
   });
 }
 
+type MostViewedCodes = { week: string[]; month: string[] };
+
+// Distinct-visitor top companies for one time window. Fail-soft: any error —
+// including the RPC not existing yet (pre-DDL) — resolves to [] so the desk page
+// never 500s over a missing analytics block.
+async function fetchTopVisitors(
+  client: ReturnType<typeof createPublicReadClient>,
+  startIso: string,
+  limit: number,
+): Promise<string[]> {
+  try {
+    const { data, error } = await client.rpc("get_top_company_visitors", {
+      start_ts: startIso,
+      limit_n: limit,
+    });
+    if (error || !data) return [];
+    return (data as { company_code: string | null }[])
+      .map((r) => r.company_code)
+      .filter((c): c is string => !!c);
+  } catch {
+    return [];
+  }
+}
+
+// Cached ~5 min. A NO-ARG function so the cache key is stable — the 7d/30d
+// cutoffs are computed INSIDE (bucketed to the hour), not passed as args, which
+// would otherwise make every request a fresh key and defeat revalidate. Uses the
+// cookie-free public-read client so the result stays cacheable.
+const getCachedMostViewedCodes = unstable_cache(
+  async (): Promise<MostViewedCodes> => {
+    try {
+      const nowMs = Date.now();
+      const hourBucket = nowMs - (nowMs % 3_600_000);
+      const iso = (days: number) =>
+        new Date(hourBucket - days * 86_400_000).toISOString();
+      const client = createPublicReadClient();
+      const [week, month] = await Promise.all([
+        fetchTopVisitors(client, iso(7), 40),
+        fetchTopVisitors(client, iso(30), 40),
+      ]);
+      return { week, month };
+    } catch {
+      return { week: [], month: [] };
+    }
+  },
+  ["desk-most-viewed-codes-v1"],
+  { revalidate: 300 },
+);
+
 export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
   const supabase = await createClient();
   const now = new Date();
   const quarter = currentReportingQuarter(now);
 
-  const [coverage, concallRows, moat, growth] = await Promise.all([
+  const [coverage, concallRows, moat, growth, mostViewedCodes] = await Promise.all([
     fetchCoverage(supabase),
     fetchConcallRows(supabase),
     fetchMoatLeaders(supabase),
     fetchGrowthLeaders(supabase),
+    getCachedMostViewedCodes(),
   ]);
 
   // Group each covered company's reads, newest-first.
@@ -423,6 +483,24 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
       };
     });
 
+  // Most viewed: turn the RPC's popularity-ordered codes into rows, gated by the
+  // coverage map (so off-discovery / uncovered / fake codes drop) and enriched
+  // with score/sparkline from the concall rows where available.
+  const pickMostViewed = (codes: string[]) =>
+    selectMostViewed({
+      orderedCodes: codes,
+      coveredByCode: coverage.byCode,
+      excludedKeys: coverage.excludedKeys,
+      rowByCode,
+      limit: 8,
+    });
+  const mostViewedWeek = pickMostViewed(mostViewedCodes.week);
+  const mostViewedMonth = pickMostViewed(mostViewedCodes.month);
+  // Open on Week unless it's empty (quiet week at low traffic) — never first-paint
+  // an empty flagship block.
+  const mostViewedInitial: "week" | "month" =
+    mostViewedWeek.length > 0 ? "week" : "month";
+
   return {
     quarterLabel: quarter.label,
     coveredCount: coverage.coveredCount,
@@ -433,5 +511,8 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
     positiveTwist,
     growthLeaders,
     moatLeaders,
+    mostViewedWeek,
+    mostViewedMonth,
+    mostViewedInitial,
   };
 }
