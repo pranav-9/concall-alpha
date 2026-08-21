@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -35,8 +35,11 @@ export function WatchlistButton({
   initialContainingIds: number[];
 }) {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(initialIsAuthenticated);
-  const [watchlists, setWatchlists] = useState<WatchlistOption[]>(initialWatchlists);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    initialIsAuthenticated,
+  );
+  const [watchlists, setWatchlists] =
+    useState<WatchlistOption[]>(initialWatchlists);
   const [containingIds, setContainingIds] = useState<Set<number>>(
     () => new Set(initialContainingIds),
   );
@@ -80,7 +83,10 @@ export function WatchlistButton({
     });
   };
 
-  const toggleMembership = async (watchlist: WatchlistOption, nextChecked: boolean) => {
+  const toggleMembership = async (
+    watchlist: WatchlistOption,
+    nextChecked: boolean,
+  ) => {
     if (pendingIds.has(watchlist.id)) return;
     const ok = await ensureAuthenticated();
     if (!ok) return;
@@ -96,17 +102,15 @@ export function WatchlistButton({
         body: JSON.stringify({ companyCode, watchlistId: watchlist.id }),
       });
 
-      const payload = (await response.json().catch(() => null)) as
-        | {
-            ok?: boolean;
-            added?: boolean;
-            removed?: boolean;
-            alreadyExists?: boolean;
-            notFound?: boolean;
-            error?: string;
-            code?: string;
-          }
-        | null;
+      const payload = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        added?: boolean;
+        removed?: boolean;
+        alreadyExists?: boolean;
+        notFound?: boolean;
+        error?: string;
+        code?: string;
+      } | null;
 
       if (!response.ok) {
         setMembership(watchlist.id, previousIsMember);
@@ -115,7 +119,10 @@ export function WatchlistButton({
           return;
         }
         window.alert(
-          payload?.error ?? (nextChecked ? "Unable to add company." : "Unable to remove company."),
+          payload?.error ??
+            (nextChecked
+              ? "Unable to add company."
+              : "Unable to remove company."),
         );
         return;
       }
@@ -148,9 +155,12 @@ export function WatchlistButton({
         body: JSON.stringify({ name: trimmed }),
       });
 
-      const createPayload = (await createResponse.json().catch(() => null)) as
-        | { ok?: boolean; watchlistId?: number; name?: string; error?: string }
-        | null;
+      const createPayload = (await createResponse.json().catch(() => null)) as {
+        ok?: boolean;
+        watchlistId?: number;
+        name?: string;
+        error?: string;
+      } | null;
 
       if (!createResponse.ok || !createPayload?.watchlistId) {
         window.alert(createPayload?.error ?? "Unable to create watchlist.");
@@ -169,12 +179,17 @@ export function WatchlistButton({
         body: JSON.stringify({ companyCode, watchlistId: newList.id }),
       });
 
-      const addPayload = (await addResponse.json().catch(() => null)) as
-        | { ok?: boolean; added?: boolean; alreadyExists?: boolean; error?: string }
-        | null;
+      const addPayload = (await addResponse.json().catch(() => null)) as {
+        ok?: boolean;
+        added?: boolean;
+        alreadyExists?: boolean;
+        error?: string;
+      } | null;
 
       if (!addResponse.ok) {
-        window.alert(addPayload?.error ?? "Watchlist created but unable to add company.");
+        window.alert(
+          addPayload?.error ?? "Watchlist created but unable to add company.",
+        );
         return;
       }
 
@@ -192,11 +207,16 @@ export function WatchlistButton({
         type="button"
         variant="outline"
         size="sm"
+        className="inline-flex items-center gap-1.5 rounded-full lg:rounded-md"
         onClick={() => {
-          router.push(`/auth/login?next=${encodeURIComponent(loginRedirectPath)}`);
+          router.push(
+            `/auth/login?next=${encodeURIComponent(loginRedirectPath)}`,
+          );
         }}
       >
-        Add to Watchlist
+        <Star className="h-3.5 w-3.5 lg:hidden" aria-hidden />
+        <span className="lg:hidden">Watchlist</span>
+        <span className="hidden lg:inline">Add to Watchlist</span>
       </Button>
     );
   }
@@ -207,6 +227,9 @@ export function WatchlistButton({
       : containingCount === 1
         ? "In 1 list"
         : `In ${containingCount} lists`;
+  // Mobile pill keeps the label short (design 4a: "☆ Watchlist"); the star
+  // fills once the company is in any list.
+  const compactLabel = containingCount === 0 ? "Watchlist" : triggerLabel;
 
   return (
     <DropdownMenu>
@@ -216,10 +239,15 @@ export function WatchlistButton({
           variant={containingCount > 0 ? "secondary" : "outline"}
           size="sm"
           disabled={isWorking}
-          className="inline-flex items-center gap-1.5"
+          className="inline-flex items-center gap-1.5 rounded-full lg:rounded-md"
         >
-          {triggerLabel}
-          <ChevronDown className="h-4 w-4" />
+          <Star
+            className={`h-3.5 w-3.5 lg:hidden ${containingCount > 0 ? "fill-current" : ""}`}
+            aria-hidden
+          />
+          <span className="lg:hidden">{compactLabel}</span>
+          <span className="hidden lg:inline">{triggerLabel}</span>
+          <ChevronDown className="hidden h-4 w-4 lg:inline" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
