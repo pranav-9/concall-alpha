@@ -14,18 +14,14 @@ type WatchlistButtonProps = {
   initialContainingIds: number[];
 };
 
-const WatchlistButton = dynamic<WatchlistButtonProps>(
-  () => import("@/components/watchlist-button").then((mod) => mod.WatchlistButton),
+const WatchlistButton = dynamic<WatchlistButtonProps>(() =>
+  import("@/components/watchlist-button").then((mod) => mod.WatchlistButton),
 );
 
-function WatchlistSlotShell({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function WatchlistSlotShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="shrink-0 self-start rounded-2xl border border-border/60 bg-background/70 p-3 shadow-sm backdrop-blur-sm lg:ml-auto lg:pt-1">
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+    <div className="shrink-0 self-start lg:ml-auto lg:rounded-2xl lg:border lg:border-border/60 lg:bg-background/70 lg:p-3 lg:pt-1 lg:shadow-sm lg:backdrop-blur-sm">
+      <p className="mb-2 hidden text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground lg:block">
         Track this name
       </p>
       {children}
@@ -36,7 +32,7 @@ function WatchlistSlotShell({
 export function WatchlistSlotFallback() {
   return (
     <WatchlistSlotShell>
-      <div className="h-9 w-32 animate-pulse rounded-md bg-muted" />
+      <div className="h-9 w-28 animate-pulse rounded-full bg-muted lg:w-32 lg:rounded-md" />
     </WatchlistSlotShell>
   );
 }
@@ -77,9 +73,11 @@ export default async function CompanyWatchlistSlot({
         .eq("company_code", companyCode);
 
       const seen = new Set<number>();
-      ((membershipRows ?? []) as Array<{ watchlist_id: number }>).forEach((row) => {
-        seen.add(row.watchlist_id);
-      });
+      ((membershipRows ?? []) as Array<{ watchlist_id: number }>).forEach(
+        (row) => {
+          seen.add(row.watchlist_id);
+        },
+      );
       containingIds = Array.from(seen);
     }
   }

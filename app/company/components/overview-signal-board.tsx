@@ -149,49 +149,64 @@ async function WhereItSits({ companyCode }: { companyCode: string }) {
   const pos = await getOverviewBoardPosition(companyCode);
   if (!pos) return null;
   const left = Math.max(2, Math.min(98, pos.percentile * 100));
-  return (
-    <div className="mt-3 w-full sm:w-[200px]">
-      <p className={cn(kickerClass, "mb-1.5")}>Where it sits</p>
-      <div
-        className="relative h-[7px] rounded-full bg-gradient-to-r from-muted via-teal-500/40 to-teal-500"
-        role="img"
-        aria-label={`Reads above ${Math.round(pos.percentile * 100)}% of covered companies`}
-      >
-        <span
-          className="absolute top-[-3.5px] h-[14px] w-[3px] -translate-x-1/2 rounded-sm bg-foreground"
-          style={{ left: `${left}%` }}
-        />
-      </div>
-      <Link
-        href="/leaderboards"
-        title="Rank on the Overall leaderboard (recency-weighted quarter leg) — opens the board"
-        className="mt-2 flex items-baseline justify-end gap-2 transition-colors hover:opacity-80"
-      >
-        <span
-          className={cn(
-            displayClass,
-            "text-[22px] leading-none text-foreground",
-          )}
-        >
-          #{pos.rank}
-          <span className="text-[13px] font-semibold text-muted-foreground">
-            /{pos.total}
-          </span>
-        </span>
-        <span
-          className={cn(
-            "rounded-full px-2.5 py-0.5 text-[11px] font-bold",
-            pos.belowLine
-              ? "bg-muted text-muted-foreground"
-              : "bg-teal-500/15 text-teal-700 dark:text-teal-300",
-          )}
-        >
-          {pos.belowLine
-            ? "BELOW LINE"
-            : topShareLabel(pos.rank, pos.total).toUpperCase()}
-        </span>
-      </Link>
+  const bar = (
+    <div
+      className="relative h-[7px] rounded-full bg-gradient-to-r from-muted via-teal-500/40 to-teal-500"
+      role="img"
+      aria-label={`Reads above ${Math.round(pos.percentile * 100)}% of covered companies`}
+    >
+      <span
+        className="absolute top-[-3.5px] h-[14px] w-[3px] -translate-x-1/2 rounded-sm bg-foreground"
+        style={{ left: `${left}%` }}
+      />
     </div>
+  );
+  const rank = (
+    <Link
+      href="/leaderboards"
+      title="Rank on the Overall leaderboard (recency-weighted quarter leg) — opens the board"
+      className="flex items-baseline justify-end gap-2 transition-colors hover:opacity-80"
+    >
+      <span
+        className={cn(displayClass, "text-[22px] leading-none text-foreground")}
+      >
+        #{pos.rank}
+        <span className="text-[13px] font-semibold text-muted-foreground">
+          /{pos.total}
+        </span>
+      </span>
+      <span
+        className={cn(
+          "rounded-full px-2.5 py-0.5 text-[11px] font-bold",
+          pos.belowLine
+            ? "bg-muted text-muted-foreground"
+            : "bg-teal-500/15 text-teal-700 dark:text-teal-300",
+        )}
+      >
+        {pos.belowLine
+          ? "BELOW LINE"
+          : topShareLabel(pos.rank, pos.total).toUpperCase()}
+      </span>
+    </Link>
+  );
+  // Two cells, placed by OverallRead's grid. Mobile (design 4a): the rank sits
+  // beside the numeral with the kicker under it, and the bar runs full-width
+  // underneath both. lg: one right-aligned column — kicker → bar → rank.
+  return (
+    <>
+      <div className="justify-self-end text-right lg:mt-3 lg:w-full">
+        <div className="hidden lg:block">
+          <p className={cn(kickerClass, "mb-1.5")}>Where it sits</p>
+          {bar}
+          <div className="mt-2">{rank}</div>
+        </div>
+        <div className="lg:hidden">
+          {rank}
+          <p className={cn(kickerClass, "mt-1.5")}>Where it sits</p>
+        </div>
+      </div>
+      <div className="col-span-2 mt-3 lg:hidden">{bar}</div>
+    </>
   );
 }
 
@@ -229,7 +244,7 @@ function Header({
     chips.push(
       <span
         key="cap"
-        className="inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground"
+        className="hidden lg:inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground"
       >
         {capLabel}
       </span>,
@@ -251,7 +266,7 @@ function Header({
     chips.push(
       <span
         key="counts"
-        className="inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground"
+        className="hidden lg:inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground"
       >
         {[
           segCount > 0 ? `${segCount} segments` : null,
@@ -312,9 +327,9 @@ function OverallRead({
   streamPosition: boolean;
 }) {
   return (
-    <div className="flex items-end justify-between gap-6 lg:w-[200px] lg:flex-col lg:items-end lg:gap-0">
+    <div className="grid grid-cols-[auto_1fr] items-end gap-x-6 lg:flex lg:w-[200px] lg:flex-col lg:items-end lg:gap-0">
       <div className="lg:text-right">
-        <p className={kickerClass}>Overall read</p>
+        <p className={cn(kickerClass, "whitespace-nowrap")}>Overall read</p>
         <p
           className={cn(
             displayClass,
@@ -327,13 +342,19 @@ function OverallRead({
       {streamPosition ? (
         <Suspense
           fallback={
-            <div className="mt-3 h-[62px] w-full sm:w-[200px]" aria-hidden />
+            <div
+              className="h-[62px] justify-self-end lg:mt-3 lg:w-full"
+              aria-hidden
+            />
           }
         >
           <WhereItSits companyCode={overview.company_code} />
         </Suspense>
       ) : (
-        <div className="mt-3 h-[62px] w-full sm:w-[200px]" aria-hidden />
+        <div
+          className="h-[62px] justify-self-end lg:mt-3 lg:w-full"
+          aria-hidden
+        />
       )}
     </div>
   );
