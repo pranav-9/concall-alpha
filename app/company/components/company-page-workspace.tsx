@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { resolveSectionId as resolveSectionHash } from "@/lib/section-hash";
 import type { CompanySidebarSectionItem } from "../constants";
 import { TopSectionTabs } from "./top-section-tabs";
 import { analytics } from "@/lib/analytics";
@@ -46,10 +47,7 @@ export function CompanyPageWorkspace({
     "overview";
 
   const resolveSectionId = React.useCallback(
-    (hash: string) => {
-      const sectionId = hash.replace(/^#/, "").trim();
-      return validIds.has(sectionId) ? sectionId : fallbackSectionId;
-    },
+    (hash: string) => resolveSectionHash(hash, validIds, fallbackSectionId),
     [fallbackSectionId, validIds],
   );
 
