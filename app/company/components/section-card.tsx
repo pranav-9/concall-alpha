@@ -6,9 +6,19 @@ import {
   type OverviewBodyPillTone,
 } from "../[code]/display-tokens";
 import { SectionFeedbackButton } from "./section-feedback-button";
+import { SectionLink } from "./section-link";
 import { SectionHelpfulnessFooter } from "./section-helpfulness-footer";
 
 type SectionTone = "sky" | "emerald" | "amber" | "violet" | "rose" | "slate";
+
+/**
+ * Header pill. `anchor` links to a block inside this section (plain `#id`,
+ * same panel); `sectionId` jumps to another section through the workspace so
+ * the target panel mounts before scrolling. Plain strings stay static.
+ */
+export type SectionHeaderPill =
+  | string
+  | { label: string; anchor?: string; sectionId?: string };
 
 export type SectionHeaderRankPill = {
   label: string;
@@ -23,7 +33,7 @@ interface SectionCardProps {
   className?: string;
   headerAction?: React.ReactNode;
   headerDescription?: React.ReactNode;
-  headerPills?: string[];
+  headerPills?: SectionHeaderPill[];
   headerRankPills?: SectionHeaderRankPill[];
   feedbackEnabled?: boolean;
   feedbackCompanyCode?: string;
@@ -99,7 +109,8 @@ const TONE_CLASSES: Record<
 const CARD_SHELL =
   "group relative scroll-mt-40 overflow-hidden rounded-[1.55rem] border shadow-[0_18px_42px_-34px_rgba(15,23,42,0.45)] backdrop-blur-sm";
 
-const SCROLL_MARGIN_TOP =
+/** Sticky navbar + company tabs clearance for anything targeted by a hash. */
+export const SCROLL_MARGIN_TOP =
   "calc(var(--global-navbar-height, 84px) + var(--company-tabs-height, 56px) + 1rem)";
 
 export function SectionCard({
@@ -142,7 +153,7 @@ export function SectionCard({
     ) : null;
 
   const header = (
-    <div className="relative flex flex-wrap items-start justify-between gap-3">
+    <div className="relative flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
       <div className="min-w-0 flex-1 space-y-1.5">
         <div className="flex items-center gap-2">
           <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", toneClasses.accent)} />
@@ -180,20 +191,47 @@ export function SectionCard({
                 </span>
               );
             })}
-            {headerPills.map((pill) => (
-              <span
-                key={`${id}-${pill}`}
-                className="inline-flex items-center rounded-full border border-border/60 bg-background/75 px-2.5 py-1 text-[10px] font-medium text-muted-foreground"
-              >
-                {pill}
-              </span>
-            ))}
+            {headerPills.map((rawPill) => {
+              const pill = typeof rawPill === "string" ? { label: rawPill } : rawPill;
+              const pillClass =
+                "inline-flex items-center rounded-full border border-border/60 bg-background/75 px-2.5 py-1 text-[10px] font-medium text-muted-foreground";
+              // Interactive pills get a taller tap target on touch widths.
+              const interactiveClass =
+                "py-1.5 transition-colors hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 sm:py-1";
+              if (pill.sectionId) {
+                return (
+                  <SectionLink
+                    key={`${id}-${pill.label}`}
+                    sectionId={pill.sectionId}
+                    className={cn(pillClass, interactiveClass)}
+                  >
+                    {pill.label}
+                  </SectionLink>
+                );
+              }
+              if (pill.anchor) {
+                return (
+                  <a
+                    key={`${id}-${pill.label}`}
+                    href={`#${pill.anchor}`}
+                    className={cn(pillClass, interactiveClass)}
+                  >
+                    {pill.label}
+                  </a>
+                );
+              }
+              return (
+                <span key={`${id}-${pill.label}`} className={pillClass}>
+                  {pill.label}
+                </span>
+              );
+            })}
           </div>
         ) : null}
       </div>
       {headerAction || feedbackAction ? (
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-[11px] text-muted-foreground">
-          {headerAction}
+        <div className="flex w-full items-center justify-end gap-2 text-[11px] text-muted-foreground sm:w-auto sm:shrink-0">
+          {headerAction ? <div className="mr-auto sm:mr-0">{headerAction}</div> : null}
           {feedbackAction}
         </div>
       ) : null}

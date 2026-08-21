@@ -107,19 +107,22 @@ export function SectionFeedbackButton({
     }
   };
 
+  const label = requested ? "Feedback sent" : submitting ? "Sending..." : "Improve this section";
+
   return (
     <Button
       type="button"
       variant="outline"
       size="sm"
-      className="h-8 rounded-full border-border/60 px-2.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:px-3"
+      className="relative h-8 w-8 rounded-full border-border/60 px-0 text-[11px] font-medium text-muted-foreground transition-colors before:absolute before:-inset-1.5 before:content-[''] hover:text-foreground sm:w-auto sm:px-3 sm:before:hidden"
       disabled={requested || submitting}
       onClick={handleClick}
+      aria-label={label}
+      aria-busy={submitting || undefined}
+      title={label}
     >
       <MessageSquarePlus className="h-3.5 w-3.5" />
-      <span>
-        {requested ? "Feedback sent" : submitting ? "Sending..." : "Improve this section"}
-      </span>
+      <span className="hidden sm:inline">{label}</span>
     </Button>
   );
 }
