@@ -365,9 +365,12 @@ function OverallRead({
 function Synthesis({
   overview,
   themes,
+  streamPosition = true,
 }: {
   overview: CompanyPageOverviewCacheRow;
   themes: OverviewSignalExtras["themes"];
+  // false in the streaming fallback: no async children allowed there.
+  streamPosition?: boolean;
 }) {
   const { read } = overview;
   const def = BOARD_READS[read.key];
@@ -419,7 +422,7 @@ function Synthesis({
           </p>
         </div>
         <div className="border-b border-border/60 pb-4 lg:border-b-0 lg:border-l lg:pb-0 lg:pl-8">
-          <OverallRead overview={overview} streamPosition />
+          <OverallRead overview={overview} streamPosition={streamPosition} />
         </div>
       </div>
       {themes.length > 0 && (
@@ -1156,7 +1159,17 @@ export async function OverviewSignalBoard({
   );
 }
 
-/** Streaming fallback: the header from the cache row, skeletons for the rest. */
+/**
+ * Streaming fallback. Everything the cache row can render, it renders for real:
+ * the header and the synthesis (read label, gloss sentence, overall score).
+ * The gloss sentence is the page's LCP element on mobile — leaving it behind
+ * the Suspense boundary put LCP at ~5s (7s element render delay) while the
+ * extras fetch ran. Only the extras-dependent blocks are skeletons, and those
+ * are sized to the measured real blocks (412px / 1350px viewports, 2026-08-21)
+ * so the swap doesn't move the 2,000px of page below the board: that swap was
+ * a 0.35 CLS on mobile. Heights drift a little per company; that's fine — a
+ * few px of shift scores near zero, a missing 575px block does not.
+ */
 export function OverviewSignalBoardFallback({
   overview,
   watchlistSlot = null,
@@ -1174,25 +1187,22 @@ export function OverviewSignalBoardFallback({
         watchlistSlot={watchlistSlot}
         moatPhrase={null}
       />
-      <div className="mt-5 rounded-2xl border border-border/60 bg-card p-4 sm:p-5 lg:px-6">
-        <div className="flex flex-col-reverse gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
-          <div className="min-w-0 flex-1">
-            <div className="h-5 w-40 animate-pulse rounded-full bg-muted/50" />
-            <div className="mt-4 h-14 w-full max-w-[700px] animate-pulse rounded-md bg-muted/50" />
-          </div>
-          <div className="border-b border-border/60 pb-4 lg:border-b-0 lg:border-l lg:pb-0 lg:pl-8">
-            <OverallRead overview={overview} streamPosition={false} />
-          </div>
-        </div>
+
+      <div className="mt-5">
+        <Synthesis overview={overview} themes={[]} streamPosition={false} />
       </div>
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_340px]">
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start lg:gap-7">
         <div className="flex flex-col gap-3">
-          <div className="h-24 animate-pulse rounded-[14px] bg-muted/50" />
-          <div className="h-28 animate-pulse rounded-[14px] bg-muted/50" />
-          <div className="h-24 animate-pulse rounded-[14px] bg-muted/50" />
+          <p className={kickerClass}>The three reads · this quarter</p>
+          <div className="h-[188px] animate-pulse rounded-[14px] bg-muted/50 lg:h-[118px]" />
+          <div className="h-[190px] animate-pulse rounded-[14px] bg-muted/50 lg:h-[132px]" />
+          <div className="h-[196px] animate-pulse rounded-[14px] bg-muted/50 lg:h-[120px]" />
         </div>
-        <div className="h-48 animate-pulse rounded-[14px] bg-muted/40" />
+        <div className="h-[267px] animate-pulse rounded-[14px] bg-muted/40 lg:h-[286px]" />
       </div>
+
+      <div className="mt-6 h-[575px] animate-pulse rounded-[14px] bg-muted/40 lg:h-[269px]" />
     </div>
   );
 }
