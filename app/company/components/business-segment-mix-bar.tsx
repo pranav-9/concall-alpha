@@ -103,8 +103,8 @@ export function BusinessSegmentMixBar({
           />
         ))}
       </div>
-      <span className="shrink-0 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-        Disclosed {formatPct(knownShareTotal)}
+      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/80">
+        <span className="font-semibold text-foreground/80">{formatPct(knownShareTotal)}</span> disclosed
       </span>
     </div>
   );

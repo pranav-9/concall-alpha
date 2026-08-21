@@ -69,7 +69,7 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
               }}
             />
           )}
-          <p className="min-w-0 text-[10px] font-semibold uppercase leading-tight tracking-[0.1em] text-muted-foreground">
+          <p className="min-w-0 break-words text-[10px] font-semibold uppercase leading-tight tracking-[0.1em] text-muted-foreground">
             {entry.name}
           </p>
         </div>
@@ -100,7 +100,7 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
 
   const cardsSurface = (
     <div className="min-w-0 rounded-xl border border-border/20 bg-background/25 p-2.5 sm:p-3">
-      <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+      <div className="grid grid-cols-1 gap-2 min-[480px]:grid-cols-2 sm:gap-2.5">
         {visibleEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "visible"))}
       </div>
       {extraEntries.length > 0 && (
@@ -111,7 +111,7 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
               <span className="text-muted-foreground">({extraEntries.length})</span>
             </div>
           </summary>
-          <div className="mt-2 grid grid-cols-2 gap-2 sm:gap-2.5">
+          <div className="mt-2 grid grid-cols-1 gap-2 min-[480px]:grid-cols-2 sm:gap-2.5">
             {extraEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "extra"))}
           </div>
         </details>
