@@ -40,8 +40,13 @@ export default function LeaderboardsLoading() {
           {/* Band summary line stand-in. */}
           <div className="h-4 w-72 max-w-full animate-pulse rounded-md bg-muted/40" />
 
-          {/* Table card stand-in: header row, then a run of table rows. */}
-          <div className={TABLE_CARD_SKY}>
+          {/* Table card stand-in: header row, then a run of table rows. The
+              min-h floor matters: the real Overall board is 100+ rows, so a
+              short skeleton put the footer on screen and the streamed page
+              then shoved it down — a 0.08 CLS on its own (Lighthouse, desktop).
+              Pinning the card to at least a viewport keeps the footer below the
+              fold on both frames, and off-screen movement doesn't score. */}
+          <div className={`${TABLE_CARD_SKY} min-h-[100svh]`}>
             <div className="flex items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
               <div className="h-3 w-28 animate-pulse rounded bg-muted/50" />
               <div className="h-3 w-48 animate-pulse rounded bg-muted/40" />
