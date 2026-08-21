@@ -2,13 +2,17 @@
  * Typed per-key display formats for the growth score breakdown drawer.
  *
  * The pipeline's growth_score_components dict mixes FOUR unit kinds
- * (concallyser app/phase5_growth/growth_outlook.py, v6):
- *   - 0-10 sub-scores      -> "6.5" + "/10"
+ * (concallyser app/phase5_growth/growth_outlook.py, v7):
+ *   - 0-10 sub-scores      -> "6.5" + "/10"  (incl. raw_composite, pre-stretch)
  *   - multipliers          -> "×0.85"      (credibility discount, 0.6-1.0)
  *   - raw counts           -> "3"          (quantified forward facts)
- *   - raw percents         -> "19.8%"      (delivered revenue CAGR blend)
- * Structured values (delivered_cagr windows dict) are non-numeric and already
- * dropped by normalizeGrowthScoreComponents.
+ *   - raw percents         -> "19.8%"      (delivered_backing; v6 rows carry the
+ *                                          older delivered_cagr_blend key;
+ *                                          base_confidence_pct is reported, not
+ *                                          scored, since v7)
+ * Structured / string values (delivered_cagr windows dict, credibility_gate,
+ * ladder_flag) are non-numeric and already dropped by
+ * normalizeGrowthScoreComponents.
  *
  * Rendering everything as "X/10" — the pre-2026-08-21 behavior — showed a
  * 1.0 credibility multiplier as a terrible-looking "1.0/10" and a 19.8%
@@ -24,13 +28,18 @@ export type GrowthComponentDisplay = {
 
 const MULTIPLIER_KEYS = new Set(["credibility_multiplier"]);
 const COUNT_KEYS = new Set(["quantified_forward_facts"]);
-const RAW_PCT_KEYS = new Set(["delivered_cagr_blend"]);
+const RAW_PCT_KEYS = new Set([
+  "delivered_cagr_blend",
+  "delivered_backing",
+  "base_confidence_pct",
+]);
 const SCORE_KEYS = new Set([
   "sentiment_score",
   "catalyst_strength",
   "guidance_strength",
   "scenario_strength",
   "scenario_adjusted",
+  "raw_composite",
   "execution_confidence",
   "industry_score",
 ]);

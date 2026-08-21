@@ -39,6 +39,21 @@ assert.deepEqual(formatGrowthScoreComponent("delivered_cagr_blend", 19.8), {
   suffix: "%",
 });
 
+// v7 keys: best-window backing and issuer confidence are percents; the
+// pre-stretch raw composite is a 0-10 score. Old v6 rows keep rendering above.
+assert.deepEqual(formatGrowthScoreComponent("delivered_backing", 27), {
+  value: "27",
+  suffix: "%",
+});
+assert.deepEqual(formatGrowthScoreComponent("base_confidence_pct", 85), {
+  value: "85",
+  suffix: "%",
+});
+assert.deepEqual(formatGrowthScoreComponent("raw_composite", 6.3412), {
+  value: "6.3",
+  suffix: "/10",
+});
+
 // Unknown keys only claim the /10 scale when the magnitude is plausible.
 assert.equal(formatGrowthScoreComponent("mystery_metric", 42), null);
 assert.equal(formatGrowthScoreComponent("mystery_metric", -1), null);
