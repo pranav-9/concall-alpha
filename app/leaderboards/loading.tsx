@@ -45,8 +45,11 @@ export default function LeaderboardsLoading() {
               short skeleton put the footer on screen and the streamed page
               then shoved it down — a 0.08 CLS on its own (Lighthouse, desktop).
               Pinning the card to at least a viewport keeps the footer below the
-              fold on both frames, and off-screen movement doesn't score. */}
-          <div className={`${TABLE_CARD_SKY} min-h-[100svh]`}>
+              fold in both frames for the Overall board (the default tab), and
+              an element off-screen in both frames doesn't score. Plain vh on
+              purpose: a taller floor is harmless, and it holds on browsers
+              without svh. */}
+          <div className={`${TABLE_CARD_SKY} min-h-screen`}>
             <div className="flex items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
               <div className="h-3 w-28 animate-pulse rounded bg-muted/50" />
               <div className="h-3 w-48 animate-pulse rounded bg-muted/40" />
