@@ -13,7 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { createClient } from "@/lib/supabase/client";
 import { analytics } from "@/lib/analytics";
 
 type WatchlistOption = {
@@ -50,6 +49,17 @@ export function WatchlistButton({
   const isWorking = pendingIds.size > 0 || isCreating;
 
   const ensureAuthenticated = async () => {
+    // Loaded on demand: this button renders on every company page header, and
+    // a static import shipped the browser Supabase client (~50KB, almost all
+    // unused on first paint) with it. Nobody needs it until they click.
+    let createClient: typeof import("@/lib/supabase/client").createClient;
+    try {
+      ({ createClient } = await import("@/lib/supabase/client"));
+    } catch {
+      // Offline, or a stale tab after a deploy (old HTML, new chunk hashes).
+      window.alert("Couldn't reach the watchlist service. Reload the page and try again.");
+      return false;
+    }
     const supabase = createClient();
     const {
       data: { user },

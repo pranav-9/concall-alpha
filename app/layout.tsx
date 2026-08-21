@@ -60,6 +60,13 @@ const houseData = IBM_Plex_Mono({
   display: "swap",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  // next/font's automatic fallback is Arial with size-adjust ~134%: a
+  // proportional face standing in for a mono one, so every label and number
+  // set in --font-data rewraps when Plex Mono arrives. On the homepage that
+  // reflow was the whole CLS (0.20 desktop / 0.40 mobile, Lighthouse 2026-08-21).
+  // System monos share Plex Mono's 0.6em advance, so lines hold their breaks.
+  adjustFontFallback: false,
+  fallback: ["ui-monospace", "Menlo", "Cascadia Mono", "Consolas", "Liberation Mono", "monospace"],
 });
 
 async function NavbarWithUser() {

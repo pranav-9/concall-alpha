@@ -11,9 +11,8 @@ import {
   isDismissActive,
   STORAGE_KEY_LAST_DISMISS,
   storageKeyResponded,
-  type NormalizedPoll,
-  type ResponseValue,
-} from "@/lib/feedback-polls/types";
+} from "@/lib/feedback-polls/storage";
+import type { NormalizedPoll, ResponseValue } from "@/lib/feedback-polls/types";
 
 type BannerProps = {
   poll: NormalizedPoll | null;

@@ -67,7 +67,9 @@ export function TopSectionTabs({
   });
   const tabRefs = React.useRef<Record<string, HTMLButtonElement | null>>({});
 
-  React.useEffect(() => {
+  // Layout effect on purpose: it runs after hydration but before the browser
+  // paints, so the relative→fixed flip below never shows an in-flow frame.
+  React.useLayoutEffect(() => {
     const placeholderElement = placeholderRef.current;
     const floatingElement = floatingRef.current;
     const navElement = document.getElementById("global-navbar");
@@ -117,6 +119,15 @@ export function TopSectionTabs({
     });
   }, [activeSectionId]);
 
+  // Until the effect above has measured the placeholder, the bar sits in normal
+  // flow at the placeholder's own width. It used to be `fixed` from the first
+  // render with `width: 0`, so on hydration it snapped from 0 to full width
+  // and its right-edge fade overlay travelled ~370px across the viewport — a
+  // 0.35 layout shift on every company page load (Lighthouse mobile,
+  // 2026-08-21), the single worst CLS source on the site. Static-then-fixed
+  // lands within a few px of the same spot, which scores ~0.
+  const measured = floatingFrame.width > 0;
+
   return (
     <div
       ref={placeholderRef}
@@ -125,12 +136,16 @@ export function TopSectionTabs({
     >
       <div
         ref={floatingRef}
-        className="fixed z-40"
-        style={{
-          top: "calc(var(--global-navbar-height, 84px) + 0.5rem)",
-          left: floatingFrame.left,
-          width: floatingFrame.width,
-        }}
+        className={measured ? "fixed z-40" : "relative z-40"}
+        style={
+          measured
+            ? {
+                top: "calc(var(--global-navbar-height, 84px) + 0.5rem)",
+                left: floatingFrame.left,
+                width: floatingFrame.width,
+              }
+            : undefined
+        }
       >
         <div className="relative rounded-[1.5rem] border border-border/70 bg-background/88 px-2 py-2 shadow-[0_18px_45px_-34px_rgba(15,23,42,0.42)] backdrop-blur-xl dark:bg-slate-950/82 sm:px-3">
           <div className="pointer-events-none absolute inset-y-0 left-0 w-8 rounded-l-[1.5rem] bg-gradient-to-r from-background/85 via-background/35 to-transparent dark:from-slate-950/85 dark:via-slate-950/30" />
