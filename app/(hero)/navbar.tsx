@@ -36,7 +36,13 @@ const LogoutButton = dynamic<LogoutButtonProps>(
 
 const ThemeSwitcher = dynamic(
   () => import("@/components/theme-switcher").then((mod) => mod.ThemeSwitcher),
-  { ssr: false },
+  {
+    ssr: false,
+    // Reserve the button's footprint (Button size="sm" with one icon: h-8,
+    // ~36px wide) so the nav cluster doesn't shift when the switcher mounts.
+    // Lighthouse attributed a ~0.03 CLS on every route to this gap.
+    loading: () => <div aria-hidden className="h-8 w-9" />,
+  },
 );
 
 const Navbar = ({

@@ -109,7 +109,8 @@ const CustomLabel = (props: {
     return null;
   }
 
-  const labelYOffset = mobile ? 12 : value >= 9.0 ? 20 : 16;
+  // Clear the selected-point ring (r=7 on mobile) so the label never sits on it.
+  const labelYOffset = mobile ? 15 : value >= 9.0 ? 20 : 16;
 
   return (
     <g>
@@ -157,6 +158,8 @@ function isLocalExtreme(index: number, data: ChartPoint[]) {
 function shouldShowLabel(index: number, data: ChartPoint[], mobile: boolean) {
   const lastIndex = data.length - 1;
   if (index === 0 || index === lastIndex) return true;
+  // Short series: an unlabeled dot reads as a missing value, so label them all.
+  if (data.length <= 6) return true;
 
   if (mobile) {
     return index % 2 === 0;
@@ -315,6 +318,8 @@ export function ChartLineLabel({
   const labelFill = isDark ? "#e2e8f0" : "#1e293b";
   const denseDesktop = !isMobile && chartData.length >= 10;
   const showStar = !isMobile && chartData.length <= 10;
+  // Short series fit every quarter label even on a phone.
+  const shortSeries = chartData.length <= 6;
 
   // Fit the y-axis to the data (scores cluster high) so quarter-to-quarter
   // movement is legible, instead of a fixed 0-10 that flattens the trend.
@@ -341,9 +346,9 @@ export function ChartLineLabel({
             accessibilityLayer
             data={chartData}
             margin={{
-              top: isMobile ? 14 : 18,
+              top: isMobile ? 16 : 18,
               left: isMobile ? 8 : 22,
-              right: isMobile ? 8 : 22,
+              right: isMobile ? 18 : 22,
               bottom: 12,
             }}
           >
@@ -381,6 +386,26 @@ export function ChartLineLabel({
               );
             })}
             <CartesianGrid vertical={false} stroke={gridStroke} />
+            {/* Mobile has no room for zone labels, so the 8.5+ threshold the
+                legend refers to is drawn as a labelled line instead. */}
+            {isMobile && yMax >= 8.5 && (
+              <ReferenceLine
+                y={8.5}
+                stroke="#f59e0b"
+                strokeOpacity={0.55}
+                strokeDasharray="2 4"
+                ifOverflow="hidden"
+                label={{
+                  value: "8.5+",
+                  // Axis side: the plot's right edge is where the latest point's
+                  // own label lives.
+                  position: "left",
+                  fill: isDark ? "#fcd34d" : "#b45309",
+                  fontSize: 9,
+                  fontWeight: 600,
+                }}
+              />
+            )}
             {selectedQuarter && (
               <ReferenceLine
                 x={selectedQuarter}
@@ -394,8 +419,8 @@ export function ChartLineLabel({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              minTickGap={isMobile ? 24 : denseDesktop ? 28 : 8}
-              interval={isMobile || denseDesktop ? "preserveStartEnd" : 0}
+              minTickGap={shortSeries ? 4 : isMobile ? 24 : denseDesktop ? 28 : 8}
+              interval={shortSeries ? 0 : isMobile || denseDesktop ? "preserveStartEnd" : 0}
               stroke={axisStroke}
               tick={(tickProps) => (
                 <CustomXAxisTick
@@ -411,7 +436,7 @@ export function ChartLineLabel({
               tickLine={false}
               axisLine={false}
               domain={[yMin, yMax]}
-              ticks={isMobile ? [yMin, Math.round((yMin + yMax) / 2), yMax] : yTicks}
+              ticks={isMobile ? [yMin, yMax] : yTicks}
               width={isMobile ? 28 : 40}
               label={
                 isMobile

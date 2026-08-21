@@ -1,7 +1,7 @@
 import type { NormalizedCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/types";
 import { getCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/get";
 import { formatShortDate } from "../[code]/page-helpers";
-import { SectionCard } from "./section-card";
+import { SectionCard, SectionUpdatedAt } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
 import { SubSectorTabs, type SubSectorTabEntry } from "./sub-sector-tabs";
 
@@ -84,13 +84,7 @@ export async function SubSectorSection({
       feedbackEnabled={!isEmpty}
       feedbackCompanyCode={companyCode}
       feedbackCompanyName={companyName}
-      headerAction={
-        generatedAtShort ? (
-          <span className="text-[11px] text-muted-foreground">
-            {generatedAtShort}
-          </span>
-        ) : undefined
-      }
+      headerAction={<SectionUpdatedAt date={generatedAtShort} />}
     >
       {isEmpty ? (
         <MissingSectionState

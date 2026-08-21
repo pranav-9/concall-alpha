@@ -13,6 +13,8 @@ type SectionHelpfulnessFooterProps = {
   companyName?: string | null;
   sectionId: string;
   sectionTitle: string;
+  /** Extra control rendered after Yes/No — the "Improve this section" button. */
+  action?: React.ReactNode;
 };
 
 type HelpfulnessAnswer = "yes" | "no";
@@ -28,6 +30,7 @@ export function SectionHelpfulnessFooter({
   companyName,
   sectionId,
   sectionTitle,
+  action,
 }: SectionHelpfulnessFooterProps) {
   const pathname = usePathname();
   const storageKey = React.useMemo(
@@ -147,6 +150,12 @@ export function SectionHelpfulnessFooter({
           <ThumbsDown className="h-3.5 w-3.5" />
           {submittingAnswer === "no" ? "Sending..." : "No"}
         </Button>
+        {action ? (
+          <>
+            <span aria-hidden className="mx-1 h-4 w-px bg-border/70" />
+            {action}
+          </>
+        ) : null}
       </div>
     </div>
   );

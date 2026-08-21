@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import type {
   NormalizedBusinessSnapshot,
   NormalizedHistoricalEconomics,
@@ -11,7 +12,7 @@ import {
   formatRangeLabel,
 } from "../[code]/page-helpers";
 import { formatCompactLabel } from "../[code]/display-tokens";
-import { SectionCard } from "./section-card";
+import { SCROLL_MARGIN_TOP, SectionCard, SectionUpdatedAt } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
 import { BusinessSegmentsMosaic } from "./business-segments-mosaic";
 import { HistoricalEconomicsDataPack } from "./deferred-company-sections";
@@ -85,37 +86,17 @@ function deriveState(snapshot: NormalizedBusinessSnapshot | null): DerivedState 
   };
 }
 
-function buildHeaderPills(
-  snapshot: NormalizedBusinessSnapshot | null,
-  derived: DerivedState,
-  hasMoatAnalysis: boolean,
-): string[] {
-  const {
-    aboutHeading,
-    aboutSupportingText,
-    hasBusinessSegments,
-    hasHistoricalEconomics,
-    hasStructuredBusinessSnapshot,
-  } = derived;
+// Sub-anchor ids follow `<sectionId>-<block>` so the workspace keeps this
+// section mounted when one is in the hash (see lib/section-hash.ts).
+const SNAPSHOT_ANCHORS = {
+  about: "business-overview-about",
+  segments: "business-overview-segments",
+  momentum: "business-overview-momentum",
+  mixShift: "business-overview-mix-shift",
+} as const;
 
-  return hasStructuredBusinessSnapshot
-    ? [
-        aboutHeading || aboutSupportingText ? "About" : null,
-        hasBusinessSegments ? "Business segments" : null,
-        hasHistoricalEconomics ? "Business Momentum" : null,
-        snapshot?.mixShiftSummary ? "Mix shift" : null,
-        hasMoatAnalysis ? "Moat analysis" : null,
-      ].filter((value): value is string => Boolean(value))
-    : [
-        snapshot?.businessSummaryShort || snapshot?.businessSummaryLong ? "Summary" : null,
-        snapshot?.topRevenueDrivers.length ? "Revenue drivers" : null,
-        (snapshot?.keyDependencies.length ?? 0) > 0 ||
-        (snapshot?.keyRisksToModel.length ?? 0) > 0
-          ? "Model watchpoints"
-          : null,
-        snapshot?.mixShiftSummary ? "Mix shift" : null,
-        hasMoatAnalysis ? "Moat analysis" : null,
-      ].filter((value): value is string => Boolean(value));
+function anchorStyle() {
+  return { scrollMarginTop: SCROLL_MARGIN_TOP };
 }
 
 function renderAboutBlock(
@@ -131,7 +112,7 @@ function renderAboutBlock(
   if (!aboutMainText) return null;
 
   return (
-    <div className={`${nestedDetailClass} p-3`}>
+    <div id={SNAPSHOT_ANCHORS.about} style={anchorStyle()} className={`${nestedDetailClass} p-3`}>
       <div className="min-w-0 space-y-2">
         <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
           About
@@ -139,9 +120,10 @@ function renderAboutBlock(
         <p className={aboutMainTextClass}>{aboutMainText}</p>
         {aboutDrawerText ? (
           <details className="group/about-more">
-            <summary className="list-none cursor-pointer text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground">
+            <summary className="inline-flex list-none cursor-pointer items-center gap-1 rounded-sm text-xs font-medium text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
               <span className="group-open/about-more:hidden">Read more</span>
-              <span className="hidden group-open/about-more:inline">Hide</span>
+              <span className="hidden group-open/about-more:inline">Show less</span>
+              <ChevronDown className="h-3 w-3 transition-transform group-open/about-more:rotate-180" aria-hidden />
             </summary>
             <p className="mt-2 text-sm leading-relaxed lg:text-[13px] text-foreground">{aboutDrawerText}</p>
           </details>
@@ -559,7 +541,6 @@ type BusinessSnapshotSectionProps = {
   companyCode: string;
   companyName: string | null;
   generatedAtShort: string | null;
-  hasMoatAnalysis: boolean;
 };
 
 export function BusinessSnapshotSection({
@@ -567,10 +548,8 @@ export function BusinessSnapshotSection({
   companyCode,
   companyName,
   generatedAtShort,
-  hasMoatAnalysis,
 }: BusinessSnapshotSectionProps) {
   const derived = deriveState(snapshot);
-  const headerPills = buildHeaderPills(snapshot, derived, hasMoatAnalysis);
   const {
     aboutHeading,
     aboutSupportingText,
@@ -595,18 +574,11 @@ export function BusinessSnapshotSection({
     <SectionCard
       id="business-overview"
       title="Business Snapshot"
-      headerPills={headerPills}
       feedbackEnabled={Boolean(snapshot && (hasStructuredBusinessSnapshot || hasLegacyBusinessSnapshot))}
       feedbackCompanyCode={companyCode}
       feedbackCompanyName={companyName}
-      headerAction={
-        generatedAtShort ? (
-          <span className="text-[11px] text-muted-foreground">
-            {generatedAtShort}
-          </span>
-        ) : undefined
-      }
-      >
+      headerAction={<SectionUpdatedAt date={generatedAtShort} />}
+    >
         <div className="flex flex-col gap-4">
           {snapshot ? (
             <div className={businessSnapshotSurfaceClass}>
@@ -615,12 +587,16 @@ export function BusinessSnapshotSection({
                   <div className="space-y-3">
                     {renderAboutBlock(aboutHeading, aboutSupportingText)}
 
-                    <BusinessSegmentsMosaic segments={segmentEntries} />
-                    {historicalEconomics
-                      ? renderHistoricalEconomicsCard(historicalEconomics)
-                      : hasHistoricalEconomicsSource
-                        ? renderHistoricalEconomicsUnavailableCard()
-                        : null}
+                    <div id={SNAPSHOT_ANCHORS.segments} style={anchorStyle()}>
+                      <BusinessSegmentsMosaic segments={segmentEntries} />
+                    </div>
+                    {historicalEconomics || hasHistoricalEconomicsSource ? (
+                      <div id={SNAPSHOT_ANCHORS.momentum} style={anchorStyle()}>
+                        {historicalEconomics
+                          ? renderHistoricalEconomicsCard(historicalEconomics)
+                          : renderHistoricalEconomicsUnavailableCard()}
+                      </div>
+                    ) : null}
                     <SegmentHistoryPanel
                       quarterly={snapshot.segmentHistoryQuarterly}
                       annual={snapshot.segmentHistoryAnnual}
@@ -740,7 +716,11 @@ export function BusinessSnapshotSection({
                     )}
 
                     {snapshot.mixShiftSummary && (
-                      <div className={`${nestedDetailClass} p-3 space-y-0.5`}>
+                      <div
+                        id={SNAPSHOT_ANCHORS.mixShift}
+                        style={anchorStyle()}
+                        className={`${nestedDetailClass} p-3 space-y-0.5`}
+                      >
                         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Mix Shift
                         </p>

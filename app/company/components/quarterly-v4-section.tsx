@@ -83,9 +83,10 @@ export function V4LeansStrip({
     });
   if (segments.length === 0) return null;
   return (
+    <div className="space-y-1.5">
     <div className="flex items-center gap-2">
-      <span className="shrink-0 text-[10px] text-muted-foreground">← detracts</span>
-      <div className="flex h-6 min-w-0 flex-1 gap-1" role="group" aria-label="Per-category leans">
+      <span className="hidden shrink-0 text-[10px] text-muted-foreground sm:inline">← detracts</span>
+      <div className="flex h-5 min-w-0 flex-1 gap-1 sm:h-6" role="group" aria-label="Per-category leans">
         {segments.map((cat) => {
           const sign = cat.lean > 0 ? "+" : "−";
           return (
@@ -101,7 +102,9 @@ export function V4LeansStrip({
               )}
               style={{ flexGrow: Math.abs(cat.lean), flexBasis: 0 }}
             >
-              <span className="truncate">
+              {/* Six chips at ~40px each truncate to one letter on a phone, so
+                  the bar is colour-only there and the legend below names them. */}
+              <span className="hidden truncate sm:inline">
                 {STRIP_LABELS[cat.key] ?? cat.label} {sign}
                 {Math.abs(cat.lean)}
               </span>
@@ -109,7 +112,29 @@ export function V4LeansStrip({
           );
         })}
       </div>
-      <span className="shrink-0 text-[10px] text-muted-foreground">supports →</span>
+      <span className="hidden shrink-0 text-[10px] text-muted-foreground sm:inline">supports →</span>
+    </div>
+    <div className="flex items-center justify-between text-[10px] text-muted-foreground sm:hidden">
+      <span>← detracts</span>
+      <span>supports →</span>
+    </div>
+    <ul className="grid grid-cols-2 gap-x-3 gap-y-1 sm:hidden" aria-hidden>
+      {segments.map((cat) => {
+        const sign = cat.lean > 0 ? "+" : "−";
+        return (
+          <li key={cat.key} className="flex min-w-0 items-center gap-1.5 text-[11px]">
+            <span className={cn("h-2 w-2 shrink-0 rounded-sm", SEGMENT_TONE[cat.lean])} />
+            <span className="min-w-0 truncate text-foreground/85">
+              {STRIP_LABELS[cat.key] ?? cat.label}
+            </span>
+            <span className="ml-auto tabular-nums text-muted-foreground">
+              {sign}
+              {Math.abs(cat.lean)}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
     </div>
   );
 }

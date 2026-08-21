@@ -1,30 +1,31 @@
-import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  overviewBodyPillClass,
-  type OverviewBodyPillTone,
-} from "../[code]/display-tokens";
 import { SectionFeedbackButton } from "./section-feedback-button";
 import { SectionHelpfulnessFooter } from "./section-helpfulness-footer";
 
 type SectionTone = "sky" | "emerald" | "amber" | "violet" | "rose" | "slate";
 
-export type SectionHeaderRankPill = {
-  label: string;
-  tone?: OverviewBodyPillTone;
-  href?: string;
-};
+/**
+ * Every section header is the same two things: the title on the left and the
+ * last-updated date on the right. Render the date through this so the
+ * typography matches across sections.
+ */
+export function SectionUpdatedAt({ date }: { date: string | null | undefined }) {
+  if (!date) return null;
+  return (
+    <span className="whitespace-nowrap text-[11px] tabular-nums text-muted-foreground">
+      {date}
+    </span>
+  );
+}
 
 interface SectionCardProps {
   id: string;
   title: string;
   children: React.ReactNode;
   className?: string;
+  /** Right-hand slot — the last-updated date (use SectionUpdatedAt). */
   headerAction?: React.ReactNode;
-  headerDescription?: React.ReactNode;
-  headerPills?: string[];
-  headerRankPills?: SectionHeaderRankPill[];
   feedbackEnabled?: boolean;
   feedbackCompanyCode?: string;
   feedbackCompanyName?: string | null;
@@ -99,7 +100,8 @@ const TONE_CLASSES: Record<
 const CARD_SHELL =
   "group relative scroll-mt-40 overflow-hidden rounded-[1.55rem] border shadow-[0_18px_42px_-34px_rgba(15,23,42,0.45)] backdrop-blur-sm";
 
-const SCROLL_MARGIN_TOP =
+/** Sticky navbar + company tabs clearance for anything targeted by a hash. */
+export const SCROLL_MARGIN_TOP =
   "calc(var(--global-navbar-height, 84px) + var(--company-tabs-height, 56px) + 1rem)";
 
 export function SectionCard({
@@ -108,9 +110,6 @@ export function SectionCard({
   children,
   className = "",
   headerAction,
-  headerDescription,
-  headerPills = [],
-  headerRankPills = [],
   feedbackEnabled = false,
   feedbackCompanyCode,
   feedbackCompanyName,
@@ -138,65 +137,23 @@ export function SectionCard({
         companyName={feedbackCompanyName}
         sectionId={id}
         sectionTitle={title}
+        action={feedbackAction}
       />
     ) : null;
+  // "Improve this section" lives in the footer next to "Was this section
+  // helpful?"; it only falls back to the header when there is no footer.
+  const headerFeedbackAction = helpfulnessFooter ? null : feedbackAction;
 
   const header = (
-    <div className="relative flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0 flex-1 space-y-1.5">
-        <div className="flex items-center gap-2">
-          <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", toneClasses.accent)} />
-          <p className="min-w-0 text-lg font-bold leading-tight text-foreground">{title}</p>
-        </div>
-        {headerDescription ? (
-          <p className="max-w-3xl text-[13px] leading-snug text-foreground/80">
-            {headerDescription}
-          </p>
-        ) : null}
-        {headerPills.length > 0 || headerRankPills.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5 pt-0.5">
-            {headerRankPills.map((pill) => {
-              const baseClass = cn(
-                "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold",
-                overviewBodyPillClass(pill.tone),
-              );
-              if (pill.href) {
-                return (
-                  <Link
-                    key={`${id}-rank-${pill.label}`}
-                    href={pill.href}
-                    className={cn(
-                      baseClass,
-                      "transition-colors hover:brightness-110 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
-                    )}
-                  >
-                    {pill.label}
-                  </Link>
-                );
-              }
-              return (
-                <span key={`${id}-rank-${pill.label}`} className={baseClass}>
-                  {pill.label}
-                </span>
-              );
-            })}
-            {headerPills.map((pill) => (
-              <span
-                key={`${id}-${pill}`}
-                className="inline-flex items-center rounded-full border border-border/60 bg-background/75 px-2.5 py-1 text-[10px] font-medium text-muted-foreground"
-              >
-                {pill}
-              </span>
-            ))}
-          </div>
-        ) : null}
+    <div className="relative flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", toneClasses.accent)} />
+        <p className="min-w-0 text-lg font-bold leading-tight text-foreground">{title}</p>
       </div>
-      {headerAction || feedbackAction ? (
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-[11px] text-muted-foreground">
-          {headerAction}
-          {feedbackAction}
-        </div>
-      ) : null}
+      <div className="flex shrink-0 items-center gap-2 text-[11px] text-muted-foreground">
+        {headerAction}
+        {headerFeedbackAction}
+      </div>
     </div>
   );
 
@@ -215,19 +172,12 @@ export function SectionCard({
             <div className={`pointer-events-none absolute inset-0 ${toneClasses.glow}`} />
             <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accent}`} />
             <div className="relative flex flex-wrap items-center justify-between gap-3 transition-colors group-hover:text-foreground">
-              <div className="min-w-0 flex-1 space-y-1">
-                <p className="min-w-0 text-lg font-bold leading-tight text-foreground">{title}</p>
-                {headerDescription ? (
-                  <p className="max-w-3xl text-[13px] leading-snug text-foreground/80">
-                    {headerDescription}
-                  </p>
-                ) : null}
-              </div>
+              <p className="min-w-0 flex-1 text-lg font-bold leading-tight text-foreground">{title}</p>
               <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                {headerAction || feedbackAction ? (
+                {headerAction || headerFeedbackAction ? (
                   <div className="hidden flex-wrap items-center justify-end gap-2 text-[11px] text-muted-foreground sm:flex group-open:flex">
                     {headerAction}
-                    {feedbackAction}
+                    {headerFeedbackAction}
                   </div>
                 ) : null}
                 <div className="flex items-center gap-2">

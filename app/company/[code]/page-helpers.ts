@@ -44,12 +44,14 @@ export const formatShortDate = (
   includeYear = false,
 ): string | null => {
   if (!raw) return null;
-  const date = new Date(raw);
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(raw);
+  const date = new Date(dateOnly ? `${raw}T00:00:00Z` : raw);
   if (Number.isNaN(date.getTime())) return null;
   return new Intl.DateTimeFormat("en-IN", {
     day: "2-digit",
     month: "short",
     ...(includeYear ? { year: "numeric" as const } : {}),
+    ...(dateOnly ? { timeZone: "UTC" } : {}),
   }).format(date);
 };
 
