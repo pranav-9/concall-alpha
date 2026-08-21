@@ -149,8 +149,12 @@ export function SectionCard({
         companyName={feedbackCompanyName}
         sectionId={id}
         sectionTitle={title}
+        action={feedbackAction}
       />
     ) : null;
+  // "Improve this section" lives in the footer next to "Was this section
+  // helpful?"; it only falls back to the header when there is no footer.
+  const headerFeedbackAction = helpfulnessFooter ? null : feedbackAction;
 
   const header = (
     <div className="relative flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
@@ -229,10 +233,10 @@ export function SectionCard({
           </div>
         ) : null}
       </div>
-      {headerAction || feedbackAction ? (
+      {headerAction || headerFeedbackAction ? (
         <div className="flex w-full items-center justify-end gap-2 text-[11px] text-muted-foreground sm:w-auto sm:shrink-0">
           {headerAction ? <div className="mr-auto sm:mr-0">{headerAction}</div> : null}
-          {feedbackAction}
+          {headerFeedbackAction}
         </div>
       ) : null}
     </div>
@@ -262,10 +266,10 @@ export function SectionCard({
                 ) : null}
               </div>
               <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                {headerAction || feedbackAction ? (
+                {headerAction || headerFeedbackAction ? (
                   <div className="hidden flex-wrap items-center justify-end gap-2 text-[11px] text-muted-foreground sm:flex group-open:flex">
                     {headerAction}
-                    {feedbackAction}
+                    {headerFeedbackAction}
                   </div>
                 ) : null}
                 <div className="flex items-center gap-2">

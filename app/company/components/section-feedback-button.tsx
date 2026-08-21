@@ -114,7 +114,7 @@ export function SectionFeedbackButton({
       type="button"
       variant="outline"
       size="sm"
-      className="relative h-8 w-8 rounded-full border-border/60 px-0 text-[11px] font-medium text-muted-foreground transition-colors before:absolute before:-inset-1.5 before:content-[''] hover:text-foreground sm:w-auto sm:px-3 sm:before:hidden"
+      className="relative h-7 w-7 rounded-full border-border/60 px-0 text-[11px] font-medium text-muted-foreground transition-colors before:absolute before:-inset-2 before:content-[''] hover:text-foreground sm:w-auto sm:px-2.5 sm:before:hidden"
       disabled={requested || submitting}
       onClick={handleClick}
       aria-label={label}
