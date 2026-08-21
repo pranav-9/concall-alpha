@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { chipClass } from "./chip-tone";
+import { edgePhrase } from "@/lib/moat-analysis/plain-language";
 import type { ChipTone } from "./chip-tone";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 import type {
@@ -52,22 +53,7 @@ const metadataClass =
 
 // The one-line verdict phrase, from (rating, tier). Trajectory intentionally
 // omitted — no history is stored, so we never claim "widening" / "was weaker".
-const edgePhrase = (rating: MoatRatingKey, tier: MoatTier | null): string => {
-  switch (rating) {
-    case "no_moat":
-      return "No real edge";
-    case "moat_at_risk":
-      return "Edge under threat";
-    case "wide_moat":
-      return tier === "strong" ? "Wide, well-protected edge" : "Wide edge";
-    case "narrow_moat":
-      if (tier === "strong") return "Solid, defensible edge";
-      if (tier === "weak") return "Slim edge";
-      return "Moderate edge";
-    default:
-      return "Edge unclear";
-  }
-};
+// edgePhrase lives in lib/moat-analysis/plain-language.ts (shared with the overview).
 
 // The plain sentence under the phrase — naturally worded per rating/tier so we
 // never have to glue an article onto the phrase.
