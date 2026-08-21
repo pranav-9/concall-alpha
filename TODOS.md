@@ -2,6 +2,14 @@
 
 Captured with context so a future session can pick any item up cold. Source review noted per item.
 
+## P0 — pre-existing test failure noticed on overview-signal-board (2026-08-21)
+
+### 0. `tests/board-read.test.ts` fails on main
+- **What:** `npm test` stops at `board-read.test.ts`: `strong print, cooling outlook: expected peaking, got cheap_forming`. Noticed while shipping the overview signal board; `lib/board-read.ts` was not touched on that branch, and the failure reproduces on `main` (3ede8f2).
+- **Why:** The test suite runs `for f in tests/*.test.ts … || exit 1`, so this one assertion masks every later test file from running in CI. Either the `quality_fair`/`cheap_forming` split (2026-08-13) changed the intended classification and the fixture is stale, or the classifier ordering regressed — decide which before editing either side (`compute_composite_score.py` mirrors the weights, not the labels).
+- **Priority:** P0
+- **Depends on:** nothing.
+
 ## Marketing-readiness plumbing — deferred follow-ups (2026-07-17)
 
 (Shipped that day: first-touch attribution fix + Acquisition report section, sitemap/robots/metadataBase/company-page metadata, `[beta]` dropped. Domain decision: storyofastock.in. See memory `project_marketing_readiness_plumbing`.)
