@@ -12,7 +12,7 @@ import {
   formatRangeLabel,
 } from "../[code]/page-helpers";
 import { formatCompactLabel } from "../[code]/display-tokens";
-import { SCROLL_MARGIN_TOP, SectionCard, type SectionHeaderPill } from "./section-card";
+import { SCROLL_MARGIN_TOP, SectionCard, SectionUpdatedAt } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
 import { BusinessSegmentsMosaic } from "./business-segments-mosaic";
 import { HistoricalEconomicsDataPack } from "./deferred-company-sections";
@@ -95,53 +95,8 @@ const SNAPSHOT_ANCHORS = {
   mixShift: "business-overview-mix-shift",
 } as const;
 
-// Cross-section jump; must match the id in app/company/constants.ts.
-const MOAT_SECTION_ID = "moat-analysis";
-
 function anchorStyle() {
   return { scrollMarginTop: SCROLL_MARGIN_TOP };
-}
-
-function buildHeaderPills(
-  snapshot: NormalizedBusinessSnapshot | null,
-  derived: DerivedState,
-  hasMoatAnalysis: boolean,
-): SectionHeaderPill[] {
-  const {
-    aboutHeading,
-    aboutSupportingText,
-    hasBusinessSegments,
-    hasHistoricalEconomics,
-    hasStructuredBusinessSnapshot,
-  } = derived;
-
-  const pills: Array<SectionHeaderPill | null> = hasStructuredBusinessSnapshot
-    ? [
-        aboutHeading || aboutSupportingText
-          ? { label: "About", anchor: SNAPSHOT_ANCHORS.about }
-          : null,
-        hasBusinessSegments
-          ? { label: "Business segments", anchor: SNAPSHOT_ANCHORS.segments }
-          : null,
-        hasHistoricalEconomics
-          ? { label: "Business Momentum", anchor: SNAPSHOT_ANCHORS.momentum }
-          : null,
-        snapshot?.mixShiftSummary ? "Mix shift" : null,
-        hasMoatAnalysis ? { label: "Moat analysis", sectionId: MOAT_SECTION_ID } : null,
-      ]
-    : [
-        snapshot?.businessSummaryShort || snapshot?.businessSummaryLong ? "Summary" : null,
-        snapshot?.topRevenueDrivers.length ? "Revenue drivers" : null,
-        (snapshot?.keyDependencies.length ?? 0) > 0 ||
-        (snapshot?.keyRisksToModel.length ?? 0) > 0
-          ? "Model watchpoints"
-          : null,
-        snapshot?.mixShiftSummary
-          ? { label: "Mix shift", anchor: SNAPSHOT_ANCHORS.mixShift }
-          : null,
-        hasMoatAnalysis ? { label: "Moat analysis", sectionId: MOAT_SECTION_ID } : null,
-      ];
-  return pills.filter((value): value is SectionHeaderPill => value !== null);
 }
 
 function renderAboutBlock(
@@ -586,7 +541,6 @@ type BusinessSnapshotSectionProps = {
   companyCode: string;
   companyName: string | null;
   generatedAtShort: string | null;
-  hasMoatAnalysis: boolean;
 };
 
 export function BusinessSnapshotSection({
@@ -594,10 +548,8 @@ export function BusinessSnapshotSection({
   companyCode,
   companyName,
   generatedAtShort,
-  hasMoatAnalysis,
 }: BusinessSnapshotSectionProps) {
   const derived = deriveState(snapshot);
-  const headerPills = buildHeaderPills(snapshot, derived, hasMoatAnalysis);
   const {
     aboutHeading,
     aboutSupportingText,
@@ -622,18 +574,11 @@ export function BusinessSnapshotSection({
     <SectionCard
       id="business-overview"
       title="Business Snapshot"
-      headerPills={headerPills}
       feedbackEnabled={Boolean(snapshot && (hasStructuredBusinessSnapshot || hasLegacyBusinessSnapshot))}
       feedbackCompanyCode={companyCode}
       feedbackCompanyName={companyName}
-      headerAction={
-        generatedAtShort ? (
-          <span className="text-[11px] text-muted-foreground">
-            {generatedAtShort}
-          </span>
-        ) : undefined
-      }
-      >
+      headerAction={<SectionUpdatedAt date={generatedAtShort} />}
+    >
         <div className="flex flex-col gap-4">
           {snapshot ? (
             <div className={businessSnapshotSurfaceClass}>

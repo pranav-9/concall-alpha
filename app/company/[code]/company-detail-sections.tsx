@@ -22,7 +22,8 @@ import {
 import type { CompanyPageOverviewCacheRow } from "@/lib/company-overview-cache";
 
 import { AnalyticsBeacon } from "@/components/analytics-beacon";
-import { SectionCard } from "../components/section-card";
+import { scoreWrittenAt } from "@/lib/score-freshness";
+import { SectionCard, SectionUpdatedAt } from "../components/section-card";
 import { BusinessSnapshotSection } from "../components/business-snapshot-section";
 import { FutureGrowthSection } from "../components/future-growth-section";
 import { IndustryContextSection } from "../components/industry-context-section";
@@ -32,10 +33,7 @@ import { MoatAnalysisSection } from "../components/moat-analysis-section";
 import { SectionLoading } from "../components/section-loading";
 import { SubSectorSection } from "../components/sub-sector-section";
 import { ValuationCheckSection } from "../components/valuation-check-section";
-import {
-  WalkTheTalkSection,
-  walkTheTalkSinceBadge,
-} from "../components/walk-the-talk-section";
+import { WalkTheTalkSection } from "../components/walk-the-talk-section";
 import {
   CompanyCommentsSection,
   GuidanceHistorySection,
@@ -44,11 +42,6 @@ import {
 import { parseSummary, transformToChartData } from "../utils";
 import type { QuarterData } from "../types";
 import { formatShortDate } from "./page-helpers";
-import {
-  getPercentileTone,
-  topShareLabel,
-} from "./display-tokens";
-import { slugifySector } from "@/app/sector/utils";
 
 type CompanyDetailSectionProps = {
   overview: CompanyPageOverviewCacheRow;
@@ -75,18 +68,6 @@ export function IndustryContextPanel({ overview }: CompanyDetailSectionProps) {
       <IndustryContextSection
         companyCode={overview.company_code}
         companyName={overview.company_name}
-        rankInfo={
-          overview.sector_rank != null &&
-          overview.sector_total != null &&
-          overview.sector_percentile != null
-            ? {
-                rank: overview.sector_rank,
-                total: overview.sector_total,
-                percentile: overview.sector_percentile,
-                href: overview.sector ? `/sector/${slugifySector(overview.sector)}` : undefined,
-              }
-            : null
-        }
       />
     </Suspense>
   );
@@ -105,7 +86,7 @@ export function SubSectorPanel({ overview }: CompanyDetailSectionProps) {
 
 export async function BusinessSnapshotPanel({ overview }: CompanyDetailSectionProps) {
   const supabase = await createClient();
-  const [{ data: companyRow }, { data: businessSnapshotData }, { data: moatAnalysisData }] =
+  const [{ data: companyRow }, { data: businessSnapshotData }] =
     await Promise.all([
       supabase
         .from("company")
@@ -121,11 +102,6 @@ export async function BusinessSnapshotPanel({ overview }: CompanyDetailSectionPr
         .eq("company", overview.company_code)
         .order("generated_at", { ascending: false })
         .limit(1),
-      supabase
-        .from("moat_analysis")
-        .select("id")
-        .eq("company_code", overview.company_code)
-        .limit(1),
     ]);
   const normalizedBusinessSnapshot = normalizeBusinessSnapshot({
     companyCode: overview.company_code,
@@ -139,7 +115,6 @@ export async function BusinessSnapshotPanel({ overview }: CompanyDetailSectionPr
       companyCode={overview.company_code}
       companyName={overview.company_name}
       generatedAtShort={formatShortDate(normalizedBusinessSnapshot?.generatedAtRaw)}
-      hasMoatAnalysis={Boolean(moatAnalysisData?.[0])}
     />
   );
 }
@@ -162,15 +137,10 @@ export async function MoatAnalysisPanel({ overview }: CompanyDetailSectionProps)
     <SectionCard
       id="moat-analysis"
       title="Moat"
-      headerDescription="How protected it is from competition"
       feedbackEnabled={Boolean(normalizedMoatAnalysis)}
       feedbackCompanyCode={overview.company_code}
       feedbackCompanyName={overview.company_name}
-      headerAction={
-        moatGeneratedAtShort ? (
-          <span className="text-[11px] text-muted-foreground">{moatGeneratedAtShort}</span>
-        ) : null
-      }
+      headerAction={<SectionUpdatedAt date={moatGeneratedAtShort} />}
     >
       {normalizedMoatAnalysis ? (
         <MoatAnalysisSection
@@ -238,12 +208,16 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
   }));
   const chartData = transformToChartData(quarters, 24);
   const detailQuarters = quarters.slice(0, 24);
-  // Header chips mirror the section's two named axes (1b redesign) so the
-  // advertisement matches the card titles inside.
-  const headerPills = [
-    detailQuarters.length > 0 ? "Where it sits" : null,
-    chartData.length > 0 ? "Where it's heading" : null,
-  ].filter((value): value is string => Boolean(value));
+  // Last-updated = the newest scored_at across the rows (a re-score of an
+  // older quarter is newer than the latest quarter's first write).
+  const latestScoredAt = quarters.reduce<string | null>((latest, row) => {
+    const written = scoreWrittenAt({
+      scored_at:
+        (row.details as { scoring_meta?: { scored_at?: string | null } } | null)?.scoring_meta
+          ?.scored_at ?? null,
+    });
+    return written && (!latest || written > latest) ? written : latest;
+  }, null);
 
   return (
     <SectionCard
@@ -252,25 +226,7 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
       feedbackEnabled
       feedbackCompanyCode={overview.company_code}
       feedbackCompanyName={overview.company_name}
-      headerPills={headerPills}
-      headerRankPills={
-        overview.quarter_rank != null &&
-        overview.quarter_total != null &&
-        overview.quarter_percentile != null
-          ? [
-              {
-                label: `Q Rank ${overview.quarter_rank}/${overview.quarter_total}`,
-                tone: getPercentileTone(overview.quarter_percentile),
-                href: "/leaderboards?tab=quarter",
-              },
-              {
-                label: topShareLabel(overview.quarter_rank, overview.quarter_total),
-                tone: getPercentileTone(overview.quarter_percentile),
-                href: "/leaderboards?tab=quarter",
-              },
-            ]
-          : undefined
-      }
+      headerAction={<SectionUpdatedAt date={formatShortDate(latestScoredAt)} />}
     >
       <ConcallScoreSection
         chartData={chartData}
@@ -295,15 +251,6 @@ export async function KeyVariablesPanel({ overview }: CompanyDetailSectionProps)
   const normalizedKeyVariablesSnapshot = normalizeKeyVariablesSnapshot(
     (keyVariablesSnapshotData?.[0] as KeyVariablesSnapshotRow | undefined) ?? null,
   );
-  const headerPills = normalizedKeyVariablesSnapshot
-    ? [
-        normalizedKeyVariablesSnapshot.discoverySummary ? "Discovery summary" : null,
-        normalizedKeyVariablesSnapshot.deepTreatment.length > 0 ? "Deep treatment" : null,
-        normalizedKeyVariablesSnapshot.deepTreatment.some((item) => Boolean(item.kpiHistory))
-          ? "KPI history"
-          : null,
-      ].filter((value): value is string => Boolean(value))
-    : [];
 
   return (
     <SectionCard
@@ -312,14 +259,8 @@ export async function KeyVariablesPanel({ overview }: CompanyDetailSectionProps)
       feedbackEnabled={Boolean(normalizedKeyVariablesSnapshot)}
       feedbackCompanyCode={overview.company_code}
       feedbackCompanyName={overview.company_name}
-      headerPills={headerPills}
-      headerDescription="The non-financial variables that best explain whether growth is healthy, sustainable, and improving in quality."
       headerAction={
-        normalizedKeyVariablesSnapshot?.generatedAtRaw ? (
-          <span className="text-[11px] text-muted-foreground">
-            {formatShortDate(normalizedKeyVariablesSnapshot.generatedAtRaw)}
-          </span>
-        ) : undefined
+        <SectionUpdatedAt date={formatShortDate(normalizedKeyVariablesSnapshot?.generatedAtRaw)} />
       }
     >
       {normalizedKeyVariablesSnapshot ? (
@@ -372,25 +313,12 @@ export async function FutureGrowthPanel({ overview }: CompanyDetailSectionProps)
       outlook={normalizedGrowthOutlook}
       companyCode={overview.company_code}
       companyName={overview.company_name}
-      rankInfo={
-        overview.growth_rank != null &&
-        overview.growth_total != null &&
-        overview.growth_percentile != null
-          ? {
-              rank: overview.growth_rank,
-              total: overview.growth_total,
-              percentile: overview.growth_percentile,
-              href: "/leaderboards?tab=growth",
-            }
-          : null
-      }
     />
   );
 }
 
 export async function WalkTheTalkPanel({ overview }: CompanyDetailSectionProps) {
   const snapshot = await getWalkTheTalk(overview.company_code);
-  const sinceBadge = walkTheTalkSinceBadge(snapshot);
   const generatedAtShort = formatShortDate(snapshot.updatedAtRaw);
   const hasRow = snapshot.schemaStatus !== "missing";
 
@@ -401,15 +329,7 @@ export async function WalkTheTalkPanel({ overview }: CompanyDetailSectionProps) 
       feedbackEnabled={hasRow}
       feedbackCompanyCode={overview.company_code}
       feedbackCompanyName={overview.company_name}
-      headerAction={
-        sinceBadge ? (
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            {sinceBadge}
-          </span>
-        ) : generatedAtShort ? (
-          <span className="text-[11px] text-muted-foreground">{generatedAtShort}</span>
-        ) : null
-      }
+      headerAction={<SectionUpdatedAt date={generatedAtShort} />}
     >
       {hasRow ? (
         <WalkTheTalkSection snapshot={snapshot} />
@@ -452,29 +372,11 @@ export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionPro
     (guidanceTrackingResult.data as GuidanceTrackingRow[] | null | undefined) ?? null,
   );
   const guidanceItems = normalizedGuidanceSnapshot?.guidanceItems ?? legacyGuidanceItems;
-  const guidanceSnapshotUpdatedAtShort = formatShortDate(
-    normalizedGuidanceSnapshot?.updatedAtRaw ?? normalizedGuidanceSnapshot?.generatedAtRaw,
-    true,
+  const guidanceUpdatedAtShort = formatShortDate(
+    normalizedGuidanceSnapshot?.updatedAtRaw ??
+      normalizedGuidanceSnapshot?.generatedAtRaw ??
+      (guidanceTrackingResult.data as { generated_at?: string | null }[] | null)?.[0]?.generated_at,
   );
-  const guidanceSnapshotAnalysisWindowLabel =
-    normalizedGuidanceSnapshot?.analysisWindowQuarters != null
-      ? `${normalizedGuidanceSnapshot.analysisWindowQuarters} qtr${
-          normalizedGuidanceSnapshot.analysisWindowQuarters === 1 ? "" : "s"
-        }`
-      : null;
-  const guidanceSnapshotSourceFilesLabel =
-    normalizedGuidanceSnapshot?.sourceFiles.length
-      ? `${normalizedGuidanceSnapshot.sourceFiles.length} source file${
-          normalizedGuidanceSnapshot.sourceFiles.length === 1 ? "" : "s"
-        }`
-      : null;
-  const headerPills = normalizedGuidanceSnapshot
-    ? [
-        guidanceSnapshotAnalysisWindowLabel,
-        guidanceSnapshotUpdatedAtShort ? `Updated ${guidanceSnapshotUpdatedAtShort}` : null,
-        guidanceSnapshotSourceFilesLabel,
-      ].filter((value): value is string => Boolean(value))
-    : [];
   return (
     <SectionCard
       id="guidance-history"
@@ -482,16 +384,7 @@ export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionPro
       feedbackEnabled={Boolean(normalizedGuidanceSnapshot || guidanceItems.length > 0)}
       feedbackCompanyCode={overview.company_code}
       feedbackCompanyName={overview.company_name}
-      headerPills={headerPills}
-      headerAction={
-        <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
-          {guidanceItems.length > 0
-            ? `${guidanceItems.length} tracked`
-            : normalizedGuidanceSnapshot
-              ? "Live snapshot"
-              : "Not ready"}
-        </span>
-      }
+      headerAction={<SectionUpdatedAt date={guidanceUpdatedAtShort} />}
     >
       {guidanceItems.length > 0 ? (
         <GuidanceHistorySection
@@ -569,11 +462,7 @@ export async function ValuationCheckPanel({ overview }: CompanyDetailSectionProp
       feedbackEnabled={Boolean(valuation)}
       feedbackCompanyCode={overview.company_code}
       feedbackCompanyName={overview.company_name}
-      headerAction={
-        valuation?.pricedAsOf ? (
-          <span className="text-[11px] text-muted-foreground">{valuation.pricedAsOf}</span>
-        ) : null
-      }
+      headerAction={<SectionUpdatedAt date={formatShortDate(valuation?.pricedAsOf)} />}
     >
       {!valuation ? (
         <AnalyticsBeacon

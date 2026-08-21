@@ -1,40 +1,31 @@
-import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  overviewBodyPillClass,
-  type OverviewBodyPillTone,
-} from "../[code]/display-tokens";
 import { SectionFeedbackButton } from "./section-feedback-button";
-import { SectionLink } from "./section-link";
 import { SectionHelpfulnessFooter } from "./section-helpfulness-footer";
 
 type SectionTone = "sky" | "emerald" | "amber" | "violet" | "rose" | "slate";
 
 /**
- * Header pill. `anchor` links to a block inside this section (plain `#id`,
- * same panel); `sectionId` jumps to another section through the workspace so
- * the target panel mounts before scrolling. Plain strings stay static.
+ * Every section header is the same two things: the title on the left and the
+ * last-updated date on the right. Render the date through this so the
+ * typography matches across sections.
  */
-export type SectionHeaderPill =
-  | string
-  | { label: string; anchor?: string; sectionId?: string };
-
-export type SectionHeaderRankPill = {
-  label: string;
-  tone?: OverviewBodyPillTone;
-  href?: string;
-};
+export function SectionUpdatedAt({ date }: { date: string | null | undefined }) {
+  if (!date) return null;
+  return (
+    <span className="whitespace-nowrap text-[11px] tabular-nums text-muted-foreground">
+      {date}
+    </span>
+  );
+}
 
 interface SectionCardProps {
   id: string;
   title: string;
   children: React.ReactNode;
   className?: string;
+  /** Right-hand slot — the last-updated date (use SectionUpdatedAt). */
   headerAction?: React.ReactNode;
-  headerDescription?: React.ReactNode;
-  headerPills?: SectionHeaderPill[];
-  headerRankPills?: SectionHeaderRankPill[];
   feedbackEnabled?: boolean;
   feedbackCompanyCode?: string;
   feedbackCompanyName?: string | null;
@@ -119,9 +110,6 @@ export function SectionCard({
   children,
   className = "",
   headerAction,
-  headerDescription,
-  headerPills = [],
-  headerRankPills = [],
   feedbackEnabled = false,
   feedbackCompanyCode,
   feedbackCompanyName,
@@ -157,85 +145,14 @@ export function SectionCard({
   const headerFeedbackAction = helpfulnessFooter ? null : feedbackAction;
 
   const header = (
-    <div className="relative flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-      <div className="min-w-0 flex-1 space-y-1.5">
-        <div className="flex items-center gap-2">
-          <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", toneClasses.accent)} />
-          <p className="min-w-0 text-lg font-bold leading-tight text-foreground">{title}</p>
-        </div>
-        {headerDescription ? (
-          <p className="max-w-3xl text-[13px] leading-snug text-foreground/80">
-            {headerDescription}
-          </p>
-        ) : null}
-        {headerPills.length > 0 || headerRankPills.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5 pt-0.5">
-            {headerRankPills.map((pill) => {
-              const baseClass = cn(
-                "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold",
-                overviewBodyPillClass(pill.tone),
-              );
-              if (pill.href) {
-                return (
-                  <Link
-                    key={`${id}-rank-${pill.label}`}
-                    href={pill.href}
-                    className={cn(
-                      baseClass,
-                      "transition-colors hover:brightness-110 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
-                    )}
-                  >
-                    {pill.label}
-                  </Link>
-                );
-              }
-              return (
-                <span key={`${id}-rank-${pill.label}`} className={baseClass}>
-                  {pill.label}
-                </span>
-              );
-            })}
-            {headerPills.map((rawPill) => {
-              const pill = typeof rawPill === "string" ? { label: rawPill } : rawPill;
-              const pillClass =
-                "inline-flex items-center rounded-full border border-border/60 bg-background/75 px-2.5 py-1 text-[10px] font-medium text-muted-foreground";
-              // Interactive pills get a taller tap target on touch widths.
-              const interactiveClass =
-                "py-1.5 transition-colors hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 sm:py-1";
-              if (pill.sectionId) {
-                return (
-                  <SectionLink
-                    key={`${id}-${pill.label}`}
-                    sectionId={pill.sectionId}
-                    className={cn(pillClass, interactiveClass)}
-                  >
-                    {pill.label}
-                  </SectionLink>
-                );
-              }
-              if (pill.anchor) {
-                return (
-                  <a
-                    key={`${id}-${pill.label}`}
-                    href={`#${pill.anchor}`}
-                    className={cn(pillClass, interactiveClass)}
-                  >
-                    {pill.label}
-                  </a>
-                );
-              }
-              return (
-                <span key={`${id}-${pill.label}`} className={pillClass}>
-                  {pill.label}
-                </span>
-              );
-            })}
-          </div>
-        ) : null}
+    <div className="relative flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", toneClasses.accent)} />
+        <p className="min-w-0 text-lg font-bold leading-tight text-foreground">{title}</p>
       </div>
       {headerAction || headerFeedbackAction ? (
-        <div className="flex w-full items-center justify-end gap-2 text-[11px] text-muted-foreground sm:w-auto sm:shrink-0">
-          {headerAction ? <div className="mr-auto sm:mr-0">{headerAction}</div> : null}
+        <div className="flex shrink-0 items-center gap-2 text-[11px] text-muted-foreground">
+          {headerAction}
           {headerFeedbackAction}
         </div>
       ) : null}
@@ -257,14 +174,7 @@ export function SectionCard({
             <div className={`pointer-events-none absolute inset-0 ${toneClasses.glow}`} />
             <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accent}`} />
             <div className="relative flex flex-wrap items-center justify-between gap-3 transition-colors group-hover:text-foreground">
-              <div className="min-w-0 flex-1 space-y-1">
-                <p className="min-w-0 text-lg font-bold leading-tight text-foreground">{title}</p>
-                {headerDescription ? (
-                  <p className="max-w-3xl text-[13px] leading-snug text-foreground/80">
-                    {headerDescription}
-                  </p>
-                ) : null}
-              </div>
+              <p className="min-w-0 flex-1 text-lg font-bold leading-tight text-foreground">{title}</p>
               <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                 {headerAction || headerFeedbackAction ? (
                   <div className="hidden flex-wrap items-center justify-end gap-2 text-[11px] text-muted-foreground sm:flex group-open:flex">

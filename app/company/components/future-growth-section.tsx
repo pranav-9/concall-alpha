@@ -31,13 +31,11 @@ import {
   formatCompactLabel,
   getCatalystStatusDisplay,
   getGrowthScoreComponentLabel,
-  getPercentileTone,
-  topShareLabel,
   getTimelineStageDisplay,
   splitCatalystQuantifiedLabel,
   toDisplayLabel,
 } from "../[code]/display-tokens";
-import { SectionCard, type SectionHeaderRankPill } from "./section-card";
+import { SectionCard, SectionUpdatedAt } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 import { chipClass, type ChipTone } from "./chip-tone";
@@ -230,67 +228,34 @@ type FutureGrowthSectionProps = {
   outlook: NormalizedGrowthOutlook | null;
   companyCode: string;
   companyName: string | null;
-  rankInfo?: {
-    rank: number;
-    total: number;
-    percentile: number;
-    href?: string;
-  } | null;
 };
 
-function buildGrowthRankPills(
-  rankInfo: FutureGrowthSectionProps["rankInfo"],
-): SectionHeaderRankPill[] {
-  if (!rankInfo || rankInfo.rank == null || rankInfo.total <= 0) return [];
-  const tone = getPercentileTone(rankInfo.percentile);
-  return [
-    {
-      label: `Growth Rank ${rankInfo.rank}/${rankInfo.total}`,
-      tone,
-      href: rankInfo.href,
-    },
-    {
-      label: topShareLabel(rankInfo.rank, rankInfo.total),
-      tone,
-      href: rankInfo.href,
-    },
-  ];
-}
 
 export function FutureGrowthSection({
   outlook,
   companyCode,
   companyName,
-  rankInfo = null,
 }: FutureGrowthSectionProps) {
   const growthScore = outlook?.growthScore ?? null;
   const growthBand =
     typeof growthScore === "number"
       ? GROWTH_BANDS[bandForGrowthScore(growthScore)]
       : null;
-  const growthUpdatedAt = formatShortDate(outlook?.updatedAtRaw, true);
+  const growthUpdatedAt = formatShortDate(outlook?.updatedAtRaw);
   const hasDeepDive = Boolean(
     outlook?.scenarios?.base ||
       outlook?.scenarios?.upside ||
       outlook?.scenarios?.downside,
   );
-  const headerRankPills = buildGrowthRankPills(rankInfo);
 
   return (
     <SectionCard
       id="future-growth"
       title="Future Growth Prospects"
-      headerRankPills={headerRankPills}
       feedbackEnabled={Boolean(outlook)}
       feedbackCompanyCode={companyCode}
       feedbackCompanyName={companyName}
-      headerAction={
-        growthUpdatedAt ? (
-          <span className="text-[11px] text-muted-foreground">
-            Updated: {growthUpdatedAt}
-          </span>
-        ) : undefined
-      }
+      headerAction={<SectionUpdatedAt date={growthUpdatedAt} />}
     >
         {outlook ? (
           <div className="flex flex-col gap-4">

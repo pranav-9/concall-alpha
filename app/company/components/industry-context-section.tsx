@@ -20,13 +20,11 @@ import {
   formatCompactLabel,
   getImpactDirectionDisplay,
   getMarginQualityTone,
-  getPercentileTone,
-  topShareLabel,
   getTimeHorizonDisplay,
   marginQualityPillClass,
 } from "../[code]/display-tokens";
 import { formatShortDate, type ThemeItemWithSource } from "../[code]/page-helpers";
-import { SectionCard, type SectionHeaderRankPill } from "./section-card";
+import { SectionCard, SectionUpdatedAt } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 
@@ -460,79 +458,29 @@ function renderTypesOfPlayers(
   );
 }
 
-function buildIndustryHeaderPills(
-  analysis: NormalizedCompanyIndustryAnalysis | null,
-): string[] {
-  const positioning = analysis?.industryPositioning;
-  return [
-    (positioning?.customerNeed || positioning?.industryEconomicsForCompany)
-      ? "Industry overview"
-      : null,
-    analysis?.valueChainMap ? "Value chain" : null,
-    analysis?.typesOfPlayers ? "Players" : null,
-    analysis?.regulatoryChanges.length ? "Regulations" : null,
-    analysis?.tailwinds.length ? "Tailwinds" : null,
-    analysis?.headwinds.length ? "Headwinds" : null,
-  ].filter((value): value is string => Boolean(value));
-}
 
 type IndustryContextSectionProps = {
   companyCode: string;
   companyName: string | null;
-  rankInfo?: {
-    rank: number;
-    total: number;
-    percentile: number;
-    href?: string;
-  } | null;
 };
 
-function buildIndustryRankPills(
-  rankInfo: IndustryContextSectionProps["rankInfo"],
-): SectionHeaderRankPill[] {
-  if (!rankInfo || rankInfo.rank == null || rankInfo.total <= 0) return [];
-  const tone = getPercentileTone(rankInfo.percentile);
-  return [
-    {
-      label: `Sector Rank ${rankInfo.rank}/${rankInfo.total}`,
-      tone,
-      href: rankInfo.href,
-    },
-    {
-      label: topShareLabel(rankInfo.rank, rankInfo.total),
-      tone,
-      href: rankInfo.href,
-    },
-  ];
-}
 
 export async function IndustryContextSection({
   companyCode,
   companyName,
-  rankInfo = null,
 }: IndustryContextSectionProps) {
   const analysis = await getCompanyIndustryAnalysis(companyCode);
   const generatedAtShort = formatShortDate(analysis?.generatedAtRaw);
-  const headerPills = buildIndustryHeaderPills(analysis);
-  const headerRankPills = buildIndustryRankPills(rankInfo);
 
   return (
     <SectionCard
       id="industry-context"
       title="Industry Context"
-      headerPills={headerPills}
-      headerRankPills={headerRankPills}
       feedbackEnabled={Boolean(analysis)}
       feedbackCompanyCode={companyCode}
       feedbackCompanyName={companyName}
-        headerAction={
-          generatedAtShort ? (
-            <span className="text-[11px] text-muted-foreground">
-              {generatedAtShort}
-            </span>
-          ) : undefined
-        }
-      >
+      headerAction={<SectionUpdatedAt date={generatedAtShort} />}
+    >
         {analysis ? (
           <div className="space-y-3">
             <div className="space-y-5">
