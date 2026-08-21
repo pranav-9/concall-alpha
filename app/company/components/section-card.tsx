@@ -150,12 +150,10 @@ export function SectionCard({
         <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", toneClasses.accent)} />
         <p className="min-w-0 text-lg font-bold leading-tight text-foreground">{title}</p>
       </div>
-      {headerAction || headerFeedbackAction ? (
-        <div className="flex shrink-0 items-center gap-2 text-[11px] text-muted-foreground">
-          {headerAction}
-          {headerFeedbackAction}
-        </div>
-      ) : null}
+      <div className="flex shrink-0 items-center gap-2 text-[11px] text-muted-foreground">
+        {headerAction}
+        {headerFeedbackAction}
+      </div>
     </div>
   );
 

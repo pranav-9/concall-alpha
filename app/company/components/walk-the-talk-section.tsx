@@ -178,13 +178,3 @@ export function WalkTheTalkSection({ snapshot }: Props) {
 //
 // Rendered in SectionCard.headerAction so it sits in the title row and
 // doesn't compete with the verdict.
-export function walkTheTalkSinceBadge(
-  snapshot: NormalizedWalkTheTalk,
-): string | null {
-  if (snapshot.schemaStatus !== "present") return null;
-  const start = snapshot.dataSpanStart;
-  const end = snapshot.dataSpanEnd;
-  if (!start || !end) return null;
-  if (start === end) return start;
-  return `${start} → ${end}`;
-}
