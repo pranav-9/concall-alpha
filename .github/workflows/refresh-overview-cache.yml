@@ -1,0 +1,44 @@
+name: Refresh overview cache (nightly sweep)
+
+# Rebuilds company_page_overview_cache across the whole fleet once a day.
+#
+# Why this is load-bearing (not just a backstop): the valuation leg of the cache
+# goes stale on the CALENDAR (the portal withholds any verdict priced >4 days
+# ago) with no write to trigger the pipeline's push-on-write refresh. Rank legs
+# also drift when *other* companies re-score. This sweep is what keeps both
+# honest. Push-on-write (concallyser/app/overview_refresh.py) handles the fast
+# scalar-drift case within seconds of a promote; this handles the rest daily.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   NEXT_PUBLIC_SUPABASE_URL
+#   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY
+#   HOMEPAGE_ACTIVITY_REFRESH_SECRET
+# The script reads these from a .env file, so the run writes one from the secrets.
+
+on:
+  schedule:
+    # 20:30 UTC = 02:00 IST — after the day's promotes/results-season activity.
+    - cron: "30 20 * * *"
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20" # global fetch (Node 18+); script uses only builtins
+
+      - name: Write .env from secrets
+        run: |
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY }}"
+            echo "HOMEPAGE_ACTIVITY_REFRESH_SECRET=${{ secrets.HOMEPAGE_ACTIVITY_REFRESH_SECRET }}"
+          } > .env
+
+      - name: Run the sweep
+        run: node scripts/refresh-overview-cache.mjs --all --apply --base https://concall-alpha.vercel.app
