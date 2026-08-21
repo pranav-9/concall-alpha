@@ -24,7 +24,8 @@ import type {
   NormalizedGrowthScenario,
   NormalizedGrowthTimelineItem,
 } from "@/lib/growth-outlook/types";
-import { formatShortDate, pctFormatter } from "../[code]/page-helpers";
+import { formatShortDate } from "../[code]/page-helpers";
+import { formatGrowthScoreComponent } from "@/lib/growth-outlook/component-format";
 import {
   formatCatalystQuantifiedLabel,
   formatCompactLabel,
@@ -342,22 +343,31 @@ export function FutureGrowthSection({
                               </DrawerHeader>
                               <div className="space-y-3 overflow-y-auto px-4 py-4">
                                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                  {outlook.growthScoreComponents.map((component) => (
-                                    <div
-                                      key={component.key}
-                                      className={`${nestedDetailClass} px-3 py-2.5`}
-                                    >
-                                      <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                                        {getGrowthScoreComponentLabel(component.key)}
-                                      </p>
-                                      <p className="mt-1 text-2xl font-semibold leading-none text-foreground">
-                                        {pctFormatter.format(component.score)}
-                                        <span className="ml-1 text-[10px] font-medium text-muted-foreground">
-                                          /10
-                                        </span>
-                                      </p>
-                                    </div>
-                                  ))}
+                                  {outlook.growthScoreComponents.map((component) => {
+                                    const display = formatGrowthScoreComponent(
+                                      component.key,
+                                      component.score,
+                                    );
+                                    if (!display) return null;
+                                    return (
+                                      <div
+                                        key={component.key}
+                                        className={`${nestedDetailClass} px-3 py-2.5`}
+                                      >
+                                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+                                          {getGrowthScoreComponentLabel(component.key)}
+                                        </p>
+                                        <p className="mt-1 text-2xl font-semibold leading-none text-foreground">
+                                          {display.value}
+                                          {display.suffix && (
+                                            <span className="ml-1 text-[10px] font-medium text-muted-foreground">
+                                              {display.suffix}
+                                            </span>
+                                          )}
+                                        </p>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                               <DrawerFooter className="border-t border-border">

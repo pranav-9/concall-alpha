@@ -423,6 +423,12 @@ export const getGrowthScoreComponentLabel = (key: string) => {
       return "Guidance";
     case "scenario_strength":
       return "Scenarios";
+    case "scenario_adjusted":
+      return "Scenarios (cred-adj)";
+    case "credibility_multiplier":
+      return "Credibility";
+    case "delivered_cagr_blend":
+      return "Delivered CAGR";
     case "execution_confidence":
       return "Execution";
     case "quantified_forward_facts":
