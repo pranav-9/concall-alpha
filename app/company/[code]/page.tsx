@@ -7,8 +7,10 @@ import {
 } from "@/lib/company-overview-cache";
 import { SECTION_MAP } from "../constants";
 import { CompanyPageWorkspace } from "../components/company-page-workspace";
-import { TheReadOverview } from "../components/overview-the-read";
-import { CompanyOverallRankSlot } from "../components/overall-rank-slot";
+import {
+  OverviewSignalBoard,
+  OverviewSignalBoardFallback,
+} from "../components/overview-signal-board";
 import CompanyWatchlistSlot, {
   WatchlistSlotFallback,
 } from "../components/company-watchlist-slot";
@@ -157,19 +159,26 @@ export default async function Page({
           companyCode={overview.company_code}
         >
           <div data-section-id="overview">
-            <TheReadOverview
-              overview={overview}
-              watchlistSlot={
-                <Suspense fallback={<WatchlistSlotFallback />}>
-                  <CompanyWatchlistSlot companyCode={overview.company_code} />
-                </Suspense>
+            {/* Recency-first signal board (2026-08-21). The shell (header from the
+                cache row) renders immediately; the per-company extras stream in
+                behind Suspense, and the fleet-wide board rank streams inside that. */}
+            <Suspense
+              fallback={
+                <OverviewSignalBoardFallback
+                  overview={overview}
+                  watchlistSlot={<WatchlistSlotFallback />}
+                />
               }
-              overallRankSlot={
-                <Suspense fallback={null}>
-                  <CompanyOverallRankSlot companyCode={overview.company_code} />
-                </Suspense>
-              }
-            />
+            >
+              <OverviewSignalBoard
+                overview={overview}
+                watchlistSlot={
+                  <Suspense fallback={<WatchlistSlotFallback />}>
+                    <CompanyWatchlistSlot companyCode={overview.company_code} />
+                  </Suspense>
+                }
+              />
+            </Suspense>
           </div>
 
           <div data-section-id="business-overview">
