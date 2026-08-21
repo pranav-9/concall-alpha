@@ -382,7 +382,7 @@ function Synthesis({
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5 lg:px-6">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+      <div className="flex flex-col-reverse gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className={kickerClass}>The read</span>
@@ -418,7 +418,7 @@ function Synthesis({
             {def.gloss}
           </p>
         </div>
-        <div className="border-t border-border/60 pt-4 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+        <div className="border-b border-border/60 pb-4 lg:border-b-0 lg:border-l lg:pb-0 lg:pl-8">
           <OverallRead overview={overview} streamPosition />
         </div>
       </div>
@@ -1175,12 +1175,12 @@ export function OverviewSignalBoardFallback({
         moatPhrase={null}
       />
       <div className="mt-5 rounded-2xl border border-border/60 bg-card p-4 sm:p-5 lg:px-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+        <div className="flex flex-col-reverse gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
           <div className="min-w-0 flex-1">
             <div className="h-5 w-40 animate-pulse rounded-full bg-muted/50" />
             <div className="mt-4 h-14 w-full max-w-[700px] animate-pulse rounded-md bg-muted/50" />
           </div>
-          <div className="border-t border-border/60 pt-4 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+          <div className="border-b border-border/60 pb-4 lg:border-b-0 lg:border-l lg:pb-0 lg:pl-8">
             <OverallRead overview={overview} streamPosition={false} />
           </div>
         </div>
