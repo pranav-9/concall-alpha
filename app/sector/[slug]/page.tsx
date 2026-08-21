@@ -96,6 +96,26 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
 
   const supabase = await createClient();
 
+  // Neither of these depends on which sector the slug resolves to, so they
+  // start now and overlap the two sector lookups below instead of queueing
+  // behind them. The page is fully dynamic, and this chain was the TTFB:
+  // ~1.3-1.8s measured on prod (2026-08-21), four serial Supabase round trips.
+  const concallPromise = getConcallData({ excludeLargeCaps: true });
+  // Promise.resolve() matters: a Supabase query builder is a thenable that
+  // issues a fresh request on EVERY .then(), so handing the bare builder to
+  // both the guard below and Promise.all would run the query twice.
+  // Materialising it once means one request, however many times it's awaited.
+  const growthPromise = Promise.resolve(
+    supabase
+      .from("growth_outlook")
+      .select("company, growth_score, run_timestamp")
+      .order("run_timestamp", { ascending: false }),
+  );
+  // If the slug 404s below we never await these; mark them handled so a
+  // rejection can't surface as an unhandled-promise warning.
+  concallPromise.catch(() => undefined);
+  growthPromise.catch(() => undefined);
+
   const { data: sectorListRows } = await supabase
     .from("company")
     .select(`sector, ${COVERAGE_SELECT}`)
@@ -152,11 +172,8 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
 
   const [{ rows: concallRows, latestLabel }, { data: growthRows }, { data: moatRows }] =
     await Promise.all([
-      getConcallData({ excludeLargeCaps: true }),
-      supabase
-        .from("growth_outlook")
-        .select("company, growth_score, run_timestamp")
-        .order("run_timestamp", { ascending: false }),
+      concallPromise,
+      growthPromise,
       supabase
         .from("moat_analysis")
         .select(
