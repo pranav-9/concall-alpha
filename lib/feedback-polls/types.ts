@@ -244,23 +244,15 @@ export type PollAggregate = {
   mean?: number | null;
 };
 
-// ---------------------------------------------------------------------------
-// Dismiss snooze constants (used by the banner client component).
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// Dismiss snooze constants moved to ./storage (schema-free) so the banner client
+// component can import them without dragging zod into the root layout bundle.
+// Re-exported here so existing server/test imports keep working.
+// -----------------------------------------------------------------------------
 
-export const DISMISS_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
-
-export const STORAGE_KEY_LAST_DISMISS = "feedback-poll:last-dismiss";
-export const storageKeyResponded = (pollId: string) =>
-  `feedback-poll:responded:${pollId}`;
-
-// Pure function: returns true if a stored dismiss timestamp still falls within
-// the snooze window. Used in tests and at banner mount.
-export function isDismissActive(
-  storedTimestampMs: number | null,
-  nowMs: number,
-): boolean {
-  if (storedTimestampMs === null) return false;
-  if (!Number.isFinite(storedTimestampMs)) return false;
-  return nowMs - storedTimestampMs < DISMISS_SNOOZE_MS;
-}
+export {
+  DISMISS_SNOOZE_MS,
+  STORAGE_KEY_LAST_DISMISS,
+  storageKeyResponded,
+  isDismissActive,
+} from "./storage";
