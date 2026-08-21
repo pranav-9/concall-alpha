@@ -1,7 +1,11 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
+import {
+  COVERAGE_SELECT,
+  isAdmittedLargeCap,
+  isBelowCoverageCut,
+} from "@/lib/coverage-policy";
 import { formatRelativeActivityTime } from "@/lib/activity-feed";
 import {
   CATEGORY_META,
@@ -56,8 +60,15 @@ type AnnouncementRow = {
 };
 
 /**
- * Discovery-listed company names keyed by uppercased code, plus the excluded set
- * (large-cap admissions and below-cut names), mirroring the desk leaderboard.
+ * Company names keyed by uppercased code, split by coverage gate so the loader
+ * can route each announcement:
+ *  - `nameByCode`      — discovery-listed (the ranked hundred) → main feed.
+ *  - `largeCapKeys`    — Gate 1 admissions (large cap): a different universe,
+ *    dropped from the Desk entirely (code AND name, defensively).
+ *  - `belowCutKeys`    — Gate 2 (excluded_from_discovery): still one of ours,
+ *    just below the cut → routed to the separate below-cut block so a strong
+ *    update that might earn the name back isn't missed.
+ *  - `belowCutNameByCode` — display names for that block.
  */
 async function fetchCoverage(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -68,17 +79,29 @@ async function fetchCoverage(
   if (error) throw error;
 
   const nameByCode = new Map<string, string>();
-  const excludedKeys = new Set<string>();
+  const largeCapKeys = new Set<string>();
+  const belowCutKeys = new Set<string>();
+  const belowCutNameByCode = new Map<string, string>();
   (data ?? []).forEach((raw) => {
     const row = raw as CoverageRow;
-    if (!isDiscoveryListed(row)) {
-      if (row.code) excludedKeys.add(upper(row.code));
-      if (row.name) excludedKeys.add(upper(row.name));
+    // Gate 1 wins: a below-cut name that is ALSO a large-cap admission is out
+    // of the positioning entirely and never surfaces.
+    if (isAdmittedLargeCap(row)) {
+      if (row.code) largeCapKeys.add(upper(row.code));
+      if (row.name) largeCapKeys.add(upper(row.name));
+      return;
+    }
+    if (isBelowCoverageCut(row)) {
+      if (row.code) {
+        belowCutKeys.add(upper(row.code));
+        belowCutNameByCode.set(upper(row.code), row.name ?? row.code);
+      }
+      if (row.name) belowCutKeys.add(upper(row.name));
       return;
     }
     if (row.code) nameByCode.set(upper(row.code), row.name ?? row.code);
   });
-  return { nameByCode, excludedKeys };
+  return { nameByCode, largeCapKeys, belowCutKeys, belowCutNameByCode };
 }
 
 const EMPTY: ExchangeDeskData = {
@@ -86,6 +109,7 @@ const EMPTY: ExchangeDeskData = {
   categories: [],
   total: 0,
   windowDays: WINDOW_DAYS,
+  belowCut: [],
 };
 
 /**
@@ -118,20 +142,22 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
 
     const counts = new Map<ExchangeCategory, number>();
     const updates: ExchangeUpdate[] = [];
+    const belowCut: ExchangeUpdate[] = [];
 
     ((annResp.data ?? []) as AnnouncementRow[]).forEach((row) => {
       const key = upper(row.company_code);
-      if (coverage.excludedKeys.has(key)) return; // off discovery
+      if (coverage.largeCapKeys.has(key)) return; // Gate 1: off-positioning, never shown
       if (!isKnownCategory(row.category)) return; // procedural / unknown never stored, but guard
       const category = row.category as ExchangeCategory;
       const summary = (row.summary ?? "").trim() || (row.headline ?? "").trim();
       if (!summary) return;
 
-      counts.set(category, (counts.get(category) ?? 0) + 1);
-      updates.push({
+      const isBelowCut = coverage.belowCutKeys.has(key);
+      const nameMap = isBelowCut ? coverage.belowCutNameByCode : coverage.nameByCode;
+      const update: ExchangeUpdate = {
         id: row.announcement_id,
         companyCode: row.company_code,
-        companyName: coverage.nameByCode.get(key) ?? row.company_code,
+        companyName: nameMap.get(key) ?? row.company_code,
         category,
         categoryLabel: categoryLabel(category),
         impact: coerceImpact(row.impact),
@@ -141,14 +167,29 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
         filedRaw: row.filed_at,
         filedLabel: formatRelativeActivityTime(row.filed_at),
         bucketKey: bucketFor(row.filed_at, now),
-      });
+      };
+
+      if (isBelowCut) {
+        // Gate 2: below the cut but still one of ours — surfaced separately, so
+        // it doesn't feed the covered-100 category counts or main tape.
+        belowCut.push(update);
+        return;
+      }
+      counts.set(category, (counts.get(category) ?? 0) + 1);
+      updates.push(update);
     });
 
     const categories = CATEGORY_META.filter((c) => (counts.get(c.key) ?? 0) > 0).map(
       (c) => ({ key: c.key, label: c.label, count: counts.get(c.key) ?? 0 }),
     );
 
-    return { updates, categories, total: updates.length, windowDays: WINDOW_DAYS };
+    return {
+      updates,
+      categories,
+      total: updates.length,
+      windowDays: WINDOW_DAYS,
+      belowCut,
+    };
   } catch (err) {
     // Table missing (pre-DDL) or transient read failure — degrade to empty.
     console.warn("[exchange-desk] feed unavailable:", (err as Error)?.message ?? err);

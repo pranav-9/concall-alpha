@@ -114,4 +114,12 @@ export type ExchangeDeskData = {
   categories: { key: ExchangeCategory; label: string; count: number }[];
   total: number;
   windowDays: number;
+  /**
+   * Material filings from names just below the coverage cut (Gate 2 —
+   * excluded_from_discovery — only, NOT large-cap admissions). Surfaced in a
+   * separate, de-emphasized block so a strong update on a below-cut name isn't
+   * missed — it might be the thing that earns the name back into the ranked
+   * hundred — without diluting the covered-100 feed above it.
+   */
+  belowCut: ExchangeUpdate[];
 };

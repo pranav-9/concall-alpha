@@ -32,6 +32,8 @@ const BUCKET_ORDER: { key: RecencyBucketKey; label: string }[] = [
 // The feed can run to a few hundred filings over the window; show the most recent
 // slice by default so the section stays a scannable tape, not an endless scroll.
 const MAX_COLLAPSED = 18;
+// The below-cut watch list is a smaller signal — keep the default slice tight.
+const MAX_BELOW_CUT = 8;
 
 type Filter = "all" | ExchangeCategory;
 
@@ -155,6 +157,62 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
   );
 }
 
+/**
+ * Below-cut watch list — material filings from names just outside the ranked
+ * hundred (Gate 2, still one of ours). Kept visually quieter than the main tape
+ * so it reads as a secondary signal, not part of the covered universe, while
+ * still surfacing an update that might earn a name back in.
+ */
+function BelowCutBlock({
+  updates,
+  windowDays,
+}: {
+  updates: ExchangeUpdate[];
+  windowDays: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  if (updates.length === 0) return null;
+
+  const visible = expanded ? updates : updates.slice(0, MAX_BELOW_CUT);
+  const hiddenCount = Math.max(0, updates.length - MAX_BELOW_CUT);
+
+  return (
+    <section aria-labelledby="desk-exchange-belowcut" className="house-block mt-12">
+      <p className="house-data house-micro flex items-center gap-2 text-[var(--ink-soft)]">
+        <span aria-hidden className="text-[var(--ink-soft)]">
+          ○
+        </span>
+        Just outside coverage · last {windowDays} days
+      </p>
+      <h2 id="desk-exchange-belowcut" className="house-display mt-2 text-xl sm:text-2xl text-[var(--ink-soft)]">
+        Below the cut, but worth a look
+      </h2>
+      <p className="mt-2 max-w-2xl text-sm text-[var(--ink-soft)]">
+        Names that fell below the coverage cut are still ours — de-emphasised, never dropped. A
+        strong filing here (a big order, a fundraise) can be the thing that earns a company back
+        into the ranked hundred, so we keep their material announcements on the tape.
+      </p>
+
+      <div className="mt-4 rounded-lg border border-dashed border-[var(--rule)] bg-[var(--paper-2)] px-5 py-2 opacity-90 sm:px-6">
+        {visible.map((item) => (
+          <UpdateRow key={item.id} item={item} />
+        ))}
+      </div>
+
+      {hiddenCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className={cn("house-link mt-4 inline-block", ROW_FOCUS)}
+        >
+          {expanded ? "Show fewer" : `Show all ${updates.length} below-cut filings →`}
+        </button>
+      )}
+    </section>
+  );
+}
+
 export default function DeskExchangeUpdates({ data }: { data: ExchangeDeskData }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [expanded, setExpanded] = useState(false);
@@ -181,9 +239,12 @@ export default function DeskExchangeUpdates({ data }: { data: ExchangeDeskData }
   const hiddenCount = Math.max(0, filtered.length - MAX_COLLAPSED);
 
   // Nothing material in the window (or the feed isn't wired yet) — render nothing.
-  if (data.total === 0) return null;
+  // The below-cut watch list can still carry the section on a quiet covered week.
+  if (data.total === 0 && data.belowCut.length === 0) return null;
 
   return (
+    <>
+      {data.total > 0 && (
     <section aria-labelledby="desk-exchange" className="house-block">
       <p className="house-data house-micro flex items-center gap-2 text-[var(--ink-soft)]">
         <span aria-hidden className="text-[var(--signal)]">
@@ -253,5 +314,9 @@ export default function DeskExchangeUpdates({ data }: { data: ExchangeDeskData }
         </button>
       )}
     </section>
+      )}
+
+      <BelowCutBlock updates={data.belowCut} windowDays={data.windowDays} />
+    </>
   );
 }
