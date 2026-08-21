@@ -216,7 +216,7 @@ const renderChartCard = ({
   onRangeChange,
   showRangeToggle,
   trajectory,
-  title = "Where it's heading · whole series",
+  title = "Where it's heading",
 }: {
   chartData: ChartDataPoint[];
   selectedQuarterLabel: string;
@@ -230,8 +230,10 @@ const renderChartCard = ({
   title?: string;
 }) => (
   <div className={`${nestedDetailClass} flex min-w-0 flex-col gap-2 p-2.5`}>
-    <div className="flex items-center justify-between gap-2">
-      <div className="flex items-center gap-2">
+    {/* Mobile: title row, then the chart, then the legend as a caption.
+        Desktop: title + badge left, legend + range toggle right, one row. */}
+    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           {title}
         </p>
@@ -243,7 +245,7 @@ const renderChartCard = ({
           />
         )}
       </div>
-      <span className="flex items-center gap-2 text-[10px] text-muted-foreground">
+      <span className="hidden items-center gap-2 text-[10px] text-muted-foreground sm:flex">
         <span>
           <span className="text-amber-400/90">⭐</span> 8.5+&nbsp;&nbsp;·&nbsp;&nbsp;
           {chartData.some((d) => d.rollingAvg != null) && (
@@ -254,23 +256,7 @@ const renderChartCard = ({
           {chartData.length === 1 ? "1 quarter" : `${chartData.length} quarters`}
         </span>
         {showRangeToggle && (
-          <span aria-label="Trend range" className="flex items-center gap-0.5" role="group">
-            {CHART_RANGES.map((value) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={range === value}
-                onClick={() => onRangeChange(value)}
-                className={`rounded px-1.5 py-0.5 text-[10px] font-semibold tabular-nums transition-colors ${
-                  range === value
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
-              >
-                {value}Q
-              </button>
-            ))}
-          </span>
+          <ChartRangeToggle range={range} onRangeChange={onRangeChange} />
         )}
       </span>
     </div>
@@ -281,7 +267,45 @@ const renderChartCard = ({
         onQuarterSelect={onQuarterSelect}
       />
     </div>
+    <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground sm:hidden">
+      <span>
+        {chartData.some((d) => d.rollingAvg != null) && (
+          <>
+            <span className="tracking-[0.18em]">┄</span> 4Q avg&nbsp;&nbsp;·&nbsp;&nbsp;
+          </>
+        )}
+        {chartData.length === 1 ? "1 quarter" : `${chartData.length} quarters`}
+        &nbsp;&nbsp;·&nbsp;&nbsp;tap a dot for detail
+      </span>
+      {showRangeToggle && <ChartRangeToggle range={range} onRangeChange={onRangeChange} />}
+    </div>
   </div>
+);
+
+const ChartRangeToggle = ({
+  range,
+  onRangeChange,
+}: {
+  range: ChartRange;
+  onRangeChange: (range: ChartRange) => void;
+}) => (
+  <span aria-label="Trend range" className="flex items-center gap-0.5" role="group">
+    {CHART_RANGES.map((value) => (
+      <button
+        key={value}
+        type="button"
+        aria-pressed={range === value}
+        onClick={() => onRangeChange(value)}
+        className={`rounded px-1.5 py-0.5 text-[10px] font-semibold tabular-nums transition-colors ${
+          range === value
+            ? "bg-foreground text-background"
+            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+        }`}
+      >
+        {value}Q
+      </button>
+    ))}
+  </span>
 );
 
 export function ConcallScoreSection({
@@ -552,7 +576,8 @@ export function ConcallScoreSection({
           >
             <span className="flex min-w-0 flex-wrap items-center gap-2">
               <h3 className="text-[13px] font-semibold text-foreground">
-                Quarter breakdown by category
+                <span className="sm:hidden">Category breakdown</span>
+                <span className="hidden sm:inline">Quarter breakdown by category</span>
               </h3>
               {leanSummary && (
                 <span
@@ -567,7 +592,8 @@ export function ConcallScoreSection({
               )}
             </span>
             <span className="flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground">
-              <span className="tabular-nums">{quarterContext.detailQuarterLabel}</span>
+              {/* The quarter is already chosen above; only desktop has room to echo it. */}
+              <span className="hidden tabular-nums sm:inline">{quarterContext.detailQuarterLabel}</span>
               <span className="font-medium text-foreground/80">
                 {breakdownOpen ? "Collapse" : "Expand"}
               </span>
@@ -594,7 +620,7 @@ export function ConcallScoreSection({
                 }}
               />
               <p className="text-[10px] text-muted-foreground">
-                Click a segment to open that category&rsquo;s detail; expand for all cards.
+                Select a category to open its detail; expand for all cards.
               </p>
             </div>
           )}
