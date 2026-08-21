@@ -4,8 +4,8 @@
 // pipeline (concallyser/scripts/exchange_desk_classify.py) keeps only
 // business-material filings (order wins, capex, M&A, fundraises, approvals,
 // partnerships, ratings, business updates) and drops procedural noise, so this
-// tape is signal-only. Category chips filter; recency (Today / This week /
-// Earlier) is the spine. Reuses the house skin from desk-recency-ledger.
+// tape is signal-only. Quality chips filter (impact tier); recency (Today /
+// This week / Earlier) is the spine. Reuses the house skin from desk-recency-ledger.
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -13,7 +13,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
   IMPACT_META,
-  type ExchangeCategory,
+  type ExchangeImpact,
   type ExchangeDeskData,
   type ExchangeUpdate,
   type RecencyBucketKey,
@@ -35,9 +35,9 @@ const MAX_COLLAPSED = 18;
 // The below-cut watch list is a smaller signal — keep the default slice tight.
 const MAX_BELOW_CUT = 8;
 
-type Filter = "all" | ExchangeCategory;
+type Filter = "all" | ExchangeImpact;
 
-function CategoryTab({
+function FilterTab({
   active,
   label,
   count,
@@ -217,14 +217,14 @@ export default function DeskExchangeUpdates({ data }: { data: ExchangeDeskData }
   const [filter, setFilter] = useState<Filter>("all");
   const [expanded, setExpanded] = useState(false);
 
-  // Changing the category should always start from the collapsed view.
+  // Changing the filter should always start from the collapsed view.
   const selectFilter = (next: Filter) => {
     setFilter(next);
     setExpanded(false);
   };
 
   const filtered = useMemo(
-    () => (filter === "all" ? data.updates : data.updates.filter((u) => u.category === filter)),
+    () => (filter === "all" ? data.updates : data.updates.filter((u) => u.impact === filter)),
     [data.updates, filter],
   );
 
@@ -262,14 +262,14 @@ export default function DeskExchangeUpdates({ data }: { data: ExchangeDeskData }
       </p>
 
       <div className="mt-5 flex flex-wrap gap-2">
-        <CategoryTab
+        <FilterTab
           active={filter === "all"}
           label="All"
           count={data.total}
           onClick={() => selectFilter("all")}
         />
-        {data.categories.map((c) => (
-          <CategoryTab
+        {data.impacts.map((c) => (
+          <FilterTab
             key={c.key}
             active={filter === c.key}
             label={c.label}
@@ -282,7 +282,7 @@ export default function DeskExchangeUpdates({ data }: { data: ExchangeDeskData }
       <div className="mt-5 rounded-lg border border-[var(--rule)] bg-[var(--paper-2)] px-5 py-2 sm:px-6">
         {buckets.length === 0 ? (
           <p className="house-data house-micro py-4 text-[var(--ink-soft)]">
-            No filings in this category in the last {data.windowDays} days.
+            No filings in this band in the last {data.windowDays} days.
           </p>
         ) : (
           buckets.map((bucket) => (

@@ -8,7 +8,7 @@ import {
 } from "@/lib/coverage-policy";
 import { formatRelativeActivityTime } from "@/lib/activity-feed";
 import {
-  CATEGORY_META,
+  buildImpactFacet,
   categoryLabel,
   coerceImpact,
   isKnownCategory,
@@ -106,7 +106,7 @@ async function fetchCoverage(
 
 const EMPTY: ExchangeDeskData = {
   updates: [],
-  categories: [],
+  impacts: [],
   total: 0,
   windowDays: WINDOW_DAYS,
   belowCut: [],
@@ -140,7 +140,6 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
 
     if (annResp.error) throw annResp.error;
 
-    const counts = new Map<ExchangeCategory, number>();
     const updates: ExchangeUpdate[] = [];
     const belowCut: ExchangeUpdate[] = [];
 
@@ -171,21 +170,19 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
 
       if (isBelowCut) {
         // Gate 2: below the cut but still one of ours — surfaced separately, so
-        // it doesn't feed the covered-100 category counts or main tape.
+        // it doesn't feed the covered-100 impact counts or main tape.
         belowCut.push(update);
         return;
       }
-      counts.set(category, (counts.get(category) ?? 0) + 1);
       updates.push(update);
     });
 
-    const categories = CATEGORY_META.filter((c) => (counts.get(c.key) ?? 0) > 0).map(
-      (c) => ({ key: c.key, label: c.label, count: counts.get(c.key) ?? 0 }),
-    );
+    // Impact/quality facet, main feed only (below-cut is excluded from counts).
+    const impacts = buildImpactFacet(updates);
 
     return {
       updates,
-      categories,
+      impacts,
       total: updates.length,
       windowDays: WINDOW_DAYS,
       belowCut,

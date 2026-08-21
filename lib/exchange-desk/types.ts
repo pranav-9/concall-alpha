@@ -64,6 +64,51 @@ export function coerceImpact(value: string | null | undefined): ExchangeImpact {
     : "neutral";
 }
 
+/**
+ * Tab order for the impact/quality filter — strongest-positive to strongest-
+ * negative, the same good→bad reading as the badge axis.
+ */
+export const IMPACT_ORDER: ExchangeImpact[] = [
+  "transformative",
+  "positive",
+  "neutral",
+  "negative",
+  "severe",
+];
+
+/**
+ * Filter-tab labels. Distinct from IMPACT_META's badge labels on purpose: the
+ * neutral tier's per-row badge reads "Routine", but its tab reads "Neutral".
+ */
+export const IMPACT_TAB_LABEL: Record<ExchangeImpact, string> = {
+  transformative: "Transformative",
+  positive: "Positive",
+  neutral: "Neutral",
+  negative: "Negative",
+  severe: "Severe",
+};
+
+/**
+ * Build the impact/quality filter facet from a set of updates: count by tier,
+ * walk IMPACT_ORDER, and keep only tiers that have rows (so an empty tier — e.g.
+ * Severe on a quiet week — gets no tab). Pure and dependency-free so the loader
+ * and the unit test can both call it. `total` is not derived here; the "All" tab
+ * uses the payload's own `total`.
+ */
+export function buildImpactFacet(
+  updates: { impact: ExchangeImpact }[],
+): { key: ExchangeImpact; label: string; count: number }[] {
+  const counts = new Map<ExchangeImpact, number>();
+  for (const u of updates) {
+    counts.set(u.impact, (counts.get(u.impact) ?? 0) + 1);
+  }
+  return IMPACT_ORDER.filter((key) => (counts.get(key) ?? 0) > 0).map((key) => ({
+    key,
+    label: IMPACT_TAB_LABEL[key],
+    count: counts.get(key) ?? 0,
+  }));
+}
+
 /** Display metadata per category, in the order tabs should appear. */
 export const CATEGORY_META: { key: ExchangeCategory; label: string }[] = [
   { key: "order_win", label: "Order Wins" },
@@ -110,8 +155,11 @@ export type ExchangeUpdate = {
 
 export type ExchangeDeskData = {
   updates: ExchangeUpdate[];
-  /** Category facets present in the current window, with counts, tab order. */
-  categories: { key: ExchangeCategory; label: string; count: number }[];
+  /**
+   * Impact/quality facets present in the current window, with counts, in tab
+   * order (IMPACT_ORDER, empty tiers dropped). Drives the filter tabs.
+   */
+  impacts: { key: ExchangeImpact; label: string; count: number }[];
   total: number;
   windowDays: number;
   /**
