@@ -37,7 +37,8 @@ import { SectionLink } from "./section-link";
 // colours always come from the band modules (score-band / growth-band / valuation-band) —
 // never hardcoded.
 
-const displayClass = "[font-family:var(--font-display)] font-bold tracking-[-0.03em]";
+const displayClass =
+  "[font-family:var(--font-display)] font-bold tracking-[-0.03em]";
 const monoClass = "[font-family:var(--font-data)] tabular-nums";
 const kickerClass =
   "text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground";
@@ -65,7 +66,13 @@ function OpenNudge({ sectionId, label }: { sectionId: string; label: string }) {
 }
 
 /** Tiny server-rendered sparkline of the score path (oldest → newest). */
-function PathSparkline({ values, className }: { values: number[]; className?: string }) {
+function PathSparkline({
+  values,
+  className,
+}: {
+  values: number[];
+  className?: string;
+}) {
   if (values.length < 2) return null;
   const w = 90;
   const h = 26;
@@ -88,7 +95,9 @@ function PathSparkline({ values, className }: { values: number[]; className?: st
       aria-hidden
     >
       <polyline
-        points={pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ")}
+        points={pts
+          .map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`)
+          .join(" ")}
         stroke="currentColor"
         strokeWidth={2}
         strokeLinecap="round"
@@ -118,7 +127,9 @@ function NotScoredRead({
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[15px] font-semibold text-foreground">{title}</p>
-        <p className="mt-1 text-[12px] text-muted-foreground">Not scored yet.</p>
+        <p className="mt-1 text-[12px] text-muted-foreground">
+          Not scored yet.
+        </p>
       </div>
       <MissingSectionRequestButton
         companyCode={overview.company_code}
@@ -156,9 +167,16 @@ async function WhereItSits({ companyCode }: { companyCode: string }) {
         title="Rank on the Overall leaderboard (recency-weighted quarter leg) — opens the board"
         className="mt-2 flex items-baseline justify-end gap-2 transition-colors hover:opacity-80"
       >
-        <span className={cn(displayClass, "text-[22px] leading-none text-foreground")}>
+        <span
+          className={cn(
+            displayClass,
+            "text-[22px] leading-none text-foreground",
+          )}
+        >
           #{pos.rank}
-          <span className="text-[13px] font-semibold text-muted-foreground">/{pos.total}</span>
+          <span className="text-[13px] font-semibold text-muted-foreground">
+            /{pos.total}
+          </span>
         </span>
         <span
           className={cn(
@@ -168,7 +186,9 @@ async function WhereItSits({ companyCode }: { companyCode: string }) {
               : "bg-teal-500/15 text-teal-700 dark:text-teal-300",
           )}
         >
-          {pos.belowLine ? "BELOW LINE" : topShareLabel(pos.rank, pos.total).toUpperCase()}
+          {pos.belowLine
+            ? "BELOW LINE"
+            : topShareLabel(pos.rank, pos.total).toUpperCase()}
         </span>
       </Link>
     </div>
@@ -196,7 +216,10 @@ function Header({
   }
   if (overview.sub_sector && overview.sub_sector !== overview.sector) {
     chips.push(
-      <span key="sub" className="inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground">
+      <span
+        key="sub"
+        className="inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground"
+      >
         {overview.sub_sector}
       </span>,
     );
@@ -204,14 +227,20 @@ function Header({
   const capLabel = marketCapBandLabel(overview.market_cap_band);
   if (capLabel) {
     chips.push(
-      <span key="cap" className="inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground">
+      <span
+        key="cap"
+        className="inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground"
+      >
         {capLabel}
       </span>,
     );
   }
   if (moatPhrase) {
     chips.push(
-      <span key="moat" className="inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground">
+      <span
+        key="moat"
+        className="inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground"
+      >
         {moatPhrase}
       </span>,
     );
@@ -220,8 +249,14 @@ function Header({
   const varCount = overview.key_variable_count ?? 0;
   if (segCount > 0 || varCount > 0) {
     chips.push(
-      <span key="counts" className="inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground">
-        {[segCount > 0 ? `${segCount} segments` : null, varCount > 0 ? `${varCount} variables` : null]
+      <span
+        key="counts"
+        className="inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground"
+      >
+        {[
+          segCount > 0 ? `${segCount} segments` : null,
+          varCount > 0 ? `${varCount} variables` : null,
+        ]
           .filter(Boolean)
           .join(" · ")}
       </span>,
@@ -257,27 +292,49 @@ function Header({
         >
           {overview.company_name}
         </h1>
-        {chips.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{chips}</div>}
+        {chips.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">{chips}</div>
+        )}
       </div>
 
-      <div className="flex shrink-0 flex-col gap-3 lg:items-end">
-        <div className="hidden lg:block">{watchlistSlot}</div>
-        <div className={cn(cardClass, "p-4 sm:p-5 lg:border-0 lg:bg-transparent lg:p-0")}>
-          <div className="flex items-end justify-between gap-6 lg:flex-col lg:items-end lg:gap-0">
-            <div className="lg:text-right">
-              <p className={kickerClass}>Overall read</p>
-              <p className={cn(displayClass, "mt-1 text-[38px] leading-none text-foreground sm:text-[40px]")}>
-                {overview.read.score != null ? overview.read.score.toFixed(1) : "—"}
-              </p>
-            </div>
-            <Suspense
-              fallback={<div className="mt-3 h-[62px] w-full sm:w-[200px]" aria-hidden />}
-            >
-              <WhereItSits companyCode={overview.company_code} />
-            </Suspense>
-          </div>
-        </div>
+      <div className="hidden shrink-0 lg:block">{watchlistSlot}</div>
+    </div>
+  );
+}
+
+/** Overall read numeral + the streamed board position. Lives inside The Read
+ * card so the number sits next to the sentence that explains it. */
+function OverallRead({
+  overview,
+  streamPosition,
+}: {
+  overview: CompanyPageOverviewCacheRow;
+  streamPosition: boolean;
+}) {
+  return (
+    <div className="flex items-end justify-between gap-6 lg:w-[200px] lg:flex-col lg:items-end lg:gap-0">
+      <div className="lg:text-right">
+        <p className={kickerClass}>Overall read</p>
+        <p
+          className={cn(
+            displayClass,
+            "mt-1 text-[38px] leading-none text-foreground sm:text-[40px]",
+          )}
+        >
+          {overview.read.score != null ? overview.read.score.toFixed(1) : "—"}
+        </p>
       </div>
+      {streamPosition ? (
+        <Suspense
+          fallback={
+            <div className="mt-3 h-[62px] w-full sm:w-[200px]" aria-hidden />
+          }
+        >
+          <WhereItSits companyCode={overview.company_code} />
+        </Suspense>
+      ) : (
+        <div className="mt-3 h-[62px] w-full sm:w-[200px]" aria-hidden />
+      )}
     </div>
   );
 }
@@ -304,37 +361,46 @@ function Synthesis({
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5 lg:px-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className={kickerClass}>The read</span>
-        <span
-          className={cn(
-            "inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-[12px] font-semibold",
-            def.textClass,
-          )}
-        >
-          {read.label}
-        </span>
-        {(twistUp || twistDown) && (
-          <span
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={kickerClass}>The read</span>
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-[12px] font-semibold",
+                def.textClass,
+              )}
+            >
+              {read.label}
+            </span>
+            {(twistUp || twistDown) && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                  twistUp
+                    ? "bg-teal-500/10 text-teal-700 dark:text-teal-300"
+                    : "bg-rose-500/10 text-rose-700 dark:text-rose-300",
+                )}
+              >
+                {twistUp
+                  ? "▲ Positive twist · latest above 4Q avg"
+                  : "▼ Negative twist · latest below 4Q avg"}
+              </span>
+            )}
+          </div>
+          <p
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
-              twistUp
-                ? "bg-teal-500/10 text-teal-700 dark:text-teal-300"
-                : "bg-rose-500/10 text-rose-700 dark:text-rose-300",
+              displayClass,
+              "mt-3 max-w-[900px] text-[19px] leading-[1.26] text-foreground sm:text-[23px] sm:leading-[1.25]",
             )}
           >
-            {twistUp ? "▲ Positive twist · latest above 4Q avg" : "▼ Negative twist · latest below 4Q avg"}
-          </span>
-        )}
+            {def.gloss}
+          </p>
+        </div>
+        <div className="border-t border-border/60 pt-4 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+          <OverallRead overview={overview} streamPosition />
+        </div>
       </div>
-      <p
-        className={cn(
-          displayClass,
-          "mt-3 max-w-[900px] text-[19px] leading-[1.26] text-foreground sm:text-[23px] sm:leading-[1.25]",
-        )}
-      >
-        {def.gloss}
-      </p>
       {themes.length > 0 && (
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3.5">
           <span className={cn(kickerClass, "mr-0.5")}>Riding themes</span>
@@ -343,7 +409,10 @@ function Synthesis({
               key={t.slug}
               href="/themes"
               title={t.rationale ?? undefined}
-              className={cn(chipClass("slate"), "transition-colors hover:bg-muted")}
+              className={cn(
+                chipClass("slate"),
+                "transition-colors hover:bg-muted",
+              )}
             >
               {t.title}
             </Link>
@@ -368,10 +437,17 @@ function QuarterRead({
   // fresh print can never be captioned with the cache's older quarter label.
   const latestScore = quarter.latestScore ?? overview.latest_score;
   if (latestScore == null) {
-    return <NotScoredRead title="Quarter read" overview={overview} sectionId="sentiment-score" />;
+    return (
+      <NotScoredRead
+        title="Quarter read"
+        overview={overview}
+        sectionId="sentiment-score"
+      />
+    );
   }
   const traj = quarter.trajectory;
-  const trajDef = traj && traj.key !== "no_read" ? TRAJECTORIES[traj.key] : null;
+  const trajDef =
+    traj && traj.key !== "no_read" ? TRAJECTORIES[traj.key] : null;
   const priorScore = quarter.priorScore;
   const pathValues = quarter.scorePath
     .map((p) => p.value)
@@ -380,7 +456,10 @@ function QuarterRead({
   return (
     <SectionLink
       sectionId="sentiment-score"
-      className={cn(cardClass, "block w-full p-4 transition-colors hover:border-border sm:p-5")}
+      className={cn(
+        cardClass,
+        "block w-full p-4 transition-colors hover:border-border sm:p-5",
+      )}
     >
       <div className="flex items-start gap-4">
         <ConcallScore
@@ -390,14 +469,18 @@ function QuarterRead({
         />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <span className="text-[15px] font-semibold text-foreground">Quarter read</span>
+            <span className="text-[15px] font-semibold text-foreground">
+              Quarter read
+            </span>
             <ScoreDelta
               score={latestScore}
               priorScore={priorScore}
               priorLabel={quarter.priorLabel}
               className="text-[11px]"
             />
-            <span className={cn(monoClass, "text-[11px] text-muted-foreground")}>
+            <span
+              className={cn(monoClass, "text-[11px] text-muted-foreground")}
+            >
               {[
                 quarter.latestLabel ?? overview.quarter_label,
                 overview.quarter_rank != null && overview.quarter_total != null
@@ -408,7 +491,11 @@ function QuarterRead({
                 .join(" · ")}
             </span>
           </div>
-          {quarter.whyLine && <p className={cn(bodyClass, "mt-2 line-clamp-3")}>{quarter.whyLine}</p>}
+          {quarter.whyLine && (
+            <p className={cn(bodyClass, "mt-2 line-clamp-3")}>
+              {quarter.whyLine}
+            </p>
+          )}
         </div>
         {trajDef && pathValues.length >= 2 && (
           <div
@@ -429,7 +516,12 @@ function QuarterRead({
         )}
       </div>
       {trajDef && pathValues.length >= 2 && (
-        <div className={cn("mt-3 flex items-center gap-2.5 sm:hidden", trajDef.textClass)}>
+        <div
+          className={cn(
+            "mt-3 flex items-center gap-2.5 sm:hidden",
+            trajDef.textClass,
+          )}
+        >
           <PathSparkline values={pathValues} className="h-6 w-20" />
           <span className={cn(monoClass, "text-[10px]")}>
             {trajDef.cellLabel}
@@ -453,7 +545,13 @@ function GrowthRead({
   // Live row first (same row as the why-line); cache only as a fallback.
   const growthScore = extras.growthScore ?? overview.growth_score;
   if (growthScore == null) {
-    return <NotScoredRead title="Growth read" overview={overview} sectionId="future-growth" />;
+    return (
+      <NotScoredRead
+        title="Growth read"
+        overview={overview}
+        sectionId="future-growth"
+      />
+    );
   }
   const s = overview.growth_scenarios;
   const hasScenarios = Boolean(s && (s.bear || s.base || s.bull));
@@ -462,7 +560,10 @@ function GrowthRead({
   return (
     <SectionLink
       sectionId="future-growth"
-      className={cn(cardClass, "block w-full p-4 transition-colors hover:border-border sm:p-5")}
+      className={cn(
+        cardClass,
+        "block w-full p-4 transition-colors hover:border-border sm:p-5",
+      )}
     >
       <div className="flex items-start gap-4">
         <ConcallScore
@@ -473,16 +574,24 @@ function GrowthRead({
         />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <span className="text-[15px] font-semibold text-foreground">Growth read</span>
+            <span className="text-[15px] font-semibold text-foreground">
+              Growth read
+            </span>
             {/* Growth has its own band vocabulary (lib/growth-band) — never the
                 quarterly Bullish/Bearish scale. */}
             <span className="inline-flex items-center gap-1.5">
-              <span className={cn("h-1.5 w-1.5 rounded-full", growthBand.barClass)} />
-              <span className={cn("text-[12px] font-medium", growthBand.textClass)}>
+              <span
+                className={cn("h-1.5 w-1.5 rounded-full", growthBand.barClass)}
+              />
+              <span
+                className={cn("text-[12px] font-medium", growthBand.textClass)}
+              >
                 {growthBand.label}
               </span>
             </span>
-            <span className={cn(monoClass, "text-[11px] text-muted-foreground")}>
+            <span
+              className={cn(monoClass, "text-[11px] text-muted-foreground")}
+            >
               {[
                 s?.base ? `base ${s.base}` : null,
                 overview.growth_rank != null && overview.growth_total != null
@@ -494,16 +603,26 @@ function GrowthRead({
             </span>
           </div>
           {extras.growthWhyLine && (
-            <p className={cn(bodyClass, "mt-2 line-clamp-3")}>{extras.growthWhyLine}</p>
+            <p className={cn(bodyClass, "mt-2 line-clamp-3")}>
+              {extras.growthWhyLine}
+            </p>
           )}
           {hasScenarios && (
             <div className="mt-3">
-              <div className="flex h-1.5 gap-0.5 overflow-hidden rounded-full" aria-hidden>
+              <div
+                className="flex h-1.5 gap-0.5 overflow-hidden rounded-full"
+                aria-hidden
+              >
                 <span className="flex-[2] bg-muted" />
                 <span className="flex-[3] bg-teal-500/50" />
                 <span className="flex-[2] bg-teal-500" />
               </div>
-              <div className={cn(monoClass, "mt-1.5 flex justify-between text-[10px] text-muted-foreground")}>
+              <div
+                className={cn(
+                  monoClass,
+                  "mt-1.5 flex justify-between text-[10px] text-muted-foreground",
+                )}
+              >
                 <span>bear {s?.bear ?? "—"}</span>
                 <span>base {s?.base ?? "—"}</span>
                 <span>bull {s?.bull ?? "—"}</span>
@@ -516,7 +635,10 @@ function GrowthRead({
   );
 }
 
-const VALUATION_SHORT: Record<ReturnType<typeof bandForValuationScore>, string> = {
+const VALUATION_SHORT: Record<
+  ReturnType<typeof bandForValuationScore>,
+  string
+> = {
   deep_value: "DEEP",
   undervalued: "CHEAP",
   fair: "FAIR",
@@ -533,13 +655,21 @@ function ValuationRead({
 }) {
   const v = extras.valuation;
   if (!overview.section_availability.valuationCheck || !v) {
-    return <NotScoredRead title="Valuation read" overview={overview} sectionId="valuation-check" />;
+    return (
+      <NotScoredRead
+        title="Valuation read"
+        overview={overview}
+        sectionId="valuation-check"
+      />
+    );
   }
   // The extras already applied the 4-day staleness gate on the LIVE valuation
   // row; the cache row's valuation_stale can lag a /valuation-refresh, so it
   // must not veto (or resurrect) a verdict here.
   const shown = v.verdictLabel != null && v.score != null;
-  const band = shown ? VALUATION_BANDS[bandForValuationScore(v.score as number)] : null;
+  const band = shown
+    ? VALUATION_BANDS[bandForValuationScore(v.score as number)]
+    : null;
   // priced_as_of is an IST date; before 05:30 UTC the UTC-midnight diff is -1.
   const ageDays = v.ageDays == null ? null : Math.max(0, v.ageDays);
   const pricedLabel =
@@ -552,7 +682,10 @@ function ValuationRead({
   return (
     <SectionLink
       sectionId="valuation-check"
-      className={cn(cardClass, "block w-full p-4 transition-colors hover:border-border sm:p-5")}
+      className={cn(
+        cardClass,
+        "block w-full p-4 transition-colors hover:border-border sm:p-5",
+      )}
     >
       <div className="flex items-start gap-4">
         {band ? (
@@ -569,7 +702,9 @@ function ValuationRead({
             <span className={cn(displayClass, "text-[17px] leading-none")}>
               {v.score != null ? v.score.toFixed(1) : "—"}
             </span>
-            <span className={cn(monoClass, "mt-0.5 text-[10px] tracking-[0.08em]")}>
+            <span
+              className={cn(monoClass, "mt-0.5 text-[10px] tracking-[0.08em]")}
+            >
               {VALUATION_SHORT[band.key]}
             </span>
           </div>
@@ -583,7 +718,9 @@ function ValuationRead({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <span className="text-[15px] font-semibold text-foreground">Valuation read</span>
+            <span className="text-[15px] font-semibold text-foreground">
+              Valuation read
+            </span>
             {shown && band ? (
               <span
                 className={cn(
@@ -600,14 +737,27 @@ function ValuationRead({
               </span>
             )}
             {pricedLabel && (
-              <span className={cn(monoClass, "text-[11px] text-muted-foreground")}>{pricedLabel}</span>
+              <span
+                className={cn(monoClass, "text-[11px] text-muted-foreground")}
+              >
+                {pricedLabel}
+              </span>
             )}
           </div>
           <p className={cn(bodyClass, "mt-2 line-clamp-3")}>
-            {shown ? v.headline : v.withheldReason ? `Verdict withheld — ${v.withheldReason}.` : null}
+            {shown
+              ? v.headline
+              : v.withheldReason
+                ? `Verdict withheld — ${v.withheldReason}.`
+                : null}
           </p>
           {v.lenses.length > 0 && (
-            <div className={cn(monoClass, "mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1 text-[10.5px] text-muted-foreground")}>
+            <div
+              className={cn(
+                monoClass,
+                "mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1 text-[10.5px] text-muted-foreground",
+              )}
+            >
               {v.lenses.map((l) => (
                 <span key={l.label}>
                   {l.label} vs own history ·{" "}
@@ -648,7 +798,9 @@ function ActivityRiver({
         <p className={cn(kickerClass, "mb-3")}>Latest · newest first</p>
         <p className="text-[12.5px] leading-relaxed text-muted-foreground">
           No material exchange filings in the last 60 days.
-          {overview.quarter_label ? ` Latest scored quarter: ${overview.quarter_label}.` : ""}
+          {overview.quarter_label
+            ? ` Latest scored quarter: ${overview.quarter_label}.`
+            : ""}
         </p>
         <Link
           href="/desk"
@@ -663,9 +815,13 @@ function ActivityRiver({
     <div>
       <p className={cn(kickerClass, "mb-3.5")}>Latest · newest first</p>
       <ol className="relative pl-6">
-        <span className="absolute bottom-2.5 left-[5px] top-1.5 w-0.5 bg-border" aria-hidden />
+        <span
+          className="absolute bottom-2.5 left-[5px] top-1.5 w-0.5 bg-border"
+          aria-hidden
+        />
         {items.map((item, i) => {
-          const strong = item.impact === "transformative" || item.impact === "severe";
+          const strong =
+            item.impact === "transformative" || item.impact === "severe";
           const dotClass =
             item.impact === "transformative"
               ? "bg-teal-500"
@@ -684,19 +840,39 @@ function ActivityRiver({
                 : "text-foreground";
           const body = (
             <>
-              <span className={cn("absolute -left-6 top-0.5 h-3 w-3 rounded-full ring-[3px] ring-card", dotClass)} />
+              <span
+                className={cn(
+                  "absolute -left-6 top-0.5 h-3 w-3 rounded-full ring-[3px] ring-card",
+                  dotClass,
+                )}
+              />
               <p className={cn(monoClass, "text-[11px] text-muted-foreground")}>
                 {item.whenLabel} · {item.kind}
-                {strong && item.impact ? ` · ${IMPACT_META[item.impact].label.toLowerCase()}` : ""}
+                {strong && item.impact
+                  ? ` · ${IMPACT_META[item.impact].label.toLowerCase()}`
+                  : ""}
               </p>
-              <p className={cn("mt-1.5 text-[14px] font-semibold leading-[1.35]", headClass)}>
-                {item.impact === "transformative" ? <Star className="mr-1 inline h-3 w-3 fill-current" aria-hidden /> : null}
+              <p
+                className={cn(
+                  "mt-1.5 text-[14px] font-semibold leading-[1.35]",
+                  headClass,
+                )}
+              >
+                {item.impact === "transformative" ? (
+                  <Star
+                    className="mr-1 inline h-3 w-3 fill-current"
+                    aria-hidden
+                  />
+                ) : null}
                 {item.headline}
               </p>
             </>
           );
           return (
-            <li key={item.id} className={cn("relative", i < items.length - 1 ? "pb-5" : "")}>
+            <li
+              key={item.id}
+              className={cn("relative", i < items.length - 1 ? "pb-5" : "")}
+            >
               {item.href ? (
                 <a
                   href={item.href}
@@ -752,14 +928,21 @@ function StandingReads({
 
   return (
     <div>
-      <p className={cn(kickerClass, "mb-3")}>The standing reads · change less often</p>
+      <p className={cn(kickerClass, "mb-3")}>
+        The standing reads · change less often
+      </p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
         {/* Moat */}
         <div className={cn(cardClass, "flex flex-col p-4 sm:p-5")}>
           <p className={kickerClass}>Moat</p>
           {extras.moat ? (
             <>
-              <p className={cn(displayClass, "mt-2 text-[20px] leading-tight text-foreground sm:text-[22px]")}>
+              <p
+                className={cn(
+                  displayClass,
+                  "mt-2 text-[20px] leading-tight text-foreground sm:text-[22px]",
+                )}
+              >
                 {extras.moat.phrase}
               </p>
               {extras.moat.headline && (
@@ -769,7 +952,9 @@ function StandingReads({
               )}
             </>
           ) : (
-            <p className="mt-2 text-[12.5px] text-muted-foreground">No moat read published yet.</p>
+            <p className="mt-2 text-[12.5px] text-muted-foreground">
+              No moat read published yet.
+            </p>
           )}
           <div className="pt-3" />
           <OpenNudge sectionId="moat-analysis" label="Open moat analysis" />
@@ -781,8 +966,14 @@ function StandingReads({
           {overview.section_availability.keyVariables ? (
             <>
               <div className="mt-2 flex flex-wrap items-baseline gap-2">
-                <p className={cn(displayClass, "text-[20px] leading-tight text-foreground sm:text-[22px]")}>
-                  {overview.key_variable_count != null && overview.key_variable_count > 0
+                <p
+                  className={cn(
+                    displayClass,
+                    "text-[20px] leading-tight text-foreground sm:text-[22px]",
+                  )}
+                >
+                  {overview.key_variable_count != null &&
+                  overview.key_variable_count > 0
                     ? `${overview.key_variable_count} tracked`
                     : "Tracked"}
                 </p>
@@ -793,11 +984,15 @@ function StandingReads({
                 )}
               </div>
               {kvTrend && (
-                <p className="mt-2 line-clamp-3 text-[12.5px] leading-relaxed text-foreground/80">{kvTrend}</p>
+                <p className="mt-2 line-clamp-3 text-[12.5px] leading-relaxed text-foreground/80">
+                  {kvTrend}
+                </p>
               )}
             </>
           ) : (
-            <p className="mt-2 text-[12.5px] text-muted-foreground">No key-variables snapshot yet.</p>
+            <p className="mt-2 text-[12.5px] text-muted-foreground">
+              No key-variables snapshot yet.
+            </p>
           )}
           <div className="pt-3" />
           <OpenNudge sectionId="key-variables" label="Open key variables" />
@@ -807,18 +1002,39 @@ function StandingReads({
         <div
           className={cn(
             "flex flex-col rounded-[14px] border p-4 sm:p-5",
-            wttHighlight ? "border-teal-500/40 bg-teal-500/[0.07]" : "border-border/60 bg-card",
+            wttHighlight
+              ? "border-teal-500/40 bg-teal-500/[0.07]"
+              : "border-border/60 bg-card",
           )}
         >
-          <p className={cn(kickerClass, wttHighlight && "text-teal-700 dark:text-teal-300")}>Walk the talk</p>
+          <p
+            className={cn(
+              kickerClass,
+              wttHighlight && "text-teal-700 dark:text-teal-300",
+            )}
+          >
+            Walk the talk
+          </p>
           {wtt && wttTier ? (
             <>
               <div className="mt-2 flex flex-wrap items-baseline gap-2">
-                <p className={cn(displayClass, "text-[20px] leading-tight text-foreground sm:text-[22px]")}>
+                <p
+                  className={cn(
+                    displayClass,
+                    "text-[20px] leading-tight text-foreground sm:text-[22px]",
+                  )}
+                >
                   {TIER_LABELS[wttTier]}
                 </p>
                 {wtt.asOfQuarter && (
-                  <span className={cn(monoClass, "text-[11px] text-muted-foreground")}>as of {wtt.asOfQuarter}</span>
+                  <span
+                    className={cn(
+                      monoClass,
+                      "text-[11px] text-muted-foreground",
+                    )}
+                  >
+                    as of {wtt.asOfQuarter}
+                  </span>
                 )}
               </div>
               {segments && (
@@ -844,8 +1060,14 @@ function StandingReads({
                   ))}
                 </div>
               )}
-              <p className={cn(monoClass, "mt-2 text-[11px] text-muted-foreground")}>
-                {wtt.overall.onTimeCount} of {wtt.overall.totalCount} guidance items delivered on time
+              <p
+                className={cn(
+                  monoClass,
+                  "mt-2 text-[11px] text-muted-foreground",
+                )}
+              >
+                {wtt.overall.onTimeCount} of {wtt.overall.totalCount} guidance
+                items delivered on time
               </p>
             </>
           ) : (
@@ -872,7 +1094,10 @@ export async function OverviewSignalBoard({
   overview: CompanyPageOverviewCacheRow;
   watchlistSlot?: ReactNode;
 }) {
-  const extras = await getOverviewSignalExtras(overview.company_code, overview.company_name);
+  const extras = await getOverviewSignalExtras(
+    overview.company_code,
+    overview.company_name,
+  );
 
   return (
     <div
@@ -883,7 +1108,11 @@ export async function OverviewSignalBoard({
           "calc(var(--global-navbar-height, 84px) + var(--company-tabs-height, 56px) + 1rem)",
       }}
     >
-      <Header overview={overview} watchlistSlot={watchlistSlot} moatPhrase={extras.moat?.phrase ?? null} />
+      <Header
+        overview={overview}
+        watchlistSlot={watchlistSlot}
+        moatPhrase={extras.moat?.phrase ?? null}
+      />
 
       <div className="mt-5">
         <Synthesis overview={overview} themes={extras.themes} />
@@ -919,8 +1148,22 @@ export function OverviewSignalBoardFallback({
       id="overview"
       className="scroll-mt-40 overflow-hidden rounded-[1.55rem] border border-border/70 bg-card/95 p-4 shadow-[0_18px_42px_-34px_rgba(15,23,42,0.42)] backdrop-blur-sm sm:p-6 lg:p-8"
     >
-      <Header overview={overview} watchlistSlot={watchlistSlot} moatPhrase={null} />
-      <div className="mt-5 h-28 animate-pulse rounded-2xl bg-muted/50" />
+      <Header
+        overview={overview}
+        watchlistSlot={watchlistSlot}
+        moatPhrase={null}
+      />
+      <div className="mt-5 rounded-2xl border border-border/60 bg-card p-4 sm:p-5 lg:px-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+          <div className="min-w-0 flex-1">
+            <div className="h-5 w-40 animate-pulse rounded-full bg-muted/50" />
+            <div className="mt-4 h-14 w-full max-w-[700px] animate-pulse rounded-md bg-muted/50" />
+          </div>
+          <div className="border-t border-border/60 pt-4 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+            <OverallRead overview={overview} streamPosition={false} />
+          </div>
+        </div>
+      </div>
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="flex flex-col gap-3">
           <div className="h-24 animate-pulse rounded-[14px] bg-muted/50" />
