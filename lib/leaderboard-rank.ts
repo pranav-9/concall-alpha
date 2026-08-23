@@ -23,6 +23,21 @@ export const COVERAGE_BOARD_SIZE = 100;
 // out-scored. Greying now keys off THIS live rank (rank > COVERAGE_BOARD_SIZE),
 // so a greyed row is always the lowest-ranked and the bottom-pin has nothing to
 // hide.
+//
+// Read is compared at DISPLAY precision (rounded to 1 decimal, the same as the
+// board's `.toFixed(1)`), not full precision. Two companies that both show "7.2"
+// are treated as tied and ordered by growth — otherwise the growth tie-break
+// would be unreachable, since two full-precision floats are almost never exactly
+// equal (7.238 vs 7.184 both render "7.2" but never tie). Bucketing to tenths is
+// what makes growth a visible secondary sort.
+
+// Read at display precision: integer tenths (Math.round(x*10)), so the compare is
+// exact-integer and identical on Node and in the browser. null → sinks to the
+// bottom (unranked). Kept as a named helper so the board and snapshot bucket the
+// same way.
+function readBucket(readScore: number | null): number {
+  return readScore == null ? Number.NEGATIVE_INFINITY : Math.round(readScore * 10);
+}
 export type RankableRow = {
   companyCode: string;
   companyName: string;
@@ -37,8 +52,10 @@ export type RankableRow = {
 
 export function computeBoardRanks(rows: ReadonlyArray<RankableRow>): Map<string, number> {
   const ordered = [...rows].sort((a, b) => {
-    const av = a.readScore ?? Number.NEGATIVE_INFINITY;
-    const bv = b.readScore ?? Number.NEGATIVE_INFINITY;
+    // Primary: Read at display precision (tenths). Reads that render the same
+    // are a tie, resolved by growth below.
+    const av = readBucket(a.readScore);
+    const bv = readBucket(b.readScore);
     if (av !== bv) return bv - av;
     // Secondary: growth score, descending. Missing growth sorts last.
     const ag = a.growthScore ?? Number.NEGATIVE_INFINITY;

@@ -40,6 +40,22 @@ const r = (companyCode: string, readScore: number | null, growthScore: number | 
   assert.equal(ranks.get("ABLE"), 2, "equal Read → lower growth second");
 }
 
+// Reads compare at DISPLAY precision: 7.24 and 7.16 both render "7.2", so they
+// are a tie and growth decides — even though 7.24 > 7.16 at full precision. This
+// is what makes the growth tie-break actually reachable on real float Reads.
+{
+  const ranks = computeBoardRanks([r("HI", 7.24, 3.0), r("LO", 7.16, 9.0)]);
+  assert.equal(ranks.get("LO"), 1, "same displayed Read → higher growth first");
+  assert.equal(ranks.get("HI"), 2, "full-precision 7.24 does NOT beat 7.16 here");
+}
+
+// But a real display-level gap still wins: 7.25 rounds to 7.3, 7.16 to 7.2.
+{
+  const ranks = computeBoardRanks([r("LOWGROW", 7.25, 1.0), r("HIGROW", 7.16, 9.0)]);
+  assert.equal(ranks.get("LOWGROW"), 1, "higher displayed Read wins despite lower growth");
+  assert.equal(ranks.get("HIGROW"), 2, "lower displayed Read follows");
+}
+
 // Equal Read, a row missing a growth score sorts after one that has it.
 {
   const ranks = computeBoardRanks([r("NOGROWTH", 7.0, null), r("HAS", 7.0, 3.0)]);
