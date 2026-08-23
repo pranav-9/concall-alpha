@@ -119,6 +119,7 @@ export default async function LeaderboardsPage({
       companyCode: row.companyCode,
       companyName: row.companyName,
       readScore: overallReads[i].score,
+      growthScore: row.growthScore,
     })),
   );
   // Greyed = ranks past the coverage line on the LIVE Read (matching the board's

@@ -4,14 +4,16 @@ import { computeBoardRanks, COVERAGE_BOARD_SIZE } from "../lib/leaderboard-rank"
 
 // ---------------------------------------------------------------------------
 // computeBoardRanks: the ONE ranking both the live board and the snapshot writer
-// use. Ranks the whole universe purely by Read (desc), tie-broken by CODE. NOT
-// tiered by any coverage flag — greying is a separate, live decision downstream.
+// use. Ranks the whole universe by Read (desc), tie-broken by growth score (desc)
+// then CODE. NOT tiered by any coverage flag — greying is a separate, live
+// decision downstream.
 // ---------------------------------------------------------------------------
 
-const r = (companyCode: string, readScore: number | null) => ({
+const r = (companyCode: string, readScore: number | null, growthScore: number | null = null) => ({
   companyCode,
   companyName: companyCode,
   readScore,
+  growthScore,
 });
 
 // Pure Read-descending ordering.
@@ -30,12 +32,28 @@ const r = (companyCode: string, readScore: number | null) => ({
   assert.equal(ranks.get("KEPT"), 2, "the lower Read follows");
 }
 
-// Ties break on CODE by byte compare (identical on Node and in the browser, so
-// the Δ column never shows phantom ±1 movement from locale differences).
+// Equal Read → the higher growth score ranks first (the secondary sort). CODE
+// order here would put ABLE first, so this proves growth wins over CODE.
 {
-  const ranks = computeBoardRanks([r("ZED", 7.0), r("ABLE", 7.0)]);
-  assert.equal(ranks.get("ABLE"), 1, "equal Read → earlier CODE first");
-  assert.equal(ranks.get("ZED"), 2, "equal Read → later CODE second");
+  const ranks = computeBoardRanks([r("ABLE", 7.0, 5.0), r("ZED", 7.0, 8.0)]);
+  assert.equal(ranks.get("ZED"), 1, "equal Read → higher growth first");
+  assert.equal(ranks.get("ABLE"), 2, "equal Read → lower growth second");
+}
+
+// Equal Read, a row missing a growth score sorts after one that has it.
+{
+  const ranks = computeBoardRanks([r("NOGROWTH", 7.0, null), r("HAS", 7.0, 3.0)]);
+  assert.equal(ranks.get("HAS"), 1, "a growth score beats a missing one");
+  assert.equal(ranks.get("NOGROWTH"), 2, "missing growth sorts last");
+}
+
+// Equal Read AND equal growth → final tie-break on CODE by byte compare
+// (identical on Node and in the browser, so the Δ column never shows phantom ±1
+// movement from locale differences).
+{
+  const ranks = computeBoardRanks([r("ZED", 7.0, 4.0), r("ABLE", 7.0, 4.0)]);
+  assert.equal(ranks.get("ABLE"), 1, "equal Read+growth → earlier CODE first");
+  assert.equal(ranks.get("ZED"), 2, "equal Read+growth → later CODE second");
 }
 
 // A row with no Read holds no position (unranked, absent from the map) — it is
