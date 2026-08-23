@@ -336,6 +336,7 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
       companyCode: code,
       companyName: row.companyName,
       readScore: read.key === "no_read" ? null : read.score,
+      growthScore: row.growthScore,
     });
     // "Has a read" is the same test the summary line above the board uses, so
     // the two counts on this page can't mean different things.

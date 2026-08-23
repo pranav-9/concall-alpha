@@ -15,17 +15,24 @@ export const COVERAGE_BOARD_SIZE = 100;
 // same universe differently — if they did, the Δ column would compare a rank to
 // itself computed two ways and show phantom movement.
 //
-// Ranks the whole universe by Read (descending), tie-broken by CODE for
-// cross-runtime stability. A row with no Read is unranked (it can't hold a
-// position on a missing number). NOT tiered by the stored cut anymore (removed
-// 2026-08-12): tiering pinned a high-Read below-cut row to a low number that then
-// sat visually above a kept row it out-scored. Greying now keys off THIS live
-// rank (rank > COVERAGE_BOARD_SIZE), so a greyed row is always the lowest-ranked
-// and the bottom-pin has nothing to hide.
+// Ranks the whole universe by Read (descending), tie-broken first by growth
+// score (descending) then by CODE for cross-runtime stability. A row with no
+// Read is unranked (it can't hold a position on a missing number). NOT tiered by
+// the stored cut anymore (removed 2026-08-12): tiering pinned a high-Read
+// below-cut row to a low number that then sat visually above a kept row it
+// out-scored. Greying now keys off THIS live rank (rank > COVERAGE_BOARD_SIZE),
+// so a greyed row is always the lowest-ranked and the bottom-pin has nothing to
+// hide.
 export type RankableRow = {
   companyCode: string;
   companyName: string;
   readScore: number | null;
+  // Secondary sort: when two companies carry the same Read, the higher growth
+  // score ranks first. A row missing a growth score sorts after any row that has
+  // one (treated as -Infinity). Numeric, so it compares identically on Node (the
+  // snapshot writer) and in the browser (the live board) — unlike a locale
+  // string compare, it can't create a phantom Δ.
+  growthScore: number | null;
 };
 
 export function computeBoardRanks(rows: ReadonlyArray<RankableRow>): Map<string, number> {
@@ -33,11 +40,15 @@ export function computeBoardRanks(rows: ReadonlyArray<RankableRow>): Map<string,
     const av = a.readScore ?? Number.NEGATIVE_INFINITY;
     const bv = b.readScore ?? Number.NEGATIVE_INFINITY;
     if (av !== bv) return bv - av;
-    // Tie-break on CODE with a byte compare, NOT companyName.localeCompare:
+    // Secondary: growth score, descending. Missing growth sorts last.
+    const ag = a.growthScore ?? Number.NEGATIVE_INFINITY;
+    const bg = b.growthScore ?? Number.NEGATIVE_INFINITY;
+    if (ag !== bg) return bg - ag;
+    // Final tie-break on CODE with a byte compare, NOT companyName.localeCompare:
     // this fn runs on Node (the snapshot writer) and in the browser (the live
-    // board), and localeCompare can order two equal-Read companies differently
-    // across those runtimes — which would surface as a permanent Δ = ±1 with no
-    // real movement. A code byte-compare is identical everywhere.
+    // board), and localeCompare can order two rows tied on Read AND growth
+    // differently across those runtimes — which would surface as a permanent
+    // Δ = ±1 with no real movement. A code byte-compare is identical everywhere.
     if (a.companyCode === b.companyCode) return 0;
     return a.companyCode < b.companyCode ? -1 : 1;
   });

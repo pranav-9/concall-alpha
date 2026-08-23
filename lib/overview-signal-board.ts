@@ -457,6 +457,7 @@ export async function getOverviewBoardPosition(
         growthScore: row.growthScore,
         valuationScore: row.valuationScore,
       }).score,
+      growthScore: row.growthScore,
     }));
     const rankByCode = computeBoardRanks(scored);
     const rank = rankByCode.get(code);
