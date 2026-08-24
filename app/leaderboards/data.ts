@@ -297,9 +297,18 @@ async function fetchMoatLeaders(ctx: LeaderboardContext): Promise<MoatRowTable[]
 // third line under Growth broke that grammar. The capability is untouched and
 // still renders on /watchlists (app/watchlists/[id]/page.tsx).
 
-export async function fetchLeaderboardData(): Promise<{
+export async function fetchLeaderboardData(options?: {
+  /**
+   * Fetch the moat leaders. Only the /leaderboards Moat tab consumes them; every
+   * other caller (overall-board → /themes + the homepage signal board,
+   * how-scores-work) discards moatEntries. That fetch drags a ~600KB JSONB
+   * payload for ~2.8s, so those callers pass `false` and get moatEntries: [].
+   */
+  includeMoat?: boolean;
+}): Promise<{
   /** Growth board rows — the ranked hundred only, as the Growth tab has always shown. */
   growthEntries: GrowthEntry[];
+  /** Empty when `includeMoat` is false (the caller doesn't render a Moat column). */
   moatEntries: MoatRowTable[];
   /** Overall (composite) rank per company code — powers the Overall tab's # column. */
   coverageRankByCode: Map<string, number>;
@@ -314,6 +323,7 @@ export async function fetchLeaderboardData(): Promise<{
   /** Mid/small companies below the composite cut — the greyed, non-clickable tail. */
   belowCutCodes: Set<string>;
 }> {
+  const includeMoat = options?.includeMoat ?? true;
   const supabase = await createClient();
   const { data: companiesData, error: companiesError } = await supabase
     .from("company")
@@ -362,7 +372,9 @@ export async function fetchLeaderboardData(): Promise<{
   // and the Overall board no longer carries a moat column.
   const [allGrowthEntries, moatEntries] = await Promise.all([
     fetchGrowthLeaders({ supabase, companies: midSmall, newCompanySet, excludedKeys }),
-    fetchMoatLeaders({ supabase, companies, newCompanySet, excludedKeys }),
+    includeMoat
+      ? fetchMoatLeaders({ supabase, companies, newCompanySet, excludedKeys })
+      : Promise.resolve([] as MoatRowTable[]),
   ]);
 
   const growthScoreByCode = new Map<string, number>();

@@ -6,11 +6,12 @@
 //
 // Wrapped in React `cache()` for REQUEST-scoped dedupe only. getConcallData is
 // now cross-request cached internally (public-read client + unstable_cache,
-// 2026-08-13), so the quarter substrate is cheap here; fetchLeaderboardData
-// still uses the cookie-based server client, which unstable_cache forbids
+// 2026-08-13), so the quarter substrate is cheap here. fetchLeaderboardData is
+// called with { includeMoat: false } — this board has no moat column, so the
+// ~2.8s moat payload fetch is skipped; only the growth leg is read. That growth
+// leg still uses the cookie-based server client, which unstable_cache forbids
 // inside its callback. Moving it onto createPublicReadClient and caching the
-// whole assembly is the remaining half of the tracked fast-follow — see
-// TODOS.md. Until then /themes pays a growth+moat fetch per request.
+// whole assembly is the remaining half of the tracked fast-follow — see TODOS.md.
 
 import { cache } from "react";
 
@@ -23,7 +24,9 @@ export const getOverallBoardRows = cache(async (): Promise<ScoreBoardRow[]> => {
   const [{ rows, latestLabel }, { growthScoreByCode, nameByCode }] = await Promise.all([
     // Same gates as the Overall tab: large caps out, below-cut tail kept (greyed).
     getConcallData({ excludeLargeCaps: true, includeBelowCut: true }),
-    fetchLeaderboardData(),
+    // The Overall board carries no moat column, so skip the ~2.8s moat payload
+    // fetch — only growthScoreByCode + nameByCode are read below.
+    fetchLeaderboardData({ includeMoat: false }),
   ]);
 
   return buildScoreBoardRows(rows, latestLabel ?? null, growthScoreByCode, nameByCode);
