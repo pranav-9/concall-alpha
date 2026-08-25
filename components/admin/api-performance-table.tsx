@@ -30,6 +30,73 @@ function formatTimestamp(value: string | null) {
   });
 }
 
+export type ApiRouteAggregateRow = {
+  route: string;
+  calls: number;
+  errorCount: number;
+  avgMs: number | null;
+  p95Ms: number | null;
+};
+
+function formatMsCell(value: number | null) {
+  if (value == null || !Number.isFinite(value)) return "-";
+  return `${Math.round(value).toLocaleString()}ms`;
+}
+
+export function ApiRouteBreakdownTable({
+  rows,
+}: {
+  rows: ApiRouteAggregateRow[];
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card">
+      <div className="border-b border-border px-4 py-3">
+        <h2 className="text-sm font-semibold text-foreground">Per-Route Breakdown</h2>
+      </div>
+      <div className="p-2">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Route</TableHead>
+              <TableHead className="text-right">Calls</TableHead>
+              <TableHead className="text-right">Errors</TableHead>
+              <TableHead className="text-right">Avg</TableHead>
+              <TableHead className="text-right">P95</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-muted-foreground">
+                  No API metrics found for this range.
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((row) => (
+                <TableRow key={row.route}>
+                  <TableCell className="font-medium text-foreground">{row.route}</TableCell>
+                  <TableCell className="text-right">{row.calls.toLocaleString()}</TableCell>
+                  <TableCell
+                    className={`text-right ${row.errorCount > 0 ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"}`}
+                  >
+                    {row.errorCount.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {formatMsCell(row.avgMs)}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {formatMsCell(row.p95Ms)}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 export function ApiPerformanceTable({
   rows,
 }: {
