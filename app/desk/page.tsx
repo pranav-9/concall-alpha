@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { QuarterTrackerBanner } from "@/components/quarter-tracker-banner";
 import { formatRelativeActivityTime } from "@/lib/activity-feed";
 import { getDeskLeaderboard, type DeskRow } from "@/lib/desk-leaderboard";
 import DeskRecencyLedger, {
@@ -53,7 +52,8 @@ export default async function DeskPage() {
 
   return (
     <main className="house relative min-h-screen">
-      <QuarterTrackerBanner />
+      {/* Quarter tracker strip hidden 2026-08-25 — results season over. Re-enable next season. */}
+      {/* <QuarterTrackerBanner /> */}
 
       <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
