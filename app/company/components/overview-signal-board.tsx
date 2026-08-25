@@ -401,11 +401,11 @@ function Synthesis({
 }) {
   const { read } = overview;
   const def = BOARD_READS[read.key];
-  // The synthesized story-engine one-liner (company_story) wins over the generic
-  // bucket when present; otherwise the read falls back to the bucket label +
-  // gloss. Colour + twist stay driven by the composite bucket either way.
-  const pillLabel = read.storyEngine ?? read.label;
-  const glossLine = read.storyLine ?? def.gloss;
+  // Label + gloss come from the composite bucket. (The story-engine one-liner
+  // that would override these — company_story — is wired separately and not
+  // committed yet, so this stays on the bucket to keep the build self-contained.)
+  const pillLabel = read.label;
+  const glossLine = def.gloss;
   // "Twist": the latest print vs the standing 4Q leg. Gated at the re-score
   // noise floor (±0.5) — a move drift can explain never earns a direction.
   const twist =
