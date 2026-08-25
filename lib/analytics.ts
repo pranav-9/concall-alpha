@@ -112,17 +112,23 @@ export const analytics = {
     track("section_view", { section_id: sectionId, company_code: companyCode }),
 
   /** Time spent on a section before leaving it — turns section_view into engagement.
-   *  `path` is the pathname snapshotted when the dwell STARTED. Dwell fires on
-   *  leave (tab switch / unmount), by which point App Router may have already
-   *  swapped the URL, so PostHog's auto-filled $pathname would attribute the
-   *  dwell to the wrong page. Passing $pathname/$current_url explicitly overrides
-   *  the auto-enriched values and pins the event to where it actually happened. */
+   *  `path` is the relative URL (pathname + search) snapshotted when the dwell
+   *  STARTED. Dwell fires on leave (tab switch / unmount), by which point App
+   *  Router may have already swapped the URL, so PostHog's auto-filled $pathname
+   *  would attribute the dwell to the wrong page. Passing $pathname/$current_url
+   *  explicitly overrides the auto-enriched values and pins the event to where it
+   *  actually happened. $pathname is the path alone (matching PostHog's
+   *  convention); $current_url keeps the query string so it agrees with the
+   *  $pageview recorded for the same load (UTM/deep-link attribution). NOTE: a
+   *  single section visit can emit MORE THAN ONE section_dwell — one per tab-hide
+   *  (see the visibilitychange flush in company-page-workspace) plus one on
+   *  leave. Aggregate dwell by SUMMING ms, not by counting events per view. */
   sectionDwell: (sectionId: string, ms: number, companyCode?: string, path?: string) =>
     track("section_dwell", {
       section_id: sectionId,
       ms: Math.round(ms),
       company_code: companyCode,
-      $pathname: path,
+      $pathname: path ? path.split("?")[0] : undefined,
       $current_url:
         path && typeof window !== "undefined" ? window.location.origin + path : undefined,
     }),

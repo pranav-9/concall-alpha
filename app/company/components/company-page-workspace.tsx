@@ -84,19 +84,27 @@ export function CompanyPageWorkspace({
     dwellRef.current = {
       id: activeSectionId,
       t: performance.now(),
-      path: window.location.pathname,
+      // pathname + search so $current_url keeps the query string (UTM/deep-link).
+      path: window.location.pathname + window.location.search,
     };
   }, [activeSectionId, companyCode, flushDwell]);
 
   // Final flush on unmount, plus a flush when the tab is hidden — otherwise a
-  // dwell is silently lost whenever someone closes the tab mid-section.
+  // dwell is silently lost whenever someone closes the tab mid-section (unmount
+  // cleanup is unreliable on tab-close; visibilitychange→hidden is the last
+  // reliable moment). On the way BACK to visible, restart the clock so the time
+  // the tab spent hidden is NOT counted as reading time.
   React.useEffect(() => {
-    const onHide = () => {
-      if (document.visibilityState === "hidden") flushDwell();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flushDwell();
+      } else if (dwellRef.current) {
+        dwellRef.current.t = performance.now();
+      }
     };
-    document.addEventListener("visibilitychange", onHide);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
-      document.removeEventListener("visibilitychange", onHide);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       flushDwell();
     };
   }, [flushDwell]);
