@@ -48,29 +48,31 @@ function ScoreCell({
   );
 }
 
-function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null }) {
+// The company name + its status badges. On desktop the name is its own text
+// link (precise pointer); on mobile the whole row is the link (see MemberRow),
+// so the name renders as plain text — a nested <a> would be invalid markup.
+function CompanyLabel({ member, nameAsLink }: { member: ThemeMember; nameAsLink: boolean }) {
   const dim = member.belowCut;
-  const read = BOARD_READS[member.readKey];
-  const quarterBand = member.concallScore != null ? BANDS[bandForScore(member.concallScore)] : null;
-  const growthBand =
-    member.growthScore != null ? GROWTH_BANDS[bandForGrowthScore(member.growthScore)] : null;
-  const valuationBand =
-    member.valuationScore != null
-      ? VALUATION_BANDS[bandForValuationScore(member.valuationScore)]
-      : null;
-
-  const companyCell = (
+  const nameClass = `min-w-0 truncate font-semibold ${
+    dim ? "text-muted-foreground" : "text-foreground"
+  }`;
+  const nameTitle = dim ? `${member.companyName} — below the coverage cut` : member.companyName;
+  return (
     <span className="flex min-w-0 items-baseline gap-2">
-      <Link
-        href={`/company/${member.companyCode}`}
-        prefetch={false}
-        title={dim ? `${member.companyName} — below the coverage cut` : member.companyName}
-        className={`min-w-0 truncate font-semibold hover:underline ${
-          dim ? "text-muted-foreground" : "text-foreground"
-        }`}
-      >
-        {member.companyName}
-      </Link>
+      {nameAsLink ? (
+        <Link
+          href={`/company/${member.companyCode}`}
+          prefetch={false}
+          title={nameTitle}
+          className={`${nameClass} hover:underline`}
+        >
+          {member.companyName}
+        </Link>
+      ) : (
+        <span title={nameTitle} className={nameClass}>
+          {member.companyName}
+        </span>
+      )}
       {member.isBestRead && (
         <span className="shrink-0 rounded-sm border border-teal-600/60 px-1.5 py-px text-[9px] font-medium uppercase tracking-[0.12em] text-teal-700 dark:border-teal-400/50 dark:text-teal-300">
           Best read
@@ -99,6 +101,18 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
       )}
     </span>
   );
+}
+
+function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null }) {
+  const dim = member.belowCut;
+  const read = BOARD_READS[member.readKey];
+  const quarterBand = member.concallScore != null ? BANDS[bandForScore(member.concallScore)] : null;
+  const growthBand =
+    member.growthScore != null ? GROWTH_BANDS[bandForGrowthScore(member.growthScore)] : null;
+  const valuationBand =
+    member.valuationScore != null
+      ? VALUATION_BANDS[bandForValuationScore(member.valuationScore)]
+      : null;
 
   const rankCell = (
     <span className="w-6 shrink-0 text-right font-mono text-xs tabular-nums text-muted-foreground">
@@ -107,11 +121,11 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
   );
 
   return (
-    <li className={`border-b border-border/45 py-2.5 last:border-0 ${dim ? "opacity-55" : ""}`}>
+    <li className={`border-b border-border/45 last:border-0 ${dim ? "opacity-55" : ""}`}>
       {/* Desktop: one grid row — # · Company · ConcallScore · Grw · Val · Read. */}
-      <div className="hidden items-center gap-3 sm:grid sm:grid-cols-[1.5rem_minmax(0,1fr)_3.25rem_3.25rem_3.5rem_3.75rem]">
+      <div className="hidden items-center gap-3 py-2.5 sm:grid sm:grid-cols-[1.5rem_minmax(0,1fr)_3.25rem_3.25rem_3.5rem_3.75rem]">
         {rankCell}
-        {companyCell}
+        <CompanyLabel member={member} nameAsLink />
         <div className="text-right">
           <ScoreCell
             score={member.concallScore}
@@ -152,11 +166,16 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
         </div>
       </div>
 
-      {/* Mobile: two lines — (1) # + company, (2) the four scores compact. */}
-      <div className="sm:hidden">
+      {/* Mobile: the whole two-line row is one tap target (≥44px), not just the
+          truncated company name — a thin text link was easy to mis-tap. */}
+      <Link
+        href={`/company/${member.companyCode}`}
+        prefetch={false}
+        className="-mx-2 flex flex-col justify-center rounded-lg px-2 py-2.5 transition-colors active:bg-accent/60 sm:hidden"
+      >
         <div className="flex items-baseline gap-2">
           {rankCell}
-          {companyCell}
+          <CompanyLabel member={member} nameAsLink={false} />
         </div>
         <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 pl-8 font-mono text-xs tabular-nums text-muted-foreground">
           <span>
@@ -176,7 +195,7 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
             <span className="font-semibold">{fmt(member.readScore)}</span>
           </span>
         </div>
-      </div>
+      </Link>
     </li>
   );
 }

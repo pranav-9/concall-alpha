@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { EnvVarWarning } from "@/components/env-var-warning";
+import { TOUCH_TARGET_ICON } from "@/lib/design/shell";
 import { cn, hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -245,7 +246,16 @@ const Navbar = ({
               // reference when the menu is closed.
               aria-controls={isMenuOpen ? "global-navbar-mobile-menu" : undefined}
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="relative z-50 min-[1200px]:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground/80"
+              // 44px square (touch floor) + touch-manipulation to drop the 300ms
+              // tap delay + an active state for immediate tap feedback, and
+              // TOUCH_TARGET_ICON squares off the hit area so the rounded-2xl
+              // corners aren't dead. Was h-10 w-10 (40px): under the floor, and
+              // its corners hit-tested to the div behind, so edge taps did
+              // nothing — the "mash the menu and it won't open" report at 354px.
+              className={cn(
+                "relative z-50 min-[1200px]:hidden inline-flex h-11 w-11 touch-manipulation items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground active:bg-accent active:text-foreground dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground/80",
+                TOUCH_TARGET_ICON,
+              )}
             >
               {isMenuOpen ? (
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
