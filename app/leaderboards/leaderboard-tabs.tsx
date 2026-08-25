@@ -39,7 +39,7 @@ export function LeaderboardTabs({ defaultTab, className, children }: Props) {
     // Idempotent: swallows the touch double-fire (focus + click both activate).
     if (next === value) return;
     setValue(next); // instant visible switch — no server round-trip
-    analytics.leaderboardTabChange(value, next);
+    analytics.leaderboardTabChange(value, next, "leaderboards");
     // Sync the URL for deep-links WITHOUT a Next navigation. router.replace here
     // refetched the whole page's RSC (getConcallData + fetchLeaderboardData +
     // readPriorRanks, plus the after() snapshot write) on every tap, for data

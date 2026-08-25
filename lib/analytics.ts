@@ -30,8 +30,21 @@ function track(event: string, props?: AnalyticsProps) {
   }
 }
 
-export type LeaderboardBoard = "overall" | "quarter" | "growth" | "moat" | "watchlist";
+export type LeaderboardBoard =
+  | "overall"
+  | "quarter"
+  | "growth"
+  | "moat"
+  | "watchlist"
+  // The /desk leaderboard surfaces these two board views in addition.
+  | "latest"
+  | "twist";
 export type WatchlistSource = "company_page" | "leaderboard" | "watchlist" | "other";
+
+/** Which page a shared module/board event fired on. Lets /desk, the homepage,
+ *  and /leaderboards reuse the same event names while staying separable in
+ *  breakdowns — instead of forking near-identical events per surface. */
+export type AnalyticsSurface = "home" | "desk" | "leaderboards";
 
 export const analytics = {
   // ── Discovery — is the door working, and what do people look for? ──────────
@@ -51,9 +64,10 @@ export const analytics = {
   searchResultClick: (query: string, companyCode: string, position: number) =>
     track("search_result_click", { query, company_code: companyCode, position }),
 
-  /** Leaderboard tab switched — which board is the real front door. */
-  leaderboardTabChange: (from: string, to: string) =>
-    track("leaderboard_tab_change", { from, to }),
+  /** Leaderboard tab switched — which board is the real front door. `surface`
+   *  separates the /leaderboards page from the /desk board that shares this event. */
+  leaderboardTabChange: (from: string, to: string, surface?: AnalyticsSurface) =>
+    track("leaderboard_tab_change", { from, to, surface }),
 
   /** A leaderboard column was sorted — what ranking dimension people value. */
   leaderboardSort: (board: LeaderboardBoard, column: string, direction: "asc" | "desc") =>
@@ -66,12 +80,14 @@ export const analytics = {
     board: LeaderboardBoard;
     belowCut: boolean;
     rank?: number;
+    surface?: AnalyticsSurface;
   }) =>
     track("leaderboard_row_click", {
       company_code: params.companyCode,
       board: params.board,
       below_cut: params.belowCut,
       rank: Number.isFinite(params.rank) ? params.rank : undefined,
+      surface: params.surface,
     }),
 
   /** A sector page was viewed. */
@@ -81,21 +97,34 @@ export const analytics = {
   sectorCompanyClick: (sector: string, companyCode: string) =>
     track("sector_company_click", { sector, company_code: companyCode }),
 
-  /** A homepage module was clicked (hero / carousel / scoreplate / trail). */
-  homepageModuleClick: (module: string, companyCode?: string) =>
-    track("homepage_module_click", { module, company_code: companyCode }),
+  /** A homepage module was clicked (hero / carousel / scoreplate / trail).
+   *  `surface` defaults to "home" so the existing homepage call sites are tagged
+   *  automatically; pass another surface if this event ever fires off-homepage. */
+  homepageModuleClick: (
+    module: string,
+    companyCode?: string,
+    surface: AnalyticsSurface = "home",
+  ) => track("homepage_module_click", { module, company_code: companyCode, surface }),
 
   // ── Depth — are they reading the research, or bouncing? ────────────────────
   /** A section tab became active — depth-of-engagement signal (one panel at a time). */
   sectionView: (sectionId: string, companyCode?: string) =>
     track("section_view", { section_id: sectionId, company_code: companyCode }),
 
-  /** Time spent on a section before leaving it — turns section_view into engagement. */
-  sectionDwell: (sectionId: string, ms: number, companyCode?: string) =>
+  /** Time spent on a section before leaving it — turns section_view into engagement.
+   *  `path` is the pathname snapshotted when the dwell STARTED. Dwell fires on
+   *  leave (tab switch / unmount), by which point App Router may have already
+   *  swapped the URL, so PostHog's auto-filled $pathname would attribute the
+   *  dwell to the wrong page. Passing $pathname/$current_url explicitly overrides
+   *  the auto-enriched values and pins the event to where it actually happened. */
+  sectionDwell: (sectionId: string, ms: number, companyCode?: string, path?: string) =>
     track("section_dwell", {
       section_id: sectionId,
       ms: Math.round(ms),
       company_code: companyCode,
+      $pathname: path,
+      $current_url:
+        path && typeof window !== "undefined" ? window.location.origin + path : undefined,
     }),
 
   /** An evidence/detail drawer was opened — the deep readers. */
