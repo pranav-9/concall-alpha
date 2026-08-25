@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 import { ADMIN_ACCESS_COOKIE, hasAdminAccess } from "@/lib/admin-auth";
+import { withRouteMetric } from "@/lib/api-metrics";
 import { logger } from "@/lib/logger";
 import { fetchNseEvents } from "@/lib/nse-event-calendar";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -33,6 +34,10 @@ const buildCompanyMatcher = (companies: CompanyRow[]) => {
 };
 
 export async function POST() {
+  return withRouteMetric("/api/admin/sync-earnings-calendar", "POST", () => handlePOST());
+}
+
+async function handlePOST() {
   const cookieStore = await cookies();
   const access = cookieStore.get(ADMIN_ACCESS_COOKIE)?.value;
   if (!hasAdminAccess(access)) {

@@ -4,6 +4,7 @@ import { revalidateTag } from "next/cache";
 import { cookies, headers } from "next/headers";
 
 import { ADMIN_ACCESS_COOKIE, hasAdminAccess } from "@/lib/admin-auth";
+import { withRouteMetric } from "@/lib/api-metrics";
 import {
   buildCompanyPageOverviewCacheRow,
   companyOverviewCacheTag,
@@ -38,6 +39,10 @@ function errorDetail(error: unknown): string {
 }
 
 export async function POST(request: Request) {
+  return withRouteMetric("/api/admin/refresh-company-overview", "POST", () => handlePOST(request));
+}
+
+async function handlePOST(request: Request) {
   const cookieStore = await cookies();
   const headerStore = await headers();
   const access = cookieStore.get(ADMIN_ACCESS_COOKIE)?.value;

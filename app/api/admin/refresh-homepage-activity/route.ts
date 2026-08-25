@@ -5,6 +5,7 @@ import { cookies, headers } from "next/headers";
 
 import { getUnifiedUpdates } from "@/lib/activity-feed";
 import { ADMIN_ACCESS_COOKIE, hasAdminAccess } from "@/lib/admin-auth";
+import { withRouteMetric } from "@/lib/api-metrics";
 import {
   HOMEPAGE_ACTIVITY_FEED_TAG,
   toHomepageActivityFeedUpsert,
@@ -27,6 +28,10 @@ function isValidRefreshSecret(value: string | null): boolean {
 }
 
 export async function POST() {
+  return withRouteMetric("/api/admin/refresh-homepage-activity", "POST", () => handlePOST());
+}
+
+async function handlePOST() {
   const cookieStore = await cookies();
   const headerStore = await headers();
   const access = cookieStore.get(ADMIN_ACCESS_COOKIE)?.value;
