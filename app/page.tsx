@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import HeroExhibit, { HeroExhibitFallback } from "./(hero)/hero-exhibit";
 import { DeskStickyCta } from "./(hero)/desk-sticky-cta";
-import { QuarterTrackerBanner } from "@/components/quarter-tracker-banner";
 
 // Title/description are inherited from the root layout; this exists only to
 // pin the canonical so query-string variants don't get indexed separately.
@@ -62,7 +61,8 @@ const READS = [
 export default async function Home() {
   return (
     <main className="house relative min-h-screen">
-      <QuarterTrackerBanner />
+      {/* Quarter tracker strip hidden 2026-08-25 — results season over. Re-enable next season. */}
+      {/* <QuarterTrackerBanner /> */}
 
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-12 px-4 pb-16 sm:px-6 lg:gap-16 lg:px-10">
         {/* The hero — one centered composition on the soft canvas: the read
