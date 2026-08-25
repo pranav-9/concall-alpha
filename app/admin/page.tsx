@@ -108,7 +108,11 @@ type ApiMetricRawRow = {
 type ApiRouteAggregate = {
   route: string;
   calls: number;
-  errorCount: number;
+  // serverErrors = 5xx (real failures); clientErrors = 4xx (validation
+  // rejections, auth-required) — kept apart so bot/junk traffic doesn't bury
+  // a real server failure.
+  serverErrorCount: number;
+  clientErrorCount: number;
   avgMs: number | null;
   p95Ms: number | null;
 };
@@ -122,7 +126,10 @@ type ApiPerformanceData = {
   totalCalls: number;
   sampledCalls: number;
   sampled: boolean;
-  errorCount: number;
+  // serverErrorCount = 5xx (real failures); clientErrorCount = 4xx (validation
+  // / auth rejections — expected traffic, tracked separately).
+  serverErrorCount: number;
+  clientErrorCount: number;
   avgMs: number | null;
   p50Ms: number | null;
   p90Ms: number | null;
@@ -496,7 +503,8 @@ function emptyApiPerformance(available = true): ApiPerformanceData {
     totalCalls: 0,
     sampledCalls: 0,
     sampled: false,
-    errorCount: 0,
+    serverErrorCount: 0,
+    clientErrorCount: 0,
     avgMs: null,
     p50Ms: null,
     p90Ms: null,
@@ -563,15 +571,18 @@ async function getApiPerformance(startIso: string | null): Promise<ApiPerformanc
   // down). Computed over the same sample as the headline stats.
   const byRoute = new Map<
     string,
-    { calls: number; durations: number[]; errorCount: number }
+    { calls: number; durations: number[]; serverErrors: number; clientErrors: number }
   >();
   for (const row of rows) {
-    const bucket = byRoute.get(row.route) ?? { calls: 0, durations: [], errorCount: 0 };
+    const bucket =
+      byRoute.get(row.route) ??
+      { calls: 0, durations: [], serverErrors: 0, clientErrors: 0 };
     bucket.calls += 1;
     if (Number.isFinite(row.durationMs) && row.durationMs >= 0) {
       bucket.durations.push(row.durationMs);
     }
-    if (row.statusCode >= 400) bucket.errorCount += 1;
+    if (row.statusCode >= 500) bucket.serverErrors += 1;
+    else if (row.statusCode >= 400) bucket.clientErrors += 1;
     byRoute.set(row.route, bucket);
   }
   const perRoute: ApiRouteAggregate[] = [...byRoute.entries()]
@@ -581,7 +592,8 @@ async function getApiPerformance(startIso: string | null): Promise<ApiPerformanc
       return {
         route,
         calls: bucket.calls,
-        errorCount: bucket.errorCount,
+        serverErrorCount: bucket.serverErrors,
+        clientErrorCount: bucket.clientErrors,
         avgMs: sorted.length > 0 ? sum / sorted.length : null,
         p95Ms: percentile(sorted, 95),
       };
@@ -595,7 +607,8 @@ async function getApiPerformance(startIso: string | null): Promise<ApiPerformanc
     totalCalls,
     sampledCalls: rows.length,
     sampled: totalCalls > rows.length,
-    errorCount: rows.filter((row) => row.statusCode >= 400).length,
+    serverErrorCount: rows.filter((row) => row.statusCode >= 500).length,
+    clientErrorCount: rows.filter((row) => row.statusCode >= 400 && row.statusCode < 500).length,
     avgMs: durations.length > 0 ? totalDuration / durations.length : null,
     p50Ms: percentile(durations, 50),
     p90Ms: percentile(durations, 90),
@@ -1061,7 +1074,8 @@ export default async function AdminPage({
             <AdminMetricGrid
               metrics={[
                 { label: "API Calls", value: data.apiPerformance.totalCalls },
-                { label: "Errors", value: data.apiPerformance.errorCount },
+                { label: "Server Errors (5xx)", value: data.apiPerformance.serverErrorCount },
+                { label: "Client 4xx", value: data.apiPerformance.clientErrorCount },
                 { label: "Avg Latency", value: formatMs(data.apiPerformance.avgMs) },
                 { label: "P95 Latency", value: formatMs(data.apiPerformance.p95Ms) },
                 { label: "P50 Latency", value: formatMs(data.apiPerformance.p50Ms) },

@@ -33,7 +33,8 @@ function formatTimestamp(value: string | null) {
 export type ApiRouteAggregateRow = {
   route: string;
   calls: number;
-  errorCount: number;
+  serverErrorCount: number;
+  clientErrorCount: number;
   avgMs: number | null;
   p95Ms: number | null;
 };
@@ -59,7 +60,8 @@ export function ApiRouteBreakdownTable({
             <TableRow>
               <TableHead>Route</TableHead>
               <TableHead className="text-right">Calls</TableHead>
-              <TableHead className="text-right">Errors</TableHead>
+              <TableHead className="text-right">5xx</TableHead>
+              <TableHead className="text-right">4xx</TableHead>
               <TableHead className="text-right">Avg</TableHead>
               <TableHead className="text-right">P95</TableHead>
             </TableRow>
@@ -67,7 +69,7 @@ export function ApiRouteBreakdownTable({
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-muted-foreground">
+                <TableCell colSpan={6} className="text-muted-foreground">
                   No API metrics found for this range.
                 </TableCell>
               </TableRow>
@@ -77,9 +79,14 @@ export function ApiRouteBreakdownTable({
                   <TableCell className="font-medium text-foreground">{row.route}</TableCell>
                   <TableCell className="text-right">{row.calls.toLocaleString()}</TableCell>
                   <TableCell
-                    className={`text-right ${row.errorCount > 0 ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"}`}
+                    className={`text-right ${row.serverErrorCount > 0 ? "text-red-700 dark:text-red-300" : "text-muted-foreground"}`}
                   >
-                    {row.errorCount.toLocaleString()}
+                    {row.serverErrorCount.toLocaleString()}
+                  </TableCell>
+                  <TableCell
+                    className={`text-right ${row.clientErrorCount > 0 ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"}`}
+                  >
+                    {row.clientErrorCount.toLocaleString()}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
                     {formatMsCell(row.avgMs)}
