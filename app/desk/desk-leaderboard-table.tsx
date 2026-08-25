@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 import ConcallScore from "@/components/concall-score";
+import { analytics } from "@/lib/analytics";
 
 // Client-facing row: the lib's DeskRow with a server-formatted "filed" label
 // (formatting there, not here, so the relative time can't drift on hydration).
@@ -78,7 +79,11 @@ export default function DeskLeaderboardTable({
                 role="tab"
                 type="button"
                 aria-selected={active}
-                onClick={() => setTab(t.key)}
+                onClick={() => {
+                  if (t.key === tab) return; // idempotent — mirrors /leaderboards
+                  analytics.leaderboardTabChange(tab, t.key, "desk");
+                  setTab(t.key);
+                }}
                 className={`house-data house-micro pb-1 transition-colors ${
                   active
                     ? "border-b-2 border-[var(--mark)] text-[var(--ink)]"
@@ -144,6 +149,17 @@ function Row({ row, rank, tab }: { row: DeskTableRow; rank: number; tab: TabKey 
     <Link
       href={`/company/${row.code}`}
       prefetch={false}
+      onClick={() =>
+        analytics.leaderboardRowClick({
+          companyCode: row.code,
+          // The desk board tab doubles as the leaderboard "board" value; the
+          // desk only lists the discovery-covered 100, so nothing is below-cut.
+          board: tab,
+          belowCut: false,
+          rank,
+          surface: "desk",
+        })
+      }
       className="flex items-center gap-3 border-b border-[var(--rule)] px-1 py-3 transition-colors hover:bg-[var(--paper-2)] md:grid md:grid-cols-[minmax(0,1fr)_8rem_3.25rem_3.5rem_4.75rem_4.25rem] md:gap-4"
     >
       {/* Company */}

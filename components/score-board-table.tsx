@@ -814,6 +814,7 @@ export function ScoreBoardTable({
                                 rank: Number.isFinite(row.effectiveRank)
                                   ? row.effectiveRank
                                   : undefined,
+                                surface: "leaderboards",
                               })
                             }
                             title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}

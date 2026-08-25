@@ -63,22 +63,51 @@ export function CompanyPageWorkspace({
   // since the workspace shows one panel at a time. section_dwell fires for the
   // section being left, carrying how long it was open (turns navigation into
   // engagement). The final section's dwell is flushed on unmount below.
-  const dwellRef = React.useRef<{ id: string; t: number } | null>(null);
-  React.useEffect(() => {
+  // path is snapshotted at dwell START — dwell fires on leave, by which point the
+  // URL may have changed, so pinning the start path keeps the event attributed
+  // to the page it happened on (see analytics.sectionDwell).
+  const dwellRef = React.useRef<{ id: string; t: number; path: string } | null>(null);
+
+  const flushDwell = React.useCallback(() => {
     const prev = dwellRef.current;
-    if (prev && prev.id !== activeSectionId) {
-      analytics.sectionDwell(prev.id, performance.now() - prev.t, companyCode);
-    }
-    analytics.sectionView(activeSectionId, companyCode);
-    dwellRef.current = { id: activeSectionId, t: performance.now() };
-  }, [activeSectionId, companyCode]);
+    if (!prev) return;
+    analytics.sectionDwell(prev.id, performance.now() - prev.t, companyCode, prev.path);
+    // Reset the clock so a later flush (unmount, or a second tab-hide) measures
+    // only the new interval instead of re-counting time already recorded.
+    dwellRef.current = { ...prev, t: performance.now() };
+  }, [companyCode]);
 
   React.useEffect(() => {
-    return () => {
-      const prev = dwellRef.current;
-      if (prev) analytics.sectionDwell(prev.id, performance.now() - prev.t, companyCode);
+    const prev = dwellRef.current;
+    if (prev && prev.id !== activeSectionId) flushDwell();
+    analytics.sectionView(activeSectionId, companyCode);
+    dwellRef.current = {
+      id: activeSectionId,
+      t: performance.now(),
+      // pathname + search so $current_url keeps the query string (UTM/deep-link).
+      path: window.location.pathname + window.location.search,
     };
-  }, [companyCode]);
+  }, [activeSectionId, companyCode, flushDwell]);
+
+  // Final flush on unmount, plus a flush when the tab is hidden — otherwise a
+  // dwell is silently lost whenever someone closes the tab mid-section (unmount
+  // cleanup is unreliable on tab-close; visibilitychange→hidden is the last
+  // reliable moment). On the way BACK to visible, restart the clock so the time
+  // the tab spent hidden is NOT counted as reading time.
+  React.useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flushDwell();
+      } else if (dwellRef.current) {
+        dwellRef.current.t = performance.now();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      flushDwell();
+    };
+  }, [flushDwell]);
 
   // Delegated click listener for evidence drawers and source links inside the
   // active panel. Several section components are server components, so their
