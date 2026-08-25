@@ -35,6 +35,12 @@ interface DataTableProps<TData, TValue> {
   /** Column id (accessorKey) to pin left on mobile so the company name stays
       visible while the score columns scroll. Adds a right-edge scroll hint. */
   stickyColId?: string;
+  /** Stable per-row identity (e.g. company code). Without it TanStack defaults
+      row.id to the array index, so a client sort reorders rows while React
+      reuses the same DOM node by index-key and only mutates its href — a tap
+      begun on one company can then resolve to whatever row slid under it.
+      Keying by identity makes React move the node, not rewrite it. */
+  getRowId?: (row: TData, index: number) => string;
 }
 
 export function DataTable<TData, TValue>({
@@ -42,12 +48,14 @@ export function DataTable<TData, TValue>({
   data,
   ariaLabel,
   stickyColId,
+  getRowId,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const table = useReactTable({
     data,
     columns,
+    getRowId,
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),

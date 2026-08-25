@@ -289,6 +289,7 @@ export function LeaderboardTable({
       columns={columns}
       data={rankedData}
       stickyColId="company"
+      getRowId={(row) => row.company}
     />
   );
 }

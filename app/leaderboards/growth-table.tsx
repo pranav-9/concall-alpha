@@ -147,6 +147,7 @@ export function GrowthTable({ data }: { data: GrowthRowTable[] }) {
       columns={growthColumns}
       data={data}
       stickyColId="companyName"
+      getRowId={(row) => row.companyCode}
     />
   );
 }
