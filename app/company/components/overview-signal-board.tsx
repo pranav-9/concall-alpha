@@ -156,7 +156,7 @@ async function WhereItSits({ companyCode }: { companyCode: string }) {
       aria-label={`Reads above ${Math.round(pos.percentile * 100)}% of covered companies`}
     >
       <span
-        className="absolute top-[-3.5px] h-[14px] w-[3px] -translate-x-1/2 rounded-sm bg-foreground"
+        className="absolute top-1/2 h-[15px] w-[4px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground shadow-[0_0_0_2px_hsl(var(--card))] ring-1 ring-foreground/10"
         style={{ left: `${left}%` }}
       />
     </div>
@@ -318,14 +318,21 @@ function Header({
 }
 
 /** Overall read numeral + the streamed board position. Lives inside The Read
- * card so the number sits next to the sentence that explains it. */
+ * card so the number sits next to the sentence that explains it. The one-word
+ * configuration label (band-tinted) sits under the numeral so the scoreboard
+ * carries its own read without a separate pill up in the story row. */
 function OverallRead({
   overview,
   streamPosition,
+  readLabel,
+  readClass,
 }: {
   overview: CompanyPageOverviewCacheRow;
   streamPosition: boolean;
+  readLabel: string;
+  readClass: string;
 }) {
+  const hasScore = overview.read.score != null;
   return (
     <div className="grid grid-cols-[auto_1fr] items-end gap-x-6 lg:flex lg:w-[200px] lg:flex-col lg:items-end lg:gap-0">
       <div className="lg:text-right">
@@ -333,10 +340,30 @@ function OverallRead({
         <p
           className={cn(
             displayClass,
-            "mt-1 text-[38px] leading-none text-foreground sm:text-[40px]",
+            "mt-1 flex items-baseline gap-1 leading-none text-foreground lg:justify-end",
           )}
         >
-          {overview.read.score != null ? overview.read.score.toFixed(1) : "—"}
+          <span className="text-[40px] sm:text-[44px]">
+            {hasScore ? overview.read.score!.toFixed(1) : "—"}
+          </span>
+          {hasScore && (
+            <span
+              className={cn(
+                monoClass,
+                "text-[13px] font-medium text-muted-foreground",
+              )}
+            >
+              /10
+            </span>
+          )}
+        </p>
+        <p
+          className={cn(
+            "mt-1 text-[11px] font-semibold uppercase tracking-[0.08em]",
+            readClass,
+          )}
+        >
+          {readLabel}
         </p>
       </div>
       {streamPosition ? (
@@ -374,6 +401,11 @@ function Synthesis({
 }) {
   const { read } = overview;
   const def = BOARD_READS[read.key];
+  // The synthesized story-engine one-liner (company_story) wins over the generic
+  // bucket when present; otherwise the read falls back to the bucket label +
+  // gloss. Colour + twist stay driven by the composite bucket either way.
+  const pillLabel = read.storyEngine ?? read.label;
+  const glossLine = read.storyLine ?? def.gloss;
   // "Twist": the latest print vs the standing 4Q leg. Gated at the re-score
   // noise floor (±0.5) — a move drift can explain never earns a direction.
   const twist =
@@ -388,15 +420,7 @@ function Synthesis({
       <div className="flex flex-col-reverse gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={kickerClass}>The read</span>
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-[12px] font-semibold",
-                def.textClass,
-              )}
-            >
-              {read.label}
-            </span>
+            <span className={kickerClass}>The story</span>
             {(twistUp || twistDown) && (
               <span
                 className={cn(
@@ -415,14 +439,19 @@ function Synthesis({
           <p
             className={cn(
               displayClass,
-              "mt-3 max-w-[900px] text-[19px] leading-[1.26] text-foreground sm:text-[23px] sm:leading-[1.25]",
+              "mt-3 max-w-[900px] text-balance text-[20px] leading-[1.24] text-foreground sm:text-[24px] sm:leading-[1.22]",
             )}
           >
-            {def.gloss}
+            {glossLine}
           </p>
         </div>
         <div className="border-b border-border/60 pb-4 lg:border-b-0 lg:border-l lg:pb-0 lg:pl-8">
-          <OverallRead overview={overview} streamPosition={streamPosition} />
+          <OverallRead
+            overview={overview}
+            streamPosition={streamPosition}
+            readLabel={pillLabel}
+            readClass={def.textClass}
+          />
         </div>
       </div>
       {themes.length > 0 && (
@@ -433,11 +462,11 @@ function Synthesis({
               key={t.slug}
               href="/themes"
               title={t.rationale ?? undefined}
-              className={cn(
-                chipClass("slate"),
-                "transition-colors hover:bg-muted",
-              )}
+              className="group inline-flex items-center gap-1 rounded-full border border-teal-500/30 bg-teal-500/10 px-2.5 py-1 text-[11px] font-medium leading-none text-teal-700 transition-colors hover:border-teal-500/50 hover:bg-teal-500/15 dark:text-teal-300"
             >
+              <span aria-hidden className="text-[9px] leading-none">
+                ▲
+              </span>
               {t.title}
             </Link>
           ))}
