@@ -73,6 +73,13 @@ export type OverviewReadModel = {
   key: BoardReadKey;
   label: string;
   description: string;
+  // The synthesized "story engine" one-liner (company_story table), attached on
+  // read. When present, the read card renders these IN PLACE OF the bucket
+  // label + gloss; when null, it falls back to BOARD_READS[key]. Never persisted
+  // in the overview cache — sourced live from company_story so a re-generation
+  // shows up within the read cache's revalidate window.
+  storyEngine: string | null;
+  storyLine: string | null;
 };
 
 // Single source of the read on both the cache-miss build path and the
@@ -89,6 +96,10 @@ function deriveOverviewRead(
     key: r.key,
     label: BOARD_READS[r.key].label,
     description: r.description,
+    // Filled in by attachCompanyStory() at read time; null unless a
+    // company_story row exists (then the read card prefers it over the bucket).
+    storyEngine: null,
+    storyLine: null,
   };
 }
 
@@ -842,11 +853,40 @@ async function readCompanyOverview(code: string): Promise<CompanyPageOverviewCac
     .eq("company_code", normalizedCode)
     .maybeSingle();
 
-  if (!error && data) {
-    return normalizeCacheRow(data as Record<string, unknown>);
-  }
+  return !error && data
+    ? normalizeCacheRow(data as Record<string, unknown>)
+    : await buildCompanyPageOverviewCacheRow(supabase, normalizedCode);
+}
 
-  return buildCompanyPageOverviewCacheRow(supabase, normalizedCode);
+/**
+ * Attach the synthesized story-engine one-liner (company_story) to the read
+ * model. Runs OUTSIDE the overview `unstable_cache` (see getCachedCompanyPageOverview)
+ * on purpose: the story regenerates on its own cadence, so a stale cached overview
+ * row must never hide a fresh story. Still on the read path before the streaming
+ * fallback renders, so the line rides the same row the fallback uses — no late
+ * swap on the LCP element. Best-effort: any failure (pre-DDL table, RLS, no row)
+ * leaves the read on its bucket label + gloss, never blanks the card.
+ */
+async function fetchCompanyStory(
+  supabase: SupabaseQueryClient,
+  code: string,
+): Promise<{ engine: string; line: string } | null> {
+  try {
+    const { data, error } = await supabase
+      .from("company_story")
+      .select("engine_tag, story_line")
+      .eq("company_code", code)
+      .maybeSingle();
+    if (error || !data) return null;
+    const engine = typeof data.engine_tag === "string" ? data.engine_tag.trim() : "";
+    const line = typeof data.story_line === "string" ? data.story_line.trim() : "";
+    // Both must be present — a pill with no sentence (or vice versa) is worse
+    // than the coherent bucket fallback.
+    return engine && line ? { engine, line } : null;
+  } catch {
+    // swallow: story is a progressive enhancement over the bucket read.
+    return null;
+  }
 }
 
 export async function getCachedCompanyPageOverview(
@@ -867,7 +907,16 @@ export async function getCachedCompanyPageOverview(
     },
   );
 
-  return read();
+  const row = await read();
+  if (!row) return row;
+  // Story attaches OUTSIDE the cache so a re-generated line shows up without
+  // waiting on the overview row's revalidate. One indexed PK lookup per request;
+  // best-effort, never blocks or blanks the card. Returns a NEW row rather than
+  // mutating `row` — unstable_cache deep-FREEZES its result, so an in-place
+  // `row.read.storyLine = …` throws and would be silently swallowed.
+  const story = await fetchCompanyStory(createPublicReadClient(), normalizedCode);
+  if (!story) return row;
+  return { ...row, read: { ...row.read, storyEngine: story.engine, storyLine: story.line } };
 }
 
 export function toCompanyPageOverviewUpsert(row: CompanyPageOverviewCacheRow) {
