@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withRouteMetric } from "@/lib/api-metrics";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 
@@ -8,6 +9,10 @@ type Payload = {
 };
 
 export async function POST(request: Request) {
+  return withRouteMetric("/api/watchlists/items", "POST", () => handlePOST(request));
+}
+
+async function handlePOST(request: Request) {
   try {
     return await addWatchlistItem(request);
   } catch (err) {
@@ -20,6 +25,10 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  return withRouteMetric("/api/watchlists/items", "DELETE", () => handleDELETE(request));
+}
+
+async function handleDELETE(request: Request) {
   try {
     return await removeWatchlistItem(request);
   } catch (err) {

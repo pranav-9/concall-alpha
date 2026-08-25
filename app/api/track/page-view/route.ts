@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getOwnHosts, normalizeExternalReferrer, sanitizeUtmValue } from "@/lib/attribution";
+import { withRouteMetric } from "@/lib/api-metrics";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
@@ -37,6 +38,10 @@ function validate(body: Payload) {
 }
 
 export async function POST(request: Request) {
+  return withRouteMetric("/api/track/page-view", "POST", () => handlePOST(request));
+}
+
+async function handlePOST(request: Request) {
   try {
     const body = (await request.json()) as Payload;
     const parsed = validate(body);

@@ -39,6 +39,7 @@ import {
 } from "@/components/admin/company-comments-table";
 import {
   ApiPerformanceTable,
+  ApiRouteBreakdownTable,
   type ApiPerformanceRow,
 } from "@/components/admin/api-performance-table";
 import {
@@ -104,14 +105,36 @@ type ApiMetricRawRow = {
   created_at: string | null;
 };
 
+type ApiRouteAggregate = {
+  route: string;
+  calls: number;
+  // serverErrors = 5xx (real failures); clientErrors = 4xx (validation
+  // rejections, auth-required) — kept apart so bot/junk traffic doesn't bury
+  // a real server failure.
+  serverErrorCount: number;
+  clientErrorCount: number;
+  avgMs: number | null;
+  p95Ms: number | null;
+};
+
 type ApiPerformanceData = {
   available: boolean;
+  // totalCalls is the exact count over the whole window; the latency/error
+  // stats below are computed over the most recent `sampledCalls` rows (capped
+  // at API_METRICS_MAX_ROWS). When `sampled` is true the two differ, so the
+  // error count/percentiles describe the recent sample, not the full window.
   totalCalls: number;
-  errorCount: number;
+  sampledCalls: number;
+  sampled: boolean;
+  // serverErrorCount = 5xx (real failures); clientErrorCount = 4xx (validation
+  // / auth rejections — expected traffic, tracked separately).
+  serverErrorCount: number;
+  clientErrorCount: number;
   avgMs: number | null;
   p50Ms: number | null;
   p90Ms: number | null;
   p95Ms: number | null;
+  perRoute: ApiRouteAggregate[];
   slowRows: ApiPerformanceRow[];
 };
 
@@ -478,11 +501,15 @@ function emptyApiPerformance(available = true): ApiPerformanceData {
   return {
     available,
     totalCalls: 0,
-    errorCount: 0,
+    sampledCalls: 0,
+    sampled: false,
+    serverErrorCount: 0,
+    clientErrorCount: 0,
     avgMs: null,
     p50Ms: null,
     p90Ms: null,
     p95Ms: null,
+    perRoute: [],
     slowRows: [],
   };
 }
@@ -539,14 +566,54 @@ async function getApiPerformance(startIso: string | null): Promise<ApiPerformanc
     .sort((a, b) => b.durationMs - a.durationMs)
     .slice(0, API_METRICS_SLOW_ROWS);
 
+  // Per-route aggregates so heterogeneous routes are not blended into one
+  // meaningless average (a fast page-view write would otherwise drag search P95
+  // down). Computed over the same sample as the headline stats.
+  const byRoute = new Map<
+    string,
+    { calls: number; durations: number[]; serverErrors: number; clientErrors: number }
+  >();
+  for (const row of rows) {
+    const bucket =
+      byRoute.get(row.route) ??
+      { calls: 0, durations: [], serverErrors: 0, clientErrors: 0 };
+    bucket.calls += 1;
+    if (Number.isFinite(row.durationMs) && row.durationMs >= 0) {
+      bucket.durations.push(row.durationMs);
+    }
+    if (row.statusCode >= 500) bucket.serverErrors += 1;
+    else if (row.statusCode >= 400) bucket.clientErrors += 1;
+    byRoute.set(row.route, bucket);
+  }
+  const perRoute: ApiRouteAggregate[] = [...byRoute.entries()]
+    .map(([route, bucket]) => {
+      const sorted = [...bucket.durations].sort((a, b) => a - b);
+      const sum = sorted.reduce((acc, value) => acc + value, 0);
+      return {
+        route,
+        calls: bucket.calls,
+        serverErrorCount: bucket.serverErrors,
+        clientErrorCount: bucket.clientErrors,
+        avgMs: sorted.length > 0 ? sum / sorted.length : null,
+        p95Ms: percentile(sorted, 95),
+      };
+    })
+    .sort((a, b) => b.calls - a.calls);
+
+  const totalCalls = Number(count ?? rows.length);
+
   return {
     available: true,
-    totalCalls: Number(count ?? rows.length),
-    errorCount: rows.filter((row) => row.statusCode >= 400).length,
+    totalCalls,
+    sampledCalls: rows.length,
+    sampled: totalCalls > rows.length,
+    serverErrorCount: rows.filter((row) => row.statusCode >= 500).length,
+    clientErrorCount: rows.filter((row) => row.statusCode >= 400 && row.statusCode < 500).length,
     avgMs: durations.length > 0 ? totalDuration / durations.length : null,
     p50Ms: percentile(durations, 50),
     p90Ms: percentile(durations, 90),
     p95Ms: percentile(durations, 95),
+    perRoute,
     slowRows,
   };
 }
@@ -1007,13 +1074,23 @@ export default async function AdminPage({
             <AdminMetricGrid
               metrics={[
                 { label: "API Calls", value: data.apiPerformance.totalCalls },
-                { label: "Errors", value: data.apiPerformance.errorCount },
+                { label: "Server Errors (5xx)", value: data.apiPerformance.serverErrorCount },
+                { label: "Client 4xx", value: data.apiPerformance.clientErrorCount },
                 { label: "Avg Latency", value: formatMs(data.apiPerformance.avgMs) },
                 { label: "P95 Latency", value: formatMs(data.apiPerformance.p95Ms) },
                 { label: "P50 Latency", value: formatMs(data.apiPerformance.p50Ms) },
                 { label: "P90 Latency", value: formatMs(data.apiPerformance.p90Ms) },
               ]}
             />
+            {data.apiPerformance.sampled ? (
+              <p className="text-xs text-muted-foreground">
+                Latency and error stats are computed over the most recent{" "}
+                {data.apiPerformance.sampledCalls.toLocaleString()} of{" "}
+                {data.apiPerformance.totalCalls.toLocaleString()} calls in this range.
+                &ldquo;API Calls&rdquo; is the full count; the rest describe the recent sample.
+              </p>
+            ) : null}
+            <ApiRouteBreakdownTable rows={data.apiPerformance.perRoute} />
             <ApiPerformanceTable rows={data.apiPerformance.slowRows} />
           </AdminSection>
         }

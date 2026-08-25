@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { withRouteMetric } from "@/lib/api-metrics";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
@@ -19,6 +20,10 @@ function sanitizeSourcePath(input: unknown): string | null {
 }
 
 export async function POST(request: Request) {
+  return withRouteMetric("/api/feedback-polls/respond", "POST", () => handlePOST(request));
+}
+
+async function handlePOST(request: Request) {
   let payload: unknown;
   try {
     payload = await request.json();

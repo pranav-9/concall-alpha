@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withRouteMetric } from "@/lib/api-metrics";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 
@@ -71,6 +72,10 @@ async function resolveWatchlist(request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  return withRouteMetric("/api/watchlists/[id]", "PATCH", () => handlePATCH(request, context));
+}
+
+async function handlePATCH(request: Request, context: RouteContext) {
   try {
     const resolved = await resolveWatchlist(request, context);
     if ("errorResponse" in resolved) return resolved.errorResponse;
@@ -121,6 +126,10 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
+  return withRouteMetric("/api/watchlists/[id]", "DELETE", () => handleDELETE(request, context));
+}
+
+async function handleDELETE(request: Request, context: RouteContext) {
   const resolved = await resolveWatchlist(request, context);
   if ("errorResponse" in resolved) return resolved.errorResponse;
 

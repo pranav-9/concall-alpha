@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withRouteMetric } from "@/lib/api-metrics";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
@@ -65,6 +66,10 @@ function parseCursor(raw: string | null) {
 }
 
 export async function GET(request: Request) {
+  return withRouteMetric("/api/company-comments", "GET", () => handleGET(request));
+}
+
+async function handleGET(request: Request) {
   const { searchParams } = new URL(request.url);
   const companyCode = (searchParams.get("companyCode") ?? "").trim();
   if (!COMPANY_CODE_REGEX.test(companyCode)) {
@@ -146,6 +151,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  return withRouteMetric("/api/company-comments", "POST", () => handlePOST(request));
+}
+
+async function handlePOST(request: Request) {
   try {
     const body = (await request.json()) as CreatePayload;
     const companyCode = (body.companyCode ?? "").trim();

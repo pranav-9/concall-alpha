@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withRouteMetric } from "@/lib/api-metrics";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
@@ -11,6 +12,10 @@ const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
+  return withRouteMetric("/api/company-comments/like", "POST", () => handlePOST(request));
+}
+
+async function handlePOST(request: Request) {
   try {
     const body = (await request.json()) as Payload;
     const commentId = (body.commentId ?? "").trim();

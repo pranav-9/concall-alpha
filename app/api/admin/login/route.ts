@@ -5,6 +5,7 @@ import {
   ADMIN_ACCESS_COOKIE_VALUE,
   isValidAdminPasscode,
 } from "@/lib/admin-auth";
+import { withRouteMetric } from "@/lib/api-metrics";
 import { logger } from "@/lib/logger";
 
 type Payload = {
@@ -12,6 +13,10 @@ type Payload = {
 };
 
 export async function POST(request: Request) {
+  return withRouteMetric("/api/admin/login", "POST", () => handlePOST(request));
+}
+
+async function handlePOST(request: Request) {
   try {
     const body = (await request.json()) as Payload;
     const passcode = (body.passcode ?? "").trim();

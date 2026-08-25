@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { ADMIN_ACCESS_COOKIE, hasAdminAccess } from "@/lib/admin-auth";
+import { withRouteMetric } from "@/lib/api-metrics";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import { adminPollWriteSchema } from "@/lib/feedback-polls/types";
@@ -13,6 +14,10 @@ async function requireAdmin(): Promise<boolean> {
 // Create or update a poll definition. Body matches adminPollWriteSchema; if
 // `id` is provided (via query param), the row is updated, otherwise inserted.
 export async function POST(request: Request) {
+  return withRouteMetric("/api/admin/feedback-polls", "POST", () => handlePOST(request));
+}
+
+async function handlePOST(request: Request) {
   if (!(await requireAdmin())) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized." },

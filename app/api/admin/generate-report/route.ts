@@ -6,12 +6,17 @@ import {
   generateAdminReport,
   parseRange,
 } from "@/lib/admin-analytics-report";
+import { withRouteMetric } from "@/lib/api-metrics";
 import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  return withRouteMetric("/api/admin/generate-report", "GET", () => handleGET(request));
+}
+
+async function handleGET(request: NextRequest) {
   const cookieStore = await cookies();
   if (!hasAdminAccess(cookieStore.get(ADMIN_ACCESS_COOKIE)?.value)) {
     return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
