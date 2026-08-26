@@ -1,5 +1,5 @@
 export type CompanySidebarSectionMeta =
-  | { kind: "score"; score: number | null }
+  | { kind: "score"; score: number | null; scoreKind?: "quarterly" | "growth" | "valuation" }
   | { kind: "text"; text: string }
   | { kind: "count"; count: number; suffix?: string };
 

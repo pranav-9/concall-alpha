@@ -54,77 +54,48 @@ export async function generateMetadata({
 }
 
 function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
-  const availability = overview.section_availability;
-
+  // Only three tabs carry a badge, and each carries a score circle — nothing
+  // else (decision 2026-08-26). The tab bar reads as a three-number scorecard:
+  // ConcallScore (quarterly), Future Growth, and Valuation, each in its own band
+  // scheme. A score that isn't available yet (null, or a stale/withheld
+  // valuation) simply shows no badge rather than a placeholder. Every other tab
+  // is label-only.
   return [
-    {
-      ...SECTION_MAP.overview,
-      meta: overview.sector
-        ? { kind: "text" as const, text: overview.sector }
-        : { kind: "text" as const, text: "Live" },
-    },
-    {
-      ...SECTION_MAP.businessSnapshot,
-      meta: availability.businessSnapshot
-        ? { kind: "text" as const, text: "Live" }
-        : { kind: "text" as const, text: "Soon" },
-    },
-    {
-      ...SECTION_MAP.moatAnalysis,
-      meta: overview.moat_label
-        ? { kind: "text" as const, text: overview.moat_label }
-        : { kind: "text" as const, text: "Soon" },
-    },
+    SECTION_MAP.overview,
+    SECTION_MAP.businessSnapshot,
+    SECTION_MAP.moatAnalysis,
     {
       ...SECTION_MAP.concallScore,
-      meta: { kind: "score" as const, score: overview.latest_score },
-    },
-    {
-      ...SECTION_MAP.keyVariables,
       meta:
-        overview.key_variable_count != null && overview.key_variable_count > 0
-          ? {
-              kind: "count" as const,
-              count: overview.key_variable_count,
-              suffix: "vars",
-            }
-          : availability.keyVariables
-            ? { kind: "text" as const, text: "Live" }
-            : { kind: "text" as const, text: "Soon" },
+        overview.latest_score != null
+          ? { kind: "score" as const, score: overview.latest_score, scoreKind: "quarterly" as const }
+          : undefined,
     },
+    SECTION_MAP.keyVariables,
     {
       ...SECTION_MAP.futureGrowth,
-      meta: availability.futureGrowth
-        ? { kind: "score" as const, score: overview.growth_score }
-        : { kind: "text" as const, text: "Soon" },
+      meta:
+        overview.growth_score != null
+          ? { kind: "score" as const, score: overview.growth_score, scoreKind: "growth" as const }
+          : undefined,
     },
     // Walk the Talk tab hidden for now — verdict-style synthesis surface;
     // re-enable when ready. Component code is kept intact.
-    // {
-    //   ...SECTION_MAP.walkTheTalk,
-    //   meta: { kind: "text" as const, text: "Live" },
-    // },
+    // { ...SECTION_MAP.walkTheTalk },
     {
       ...SECTION_MAP.valuationCheck,
-      meta: availability.valuationCheck
-        ? { kind: "text" as const, text: "Live" }
-        : { kind: "text" as const, text: "Soon" },
-    },
-    {
-      ...SECTION_MAP.guidanceHistory,
+      // Withhold the badge when the valuation is stale — the portal already
+      // withholds a valuation priced more than 4 days ago, so the tab must not
+      // flash a score the section itself won't stand behind.
       meta:
-        overview.guidance_count != null && overview.guidance_count > 0
-          ? { kind: "count" as const, count: overview.guidance_count, suffix: "items" }
-          : availability.guidanceHistory
-            ? { kind: "text" as const, text: "Live" }
-            : { kind: "text" as const, text: "Soon" },
+        overview.valuation_score != null && !overview.valuation_stale
+          ? { kind: "score" as const, score: overview.valuation_score, scoreKind: "valuation" as const }
+          : undefined,
     },
+    SECTION_MAP.guidanceHistory,
     // Community tab retired for now — no engagement (1 comment total as of 2026-07).
     // Component + API routes + Supabase tables kept intact; re-enable when ready.
-    // {
-    //   ...SECTION_MAP.community,
-    //   meta: { kind: "text" as const, text: "Discuss" },
-    // },
+    // { ...SECTION_MAP.community },
   ];
 }
 

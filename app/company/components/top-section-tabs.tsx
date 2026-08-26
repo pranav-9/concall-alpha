@@ -48,7 +48,12 @@ const pillClass = (isActive: boolean) =>
 const renderMeta = (meta: CompanySidebarSectionMeta, isActive: boolean) => {
   if (meta.kind === "score") {
     return typeof meta.score === "number" ? (
-      <ConcallScore score={meta.score} size="sm" className="h-6 w-6 text-[10px] ring-2" />
+      <ConcallScore
+        score={meta.score}
+        kind={meta.scoreKind ?? "quarterly"}
+        size="sm"
+        className="h-6 w-6 text-[10px] ring-2"
+      />
     ) : (
       <span className={pillClass(isActive)}>—</span>
     );
