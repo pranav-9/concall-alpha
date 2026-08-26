@@ -52,6 +52,7 @@ export function CompanyPageWorkspace({
   );
 
   const [activeSectionId, setActiveSectionId] = React.useState<string>(fallbackSectionId);
+  const [, startTransition] = React.useTransition();
 
   // One company_page_view per page load; company_code is the join key to our data.
   React.useEffect(() => {
@@ -179,7 +180,13 @@ export function CompanyPageWorkspace({
         window.history.pushState(null, "", `#${sectionId}`);
       }
 
-      setActiveSectionId(sectionId);
+      // Swapping the active panel unmounts/remounts a large section tree; doing
+      // it as an urgent update blocks the tap for ~800ms on data-rich tickers
+      // (INP). Mark it non-urgent so the browser can paint the tap first. URL +
+      // scroll stay synchronous so navigation feels instant.
+      startTransition(() => {
+        setActiveSectionId(sectionId);
+      });
       window.requestAnimationFrame(() => {
         scrollContentIntoView();
       });

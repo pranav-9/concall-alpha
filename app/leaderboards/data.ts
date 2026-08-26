@@ -9,9 +9,11 @@ import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
 import type { MoatAnalysisRow, MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
 
-type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+import { createPublicReadClient } from "@/lib/supabase/public-read";
+
+type PublicReadClient = ReturnType<typeof createPublicReadClient>;
 
 type CompanyRow = {
   code: string;
@@ -23,7 +25,6 @@ type CompanyRow = {
 };
 
 type LeaderboardContext = {
-  supabase: SupabaseServerClient;
   companies: CompanyRow[];
   newCompanySet: Set<string>;
   /** Uppercased codes+names of companies excluded by coverage policy. */
@@ -87,16 +88,45 @@ const sortTimestamp = (value: string | null | undefined) => {
   return Number.isFinite(ts) ? ts : Number.NEGATIVE_INFINITY;
 };
 
-async function fetchGrowthLeaders(ctx: LeaderboardContext): Promise<GrowthEntry[]> {
-  const { supabase, companies, newCompanySet } = ctx;
-  const { data: growthData, error: growthError } = await supabase
-    .from("growth_outlook")
-    .select("company, fiscal_year, run_timestamp, base_growth_pct, upside_growth_pct, downside_growth_pct, growth_score, growth_score_formula, growth_score_steps")
-    .order("run_timestamp", { ascending: false });
+// The two heavy, user-independent reads behind fetchLeaderboardData (company +
+// growth_outlook), cached cross-request on the cookie-free public-read client —
+// the same pattern getConcallData and the desk substrate use. This uncached read
+// is what forced /themes, /leaderboards, /how-scores-work and the Overview board
+// to render dynamically with high TTFB. Moat is deliberately NOT cached here: its
+// ~600KB assessment_payload would blow Vercel's 2MB Next-data-cache ceiling (past
+// which caching silently no-ops), and only the /leaderboards Moat tab reads it.
+// isNew and the coverage gates are pure/time derivations recomputed per request
+// in fetchLeaderboardData, never frozen inside the cache.
+const getCachedLeaderboardSubstrate = unstable_cache(
+  async (): Promise<{ companies: CompanyRow[]; growthRows: GrowthRow[] }> => {
+    const supabase = createPublicReadClient();
+    const [companiesRes, growthRes] = await Promise.all([
+      supabase
+        .from("company")
+        .select(`code, name, created_at, coverage_rank, ${COVERAGE_SELECT}`),
+      supabase
+        .from("growth_outlook")
+        .select(
+          "company, fiscal_year, run_timestamp, base_growth_pct, upside_growth_pct, downside_growth_pct, growth_score, growth_score_formula, growth_score_steps",
+        )
+        .order("run_timestamp", { ascending: false }),
+    ]);
+    if (companiesRes.error) throw companiesRes.error;
+    if (growthRes.error) throw growthRes.error;
+    return {
+      companies: (companiesRes.data ?? []) as CompanyRow[],
+      growthRows: (growthRes.data ?? []) as GrowthRow[],
+    };
+  },
+  ["leaderboard-substrate-v1"],
+  { revalidate: 300 },
+);
 
-  if (growthError) throw growthError;
-
-  const rows = (growthData ?? []) as GrowthRow[];
+async function fetchGrowthLeaders(
+  ctx: LeaderboardContext & { growthRows: GrowthRow[] },
+): Promise<GrowthEntry[]> {
+  const { growthRows, companies, newCompanySet } = ctx;
+  const rows = growthRows;
   const latestByCompany = new Map<string, GrowthRow>();
   const companyByCode = new Map<string, CompanyRow>();
   const companyByName = new Map<string, CompanyRow>();
@@ -217,7 +247,9 @@ async function fetchGrowthLeaders(ctx: LeaderboardContext): Promise<GrowthEntry[
   );
 }
 
-async function fetchMoatLeaders(ctx: LeaderboardContext): Promise<MoatRowTable[]> {
+async function fetchMoatLeaders(
+  ctx: LeaderboardContext & { supabase: PublicReadClient },
+): Promise<MoatRowTable[]> {
   const { supabase, companies, newCompanySet } = ctx;
   const { data: moatData, error: moatError } = await supabase
     .from("moat_analysis")
@@ -324,13 +356,9 @@ export async function fetchLeaderboardData(options?: {
   belowCutCodes: Set<string>;
 }> {
   const includeMoat = options?.includeMoat ?? true;
-  const supabase = await createClient();
-  const { data: companiesData, error: companiesError } = await supabase
-    .from("company")
-    .select(`code, name, created_at, coverage_rank, ${COVERAGE_SELECT}`);
-  if (companiesError) throw companiesError;
-
-  const allCompanies = (companiesData ?? []) as CompanyRow[];
+  // Heavy reads (company + growth_outlook) come from the cross-request cache;
+  // everything below — gates, isNew, ranks — is recomputed per request.
+  const { companies: allCompanies, growthRows } = await getCachedLeaderboardSubstrate();
   // Two gates, handled separately (lib/coverage-policy): admission removes large
   // caps from the board entirely; the composite cut only greys a company out.
   const midSmall = allCompanies.filter((company) => !isAdmittedLargeCap(company));
@@ -371,9 +399,17 @@ export async function fetchLeaderboardData(options?: {
   // tail); moat only over the ranked hundred, since the Moat tab is unchanged
   // and the Overall board no longer carries a moat column.
   const [allGrowthEntries, moatEntries] = await Promise.all([
-    fetchGrowthLeaders({ supabase, companies: midSmall, newCompanySet, excludedKeys }),
+    fetchGrowthLeaders({ growthRows, companies: midSmall, newCompanySet, excludedKeys }),
+    // Moat is uncached (excluded from the substrate to stay under the 2MB
+    // ceiling) and only the /leaderboards Moat tab asks for it — read it live off
+    // the cookie-free public-read client when requested.
     includeMoat
-      ? fetchMoatLeaders({ supabase, companies, newCompanySet, excludedKeys })
+      ? fetchMoatLeaders({
+          supabase: createPublicReadClient(),
+          companies,
+          newCompanySet,
+          excludedKeys,
+        })
       : Promise.resolve([] as MoatRowTable[]),
   ]);
 

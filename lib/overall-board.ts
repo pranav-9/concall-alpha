@@ -4,14 +4,14 @@
 // through buildScoreBoardRows — factored out so /themes can filter it to a theme's
 // members without a second, drifting assembly.
 //
-// Wrapped in React `cache()` for REQUEST-scoped dedupe only. getConcallData is
-// now cross-request cached internally (public-read client + unstable_cache,
-// 2026-08-13), so the quarter substrate is cheap here. fetchLeaderboardData is
-// called with { includeMoat: false } — this board has no moat column, so the
-// ~2.8s moat payload fetch is skipped; only the growth leg is read. That growth
-// leg still uses the cookie-based server client, which unstable_cache forbids
-// inside its callback. Moving it onto createPublicReadClient and caching the
-// whole assembly is the remaining half of the tracked fast-follow — see TODOS.md.
+// Wrapped in React `cache()` for REQUEST-scoped dedupe only. Both legs are now
+// cross-request cached internally on the public-read client + unstable_cache:
+// getConcallData (quarter substrate, 2026-08-13) and fetchLeaderboardData's
+// company+growth reads (leaderboard-substrate-v1, 2026-08-26 — this closed the
+// /themes + /leaderboards + /how-scores-work + Overview-board TTFB). It's called
+// with { includeMoat: false } so the uncached ~600KB moat payload fetch is
+// skipped entirely; only the cached growth leg is read. So this whole assembly
+// runs off warm caches, and the React cache() here just dedupes within a request.
 
 import { cache } from "react";
 

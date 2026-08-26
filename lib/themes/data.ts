@@ -3,7 +3,7 @@
 // result so the /themes section and the homepage teaser render nothing rather
 // than breaking the page.
 
-import { createClient } from "@/lib/supabase/server";
+import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { logger } from "@/lib/logger";
 import { getOverallBoardRows } from "@/lib/overall-board";
 
@@ -19,7 +19,7 @@ import {
 
 /** Featured themes with their members scored live off the board. Empty on any failure. */
 export async function getFeaturedThemeBlocks(): Promise<ThemeBlock[]> {
-  const supabase = await createClient();
+  const supabase = createPublicReadClient();
 
   const { data: themeData, error: themeError } = await supabase
     .from("theme")
@@ -76,7 +76,7 @@ export async function getFeaturedThemeBlocks(): Promise<ThemeBlock[]> {
  * stays cheap. Themes with zero memberships are omitted.
  */
 export async function getFeaturedThemeTeasers(): Promise<ThemeTeaser[]> {
-  const supabase = await createClient();
+  const supabase = createPublicReadClient();
 
   const { data: themeData, error } = await supabase
     .from("theme")
