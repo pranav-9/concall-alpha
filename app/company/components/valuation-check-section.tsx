@@ -14,17 +14,8 @@
 //      horizon axis against our cases + delivered.
 //   3. RATIO EVALUATION — a 2x2 grid: the own-history multiples (P/E + cross-check) as coloured
 //      band bars, and both PEG legs (display-only) as four-band meters.
-//   4. Quality/risk overlay + "what would change the call", then the footer disclosure.
-import {
-  AlertTriangle,
-  ArrowDownRight,
-  ArrowUpRight,
-  Info,
-  Minus,
-  Plus,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
+//   4. The footer disclosure (priced-as-of + how-the-score-was-built).
+import { AlertTriangle, Info, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { chipBaseClass, chipClass, chipToneClasses, type ChipTone } from "./chip-tone";
@@ -134,28 +125,6 @@ function ZoneChipBadge({ chip }: { chip: ZoneChip }) {
     </span>
   );
 }
-
-// Best-effort direction for a "what would change the call" item, from grounded keywords. Neutral
-// is the safe fallback — this is presentation only, never asserted as an input to the score.
-type CallDirection = "cheaper" | "richer" | "new" | "neutral";
-function callDirection(item: string): CallDirection {
-  if (/forensic|credibilit|publish|disclos|coverage/i.test(item)) return "new";
-  const cheaper = /\bcheap|undervalued|de-?rate/i.test(item);
-  const richer = /\brich|expensive|stretch|widen|overvalued/i.test(item);
-  if (cheaper && !richer) return "cheaper";
-  if (richer && !cheaper) return "richer";
-  return "neutral";
-}
-
-const CALL_MARK: Record<
-  CallDirection,
-  { Icon: typeof ArrowUpRight; className: string }
-> = {
-  cheaper: { Icon: ArrowUpRight, className: "text-emerald-600 dark:text-emerald-400" },
-  richer: { Icon: ArrowDownRight, className: "text-rose-600 dark:text-rose-400" },
-  new: { Icon: Plus, className: "text-violet-600 dark:text-violet-400" },
-  neutral: { Icon: Minus, className: "text-muted-foreground" },
-};
 
 type Props = {
   valuation: NormalizedValuationCheck;
@@ -578,68 +547,6 @@ function RatioEvaluation({ valuation }: { valuation: NormalizedValuationCheck })
   );
 }
 
-function Overlay({ valuation }: { valuation: NormalizedValuationCheck }) {
-  if (!valuation.overlayRows.length) return null;
-  return (
-    <div>
-      <p className={eyebrowClass}>Quality &amp; risk overlay</p>
-      <div className="mt-2 space-y-1.5">
-        {valuation.overlayRows.map((row) => {
-          const unavailable =
-            row.verdict === "not available" || row.verdict === "not yet built";
-          return (
-            <div
-              key={row.source}
-              className={cn(
-                nestedDetailClass,
-                "flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 px-3 py-2 text-[12px]",
-              )}
-            >
-              <span className="font-medium text-foreground">{row.source}</span>
-              <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <span
-                  className={cn(
-                    unavailable ? "text-muted-foreground/70 italic" : "text-foreground",
-                  )}
-                >
-                  {row.verdict}
-                </span>
-                <span className="text-[11px] text-muted-foreground/80">{row.impact}</span>
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      {valuation.overlayInterpretation ? (
-        <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
-          {valuation.overlayInterpretation}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-/** "What would change the call" — presentation-only directional cues; never an input to the score. */
-function WhatWouldChange({ items }: { items: string[] }) {
-  if (!items.length) return null;
-  return (
-    <div>
-      <p className={eyebrowClass}>What would change the call</p>
-      <ul className="mt-2 space-y-1.5">
-        {items.map((item) => {
-          const { Icon, className } = CALL_MARK[callDirection(item)];
-          return (
-            <li key={item} className="flex items-start gap-1.5 text-[12px] leading-snug text-muted-foreground">
-              <Icon className={cn("mt-[1px] h-3.5 w-3.5 shrink-0", className)} />
-              <span>{item}</span>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
 export function ValuationCheckSection({ valuation, staleness, scoreHistory }: Props) {
   const showVerdict = valuation.rateable && Boolean(valuation.verdict) && !staleness.stale;
   // A one- or two-dot line reads as broken, not a trend.
@@ -691,15 +598,7 @@ export function ValuationCheckSection({ valuation, staleness, scoreHistory }: Pr
       {/* 3. RATIO EVALUATION — multiples + PEG in a 2x2 grid. */}
       {hasRatioBlock ? <RatioEvaluation valuation={valuation} /> : null}
 
-      {/* 4. Quality/risk overlay + what-would-change. */}
-      {valuation.overlayRows.length || valuation.whatWouldChangeTheCall.length ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Overlay valuation={valuation} />
-          <WhatWouldChange items={valuation.whatWouldChangeTheCall} />
-        </div>
-      ) : null}
-
-      {/* 5. Footer: pricing note + derivation disclosure. */}
+      {/* 4. Footer: pricing note + derivation disclosure. */}
       {valuation.pricedAsOf || valuation.derivation.length ? (
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 pt-1">
           {valuation.pricedAsOf ? (
