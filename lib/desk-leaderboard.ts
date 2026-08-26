@@ -2,7 +2,6 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 
-import { createClient } from "@/lib/supabase/server";
 import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { selectMostViewed } from "@/lib/desk-most-viewed";
 import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
@@ -13,7 +12,11 @@ import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
 import type { MoatAnalysisRow, NormalizedMoatAnalysis } from "@/lib/moat-analysis/types";
 
-type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+// Every desk fetcher reads through the cookie-free public-read client: the raw
+// reads are cached with unstable_cache (getCachedDeskSubstrate), and
+// unstable_cache forbids cookies() inside its callback. Row parity with the
+// cookie/service client was verified for all four tables (2026-08-26).
+type DeskReadClient = ReturnType<typeof createPublicReadClient>;
 
 // How many quarters of score history a row's sparkline draws.
 const SPARK_QUARTERS = 7;
@@ -113,19 +116,31 @@ const embeddedCompany = (row: ConcallRow) =>
  * below-cut names — are collected into `excludedKeys` and dropped, matching the
  * homepage/banner convention (isDiscoveryListed).
  */
-async function fetchCoverage(supabase: SupabaseServerClient) {
+// Raw company rows — the cacheable read. Map/Set-building lives in buildCoverage
+// (below), which runs OUTSIDE the cache: unstable_cache JSON-serializes its
+// result, and a Map/Set would round-trip to `{}`.
+async function fetchCompanyRows(supabase: DeskReadClient): Promise<CoverageRow[]> {
   const { data, error } = await supabase
     .from("company")
     .select(`code, name, sector, created_at, ${COVERAGE_SELECT}`);
   if (error) throw error;
+  return (data ?? []) as CoverageRow[];
+}
 
+/**
+ * Discovery-listed coverage keyed by uppercased code and name. Companies off
+ * discovery — large-cap admissions (outside the mid/small positioning) and
+ * below-cut names — are collected into `excludedKeys` and dropped, matching the
+ * homepage/banner convention (isDiscoveryListed). Pure derivation of the cached
+ * company rows, so it runs per request outside the substrate cache.
+ */
+function buildCoverage(companyRows: CoverageRow[]) {
   const byCode = new Map<string, CoverageInfo>();
   const excludedKeys = new Set<string>();
   const sectorCounts = new Map<string, number>();
   let coveredCount = 0;
 
-  (data ?? []).forEach((raw) => {
-    const row = raw as CoverageRow;
+  companyRows.forEach((row) => {
     if (!isDiscoveryListed(row)) {
       if (row.code) excludedKeys.add(upper(row.code));
       if (row.name) excludedKeys.add(upper(row.name));
@@ -151,7 +166,7 @@ async function fetchCoverage(supabase: SupabaseServerClient) {
   return { byCode, excludedKeys, coveredCount, sectorCount };
 }
 
-async function fetchConcallRows(supabase: SupabaseServerClient) {
+async function fetchConcallRows(supabase: DeskReadClient) {
   const rows: ConcallRow[] = [];
   let from = 0;
   for (;;) {
@@ -175,7 +190,7 @@ async function fetchConcallRows(supabase: SupabaseServerClient) {
   return rows;
 }
 
-async function fetchMoatLeaders(supabase: SupabaseServerClient) {
+async function fetchMoatLeaders(supabase: DeskReadClient) {
   const { data, error } = await supabase
     .from("moat_analysis")
     .select(
@@ -222,7 +237,7 @@ type GrowthLeader = {
 // Latest growth_outlook row per company, ranked by growth score (base growth as
 // the tiebreaker). Mirrors the /leaderboards Growth ordering, trimmed to what a
 // desk row needs. Off-discovery names are dropped by the caller via excludedKeys.
-async function fetchGrowthLeaders(supabase: SupabaseServerClient): Promise<GrowthLeader[]> {
+async function fetchGrowthLeaders(supabase: DeskReadClient): Promise<GrowthLeader[]> {
   const { data, error } = await supabase
     .from("growth_outlook")
     .select(
@@ -317,18 +332,46 @@ const getCachedMostViewedCodes = unstable_cache(
   { revalidate: 300 },
 );
 
+// The heavy, user-independent reads (whole concall_analysis history, the full
+// moat payload parse, coverage and growth) behind one cross-request cache. This
+// caches RAW data only — no time-derived fields — so a warm board can't freeze
+// the reporting quarter, the reportedCount, or the isNew badge for a whole
+// revalidate window. Cookie-free client, same reason getConcallData is.
+type DeskSubstrate = {
+  companyRows: CoverageRow[];
+  concallRows: ConcallRow[];
+  moatLeaders: NormalizedMoatAnalysis[];
+  growthLeaders: GrowthLeader[];
+};
+
+const getCachedDeskSubstrate = unstable_cache(
+  async (): Promise<DeskSubstrate> => {
+    const supabase = createPublicReadClient();
+    const [companyRows, concallRows, moatLeaders, growthLeaders] = await Promise.all([
+      fetchCompanyRows(supabase),
+      fetchConcallRows(supabase),
+      fetchMoatLeaders(supabase),
+      fetchGrowthLeaders(supabase),
+    ]);
+    return { companyRows, concallRows, moatLeaders, growthLeaders };
+  },
+  ["desk-substrate-v1"],
+  { revalidate: 300 },
+);
+
 export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
-  const supabase = await createClient();
+  // Time-derived state stays OUTSIDE the cache. Most-viewed keeps its own cache
+  // and is composed here too, so the board can't hold a doubly-stale window.
   const now = new Date();
   const quarter = currentReportingQuarter(now);
 
-  const [coverage, concallRows, moat, growth, mostViewedCodes] = await Promise.all([
-    fetchCoverage(supabase),
-    fetchConcallRows(supabase),
-    fetchMoatLeaders(supabase),
-    fetchGrowthLeaders(supabase),
+  const [substrate, mostViewedCodes] = await Promise.all([
+    getCachedDeskSubstrate(),
     getCachedMostViewedCodes(),
   ]);
+
+  const coverage = buildCoverage(substrate.companyRows);
+  const { concallRows, moatLeaders: moat, growthLeaders: growth } = substrate;
 
   // Group each covered company's reads, newest-first.
   const byCompany = new Map<string, ConcallRow[]>();
