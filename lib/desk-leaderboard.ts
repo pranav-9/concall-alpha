@@ -190,7 +190,18 @@ async function fetchConcallRows(supabase: DeskReadClient) {
   return rows;
 }
 
-async function fetchMoatLeaders(supabase: DeskReadClient) {
+// Only the fields a desk moat-leader row actually needs. Slimming the sorted
+// output before it enters the substrate cache keeps the full v15 payload
+// (~700KB across the fleet) OUT of the cached entry — it's parsed here to derive
+// the sort keys, then dropped, so the cache stays well under the 2MB ceiling
+// (past which Next silently skips caching and the whole optimization no-ops).
+type DeskMoatLeader = {
+  companyCode: string;
+  companyName: string | null;
+  moatRatingLabel: string;
+};
+
+async function fetchMoatLeaders(supabase: DeskReadClient): Promise<DeskMoatLeader[]> {
   const { data, error } = await supabase
     .from("moat_analysis")
     .select(
@@ -209,16 +220,24 @@ async function fetchMoatLeaders(supabase: DeskReadClient) {
     if (!latestByCompany.has(key)) latestByCompany.set(key, normalized);
   });
 
-  return Array.from(latestByCompany.values()).sort((a, b) => {
-    const ratingDiff = MOAT_RATING_ORDER[a.moatRating] - MOAT_RATING_ORDER[b.moatRating];
-    if (ratingDiff !== 0) return ratingDiff;
-    const tierDiff = moatTierRank(a.moatTier) - moatTierRank(b.moatTier);
-    if (tierDiff !== 0) return tierDiff;
-    if (b.appliesSourceCount !== a.appliesSourceCount) {
-      return b.appliesSourceCount - a.appliesSourceCount;
-    }
-    return (a.companyName ?? a.companyCode).localeCompare(b.companyName ?? b.companyCode);
-  });
+  // Sort on the full normalized objects (rating → tier → applies-source-count →
+  // name), THEN project to the slim shape the desk consumes.
+  return Array.from(latestByCompany.values())
+    .sort((a, b) => {
+      const ratingDiff = MOAT_RATING_ORDER[a.moatRating] - MOAT_RATING_ORDER[b.moatRating];
+      if (ratingDiff !== 0) return ratingDiff;
+      const tierDiff = moatTierRank(a.moatTier) - moatTierRank(b.moatTier);
+      if (tierDiff !== 0) return tierDiff;
+      if (b.appliesSourceCount !== a.appliesSourceCount) {
+        return b.appliesSourceCount - a.appliesSourceCount;
+      }
+      return (a.companyName ?? a.companyCode).localeCompare(b.companyName ?? b.companyCode);
+    })
+    .map((m) => ({
+      companyCode: m.companyCode,
+      companyName: m.companyName,
+      moatRatingLabel: m.moatRatingLabel,
+    }));
 }
 
 type GrowthLeader = {
@@ -340,7 +359,7 @@ const getCachedMostViewedCodes = unstable_cache(
 type DeskSubstrate = {
   companyRows: CoverageRow[];
   concallRows: ConcallRow[];
-  moatLeaders: NormalizedMoatAnalysis[];
+  moatLeaders: DeskMoatLeader[];
   growthLeaders: GrowthLeader[];
 };
 
