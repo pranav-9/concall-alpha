@@ -27,20 +27,36 @@ const SHORT_LABELS: Record<string, string> = {
   community: "Community",
 };
 
-const renderMeta = (meta: CompanySidebarSectionMeta) => {
+// "Live" is a placeholder, not a signal — hiding it from an always-on badge
+// keeps the bar scannable. "Soon" stays: it tells you a tab has no data yet, so
+// you don't bother clicking it. Everything else (scores, counts, moat label,
+// sector) is real information worth showing on every tab.
+const isNoiseMeta = (meta: CompanySidebarSectionMeta) =>
+  meta.kind === "text" && meta.text === "Live";
+
+// Pills sit inside the tab, so they have to read on both the inverted active tab
+// (dark bg) and the transparent inactive tabs. Scores carry their own color, so
+// only the text/count pills need the active swap.
+const pillClass = (isActive: boolean) =>
+  cn(
+    "inline-flex max-w-[7rem] items-center truncate rounded-full border px-1.5 py-0.5 text-[9px] font-medium",
+    isActive
+      ? "border-background/25 bg-background/15 text-background/90"
+      : "border-border/60 bg-background/85 text-muted-foreground",
+  );
+
+const renderMeta = (meta: CompanySidebarSectionMeta, isActive: boolean) => {
   if (meta.kind === "score") {
     return typeof meta.score === "number" ? (
-      <ConcallScore score={meta.score} size="sm" className="h-7 w-7 text-[11px] ring-2" />
+      <ConcallScore score={meta.score} size="sm" className="h-6 w-6 text-[10px] ring-2" />
     ) : (
-      <span className="inline-flex items-center rounded-full border border-border/60 bg-background/85 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
-        —
-      </span>
+      <span className={pillClass(isActive)}>—</span>
     );
   }
 
   if (meta.kind === "count") {
     return (
-      <span className="inline-flex items-center rounded-full border border-border/60 bg-background/85 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
+      <span className={pillClass(isActive)}>
         {meta.count}
         {meta.suffix ? ` ${meta.suffix}` : ""}
       </span>
@@ -48,7 +64,13 @@ const renderMeta = (meta: CompanySidebarSectionMeta) => {
   }
 
   return (
-    <span className="inline-flex max-w-[7rem] items-center truncate rounded-full border border-border/60 bg-background/85 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">
+    <span
+      className={cn(
+        pillClass(isActive),
+        // "Soon" reads as a status, not a value — dim and italicize it.
+        meta.text === "Soon" && !isActive && "bg-transparent italic text-muted-foreground/70",
+      )}
+    >
       {meta.text}
     </span>
   );
@@ -175,8 +197,8 @@ export function TopSectionTabs({
                     )}
                   >
                     <span>{shortLabel}</span>
-                    {isActive && section.meta ? (
-                      <span className="hidden lg:inline-flex">{renderMeta(section.meta)}</span>
+                    {section.meta && !isNoiseMeta(section.meta) ? (
+                      <span className="inline-flex">{renderMeta(section.meta, isActive)}</span>
                     ) : null}
                   </button>
                 );
