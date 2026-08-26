@@ -2,9 +2,10 @@ import React from "react";
 import { Badge } from "@/components/ui/badge"; // adjust path if needed
 import { BANDS, bandForScore } from "@/lib/score-band";
 import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
+import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
 
 type Size = "sm" | "md" | "lg";
-type Kind = "quarterly" | "growth";
+type Kind = "quarterly" | "growth" | "valuation";
 
 // Score → colour derives from one of two band schemes: lib/score-band (Quarterly /
 // sentiment, default) or lib/growth-band (forward growth outlook). One colour per
@@ -17,7 +18,11 @@ export const chartColorFor = (score: number): string =>
 /** Badge styling for the score circle — band fill + ring + on-fill text colour. */
 export const categoryFor = (score: number, kind: Kind = "quarterly") => {
   const b =
-    kind === "growth" ? GROWTH_BANDS[bandForGrowthScore(score)] : BANDS[bandForScore(score)];
+    kind === "growth"
+      ? GROWTH_BANDS[bandForGrowthScore(score)]
+      : kind === "valuation"
+        ? VALUATION_BANDS[bandForValuationScore(score)]
+        : BANDS[bandForScore(score)];
   return { label: b.label, bg: b.barClass, ring: b.ringClass, textClass: b.textOnBarClass };
 };
 
