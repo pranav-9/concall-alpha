@@ -126,6 +126,27 @@ function FeaturedTheme({ theme }: { theme: ScoredTheme }) {
   );
 }
 
+// Match-final-state fallback: mirrors the populated section's house-block header
+// + featured block + a few ranked rows, so the space is reserved during stream-in
+// and the settled layout doesn't jump. On the rare empty case the section renders
+// null (below) — an accepted, infrequent collapse rather than the every-load
+// shift a fallback={null} produced.
+export function DeskHotThemesFallback() {
+  return (
+    <section aria-hidden className="house-block">
+      <div className="h-3 w-28 animate-pulse rounded bg-[var(--rule)]" />
+      <div className="mt-2 h-8 w-40 animate-pulse rounded bg-[var(--rule)]" />
+      <div className="mt-6 h-28 w-full animate-pulse rounded bg-[var(--rule)]" />
+      <div className="mt-2 space-y-px">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-11 w-full animate-pulse rounded bg-[var(--rule)]" />
+        ))}
+      </div>
+      <div className="mt-5 h-4 w-32 animate-pulse rounded bg-[var(--rule)]" />
+    </section>
+  );
+}
+
 export async function DeskHotThemes() {
   const blocks = await getFeaturedThemeBlocks().catch(() => []);
   if (blocks.length === 0) return null;

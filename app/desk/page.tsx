@@ -6,8 +6,10 @@ import { getDeskLeaderboard, type DeskRow } from "@/lib/desk-leaderboard";
 import DeskRecencyLedger, {
   DeskRecencyLedgerFallback,
 } from "./desk-recency-ledger";
-import { DeskHotThemes } from "./desk-hot-themes";
-import DeskExchangeSection from "./desk-exchange-section";
+import { DeskHotThemes, DeskHotThemesFallback } from "./desk-hot-themes";
+import DeskExchangeSection, {
+  DeskExchangeSectionFallback,
+} from "./desk-exchange-section";
 import DeskLeaderboardTable, {
   type DeskTableRow,
 } from "./desk-leaderboard-table";
@@ -121,13 +123,13 @@ export default async function DeskPage() {
         </div>
 
         <div className="mt-12">
-          <Suspense fallback={null}>
+          <Suspense fallback={<DeskExchangeSectionFallback />}>
             <DeskExchangeSection />
           </Suspense>
         </div>
 
         <div className="mt-12">
-          <Suspense fallback={null}>
+          <Suspense fallback={<DeskHotThemesFallback />}>
             <DeskHotThemes />
           </Suspense>
         </div>
