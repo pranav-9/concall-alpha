@@ -4,6 +4,7 @@ import * as React from "react";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { analytics } from "@/lib/analytics";
 
 type MissingSectionRequestButtonProps = {
   companyCode: string;
@@ -99,6 +100,7 @@ export function MissingSectionRequestButton({
         );
       }
 
+      analytics.sectionRequestSubmitted(companyCode, sectionId);
       setRequested(true);
       toast.success(`${sectionTitle} requested`);
     } catch {
