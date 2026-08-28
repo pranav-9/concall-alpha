@@ -52,6 +52,9 @@ const missingSectionState = (
   sectionId: string,
   sectionTitle: string,
   description: string,
+  // Valuation Check fires its own empty_section beacon (no_valuation / unrated /
+  // stale), so it opts out here to avoid double-counting the empty view.
+  emitEmptyView = true,
 ) => (
   <MissingSectionState
     companyCode={overview.company_code}
@@ -59,6 +62,7 @@ const missingSectionState = (
     sectionId={sectionId}
     sectionTitle={sectionTitle}
     description={description}
+    emitEmptyView={emitEmptyView}
   />
 );
 
@@ -497,6 +501,7 @@ export async function ValuationCheckPanel({ overview }: CompanyDetailSectionProp
           "valuation-check",
           "Valuation Check",
           "We have not published a valuation read for this company yet.",
+          false,
         )
       )}
     </SectionCard>

@@ -175,6 +175,18 @@ export const analytics = {
       text_len: Number.isFinite(textLen) ? textLen : undefined,
     }),
 
+  /** A one-click "Request this section" was submitted from a company page — a
+   *  pre-signup intent signal (someone asks for the missing/withheld content in
+   *  front of them). Fires on a successful POST to /api/user-requests, not on the
+   *  raw click, so failed/duplicate attempts don't inflate it. Was previously
+   *  invisible: the click survived only as a generic `$autocapture`. */
+  sectionRequestSubmitted: (companyCode: string, sectionId: string) =>
+    track("section_request_submitted", {
+      company_code: companyCode,
+      section_id: sectionId,
+      surface: "company_page",
+    }),
+
   /** A section helpfulness poll was answered — which sections deliver felt value. */
   feedbackPollResponse: (sectionId: string, value: string, companyCode?: string) =>
     track("feedback_poll_response", {
