@@ -9,6 +9,7 @@ import Navbar from "./(hero)/navbar";
 import { createClient } from "@/lib/supabase/server";
 import { FeedbackPollBanner } from "@/components/feedback-poll-banner";
 import { PageViewTracker } from "@/components/page-view-tracker";
+import { IdentityBridge } from "@/components/identity-bridge";
 import { SiteFooter } from "@/components/site-footer";
 import { Toaster } from "@/components/ui/sonner";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
@@ -79,20 +80,23 @@ async function NavbarWithUser() {
   const latestJournalDate = getAllPostMeta()[0]?.date ?? null;
 
   return (
-    <Navbar
-      initialCompanies={initialCompanies}
-      latestJournalDate={latestJournalDate}
-      quarterLabel={currentReportingQuarter().label}
-      initialUser={
-        user
-          ? {
-              email: user.email ?? null,
-              name: user.user_metadata?.full_name ?? null,
-              avatar: user.user_metadata?.avatar_url ?? null,
-            }
-          : null
-      }
-    />
+    <>
+      <IdentityBridge userId={user?.id ?? null} email={user?.email ?? null} />
+      <Navbar
+        initialCompanies={initialCompanies}
+        latestJournalDate={latestJournalDate}
+        quarterLabel={currentReportingQuarter().label}
+        initialUser={
+          user
+            ? {
+                email: user.email ?? null,
+                name: user.user_metadata?.full_name ?? null,
+                avatar: user.user_metadata?.avatar_url ?? null,
+              }
+            : null
+        }
+      />
+    </>
   );
 }
 

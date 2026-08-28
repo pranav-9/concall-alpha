@@ -19,7 +19,6 @@ export default function ProtectedLayout({
                 <DeployButton />
               </div>
             </div>
-            {/* {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />} */}
           </div>
         </nav>
         <Navbar quarterLabel={currentReportingQuarter().label} />
