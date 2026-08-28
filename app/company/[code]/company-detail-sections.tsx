@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
 import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
@@ -30,8 +28,6 @@ import { IndustryContextSection } from "../components/industry-context-section";
 import { KeyVariablesSection } from "../components/key-variables-section";
 import { MissingSectionState } from "../components/missing-section-state";
 import { MoatAnalysisSection } from "../components/moat-analysis-section";
-import { SectionLoading } from "../components/section-loading";
-import { SubSectorSection } from "../components/sub-sector-section";
 import { ValuationCheckSection } from "../components/valuation-check-section";
 import { WalkTheTalkSection } from "../components/walk-the-talk-section";
 import {
@@ -67,24 +63,12 @@ const missingSectionState = (
 );
 
 export function IndustryContextPanel({ overview }: CompanyDetailSectionProps) {
+  // No self-Suspense: page.tsx wraps this panel once, like every sibling panel.
   return (
-    <Suspense fallback={<SectionLoading id="industry-context" title="Industry Context" />}>
-      <IndustryContextSection
-        companyCode={overview.company_code}
-        companyName={overview.company_name}
-      />
-    </Suspense>
-  );
-}
-
-export function SubSectorPanel({ overview }: CompanyDetailSectionProps) {
-  return (
-    <Suspense fallback={<SectionLoading id="sub-sector" title="Sub-sectors" />}>
-      <SubSectorSection
-        companyCode={overview.company_code}
-        companyName={overview.company_name}
-      />
-    </Suspense>
+    <IndustryContextSection
+      companyCode={overview.company_code}
+      companyName={overview.company_name}
+    />
   );
 }
 

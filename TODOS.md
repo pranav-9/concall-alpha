@@ -69,3 +69,19 @@ Captured with context so a future session can pick any item up cold. Source revi
 - **Pros:** Converts the overfitting critique into a scheduled validation with a concrete trigger; pinned fixtures surface drift as test failures. **Cons:** none material (~1 analysis session).
 - **Context:** Thresholds live in one constants block in `lib/score-trajectory.ts`; real-path fixtures in `tests/score-trajectory.test.ts`. Re-run the distribution script pattern from the 2026-06-12 feasibility analysis (memory: `project_trend_label_taxonomy_analysis`). Expect SAILIFE/NEULANDLAB-class boundary cases in new shapes.
 - **Depends on:** Re-score backlog execution (separate workstream; memory: `project_legacy_score_hiding`).
+
+## Industry/Sub-sector merge — deferred follow-ups (eng review 2026-08-28)
+
+### 1. Refactor SECTION_MAP to id-keyed object literals (P3)
+- **What:** Replace the positional `SECTION_MAP.foo = SECTIONS[n]` mapping in `app/company/constants.ts` with an id-keyed object literal (or derive the map from `SECTIONS` by id), so dormant entries can be pruned without a silent index shift.
+- **Why:** Today removing an earlier `SECTIONS[n]` element renumbers every later index — a footgun. It's the root cause behind keeping the now-dead `sub-sector` entry dormant (and the same applies to `walk-the-talk`/`community`). Codex outside-voice flagged it during the Industry re-enable.
+- **Pros:** Lets us actually delete dead section ids cleanly; removes a whole class of index-shift bugs. **Cons:** Touches a shared registry every section reads; needs a typecheck + quick browser pass to confirm no id drift.
+- **Context:** `SECTION_MAP` at `app/company/constants.ts:67-81` currently indexes into the `SECTIONS` tuple by position. Consumers use `SECTION_MAP.<name>`; keep those call sites stable, just change how the map is built.
+- **Depends on:** nothing.
+
+### 2. Alias `#sub-sector` hash → the merged Industry sub-anchor (P3)
+- **What:** Map the retired `#sub-sector` hash to `#industry-context-sub-sectors` (a sub-anchor on the Sub-sectors block) so stray bookmarks/external links land on the merged section instead of the Overview fallback.
+- **Why:** Merging Sub-sectors into Industry Context orphaned the `#sub-sector` hash; `lib/section-hash.ts` resolves unknown hashes to the fallback tab (Overview).
+- **Pros:** No dead deep-links. Small — `section-hash.ts` already prefix-matches `<sectionId>-<block>`, so adding an alias + a matching anchor id on the block is enough. **Cons:** Near-zero; low urgency since the Sub-sectors tab was never publicly live, so real bookmarks are unlikely.
+- **Context:** Resolver at `lib/section-hash.ts`; the Sub-sectors block lives inside `app/company/components/industry-context-section.tsx`. Add an `id="industry-context-sub-sectors"` (or similar) anchor and a `sub-sector → industry-context` alias in the resolver.
+- **Depends on:** nothing.

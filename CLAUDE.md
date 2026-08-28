@@ -63,7 +63,7 @@ Read [skills/concall-alpha-ui-patterns/SKILL.md](skills/concall-alpha-ui-pattern
 
 - **Verifying coverage counts:** PostgREST `neq.large` silently drops NULL-band rows, so it under-counts. Mirror `isDiscoveryListed` in JS instead, or you'll "confirm" 98 when the portal shows 100.
 
-- Industry Context is currently **not rendered** on the company page (`IndustryContextPanel` is defined in `app/company/[code]/company-detail-sections.tsx` but not imported into `page.tsx`). It was temporarily pulled while other sections get polished — do **not** re-wire it back into the page without checking with the user first.
+- Industry Context is a company-page tab (after Business Snapshot) with the **Sub-sectors** cards merged in at the bottom of the same card — one section, one fetch (`getCompanyIndustryAnalysis`, `cache()`-wrapped). The old standalone Sub-sectors section was retired (`sub-sector-section.tsx` deleted); its `sub-sector` id stays dormant in `constants.ts`/`SHORT_LABELS`/`section-card.tsx` (same pattern as walk-the-talk/community). The sub-sector tab entries are built by `buildEntries` in `app/company/components/sub-sector-entries.ts` and rendered by `SubSectorTabs`.
 - Business Snapshot renders **expanded by default** on the company page. The internal `<details>` blocks inside it (about "Read more", historical-economics drawer) are intentional *sub-element* collapses — don't flatten them.
 - Guidance History uses thread-style trails, not full comparison cards. Don't reintroduce comparison cards without a product reason.
 - `/admin` requires both `ADMIN_PANEL_PASSCODE` and `SUPABASE_SERVICE_ROLE_KEY`. If a feature seems to "not work locally," check `.env.local`.
