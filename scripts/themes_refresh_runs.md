@@ -12,3 +12,4 @@
 2026-08-20 | THEMES | adds=1 [defence-order-inflows:SANSERA]
 2026-08-20 | THEMES | adds=1 [ai-datacentre-fibre:MTARTECH]
 2026-08-20 | THEMES | adds=1 [defence-order-inflows:SHREEREF]
+2026-08-30 | THEMES | adds=4 [ai-datacentre-fibre:E2E,transmission-grid-capex:ADVAIT,defence-order-inflows:VINYAS,jewellery-gold-retail:SKYGOLD]
