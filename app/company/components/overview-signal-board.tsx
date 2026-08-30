@@ -260,23 +260,6 @@ function Header({
       </span>,
     );
   }
-  const segCount = overview.business_segment_mix?.length ?? 0;
-  const varCount = overview.key_variable_count ?? 0;
-  if (segCount > 0 || varCount > 0) {
-    chips.push(
-      <span
-        key="counts"
-        className="hidden lg:inline-flex items-center rounded-full border border-border/60 px-2.5 py-1 text-[11px] font-medium leading-none text-muted-foreground"
-      >
-        {[
-          segCount > 0 ? `${segCount} segments` : null,
-          varCount > 0 ? `${varCount} variables` : null,
-        ]
-          .filter(Boolean)
-          .join(" · ")}
-      </span>,
-    );
-  }
   if (overview.is_new) {
     chips.push(
       <span key="new" className={chipClass("emerald")}>
