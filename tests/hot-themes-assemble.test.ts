@@ -27,8 +27,13 @@ function boardRow(
   };
 }
 
-function theme(slug: string, sort: number): ThemeRow {
-  return { slug, title: slug.toUpperCase(), blurb: null, is_featured: true, sort };
+function theme(
+  slug: string,
+  sort: number,
+  hotness: number | null = null,
+  updated_at: string | null = null,
+): ThemeRow {
+  return { slug, title: slug.toUpperCase(), blurb: null, is_featured: true, sort, hotness, updated_at };
 }
 
 function member(themeSlug: string, code: string): ThemeMembershipRow {
@@ -116,6 +121,29 @@ function member(themeSlug: string, code: string): ThemeMembershipRow {
   );
   assert.equal(blocks.length, 1, "empty theme omitted");
   assert.equal(blocks[0].slug, "real");
+}
+
+// 6. hotness + updated_at carry through to the block (ordering itself is the data
+//    layer's job; assemble just carries the values it renders).
+{
+  const [block] = assembleThemeBlocks(
+    [theme("t", 0, 4, "2026-08-30T00:00:00Z")],
+    [member("t", "A")],
+    [boardRow("A", "Alpha", 8, 8, 6)],
+  );
+  assert.equal(block.hotness, 4, "hotness carried onto block");
+  assert.equal(block.updatedAt, "2026-08-30T00:00:00Z", "updatedAt carried onto block");
+}
+
+// 7. Absent hotness -> block.hotness null (no meter); the theme still renders.
+{
+  const [block] = assembleThemeBlocks(
+    [theme("t", 0)],
+    [member("t", "A")],
+    [boardRow("A", "Alpha", 8, 8, 6)],
+  );
+  assert.equal(block.hotness, null, "absent hotness -> null");
+  assert.equal(block.updatedAt, null, "absent updated_at -> null");
 }
 
 console.log("hot-themes-assemble: all assertions passed");

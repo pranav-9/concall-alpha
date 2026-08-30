@@ -5,6 +5,7 @@
 
 import Link from "next/link";
 
+import { InFocusPips } from "@/components/in-focus-pips";
 import { getFeaturedThemeTeasers } from "@/lib/themes/data";
 
 export async function HotThemesTeaser() {
@@ -29,8 +30,15 @@ export async function HotThemesTeaser() {
             className="flex items-baseline justify-between gap-4 border-t border-[var(--rule)] py-3"
           >
             <span className="house-display text-base text-[var(--ink)]">{theme.title}</span>
-            <span className="house-data house-micro shrink-0 text-[var(--ink-soft)]">
-              {theme.memberCount} {theme.memberCount === 1 ? "name" : "names"}
+            <span className="flex shrink-0 items-center gap-3">
+              <InFocusPips
+                value={theme.hotness}
+                updatedAt={theme.updatedAt}
+                className="text-[var(--ink)]"
+              />
+              <span className="house-data house-micro text-[var(--ink-soft)]">
+                {theme.memberCount} {theme.memberCount === 1 ? "name" : "names"}
+              </span>
             </span>
           </li>
         ))}

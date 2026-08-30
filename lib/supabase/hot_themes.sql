@@ -14,13 +14,29 @@ create table if not exists theme (
     title text not null,
     blurb text,                          -- one-line "why now" editorial claim (leads each block)
     is_featured boolean not null default false,
-    sort integer not null default 0,     -- display order among featured themes
+    sort integer not null default 0,     -- display order among featured themes (tiebreak under hotness)
+    -- "In Focus" attention meter, 1-5; null = no meter. Editorial, hand-set per
+    -- results season. This is the PRIMARY board ordering key (hotness desc, nulls
+    -- last, then sort) on both /themes and /desk. It is a measure of attention
+    -- (earnings momentum, re-rating, community buzz), NOT investment advice.
+    hotness smallint check (hotness is null or hotness between 1 and 5),
     updated_at timestamptz not null default now()
 );
 
--- Only featured themes are ever rendered or hand-maintained.
+-- Idempotent alter for databases created before hotness existed (2026-08-30).
+alter table theme add column if not exists hotness smallint;
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'theme_hotness_range') then
+    alter table theme add constraint theme_hotness_range
+      check (hotness is null or hotness between 1 and 5);
+  end if;
+end $$;
+
+-- Only featured themes are ever rendered or hand-maintained. Board order is
+-- hotness desc then sort, so index both.
 create index if not exists idx_theme_featured
-    on theme (sort) where is_featured;
+    on theme (hotness desc nulls last, sort) where is_featured;
 
 create table if not exists theme_membership (
     theme_slug text not null references theme (slug) on delete cascade,

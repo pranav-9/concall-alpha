@@ -1,12 +1,13 @@
 // Desk "Hot themes" — featured lead + ranked rail (mockup 2b). Mirrors the
-// /themes editorial structure: the hottest theme (highest average Read of its
-// covered names) gets real estate — a why-now line and its top names with reads
+// /themes editorial structure: the hottest theme (highest "In Focus" hotness)
+// gets real estate — a why-now line and its top names with reads
 // — while the rest sit as a compact ranked strip below. Counts + averages only;
 // the full member boards live on /themes. Reads the same live board as /themes,
 // so a name's Read is identical on both. Renders the whole section or nothing.
 
 import Link from "next/link";
 
+import { InFocusPips } from "@/components/in-focus-pips";
 import { BANDS, bandForScore } from "@/lib/score-band";
 import { getFeaturedThemeBlocks } from "@/lib/themes/data";
 import type { ThemeBlock, ThemeMember } from "@/lib/themes/types";
@@ -24,17 +25,19 @@ type ScoredTheme = ThemeBlock & {
   leaders: ThemeMember[];
 };
 
+// Compute avgRead + leaders for display ONLY. Order is NOT touched here: blocks
+// arrive already sorted by "In Focus" hotness (lib/themes/data.ts), and /desk
+// preserves that so it agrees with /themes. (It used to re-sort by avgRead, which
+// split the two surfaces apart.)
 function scoreThemes(blocks: ThemeBlock[]): ScoredTheme[] {
-  return blocks
-    .map((block) => {
-      const scored = block.members.filter((m) => !m.belowCut && m.readScore != null);
-      const avgRead =
-        scored.length > 0
-          ? scored.reduce((sum, m) => sum + (m.readScore ?? 0), 0) / scored.length
-          : null;
-      return { ...block, avgRead, leaders: scored.slice(0, 3) };
-    })
-    .sort((a, b) => (b.avgRead ?? -1) - (a.avgRead ?? -1));
+  return blocks.map((block) => {
+    const scored = block.members.filter((m) => !m.belowCut && m.readScore != null);
+    const avgRead =
+      scored.length > 0
+        ? scored.reduce((sum, m) => sum + (m.readScore ?? 0), 0) / scored.length
+        : null;
+    return { ...block, avgRead, leaders: scored.slice(0, 3) };
+  });
 }
 
 /** Small band-coloured dot — the same colour a company's score circle carries. */
@@ -65,7 +68,14 @@ function FeaturedTheme({ theme }: { theme: ScoredTheme }) {
     <div className="rounded-lg border border-[var(--rule)] border-l-2 border-l-[var(--signal)] bg-[var(--paper-2)] p-5 sm:p-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_15rem]">
         <div className="min-w-0">
-          <p className="house-data house-micro text-[var(--signal)]">#1 hottest · this quarter</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="house-data house-micro text-[var(--signal)]">#1 hottest · this quarter</p>
+            <InFocusPips
+              value={theme.hotness}
+              updatedAt={theme.updatedAt}
+              className="text-[var(--ink)]"
+            />
+          </div>
           <h3 className="house-display mt-2 text-xl sm:text-2xl">
             <Link
               href="/themes"
@@ -153,6 +163,7 @@ export async function DeskHotThemes() {
 
   const themes = scoreThemes(blocks);
   const [featured, ...rest] = themes;
+  const hasInFocus = themes.some((t) => t.hotness != null);
 
   return (
     <section aria-labelledby="desk-themes" className="house-block">
@@ -160,6 +171,12 @@ export async function DeskHotThemes() {
       <h2 id="desk-themes" className="house-display mt-2 text-2xl sm:text-3xl">
         Hot themes
       </h2>
+      {hasInFocus && (
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--ink-soft)]">
+          Ordered by <span className="text-[var(--ink)]">In Focus</span> — how much each theme is
+          drawing attention now. A measure of attention, not investment advice.
+        </p>
+      )}
 
       <div className="mt-6">
         <FeaturedTheme theme={featured} />
@@ -170,6 +187,11 @@ export async function DeskHotThemes() {
           {rest.map((theme, i) => {
             const metrics = (
               <>
+                <InFocusPips
+                  value={theme.hotness}
+                  updatedAt={theme.updatedAt}
+                  className="text-[var(--ink)]"
+                />
                 {theme.avgRead != null ? (
                   <ReadValue read={theme.avgRead} />
                 ) : (
