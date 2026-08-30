@@ -65,6 +65,7 @@ const Navbar = ({
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
   const navItems = [
     { href: "/desk", label: "Desk" },
+    { href: "/announcements", label: "Announcements" },
     { href: "/themes", label: "Themes" },
     { href: "/leaderboards", label: "Leaderboards" },
     { href: "/sectors", label: "Sectors" },

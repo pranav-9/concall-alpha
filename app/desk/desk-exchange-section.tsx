@@ -35,5 +35,7 @@ export function DeskExchangeSectionFallback() {
 
 export default async function DeskExchangeSection() {
   const data = await getExchangeDeskData();
-  return <DeskExchangeUpdates data={data} />;
+  // Desk shows the compact teaser only; the full feed + below-cut list live on
+  // the dedicated /announcements page (linked from the teaser).
+  return <DeskExchangeUpdates data={data} variant="compact" />;
 }

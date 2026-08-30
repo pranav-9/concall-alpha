@@ -34,6 +34,9 @@ const BUCKET_ORDER: { key: RecencyBucketKey; label: string }[] = [
 const MAX_COLLAPSED = 18;
 // The below-cut watch list is a smaller signal — keep the default slice tight.
 const MAX_BELOW_CUT = 8;
+// The desk carries only a compact teaser (recency top slice) that links out to
+// the full /announcements page; the full feed + below-cut list live there.
+const MAX_COMPACT = 6;
 
 type Filter = "all" | ExchangeImpact;
 
@@ -213,7 +216,12 @@ function BelowCutBlock({
   );
 }
 
-export default function DeskExchangeUpdates({ data }: { data: ExchangeDeskData }) {
+/**
+ * Full announcements experience — the covered-universe feed (recency spine +
+ * impact filter tabs + show-all) followed by the below-cut watch list. Lives on
+ * the dedicated /announcements page; the desk only shows the compact teaser.
+ */
+function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [expanded, setExpanded] = useState(false);
 
@@ -318,5 +326,64 @@ export default function DeskExchangeUpdates({ data }: { data: ExchangeDeskData }
 
       <BelowCutBlock updates={data.belowCut} windowDays={data.windowDays} />
     </>
+  );
+}
+
+/**
+ * Desk teaser — the most recent covered filings only, no filter tabs and no
+ * below-cut block, ending in a link to the full /announcements page. Keeps the
+ * desk to a single announcements section instead of the full tape.
+ */
+function CompactAnnouncements({ data }: { data: ExchangeDeskData }) {
+  if (data.total === 0) return null;
+  const visible = data.updates.slice(0, MAX_COMPACT);
+
+  return (
+    <section aria-labelledby="desk-exchange" className="house-block">
+      <p className="house-data house-micro flex items-center gap-2 text-[var(--ink-soft)]">
+        <span aria-hidden className="text-[var(--signal)]">
+          ●
+        </span>
+        Exchange filings · last {data.windowDays} days
+      </p>
+      <h2 id="desk-exchange" className="house-display mt-2 text-2xl sm:text-3xl">
+        What companies are announcing
+      </h2>
+      <p className="mt-2 max-w-2xl text-sm text-[var(--ink-soft)]">
+        BSE filings across the covered universe, read into plain English and filtered to the
+        business events — order wins, capex, deals, fundraises, approvals. The procedural noise is
+        left out.
+      </p>
+
+      <div className="mt-5 rounded-lg border border-[var(--rule)] bg-[var(--paper-2)] px-5 py-2 sm:px-6">
+        {visible.map((item) => (
+          <UpdateRow key={item.id} item={item} />
+        ))}
+      </div>
+
+      <Link
+        href="/announcements"
+        prefetch={false}
+        className={cn("house-link mt-4 inline-block", ROW_FOCUS)}
+      >
+        See all {data.total} announcements →
+      </Link>
+    </section>
+  );
+}
+
+export default function DeskExchangeUpdates({
+  data,
+  variant = "full",
+}: {
+  data: ExchangeDeskData;
+  // "compact" = desk teaser (top slice + link out); "full" = the /announcements
+  // page (whole covered feed + below-cut watch list).
+  variant?: "full" | "compact";
+}) {
+  return variant === "compact" ? (
+    <CompactAnnouncements data={data} />
+  ) : (
+    <FullAnnouncements data={data} />
   );
 }
