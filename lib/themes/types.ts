@@ -16,6 +16,11 @@ export const themeRowSchema = z.object({
   blurb: z.string().nullable().optional(),
   is_featured: z.boolean(),
   sort: z.number(),
+  // Editorial "In Focus" attention meter, 1-5; null = no pips. `.catch(null)` is
+  // deliberate: an out-of-range value coerces to null (renders no meter) rather
+  // than failing the whole row and vanishing the theme from the board.
+  hotness: z.number().int().min(1).max(5).nullable().optional().catch(null),
+  updated_at: z.string().nullable().optional(),
 });
 export type ThemeRow = z.infer<typeof themeRowSchema>;
 
@@ -58,6 +63,10 @@ export type ThemeBlock = {
   /** Count of RESOLVED members (rendered). A theme with zero resolved members is hidden. */
   memberCount: number;
   members: ThemeMember[];
+  /** Editorial "In Focus" attention meter, 1-5; null = no pips. Also the board ordering key. */
+  hotness: number | null;
+  /** ISO timestamp the theme row was last edited; dates the In-Focus tooltip. */
+  updatedAt: string | null;
 };
 
 /** Homepage teaser: title + raw membership count only. No board build. */
@@ -65,4 +74,6 @@ export type ThemeTeaser = {
   slug: string;
   title: string;
   memberCount: number;
+  hotness: number | null;
+  updatedAt: string | null;
 };

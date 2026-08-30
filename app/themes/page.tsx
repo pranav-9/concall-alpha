@@ -23,6 +23,7 @@ const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 export default async function ThemesPage() {
   const blocks = await getFeaturedThemeBlocks();
   const quarterLabel = currentReportingQuarter().label;
+  const showInFocusLegend = blocks.some((b) => b.hotness != null);
 
   return (
     <main className="relative isolate overflow-hidden">
@@ -36,8 +37,15 @@ export default async function ThemesPage() {
             <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
               What&apos;s working this quarter, and which of the companies we cover are riding it.
               Each name carries the same four scores as the leaderboard — Quarter, Growth, Valuation,
-              and our overall Read. Ranked by Read; rank 1 is the strongest overall pick in the theme.
+              and our overall Read. Rank 1 is the strongest overall pick in the theme.
             </p>
+            {showInFocusLegend && (
+              <p className="text-xs leading-relaxed text-muted-foreground/80">
+                Themes are ordered by <span className="font-medium text-foreground">In Focus</span> —
+                how much each is drawing attention now (earnings momentum, re-rating, community buzz).
+                It is a measure of attention, not investment advice.
+              </p>
+            )}
           </div>
         </section>
 

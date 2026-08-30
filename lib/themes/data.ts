@@ -23,8 +23,12 @@ export async function getFeaturedThemeBlocks(): Promise<ThemeBlock[]> {
 
   const { data: themeData, error: themeError } = await supabase
     .from("theme")
-    .select("slug,title,blurb,is_featured,sort")
+    .select("slug,title,blurb,is_featured,sort,hotness,updated_at")
     .eq("is_featured", true)
+    // Ordering key: "In Focus" hotness desc (nulls last), sort as the stable
+    // tiebreak. Both /themes and /desk consume this order (desk no longer
+    // re-sorts by mean-Read), so the boards agree.
+    .order("hotness", { ascending: false, nullsFirst: false })
     .order("sort", { ascending: true });
 
   if (themeError) {
@@ -80,8 +84,9 @@ export async function getFeaturedThemeTeasers(): Promise<ThemeTeaser[]> {
 
   const { data: themeData, error } = await supabase
     .from("theme")
-    .select("slug,title")
+    .select("slug,title,hotness,updated_at")
     .eq("is_featured", true)
+    .order("hotness", { ascending: false, nullsFirst: false })
     .order("sort", { ascending: true });
 
   if (error || !themeData || themeData.length === 0) return [];
@@ -104,6 +109,8 @@ export async function getFeaturedThemeTeasers(): Promise<ThemeTeaser[]> {
       slug: String(theme.slug),
       title: String(theme.title),
       memberCount: countBySlug.get(String(theme.slug)) ?? 0,
+      hotness: typeof theme.hotness === "number" ? theme.hotness : null,
+      updatedAt: typeof theme.updated_at === "string" ? theme.updated_at : null,
     }))
     .filter((teaser) => teaser.memberCount > 0);
 }

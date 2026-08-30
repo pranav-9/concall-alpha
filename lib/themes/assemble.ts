@@ -93,6 +93,8 @@ export function assembleThemeBlocks(
       blurb: theme.blurb ?? null,
       memberCount: members.length,
       members,
+      hotness: theme.hotness ?? null,
+      updatedAt: theme.updated_at ?? null,
     });
   }
 

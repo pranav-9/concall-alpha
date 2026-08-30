@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 
+import { InFocusPips } from "@/components/in-focus-pips";
 import { BOARD_READS } from "@/lib/board-read";
 import { BANDS, bandForScore } from "@/lib/score-band";
 import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
@@ -213,13 +214,16 @@ export function ThemeBlockView({
   ).length;
   return (
     <section className="border-t-2 border-foreground pt-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-1">
         <h2 className="text-xl font-semibold tracking-[-0.01em] text-foreground sm:text-2xl">
           {block.title}
         </h2>
-        <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
-          {block.memberCount} covered
-        </span>
+        <div className="flex flex-col items-end gap-0.5 text-foreground">
+          <InFocusPips value={block.hotness} updatedAt={block.updatedAt} />
+          <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+            {block.memberCount} covered
+          </span>
+        </div>
       </div>
       {block.blurb && (
         <p className="mt-2 max-w-[66ch] text-sm leading-relaxed text-muted-foreground">
