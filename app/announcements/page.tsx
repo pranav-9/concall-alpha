@@ -10,10 +10,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/announcements" },
 };
 
-// The tape is a live feed and the window is fixed in the data layer, so keep the
-// page fresh rather than statically cached.
-export const revalidate = 300;
-
 export default async function AnnouncementsPage() {
   const data = await getExchangeDeskData();
   const isEmpty = data.total === 0 && data.belowCut.length === 0;
