@@ -14,7 +14,7 @@ import {
   getOverviewSignalExtras,
   type OverviewSignalExtras,
 } from "@/lib/overview-signal-board";
-import { TRAJECTORIES, TRAJECTORY_NOISE } from "@/lib/score-trajectory";
+import { TRAJECTORIES } from "@/lib/score-trajectory";
 import { cn } from "@/lib/utils";
 import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
 import { TIER_LABELS, type WalkTheTalkTier } from "@/lib/walk-the-talk/types";
@@ -301,9 +301,9 @@ function Header({
 }
 
 /** Overall read numeral + the streamed board position. Lives inside The Read
- * card so the number sits next to the sentence that explains it. The one-word
- * configuration label (band-tinted) sits under the numeral so the scoreboard
- * carries its own read without a separate pill up in the story row. */
+ * card so the number sits next to the sentence that explains it. The board-read
+ * verdict word (band-tinted) sits under the numeral, carrying the scoreboard's
+ * own read; the story row above carries the neutral business-descriptor chip. */
 function OverallRead({
   overview,
   streamPosition,
@@ -384,20 +384,15 @@ function Synthesis({
 }) {
   const { read } = overview;
   const def = BOARD_READS[read.key];
-  // The synthesized story-engine one-liner (company_story, attached to read in
-  // company-overview-cache.ts) wins over the generic bucket when present;
-  // otherwise the read falls back to the bucket label + gloss. Colour + twist
-  // stay driven by the composite bucket either way.
-  const pillLabel = read.storyEngine ?? read.label;
+  // Two labels, each next to the thing it describes. The story-engine descriptor
+  // (company_story.engine_tag — "what kind of business") rides the story row as a
+  // NEUTRAL chip; the board-read verdict word + its colour both come from `def`
+  // and sit under the score, where a band tint belongs on an actual verdict.
+  // engine_tag renders verbatim — caps come from the data, never a code
+  // transform, since a tag can carry acronyms (NBFC, EV, B2B). glossLine still
+  // prefers the synthesized story line over the bucket gloss.
+  const engineTag = read.storyEngine;
   const glossLine = read.storyLine ?? def.gloss;
-  // "Twist": the latest print vs the standing 4Q leg. Gated at the re-score
-  // noise floor (±0.5) — a move drift can explain never earns a direction.
-  const twist =
-    overview.latest_score != null && overview.quarter_4q_avg != null
-      ? overview.latest_score - overview.quarter_4q_avg
-      : null;
-  const twistUp = twist != null && twist >= TRAJECTORY_NOISE;
-  const twistDown = twist != null && twist <= -TRAJECTORY_NOISE;
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5 lg:px-6">
@@ -405,19 +400,8 @@ function Synthesis({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className={kickerClass}>The story</span>
-            {(twistUp || twistDown) && (
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
-                  twistUp
-                    ? "bg-teal-500/10 text-teal-700 dark:text-teal-300"
-                    : "bg-rose-500/10 text-rose-700 dark:text-rose-300",
-                )}
-              >
-                {twistUp
-                  ? "▲ Positive twist · latest above 4Q avg"
-                  : "▼ Negative twist · latest below 4Q avg"}
-              </span>
+            {engineTag && (
+              <span className={chipClass("slate")}>{engineTag}</span>
             )}
           </div>
           <p
@@ -433,7 +417,7 @@ function Synthesis({
           <OverallRead
             overview={overview}
             streamPosition={streamPosition}
-            readLabel={pillLabel}
+            readLabel={def.label}
             readClass={def.textClass}
           />
         </div>
