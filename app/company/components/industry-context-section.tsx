@@ -27,6 +27,8 @@ import { formatShortDate, type ThemeItemWithSource } from "../[code]/page-helper
 import { SectionCard, SectionUpdatedAt } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
+import { SubSectorTabs } from "./sub-sector-tabs";
+import { buildEntries } from "./sub-sector-entries";
 
 type RenderDrawerCardArgs = {
   title: string;
@@ -471,6 +473,9 @@ export async function IndustryContextSection({
 }: IndustryContextSectionProps) {
   const analysis = await getCompanyIndustryAnalysis(companyCode);
   const generatedAtShort = formatShortDate(analysis?.generatedAtRaw);
+  // Sub-sector cards (formerly their own section) render at the bottom of this
+  // card. Built from the same single fetch — no extra query.
+  const subSectorEntries = buildEntries(analysis);
 
   return (
     <SectionCard
@@ -718,6 +723,21 @@ export async function IndustryContextSection({
                   showAccentStrip: true,
                 })}
                 {renderTailwindsHeadwindsSection(analysis)}
+              </div>
+            )}
+
+            {subSectorEntries.length > 0 && (
+              <div className={`${elevatedBlockClass} p-4 space-y-3`}>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Sub-sectors
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    The specific sub-sectors this company plays in — each with its
+                    capital cycle, market-share picture, and supply-side read.
+                  </p>
+                </div>
+                <SubSectorTabs entries={subSectorEntries} />
               </div>
             )}
           </div>

@@ -1,11 +1,19 @@
 import type { NormalizedCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/types";
-import { getCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/get";
-import { formatShortDate } from "../[code]/page-helpers";
-import { SectionCard, SectionUpdatedAt } from "./section-card";
-import { MissingSectionState } from "./missing-section-state";
-import { SubSectorTabs, type SubSectorTabEntry } from "./sub-sector-tabs";
+import type { SubSectorTabEntry } from "./sub-sector-tabs";
 
-function buildEntries(
+/**
+ * Merge the two sub-sector substrates from a normalized industry analysis into
+ * a single ordered list of tab entries:
+ *   - company_fit.qualifyingSubSectors (context: description + why relevant)
+ *   - subSectorCards (depth: capital cycle, market-share, supply-side evidence)
+ * Keyed by a normalized sub-sector name so a card enriches its matching
+ * qualifying entry rather than duplicating it. Qualifying order wins; cards
+ * with no qualifying match are appended in card order.
+ *
+ * Extracted from the (now-retired) sub-sector-section.tsx so the merged
+ * Industry Context section can build the same entries from its single fetch.
+ */
+export function buildEntries(
   analysis: NormalizedCompanyIndustryAnalysis | null,
 ): SubSectorTabEntry[] {
   const qualifying = analysis?.companyFit?.qualifyingSubSectors ?? [];
@@ -59,44 +67,4 @@ function buildEntries(
   return order
     .map((key) => byKey.get(key))
     .filter((entry): entry is SubSectorTabEntry => Boolean(entry));
-}
-
-type SubSectorSectionProps = {
-  companyCode: string;
-  companyName: string | null;
-};
-
-export async function SubSectorSection({
-  companyCode,
-  companyName,
-}: SubSectorSectionProps) {
-  const analysis = await getCompanyIndustryAnalysis(companyCode);
-  const generatedAtShort = formatShortDate(analysis?.generatedAtRaw);
-  const qualifying = analysis?.companyFit?.qualifyingSubSectors ?? [];
-  const cards = analysis?.subSectorCards ?? [];
-  const isEmpty = qualifying.length === 0 && cards.length === 0;
-  const entries = isEmpty ? [] : buildEntries(analysis);
-
-  return (
-    <SectionCard
-      id="sub-sector"
-      title="Sub-sectors"
-      feedbackEnabled={!isEmpty}
-      feedbackCompanyCode={companyCode}
-      feedbackCompanyName={companyName}
-      headerAction={<SectionUpdatedAt date={generatedAtShort} />}
-    >
-      {isEmpty ? (
-        <MissingSectionState
-          companyCode={companyCode}
-          companyName={companyName}
-          sectionId="sub-sector"
-          sectionTitle="Sub-sectors"
-          description="We have not generated sub-sector-specific cards for this company yet."
-        />
-      ) : (
-        <SubSectorTabs entries={entries} />
-      )}
-    </SectionCard>
-  );
 }
