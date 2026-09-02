@@ -83,6 +83,7 @@ const Navbar = ({
         <div className="flex items-center gap-3">
           <Link
             href="/auth/login"
+            onClick={() => setIsMenuOpen(false)}
             className={cn(
               "inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
             )}
@@ -91,6 +92,7 @@ const Navbar = ({
           </Link>
           <Link
             href="/auth/sign-up"
+            onClick={() => setIsMenuOpen(false)}
             className={cn(
               "inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-foreground bg-foreground px-3 py-2 text-xs font-medium text-background transition-colors hover:bg-foreground/90",
             )}
@@ -105,12 +107,14 @@ const Navbar = ({
       <div className="flex gap-2">
         <Link
           href="/auth/login"
+          onClick={() => setIsMenuOpen(false)}
           className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
         >
           Sign in
         </Link>
         <Link
           href="/auth/sign-up"
+          onClick={() => setIsMenuOpen(false)}
           className="inline-flex h-9 items-center justify-center rounded-md border border-transparent bg-foreground px-3 text-sm font-medium text-background shadow-sm transition-colors hover:bg-foreground/90"
         >
           Sign up
@@ -165,6 +169,15 @@ const Navbar = ({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMenuOpen]);
+
+  // The Navbar lives in the root layout, so isMenuOpen survives client
+  // navigation. Close on every route change; the [isMenuOpen] effect's cleanup
+  // then restores body.overflow, releasing the scroll-lock. Without this,
+  // tapping Sign in / Sign up (or any menu link) leaves the menu, its backdrop,
+  // and the scroll-lock open over the new page.
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const element = navRef.current;
