@@ -213,14 +213,17 @@ expectRead("mid-band quarter", { concallScore: 6.7, growthScore: 7.2, valuationS
 
 // The residual makes the same price check as every other branch (2026-08-13):
 // a mid-quality row with an extreme price must not shrug it off as "Balanced",
-// or the Read contradicts the Valuation cell beside it. Leg values are the real
-// rows that motivated the split (WINDLAS / POKARNA / mid-with-no-valuation).
+// or the Read contradicts the Valuation cell beside it. "Mid quality" means a
+// mildly_bullish quarter (6.7) — neither STRONG_QTR nor SOFT_QTR — so no
+// divergence or strong/soft-both family fires and the row lands in the residual.
 expectRead("mid quality, cheap", { concallScore: 6.7, growthScore: 7.8, valuationScore: 6.2 }, "cheap_forming");
-expectRead("mid quality, rich", { concallScore: 5.6, growthScore: 7.1, valuationScore: 2.6 }, "priced_ahead");
-expectRead("mid quality, no price", { concallScore: 5.8, growthScore: 7.2, valuationScore: null }, "unpriced");
-// Strong print, moderate outlook, rich price also lands in the residual — the
-// reason the rich lean's label is print-agnostic ("Priced ahead of it").
-expectRead("strong print, moderate outlook, rich", { concallScore: 7.5, growthScore: 7.2, valuationScore: 1.8 }, "priced_ahead");
+expectRead("mid quality, rich", { concallScore: 6.7, growthScore: 7.1, valuationScore: 2.6 }, "priced_ahead");
+expectRead("mid quality, no price", { concallScore: 6.7, growthScore: 7.2, valuationScore: null }, "unpriced");
+// A strong print with a moderate outlook is the "Peaking" divergence, not the
+// residual (2026-09-02): moderate growth (5.8–6.4) counts as the cooling side of
+// a divergence (in SOFT_GROWTH, mirroring `neutral` in SOFT_QTR), so it fires
+// before any price check — the rich price never reaches a label.
+expectRead("strong print, moderate outlook", { concallScore: 7.5, growthScore: 6.2, valuationScore: 1.8 }, "peaking");
 
 // The Read can never contradict the columns above it: a row labelled cheap must
 // have a valuation in a cheap band.
