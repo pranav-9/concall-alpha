@@ -240,7 +240,15 @@ const STRONG_GROWTH: ReadonlySet<GrowthBandKey> = new Set<GrowthBandKey>([
   "strong",
   "solid",
 ]);
+// "moderate" (5.8–6.4) sits below the growth-band median (6.5) on the amber
+// caution side, so it counts as the cooling/soft side of a divergence — mirroring
+// the quarter side, where the middle band `neutral` is in SOFT_QTR. Without it,
+// the ~30% of the fleet in the moderate band could never read "Peaking" (strong
+// print, cooling outlook) or fall into the soft-on-both family; they leaked into
+// the price residual. The growth-band cut retune (v5, 2026-08-20) moved mid-6
+// scores from `soft` into `moderate` and this set was not updated to match.
 const SOFT_GROWTH: ReadonlySet<GrowthBandKey> = new Set<GrowthBandKey>([
+  "moderate",
   "soft",
   "weak",
 ]);
