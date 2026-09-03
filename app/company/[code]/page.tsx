@@ -85,7 +85,7 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
     {
       ...SECTION_MAP.valuationCheck,
       // Withhold the badge when the valuation is stale — the portal already
-      // withholds a valuation priced more than 4 days ago, so the tab must not
+      // withholds a valuation priced more than 10 days ago, so the tab must not
       // flash a score the section itself won't stand behind.
       meta:
         overview.valuation_score != null && !overview.valuation_stale
