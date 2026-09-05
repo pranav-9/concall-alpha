@@ -8,22 +8,18 @@ import * as React from "react";
  * rightmost and clips off-screen inside a narrow card on mobile. On mount (and
  * on resize) this opens the table scrolled to the far right so the latest
  * quarter is visible by default, and shows edge fades that reflect the actual
- * scroll position — a left fade when older columns are hidden to the left, a
- * right fade when newer columns are hidden to the right. Desktop, where the
- * table fits, gets no fades and no scroll.
+ * scroll position — a right fade when newer columns are hidden to the right.
+ * Desktop, where the table fits, gets no fade and no scroll.
  */
 export function ScrollToLatest({ children }: { children: React.ReactNode }) {
   const scrollRef = React.useRef<HTMLDivElement | null>(null);
-  const [edges, setEdges] = React.useState({ left: false, right: false });
+  const [edges, setEdges] = React.useState({ right: false });
 
   const syncEdges = React.useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const maxScroll = el.scrollWidth - el.clientWidth;
-    setEdges({
-      left: el.scrollLeft > 1,
-      right: el.scrollLeft < maxScroll - 1,
-    });
+    setEdges({ right: el.scrollLeft < maxScroll - 1 });
   }, []);
 
   React.useEffect(() => {
@@ -47,15 +43,9 @@ export function ScrollToLatest({ children }: { children: React.ReactNode }) {
       <div ref={scrollRef} onScroll={syncEdges} className="overflow-x-auto">
         {children}
       </div>
-      {/* Left fade sits UNDER the table's sticky first column (z-10) — the
-          Key Variables table pins its metric-name column, so the fade must not
-          wash over the labels. It still shows on a table with no sticky column. */}
-      {edges.left ? (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-0 z-[5] w-8 bg-gradient-to-r from-background to-transparent"
-        />
-      ) : null}
+      {/* No left fade: the only consumer (Key Variables) pins its first column,
+          which would sit on top of it. The pinned labels are the "more to the
+          left" cue. */}
       {edges.right ? (
         <div
           aria-hidden

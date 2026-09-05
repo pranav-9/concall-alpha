@@ -5,7 +5,7 @@ import type {
   NormalizedKeyVariablesSnapshot,
 } from "@/lib/key-variables-snapshot/types";
 import { Button } from "@/components/ui/button";
-import { KpiSparkline } from "./kpi-sparkline-lazy";
+import { KpiHistoryTrendCell } from "./kpi-history-trend-cell";
 import { ScrollToLatest } from "./scroll-to-latest";
 import { ExpandableText } from "./expandable-text";
 import {
@@ -239,7 +239,7 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
                   which on a phone scrolled the metric names off the left edge
                   and left unlabeled rows of numbers. The label column pins so
                   every row is named at any scroll position. */}
-              <th className="sticky left-0 z-10 max-w-[7.5rem] bg-background px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:max-w-none sm:px-3">
+              <th className="sticky left-0 z-10 bg-background px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:px-3">
                 Metric
               </th>
               {/* Trend sparkline is desktop-only: at 390px it cost 100px of a
@@ -263,18 +263,19 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
               const numericValuesByPeriod = toNumericValuesByPeriod(row.valuesByPeriod);
               return (
               <tr key={row.metric} className="border-b border-border/20 last:border-b-0">
-                <td className="sticky left-0 z-10 max-w-[7.5rem] bg-background px-2 py-2 text-[11px] font-medium leading-snug text-foreground sm:max-w-none sm:px-3 sm:text-[12px]">
-                  {row.metric}
+                <td className="sticky left-0 z-10 bg-background px-2 py-2 text-[11px] font-medium leading-snug text-foreground sm:px-3 sm:text-[12px]">
+                  {/* max-width is ignored on table cells; the inner block is
+                      what caps the pinned column at ~7.5rem on a phone so the
+                      period columns keep most of the width. */}
+                  <div className="max-w-[7.5rem] sm:max-w-none">{row.metric}</div>
                 </td>
-                <td className="hidden px-3 py-2 sm:table-cell">
-                  <KpiSparkline
-                    ariaLabel={`${row.metric} trend across ${periods.length} periods`}
-                    points={periods.map((period) => ({
-                      period,
-                      value: numericValuesByPeriod[period] ?? null,
-                    }))}
-                  />
-                </td>
+                <KpiHistoryTrendCell
+                  ariaLabel={`${row.metric} trend across ${periods.length} periods`}
+                  points={periods.map((period) => ({
+                    period,
+                    value: numericValuesByPeriod[period] ?? null,
+                  }))}
+                />
                 {periods.map((period) => {
                   const delta = getPeriodOverPeriodDelta(
                     periods,

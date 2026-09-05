@@ -32,15 +32,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowUpDown, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { Fragment, useState } from "react";
+import { Fragment, useId, useMemo, useState } from "react";
 
 import { ColumnInfo } from "@/app/company/components/column-info";
 import { analytics } from "@/lib/analytics";
-import {
-  STICKY_NAME_CELL,
-  STICKY_NAME_HEAD,
-  TABLE_SCROLL_HINT,
-} from "@/lib/design/shell";
+import { TOUCH_TARGET, TOUCH_TARGET_ICON } from "@/lib/design/shell";
+import { useMinWidth } from "@/hooks/use-min-width";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -551,11 +548,13 @@ function LegStat({
   );
 }
 
-// Sticky first column (name stays visible while score columns scroll on a
-// phone) lives in the shared shell tokens — STICKY_NAME_HEAD / STICKY_NAME_CELL
-// / TABLE_SCROLL_HINT — so this board and the four DataTable/section boards
-// share one implementation. The cell token carries the opaque base, the
-// group-hover tint overlay, the width cap, and the lg revert.
+// Two layouts, one state. Below lg the board is a phone list (one row per
+// company, all six numbers in view); from lg it is the six-column table. Both
+// are rendered on the server (CSS-toggled) so hydration matches; once
+// matchMedia has answered on the client, the layout that is display:none is
+// unmounted so a sort or a remove reconciles one tree, not two. The old
+// sticky-first-column phone table is gone — it left the Read column two
+// screens to the right.
 
 export function ScoreBoardTable({
   rows,
@@ -594,9 +593,16 @@ export function ScoreBoardTable({
   overallRankByCode?: Record<string, number>;
 }) {
   const router = useRouter();
+  const sortSelectId = useId();
   const [sort, setSort] = useState<SortState>({ key: "coverageRank", direction: "asc" });
   const [removingCompanyCode, setRemovingCompanyCode] = useState<string | null>(null);
-  const sortedRows = sortRows(deriveRows(rows, coverageCutRank), sort);
+  const sortedRows = useMemo(
+    () => sortRows(deriveRows(rows, coverageCutRank), sort),
+    [rows, coverageCutRank, sort],
+  );
+  // null until hydration → render both layouts (matches the server HTML);
+  // then only the one the viewport needs. See hooks/use-min-width.
+  const isLg = useMinWidth(1024);
   const showRemove = watchlistId != null;
   // Only show Δ once there is prior data to compare against — otherwise the first
   // week (or forever, pre-DDL) would render a column of empty dots.
@@ -607,24 +613,26 @@ export function ScoreBoardTable({
   // ≤ coverageCutRank scored rows).
   const firstBelowCutIndex = sortedRows.findIndex((row) => row.dim);
 
-  const handleSort = (key: SortKey) => {
-    const nextDirection =
+  const applySort = (key: SortKey, direction: SortDirection) => {
+    analytics.leaderboardSort(showRemove ? "watchlist" : "overall", key, direction);
+    setSort({ key, direction });
+  };
+
+  // Column header click: a new key opens in its default direction, the same
+  // key flips.
+  const handleSort = (key: SortKey) =>
+    applySort(
+      key,
       sort.key !== key
         ? defaultDirectionForKey(key)
         : sort.direction === "asc"
           ? "desc"
-          : "asc";
-    analytics.leaderboardSort(showRemove ? "watchlist" : "overall", key, nextDirection);
-    setSort({ key, direction: nextDirection });
-  };
+          : "asc",
+    );
 
-  // The phone list's sort <select>: picking a key opens it in that key's default
-  // direction; the caret button beside it flips direction via handleSort.
-  const handleSortSelect = (key: SortKey) => {
-    const nextDirection = defaultDirectionForKey(key);
-    analytics.leaderboardSort(showRemove ? "watchlist" : "overall", key, nextDirection);
-    setSort({ key, direction: nextDirection });
-  };
+  // The phone list's sort <select>: picking a key opens it in that key's
+  // default direction; the caret button beside it flips via handleSort.
+  const handleSortSelect = (key: SortKey) => applySort(key, defaultDirectionForKey(key));
 
   const sortDirectionLabel = (key: SortKey) =>
     sort.key === key ? (sort.direction === "asc" ? "ascending" : "descending") : "none";
@@ -811,7 +819,7 @@ export function ScoreBoardTable({
               disabled={removingCompanyCode === row.companyCode}
               aria-label={`Remove ${row.companyName} from this watchlist`}
               title="Remove from watchlist"
-              className="-mr-1 inline-flex shrink-0 items-center justify-center rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 dark:hover:bg-rose-950/20 dark:hover:text-rose-400"
+              className={`-mr-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground/60 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 dark:hover:bg-rose-950/20 dark:hover:text-rose-400 ${TOUCH_TARGET_ICON}`}
             >
               <X className="h-4 w-4" />
             </button>
@@ -828,23 +836,29 @@ export function ScoreBoardTable({
           board ranks on — two screens to the right. So below lg the board is a
           list: one row per company, all six numbers in view, no horizontal
           scroll. The table returns from lg, where it fits the shell. */}
+      {isLg !== true && (
       <div className="lg:hidden">
+        {/* flex-wrap: at 320px "Sort" + select + caret + "Read" would not fit
+            on one line. Touch targets: the select is 36px tall, the caret and
+            the pills carry the shell's invisible 44px hit area. */}
         <div
-          className="flex items-center justify-between gap-3 border-b px-3 py-2"
+          className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b px-3 py-2"
           style={{ borderColor: "var(--rule)" }}
         >
-          <label className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--ink-soft)" }}>
-            <span className="font-bold uppercase tracking-[0.09em]">Sort</span>
+          <div className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--ink-soft)" }}>
+            <label htmlFor={sortSelectId} className="font-bold uppercase tracking-[0.09em]">
+              Sort
+            </label>
             <select
+              id={sortSelectId}
               value={sort.key}
               onChange={(event) => handleSortSelect(event.target.value as SortKey)}
-              aria-label="Sort the board by"
-              className="rounded-md border border-border/60 bg-background px-1.5 py-1 text-[11px] font-medium text-foreground"
+              className={`min-h-9 rounded-md border border-border/60 bg-background px-2 py-1.5 text-[12px] font-medium text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${TOUCH_TARGET}`}
             >
               <option value="coverageRank">Rank</option>
               <option value="read">Read</option>
-              <option value="latestScore">ConcallScore (latest)</option>
-              <option value="fourQScore">ConcallScore (4Q avg)</option>
+              <option value="latestScore">Latest</option>
+              <option value="fourQScore">4Q avg</option>
               <option value="growthScore">Growth</option>
               <option value="valuationScore">Valuation</option>
               <option value="companyName">Company</option>
@@ -853,15 +867,15 @@ export function ScoreBoardTable({
               type="button"
               onClick={() => handleSort(sort.key)}
               aria-label={`Sort ${sort.direction === "asc" ? "descending" : "ascending"}`}
-              className="inline-flex items-center rounded-md border border-border/60 bg-background p-1 text-foreground"
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/60 bg-background text-foreground outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 ${TOUCH_TARGET_ICON}`}
             >
               {sort.direction === "asc" ? (
-                <ChevronUp className="h-3.5 w-3.5" />
+                <ChevronUp className="h-4 w-4" />
               ) : (
-                <ChevronDown className="h-3.5 w-3.5" />
+                <ChevronDown className="h-4 w-4" />
               )}
             </button>
-          </label>
+          </div>
           <div
             className="flex items-center gap-0.5 text-[11px] font-bold uppercase tracking-[0.09em]"
             style={{ color: "var(--warn)" }}
@@ -884,8 +898,9 @@ export function ScoreBoardTable({
           <p className="px-3 py-8 text-center text-sm text-muted-foreground">No results.</p>
         )}
       </div>
+      )}
+      {isLg !== false && (
       <div className="hidden lg:block">
-      <div aria-hidden className={TABLE_SCROLL_HINT} />
       <Table
         aria-label={
           showRemove
@@ -904,7 +919,7 @@ export function ScoreBoardTable({
                   ? sortDirectionLabel(sort.key)
                   : "none"
               }
-              className={`${STICKY_NAME_HEAD} px-3 py-3 text-foreground`}
+              className="px-3 py-3 text-foreground"
             >
               <div className="flex items-baseline gap-3">
                 {showDelta && (
@@ -1035,7 +1050,7 @@ export function ScoreBoardTable({
                       dim ? "opacity-55" : ""
                     }`}
                   >
-                    <TableCell className={`${STICKY_NAME_CELL} px-3 py-3`}>
+                    <TableCell className="px-3 py-3">
                       <div className="relative z-[1] flex items-baseline gap-2">
                         {showDelta && (
                           <span className="w-8 shrink-0 text-right">
@@ -1228,6 +1243,7 @@ export function ScoreBoardTable({
         </TableBody>
       </Table>
       </div>
+      )}
     </div>
   );
 }

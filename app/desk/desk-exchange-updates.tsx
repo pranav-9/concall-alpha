@@ -151,12 +151,12 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
         </div>
         {/* Wraps rather than truncates: a phone row whose name AND summary
             both end in "…" carried nothing. Two lines of summary is the cap. */}
-        <div className="mt-1 pl-[3.5rem]">
-          <span className="house-data house-micro mr-2 text-[var(--ink-soft)]">
-            {item.categoryLabel}
-          </span>
-          <span className="line-clamp-2 text-xs leading-snug text-[var(--ink-soft)]">{item.summary}</span>
-        </div>
+        {/* One clamped block: line-clamp is display:-webkit-box, so it has to
+            be the container, with the category label inline inside it. */}
+        <p className="mt-1 line-clamp-2 pl-[3.5rem] text-xs leading-snug text-[var(--ink-soft)]">
+          <span className="house-data house-micro mr-2">{item.categoryLabel}</span>
+          {item.summary}
+        </p>
       </div>
     </div>
   );

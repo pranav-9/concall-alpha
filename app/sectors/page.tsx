@@ -23,7 +23,7 @@ import {
   PAGE_SHELL,
   PANEL_CARD_NEUTRAL,
   TABLE_CARD_SKY,
-  TABLE_SCROLL_HINT,
+  TOUCH_TARGET,
 } from "@/lib/design/shell";
 
 type CompanyRow = {
@@ -487,7 +487,7 @@ export default async function SectorsPage({
                 numbers in view; the table returns from lg. Sorting stays on the
                 URL, so the pills below are plain links. */}
             <div className="lg:hidden">
-              <div className="flex flex-wrap items-center gap-1.5 border-b border-border/35 px-3 py-2 text-[11px] text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-2 border-b border-border/35 px-3 py-2 text-[11px] text-muted-foreground">
                 <span className="font-semibold uppercase tracking-[0.12em]">Sort</span>
                 {(
                   [
@@ -503,7 +503,7 @@ export default async function SectorsPage({
                     key={key}
                     href={headerHref(key)}
                     prefetch={false}
-                    className={`rounded-full border px-2 py-0.5 ${
+                    className={`inline-flex min-h-8 items-center rounded-full border px-2.5 py-1 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${TOUCH_TARGET} ${
                       sortBy === key
                         ? "border-foreground bg-foreground text-background"
                         : "border-border/60 bg-background/80 text-foreground"
@@ -669,13 +669,12 @@ export default async function SectorsPage({
                 </tbody>
               </table>
               </div>
-              <div aria-hidden className={TABLE_SCROLL_HINT} />
             </div>
 
             <div className="border-t border-border/35 px-4 py-3">
               {/* Nine lines of method on a phone; folded behind one line there. */}
               <details className="sm:hidden">
-                <summary className="cursor-pointer list-none text-[11px] font-medium text-muted-foreground underline decoration-border underline-offset-2 [&::-webkit-details-marker]:hidden">
+                <summary className="cursor-pointer list-none rounded-md py-1.5 text-[11px] font-medium text-muted-foreground underline decoration-border underline-offset-2 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden">
                   How the Read is computed
                 </summary>
                 <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">

@@ -8,10 +8,17 @@ interface ExpandableTextProps {
   text: string;
   className?: string;
   buttonClassName?: string;
-  previewLines?: number;
+  previewLines?: 2 | 3 | 4;
   /** Clamp and show the toggle only below `sm`; from `sm` the full text renders. */
   mobileOnly?: boolean;
 }
+
+// Full literal class strings so Tailwind's scanner generates every variant.
+const CLAMP_CLASS = {
+  2: { always: "line-clamp-2", mobile: "max-sm:line-clamp-2" },
+  3: { always: "line-clamp-3", mobile: "max-sm:line-clamp-3" },
+  4: { always: "line-clamp-4", mobile: "max-sm:line-clamp-4" },
+} as const;
 
 export function ExpandableText({
   text,
@@ -22,18 +29,7 @@ export function ExpandableText({
 }: ExpandableTextProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const lines = previewLines === 3 ? 3 : previewLines === 4 ? 4 : 2;
-  const clampClass = mobileOnly
-    ? lines === 3
-      ? "max-sm:line-clamp-3"
-      : lines === 4
-        ? "max-sm:line-clamp-4"
-        : "max-sm:line-clamp-2"
-    : lines === 3
-      ? "line-clamp-3"
-      : lines === 4
-        ? "line-clamp-4"
-        : "line-clamp-2";
+  const clampClass = CLAMP_CLASS[previewLines][mobileOnly ? "mobile" : "always"];
 
   return (
     <div className="max-w-4xl">

@@ -43,6 +43,7 @@ import type {
   NormalizedRevenueMixHistoryByUnit,
   NormalizedRevenueMixHistoryByUnitRow,
 } from "@/lib/business-snapshot/types";
+import { hasAnyNumericValue } from "@/lib/business-snapshot/has-any-numeric-value";
 
 const valueFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 1,
@@ -425,9 +426,8 @@ function RevenueHistoryModule({
   );
   const chartData = buildRevenueChartData(module, chartRows);
   const hasGraphView = chartData.length > 0;
-  const hasAnyValue = module.rows.some((row) =>
-    displayPeriods.some((period) => typeof row.valuesByPeriod[period] === "number"),
-  );
+  const hasAnyValue = hasAnyNumericValue(module.rows, displayPeriods, (row) => row.valuesByPeriod);
+  if (!hasAnyValue && module.insights.length === 0) return null;
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
@@ -614,6 +614,7 @@ function RevenueMixHistoryModule({
   );
   const chartData = buildMixChartData(module, orderedRows);
   const hasGraphView = chartData.length > 0;
+  const hasAnyValue = hasAnyNumericValue(module.rows, displayPeriods, (row) => row.mixByPeriod);
 
   const computeMixDelta = (row: NormalizedRevenueMixHistoryByUnitRow) => {
     if (displayPeriods.length === 0) return null;
@@ -655,12 +656,12 @@ function RevenueMixHistoryModule({
             )}
           </div>
         )}
-        {hasGraphView && (
+        {hasGraphView && hasAnyValue && (
           <ViewToggle value={activeView} onValueChange={setActiveView} />
         )}
       </div>
 
-      {activeView === "table" || !hasGraphView ? (
+      {!hasAnyValue ? null : activeView === "table" || !hasGraphView ? (
         <Table className="tabular-nums">
           <TableHeader className="bg-muted/45">
             <TableRow>
@@ -831,10 +832,9 @@ function RevenueHistorySegmentModule({
   const hasGraphView = chartData.length > 0;
   // A module whose rows carry no number at all (every year null) used to render
   // a full table of "—" cells and blank sparklines. Keep the takeaways, skip the
-  // empty grid.
-  const hasAnyValue = module.rows.some((row) =>
-    displayPeriods.some((period) => typeof row.revenueByYear[period] === "number"),
-  );
+  // empty grid — and skip the whole card when there are no takeaways either.
+  const hasAnyValue = hasAnyNumericValue(module.rows, displayPeriods, (row) => row.revenueByYear);
+  if (!hasAnyValue && module.insights.length === 0) return null;
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
@@ -1023,6 +1023,7 @@ function RevenueMixHistorySegmentModule({
   );
   const chartData = buildMixSegmentChartData(displayPeriods, chartRows);
   const hasGraphView = chartData.length > 0;
+  const hasAnyValue = hasAnyNumericValue(module.rows, displayPeriods, (row) => row.mixPercentByYear);
 
   const computeMixDelta = (row: NormalizedRevenueMixHistoryBySegmentRow) => {
     if (displayPeriods.length === 0) return null;
@@ -1055,12 +1056,12 @@ function RevenueMixHistorySegmentModule({
             </p>
           </div>
         )}
-        {hasGraphView && (
+        {hasGraphView && hasAnyValue && (
           <ViewToggle value={activeView} onValueChange={setActiveView} />
         )}
       </div>
 
-      {activeView === "table" || !hasGraphView ? (
+      {!hasAnyValue ? null : activeView === "table" || !hasGraphView ? (
         <Table className="tabular-nums">
           <TableHeader className="bg-muted/45">
             <TableRow>

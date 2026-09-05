@@ -41,7 +41,9 @@ const ROW_H = 15;
 const CHAR_W = 5.6;
 const LABEL_PAD = 8;
 
-const KIND_INK: Record<Marker["kind"], string> = {
+// Exported so the phone list (PriceAssumesList) paints the same markers in the
+// same three colours.
+export const KIND_INK: Record<Marker["kind"], string> = {
   case: "text-violet-600 dark:text-violet-400",
   delivered: "text-teal-600 dark:text-teal-400",
   ask: "text-orange-600 dark:text-orange-400",

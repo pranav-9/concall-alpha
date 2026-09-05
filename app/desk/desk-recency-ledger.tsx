@@ -185,12 +185,12 @@ function LedgerRow({ item }: { item: UnifiedUpdate }) {
           </span>
           {right}
         </div>
-        <div className="mt-1 pl-[3.5rem]">
+        {/* One clamped block (line-clamp is display:-webkit-box) with the
+            event label inline, so the row is two lines, not three. */}
+        <p className="mt-1 line-clamp-2 pl-[3.5rem] text-xs leading-snug text-[var(--ink-soft)]">
           <span className="house-data house-micro mr-2 text-[var(--signal)]">{event}</span>
-          {substance && (
-            <span className="line-clamp-2 text-xs leading-snug text-[var(--ink-soft)]">{substance}</span>
-          )}
-        </div>
+          {substance}
+        </p>
       </div>
     </>
   );

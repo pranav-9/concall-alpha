@@ -185,7 +185,7 @@ export function TopSectionTabs({
             navbar's underside to the bar's bottom edge, gutter to gutter. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -inset-x-3 -top-2 bottom-0 -z-10 bg-background/85 backdrop-blur-md dark:bg-slate-950/80 sm:hidden"
+          className="pointer-events-none absolute -inset-x-3 -top-2 bottom-0 -z-10 bg-background/92 dark:bg-slate-950/90 sm:hidden"
         />
         <div className="relative rounded-[1.5rem] border border-border/70 bg-background/88 px-2 py-2 shadow-[0_18px_45px_-34px_rgba(15,23,42,0.42)] backdrop-blur-xl dark:bg-slate-950/82 sm:px-3">
           <div className="pointer-events-none absolute inset-y-0 left-0 w-8 rounded-l-[1.5rem] bg-gradient-to-r from-background/85 via-background/35 to-transparent dark:from-slate-950/85 dark:via-slate-950/30" />

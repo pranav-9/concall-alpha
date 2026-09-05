@@ -25,7 +25,11 @@ import { PegMeter, pegBandFor, type PegBandKey } from "./valuation-peg-meter";
 import { ValuationScoreDial } from "./valuation-score-dial";
 import { ValuationScoreHistory } from "./valuation-score-history";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
-import { ValuationHorizonBar, ValuationHorizonLegend } from "./valuation-horizon-bar";
+import { KIND_INK, ValuationHorizonBar, ValuationHorizonLegend } from "./valuation-horizon-bar";
+import {
+  buildPriceAssumesRows,
+  type PriceAssumesInput,
+} from "@/lib/valuation-check/price-assumes-rows";
 import { ValuationSpectrumBar } from "./valuation-spectrum-bar";
 import type { ValuationScorePoint } from "@/lib/valuation-check/history";
 import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
@@ -219,57 +223,20 @@ function ScoreHistoryCard({ points }: { points: ValuationScorePoint[] }) {
  * labels render at ~6px at 390px, so below `sm` the ask, our cases and what the
  * company delivered are listed in the bar's own colours instead.
  */
-function PriceAssumesList({
-  impliedPct,
-  scenarios,
-  delivered,
-  metric,
-}: {
-  impliedPct: number;
-  scenarios: { downside: number | null; base: number | null; upside: number | null };
-  delivered: { key: string; label: string; pct: number }[];
-  metric: "growth" | "roe";
-}) {
-  const fmt = (n: number) => `${n.toFixed(n % 1 === 0 ? 0 : 1)}%`;
-  const rows: { key: string; label: string; pct: number; tone: string; strong?: boolean }[] = [];
-  const caseTone = "text-violet-600 dark:text-violet-400";
-  const deliveredTone = "text-teal-600 dark:text-teal-400";
-  if (scenarios.downside !== null)
-    rows.push({ key: "down", label: "Our downside case", pct: scenarios.downside * 100, tone: caseTone });
-  if (scenarios.base !== null)
-    rows.push({ key: "base", label: "Our base case", pct: scenarios.base * 100, tone: caseTone });
-  if (scenarios.upside !== null)
-    rows.push({ key: "up", label: "Our upside case", pct: scenarios.upside * 100, tone: caseTone });
-  for (const d of delivered) {
-    rows.push({
-      key: `d-${d.key}`,
-      // Delivered labels arrive as "10-yr delivered" / "TTM"; don't double the word.
-      label:
-        metric === "roe"
-          ? "Return on equity it earns"
-          : /delivered/i.test(d.label)
-            ? d.label.replace(/^./, (c) => c.toUpperCase())
-            : `${d.label} delivered`,
-      pct: d.pct,
-      tone: deliveredTone,
-    });
-  }
-  rows.sort((a, b) => a.pct - b.pct);
-  rows.push({
-    key: "ask",
-    label: metric === "roe" ? "The ask · implied by today's price" : "The ask · growth implied by today's price",
-    pct: impliedPct,
-    tone: "text-orange-600 dark:text-orange-400",
-    strong: true,
-  });
+function PriceAssumesList(input: PriceAssumesInput) {
+  const rows = buildPriceAssumesRows(input);
   return (
     <ul className="mt-3 divide-y divide-border/40 text-[12px] sm:hidden">
       {rows.map((row) => (
         <li key={row.key} className="flex items-baseline justify-between gap-3 py-1.5">
-          <span className={row.strong ? "font-medium text-foreground" : "text-muted-foreground"}>
+          <span className={row.kind === "ask" ? "font-medium text-foreground" : "text-muted-foreground"}>
             {row.label}
           </span>
-          <span className={`shrink-0 font-semibold tabular-nums ${row.tone}`}>{fmt(row.pct)}</span>
+          {/* toFixed(1) to match the hero number two lines up ("12.0%"), not the
+              bar's tick labels. */}
+          <span className={`shrink-0 font-semibold tabular-nums ${KIND_INK[row.kind]}`}>
+            {row.pct.toFixed(1)}%
+          </span>
         </li>
       ))}
     </ul>
