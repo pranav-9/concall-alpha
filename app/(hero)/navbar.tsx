@@ -211,8 +211,8 @@ const Navbar = ({
       id="global-navbar"
       className="sticky top-0 z-50 flex justify-center bg-background/38 backdrop-blur-lg dark:bg-background/70"
     >
-      <div className="relative w-full max-w-[1440px] px-3 py-2 sm:px-6 lg:px-10">
-        <div className="flex min-h-[4.25rem] items-center justify-between gap-3 rounded-[1.5rem] border border-border/60 bg-background/82 px-3 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.45)] dark:border-white/12 dark:bg-white/[0.05] dark:shadow-[0_18px_40px_-28px_rgba(0,0,0,0.9)] sm:px-4">
+      <div className="relative w-full max-w-[1440px] px-3 py-1.5 sm:px-6 sm:py-2 lg:px-10">
+        <div className="flex min-h-[3.5rem] items-center justify-between gap-3 rounded-[1.5rem] sm:min-h-[4.25rem] border border-border/60 bg-background/82 px-3 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.45)] dark:border-white/12 dark:bg-white/[0.05] dark:shadow-[0_18px_40px_-28px_rgba(0,0,0,0.9)] sm:px-4">
           <div className="min-w-0 shrink-0">
             <Link href="/" className="group inline-flex items-center gap-3">
               <BrandLogo size={40} showEyebrow />

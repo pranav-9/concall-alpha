@@ -18,6 +18,16 @@ export const elevatedBlockClass =
 export const elevatedMutedBlockClass =
   "rounded-xl border border-border/35 bg-muted/35 shadow-md shadow-black/20";
 
+/**
+ * elevatedBlockClass from `sm` up, and NO box below it. For an L2 wrapper that
+ * sits around other L2 blocks: on a phone its border + padding were one of six
+ * nested paddings squeezing text to 216px of a 390px screen, so the box drops
+ * out there and the children stand on their own. Keep in step with
+ * elevatedBlockClass — same recipe, prefixed.
+ */
+export const elevatedBlockClassFromSm =
+  "sm:rounded-xl sm:border sm:border-border/35 sm:bg-background/75 sm:shadow-md sm:shadow-black/20";
+
 export const nestedDetailClass =
   "rounded-md border border-border/25 bg-background/45";
 

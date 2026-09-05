@@ -51,10 +51,12 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
       <div
         key={`${entry.name}-${variant}-${idx}`}
         className={`flex h-full flex-col rounded-xl border border-border/20 bg-background/25 ${
-          isVisible ? "p-3 sm:p-3.5" : "p-2.5"
+          isVisible ? "p-2.5 sm:p-3.5" : "p-2.5"
         }`}
       >
-        {/* Label row: colour dot + uppercase segment name. */}
+        {/* Label row: colour dot + uppercase segment name. On a phone the share
+            sits on this same line (see below), so a four-segment mix is four
+            short cards rather than four ~150px ones. */}
         <div className="flex items-start gap-1.5">
           {accentColor && (
             <span
@@ -69,17 +71,22 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
               }}
             />
           )}
-          <p className="min-w-0 break-words text-[10px] font-semibold uppercase leading-tight tracking-[0.1em] text-muted-foreground">
+          <p className="min-w-0 flex-1 break-words text-[10px] font-semibold uppercase leading-tight tracking-[0.1em] text-muted-foreground">
             {entry.name}
           </p>
+          {entry.revenueSharePercent != null && (
+            <p className="shrink-0 text-lg font-semibold leading-none tracking-tight text-foreground sm:hidden">
+              {formatPctLabel(entry.revenueSharePercent)}
+            </p>
+          )}
         </div>
 
-        {/* Hero share number. */}
+        {/* Hero share number (sm and up). */}
         {entry.revenueSharePercent != null && (
           <p
             className={`${
               isVisible ? "text-2xl sm:text-[26px]" : "text-xl"
-            } mt-1.5 font-semibold leading-none tracking-tight text-foreground`}
+            } mt-1.5 hidden font-semibold leading-none tracking-tight text-foreground sm:block`}
           >
             {formatPctLabel(entry.revenueSharePercent)}
           </p>
@@ -88,7 +95,7 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
         {entry.description && (
           <p
             className={`${
-              entry.revenueSharePercent != null ? "mt-2" : "mt-1.5"
+              entry.revenueSharePercent != null ? "mt-1.5 sm:mt-2" : "mt-1.5"
             } text-[11px] leading-relaxed text-muted-foreground`}
           >
             {entry.description}
@@ -99,7 +106,7 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
   };
 
   const cardsSurface = (
-    <div className="min-w-0 rounded-xl border border-border/20 bg-background/25 p-2.5 sm:p-3">
+    <div className="min-w-0 sm:rounded-xl sm:border sm:border-border/20 sm:bg-background/25 sm:p-3">
       <div className="grid grid-cols-1 gap-2 min-[480px]:grid-cols-2 sm:gap-2.5">
         {visibleEntries.map((entry, idx) => renderRevenueEntry(entry, idx, "visible"))}
       </div>

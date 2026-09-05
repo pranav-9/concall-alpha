@@ -118,7 +118,7 @@ export function BrandWordmark({ className, showEyebrow = false, size = "sm" }: B
   return (
     <span className={cn("min-w-0", className)}>
       {showEyebrow ? (
-        <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors group-hover:text-foreground/80">
+        <span className="hidden truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground transition-colors group-hover:text-foreground/80 sm:block">
           Research platform
         </span>
       ) : null}

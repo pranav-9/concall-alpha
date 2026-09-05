@@ -25,7 +25,11 @@ import { PegMeter, pegBandFor, type PegBandKey } from "./valuation-peg-meter";
 import { ValuationScoreDial } from "./valuation-score-dial";
 import { ValuationScoreHistory } from "./valuation-score-history";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
-import { ValuationHorizonBar, ValuationHorizonLegend } from "./valuation-horizon-bar";
+import { KIND_INK, ValuationHorizonBar, ValuationHorizonLegend } from "./valuation-horizon-bar";
+import {
+  buildPriceAssumesRows,
+  type PriceAssumesInput,
+} from "@/lib/valuation-check/price-assumes-rows";
 import { ValuationSpectrumBar } from "./valuation-spectrum-bar";
 import type { ValuationScorePoint } from "@/lib/valuation-check/history";
 import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
@@ -37,6 +41,7 @@ import type {
   ValuationZone,
 } from "@/lib/valuation-check/types";
 import { cn } from "@/lib/utils";
+import { ExpandableText } from "./expandable-text";
 
 const eyebrowClass =
   "text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground";
@@ -164,9 +169,14 @@ function TheRead({ valuation }: { valuation: NormalizedValuationCheck }) {
       </div>
 
       {valuation.reasoning ? (
-        <p className="mt-3 text-[12.5px] leading-relaxed text-foreground/85">
-          {valuation.reasoning}
-        </p>
+        <div className="mt-3">
+          <ExpandableText
+            text={valuation.reasoning}
+            className="text-[12.5px] leading-relaxed text-foreground/85"
+            previewLines={4}
+            mobileOnly
+          />
+        </div>
       ) : headline ? (
         <p className="mt-3 text-[13px] font-medium leading-snug text-foreground">{headline}</p>
       ) : null}
@@ -205,6 +215,31 @@ function ScoreHistoryCard({ points }: { points: ValuationScorePoint[] }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Phone rendering of the horizon bar: the same markers as a sorted list. The SVG's
+ * labels render at ~6px at 390px, so below `sm` the ask, our cases and what the
+ * company delivered are listed in the bar's own colours instead.
+ */
+function PriceAssumesList(input: PriceAssumesInput) {
+  const rows = buildPriceAssumesRows(input);
+  return (
+    <ul className="mt-3 divide-y divide-border/40 text-[12px] sm:hidden">
+      {rows.map((row) => (
+        <li key={row.key} className="flex items-baseline justify-between gap-3 py-1.5">
+          <span className={row.kind === "ask" ? "font-medium text-foreground" : "text-muted-foreground"}>
+            {row.label}
+          </span>
+          {/* toFixed(1) to match the hero number two lines up ("12.0%"), not the
+              bar's tick labels. */}
+          <span className={`shrink-0 font-semibold tabular-nums ${KIND_INK[row.kind]}`}>
+            {row.pct.toFixed(1)}%
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -253,15 +288,23 @@ function PriceAssumes({ valuation }: { valuation: NormalizedValuationCheck }) {
           </div>
         ) : null}
         {impliedRoe !== null ? (
-          <div className="mt-3 space-y-2">
-            <ValuationHorizonBar
+          <>
+            <div className="mt-3 hidden space-y-2 sm:block">
+              <ValuationHorizonBar
+                impliedPct={impliedRoe}
+                scenarios={{ downside: null, base: null, upside: null }}
+                delivered={deliveredMarker}
+                metric="roe"
+              />
+              <ValuationHorizonLegend hasDelivered={deliveredMarker.length > 0} metric="roe" />
+            </div>
+            <PriceAssumesList
               impliedPct={impliedRoe}
               scenarios={{ downside: null, base: null, upside: null }}
               delivered={deliveredMarker}
               metric="roe"
             />
-            <ValuationHorizonLegend hasDelivered={deliveredMarker.length > 0} metric="roe" />
-          </div>
+          </>
         ) : null}
         {valuation.plausibilityCheck ? (
           <p className="mt-3 text-[12px] leading-snug text-muted-foreground">
@@ -296,14 +339,22 @@ function PriceAssumes({ valuation }: { valuation: NormalizedValuationCheck }) {
       ) : null}
 
       {impliedCagrPct !== null ? (
-        <div className="mt-3 space-y-2">
-          <ValuationHorizonBar
+        <>
+          <div className="mt-3 hidden space-y-2 sm:block">
+            <ValuationHorizonBar
+              impliedPct={impliedCagrPct}
+              scenarios={scenarios}
+              delivered={valuation.deliveredCagr}
+            />
+            <ValuationHorizonLegend hasDelivered={valuation.deliveredCagr.length > 0} />
+          </div>
+          <PriceAssumesList
             impliedPct={impliedCagrPct}
             scenarios={scenarios}
             delivered={valuation.deliveredCagr}
+            metric="growth"
           />
-          <ValuationHorizonLegend hasDelivered={valuation.deliveredCagr.length > 0} />
-        </div>
+        </>
       ) : null}
 
       {valuation.plausibilityCheck ? (
