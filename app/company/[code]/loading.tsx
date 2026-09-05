@@ -1,3 +1,5 @@
+import { SectionSkeleton } from "../components/section-skeleton";
+
 // Route-level loading state. Until this existed, clicking a company link
 // anywhere on the site showed nothing for the ~1s server render — a 2026-08-01
 // session replay recorded a visitor reading that silence as a dead click. The
@@ -17,14 +19,11 @@ export default function CompanyPageLoading() {
           <div className="h-28 w-full animate-pulse rounded-xl bg-muted/40" />
         </div>
         {/* Two section stand-ins — enough to signal "the page is coming". */}
-        <div className="space-y-3 rounded-2xl border border-border/50 bg-background/70 p-5">
-          <div className="h-5 w-44 animate-pulse rounded-md bg-muted/50" />
-          <div className="h-24 w-full animate-pulse rounded-xl bg-muted/40" />
-          <div className="h-32 w-full animate-pulse rounded-xl bg-muted/30" />
+        <div className="rounded-2xl border border-border/50 bg-background/70 p-5">
+          <SectionSkeleton />
         </div>
-        <div className="space-y-3 rounded-2xl border border-border/50 bg-background/70 p-5">
-          <div className="h-5 w-36 animate-pulse rounded-md bg-muted/50" />
-          <div className="h-24 w-full animate-pulse rounded-xl bg-muted/40" />
+        <div className="rounded-2xl border border-border/50 bg-background/70 p-5">
+          <SectionSkeleton />
         </div>
       </div>
     </div>

@@ -11,6 +11,8 @@ import type {
 type TopSectionTabsProps = {
   sections: CompanySidebarSectionItem[];
   activeSectionId: string;
+  /** Tab that is highlighted but whose panel is still waiting on its chunk. */
+  pendingSectionId?: string | null;
   onSectionChange: (sectionId: string) => void;
 };
 
@@ -84,6 +86,7 @@ const renderMeta = (meta: CompanySidebarSectionMeta, isActive: boolean) => {
 export function TopSectionTabs({
   sections,
   activeSectionId,
+  pendingSectionId = null,
   onSectionChange,
 }: TopSectionTabsProps) {
   const placeholderRef = React.useRef<HTMLDivElement | null>(null);
@@ -182,6 +185,7 @@ export function TopSectionTabs({
             <nav className="flex min-w-full items-center gap-2 whitespace-nowrap px-1" aria-label="Company sections">
               {sections.map((section) => {
                 const isActive = activeSectionId === section.id;
+                const isPending = pendingSectionId === section.id;
                 const shortLabel = SHORT_LABELS[section.id] ?? section.label;
 
                 return (
@@ -192,7 +196,10 @@ export function TopSectionTabs({
                     }}
                     type="button"
                     aria-pressed={isActive}
-                    aria-current={isActive ? "true" : undefined}
+                    // Only "current" once its panel is actually on screen.
+                    aria-current={isActive && !isPending ? "true" : undefined}
+                    aria-busy={isPending || undefined}
+                    data-pending={isPending || undefined}
                     onClick={() => onSectionChange(section.id)}
                     className={cn(
                       "inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-[11px] font-medium tracking-[0.01em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
@@ -202,6 +209,15 @@ export function TopSectionTabs({
                     )}
                   >
                     <span>{shortLabel}</span>
+                    {isPending ? (
+                      // Panel still waiting on its chunk: a small pulsing dot
+                      // says "coming" without dimming the label (the pill is
+                      // inverted, so pulsing the whole thing broke contrast).
+                      <span
+                        aria-hidden
+                        className="inline-block h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-current motion-reduce:animate-none"
+                      />
+                    ) : null}
                     {section.meta && !isNoiseMeta(section.meta) ? (
                       <span className="inline-flex">{renderMeta(section.meta, isActive)}</span>
                     ) : null}
