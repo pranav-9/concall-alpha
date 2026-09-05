@@ -32,7 +32,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowUpDown, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { Fragment, useId, useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 
 import { ColumnInfo } from "@/app/company/components/column-info";
 import { analytics } from "@/lib/analytics";
@@ -593,7 +593,6 @@ export function ScoreBoardTable({
   overallRankByCode?: Record<string, number>;
 }) {
   const router = useRouter();
-  const sortSelectId = useId();
   const [sort, setSort] = useState<SortState>({ key: "coverageRank", direction: "asc" });
   const [removingCompanyCode, setRemovingCompanyCode] = useState<string | null>(null);
   const sortedRows = useMemo(
@@ -846,11 +845,13 @@ export function ScoreBoardTable({
           style={{ borderColor: "var(--rule)" }}
         >
           <div className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--ink-soft)" }}>
-            <label htmlFor={sortSelectId} className="font-bold uppercase tracking-[0.09em]">
-              Sort
-            </label>
+            {/* The label wraps ONLY the select (one labelable descendant); the
+                caret is a sibling. No useId: this board mounts through
+                next/dynamic, whose Suspense boundary differs between server
+                and client, so generated ids did not match on hydration. */}
+            <label className="flex items-center gap-1.5">
+              <span className="font-bold uppercase tracking-[0.09em]">Sort</span>
             <select
-              id={sortSelectId}
               value={sort.key}
               onChange={(event) => handleSortSelect(event.target.value as SortKey)}
               className={`min-h-9 rounded-md border border-border/60 bg-background px-2 py-1.5 text-[12px] font-medium text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${TOUCH_TARGET}`}
@@ -863,6 +864,7 @@ export function ScoreBoardTable({
               <option value="valuationScore">Valuation</option>
               <option value="companyName">Company</option>
             </select>
+            </label>
             <button
               type="button"
               onClick={() => handleSort(sort.key)}
