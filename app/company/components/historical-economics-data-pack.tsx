@@ -425,6 +425,9 @@ function RevenueHistoryModule({
   );
   const chartData = buildRevenueChartData(module, chartRows);
   const hasGraphView = chartData.length > 0;
+  const hasAnyValue = module.rows.some((row) =>
+    displayPeriods.some((period) => typeof row.valuesByPeriod[period] === "number"),
+  );
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
@@ -437,12 +440,12 @@ function RevenueHistoryModule({
             Largest unit first.
           </p>
         </div>
-        {hasGraphView && (
+        {hasGraphView && hasAnyValue && (
           <ViewToggle value={activeView} onValueChange={setActiveView} />
         )}
       </div>
 
-      {activeView === "table" || !hasGraphView ? (
+      {!hasAnyValue ? null : activeView === "table" || !hasGraphView ? (
         <Table className="tabular-nums">
           <TableHeader className="bg-muted/45">
             <TableRow>
@@ -455,7 +458,7 @@ function RevenueHistoryModule({
                   {period}
                 </TableHead>
               ))}
-              <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+              <TableHead className="sticky right-0 z-10 bg-background text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
                 CAGR
               </TableHead>
             </TableRow>
@@ -526,7 +529,7 @@ function RevenueHistoryModule({
                     </div>
                   </TableCell>
                 ))}
-                <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                <TableCell className="sticky right-0 z-10 bg-background text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
                   <span
                     className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
                       row.cagrPercent,
@@ -670,7 +673,7 @@ function RevenueMixHistoryModule({
                   {period}
                 </TableHead>
               ))}
-              <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+              <TableHead className="sticky right-0 z-10 bg-background text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
                 Net Δ
               </TableHead>
             </TableRow>
@@ -740,7 +743,7 @@ function RevenueMixHistoryModule({
                       </TableCell>
                     );
                   })}
-                  <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                  <TableCell className="sticky right-0 z-10 bg-background text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
                     <span
                       className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
                         delta,
@@ -826,6 +829,12 @@ function RevenueHistorySegmentModule({
   );
   const chartData = buildRevenueSegmentChartData(displayPeriods, chartRows);
   const hasGraphView = chartData.length > 0;
+  // A module whose rows carry no number at all (every year null) used to render
+  // a full table of "—" cells and blank sparklines. Keep the takeaways, skip the
+  // empty grid.
+  const hasAnyValue = module.rows.some((row) =>
+    displayPeriods.some((period) => typeof row.revenueByYear[period] === "number"),
+  );
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
@@ -838,12 +847,12 @@ function RevenueHistorySegmentModule({
             Largest segment first.
           </p>
         </div>
-        {hasGraphView && (
+        {hasGraphView && hasAnyValue && (
           <ViewToggle value={activeView} onValueChange={setActiveView} />
         )}
       </div>
 
-      {activeView === "table" || !hasGraphView ? (
+      {!hasAnyValue ? null : activeView === "table" || !hasGraphView ? (
         <Table className="tabular-nums">
           <TableHeader className="bg-muted/45">
             <TableRow>
@@ -856,7 +865,7 @@ function RevenueHistorySegmentModule({
                   {period}
                 </TableHead>
               ))}
-              <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+              <TableHead className="sticky right-0 z-10 bg-background text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
                 CAGR
               </TableHead>
             </TableRow>
@@ -928,7 +937,7 @@ function RevenueHistorySegmentModule({
                     </div>
                   </TableCell>
                 ))}
-                <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                <TableCell className="sticky right-0 z-10 bg-background text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
                   <span
                     className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
                       row.growthMetricPercent,
@@ -1064,7 +1073,7 @@ function RevenueMixHistorySegmentModule({
                   {period}
                 </TableHead>
               ))}
-              <TableHead className="sticky right-0 z-10 bg-muted/45 text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+              <TableHead className="sticky right-0 z-10 bg-background text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
                 Net Δ
               </TableHead>
             </TableRow>
@@ -1146,7 +1155,7 @@ function RevenueMixHistorySegmentModule({
                       </TableCell>
                     );
                   })}
-                  <TableCell className="sticky right-0 bg-background/95 text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                  <TableCell className="sticky right-0 z-10 bg-background text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
                     <span
                       className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
                         delta,

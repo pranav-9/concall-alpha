@@ -47,10 +47,13 @@ export function ScrollToLatest({ children }: { children: React.ReactNode }) {
       <div ref={scrollRef} onScroll={syncEdges} className="overflow-x-auto">
         {children}
       </div>
+      {/* Left fade sits UNDER the table's sticky first column (z-10) — the
+          Key Variables table pins its metric-name column, so the fade must not
+          wash over the labels. It still shows on a table with no sticky column. */}
       {edges.left ? (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-background to-transparent"
+          className="pointer-events-none absolute inset-y-0 left-0 z-[5] w-8 bg-gradient-to-r from-background to-transparent"
         />
       ) : null}
       {edges.right ? (

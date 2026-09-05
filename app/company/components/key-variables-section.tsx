@@ -7,6 +7,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { KpiSparkline } from "./kpi-sparkline-lazy";
 import { ScrollToLatest } from "./scroll-to-latest";
+import { ExpandableText } from "./expandable-text";
 import {
   Drawer,
   DrawerClose,
@@ -234,10 +235,17 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
         <table className="min-w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-border/20">
-              <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {/* Sticky: ScrollToLatest opens the table at the newest quarter,
+                  which on a phone scrolled the metric names off the left edge
+                  and left unlabeled rows of numbers. The label column pins so
+                  every row is named at any scroll position. */}
+              <th className="sticky left-0 z-10 max-w-[7.5rem] bg-background px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:max-w-none sm:px-3">
                 Metric
               </th>
-              <th className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {/* Trend sparkline is desktop-only: at 390px it cost 100px of a
+                  table that already scrolls, and the deltas under each value
+                  carry the direction. */}
+              <th className="hidden px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:table-cell">
                 Trend
               </th>
               {periods.map((period) => (
@@ -255,10 +263,10 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
               const numericValuesByPeriod = toNumericValuesByPeriod(row.valuesByPeriod);
               return (
               <tr key={row.metric} className="border-b border-border/20 last:border-b-0">
-                <td className="px-3 py-2 text-[12px] font-medium text-foreground">
+                <td className="sticky left-0 z-10 max-w-[7.5rem] bg-background px-2 py-2 text-[11px] font-medium leading-snug text-foreground sm:max-w-none sm:px-3 sm:text-[12px]">
                   {row.metric}
                 </td>
-                <td className="px-3 py-2">
+                <td className="hidden px-3 py-2 sm:table-cell">
                   <KpiSparkline
                     ariaLabel={`${row.metric} trend across ${periods.length} periods`}
                     points={periods.map((period) => ({
@@ -327,9 +335,14 @@ export function KeyVariablesSection({
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Synthesis
           </p>
-          <p className="mt-1.5 text-sm leading-relaxed text-foreground">
-            {snapshot.sectionSynthesis}
-          </p>
+          <div className="mt-1.5">
+            <ExpandableText
+              text={snapshot.sectionSynthesis ?? ""}
+              className="text-sm leading-relaxed text-foreground"
+              previewLines={4}
+              mobileOnly
+            />
+          </div>
         </div>
       ) : null}
 

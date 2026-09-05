@@ -23,7 +23,10 @@ import {
   snapshotSubsectionClass,
 } from "./surface-tokens";
 
-const businessSnapshotSurfaceClass = `${elevatedBlockClass} p-4`;
+// Below sm this wrapper is invisible: it is an L2 box around other L2 boxes, and
+// on a 390px screen its border + padding were one of six nested paddings that
+// left segment text 216px wide. From sm it is the elevated block it always was.
+const businessSnapshotSurfaceClass = `sm:rounded-xl sm:border sm:border-border/35 sm:bg-background/75 sm:shadow-md sm:shadow-black/20 sm:p-4`;
 const businessSnapshotBlockClass = elevatedBlockClass;
 
 type DerivedState = {
