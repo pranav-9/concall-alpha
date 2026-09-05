@@ -111,6 +111,31 @@ function valuationBand(score: number) {
   return { label: def.label, textClass: def.textClass };
 }
 
+// One leg on the phone row's single legs line: muted label, number in its band
+// colour. Same figure as the desktop column, minus the band word.
+function LegStat({
+  label,
+  score,
+  band,
+}: {
+  label: string;
+  score: number | null;
+  band: (s: number) => { label: string; textClass: string };
+}) {
+  return (
+    <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+      <span className="text-muted-foreground">{label}</span>
+      {score == null ? (
+        <span className="text-muted-foreground">—</span>
+      ) : (
+        <span className={`font-semibold tabular-nums ${band(score).textClass}`}>
+          {score.toFixed(1)}
+        </span>
+      )}
+    </span>
+  );
+}
+
 function ScoreCell({
   score,
   band,
@@ -456,7 +481,95 @@ export default async function SectorsPage({
               </p>
             </div>
 
-            <div className="relative">
+            {/* Below lg the 720px table left only # / Sector / ConcallScore in
+                view on a phone, with the Read — the column it is ranked by — off
+                to the right. So below lg each sector is one row with all five
+                numbers in view; the table returns from lg. Sorting stays on the
+                URL, so the pills below are plain links. */}
+            <div className="lg:hidden">
+              <div className="flex flex-wrap items-center gap-1.5 border-b border-border/35 px-3 py-2 text-[11px] text-muted-foreground">
+                <span className="font-semibold uppercase tracking-[0.12em]">Sort</span>
+                {(
+                  [
+                    ["read", "Read"],
+                    ["latest_qtr", "ConcallScore"],
+                    ["avg_4q", "Trailing"],
+                    ["growth", "Growth"],
+                    ["valuation", "Valuation"],
+                    ["sector", "A–Z"],
+                  ] as Array<[SectorSortKey, string]>
+                ).map(([key, label]) => (
+                  <Link
+                    key={key}
+                    href={headerHref(key)}
+                    prefetch={false}
+                    className={`rounded-full border px-2 py-0.5 ${
+                      sortBy === key
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-border/60 bg-background/80 text-foreground"
+                    }`}
+                  >
+                    {label}
+                    {arrowFor(key) ? <span className="ml-0.5">{arrowFor(key)}</span> : null}
+                  </Link>
+                ))}
+              </div>
+              <ul>
+                {sortedRows.map((row) => {
+                  const readDef = BOARD_READS[row.readKey];
+                  return (
+                    <li
+                      key={row.slug}
+                      className="flex items-start gap-2.5 border-b border-border/45 px-3 py-3 last:border-b-0"
+                    >
+                      <span className="w-6 shrink-0 pt-0.5 text-sm font-semibold tabular-nums text-muted-foreground">
+                        {row.rank ?? "—"}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          href={`/sector/${row.slug}`}
+                          prefetch={false}
+                          className="font-medium leading-snug text-foreground underline-offset-4 hover:underline"
+                        >
+                          {row.sector}
+                        </Link>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          {row.companyCount} companies
+                          {row.subSectorCount > 0
+                            ? ` · ${row.subSectorCount} sub-sector${row.subSectorCount === 1 ? "" : "s"}`
+                            : ""}
+                          {row.reportedCount > 0 ? ` · ${row.reportedCount} reported` : ""}
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[11px] leading-tight">
+                          <LegStat label="Latest" score={row.avgLatest} band={quarterBand} />
+                          <LegStat label="4Q" score={row.avg4Q} band={quarterBand} />
+                          <LegStat label="Growth" score={row.avgGrowth} band={growthBand} />
+                          <LegStat label="Value" score={row.avgValuation} band={valuationBand} />
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right leading-tight">
+                        {row.readScore != null ? (
+                          <span className="block text-base font-semibold tabular-nums text-foreground">
+                            {row.readScore.toFixed(1)}
+                          </span>
+                        ) : (
+                          <span className="block text-muted-foreground">—</span>
+                        )}
+                        <span
+                          className={`block max-w-[6.5rem] text-[10px] font-medium ${
+                            row.readScore != null ? readDef.textClass : "text-muted-foreground"
+                          }`}
+                        >
+                          {row.readLabel}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            <div className="relative hidden lg:block">
               <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-sm">
                 <thead className="border-b border-border/35 bg-background/70">
@@ -560,7 +673,20 @@ export default async function SectorsPage({
             </div>
 
             <div className="border-t border-border/35 px-4 py-3">
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
+              {/* Nine lines of method on a phone; folded behind one line there. */}
+              <details className="sm:hidden">
+                <summary className="cursor-pointer list-none text-[11px] font-medium text-muted-foreground underline decoration-border underline-offset-2 [&::-webkit-details-marker]:hidden">
+                  How the Read is computed
+                </summary>
+                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                  Read = 0.88 × the average of the quarter leg and Growth, + 0.12 ×
+                  Valuation — the leaderboard&apos;s exact formula. The quarter leg is the
+                  recency-weighted trailing four quarters (latest counts double). Each sector
+                  figure averages its covered companies. The word names the configuration the
+                  three legs make — it is not a buy or sell call.
+                </p>
+              </details>
+              <p className="hidden text-[11px] leading-relaxed text-muted-foreground sm:block">
                 Read = 0.88 × the average of the quarter leg and Growth, + 0.12 ×
                 Valuation — the leaderboard&apos;s exact formula. The quarter leg is the
                 recency-weighted trailing four quarters (latest counts double); the

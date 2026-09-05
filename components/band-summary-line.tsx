@@ -17,25 +17,39 @@ export function BandSummaryLine<K extends string>({
 }) {
   const visible = bandCounts.filter((b) => b.count > 0);
   if (scored === 0 || visible.length === 0) return null;
+  const headline =
+    scored === total ? (
+      <span className="font-semibold text-foreground">{total} companies</span>
+    ) : (
+      <>
+        <span className="font-semibold text-foreground">
+          {scored} of {total}
+        </span>{" "}
+        companies {scopeNote}
+      </>
+    );
+  const breakdown = visible.map((b, i) => (
+    <span key={b.key}>
+      {i > 0 && " · "}
+      <span className="font-semibold text-foreground">{b.count}</span> {b.label}
+    </span>
+  ));
   return (
-    <p className="px-1 text-[12px] text-muted-foreground">
-      {scored === total ? (
-        <span className="font-semibold text-foreground">{total} companies</span>
-      ) : (
-        <>
-          <span className="font-semibold text-foreground">
-            {scored} of {total}
-          </span>{" "}
-          companies {scopeNote}
-        </>
-      )}
-      {" · "}
-      {visible.map((b, i) => (
-        <span key={b.key}>
-          {i > 0 && " · "}
-          <span className="font-semibold text-foreground">{b.count}</span> {b.label}
-        </span>
-      ))}
-    </p>
+    <>
+      {/* Phone: the eight-way split ran to four lines above the board, so it
+          folds behind the headline count until asked for. */}
+      <details className="px-1 text-[12px] text-muted-foreground sm:hidden">
+        <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+          {headline}
+          <span className="ml-1.5 underline decoration-border underline-offset-2">read mix ▾</span>
+        </summary>
+        <p className="mt-1 leading-relaxed">{breakdown}</p>
+      </details>
+      <p className="hidden px-1 text-[12px] text-muted-foreground sm:block">
+        {headline}
+        {" · "}
+        {breakdown}
+      </p>
+    </>
   );
 }

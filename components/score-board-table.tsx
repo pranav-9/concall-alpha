@@ -521,6 +521,36 @@ function DeltaCell({ delta, dimmed }: { delta: number | null; dimmed: boolean })
   );
 }
 
+/**
+ * One leg on the phone list's single-line legs row: a muted label and the
+ * number in its band colour. Same figure as the desktop column, minus the band
+ * word — at 390px the colour carries the band and the word costs a wrap.
+ */
+function LegStat({
+  label,
+  score,
+  bandClass,
+  dimmed,
+}: {
+  label: string;
+  score: number | null;
+  bandClass: string;
+  dimmed: boolean;
+}) {
+  return (
+    <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+      <span className="text-muted-foreground">{label}</span>
+      {score == null ? (
+        <span className="text-muted-foreground">—</span>
+      ) : (
+        <span className={`font-semibold tabular-nums ${dimmed ? "text-muted-foreground" : bandClass}`}>
+          {score.toFixed(1)}
+        </span>
+      )}
+    </span>
+  );
+}
+
 // Sticky first column (name stays visible while score columns scroll on a
 // phone) lives in the shared shell tokens — STICKY_NAME_HEAD / STICKY_NAME_CELL
 // / TABLE_SCROLL_HINT — so this board and the four DataTable/section boards
@@ -588,6 +618,14 @@ export function ScoreBoardTable({
     setSort({ key, direction: nextDirection });
   };
 
+  // The phone list's sort <select>: picking a key opens it in that key's default
+  // direction; the caret button beside it flips direction via handleSort.
+  const handleSortSelect = (key: SortKey) => {
+    const nextDirection = defaultDirectionForKey(key);
+    analytics.leaderboardSort(showRemove ? "watchlist" : "overall", key, nextDirection);
+    setSort({ key, direction: nextDirection });
+  };
+
   const sortDirectionLabel = (key: SortKey) =>
     sort.key === key ? (sort.direction === "asc" ? "ascending" : "descending") : "none";
 
@@ -629,11 +667,224 @@ export function ScoreBoardTable({
     }
   };
 
+  // Rows the phone list and the desktop table both render from. The list is
+  // the same sortedRows in the same order — one sort state, two layouts.
+  const renderMobileRow = (row: DerivedRow, index: number) => {
+    const dim = row.dim;
+    const read = BOARD_READS[row.readKey];
+    const prior = priorRankByCode?.[row.companyCode.toUpperCase()];
+    const delta =
+      prior != null && Number.isFinite(row.effectiveRank) ? prior - row.effectiveRank : null;
+    const overallRank = overallRankByCode?.[row.companyCode.toUpperCase()];
+    return (
+      <Fragment key={row.companyCode}>
+        {index === firstBelowCutIndex && firstBelowCutIndex > 0 && (
+          <li className="border-b border-border/45 px-3 py-1.5 text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            — below the top 100 by Read —
+          </li>
+        )}
+        <li
+          className={`flex items-start gap-2.5 border-b border-border/45 px-3 py-3 last:border-0 ${
+            dim ? "opacity-55" : ""
+          }`}
+        >
+          {/* Rank over Δ — the two positional facts, stacked in a narrow gutter. */}
+          <div className="flex w-8 shrink-0 flex-col items-start gap-0.5 pt-0.5">
+            <span className="font-mono text-xs tabular-nums text-muted-foreground">
+              {Number.isFinite(row.effectiveRank) ? row.effectiveRank : "—"}
+            </span>
+            {showDelta && <DeltaCell delta={delta} dimmed={dim} />}
+          </div>
+          <div className="min-w-0 flex-1">
+            {/* Name wraps to a second line rather than truncating: on a phone a
+                12-character name stub carries less than the row costs. */}
+            <Link
+              href={`/company/${row.companyCode}`}
+              prefetch={false}
+              onClick={() =>
+                analytics.leaderboardRowClick({
+                  companyCode: row.companyCode,
+                  board: showRemove ? "watchlist" : "overall",
+                  belowCut: dim,
+                  rank: Number.isFinite(row.effectiveRank) ? row.effectiveRank : undefined,
+                  surface: "leaderboards",
+                })
+              }
+              title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}
+              className="house-display block text-sm leading-snug hover:underline"
+              style={dim ? { color: "var(--ink-soft)" } : { color: "var(--ink)" }}
+            >
+              {row.companyName}
+            </Link>
+            <span className="flex flex-wrap items-baseline gap-x-1.5">
+              <span
+                className="font-mono text-[10px] uppercase tracking-wide"
+                style={{ color: "var(--ink-soft)", opacity: 0.75 }}
+              >
+                {row.companyCode}
+              </span>
+              {overallRank != null && (
+                <span
+                  className="whitespace-nowrap font-mono text-[10px] tabular-nums"
+                  style={{ color: "var(--ink-soft)", opacity: 0.75 }}
+                  title="Rank on the Overall leaderboard"
+                >
+                  · #{overallRank} overall
+                </span>
+              )}
+              {row.latestIsStale && row.latestQuarterLabel && (
+                <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                  · latest {row.latestQuarterLabel}
+                </span>
+              )}
+            </span>
+            {/* The three legs on one line. Same numbers as the desktop columns,
+                coloured by their own band so the row keeps the board's grammar. */}
+            <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[11px] leading-tight">
+              <LegStat
+                label="Latest"
+                score={row.latestConcallScore}
+                bandClass={
+                  row.latestConcallScore != null
+                    ? BANDS[bandForScore(row.latestConcallScore)].textClass
+                    : ""
+                }
+                dimmed={dim}
+              />
+              <LegStat
+                label="4Q"
+                score={row.fourConcallScore}
+                bandClass={
+                  row.fourConcallScore != null
+                    ? BANDS[bandForScore(row.fourConcallScore)].textClass
+                    : ""
+                }
+                dimmed={dim}
+              />
+              <LegStat
+                label="Growth"
+                score={row.growthScore}
+                bandClass={
+                  row.growthScore != null
+                    ? GROWTH_BANDS[bandForGrowthScore(row.growthScore)].textClass
+                    : ""
+                }
+                dimmed={dim}
+              />
+              <LegStat
+                label="Value"
+                score={row.valuationScore}
+                bandClass={
+                  row.valuationScore != null
+                    ? VALUATION_BANDS[bandForValuationScore(row.valuationScore)].textClass
+                    : ""
+                }
+                dimmed={dim}
+              />
+              {row.concallScoredWithin24h && (
+                <FreshScoreChip scoredAt={formatScoredAt(row.concallScoredAt)} dimmed={dim} />
+              )}
+            </div>
+          </div>
+          {/* Read — the number the list is ranked by — on the right, where the
+              eye lands after the name. */}
+          <div className="shrink-0 text-right leading-tight" title={row.readDescription}>
+            {row.readScore != null ? (
+              <div className="text-base font-semibold tabular-nums text-foreground">
+                {row.readScore.toFixed(1)}
+              </div>
+            ) : (
+              <div className="text-muted-foreground">—</div>
+            )}
+            <div
+              className={`max-w-[6.5rem] text-[10px] font-medium leading-tight ${
+                dim ? "text-muted-foreground" : read.textClass
+              }`}
+            >
+              {read.label}
+            </div>
+          </div>
+          {showRemove && (
+            <button
+              type="button"
+              onClick={() => void handleRemove(row)}
+              disabled={removingCompanyCode === row.companyCode}
+              aria-label={`Remove ${row.companyName} from this watchlist`}
+              title="Remove from watchlist"
+              className="-mr-1 inline-flex shrink-0 items-center justify-center rounded-md p-1 text-muted-foreground/60 transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 dark:hover:bg-rose-950/20 dark:hover:text-rose-400"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </li>
+      </Fragment>
+    );
+  };
+
   return (
     <div className="relative">
-      {/* The only cue that more columns exist to the right — the scroll container
-          carries no shadow, no mask and no scrollbar on touch. Hidden from lg up,
-          where the table fits the shell without scrolling. */}
+      {/* Below lg the six-column table is ~1000px wide, which on a phone left
+          only Company + ConcallScore in view and put the Read — the column the
+          board ranks on — two screens to the right. So below lg the board is a
+          list: one row per company, all six numbers in view, no horizontal
+          scroll. The table returns from lg, where it fits the shell. */}
+      <div className="lg:hidden">
+        <div
+          className="flex items-center justify-between gap-3 border-b px-3 py-2"
+          style={{ borderColor: "var(--rule)" }}
+        >
+          <label className="flex items-center gap-1.5 text-[11px]" style={{ color: "var(--ink-soft)" }}>
+            <span className="font-bold uppercase tracking-[0.09em]">Sort</span>
+            <select
+              value={sort.key}
+              onChange={(event) => handleSortSelect(event.target.value as SortKey)}
+              aria-label="Sort the board by"
+              className="rounded-md border border-border/60 bg-background px-1.5 py-1 text-[11px] font-medium text-foreground"
+            >
+              <option value="coverageRank">Rank</option>
+              <option value="read">Read</option>
+              <option value="latestScore">ConcallScore (latest)</option>
+              <option value="fourQScore">ConcallScore (4Q avg)</option>
+              <option value="growthScore">Growth</option>
+              <option value="valuationScore">Valuation</option>
+              <option value="companyName">Company</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => handleSort(sort.key)}
+              aria-label={`Sort ${sort.direction === "asc" ? "descending" : "ascending"}`}
+              className="inline-flex items-center rounded-md border border-border/60 bg-background p-1 text-foreground"
+            >
+              {sort.direction === "asc" ? (
+                <ChevronUp className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
+            </button>
+          </label>
+          <div
+            className="flex items-center gap-0.5 text-[11px] font-bold uppercase tracking-[0.09em]"
+            style={{ color: "var(--warn)" }}
+          >
+            <span>Read</span>
+            <ColumnInfo label="Read">{COLUMN_INFO.read}</ColumnInfo>
+          </div>
+        </div>
+        {sortedRows.length ? (
+          <ul
+            aria-label={
+              showRemove
+                ? "Watchlist companies by read, with ConcallScore, growth outlook and valuation"
+                : "Companies by overall rank, with ConcallScore, growth outlook, valuation and read"
+            }
+          >
+            {sortedRows.map(renderMobileRow)}
+          </ul>
+        ) : (
+          <p className="px-3 py-8 text-center text-sm text-muted-foreground">No results.</p>
+        )}
+      </div>
+      <div className="hidden lg:block">
       <div aria-hidden className={TABLE_SCROLL_HINT} />
       <Table
         aria-label={
@@ -976,6 +1227,7 @@ export function ScoreBoardTable({
           )}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }
