@@ -1,0 +1,9 @@
+{
+  "name": "concall-alpha-perf-probe",
+  "private": true,
+  "type": "module",
+  "description": "Local-only deps for scripts/perf/cls-probe.mjs; kept out of the app lockfile so Vercel builds never install puppeteer-core.",
+  "dependencies": {
+    "puppeteer-core": "^23.11.1"
+  }
+}

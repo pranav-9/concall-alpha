@@ -6,7 +6,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "for f in tests/*.test.ts; do echo \"== $f\" && tsx \"$f\" || exit 1; done"
+    "test": "for f in tests/*.test.ts; do echo \"== $f\" && tsx \"$f\" || exit 1; done",
+    "perf:cls": "npm --prefix scripts/perf install --no-audit --no-fund --silent && node scripts/perf/cls-probe.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
