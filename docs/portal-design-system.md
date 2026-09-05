@@ -536,7 +536,7 @@ The portal does not feel flashy. Motion is used to indicate state change and dir
 - Scroll-triggered reveals.
 - Bouncing or springing interactions.
 
-Loading skeletons use `animate-pulse` only.
+Loading skeletons use `animate-pulse` only. On the company page, the section-level loading states (the section stand-ins in the route `loading.tsx`, each panel's Suspense fallback in `section-loading.tsx`, and the lazy-tab placeholder in `deferred-company-sections.tsx`) draw their bars with [`section-skeleton.tsx`](../app/company/components/section-skeleton.tsx), which also carries `motion-reduce:animate-none` — reuse it there rather than hand-rolling bars, so the three states cannot drift apart.
 
 ---
 
@@ -820,6 +820,7 @@ Useful files to inspect when extending the system:
 - [`lib/design/shell.ts`](../lib/design/shell.ts) — Atmospheric tokens
 - [`app/company/components/surface-tokens.ts`](../app/company/components/surface-tokens.ts) — Research tokens
 - [`app/company/components/section-card.tsx`](../app/company/components/section-card.tsx) — L1 shell + tone mapping
+- [`app/company/components/section-skeleton.tsx`](../app/company/components/section-skeleton.tsx) — the one skeleton every company-page section loading state draws
 - [`app/company/[code]/page.tsx`](../app/company/[code]/page.tsx) — research family example
 - [`app/page.tsx`](../app/page.tsx) — atmospheric family example
 - [`app/company/components/quarterly-score-section.tsx`](../app/company/components/quarterly-score-section.tsx)

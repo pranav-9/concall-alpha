@@ -25,6 +25,7 @@ In order of cost:
 npm run lint        # fast
 npm run typecheck   # medium speed; catches type drift
 npm run build       # full Next build, slow but catches RSC / route-level issues
+npm run perf:cls -- http://localhost:3000   # mobile CLS probe for /company tab swaps (after `npm run build` + `next start`; needs a Chrome binary or CHROME_PATH). Re-run whenever section-loading, section-skeleton, deferred-company-sections or company-page-workspace change.
 ```
 
 For UI changes: run `npm run dev` and exercise the change in a browser. Type-check passing is not the same as feature working — say so explicitly if you couldn't browser-verify. Mobile layout is part of the check (the section SKILL spells this out).

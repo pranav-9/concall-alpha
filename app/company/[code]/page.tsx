@@ -53,6 +53,12 @@ export async function generateMetadata({
   };
 }
 
+// Suspense fallback size per panel, from what the cache row already knows: a
+// panel that will render a real section gets a viewport-tall skeleton, one
+// that will render its short empty state gets a short one. Either mismatch
+// moves the footer when the panel lands (see section-loading.tsx).
+const fallbackSize = (available: boolean): "panel" | "block" => (available ? "panel" : "block");
+
 function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
   // Only three tabs carry a badge, and each carries a score circle — nothing
   // else (decision 2026-08-26). The tab bar reads as a three-number scorecard:
@@ -153,31 +159,31 @@ export default async function Page({
           </div>
 
           <div data-section-id="business-overview">
-            <Suspense fallback={<SectionLoading id="business-overview" title="Business Snapshot" />}>
+            <Suspense fallback={<SectionLoading id="business-overview" title="Business Snapshot" size={fallbackSize(overview.section_availability.businessSnapshot)} />}>
               <BusinessSnapshotPanel overview={overview} />
             </Suspense>
           </div>
 
           <div data-section-id="moat-analysis">
-            <Suspense fallback={<SectionLoading id="moat-analysis" title="Moat Analysis" />}>
+            <Suspense fallback={<SectionLoading id="moat-analysis" title="Moat Analysis" size={fallbackSize(overview.section_availability.moatAnalysis)} />}>
               <MoatAnalysisPanel overview={overview} />
             </Suspense>
           </div>
 
           <div data-section-id="sentiment-score">
-            <Suspense fallback={<SectionLoading id="sentiment-score" title="ConcallScore" />}>
+            <Suspense fallback={<SectionLoading id="sentiment-score" title="ConcallScore" size={fallbackSize(overview.latest_score != null)} />}>
               <ConcallScorePanel overview={overview} />
             </Suspense>
           </div>
 
           <div data-section-id="key-variables">
-            <Suspense fallback={<SectionLoading id="key-variables" title="Key Variables" />}>
+            <Suspense fallback={<SectionLoading id="key-variables" title="Key Variables" size={fallbackSize(overview.section_availability.keyVariables)} />}>
               <KeyVariablesPanel overview={overview} />
             </Suspense>
           </div>
 
           <div data-section-id="future-growth">
-            <Suspense fallback={<SectionLoading id="future-growth" title="Future Growth" />}>
+            <Suspense fallback={<SectionLoading id="future-growth" title="Future Growth" size={fallbackSize(overview.section_availability.futureGrowth)} />}>
               <FutureGrowthPanel overview={overview} />
             </Suspense>
           </div>
@@ -191,13 +197,13 @@ export default async function Page({
           </div> */}
 
           <div data-section-id="valuation-check">
-            <Suspense fallback={<SectionLoading id="valuation-check" title="Valuation Check" />}>
+            <Suspense fallback={<SectionLoading id="valuation-check" title="Valuation Check" size={fallbackSize(overview.section_availability.valuationCheck && !overview.valuation_stale)} />}>
               <ValuationCheckPanel overview={overview} />
             </Suspense>
           </div>
 
           <div data-section-id="guidance-history">
-            <Suspense fallback={<SectionLoading id="guidance-history" title="Guidance History" />}>
+            <Suspense fallback={<SectionLoading id="guidance-history" title="Guidance History" size={fallbackSize(overview.section_availability.guidanceHistory)} />}>
               <GuidanceHistoryPanel overview={overview} />
             </Suspense>
           </div>
