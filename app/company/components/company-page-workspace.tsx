@@ -4,6 +4,15 @@ import * as React from "react";
 import { resolveSectionId as resolveSectionHash } from "@/lib/section-hash";
 import type { CompanySidebarSectionItem } from "../constants";
 import { TopSectionTabs } from "./top-section-tabs";
+import {
+  ensureSectionChunk,
+  hasLazyChunk,
+  preloadDeferredCompanySections,
+} from "./deferred-company-sections";
+import {
+  DEFAULT_SWAP_HOLD_MS,
+  createSwapController,
+} from "@/lib/lazy-sections";
 import { analytics } from "@/lib/analytics";
 
 type CompanyPageNavigationContextValue = {
@@ -40,7 +49,11 @@ export function CompanyPageWorkspace({
   children,
 }: CompanyPageWorkspaceProps) {
   const contentRef = React.useRef<HTMLDivElement | null>(null);
-  const validIds = React.useMemo(() => new Set(sections.map((section) => section.id)), [sections]);
+  // Keyed on the joined ids, not the array: `sections` is a fresh array on
+  // every server render (router.refresh), and a new Set identity would re-run
+  // the hash-resolve effects below and re-arm a hold for nothing.
+  const sectionIdsKey = sections.map((section) => section.id).join("\u0000");
+  const validIds = React.useMemo(() => new Set(sectionIdsKey.split("\u0000")), [sectionIdsKey]);
   const fallbackSectionId =
     (defaultSectionId && validIds.has(defaultSectionId) ? defaultSectionId : null) ??
     sections[0]?.id ??
@@ -51,13 +64,59 @@ export function CompanyPageWorkspace({
     [fallbackSectionId, validIds],
   );
 
+  // Two ids on purpose. `selectedSectionId` is what the tab bar highlights and
+  // moves the instant a tab is tapped. `activeSectionId` is the panel actually
+  // rendered; it follows once the section's lazy chunk is ready (or the hold
+  // times out). Swapping the panel before the chunk arrives meant a placeholder
+  // that changed height when the real section landed — the 0.5+ mobile CLS on
+  // every Quarterly / Guidance tap (2026-09-05). Holding the old panel on
+  // screen for a bounded wait instead means the swap lands once, complete.
+  const [selectedSectionId, setSelectedSectionId] = React.useState<string>(fallbackSectionId);
   const [activeSectionId, setActiveSectionId] = React.useState<string>(fallbackSectionId);
   const [, startTransition] = React.useTransition();
+  // The hold itself (token ordering, bounded wait, dispose on unmount) is pure
+  // logic in lib/lazy-sections.ts so it is unit-tested; this component only
+  // wires it to state. Past DEFAULT_SWAP_HOLD_MS the viewport-tall placeholder
+  // takes over (still shift-free for anything below the fold).
+  const swapController = React.useMemo(
+    () =>
+      createSwapController({
+        shouldHold: hasLazyChunk,
+        ensure: ensureSectionChunk,
+        holdMs: DEFAULT_SWAP_HOLD_MS,
+        onRelease: (sectionId) => {
+          // Non-urgent: swapping a large section tree as an urgent update
+          // blocked the tap for ~800ms on data-rich tickers (INP). The tab
+          // highlight is already synchronous, so the tap feels instant.
+          startTransition(() => {
+            setActiveSectionId(sectionId);
+          });
+        },
+      }),
+    [startTransition],
+  );
+  React.useEffect(() => () => swapController.dispose(), [swapController]);
+
+  const commitSection = React.useCallback(
+    (sectionId: string) => {
+      setSelectedSectionId(sectionId);
+      void swapController.commit(sectionId);
+    },
+    [swapController],
+  );
 
   // One company_page_view per page load; company_code is the join key to our data.
   React.useEffect(() => {
     if (companyCode) analytics.companyPageView(companyCode);
   }, [companyCode]);
+
+  // Warm the client-only section chunks (Quarterly, Guidance, business
+  // momentum) once the page is idle, so the first tap on those tabs mounts the
+  // real section instead of sitting on a placeholder while the chunk downloads.
+  React.useEffect(() => {
+    const preload = preloadDeferredCompanySections();
+    return () => preload.cancel();
+  }, []);
 
   // section_view + section_dwell. section_view fires whenever a different section
   // becomes active (initial + every tab navigation) — the real depth signal,
@@ -78,17 +137,20 @@ export function CompanyPageWorkspace({
     dwellRef.current = { ...prev, t: performance.now() };
   }, [companyCode]);
 
+  // Keyed on the SELECTED section (the tap), not the rendered panel: the panel
+  // can lag the tap by up to DEFAULT_SWAP_HOLD_MS, and a tap abandoned inside
+  // that window would otherwise never emit its section_view.
   React.useEffect(() => {
     const prev = dwellRef.current;
-    if (prev && prev.id !== activeSectionId) flushDwell();
-    analytics.sectionView(activeSectionId, companyCode);
+    if (prev && prev.id !== selectedSectionId) flushDwell();
+    analytics.sectionView(selectedSectionId, companyCode);
     dwellRef.current = {
-      id: activeSectionId,
+      id: selectedSectionId,
       t: performance.now(),
       // pathname + search so $current_url keeps the query string (UTM/deep-link).
       path: window.location.pathname + window.location.search,
     };
-  }, [activeSectionId, companyCode, flushDwell]);
+  }, [selectedSectionId, companyCode, flushDwell]);
 
   // Final flush on unmount, plus a flush when the tab is hidden — otherwise a
   // dwell is silently lost whenever someone closes the tab mid-section (unmount
@@ -139,12 +201,12 @@ export function CompanyPageWorkspace({
   }, [activeSectionId, companyCode]);
 
   React.useEffect(() => {
-    setActiveSectionId(resolveSectionId(window.location.hash));
-  }, [resolveSectionId]);
+    commitSection(resolveSectionId(window.location.hash));
+  }, [commitSection, resolveSectionId]);
 
   React.useEffect(() => {
     const syncFromLocation = () => {
-      setActiveSectionId(resolveSectionId(window.location.hash));
+      commitSection(resolveSectionId(window.location.hash));
     };
 
     window.addEventListener("hashchange", syncFromLocation);
@@ -154,7 +216,7 @@ export function CompanyPageWorkspace({
       window.removeEventListener("hashchange", syncFromLocation);
       window.removeEventListener("popstate", syncFromLocation);
     };
-  }, [resolveSectionId]);
+  }, [commitSection, resolveSectionId]);
 
   const scrollContentIntoView = React.useCallback(() => {
     const element = contentRef.current;
@@ -180,19 +242,20 @@ export function CompanyPageWorkspace({
         window.history.pushState(null, "", `#${sectionId}`);
       }
 
-      // Swapping the active panel unmounts/remounts a large section tree; doing
-      // it as an urgent update blocks the tap for ~800ms on data-rich tickers
-      // (INP). Mark it non-urgent so the browser can paint the tap first. URL +
-      // scroll stay synchronous so navigation feels instant.
-      startTransition(() => {
-        setActiveSectionId(sectionId);
-      });
+      // URL + tab highlight + scroll are synchronous so navigation feels
+      // instant; the panel itself lands via commitSection once its chunk is in.
+      commitSection(sectionId);
       window.requestAnimationFrame(() => {
         scrollContentIntoView();
       });
     },
-    [scrollContentIntoView, validIds],
+    [commitSection, scrollContentIntoView, validIds],
   );
+
+  const pendingSectionId = selectedSectionId !== activeSectionId ? selectedSectionId : null;
+  const pendingLabel = pendingSectionId
+    ? sections.find((section) => section.id === pendingSectionId)?.label ?? null
+    : null;
 
   const panels = React.Children.toArray(children).filter(React.isValidElement) as PanelElement[];
   const activePanel =
@@ -205,9 +268,15 @@ export function CompanyPageWorkspace({
       <div className="flex min-w-0 flex-col gap-4 overflow-x-hidden">
         <TopSectionTabs
           sections={sections}
-          activeSectionId={activeSectionId}
+          activeSectionId={selectedSectionId}
+          pendingSectionId={pendingSectionId}
           onSectionChange={handleSectionChange}
         />
+        {/* aria-busy on a button is not voiced; this is what a screen reader
+            hears during the hold. Empty (silent) once the panel is in. */}
+        <span role="status" aria-live="polite" className="sr-only">
+          {pendingLabel ? `Loading ${pendingLabel}…` : ""}
+        </span>
         <div ref={contentRef} className="min-w-0">
           {activePanel}
         </div>

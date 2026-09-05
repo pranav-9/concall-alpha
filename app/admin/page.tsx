@@ -43,9 +43,23 @@ import {
   type ApiPerformanceRow,
 } from "@/components/admin/api-performance-table";
 import {
+  CompanyViewsTable,
+  RecentCompanyOpensTable,
+} from "@/components/admin/company-views-table";
+import {
   ADMIN_ACCESS_COOKIE,
   hasAdminAccess,
 } from "@/lib/admin-auth";
+import { getOwnHosts } from "@/lib/attribution";
+import {
+  buildCompanyViewRows,
+  buildRecentCompanyOpens,
+  summarizeCompanyViews,
+  type CompanyViewRow,
+  type CompanyViewRpcRow,
+  type RawCompanyOpenRow,
+  type RecentCompanyOpenRow,
+} from "@/lib/admin-company-views";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = {
@@ -791,6 +805,27 @@ async function getAdminData(range: RangeKey) {
     .from("company")
     .select("code, name");
 
+  // Companies tab. The RPC counts opens SQL-side over the whole window; limit_n
+  // is set well above the ~100-company universe so the returned set is complete
+  // and the headline metrics (count + sum) are true totals, not a truncated
+  // top-N. The recent-opens feed is a separate bounded query (indexed by
+  // company_code, created_at desc), never a full-table scan.
+  const companyViewsPromise = supabase.rpc("get_top_company_views", {
+    start_ts: startIso ?? "1970-01-01T00:00:00.000Z",
+    limit_n: 500,
+  });
+
+  const recentOpensBase = supabase
+    .from("page_view_events")
+    .select("id, company_code, referrer, created_at")
+    .not("company_code", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  const recentOpensPromise = startIso
+    ? recentOpensBase.gte("created_at", startIso)
+    : recentOpensBase;
+
   const [
     uniqueVisitorsResult,
     feedbackRowsResult,
@@ -808,6 +843,8 @@ async function getAdminData(range: RangeKey) {
     watchlistItemsRows,
     watchlistItemsCountResult,
     companyRowsResult,
+    companyViewsResult,
+    recentOpensResult,
   ] =
     await Promise.all([
       uniqueVisitorsPromise,
@@ -826,6 +863,8 @@ async function getAdminData(range: RangeKey) {
       watchlistItemsPromise,
       watchlistItemsCountPromise,
       companyRowsPromise,
+      companyViewsPromise,
+      recentOpensPromise,
     ]);
 
   const uniqueUsers = Number(uniqueVisitorsResult.data ?? 0);
@@ -852,6 +891,17 @@ async function getAdminData(range: RangeKey) {
   const watchlistsCreatedCount = Number(watchlistsCountResult.count ?? 0);
   const savedCompaniesCount = Number(watchlistItemsCountResult.count ?? 0);
   const companyRows = (companyRowsResult.data ?? []) as CompanyNameRow[];
+  const companyViewRows = buildCompanyViewRows(
+    (companyViewsResult.data ?? []) as CompanyViewRpcRow[],
+    companyRows,
+  );
+  const { companiesOpened, totalOpens } = summarizeCompanyViews(companyViewRows);
+  const recentCompanyOpens = buildRecentCompanyOpens(
+    (recentOpensResult.data ?? []) as RawCompanyOpenRow[],
+    companyRows,
+    getOwnHosts(process.env),
+  );
+  const topCompanyViews = companyViewRows.slice(0, 50);
   const watchlistsById = new Map<number, WatchlistLookupRow>();
   [...recentWatchlistsRows, ...activityWatchlistsRows].forEach((row) => {
     watchlistsById.set(row.id, row);
@@ -891,6 +941,12 @@ async function getAdminData(range: RangeKey) {
       feedbackCount,
       activeVisitors,
       recentAccountsRows,
+    },
+    companies: {
+      companiesOpened,
+      totalOpens,
+      topCompanyViews,
+      recentCompanyOpens,
     },
     watchlists: {
       watchlistsCreatedCount,
@@ -940,6 +996,12 @@ export default async function AdminPage({
       feedbackCount: 0,
       activeVisitors: [] as ActiveVisitorPoint[],
       recentAccountsRows: [] as RecentAccountRow[],
+    },
+    companies: {
+      companiesOpened: 0,
+      totalOpens: 0,
+      topCompanyViews: [] as CompanyViewRow[],
+      recentCompanyOpens: [] as RecentCompanyOpenRow[],
     },
     watchlists: {
       watchlistsCreatedCount: 0,
@@ -1036,6 +1098,21 @@ export default async function AdminPage({
             />
             <AdminDailyVisitorsChart data={data.usage.activeVisitors} />
             <RecentAccountsTable rows={data.usage.recentAccountsRows} />
+          </AdminSection>
+        }
+        companies={
+          <AdminSection
+            title="Companies"
+            description="Which covered companies get opened, how often, and the most recent opens. Counts are page opens (not unique visitors); Source is the external referrer, or Direct."
+          >
+            <AdminMetricGrid
+              metrics={[
+                { label: "Companies Opened", value: data.companies.companiesOpened },
+                { label: "Total Opens", value: data.companies.totalOpens },
+              ]}
+            />
+            <CompanyViewsTable rows={data.companies.topCompanyViews} />
+            <RecentCompanyOpensTable rows={data.companies.recentCompanyOpens} />
           </AdminSection>
         }
         watchlists={

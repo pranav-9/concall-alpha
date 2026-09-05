@@ -20,7 +20,7 @@ export const VALUATION_LENS_LABEL: Record<ValuationLensId, string> = {
  * A verdict shown against a price that has since moved is worse than no verdict, so both a
  * time bound and a move bound apply.
  */
-export const VALUATION_STALE_AFTER_DAYS = 4;
+export const VALUATION_STALE_AFTER_DAYS = 10;
 export const VALUATION_STALE_AFTER_MOVE_PCT = 10;
 
 const toNumber = (value: unknown): number | null =>
