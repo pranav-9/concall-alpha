@@ -306,7 +306,9 @@ const formatTargetBadge = (item: ValueBadgeFields): string | null => {
     return null;
   }
   // Qualitative-only fallback ("double-digit", "mid-teens").
-  return item.valueText.length > 20 ? `${item.valueText.slice(0, 18)}…` : item.valueText;
+  // A long qualitative phrase sliced to 18 chars ("growth is already …") carried
+  // nothing the guidance text beside it did not; past ~24 chars, skip the chip.
+  return item.valueText.length > 24 ? null : item.valueText;
 };
 
 // Drawer header keeps a single combined badge for back-compat (header is
