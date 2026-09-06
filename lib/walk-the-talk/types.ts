@@ -124,6 +124,10 @@ export type NormalizedWalkTheTalk = {
 
   // Live book (not yet graded) — surfaced on the Overview card so a
   // downward revision doesn't just silently leave the ratio (2026-09-06).
+  // liveRevisedUpCount is computed and tested for symmetry with the down
+  // count but intentionally not yet rendered anywhere — the Overview card
+  // only flags a raise's warning-signal counterpart, a lowered target
+  // (ship-workflow specialist review, 2026-09-06).
   liveCount: number;
   liveRevisedUpCount: number;
   liveRevisedDownCount: number;

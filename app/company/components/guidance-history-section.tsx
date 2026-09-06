@@ -40,13 +40,15 @@ import {
 import { MIN_COMMITMENTS_FOR_GRADE } from "@/lib/walk-the-talk/grade-utils";
 import type { WalkTheTalkTier } from "@/lib/walk-the-talk/types";
 import { chipClass, type ChipTone } from "./chip-tone";
+import { GUIDANCE_TIER_TONE } from "./guidance-header-pills";
 import { elevatedBlockClass, elevatedMutedBlockClass, nestedDetailClass } from "./surface-tokens";
 import type {
   NormalizedGuidanceItem,
   NormalizedGuidanceStatusKey,
 } from "@/lib/guidance-tracking/types";
 
-// Kept for the Overview and tests/guidance-status-bucket.test.ts.
+// Kept only for tests/guidance-status-bucket.test.ts — nothing in the
+// Overview reads either of these (ship-workflow specialist review, 2026-09-06).
 export { STATUS_TO_BUCKET, bucketOf } from "@/lib/guidance-tracking/verdict";
 
 export type GuidanceHistorySectionProps = {
@@ -68,28 +70,39 @@ export type GuidanceHistorySectionProps = {
 const eyebrowClass = "text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground";
 const monoClass = "font-mono text-[11px] tabular-nums text-muted-foreground";
 
-const TIER_CARD: Record<WalkTheTalkTier, { shell: string; eyebrow: string }> = {
-  reliable: {
+// Shell/eyebrow styling keyed by ChipTone, not by tier directly — the
+// tier -> tone assignment lives in one place (GUIDANCE_TIER_TONE, shared
+// with the header pill) so this card can't drift from that mapping
+// (ship-workflow specialist review, 2026-09-06).
+const TONE_CARD_SHELL: Partial<Record<ChipTone, { shell: string; eyebrow: string }>> = {
+  emerald: {
     shell: "border-emerald-500/35 bg-emerald-500/[0.06] dark:bg-emerald-500/[0.07]",
     eyebrow: "text-emerald-700 dark:text-emerald-300",
   },
-  mixed: {
+  sky: {
     shell: "border-sky-500/35 bg-sky-500/[0.06] dark:bg-sky-500/[0.07]",
     eyebrow: "text-sky-700 dark:text-sky-300",
   },
-  erratic: {
+  amber: {
     shell: "border-amber-500/35 bg-amber-500/[0.06] dark:bg-amber-500/[0.07]",
     eyebrow: "text-amber-700 dark:text-amber-300",
   },
-  weak: {
+  rose: {
     shell: "border-rose-500/35 bg-rose-500/[0.06] dark:bg-rose-500/[0.07]",
     eyebrow: "text-rose-700 dark:text-rose-300",
   },
-  not_enough_data: {
+  slate: {
     shell: "border-border/35 bg-background/75",
     eyebrow: "text-muted-foreground",
   },
 };
+
+const TIER_CARD: Record<WalkTheTalkTier, { shell: string; eyebrow: string }> = Object.fromEntries(
+  (Object.keys(GUIDANCE_TIER_TONE) as WalkTheTalkTier[]).map((tier) => [
+    tier,
+    TONE_CARD_SHELL[GUIDANCE_TIER_TONE[tier]]!,
+  ]),
+) as Record<WalkTheTalkTier, { shell: string; eyebrow: string }>;
 
 const OUTCOME_META: Record<ResolvedOutcome, { label: string; tone: ChipTone; bar: string; ink: string }> = {
   met: { label: "Met", tone: "emerald", bar: "bg-emerald-500", ink: "text-emerald-700 dark:text-emerald-300" },

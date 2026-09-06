@@ -125,7 +125,10 @@ export const readNumericValue = (v: ValueFields): NumericValue | null => {
   // Percent axis — structured kind, or a legacy row with a % on it.
   if (v.valueKind === "percent" || v.valueKind === "percent_level" || (v.valueKind == null && v.valuePercent != null)) {
     const n = v.numericValue ?? v.valuePercent;
-    const range = v.valueText?.match(/(\d+(?:\.\d+)?)\s*(?:%\s*)?(?:to|-|–|—)\s*(\d+(?:\.\d+)?)\s*%/i);
+    // Reuses extractPercentRange's own pattern rather than a second copy of
+    // it (ship-workflow specialist review, 2026-09-06).
+    const rangeText = extractPercentRange(v.valueText);
+    const range = rangeText?.match(/^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)%$/);
     if (range) {
       const lo = parseFloat(range[1]);
       const hi = parseFloat(range[2]);
@@ -180,8 +183,12 @@ export const formatDelta = (
   if (isRange) {
     if (d > guided.hi) return { label: "beat", sign: 1 };
     if (d >= guided.lo) return { label: "in range", sign: 0 };
-    const gap = guided.kind === "percent" ? `${fmtNum(d - guided.lo)} pts` : `${fmtNum(((d - guided.lo) / guided.lo) * 100)}%`;
-    return { label: gap, sign: -1 };
+    if (guided.kind === "percent") return { label: `${fmtNum(d - guided.lo)} pts`, sign: -1 };
+    // Absolute range with a zero floor (e.g. "0 to 50 crore") can't drive a
+    // percentage-of-floor gap — same defensive guard as the point-value
+    // branch below (ship-workflow specialist review, 2026-09-06).
+    if (guided.lo === 0) return null;
+    return { label: `${fmtNum(((d - guided.lo) / guided.lo) * 100)}%`, sign: -1 };
   }
   const g = guided.lo;
   if (guided.kind === "percent") {

@@ -4,8 +4,13 @@ import type { ReportingQuarter } from "../lib/current-quarter";
 import {
   buildGuidanceVerdict,
   classifyGuidanceItem,
+  commitmentShortLabel,
   heldSinceQuarter,
 } from "../lib/guidance-tracking/verdict";
+import {
+  formatMetricLabel,
+  formatMetricLabelMidSentence,
+} from "../lib/guidance-tracking/normalize";
 import type {
   NormalizedGuidanceItem,
   NormalizedGuidanceStatusKey,
@@ -177,6 +182,51 @@ test("heldSinceQuarter: stops at the value-mismatch step even when mention_type 
   // current, no break, since=Q3 FY26) then hitting Q2 FY26 whose stated
   // value (20%) differs from current (30%) and breaking there.
   assert.equal(heldSinceQuarter(it), "Q3 FY26");
+});
+
+// ---------------------------------------------------------------------------
+// 4. formatMetricLabel / formatMetricLabelMidSentence: the v2-schema
+//    subtypes added alongside this diff (margin family's gross_margin/
+//    pat_margin, and the yield family's revenue_yield/nim) had zero direct
+//    coverage — only ebitda_margin was exercised anywhere in the suite.
+// ---------------------------------------------------------------------------
+
+test("formatMetricLabel: margin family subtypes", () => {
+  assert.equal(formatMetricLabel("margin", "gross_margin"), "Gross margin");
+  assert.equal(formatMetricLabel("margin", "pat_margin"), "PAT margin");
+});
+
+test("formatMetricLabel: yield family subtypes", () => {
+  assert.equal(formatMetricLabel("yield", "revenue_yield"), "Revenue yield");
+  assert.equal(formatMetricLabel("yield", "nim"), "NIM");
+});
+
+test("formatMetricLabelMidSentence: acronym subtypes stay capitalized, plain ones lowercase", () => {
+  assert.equal(formatMetricLabelMidSentence("margin", "pat_margin"), "PAT margin");
+  assert.equal(formatMetricLabelMidSentence("margin", "gross_margin"), "gross margin");
+  assert.equal(formatMetricLabelMidSentence("yield", "nim"), "NIM");
+  assert.equal(formatMetricLabelMidSentence("yield", "revenue_yield"), "revenue yield");
+});
+
+// ---------------------------------------------------------------------------
+// 5. commitmentShortLabel: the no-metricLabel long-text truncation fallback
+//    (guidanceText > 60 chars, no family/subtype to derive a metric label
+//    from) was untested — only the metricLabel-present paths were covered.
+// ---------------------------------------------------------------------------
+
+test("commitmentShortLabel: falls back to a truncated guidanceText when there's no metricLabel", () => {
+  const longText =
+    "Management expects the newly commissioned facility to reach full utilisation over the next two years";
+  const it = item({ guidanceFamily: null, metricSubtype: null, metricLabel: null, guidanceText: longText, horizonLabel: null });
+  const label = commitmentShortLabel(it);
+  assert.equal(label.endsWith("…"), true);
+  assert.equal(label.length, 59); // 58 sliced chars + the ellipsis
+  assert.equal(label, `${longText.slice(0, 58)}…`);
+});
+
+test("commitmentShortLabel: short guidanceText with no metricLabel renders verbatim, sentence-cased", () => {
+  const it = item({ guidanceFamily: null, metricSubtype: null, metricLabel: null, guidanceText: "margin holds steady", horizonLabel: "FY26" });
+  assert.equal(commitmentShortLabel(it), "Margin holds steady (FY26)");
 });
 
 console.log("guidance-verdict-coverage-gaps: all assertions passed");
