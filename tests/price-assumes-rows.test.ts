@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 
 import {
   buildPriceAssumesRows,
+  buildPriceMarkers,
   deliveredRowLabel,
 } from "../lib/valuation-check/price-assumes-rows";
 
-// Scenarios are fractions and get scaled; delivered is already percent.
+// Scenarios are fractions and get scaled; delivered is already percent; the
+// ask sorts by its number like everything else.
 {
   const rows = buildPriceAssumesRows({
     impliedPct: 39.5,
@@ -19,45 +21,47 @@ import {
   assert.deepEqual(
     rows.map((r) => [r.key, r.pct]),
     [
-      ["down", 15],
-      ["d-5y", 17],
+      ["downside", 15],
+      ["delivered-5y", 17],
       ["base", 19],
-      ["up", 20],
-      ["d-ttm", 78],
+      ["upside", 20],
       ["ask", 39.5],
+      ["delivered-ttm", 78],
     ],
-    "cases scaled ×100, merged with delivered, sorted ascending, ask last",
+    "cases scaled ×100, merged with delivered and the ask, sorted ascending",
   );
-  assert.equal(rows.at(-1)?.kind, "ask");
-  assert.equal(rows.at(-1)?.label, "The ask · growth implied by today's price");
+  assert.equal(rows.find((r) => r.kind === "ask")?.label, "The ask · growth implied by today's price");
 }
 
-// Null scenarios are omitted, not rendered as 0.
+// A cheap stock: the ask below our base case must sort BELOW it, not last.
 {
   const rows = buildPriceAssumesRows({
-    impliedPct: 12,
-    scenarios: { downside: null, base: 0.1, upside: null },
-    delivered: [],
+    impliedPct: 8,
+    scenarios: { downside: 0.1, base: 0.15, upside: 0.2 },
+    delivered: [{ key: "10y", label: "10-yr delivered", pct: 12 }],
     metric: "growth",
   });
   assert.deepEqual(
     rows.map((r) => r.key),
-    ["base", "ask"],
+    ["ask", "downside", "delivered-10y", "base", "upside"],
   );
 }
 
-// The ask closes the list even when it is the smallest number.
+// Null scenarios are omitted, not rendered as 0; a 0 scenario is kept.
 {
   const rows = buildPriceAssumesRows({
-    impliedPct: 2,
-    scenarios: { downside: 0.05, base: 0.1, upside: 0.15 },
-    delivered: [{ key: "10y", label: "10-yr delivered", pct: 9 }],
+    impliedPct: 12,
+    scenarios: { downside: null, base: 0.1, upside: 0 },
+    delivered: [],
     metric: "growth",
   });
-  assert.equal(rows.at(-1)?.key, "ask");
   assert.deepEqual(
-    rows.slice(0, -1).map((r) => r.pct),
-    [5, 9, 10, 15],
+    rows.map((r) => [r.key, r.pct]),
+    [
+      ["upside", 0],
+      ["base", 10],
+      ["ask", 12],
+    ],
   );
 }
 
@@ -77,6 +81,32 @@ assert.equal(deliveredRowLabel("TTM", "growth"), "TTM delivered");
   assert.deepEqual(
     rows.map((r) => r.label),
     ["Return on equity it earns", "The ask · implied by today's price"],
+  );
+}
+
+// The bar and the list share one marker builder: same ids, same pct values.
+{
+  const input = {
+    impliedPct: 30,
+    scenarios: { downside: 0.1, base: 0.2, upside: null },
+    delivered: [{ key: "1y", label: "TTM", pct: 25 }],
+  };
+  const markers = buildPriceMarkers(input);
+  assert.deepEqual(
+    markers.map((m) => [m.id, m.pct, m.kind]),
+    [
+      ["downside", 10, "case"],
+      ["base", 20, "case"],
+      ["delivered-1y", 25, "delivered"],
+      ["ask", 30, "ask"],
+    ],
+    "source order: cases, delivered, ask — the bar's own layout order",
+  );
+  const rows = buildPriceAssumesRows({ ...input, metric: "growth" });
+  assert.deepEqual(
+    new Map(rows.map((r) => [r.key, r.pct])),
+    new Map(markers.map((m) => [m.id, m.pct])),
+    "every marker appears in the list with the identical value",
   );
 }
 

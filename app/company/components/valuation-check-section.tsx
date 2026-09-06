@@ -271,6 +271,13 @@ function PriceAssumes({ valuation }: { valuation: NormalizedValuationCheck }) {
       deliveredRoe !== null
         ? [{ key: "roe", label: `Delivered RoE ${deliveredRoe.toFixed(1)}%`, pct: deliveredRoe }]
         : [];
+    // Bar and list read the same input, so a new field reaches both at once.
+    const roeInput: PriceAssumesInput = {
+      impliedPct: impliedRoe ?? 0,
+      scenarios: { downside: null, base: null, upside: null },
+      delivered: deliveredMarker,
+      metric: "roe",
+    };
     return (
       <div className={cn(elevatedBlockClass, "px-4 py-3.5 sm:px-5")}>
         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -290,20 +297,10 @@ function PriceAssumes({ valuation }: { valuation: NormalizedValuationCheck }) {
         {impliedRoe !== null ? (
           <>
             <div className="mt-3 hidden space-y-2 sm:block">
-              <ValuationHorizonBar
-                impliedPct={impliedRoe}
-                scenarios={{ downside: null, base: null, upside: null }}
-                delivered={deliveredMarker}
-                metric="roe"
-              />
+              <ValuationHorizonBar {...roeInput} />
               <ValuationHorizonLegend hasDelivered={deliveredMarker.length > 0} metric="roe" />
             </div>
-            <PriceAssumesList
-              impliedPct={impliedRoe}
-              scenarios={{ downside: null, base: null, upside: null }}
-              delivered={deliveredMarker}
-              metric="roe"
-            />
+            <PriceAssumesList {...roeInput} />
           </>
         ) : null}
         {valuation.plausibilityCheck ? (
@@ -342,9 +339,12 @@ function PriceAssumes({ valuation }: { valuation: NormalizedValuationCheck }) {
         <>
           <div className="mt-3 hidden space-y-2 sm:block">
             <ValuationHorizonBar
-              impliedPct={impliedCagrPct}
-              scenarios={scenarios}
-              delivered={valuation.deliveredCagr}
+              {...({
+                impliedPct: impliedCagrPct,
+                scenarios,
+                delivered: valuation.deliveredCagr,
+                metric: "growth",
+              } satisfies PriceAssumesInput)}
             />
             <ValuationHorizonLegend hasDelivered={valuation.deliveredCagr.length > 0} />
           </div>
