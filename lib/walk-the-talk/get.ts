@@ -21,6 +21,12 @@ export const getWalkTheTalk = cache(async (code: string) => {
     .from("guidance_snapshot")
     .select(COLUMNS)
     .eq("company_code", code)
+    // No company has more than one snapshot row today, but nothing enforces
+    // that, and without an explicit order a second row would let this read
+    // and GuidanceHistoryPanel's read disagree on which one is "current"
+    // (/plan-eng-review outside-voice finding, 2026-09-06). Same ordering
+    // as that panel's own guidance_snapshot query.
+    .order("generated_at", { ascending: false })
     .limit(1);
 
   const row = (data?.[0] as GuidanceSnapshotRow | undefined) ?? null;

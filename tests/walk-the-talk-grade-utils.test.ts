@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 
 import {
   computeTier,
-  countsForGrade,
   isOnTime,
   MIN_COMMITMENTS_FOR_GRADE,
 } from "../lib/walk-the-talk/grade-utils";
@@ -33,23 +32,11 @@ test("isOnTime — only 'met' is on-time", () => {
   assert.equal(isOnTime("unknown"), false);
 });
 
-// ===========================================================================
-// countsForGrade
-// ===========================================================================
-
-test("countsForGrade — decided outcomes count: met, missed, delayed, dropped, revised", () => {
-  assert.equal(countsForGrade("met"), true);
-  assert.equal(countsForGrade("missed"), true);
-  assert.equal(countsForGrade("delayed"), true);
-  assert.equal(countsForGrade("dropped"), true);
-  assert.equal(countsForGrade("revised"), true);
-});
-
-test("countsForGrade — undecided/unknown don't count: active, not_yet_clear, unknown", () => {
-  assert.equal(countsForGrade("active"), false);
-  assert.equal(countsForGrade("not_yet_clear"), false);
-  assert.equal(countsForGrade("unknown"), false);
-});
+// countsForGrade was deleted 2026-09-06 (/plan-eng-review Issue 1) — which
+// outcomes count toward the ratio is now decided by classifyGuidanceItem /
+// isGradedForTier in lib/guidance-tracking/verdict.ts (horizon-aware; see
+// tests/guidance-verdict.test.ts for that coverage), not by a status-only
+// rule here.
 
 // ===========================================================================
 // computeTier — boundary conditions

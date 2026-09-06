@@ -40,7 +40,7 @@ export const SECTIONS = [
   },
   {
     id: "guidance-history",
-    label: "Guidance History",
+    label: "Guidance",
   },
   {
     id: "moat-analysis",

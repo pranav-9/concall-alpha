@@ -174,6 +174,6 @@ It also includes recent-activity and moderation tables such as:
 
 - Company pages are organized around sectioned analysis rather than raw transcript dumps.
 - `Industry Context` and `Business Snapshot` are collapsed by default.
-- `Guidance History` now uses thread-style guidance trails instead of full comparison cards.
+- `Guidance` leads with a keep-their-word verdict and a Guided / Delivered / Outcome track record; per-thread trails open in a drawer (thread-style, not comparison cards).
 - `ConcallScore` uses a synced chart + one-card-at-a-time context carousel.
 - Missing company sections can be requested inline with a one-click CTA.

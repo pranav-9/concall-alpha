@@ -684,15 +684,15 @@ Should feel optimistic but still research-oriented.
 - nested catalyst cards
 - scenario analysis held in a quieter sub-panel (L4)
 
-### Guidance History
+### Guidance
 
-Should feel like a longitudinal evidence trail.
+Should answer "do they keep their word?" before showing any evidence.
 
-- amber tone, but softened
-- summary at top
-- grouped threads
-- expandable trails
-- transparent historical continuity
+- amber tone, but softened; the verdict card tints by tier (emerald / sky / amber / rose)
+- verdict card + resolved track-record card (met count, segmented bar, live footnote) at the top
+- live commitments as a divided list with scope chip, horizon, status pill, and a value trail on revised threads
+- resolved commitments as a Guided / Delivered / Outcome grid (labelled cells on mobile)
+- per-thread trails in the right-side Drawer, not inline
 
 The full guidance-tracker layout spec is in the [Appendix: Guidance Tracker](#appendix-guidance-tracker-layout).
 
@@ -836,24 +836,26 @@ Useful files to inspect when extending the system:
 
 ## Appendix: Guidance Tracker Layout
 
-The guidance history section should read like a tracker dashboard, not a plain list.
+The Guidance section (`app/company/components/guidance-history-section.tsx`)
+is verdict-first (redesigned 2026-09-06 — see "### Guidance" above). This
+appendix used to describe an earlier status-group/thread-card layout that no
+longer exists; the layout is now:
 
-Use:
+- a "Do they keep their word?" verdict card (headline + a templated summary
+  sentence) paired with a resolved track-record card (met count, segmented
+  bar, live footnote) — confidence signals (percentage, bar, header pill)
+  are withheld until 3 commitments have resolved
+- a Live commitments list — one row per in-flight commitment, with a scope
+  chip, horizon, status pill, and a value trail once the thread has 2+
+  distinct stated values, regardless of status
+- a Guided / Delivered / Outcome table for resolved commitments (labelled
+  cells on mobile instead of a table)
+- per-thread trails live in a right-side Drawer, not inline on the page
+- a collapsed Sources disclosure, only rendered when well-shaped provenance
+  entries exist
 
-- section header chips that surface the analysis window, refresh time, source depth, and current guidance
-- keep style rationale and big-picture guidance in the main snapshot panels, not a drawer
-- a three-column summary grid for direction style, big-picture growth, and credibility verdict
-- a second two-column row for this year guidance data and the prior two years of guidance calibration
-- keep style, growth trend, current guidance, and credibility as compact badges inside the summary cards, not as a separate hero strip
-- keep the top summary cards sparse; do not add evidence-quarter, source, or calibration sub-panels back into them
-- keep the big-picture growth card to one primary statement; do not add a nested subheading or supporting subtext block
-- keep the top summary cards flat; use plain text and badges instead of nested inner panels
-- an amber summary band with thread counts, source depth, and the latest tracked period
-- status-group cards arranged in a responsive grid
-- individual thread cards that surface type, status, target period, and mention span first
-- collapsible quarter-by-quarter trails for the supporting evidence
-- keep the existing guidance tracker underneath the snapshot and data cards
-- avoid unnecessary explanatory copy; keep text light because the dashboard already carries a lot of text
+Every number and sentence in the verdict card is templated from counts —
+see `lib/guidance-tracking/verdict.ts`.
 
 ---
 

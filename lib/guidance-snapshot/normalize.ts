@@ -69,6 +69,12 @@ const normalizeSnapshotGuidanceItems = (
       guidance_family: asString(row.guidance_family),
       metric_subtype: asString(row.metric_subtype),
       segment: asString(row.segment),
+      // Was dropped on this path — segment_canonical drives the backend's
+      // consolidation/dedupe key, so its absence here meant every
+      // guidance_snapshot-sourced item lost that signal even though the
+      // legacy guidance_tracking path (lib/guidance-tracking/normalize.ts)
+      // always read it (Codex outside-voice finding, 2026-09-06).
+      segment_canonical: asString(row.segment_canonical),
       value: row.value,
       horizon: row.horizon,
       source_mentions: null,

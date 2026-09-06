@@ -10,9 +10,10 @@ and the Phase 10 per-company snapshot
 This doc covers reader-side intent only.
 
 The section in `concall-alpha` is rendered as **`guidance-history-section.tsx`**
-(a thread-style trail per commitment, by deliberate design — see
-`concall-alpha/CLAUDE.md` "project gotchas"). Don't reintroduce comparison
-cards.
+(verdict-first since 2026-09-06: keep-their-word card, live commitments,
+then a Guided / Delivered / Outcome track record; the thread-style trail per
+commitment lives in the row Drawer — see `concall-alpha/CLAUDE.md` "project
+gotchas"). Don't reintroduce comparison cards.
 
 ## What does the reader walk away believing?
 

@@ -1,7 +1,9 @@
+import { currentReportingQuarter, type ReportingQuarter } from "@/lib/current-quarter";
 import type { NormalizedGuidanceSnapshot } from "@/lib/guidance-snapshot/types";
 import type { NormalizedGuidanceItem } from "@/lib/guidance-tracking/types";
+import { classifyGuidanceItem, isGradedForTier, revisionDirection } from "@/lib/guidance-tracking/verdict";
 
-import { computeTier, countsForGrade, isOnTime } from "./grade-utils";
+import { computeTier, isOnTime } from "./grade-utils";
 import {
   mapGuidanceFamilyToCategory,
   type NormalizedWalkTheTalk,
@@ -29,6 +31,7 @@ function countDelayMentions(item: NormalizedGuidanceItem): number {
 
 function buildCommitmentRow(
   item: NormalizedGuidanceItem,
+  current: ReportingQuarter,
 ): WalkTheTalkCommitmentRow {
   const statusKey = item.statusKey;
   const rawGuidanceType =
@@ -48,7 +51,11 @@ function buildCommitmentRow(
     status_reason: item.statusReason,
     latest_view: item.latestView,
     on_time: isOnTime(statusKey),
-    counts_for_grade: countsForGrade(statusKey),
+    // Horizon-aware (2026-09-06): a revision/delay on a commitment whose
+    // horizon is still ahead is NOT graded yet — it is graded once the
+    // horizon passes. Same classifier the Guidance section uses, so the
+    // Overview card and the section header agree.
+    counts_for_grade: isGradedForTier(item, current),
     delay_mention_count: countDelayMentions(item),
   };
 }
@@ -153,6 +160,7 @@ function pickDataSpan(
 export function normalizeWalkTheTalk(
   snapshot: NormalizedGuidanceSnapshot | null | undefined,
   fallbackTicker?: string,
+  current: ReportingQuarter = currentReportingQuarter(),
 ): NormalizedWalkTheTalk {
   if (!snapshot || snapshot.guidanceItems.length === 0) {
     return {
@@ -166,10 +174,13 @@ export function normalizeWalkTheTalk(
       overall: emptyOverall(),
       byCategory: [],
       commitments: [],
+      liveCount: 0,
+      liveRevisedUpCount: 0,
+      liveRevisedDownCount: 0,
     };
   }
 
-  const commitments = snapshot.guidanceItems.map(buildCommitmentRow);
+  const commitments = snapshot.guidanceItems.map((item) => buildCommitmentRow(item, current));
   const byCategory = buildCategoryBuckets(commitments);
 
   const graded = commitments.filter((c) => c.counts_for_grade);
@@ -178,6 +189,25 @@ export function normalizeWalkTheTalk(
   const overallTier = computeTier(onTimeCount, totalCount);
 
   const span = pickDataSpan(commitments);
+
+  // Live book — surfaced on the Overview card so a downward revision is
+  // visible there instead of just silently leaving the graded ratio
+  // (/plan-eng-review Step 0 scope decision, 2026-09-06). Reads the SAME
+  // classifier as the Guidance section (classifyGuidanceItem), so the two
+  // never disagree on which commitments are live.
+  let liveCount = 0;
+  let liveRevisedUpCount = 0;
+  let liveRevisedDownCount = 0;
+  for (const item of snapshot.guidanceItems) {
+    const c = classifyGuidanceItem(item, current);
+    if (c.phase !== "live") continue;
+    liveCount += 1;
+    if (c.state === "revised") {
+      const direction = revisionDirection(item);
+      if (direction === "up") liveRevisedUpCount += 1;
+      else if (direction === "down") liveRevisedDownCount += 1;
+    }
+  }
 
   return {
     ticker: snapshot.companyCode,
@@ -194,5 +224,8 @@ export function normalizeWalkTheTalk(
     },
     byCategory,
     commitments,
+    liveCount,
+    liveRevisedUpCount,
+    liveRevisedDownCount,
   };
 }

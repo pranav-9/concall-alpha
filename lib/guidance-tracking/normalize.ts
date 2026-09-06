@@ -2,6 +2,7 @@ import type {
   GuidanceFamily,
   GuidanceMetricSubtype,
   GuidanceStatusKey,
+  GuidanceValueKind,
   GuidanceTrackingRow,
   NormalizedGuidanceItem,
   NormalizedGuidanceMention,
@@ -103,6 +104,45 @@ export const extractFyYear = (value: string | null | undefined): number | null =
   const parsed = parseInt(digits, 10);
   if (!Number.isFinite(parsed)) return null;
   return digits.length <= 2 ? 2000 + parsed : parsed;
+};
+
+// Extract a quarter-precise (fy, qtr) pair from a horizon string like
+// "Q3 FY26" or "Q3FY'26" — anchored, so a bare "FY26" (no quarter token)
+// returns null; extractFyYear covers that FY-only case. `fy` uses the same
+// digit-literal convention as extractFyYear and lib/current-quarter's
+// ReportingQuarter (e.g. "FY26" -> fy 2026), so the two are directly
+// comparable as a single quarter index (fy * 4 + qtr).
+//
+// Also recognizes "H1 FY26" / "H2 FY26" (a half-year horizon or trail
+// mention), mapping to the QUARTER AT WHICH THAT HALF CONCLUDES — H1 ends
+// with Q2, H2 ends with Q4 — the same convention formatGuidancePeriodLabel
+// and periodToSortSignal already use for half-year periods elsewhere in
+// this file. Before this, a horizon literally stated as "H1 FY27" fell
+// through to the FY-only fallback (deadline = Q4), so an H1-due commitment
+// stayed classified as live for two extra quarters after it was actually
+// due (Codex adversarial finding, ship-workflow review, 2026-09-06).
+export const extractFyQuarter = (
+  value: string | null | undefined,
+): { fy: number; qtr: number } | null => {
+  if (!value) return null;
+  const quarterMatch = value.match(/^\s*Q\s*([1-4])\s*FY\s*'?\s*(\d{2,4})\s*$/i);
+  if (quarterMatch) {
+    const qtr = parseInt(quarterMatch[1], 10);
+    const digits = quarterMatch[2];
+    const parsed = parseInt(digits, 10);
+    if (!Number.isFinite(parsed)) return null;
+    const fy = digits.length <= 2 ? 2000 + parsed : parsed;
+    return { fy, qtr };
+  }
+  const halfMatch = value.match(/^\s*H\s*([12])\s*FY\s*'?\s*(\d{2,4})\s*$/i);
+  if (halfMatch) {
+    const digits = halfMatch[2];
+    const parsed = parseInt(digits, 10);
+    if (!Number.isFinite(parsed)) return null;
+    const fy = digits.length <= 2 ? 2000 + parsed : parsed;
+    return { fy, qtr: halfMatch[1] === "1" ? 2 : 4 };
+  }
+  return null;
 };
 
 // Reasoning-prose hints in `value_text` — when the LLM had nothing
@@ -380,11 +420,9 @@ const normalizeTrailItem = (value: unknown): NormalizedGuidanceTrailItem | null 
   const trailValueObj = parseJsonObjectLike(row.value);
   const valuePercent = trailValueObj ? asNumber(trailValueObj.magnitude_percent) : null;
   const valueText = trailValueObj ? asString(trailValueObj.value_text) : null;
-  const trailValueKindRaw = trailValueObj ? asString(trailValueObj.value_kind) : null;
-  const trailValueKind: "percent" | "absolute" | null =
-    trailValueKindRaw === "percent" || trailValueKindRaw === "absolute"
-      ? trailValueKindRaw
-      : null;
+  const trailValueKind = normalizeValueKind(
+    trailValueObj ? asString(trailValueObj.value_kind) : null,
+  );
   const trailNumericValue = trailValueObj ? asNumber(trailValueObj.numeric_value) : null;
   const trailUnit = trailValueObj ? asString(trailValueObj.unit) : null;
 
@@ -506,16 +544,33 @@ const buildTrailFromSourceMentions = (
 
 export const formatGuidanceTypeLabel = (value: string | null | undefined) => toTitleCase(value);
 
-const ALLOWED_FAMILIES: ReadonlySet<GuidanceFamily> = new Set(["growth"]);
+// Mirrors schemas/guidance_snapshot_v2.json enums exactly. Anything outside
+// them normalizes to null so the UI falls back to the raw guidance_text.
+const ALLOWED_FAMILIES: ReadonlySet<GuidanceFamily> = new Set(["growth", "margin", "yield"]);
 const ALLOWED_SUBTYPES: ReadonlySet<GuidanceMetricSubtype> = new Set([
   "revenue",
   "ebitda",
   "pat",
+  "gross_margin",
+  "ebitda_margin",
+  "pat_margin",
+  "revenue_yield",
+  "nim",
 ]);
 const SUBTYPE_DISPLAY: Record<GuidanceMetricSubtype, string> = {
-  revenue: "Revenue",
-  ebitda: "EBITDA",
-  pat: "PAT",
+  revenue: "Revenue growth",
+  ebitda: "EBITDA growth",
+  pat: "PAT growth",
+  gross_margin: "Gross margin",
+  ebitda_margin: "EBITDA margin",
+  pat_margin: "PAT margin",
+  revenue_yield: "Revenue yield",
+  nim: "NIM",
+};
+
+export const normalizeValueKind = (value: string | null | undefined): GuidanceValueKind => {
+  const s = value?.trim().toLowerCase();
+  return s === "percent" || s === "percent_level" || s === "absolute" ? s : null;
 };
 
 const normalizeFamily = (value: unknown): GuidanceFamily | null => {
@@ -530,15 +585,56 @@ const normalizeSubtype = (value: unknown): GuidanceMetricSubtype | null => {
     : null;
 };
 
+// Which subtypes actually belong to which family — normalizeFamily and
+// normalizeSubtype validate membership in their OWN enum independently, so
+// without this cross-check a malformed row (e.g. family="margin" with
+// subtype="revenue") would pass both individually and render as a
+// coherent-looking but wrong label ("Revenue growth" on a margin-bucketed
+// item) — no such row exists in production today, but nothing stopped one
+// from landing (Codex adversarial finding, ship-workflow review, 2026-09-06).
+const FAMILY_SUBTYPES: Record<GuidanceFamily, ReadonlySet<GuidanceMetricSubtype>> = {
+  growth: new Set(["revenue", "ebitda", "pat"]),
+  margin: new Set(["gross_margin", "ebitda_margin", "pat_margin"]),
+  yield: new Set(["revenue_yield", "nim"]),
+};
+
+const subtypeBelongsToFamily = (
+  family: GuidanceFamily | null,
+  subtype: GuidanceMetricSubtype | null,
+): boolean => family != null && subtype != null && FAMILY_SUBTYPES[family].has(subtype);
+
 export const formatMetricLabel = (
   family: GuidanceFamily | null,
   subtype: GuidanceMetricSubtype | null,
 ): string | null => {
   if (!family || !subtype) return null;
-  const metric = SUBTYPE_DISPLAY[subtype];
-  if (!metric) return null;
-  // Phase 6 narrowed scope: family is always "growth".
-  return `${metric} Growth`;
+  return SUBTYPE_DISPLAY[subtype] ?? null;
+};
+
+// Mid-sentence form ("Defence EBITDA growth", "HPP revenue growth") — used
+// when the metric label is embedded after a segment name rather than
+// starting the sentence. Acronym subtypes (EBITDA / PAT / NIM) keep their
+// caps; the rest lowercase their leading word. Carried as its own data
+// column rather than derived at render time with a lowercase-then-
+// recapitalize transform, which mangled acronyms ("Defence eBITDA growth" —
+// /plan-eng-review Issue 4, 2026-09-06).
+const SUBTYPE_DISPLAY_MID_SENTENCE: Record<GuidanceMetricSubtype, string> = {
+  revenue: "revenue growth",
+  ebitda: "EBITDA growth",
+  pat: "PAT growth",
+  gross_margin: "gross margin",
+  ebitda_margin: "EBITDA margin",
+  pat_margin: "PAT margin",
+  revenue_yield: "revenue yield",
+  nim: "NIM",
+};
+
+export const formatMetricLabelMidSentence = (
+  family: GuidanceFamily | null,
+  subtype: GuidanceMetricSubtype | null,
+): string | null => {
+  if (!family || !subtype) return null;
+  return SUBTYPE_DISPLAY_MID_SENTENCE[subtype] ?? null;
 };
 
 export const formatHorizonLabel = (
@@ -681,9 +777,15 @@ const normalizeGuidanceTrackingRow = (
 
   const normalizedStatus = normalizeStatus(asString(row.status));
 
-  const guidanceFamily = normalizeFamily(row.guidance_family);
-  const metricSubtype = normalizeSubtype(row.metric_subtype);
+  const guidanceFamilyRaw = normalizeFamily(row.guidance_family);
+  const metricSubtypeRaw = normalizeSubtype(row.metric_subtype);
+  // A mismatched pair can't be trusted to mean either label — null both
+  // rather than guess, so the UI falls back to the raw guidanceText.
+  const familySubtypeValid = subtypeBelongsToFamily(guidanceFamilyRaw, metricSubtypeRaw);
+  const guidanceFamily = familySubtypeValid ? guidanceFamilyRaw : null;
+  const metricSubtype = familySubtypeValid ? metricSubtypeRaw : null;
   const metricLabel = formatMetricLabel(guidanceFamily, metricSubtype);
+  const metricLabelMidSentence = formatMetricLabelMidSentence(guidanceFamily, metricSubtype);
   const segmentRaw = asString(row.segment);
   const segment = segmentRaw && segmentRaw.toLowerCase() !== "null" ? segmentRaw.slice(0, 80) : null;
   // Canonical form drives consolidation logic in the backend; the frontend
@@ -705,9 +807,7 @@ const normalizeGuidanceTrackingRow = (
   const valueObj = parseJsonObjectLike(row.value);
   const valuePercent = asNumber(valueObj?.magnitude_percent);
   const valueText = asString(valueObj?.value_text);
-  const valueKindRaw = asString(valueObj?.value_kind);
-  const valueKind: "percent" | "absolute" | null =
-    valueKindRaw === "percent" || valueKindRaw === "absolute" ? valueKindRaw : null;
+  const valueKind = normalizeValueKind(asString(valueObj?.value_kind));
   const numericValue = asNumber(valueObj?.numeric_value);
   const unit = asString(valueObj?.unit);
 
@@ -719,6 +819,7 @@ const normalizeGuidanceTrackingRow = (
     guidanceFamily,
     metricSubtype,
     metricLabel,
+    metricLabelMidSentence,
     segment,
     segmentCanonical,
     horizonType,
