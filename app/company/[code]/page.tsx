@@ -197,7 +197,7 @@ export default async function Page({
           </div>
 
           <div data-section-id="guidance-history">
-            <Suspense fallback={<SectionLoading id="guidance-history" title="Guidance History" />}>
+            <Suspense fallback={<SectionLoading id="guidance-history" title="Guidance" />}>
               <GuidanceHistoryPanel overview={overview} />
             </Suspense>
           </div>

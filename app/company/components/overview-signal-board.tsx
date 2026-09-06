@@ -1090,6 +1090,20 @@ function StandingReads({
                 {wtt.overall.onTimeCount} of {wtt.overall.totalCount} guidance
                 items delivered on time
               </p>
+              {/* A downward revision shouldn't just silently leave the ratio
+                  once its horizon pushes the commitment into the live book
+                  (/plan-eng-review Step 0 scope decision, 2026-09-06). */}
+              {wtt.liveCount > 0 && (
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {wtt.liveCount} more live
+                  {wtt.liveRevisedDownCount > 0 && (
+                    <span className="text-amber-700 dark:text-amber-400">
+                      {" "}
+                      · {wtt.liveRevisedDownCount} revised down
+                    </span>
+                  )}
+                </p>
+              )}
             </>
           ) : (
             <p className="mt-2 text-[12.5px] text-muted-foreground">

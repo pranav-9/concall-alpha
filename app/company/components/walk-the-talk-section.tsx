@@ -104,9 +104,11 @@ function GradePendingState({ snapshot }: { snapshot: NormalizedWalkTheTalk }) {
           <p className={subtleClass}>
             {snapshot.ticker || "This company"} has {total} tracked guidance{" "}
             {totalWord}, but only {graded} {gradedVerb} a decided outcome
-            (met / delayed / dropped / revised). The walk-the-talk grade
-            needs at least 3 with decided outcomes; the others (active /
-            not yet clear) will resolve in future quarters.
+            (met / missed / dropped / delayed, or revised past its own new
+            horizon). The walk-the-talk grade needs at least 3 with decided
+            outcomes; the others are still live — active, or revised /
+            delayed with the horizon still ahead — and will resolve in
+            future quarters.
           </p>
         </div>
       </div>

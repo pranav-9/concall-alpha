@@ -4,6 +4,8 @@ import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
 import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
+import { buildGuidanceVerdict } from "@/lib/guidance-tracking/verdict";
+import { currentReportingQuarter } from "@/lib/current-quarter";
 import { normalizeKeyVariablesSnapshot } from "@/lib/key-variables-snapshot/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import { assessStaleness, normalizeValuationCheck } from "@/lib/valuation-check/normalize";
@@ -34,6 +36,7 @@ import { SectionLoading } from "../components/section-loading";
 import { SubSectorSection } from "../components/sub-sector-section";
 import { ValuationCheckSection } from "../components/valuation-check-section";
 import { WalkTheTalkSection } from "../components/walk-the-talk-section";
+import { GuidanceHeaderPills } from "../components/guidance-header-pills";
 import {
   CompanyCommentsSection,
   GuidanceHistorySection,
@@ -351,55 +354,76 @@ export async function WalkTheTalkPanel({ overview }: CompanyDetailSectionProps) 
 
 export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionProps) {
   const supabase = await createClient();
-  const [guidanceTrackingResult, guidanceSnapshotResult] = await Promise.all([
-    supabase
+  const guidanceSnapshotResult = await supabase
+    .from("guidance_snapshot")
+    .select(
+      "company_code, generated_at, analysis_window_quarters, guidance_items, source_files, details, updated_at",
+    )
+    .eq("company_code", overview.company_code)
+    .order("generated_at", { ascending: false })
+    .limit(1);
+  const normalizedGuidanceSnapshot = normalizeGuidanceSnapshot(
+    (guidanceSnapshotResult.data?.[0] as GuidanceSnapshotRow | undefined) ?? null,
+  );
+  // Legacy guidance_tracking predates the Phase 6 v2 snapshot and has no
+  // horizon data. Fetch it only when the snapshot came back empty — most
+  // companies have both rows and the snapshot always wins, so fetching
+  // legacy unconditionally was a discarded round-trip (8-9 KB of JSONB) on
+  // every one of those page loads (/plan-eng-review Issue 7, 2026-09-06).
+  // A handful of companies (e.g. ARMANFIN) have ONLY the legacy row and
+  // depend on this fallback for a working Guidance section.
+  let legacyGuidanceItems: ReturnType<typeof normalizeGuidanceTrackingRows> = [];
+  let legacyGeneratedAt: string | null | undefined;
+  if (!normalizedGuidanceSnapshot) {
+    const guidanceTrackingResult = await supabase
       .from("guidance_tracking")
       .select(
         "id, company_code, guidance_key, guidance_text, guidance_type, first_mentioned_in, target_period, source_mentions, trail, status, status_reason, latest_view, confidence, generated_at, details",
       )
       .eq("company_code", overview.company_code)
       .order("generated_at", { ascending: false })
-      .order("id", { ascending: false }),
-    supabase
-      .from("guidance_snapshot")
-      .select(
-        "company_code, generated_at, analysis_window_quarters, guidance_items, source_files, details, updated_at",
-      )
-      .eq("company_code", overview.company_code)
-      .order("generated_at", { ascending: false })
-      .limit(1),
-  ]);
-  const normalizedGuidanceSnapshot = normalizeGuidanceSnapshot(
-    (guidanceSnapshotResult.data?.[0] as GuidanceSnapshotRow | undefined) ?? null,
-  );
-  const legacyGuidanceItems = normalizeGuidanceTrackingRows(
-    (guidanceTrackingResult.data as GuidanceTrackingRow[] | null | undefined) ?? null,
-  );
+      .order("id", { ascending: false });
+    legacyGuidanceItems = normalizeGuidanceTrackingRows(
+      (guidanceTrackingResult.data as GuidanceTrackingRow[] | null | undefined) ?? null,
+    );
+    legacyGeneratedAt = (guidanceTrackingResult.data as { generated_at?: string | null }[] | null)?.[0]
+      ?.generated_at;
+  }
   const guidanceItems = normalizedGuidanceSnapshot?.guidanceItems ?? legacyGuidanceItems;
   const guidanceUpdatedAtShort = formatShortDate(
-    normalizedGuidanceSnapshot?.updatedAtRaw ??
-      normalizedGuidanceSnapshot?.generatedAtRaw ??
-      (guidanceTrackingResult.data as { generated_at?: string | null }[] | null)?.[0]?.generated_at,
+    normalizedGuidanceSnapshot?.updatedAtRaw ?? normalizedGuidanceSnapshot?.generatedAtRaw ?? legacyGeneratedAt,
   );
+  // One reporting-quarter anchor shared by the header pills and the section
+  // body, so the header tier and the body's live/resolved split never
+  // disagree (quarter-aware — see lib/guidance-tracking/verdict.ts horizonPhase).
+  const guidanceQtr = currentReportingQuarter();
+  const guidanceVerdict =
+    guidanceItems.length > 0 ? buildGuidanceVerdict(guidanceItems, guidanceQtr) : null;
   return (
     <SectionCard
       id="guidance-history"
-      title="Guidance History"
+      title="Guidance"
       feedbackEnabled={Boolean(normalizedGuidanceSnapshot || guidanceItems.length > 0)}
       feedbackCompanyCode={overview.company_code}
       feedbackCompanyName={overview.company_name}
-      headerAction={<SectionUpdatedAt date={guidanceUpdatedAtShort} />}
+      headerAction={
+        <>
+          {guidanceVerdict ? <GuidanceHeaderPills verdict={guidanceVerdict} /> : null}
+          <SectionUpdatedAt date={guidanceUpdatedAtShort} />
+        </>
+      }
     >
       {guidanceItems.length > 0 ? (
         <GuidanceHistorySection
           items={guidanceItems}
           sourceFiles={normalizedGuidanceSnapshot?.sourceFiles}
+          currentQtr={guidanceQtr}
         />
       ) : (
         missingSectionState(
           overview,
           "guidance-history",
-          "Guidance History",
+          "Guidance",
           "We have not tracked meaningful management guidance for this company yet.",
         )
       )}
