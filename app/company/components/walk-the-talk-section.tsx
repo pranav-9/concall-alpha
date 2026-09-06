@@ -106,9 +106,8 @@ function GradePendingState({ snapshot }: { snapshot: NormalizedWalkTheTalk }) {
             {totalWord}, but only {graded} {gradedVerb} a decided outcome
             (met / missed / dropped / delayed, or revised past its own new
             horizon). The walk-the-talk grade needs at least 3 with decided
-            outcomes; the others are still live — active, or revised /
-            delayed with the horizon still ahead — and will resolve in
-            future quarters.
+            outcomes; the others are still live — active, or revised with
+            the horizon still ahead — and will resolve in future quarters.
           </p>
         </div>
       </div>
