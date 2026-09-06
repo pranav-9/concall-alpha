@@ -112,18 +112,37 @@ export const extractFyYear = (value: string | null | undefined): number | null =
 // digit-literal convention as extractFyYear and lib/current-quarter's
 // ReportingQuarter (e.g. "FY26" -> fy 2026), so the two are directly
 // comparable as a single quarter index (fy * 4 + qtr).
+//
+// Also recognizes "H1 FY26" / "H2 FY26" (a half-year horizon or trail
+// mention), mapping to the QUARTER AT WHICH THAT HALF CONCLUDES — H1 ends
+// with Q2, H2 ends with Q4 — the same convention formatGuidancePeriodLabel
+// and periodToSortSignal already use for half-year periods elsewhere in
+// this file. Before this, a horizon literally stated as "H1 FY27" fell
+// through to the FY-only fallback (deadline = Q4), so an H1-due commitment
+// stayed classified as live for two extra quarters after it was actually
+// due (Codex adversarial finding, ship-workflow review, 2026-09-06).
 export const extractFyQuarter = (
   value: string | null | undefined,
 ): { fy: number; qtr: number } | null => {
   if (!value) return null;
-  const match = value.match(/^\s*Q\s*([1-4])\s*FY\s*'?\s*(\d{2,4})\s*$/i);
-  if (!match) return null;
-  const qtr = parseInt(match[1], 10);
-  const digits = match[2];
-  const parsed = parseInt(digits, 10);
-  if (!Number.isFinite(parsed)) return null;
-  const fy = digits.length <= 2 ? 2000 + parsed : parsed;
-  return { fy, qtr };
+  const quarterMatch = value.match(/^\s*Q\s*([1-4])\s*FY\s*'?\s*(\d{2,4})\s*$/i);
+  if (quarterMatch) {
+    const qtr = parseInt(quarterMatch[1], 10);
+    const digits = quarterMatch[2];
+    const parsed = parseInt(digits, 10);
+    if (!Number.isFinite(parsed)) return null;
+    const fy = digits.length <= 2 ? 2000 + parsed : parsed;
+    return { fy, qtr };
+  }
+  const halfMatch = value.match(/^\s*H\s*([12])\s*FY\s*'?\s*(\d{2,4})\s*$/i);
+  if (halfMatch) {
+    const digits = halfMatch[2];
+    const parsed = parseInt(digits, 10);
+    if (!Number.isFinite(parsed)) return null;
+    const fy = digits.length <= 2 ? 2000 + parsed : parsed;
+    return { fy, qtr: halfMatch[1] === "1" ? 2 : 4 };
+  }
+  return null;
 };
 
 // Reasoning-prose hints in `value_text` — when the LLM had nothing
@@ -566,6 +585,24 @@ const normalizeSubtype = (value: unknown): GuidanceMetricSubtype | null => {
     : null;
 };
 
+// Which subtypes actually belong to which family — normalizeFamily and
+// normalizeSubtype validate membership in their OWN enum independently, so
+// without this cross-check a malformed row (e.g. family="margin" with
+// subtype="revenue") would pass both individually and render as a
+// coherent-looking but wrong label ("Revenue growth" on a margin-bucketed
+// item) — no such row exists in production today, but nothing stopped one
+// from landing (Codex adversarial finding, ship-workflow review, 2026-09-06).
+const FAMILY_SUBTYPES: Record<GuidanceFamily, ReadonlySet<GuidanceMetricSubtype>> = {
+  growth: new Set(["revenue", "ebitda", "pat"]),
+  margin: new Set(["gross_margin", "ebitda_margin", "pat_margin"]),
+  yield: new Set(["revenue_yield", "nim"]),
+};
+
+const subtypeBelongsToFamily = (
+  family: GuidanceFamily | null,
+  subtype: GuidanceMetricSubtype | null,
+): boolean => family != null && subtype != null && FAMILY_SUBTYPES[family].has(subtype);
+
 export const formatMetricLabel = (
   family: GuidanceFamily | null,
   subtype: GuidanceMetricSubtype | null,
@@ -740,8 +777,13 @@ const normalizeGuidanceTrackingRow = (
 
   const normalizedStatus = normalizeStatus(asString(row.status));
 
-  const guidanceFamily = normalizeFamily(row.guidance_family);
-  const metricSubtype = normalizeSubtype(row.metric_subtype);
+  const guidanceFamilyRaw = normalizeFamily(row.guidance_family);
+  const metricSubtypeRaw = normalizeSubtype(row.metric_subtype);
+  // A mismatched pair can't be trusted to mean either label — null both
+  // rather than guess, so the UI falls back to the raw guidanceText.
+  const familySubtypeValid = subtypeBelongsToFamily(guidanceFamilyRaw, metricSubtypeRaw);
+  const guidanceFamily = familySubtypeValid ? guidanceFamilyRaw : null;
+  const metricSubtype = familySubtypeValid ? metricSubtypeRaw : null;
   const metricLabel = formatMetricLabel(guidanceFamily, metricSubtype);
   const metricLabelMidSentence = formatMetricLabelMidSentence(guidanceFamily, metricSubtype);
   const segmentRaw = asString(row.segment);

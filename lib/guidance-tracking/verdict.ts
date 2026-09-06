@@ -196,7 +196,14 @@ export const readDelivered = (item: NormalizedGuidanceItem): DeliveredRead | nul
   if (guided?.kind === "absolute") {
     const label = formatAbsoluteValue(step);
     if (!label) return null;
-    const numeric = readNumericValue({ ...step, valueKind: null, valuePercent: null });
+    // Force the step onto the SAME axis as the guided value (mirrors the
+    // percent branch below) — forcing to null instead of "absolute" here
+    // meant readNumericValue never took the structured numeric_value+unit
+    // path for the delivered read, silently dropping the delta whenever
+    // the step's own value_text didn't happen to restate a crore/million-
+    // style unit token (Codex adversarial finding, ship-workflow review,
+    // 2026-09-06).
+    const numeric = readNumericValue({ ...step, valueKind: "absolute" });
     return { label, numeric: numeric?.kind === "absolute" ? numeric : null };
   }
   if (guided?.kind === "percent") {
@@ -276,7 +283,14 @@ export const valueTrail = (item: NormalizedGuidanceItem): ValueTrailStep[] => {
   const last = steps[steps.length - 1];
   const lastIdx = last ? periodQuarterIndex(last.quarter) : null;
   const latestIdx = periodQuarterIndex(item.latestMentionPeriod);
-  const trailAlreadyCurrent = lastIdx != null && latestIdx != null && lastIdx >= latestIdx;
+  // Fails CLOSED (suppresses the append) when either quarter is
+  // unparseable — we can't prove the trail's last step actually precedes
+  // the item's latest mention, and a wrong synthetic step is worse than a
+  // missing one (Claude adversarial finding, ship-workflow review,
+  // 2026-09-06: the original `!= null && != null` form failed OPEN on an
+  // unparseable quarter, reintroducing the exact stale-value bug this
+  // guard exists to close).
+  const trailAlreadyCurrent = lastIdx == null || latestIdx == null || lastIdx >= latestIdx;
   if (current && last && last.label !== current && !trailAlreadyCurrent) {
     const numeric = readNumericValue(item);
     let direction: "up" | "down" | null = null;
@@ -460,10 +474,15 @@ export const buildGuidanceVerdict = (
   // Resolved: most recent horizon first (the reader wants the freshest
   // outcome, not an old win burying a recent miss — /plan-eng-review Issue
   // 8/T13); ties (including unparseable horizons, which all fall to
-  // -Infinity) break on outcome, met before misses.
+  // -Infinity) break on outcome, met before misses. Two unparseable
+  // horizons both being -Infinity makes the subtraction -Infinity - -Infinity
+  // = NaN, whose comparator-return behavior is unspecified across JS
+  // engines — checked explicitly instead so it deterministically falls
+  // through to the outcome tiebreak (Codex adversarial finding,
+  // ship-workflow review, 2026-09-06).
   resolved.sort((a, b) => {
     const recency = horizonRecencyIndex(b.item) - horizonRecencyIndex(a.item);
-    if (recency !== 0) return recency;
+    if (Number.isFinite(recency) && recency !== 0) return recency;
     return RESOLVED_ORDER[a.outcome] - RESOLVED_ORDER[b.outcome];
   });
   // Live: consolidated before segment-level, then on-track before revised.
