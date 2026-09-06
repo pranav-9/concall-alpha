@@ -42,9 +42,13 @@ export type WalkTheTalkCategory =
   | "other";
 
 // Phase 6 v2 family → walk-the-talk display category.
-// Phase 6 narrowed scope: only growth + margin families. capex / capacity /
-// other buckets will be empty until additional families are added in a
-// later phase.
+// Phase 6 narrowed scope: only growth + margin families populate a real
+// bucket. capex / capacity stay empty until those families exist; "yield"
+// (added to the v2 schema alongside growth/margin, 2026-09-06) has no
+// bucket of its own here — this grid is unrelated to the Guidance-tab
+// redesign that added it, and no production row carries family=yield yet
+// — so it falls through to "other" like any other not-yet-bucketed family
+// (ship-workflow pre-landing review, 2026-09-06).
 export function mapGuidanceFamilyToCategory(
   guidanceFamily: string | null | undefined,
 ): WalkTheTalkCategory {
