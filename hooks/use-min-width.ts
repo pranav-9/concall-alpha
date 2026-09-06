@@ -11,6 +11,12 @@ import * as React from "react";
  * `minWidthPx` should match a Tailwind breakpoint (640 = sm, 1024 = lg) so the
  * JS gate and the CSS classes flip together.
  */
+/** Tailwind's default screens (tailwind.config.ts sets none), so the JS gate
+ *  and the `sm:` / `md:` / `lg:` classes flip on the same pixel. */
+export const BREAKPOINT_SM = 640;
+export const BREAKPOINT_MD = 768;
+export const BREAKPOINT_LG = 1024;
+
 export function useMinWidth(minWidthPx: number): boolean | null {
   const [matches, setMatches] = React.useState<boolean | null>(null);
 
