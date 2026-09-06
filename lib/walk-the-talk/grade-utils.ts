@@ -11,23 +11,18 @@ import type {
 // status keys are coarser (no slippage_quarters precision), so the on-time
 // rule simplifies to "status === met".
 //
-// Methodology locked 2026-05-14, extended 2026-05-29 (added `missed`):
-//   - met            → counts, on_time=true
-//   - missed         → counts, on_time=false (target not achieved per mgmt
-//                      acknowledgement — the canonical bad-faith signal)
-//   - delayed        → counts, on_time=false (mgmt admitted delay)
-//   - dropped        → counts, on_time=false (walked back; bad-faith signal)
-//   - revised        → counts, on_time=false (conservative: Phase 6 does
-//                      not distinguish revised-up from revised-down; treat
-//                      as deviation from original signal)
-//   - active         → does NOT count (still in window)
-//   - not_yet_clear  → does NOT count (conservative: horizon elapsed but
-//                      no outcome evidence retrieved — can't grade what
-//                      we can't see)
-//   - unknown        → does NOT count (defensive: from guidance-snapshot
-//                      normalizer when status field is missing/invalid)
+// Which commitments COUNT toward the ratio is decided by
+// classifyGuidanceItem / isGradedForTier in
+// lib/guidance-tracking/verdict.ts, not here — that logic is horizon-aware
+// (2026-09-06 unification: a revision/delay whose horizon is still ahead
+// stays live and ungraded; `delayed` is always graded, regardless of its
+// new horizon, so a company can't escape the tier by repeatedly moving its
+// own goalpost). Read that file for the current methodology; this file
+// used to also decide "which count" via a status-only `countsForGrade`,
+// which is now deleted to avoid two functions answering the same question
+// (/plan-eng-review Issue 1, 2026-09-06).
 //
-// Tier thresholds (unchanged from /plan-eng-review):
+// Tier thresholds (unchanged since /plan-eng-review, 2026-05-14):
 //   ≥90% on time     → reliable
 //   75-89%           → mixed
 //   50-74%           → erratic
@@ -39,21 +34,6 @@ export const MIN_COMMITMENTS_FOR_GRADE = 3;
 
 export function isOnTime(statusKey: NormalizedGuidanceStatusKey): boolean {
   return statusKey === "met";
-}
-
-export function countsForGrade(statusKey: NormalizedGuidanceStatusKey): boolean {
-  switch (statusKey) {
-    case "met":
-    case "missed":
-    case "delayed":
-    case "dropped":
-    case "revised":
-      return true;
-    case "active":
-    case "not_yet_clear":
-    case "unknown":
-      return false;
-  }
 }
 
 export function computeTier(

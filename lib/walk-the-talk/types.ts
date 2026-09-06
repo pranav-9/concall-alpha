@@ -121,6 +121,12 @@ export type NormalizedWalkTheTalk = {
 
   // ALL guidance items shown in the matrix drawer (counted AND not-counted).
   commitments: WalkTheTalkCommitmentRow[];
+
+  // Live book (not yet graded) — surfaced on the Overview card so a
+  // downward revision doesn't just silently leave the ratio (2026-09-06).
+  liveCount: number;
+  liveRevisedUpCount: number;
+  liveRevisedDownCount: number;
 };
 
 // Re-export for caller convenience.

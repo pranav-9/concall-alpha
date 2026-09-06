@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 
+import type { ReportingQuarter } from "../lib/current-quarter";
 import { normalizeWalkTheTalk } from "../lib/walk-the-talk/normalize";
 import type { NormalizedGuidanceSnapshot } from "../lib/guidance-snapshot/types";
 import type {
@@ -24,6 +25,7 @@ const item = (
   guidanceFamily: null,
   metricSubtype: null,
   metricLabel: null,
+  metricLabelMidSentence: null,
   segment: null,
   segmentCanonical: null,
   horizonType: null,
@@ -186,6 +188,46 @@ test("status: dropped → counts=true, on_time=false", () => {
 
 test("status: revised → counts=true, on_time=false", () => {
   const r = normalizeWalkTheTalk(snapshot([mk("growth", "revised")]));
+  const c = r.commitments[0];
+  assert.equal(c.counts_for_grade, true);
+  assert.equal(c.on_time, false);
+});
+
+// REGRESSION (2026-09-06, /plan-eng-review Issue 2/T5): the fixtures above
+// all leave horizonType/appliesTo at their default null, so they pass under
+// BOTH the old status-only rule and the new horizon-aware one — they can't
+// tell the two apart. These three pin the horizon-aware behavior with a
+// REAL horizon, so a future regression back to status-only grading fails
+// here instead of silently shipping. CURRENT is a fixed Q2 FY27 anchor so
+// the test never depends on the wall-clock date.
+const CURRENT: ReportingQuarter = { fy: 2027, qtr: 2, label: "Q2 FY27" };
+
+test("status: revised with horizon STILL AHEAD → counts=false (live, not graded yet)", () => {
+  const r = normalizeWalkTheTalk(
+    snapshot([mk("growth", "revised", { horizonType: "single_fy", appliesTo: "FY30" })]),
+    "TESTCO",
+    CURRENT,
+  );
+  assert.equal(r.commitments[0].counts_for_grade, false);
+});
+
+test("status: revised with horizon ELAPSED → counts=true (graded, not_met)", () => {
+  const r = normalizeWalkTheTalk(
+    snapshot([mk("growth", "revised", { horizonType: "single_fy", appliesTo: "FY20" })]),
+    "TESTCO",
+    CURRENT,
+  );
+  const c = r.commitments[0];
+  assert.equal(c.counts_for_grade, true);
+  assert.equal(c.on_time, false);
+});
+
+test("status: delayed is graded regardless of its NEW horizon — no goalpost-moving escape", () => {
+  const r = normalizeWalkTheTalk(
+    snapshot([mk("growth", "delayed", { horizonType: "single_fy", appliesTo: "FY30" })]),
+    "TESTCO",
+    CURRENT,
+  );
   const c = r.commitments[0];
   assert.equal(c.counts_for_grade, true);
   assert.equal(c.on_time, false);

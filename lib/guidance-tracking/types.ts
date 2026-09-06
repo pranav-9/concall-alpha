@@ -52,7 +52,7 @@ export type NormalizedGuidanceTrailItem = {
   // with no new value information.
   valuePercent: number | null;
   valueText: string | null;
-  valueKind: "percent" | "absolute" | null;
+  valueKind: GuidanceValueKind;
   numericValue: number | null;
   unit: string | null;
   // Per-step horizon — lets a multi-FY trajectory thread carry FY26+FY27+FY28
@@ -64,10 +64,24 @@ export type NormalizedGuidanceTrailItem = {
   horizonLabel: string | null;
 };
 
-// Phase 6 narrowed scope: GROWTH only. Margin family is out of scope until
-// re-enabled. Gross subtype is consequently also out of scope.
-export type GuidanceFamily = "growth";
-export type GuidanceMetricSubtype = "revenue" | "ebitda" | "pat";
+// Mirrors schemas/guidance_snapshot_v2.json: three families, eight subtypes.
+// growth = revenue/EBITDA/PAT growth; margin = profitability-ratio LEVELS;
+// yield = financials' revenue-to-assets spread (fee yield on AUM, NIM).
+export type GuidanceFamily = "growth" | "margin" | "yield";
+export type GuidanceMetricSubtype =
+  | "revenue"
+  | "ebitda"
+  | "pat"
+  | "gross_margin"
+  | "ebitda_margin"
+  | "pat_margin"
+  | "revenue_yield"
+  | "nim";
+
+// value.value_kind per the v2 schema. "percent" is a growth RATE, "percent_level"
+// is a % that is a LEVEL (a 22-24% margin, NIM in %), "absolute" is a currency
+// level or a bps yield. Null when qualitative-only.
+export type GuidanceValueKind = "percent" | "percent_level" | "absolute" | null;
 
 export type NormalizedGuidanceItem = {
   id: number;
@@ -77,6 +91,9 @@ export type NormalizedGuidanceItem = {
   guidanceFamily: GuidanceFamily | null;
   metricSubtype: GuidanceMetricSubtype | null;
   metricLabel: string | null;
+  // Sentence-position-safe form for embedding after a segment name (e.g.
+  // "EBITDA growth" both stay capitalized) — see formatMetricLabelMidSentence.
+  metricLabelMidSentence: string | null;
   segment: string | null;
   segmentCanonical: string | null;
   horizonType: string | null;
@@ -89,7 +106,7 @@ export type NormalizedGuidanceItem = {
   // numericValue + unit. Readers should prefer these over the legacy
   // valuePercent when present, and fall back to valueText extraction
   // otherwise.
-  valueKind: "percent" | "absolute" | null;
+  valueKind: GuidanceValueKind;
   numericValue: number | null;
   unit: string | null;
   firstMentionPeriod: string | null;
