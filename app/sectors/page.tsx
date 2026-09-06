@@ -130,6 +130,9 @@ function LegStat({
       ) : (
         <span className={`font-semibold tabular-nums ${band(score).textClass}`}>
           {score.toFixed(1)}
+          {/* The band word rides along for screen readers and colour-blind
+              readers; visually the colour carries it at 390px. */}
+          <span className="sr-only"> {band(score).label}</span>
         </span>
       )}
     </span>
@@ -487,7 +490,9 @@ export default async function SectorsPage({
                 numbers in view; the table returns from lg. Sorting stays on the
                 URL, so the pills below are plain links. */}
             <div className="lg:hidden">
-              <div className="flex flex-wrap items-center gap-2 border-b border-border/35 px-3 py-2 text-[11px] text-muted-foreground">
+              {/* gap-y-3: each pill's 44px hit area extends 6px above and below
+                  its 32px box, so wrapped rows need ≥12px between them. */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-3 border-b border-border/35 px-3 py-2 text-[11px] text-muted-foreground">
                 <span className="font-semibold uppercase tracking-[0.12em]">Sort</span>
                 {(
                   [
@@ -514,7 +519,9 @@ export default async function SectorsPage({
                   </Link>
                 ))}
               </div>
-              <ul>
+              {/* role="list": Tailwind's preflight strips list-style, and VoiceOver
+                  then drops list semantics (and the "n of 11" count) without it. */}
+              <ul role="list" aria-label="Sectors ranked by Read">
                 {sortedRows.map((row) => {
                   const readDef = BOARD_READS[row.readKey];
                   return (

@@ -1,7 +1,7 @@
 "use client";
 
-import { KpiSparkline } from "./kpi-sparkline-lazy";
-import { useMinWidth } from "@/hooks/use-min-width";
+import { KpiSparkline, KpiSparklinePlaceholder } from "./kpi-sparkline-lazy";
+import { BREAKPOINT_SM, useMinWidth } from "@/hooks/use-min-width";
 
 type Point = { period: string; value: number | null };
 
@@ -21,13 +21,13 @@ export function KpiHistoryTrendCell({
   points: Point[];
   ariaLabel: string;
 }) {
-  const isSmUp = useMinWidth(640);
+  const isSmUp = useMinWidth(BREAKPOINT_SM);
   return (
     <td className="hidden px-3 py-2 sm:table-cell">
       {isSmUp ? (
         <KpiSparkline ariaLabel={ariaLabel} points={points} />
       ) : (
-        <div className="h-7 w-20 rounded-sm bg-muted/40" />
+        <KpiSparklinePlaceholder />
       )}
     </td>
   );

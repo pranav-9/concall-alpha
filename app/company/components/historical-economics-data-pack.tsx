@@ -45,6 +45,13 @@ import type {
 } from "@/lib/business-snapshot/types";
 import { hasAnyNumericValue } from "@/lib/business-snapshot/has-any-numeric-value";
 
+// The pinned right-hand column (CAGR / net Δ) on the four history tables. Opaque
+// on purpose: a translucent background let scrolled period headers paint
+// through it on phones.
+const PINNED_COL_HEAD =
+  "sticky right-0 z-10 bg-background text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]";
+const PINNED_COL_CELL = `${PINNED_COL_HEAD} text-[12px]`;
+
 const valueFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 1,
 });
@@ -458,7 +465,7 @@ function RevenueHistoryModule({
                   {period}
                 </TableHead>
               ))}
-              <TableHead className="sticky right-0 z-10 bg-background text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+              <TableHead className={PINNED_COL_HEAD}>
                 CAGR
               </TableHead>
             </TableRow>
@@ -529,7 +536,7 @@ function RevenueHistoryModule({
                     </div>
                   </TableCell>
                 ))}
-                <TableCell className="sticky right-0 z-10 bg-background text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                <TableCell className={PINNED_COL_CELL}>
                   <span
                     className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
                       row.cagrPercent,
@@ -615,6 +622,7 @@ function RevenueMixHistoryModule({
   const chartData = buildMixChartData(module, orderedRows);
   const hasGraphView = chartData.length > 0;
   const hasAnyValue = hasAnyNumericValue(module.rows, displayPeriods, (row) => row.mixByPeriod);
+  if (!hasAnyValue && module.insights.length === 0) return null;
 
   const computeMixDelta = (row: NormalizedRevenueMixHistoryByUnitRow) => {
     if (displayPeriods.length === 0) return null;
@@ -674,7 +682,7 @@ function RevenueMixHistoryModule({
                   {period}
                 </TableHead>
               ))}
-              <TableHead className="sticky right-0 z-10 bg-background text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+              <TableHead className={PINNED_COL_HEAD}>
                 Net Δ
               </TableHead>
             </TableRow>
@@ -744,7 +752,7 @@ function RevenueMixHistoryModule({
                       </TableCell>
                     );
                   })}
-                  <TableCell className="sticky right-0 z-10 bg-background text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                  <TableCell className={PINNED_COL_CELL}>
                     <span
                       className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
                         delta,
@@ -865,7 +873,7 @@ function RevenueHistorySegmentModule({
                   {period}
                 </TableHead>
               ))}
-              <TableHead className="sticky right-0 z-10 bg-background text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+              <TableHead className={PINNED_COL_HEAD}>
                 CAGR
               </TableHead>
             </TableRow>
@@ -937,7 +945,7 @@ function RevenueHistorySegmentModule({
                     </div>
                   </TableCell>
                 ))}
-                <TableCell className="sticky right-0 z-10 bg-background text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                <TableCell className={PINNED_COL_CELL}>
                   <span
                     className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
                       row.growthMetricPercent,
@@ -1024,6 +1032,7 @@ function RevenueMixHistorySegmentModule({
   const chartData = buildMixSegmentChartData(displayPeriods, chartRows);
   const hasGraphView = chartData.length > 0;
   const hasAnyValue = hasAnyNumericValue(module.rows, displayPeriods, (row) => row.mixPercentByYear);
+  if (!hasAnyValue && module.insights.length === 0) return null;
 
   const computeMixDelta = (row: NormalizedRevenueMixHistoryBySegmentRow) => {
     if (displayPeriods.length === 0) return null;
@@ -1074,7 +1083,7 @@ function RevenueMixHistorySegmentModule({
                   {period}
                 </TableHead>
               ))}
-              <TableHead className="sticky right-0 z-10 bg-background text-right shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+              <TableHead className={PINNED_COL_HEAD}>
                 Net Δ
               </TableHead>
             </TableRow>
@@ -1156,7 +1165,7 @@ function RevenueMixHistorySegmentModule({
                       </TableCell>
                     );
                   })}
-                  <TableCell className="sticky right-0 z-10 bg-background text-right text-[12px] shadow-[-10px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                  <TableCell className={PINNED_COL_CELL}>
                     <span
                       className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
                         delta,
@@ -1229,15 +1238,54 @@ export function HistoricalEconomicsDataPack({
 }) {
   const revenueHistorySource =
     history.revenueHistoryBySegment ?? history.revenueHistoryByUnit ?? null;
-  const revenueMixHistorySource =
-    history.revenueMixHistoryBySegment ?? history.revenueMixHistoryByUnit ?? null;
+  // "Has content" = at least one finite number in a displayed period, or a
+  // takeaway. The child modules return null otherwise, so the parent must pick
+  // by content, not presence: a segment table of all-null rows must fall through
+  // to a numeric unit table, and the Mix Shift drawer must not open onto nothing.
+  const segmentHistoryHasContent =
+    !!history.revenueHistoryBySegment &&
+    (hasAnyNumericValue(
+      history.revenueHistoryBySegment.rows,
+      history.revenueHistoryBySegment.years,
+      (row) => row.revenueByYear,
+    ) ||
+      history.revenueHistoryBySegment.insights.length > 0);
+  const unitHistoryHasContent =
+    !!history.revenueHistoryByUnit &&
+    (hasAnyNumericValue(
+      history.revenueHistoryByUnit.rows,
+      history.revenueHistoryByUnit.periods,
+      (row) => row.valuesByPeriod,
+    ) ||
+      history.revenueHistoryByUnit.insights.length > 0);
+  const segmentMixHasContent =
+    !!history.revenueMixHistoryBySegment &&
+    (hasAnyNumericValue(
+      history.revenueMixHistoryBySegment.rows,
+      history.revenueMixHistoryBySegment.years,
+      (row) => row.mixPercentByYear,
+    ) ||
+      history.revenueMixHistoryBySegment.insights.length > 0);
+  const unitMixHasContent =
+    !!history.revenueMixHistoryByUnit &&
+    (hasAnyNumericValue(
+      history.revenueMixHistoryByUnit.rows,
+      history.revenueMixHistoryByUnit.periods,
+      (row) => row.mixByPeriod,
+    ) ||
+      history.revenueMixHistoryByUnit.insights.length > 0);
+  const revenueMixHistorySource = segmentMixHasContent
+    ? history.revenueMixHistoryBySegment
+    : unitMixHasContent
+      ? history.revenueMixHistoryByUnit
+      : null;
 
-  const orderedRevenueHistoryRows = history.revenueHistoryBySegment
+  const orderedRevenueHistoryRows = segmentHistoryHasContent && history.revenueHistoryBySegment
       ? getOrderedRevenueHistorySegmentRows(
           history.revenueHistoryBySegment.rows,
           history.revenueHistoryBySegment.years,
         )
-      : history.revenueHistoryByUnit
+      : unitHistoryHasContent && history.revenueHistoryByUnit
       ? getOrderedRevenueHistoryRows(
           history.revenueHistoryByUnit.rows,
           history.revenueHistoryByUnit.periods,
@@ -1251,13 +1299,13 @@ export function HistoricalEconomicsDataPack({
     ] as const),
   );
 
-  const orderedRevenueMixRows = history.revenueMixHistoryBySegment
+  const orderedRevenueMixRows = segmentMixHasContent && history.revenueMixHistoryBySegment
     ? getOrderedRevenueMixSegmentRows(
         history.revenueMixHistoryBySegment.rows,
         history.revenueMixHistoryBySegment.years,
         revenueRowOrderMap,
       )
-    : history.revenueMixHistoryByUnit
+    : unitMixHasContent && history.revenueMixHistoryByUnit
       ? getOrderedRevenueMixRows(
           history.revenueMixHistoryByUnit.rows,
           history.revenueMixHistoryByUnit.periods,
@@ -1277,13 +1325,13 @@ export function HistoricalEconomicsDataPack({
 
   return (
     <div className="space-y-4">
-      {history.revenueHistoryBySegment ? (
+      {segmentHistoryHasContent && history.revenueHistoryBySegment ? (
         <RevenueHistorySegmentModule
           module={history.revenueHistoryBySegment}
           unitColors={unitColors}
           orderedRows={orderedRevenueHistoryRows as NormalizedRevenueHistoryBySegmentRow[]}
         />
-      ) : history.revenueHistoryByUnit ? (
+      ) : unitHistoryHasContent && history.revenueHistoryByUnit ? (
         <RevenueHistoryModule
           module={history.revenueHistoryByUnit}
           unitColors={unitColors}
@@ -1297,9 +1345,7 @@ export function HistoricalEconomicsDataPack({
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0 space-y-0.5">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground/90">
-                  {history.revenueMixHistoryBySegment
-                    ? "Mix Shift by Segment"
-                    : "Mix Shift by Economic Unit"}
+                  {segmentMixHasContent ? "Mix Shift by Segment" : "Mix Shift by Economic Unit"}
                 </p>
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
                   How the revenue mix is shifting across periods.
@@ -1312,14 +1358,14 @@ export function HistoricalEconomicsDataPack({
             </div>
           </summary>
           <div className="border-t border-border/35 p-3">
-            {history.revenueMixHistoryBySegment ? (
+            {segmentMixHasContent && history.revenueMixHistoryBySegment ? (
               <RevenueMixHistorySegmentModule
                 module={history.revenueMixHistoryBySegment}
                 unitColors={unitColors}
                 orderedRows={orderedRevenueMixRows as NormalizedRevenueMixHistoryBySegmentRow[]}
                 bare
               />
-            ) : history.revenueMixHistoryByUnit ? (
+            ) : unitMixHasContent && history.revenueMixHistoryByUnit ? (
               <RevenueMixHistoryModule
                 module={history.revenueMixHistoryByUnit}
                 unitColors={unitColors}

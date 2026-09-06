@@ -39,7 +39,7 @@ export function BandSummaryLine<K extends string>({
       {/* Phone: the eight-way split ran to four lines above the board, so it
           folds behind the headline count until asked for. */}
       <details className="group px-1 text-[12px] text-muted-foreground sm:hidden">
-        <summary className="cursor-pointer list-none rounded-md py-1.5 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden">
+        <summary className="cursor-pointer list-none rounded-md py-2.5 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden">
           {headline}
           <span className="ml-1.5 underline decoration-border underline-offset-2 group-open:hidden">
             read mix ▾
