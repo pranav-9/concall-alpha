@@ -27,6 +27,7 @@ import {
   isReasoningProse,
 } from "@/lib/guidance-tracking/normalize";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
+import { qualitativeTargetChip } from "@/lib/guidance-tracking/target-chip";
 import type {
   NormalizedGuidanceItem,
   NormalizedGuidanceStatusKey,
@@ -305,8 +306,9 @@ const formatTargetBadge = (item: ValueBadgeFields): string | null => {
   if (typeof item.valuePercent === "number" && Number.isFinite(item.valuePercent)) {
     return null;
   }
-  // Qualitative-only fallback ("double-digit", "mid-teens").
-  return item.valueText.length > 20 ? `${item.valueText.slice(0, 18)}…` : item.valueText;
+  // Qualitative-only fallback ("double-digit", "mid-teens"); long phrases drop
+  // the chip rather than truncate — see lib/guidance-tracking/target-chip.
+  return qualitativeTargetChip(item.valueText);
 };
 
 // Drawer header keeps a single combined badge for back-compat (header is

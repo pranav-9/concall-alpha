@@ -19,11 +19,14 @@ import { HistoricalEconomicsDataPack } from "./deferred-company-sections";
 import { SegmentHistoryPanel } from "./segment-history-panel";
 import {
   elevatedBlockClass,
+  elevatedBlockClassFromSm,
   nestedDetailClass,
   snapshotSubsectionClass,
 } from "./surface-tokens";
 
-const businessSnapshotSurfaceClass = `${elevatedBlockClass} p-4`;
+// Below sm this wrapper is invisible: it is an L2 box around other L2 boxes (see
+// the token's note). From sm it is the elevated block it always was.
+const businessSnapshotSurfaceClass = `${elevatedBlockClassFromSm} sm:p-4`;
 const businessSnapshotBlockClass = elevatedBlockClass;
 
 type DerivedState = {

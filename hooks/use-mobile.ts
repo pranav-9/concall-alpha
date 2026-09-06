@@ -1,19 +1,10 @@
-import * as React from "react"
+import { BREAKPOINT_MD, useMinWidth } from "./use-min-width"
 
-const MOBILE_BREAKPOINT = 768
-
+/**
+ * True below Tailwind's `md` (768px). Server and first client render return
+ * false (the hook underneath is null there), exactly as before — this is the
+ * same matchMedia implementation as useMinWidth, not a second one.
+ */
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
-
-  React.useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
-    const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    }
-    mql.addEventListener("change", onChange)
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    return () => mql.removeEventListener("change", onChange)
-  }, [])
-
-  return !!isMobile
+  return useMinWidth(BREAKPOINT_MD) === false
 }

@@ -128,12 +128,12 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
 
       {/* Mobile: (1) time + company + impact + filing, (2) category · summary */}
       <div className="sm:hidden">
-        <div className="flex items-center gap-3">
-          <span className="house-data house-micro shrink-0 text-[var(--ink-soft)]">{item.filedLabel}</span>
+        <div className="flex items-start gap-3">
+          <span className="house-data house-micro shrink-0 pt-0.5 text-[var(--ink-soft)]">{item.filedLabel}</span>
           <Link
             href={`/company/${item.companyCode}`}
             prefetch={false}
-            className="house-display min-w-0 flex-1 truncate text-sm text-[var(--ink)]"
+            className="house-display min-w-0 flex-1 text-sm leading-snug text-[var(--ink)]"
           >
             {item.companyName}
           </Link>
@@ -149,12 +149,14 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
             </a>
           ) : null}
         </div>
-        <div className="mt-1 flex items-baseline gap-2 pl-[3.5rem]">
-          <span className="house-data house-micro shrink-0 text-[var(--ink-soft)]">
-            {item.categoryLabel}
-          </span>
-          <span className="truncate text-xs text-[var(--ink-soft)]">{item.summary}</span>
-        </div>
+        {/* Wraps rather than truncates: a phone row whose name AND summary
+            both end in "…" carried nothing. Two lines of summary is the cap. */}
+        {/* One clamped block: line-clamp is display:-webkit-box, so it has to
+            be the container, with the category label inline inside it. */}
+        <p className="mt-1 line-clamp-2 pl-[3.5rem] text-xs leading-snug text-[var(--ink-soft)]">
+          <span className="house-data house-micro mr-2">{item.categoryLabel}</span>
+          {item.summary}
+        </p>
       </div>
     </div>
   );
@@ -253,23 +255,10 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
   return (
     <>
       {data.total > 0 && (
-    <section aria-labelledby="desk-exchange" className="house-block">
-      <p className="house-data house-micro flex items-center gap-2 text-[var(--ink-soft)]">
-        <span aria-hidden className="text-[var(--signal)]">
-          ●
-        </span>
-        Exchange filings · last {data.windowDays} days
-      </p>
-      <h2 id="desk-exchange" className="house-display mt-2 text-2xl sm:text-3xl">
-        What companies are announcing
-      </h2>
-      <p className="mt-2 max-w-2xl text-sm text-[var(--ink-soft)]">
-        BSE filings across the covered universe, read into plain English and filtered to the
-        business events — order wins, capex, deals, fundraises, approvals. The procedural noise is
-        left out.
-      </p>
-
-      <div className="mt-5 flex flex-wrap gap-2">
+    <section aria-label="Company announcements" className="house-block">
+      {/* No eyebrow / heading / intro here: this variant renders under the
+          /announcements page header, which already says all three. */}
+      <div className="flex flex-wrap gap-2">
         <FilterTab
           active={filter === "all"}
           label="All"
