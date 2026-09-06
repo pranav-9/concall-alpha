@@ -9,6 +9,7 @@ import {
   formatAbsoluteAmount,
   isReasoningProse,
 } from "./normalize";
+import { qualitativeTargetChip } from "./target-chip";
 import type { GuidanceValueKind } from "./types";
 
 // Both NormalizedGuidanceItem and NormalizedGuidanceTrailItem carry the same
@@ -83,15 +84,16 @@ export const formatAbsoluteValue = (v: ValueFields): string | null => {
 };
 
 // The one-line "what they guided" label. Prefers the structured number; falls
-// back to the verbatim phrasing ("mid-teens", "double-digit") trimmed.
+// back to the verbatim qualitative phrasing ("mid-teens", "double-digit").
+// Long phrases drop the chip rather than truncate into a meaningless
+// fragment — see lib/guidance-tracking/target-chip.ts (landed independently
+// on main while this module was in review; adopted here instead of keeping
+// a second, slightly different cutoff).
 export const formatGuidedValue = (v: ValueFields): string | null => {
   const structured = formatAbsoluteValue(v) ?? formatPercentValue(v);
   if (structured) return structured;
-  // Short qualitative phrasing only ("mid-teens", "double-digit"); a long
-  // sentence would just truncate into noise, so the cell shows "—" instead.
   if (!v.valueText || isReasoningProse(v.valueText)) return null;
-  const t = v.valueText.trim();
-  return t.length <= 16 ? t : null;
+  return qualitativeTargetChip(v.valueText);
 };
 
 // A numeric reading of the value for comparison. `kind` says which axis it

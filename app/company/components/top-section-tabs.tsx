@@ -11,6 +11,8 @@ import type {
 type TopSectionTabsProps = {
   sections: CompanySidebarSectionItem[];
   activeSectionId: string;
+  /** Tab that is highlighted but whose panel is still waiting on its chunk. */
+  pendingSectionId?: string | null;
   onSectionChange: (sectionId: string) => void;
 };
 
@@ -24,6 +26,8 @@ const SHORT_LABELS: Record<string, string> = {
   "future-growth": "Growth",
   "walk-the-talk": "Walk the Talk",
   "guidance-history": "Guidance",
+  "moat-analysis": "Moat",
+  "valuation-check": "Valuation",
   community: "Community",
 };
 
@@ -84,6 +88,7 @@ const renderMeta = (meta: CompanySidebarSectionMeta, isActive: boolean) => {
 export function TopSectionTabs({
   sections,
   activeSectionId,
+  pendingSectionId = null,
   onSectionChange,
 }: TopSectionTabsProps) {
   const placeholderRef = React.useRef<HTMLDivElement | null>(null);
@@ -174,7 +179,15 @@ export function TopSectionTabs({
             : undefined
         }
       >
-        <div className="relative rounded-[1.5rem] border border-border/70 bg-background/88 px-2 py-2 shadow-[0_18px_45px_-34px_rgba(15,23,42,0.42)] backdrop-blur-xl dark:bg-slate-950/82 sm:px-3">
+        {/* Phone-only backdrop: the bar floats 0.5rem below the navbar with the
+            page gutter either side, and page text scrolled through that gap
+            and around the pill's rounded ends. This fills the strip from the
+            navbar's underside to the bar's bottom edge, gutter to gutter. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-x-3 -top-2 bottom-0 -z-10 bg-background/92 dark:bg-background/90 sm:hidden"
+        />
+        <div className="relative rounded-[1.5rem] border border-border/70 bg-background/88 px-2 py-2 shadow-[0_18px_45px_-34px_rgba(15,23,42,0.42)] dark:bg-slate-950/82 sm:px-3 sm:backdrop-blur-xl">
           <div className="pointer-events-none absolute inset-y-0 left-0 w-8 rounded-l-[1.5rem] bg-gradient-to-r from-background/85 via-background/35 to-transparent dark:from-slate-950/85 dark:via-slate-950/30" />
           <div className="pointer-events-none absolute inset-y-0 right-0 w-8 rounded-r-[1.5rem] bg-gradient-to-l from-background/85 via-background/35 to-transparent dark:from-slate-950/85 dark:via-slate-950/30" />
 
@@ -182,6 +195,7 @@ export function TopSectionTabs({
             <nav className="flex min-w-full items-center gap-2 whitespace-nowrap px-1" aria-label="Company sections">
               {sections.map((section) => {
                 const isActive = activeSectionId === section.id;
+                const isPending = pendingSectionId === section.id;
                 const shortLabel = SHORT_LABELS[section.id] ?? section.label;
 
                 return (
@@ -192,7 +206,10 @@ export function TopSectionTabs({
                     }}
                     type="button"
                     aria-pressed={isActive}
-                    aria-current={isActive ? "true" : undefined}
+                    // Only "current" once its panel is actually on screen.
+                    aria-current={isActive && !isPending ? "true" : undefined}
+                    aria-busy={isPending || undefined}
+                    data-pending={isPending || undefined}
                     onClick={() => onSectionChange(section.id)}
                     className={cn(
                       "inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-[11px] font-medium tracking-[0.01em] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
@@ -202,6 +219,15 @@ export function TopSectionTabs({
                     )}
                   >
                     <span>{shortLabel}</span>
+                    {isPending ? (
+                      // Panel still waiting on its chunk: a small pulsing dot
+                      // says "coming" without dimming the label (the pill is
+                      // inverted, so pulsing the whole thing broke contrast).
+                      <span
+                        aria-hidden
+                        className="inline-block h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-current motion-reduce:animate-none"
+                      />
+                    ) : null}
                     {section.meta && !isNoiseMeta(section.meta) ? (
                       <span className="inline-flex">{renderMeta(section.meta, isActive)}</span>
                     ) : null}

@@ -175,9 +175,9 @@ function LedgerRow({ item }: { item: UnifiedUpdate }) {
 
       {/* Mobile: two lines — (1) time + company + score, (2) event · substance */}
       <div className="sm:hidden">
-        <div className="flex items-center gap-3">
-          <span className="house-data house-micro shrink-0 text-[var(--ink-soft)]">{time}</span>
-          <span className="house-display min-w-0 flex-1 truncate text-sm text-[var(--ink)]">
+        <div className="flex items-start gap-3">
+          <span className="house-data house-micro shrink-0 pt-0.5 text-[var(--ink-soft)]">{time}</span>
+          <span className="house-display min-w-0 flex-1 text-sm leading-snug text-[var(--ink)]">
             {item.companyName}
             {item.companyIsNew && (
               <span className="house-data house-micro ml-2 align-middle text-[var(--signal)]">new</span>
@@ -185,12 +185,12 @@ function LedgerRow({ item }: { item: UnifiedUpdate }) {
           </span>
           {right}
         </div>
-        <div className="mt-1 flex items-center gap-2 pl-[3.5rem]">
-          <span className="house-data house-micro shrink-0 text-[var(--signal)]">{event}</span>
-          {substance && (
-            <span className="truncate text-xs text-[var(--ink-soft)]">{substance}</span>
-          )}
-        </div>
+        {/* One clamped block (line-clamp is display:-webkit-box) with the
+            event label inline, so the row is two lines, not three. */}
+        <p className="mt-1 line-clamp-2 pl-[3.5rem] text-xs leading-snug text-[var(--ink-soft)]">
+          <span className="house-data house-micro mr-2 text-[var(--signal)]">{event}</span>
+          {substance}
+        </p>
       </div>
     </>
   );

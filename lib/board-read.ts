@@ -36,7 +36,7 @@
 // kept one. The split is therefore safe.
 // The WEIGHTS (0.88/0.12) and the composite arithmetic still mirror the pipeline
 // and stay pinned by the cross-impl fixture; only the quarter INPUT differs. The
-// valuation leg also diverges (live Read drops a stale >4-day valuation; the cut
+// valuation leg also diverges (live Read drops a stale >10-day valuation; the cut
 // keeps the last stored one).
 
 import { bandForScore, type BandKey } from "@/lib/score-band";

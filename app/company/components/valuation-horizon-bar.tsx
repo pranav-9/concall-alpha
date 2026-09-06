@@ -19,12 +19,9 @@
 // short ("Base 17.5%", "5y 22%") to reduce stacking. The viewBox is wide (so type renders at a
 // reasonable physical size on desktop) and the svg is width-capped so dots don't spread absurdly.
 
-type Marker = {
-  id: string;
-  label: string;
-  pct: number;
-  kind: "case" | "delivered" | "ask";
-};
+type Marker = PriceMarker;
+
+import { buildPriceMarkers, type PriceMarker } from "@/lib/valuation-check/price-assumes-rows";
 
 // viewBox units ≈ px at the desktop width cap, so fontSize values read as roughly their px size.
 const W = 680;
@@ -41,7 +38,9 @@ const ROW_H = 15;
 const CHAR_W = 5.6;
 const LABEL_PAD = 8;
 
-const KIND_INK: Record<Marker["kind"], string> = {
+// Exported so the phone list (PriceAssumesList) paints the same markers in the
+// same three colours.
+export const KIND_INK: Record<Marker["kind"], string> = {
   case: "text-violet-600 dark:text-violet-400",
   delivered: "text-teal-600 dark:text-teal-400",
   ask: "text-orange-600 dark:text-orange-400",
@@ -84,17 +83,8 @@ export function ValuationHorizonBar({
    * implied sustainable return on equity (Phase E) — only the axis wording changes. */
   metric?: "growth" | "roe";
 }) {
-  const markers: Marker[] = [];
-  // Scenarios are fractions (0.23) — scale to percent.
-  if (scenarios.downside !== null)
-    markers.push({ id: "downside", label: "Downside", pct: scenarios.downside * 100, kind: "case" });
-  if (scenarios.base !== null)
-    markers.push({ id: "base", label: "Base", pct: scenarios.base * 100, kind: "case" });
-  if (scenarios.upside !== null)
-    markers.push({ id: "upside", label: "Upside", pct: scenarios.upside * 100, kind: "case" });
-  for (const d of delivered)
-    markers.push({ id: `delivered-${d.key}`, label: d.label, pct: d.pct, kind: "delivered" });
-  markers.push({ id: "ask", label: "Price implies", pct: impliedPct, kind: "ask" });
+  // One builder for the bar and the phone list (lib/valuation-check/price-assumes-rows).
+  const markers: Marker[] = buildPriceMarkers({ impliedPct, scenarios, delivered });
 
   const values = markers.map((m) => m.pct);
   const lo = Math.min(...values);

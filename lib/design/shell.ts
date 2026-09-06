@@ -41,8 +41,11 @@ export const PAGE_BACKGROUND_ATMOSPHERIC =
 // Dense-board mobile scroll pattern. On a phone the score columns scroll while
 // the company name must stay in view, and the only cue that more columns exist
 // is a right-edge fade. Sticky + fade below lg; on desktop the table fits the
-// shell, so the name column reverts to a normal (transparent) cell. Lifted from
-// components/score-board-table.tsx, which solved this first.
+// shell, so the name column reverts to a normal (transparent) cell. Used by the
+// DataTable boards (app/company/data-table.tsx, sector-table.tsx, moat-table.tsx).
+// The Overall board and Sectors no longer use it: below lg they render a phone
+// LIST instead (components/score-board-table.tsx, app/sectors/page.tsx, gated by
+// hooks/use-min-width.ts), because a sticky column still hid the Read column.
 export const TABLE_SCROLL_HINT =
   "pointer-events-none absolute inset-y-0 right-0 z-30 w-10 rounded-r-[1.45rem] bg-gradient-to-l from-background to-transparent lg:hidden";
 

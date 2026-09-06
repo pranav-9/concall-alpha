@@ -35,7 +35,7 @@ Harden `STICKY_NAME_CELL` so the sticky cell owns an unambiguous compositor laye
 - Keep the opaque background (already `bg-background`) and raise stacking clearly above the scrolling cells (currently `z-10`; the scrolling `<td>`s are `z-auto`) — consider `z-20` while staying below the `z-30` `TABLE_SCROLL_HINT` and the `z-20` `STICKY_NAME_HEAD` (avoid a new conflict).
 - Ensure the anchor fills the cell so the live target matches the painted name (the anchor is currently text-width only).
 
-`STICKY_NAME_CELL` is shared by [components/score-board-table.tsx](../components/score-board-table.tsx) too, so a fix here covers every board — good, since the mis-hit can happen on any of them. That shared blast radius is also why this wasn't patched blind: it needs device verification (the fix can't be confirmed from a headless/desktop browser).
+`STICKY_NAME_CELL` was shared by [components/score-board-table.tsx](../components/score-board-table.tsx) until 2026-09-05; the Overall board and Sectors now render a phone list below `lg` instead of a sticky-column table (see "Responsive Behavior → Mobile" in the design doc), so the token's blast radius is the DataTable boards (data-table.tsx, sector-table.tsx, moat-table.tsx) — a fix here covers those — good, since the mis-hit can happen on any of them. That shared blast radius is also why this wasn't patched blind: it needs device verification (the fix can't be confirmed from a headless/desktop browser).
 
 ## Related, already shipped (separate hazard, not this bug)
 

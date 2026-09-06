@@ -168,7 +168,7 @@ export function SectionCard({
         open={defaultOpen ? true : undefined}
       >
         <summary className="list-none cursor-pointer select-none [&::-webkit-details-marker]:hidden">
-          <div className="relative p-4 sm:p-5">
+          <div className="relative p-3 sm:p-5">
             <div className={`pointer-events-none absolute inset-0 ${toneClasses.glow}`} />
             <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accent}`} />
             <div className="relative flex flex-wrap items-center justify-between gap-3 transition-colors group-hover:text-foreground">
@@ -193,7 +193,7 @@ export function SectionCard({
             </div>
           </div>
         </summary>
-        <div className="relative border-t border-border/45 p-4 pt-3 sm:p-5 sm:pt-4">
+        <div className="relative border-t border-border/45 p-3 pt-3 sm:p-5 sm:pt-4">
           <div className={`pointer-events-none absolute inset-0 ${toneClasses.glow}`} />
           <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accent}`} />
           <div className="relative flex flex-col gap-4">
@@ -213,7 +213,7 @@ export function SectionCard({
         scrollMarginTop: SCROLL_MARGIN_TOP,
       }}
     >
-      <div className="relative p-4 sm:p-5">
+      <div className="relative p-3 sm:p-5">
         <div className={`pointer-events-none absolute inset-0 ${toneClasses.glow}`} />
         <div className={`absolute inset-x-0 top-0 h-1 ${toneClasses.accent}`} />
         <div className="relative flex flex-col gap-4">

@@ -175,6 +175,7 @@ Tokens live at [`app/company/components/surface-tokens.ts`](../app/company/compo
 |---|---|---|---|
 | **L1** | Section shell | `SectionCard` | Rendered by [`section-card.tsx`](../app/company/components/section-card.tsx). Outer `rounded-[1.55rem]` shell with tone-tinted border + background, radial tone glow, and a `h-1` tone accent bar on top. Always use `SectionCard` for a new section — never hand-roll the shell. |
 | **L2** | Summary / primary block | `elevatedBlockClass` | `rounded-xl border border-border/35 bg-background/75 shadow-md shadow-black/20` |
+| **L2 (sm+ only)** | An L2 wrapper around other L2 blocks — boxless on phones | `elevatedBlockClassFromSm` | `elevatedBlockClass` with every class `sm:`-prefixed |
 | **L3** | Nested detail / mini-card | `nestedDetailClass` | `rounded-md border border-border/25 bg-background/45` |
 | **L4** | Quietest subsection wrapper | `snapshotSubsectionClass` | `rounded-xl border border-border/20 bg-background/25` |
 
@@ -536,7 +537,7 @@ The portal does not feel flashy. Motion is used to indicate state change and dir
 - Scroll-triggered reveals.
 - Bouncing or springing interactions.
 
-Loading skeletons use `animate-pulse` only.
+Loading skeletons use `animate-pulse` only. On the company page, the section-level loading states (the section stand-ins in the route `loading.tsx`, each panel's Suspense fallback in `section-loading.tsx`, and the lazy-tab placeholder in `deferred-company-sections.tsx`) draw their bars with [`section-skeleton.tsx`](../app/company/components/section-skeleton.tsx), which also carries `motion-reduce:animate-none` — reuse it there rather than hand-rolling bars, so the three states cannot drift apart.
 
 ---
 
@@ -764,6 +765,10 @@ The design should stay coherent on desktop and mobile.
 - cards do not become overly dense
 - long explanatory bars collapse into simpler vertical structure
 - hover-only interactions must have a tap-equivalent state
+- **nesting budget:** at 390px every padded wrapper costs 6–8% of the width; six of them left segment text at 216px. A wrapper whose only children are themselves L2/L3 boxes drops its own box below `sm` (`elevatedBlockClassFromSm`), and the section shell uses `p-3` there.
+- **wide boards become lists below `lg`:** a table wider than the phone (the Overall board, Sectors) renders one row per entity — name, a single legs line, the ranking number on the right — instead of a horizontally scrolling table. The sticky-first-column + right-edge-fade pattern hid the very column the board ranks on. Render both layouts on the server (CSS-toggled) and unmount the hidden one after hydration via `useMinWidth` (`hooks/use-min-width.ts`).
+- **explanatory prose folds:** multi-line method notes and band-mix summaries sit behind a `<details>` below `sm`; long verdict/synthesis paragraphs preview at four lines via `ExpandableText mobileOnly`.
+- **wide period tables pin the label column:** `sticky left-0 bg-background` on the first cell (with the width cap on an inner block — `max-width` is ignored on table cells), so rows stay named when the table opens scrolled to the newest period.
 
 ### Breakpoints
 
@@ -820,6 +825,7 @@ Useful files to inspect when extending the system:
 - [`lib/design/shell.ts`](../lib/design/shell.ts) — Atmospheric tokens
 - [`app/company/components/surface-tokens.ts`](../app/company/components/surface-tokens.ts) — Research tokens
 - [`app/company/components/section-card.tsx`](../app/company/components/section-card.tsx) — L1 shell + tone mapping
+- [`app/company/components/section-skeleton.tsx`](../app/company/components/section-skeleton.tsx) — the one skeleton every company-page section loading state draws
 - [`app/company/[code]/page.tsx`](../app/company/[code]/page.tsx) — research family example
 - [`app/page.tsx`](../app/page.tsx) — atmospheric family example
 - [`app/company/components/quarterly-score-section.tsx`](../app/company/components/quarterly-score-section.tsx)

@@ -53,6 +53,12 @@ export async function generateMetadata({
   };
 }
 
+// Suspense fallback size per panel, from what the cache row already knows: a
+// panel that will render a real section gets a viewport-tall skeleton, one
+// that will render its short empty state gets a short one. Either mismatch
+// moves the footer when the panel lands (see section-loading.tsx).
+const fallbackSize = (available: boolean): "panel" | "block" => (available ? "panel" : "block");
+
 function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
   // Only three tabs carry a badge, and each carries a score circle — nothing
   // else (decision 2026-08-26). The tab bar reads as a three-number scorecard:
@@ -85,7 +91,7 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
     {
       ...SECTION_MAP.valuationCheck,
       // Withhold the badge when the valuation is stale — the portal already
-      // withholds a valuation priced more than 4 days ago, so the tab must not
+      // withholds a valuation priced more than 10 days ago, so the tab must not
       // flash a score the section itself won't stand behind.
       meta:
         overview.valuation_score != null && !overview.valuation_stale
@@ -118,7 +124,7 @@ export default async function Page({
   const sidebarSections = buildSidebarSections(overview);
 
   return (
-    <div className="relative isolate w-full overflow-hidden px-3 py-3 pb-24 sm:px-4 sm:py-4 sm:pb-28 lg:px-8">
+    <div className="relative isolate w-full overflow-hidden px-3 py-3 pb-14 sm:px-4 sm:py-4 sm:pb-28 lg:px-8">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.08),_transparent_42%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.06),_transparent_34%),linear-gradient(to_bottom,_rgba(255,255,255,0.75),_transparent)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.12),_transparent_42%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.08),_transparent_34%),linear-gradient(to_bottom,_rgba(15,23,42,0.32),_transparent)]" />
       <div
         id="main-content"
@@ -153,31 +159,31 @@ export default async function Page({
           </div>
 
           <div data-section-id="business-overview">
-            <Suspense fallback={<SectionLoading id="business-overview" title="Business Snapshot" />}>
+            <Suspense fallback={<SectionLoading id="business-overview" title="Business Snapshot" size={fallbackSize(overview.section_availability.businessSnapshot)} />}>
               <BusinessSnapshotPanel overview={overview} />
             </Suspense>
           </div>
 
           <div data-section-id="moat-analysis">
-            <Suspense fallback={<SectionLoading id="moat-analysis" title="Moat Analysis" />}>
+            <Suspense fallback={<SectionLoading id="moat-analysis" title="Moat Analysis" size={fallbackSize(overview.section_availability.moatAnalysis)} />}>
               <MoatAnalysisPanel overview={overview} />
             </Suspense>
           </div>
 
           <div data-section-id="sentiment-score">
-            <Suspense fallback={<SectionLoading id="sentiment-score" title="ConcallScore" />}>
+            <Suspense fallback={<SectionLoading id="sentiment-score" title="ConcallScore" size={fallbackSize(overview.latest_score != null)} />}>
               <ConcallScorePanel overview={overview} />
             </Suspense>
           </div>
 
           <div data-section-id="key-variables">
-            <Suspense fallback={<SectionLoading id="key-variables" title="Key Variables" />}>
+            <Suspense fallback={<SectionLoading id="key-variables" title="Key Variables" size={fallbackSize(overview.section_availability.keyVariables)} />}>
               <KeyVariablesPanel overview={overview} />
             </Suspense>
           </div>
 
           <div data-section-id="future-growth">
-            <Suspense fallback={<SectionLoading id="future-growth" title="Future Growth" />}>
+            <Suspense fallback={<SectionLoading id="future-growth" title="Future Growth" size={fallbackSize(overview.section_availability.futureGrowth)} />}>
               <FutureGrowthPanel overview={overview} />
             </Suspense>
           </div>
@@ -191,13 +197,13 @@ export default async function Page({
           </div> */}
 
           <div data-section-id="valuation-check">
-            <Suspense fallback={<SectionLoading id="valuation-check" title="Valuation Check" />}>
+            <Suspense fallback={<SectionLoading id="valuation-check" title="Valuation Check" size={fallbackSize(overview.section_availability.valuationCheck && !overview.valuation_stale)} />}>
               <ValuationCheckPanel overview={overview} />
             </Suspense>
           </div>
 
           <div data-section-id="guidance-history">
-            <Suspense fallback={<SectionLoading id="guidance-history" title="Guidance" />}>
+            <Suspense fallback={<SectionLoading id="guidance-history" title="Guidance" size={fallbackSize(overview.section_availability.guidanceHistory)} />}>
               <GuidanceHistoryPanel overview={overview} />
             </Suspense>
           </div>

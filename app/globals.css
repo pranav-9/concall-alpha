@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --global-navbar-height: 84px;
+    --global-navbar-height: 84px; /* phones: 68px, see the media query below */
     --company-tabs-height: 56px;
     --quarter-tracker-banner-height: 36px;
     --background: 0 0% 100%;
@@ -60,6 +60,16 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+  }
+}
+
+/* The navbar is min-h-[3.5rem] + py-1.5 below sm (68px). Until the navbar's own
+   ResizeObserver writes the live value, consumers of the var (hash scroll
+   margins, the company tab bar's fixed top) fall back to this default, so keep
+   it truthful per breakpoint or the first frame over-clears by 16px. */
+@media (max-width: 639px) {
+  :root {
+    --global-navbar-height: 68px;
   }
 }
 
