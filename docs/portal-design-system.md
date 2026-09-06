@@ -683,15 +683,15 @@ Should feel optimistic but still research-oriented.
 - nested catalyst cards
 - scenario analysis held in a quieter sub-panel (L4)
 
-### Guidance History
+### Guidance
 
-Should feel like a longitudinal evidence trail.
+Should answer "do they keep their word?" before showing any evidence.
 
-- amber tone, but softened
-- summary at top
-- grouped threads
-- expandable trails
-- transparent historical continuity
+- amber tone, but softened; the verdict card tints by tier (emerald / sky / amber / rose)
+- verdict card + resolved track-record card (met count, segmented bar, live footnote) at the top
+- live commitments as a divided list with scope chip, horizon, status pill, and a value trail on revised threads
+- resolved commitments as a Guided / Delivered / Outcome grid (labelled cells on mobile)
+- per-thread trails in the right-side Drawer, not inline
 
 The full guidance-tracker layout spec is in the [Appendix: Guidance Tracker](#appendix-guidance-tracker-layout).
 
