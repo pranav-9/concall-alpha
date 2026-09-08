@@ -2,6 +2,16 @@
 
 Captured with context so a future session can pick any item up cold. Source review noted per item.
 
+## Guidance "what to watch" — deferred review findings (2026-09-08)
+
+From the /ship review of `feat/guidance-what-to-watch` (5 specialists + red team + Claude/Codex adversarial). Everything load-bearing was fixed in that PR; these were judged not worth the churn.
+
+- [ ] **`liveStateKey`'s `pushed_out` branch is unreachable** (XS, P4) — `classifyGuidanceItem` grades `statusKey: "delayed"` as RESOLVED unconditionally (deliberate, 2026-09-06: a moved goalpost is itself the broken promise), so no live row ever carries `state: "delayed"`. That makes `LIVE_META.pushed_out` ("Pushed out") and `liveNote`'s "pushed out" clause dead. Left in place because the `Record<LiveStateKey, …>` type requires the entry and the state is legal in the type. Delete both only if `LiveState` itself is ever narrowed. Start at: `lib/guidance-tracking/verdict.ts` `liveStateKey` / `app/company/components/guidance-history-section.tsx` `LIVE_META`.
+- [ ] **Trail depth demotes brand-new guidance** (S, P3) — materiality rule 6 sorts `trail.length` DESCENDING, so a commitment issued for the first time this quarter loses every tie to an old restated one. Arguably first-issue is the most material live news. Only bites after year/scope/news/metric/quarter all tie, so it is rare; needs a real example before tuning. Start at: `materialityKey` in `lib/guidance-tracking/verdict.ts`.
+- [ ] **Collapsed rows are absent from the DOM** (S, P3) — both new toggles mount their rows on click, so in-page find (⌘F) and crawlers see only the 3 watch cards and 5 resolved rows. Consistent with the rest of the portal's `<details>` blocks, but the Guidance section is now the densest example. Consider rendering hidden rows with `hidden` instead of unmounting if SEO or find-in-page matters. Start at: `WhatToWatch` / `ResolvedTrackRecord`.
+- [ ] **Test fixture ordering trap** (XS, P4) — `tests/guidance-verdict-coverage-gaps.test.ts` derives its default `guidanceKey` from a module-level `nextId` counter, and the comparator's last tiebreak is `guidanceKey.localeCompare`. Inserting a test near the top silently renumbers later fixtures, and past 10 the lexicographic order inverts ("k10" < "k9"). Latent only — every order-asserting test passes explicit keys. Fix by deriving the default key from the fixture's own text.
+- [ ] **`RESOLVED_PREVIEW_COUNT` lives in the component, `LIVE_WATCH_COUNT` in verdict.ts** (XS, P4) — the split is real (the verdict layer slices `watch`/`watchRest`; the resolved preview is pure presentation), but `docs/reader-intent/guidance-tracking.md` documents both together, so its "five most recent rows" can drift from the code with nothing failing.
+
 ## P0 — pre-existing test failure noticed on overview-signal-board (2026-08-21)
 
 ### 0. `tests/board-read.test.ts` fails on main
