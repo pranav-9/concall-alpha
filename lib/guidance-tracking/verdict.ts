@@ -11,7 +11,7 @@
 // keeps the header tier and the Overview's Walk-the-talk card on the same
 // count (lib/walk-the-talk/normalize.ts reads the same classifier).
 
-import { currentReportingQuarter, type ReportingQuarter } from "@/lib/current-quarter";
+import { currentReportingQuarter, fyLabelFor, type ReportingQuarter } from "@/lib/current-quarter";
 import { computeTier } from "@/lib/walk-the-talk/grade-utils";
 import { TIER_LABELS, type WalkTheTalkTier } from "@/lib/walk-the-talk/types";
 
@@ -27,6 +27,8 @@ import {
 } from "./format";
 import { extractFyQuarter, extractFyYear } from "./normalize";
 import type {
+  GuidanceFamily,
+  GuidanceMetricSubtype,
   NormalizedGuidanceItem,
   NormalizedGuidanceStatusKey,
   NormalizedGuidanceTrailItem,
@@ -86,12 +88,25 @@ export const horizonQuarterIndex = (item: NormalizedGuidanceItem): number | null
   return fy * 4 + qtr;
 };
 
+// A standing commitment — "ongoing", or a rolling / unspecified horizon —
+// has no deadline that can pass, so it never elapses and can never be
+// graded. Every caller that reasons about WHEN a commitment comes due has
+// to apply this first: `horizonQuarterIndex` reads `applies_to` alone, and a
+// rolling thread whose producer wrote a real period there ("next 12 months",
+// applies_to FY26) would otherwise read as a hard, already-near deadline.
+// The convention that rolling rows carry applies_to "ongoing" is a producer
+// habit, not a schema rule — guidance_tracker.py instructs it for
+// `unspecified` only (ship coverage audit, 2026-09-08).
+export const isStandingHorizon = (item: NormalizedGuidanceItem): boolean =>
+  item.horizonType === "unspecified" ||
+  item.horizonType === "rolling" ||
+  (item.appliesTo != null && item.appliesTo.toLowerCase() === "ongoing");
+
 export const horizonPhase = (
   item: NormalizedGuidanceItem,
   current: ReportingQuarter,
 ): HorizonPhase => {
-  if (item.horizonType === "unspecified" || item.horizonType === "rolling") return "ahead";
-  if (item.appliesTo && item.appliesTo.toLowerCase() === "ongoing") return "ahead";
+  if (isStandingHorizon(item)) return "ahead";
   const itemIndex = horizonQuarterIndex(item);
   if (itemIndex == null) return "unknown";
   const currentIndex = current.fy * 4 + current.qtr;
@@ -313,8 +328,10 @@ export const revisionDirection = (item: NormalizedGuidanceItem): "up" | "down" |
   return null;
 };
 
-// Short label for prose: "HPP revenue growth (FY25)", "EBITDA margin (FY24)".
-export const commitmentShortLabel = (item: NormalizedGuidanceItem): string => {
+// What the commitment is about, with no horizon attached: "HPP revenue
+// growth", "EBITDA margin". Used bare as a card title (the horizon rides
+// its own chip there) and as the stem of commitmentShortLabel.
+export const commitmentCoreLabel = (item: NormalizedGuidanceItem): string => {
   // Data-driven casing (no lowercase-then-recapitalize transform): the
   // sentence-start form ("EBITDA growth") is used bare; the mid-sentence
   // form ("EBITDA growth", acronyms still capitalized) is used after a
@@ -327,8 +344,13 @@ export const commitmentShortLabel = (item: NormalizedGuidanceItem): string => {
   } else {
     core = item.guidanceText.length > 60 ? `${item.guidanceText.slice(0, 58).trimEnd()}…` : item.guidanceText;
   }
-  const upperFirst = core.charAt(0).toUpperCase() + core.slice(1);
-  return item.horizonLabel ? `${upperFirst} (${item.horizonLabel})` : upperFirst;
+  return core.charAt(0).toUpperCase() + core.slice(1);
+};
+
+// Short label for prose: "HPP revenue growth (FY25)", "EBITDA margin (FY24)".
+export const commitmentShortLabel = (item: NormalizedGuidanceItem): string => {
+  const core = commitmentCoreLabel(item);
+  return item.horizonLabel ? `${core} (${item.horizonLabel})` : core;
 };
 
 // ---------------------------------------------------------------------------
@@ -347,6 +369,7 @@ export type ResolvedRow = {
 export type LiveRow = {
   item: NormalizedGuidanceItem;
   state: LiveState;
+  guidedLabel: string | null; // the number they are on the hook for
   heldSince: string | null;
   trail: ValueTrailStep[]; // only populated for revised / delayed
   direction: "up" | "down" | null;
@@ -377,9 +400,24 @@ export const buildLiveRow = (item: NormalizedGuidanceItem, state: LiveState): Li
   // still "active").
   const trail = valueTrail(item);
   const hasTrail = trail.length >= 2;
+  // `trail` on the row below is blanked when there is nothing to ladder; the
+  // headline number still wants the latest stated value even from one step.
+  const latestTrailLabel = trail.at(-1)?.label ?? null;
   return {
     item,
     state,
+    // The trail's latest step wins over the thread's top-level value. Phase 6
+    // leaves `value`/`guidance_text` stale after a revision (the documented
+    // HFCL case: top-level still 20% while the trail correctly reaches 40%+),
+    // and the watch card prints this as its single headline number — so
+    // reading `value` first put "Guided 20%" directly above a trail reading
+    // "20% -> 40% ▲". valueTrail was already hardened against this; the
+    // headline number was not (adversarial review, 2026-09-08).
+    // Signed the same way readGuided signs its own output, so swapping the
+    // source doesn't quietly drop the "+" that marks a growth RATE.
+    guidedLabel: latestTrailLabel
+      ? (withGrowthSign(latestTrailLabel, isGrowthRate(item)) ?? latestTrailLabel)
+      : readGuided(item).label,
     heldSince: heldSinceQuarter(item),
     trail: hasTrail ? trail : [],
     direction: hasTrail ? revisionDirection(item) : null,
@@ -403,7 +441,19 @@ export type GuidanceVerdict = {
   liveNote: string | null;
   bars: ResolvedOutcome[]; // one per graded commitment, met first
   resolved: ResolvedRow[];
-  live: LiveRow[];
+  live: LiveRow[]; // materiality-ranked; the first `watch.length` are the cards
+  watch: LiveRow[]; // top LIVE_WATCH_COUNT of `live`
+  watchRest: LiveRow[]; // the remainder, collapsed behind a toggle
+  // The horizon the watch cards share ("FY27"), or null when they straddle
+  // more than one — the heading only names a year it can actually claim.
+  watchHorizonLabel: string | null;
+  // Finished sentences, not fragments. The section assembles no prose of its
+  // own: number words and singular/plural agreement are derivation, and
+  // splitting them across two layers meant a copy change needed edits in both
+  // and the pluralisation could not be unit-tested (ship review, 2026-09-08).
+  watchHeading: string; // "The three that decide FY27."
+  watchRestLabel: string | null; // "The other six live commitments"
+  watchRestToggleLabel: string | null; // "Show the other six commitments"
 };
 
 const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
@@ -437,34 +487,254 @@ const headlineFor = (tier: WalkTheTalkTier, misses: number): string => {
   }
 };
 
+// Tiebreak for resolved rows of equal recency. Not-met outcomes come FIRST.
+// This inverts the original met-first order, which was harmless while the
+// whole table rendered but became a flattering bias the moment the table
+// started showing only its first RESOLVED_PREVIEW_COUNT rows: six same-year
+// commitments, five met and one missed, put all five wins on screen and
+// collapsed the miss — on the one section whose question is "do they keep
+// their word?" (Codex adversarial review, 2026-09-08).
 const RESOLVED_ORDER: Record<ResolvedOutcome, number> = {
-  met: 0,
-  missed: 1,
-  dropped: 2,
+  missed: 0,
+  dropped: 1,
+  delayed: 2,
   revised: 3,
-  delayed: 4,
+  met: 4,
   unclear: 5,
 };
-const LIVE_ORDER: Record<LiveState, number> = {
-  on_track: 0,
-  revised: 1,
-  delayed: 2,
-  no_update: 3,
+// ---------------------------------------------------------------------------
+// Live materiality — which live commitments are the ones to watch
+// ---------------------------------------------------------------------------
+//
+// The live book is ranked, not bucketed (redesign 2026-09-08): the top
+// LIVE_WATCH_COUNT get full cards, the rest collapse to a one-line ledger.
+// The rank is lexicographic and derived only from fields the payload already
+// carries — no per-company curation, no producer-supplied weighting:
+//
+//   1. Which YEAR it comes due. Nearest financial year first. A standing /
+//      rolling / unparseable horizon never comes due, so it can't be the
+//      thing that decides a year — those sort last. Bucketing by year, not
+//      by quarter, is deliberate: `horizonQuarterIndex` defaults an FY-only
+//      horizon to Q4, so ranking on the raw quarter let any quarter-dated
+//      segment guide outrank the consolidated FY guide for the same year —
+//      the top card decided by how precisely the producer wrote `applies_to`
+//      rather than by materiality (adversarial review, 2026-09-08).
+//   2. How much of the company it covers. Consolidated before a segment.
+//   3. Whether it just MOVED. A commitment whose number changed is the live
+//      news; one restated unchanged is context. Without this term a fresh
+//      guidance CUT could be ranked out of the cards and collapsed out of
+//      sight — three "Held" chips under a heading claiming those three decide
+//      the year, while a fourth commitment for the same year had just been
+//      cut (red-team review, 2026-09-08). Read off the derived trail
+//      direction, NOT the producer's status flag: Phase 6 routinely leaves a
+//      revised thread on status "active", and keying off status alone ranked
+//      those as non-news. It sits BELOW scope so a minor segment revision
+//      still can't outrank the flagship consolidated guide.
+//   4. Which line. Growth before margin before yield; inside growth,
+//      revenue before EBITDA before PAT.
+//   5. How soon inside that year — a quarter-dated target before a full-year
+//      one, once materiality has had its say.
+//   6. How central management treats it — the longer the trail (the more
+//      quarters they kept restating it), the higher.
+//   7. guidanceKey, so the order is stable across renders and re-extractions
+//      rather than flickering on ties.
+//
+// Rule 1 sits above rule 2 deliberately: a near-term segment guide is the
+// live news; a consolidated frame three years out is context. Ordering the
+// other way buried MTARTECH's FY27 A&D doubling under an FY28 growth frame
+// that management had already let go qualitative.
+
+export const LIVE_WATCH_COUNT = 3;
+
+// Producers sometimes write the whole-company scope into `segment` as a word
+// ("Consolidated", "Overall", "Total") instead of leaving it null. Ranking
+// those as segment-level demotes the company's own headline guide with no
+// on-screen tell — the chip renders "Consolidated" either way (adversarial
+// review, 2026-09-08).
+const WHOLE_COMPANY_SEGMENTS = new Set(["consolidated", "overall", "total", "company", "group", "standalone"]);
+
+export const isSegmentScoped = (item: NormalizedGuidanceItem): boolean =>
+  item.segment != null && !WHOLE_COMPANY_SEGMENTS.has(item.segment.trim().toLowerCase());
+
+// Lower = more material. Subtypes are ordered inside their family. The
+// family-only band below is a defensive floor, NOT an expected state: the
+// normalizer gates family and subtype together (`subtypeBelongsToFamily`)
+// and nulls BOTH on a mismatch, so today every unclassified item lands on
+// 99 and rule 3 stops discriminating between them — they fall through to
+// trail depth. Kept so the comparator still orders sanely if that gate is
+// ever relaxed (ship coverage audit, 2026-09-08).
+const METRIC_RANK: Record<GuidanceMetricSubtype, number> = {
+  revenue: 1,
+  ebitda: 2,
+  pat: 3,
+  ebitda_margin: 11,
+  gross_margin: 12,
+  pat_margin: 13,
+  nim: 21,
+  revenue_yield: 22,
+};
+const FAMILY_RANK: Record<GuidanceFamily, number> = { growth: 0, margin: 10, yield: 20 };
+
+const metricRank = (item: NormalizedGuidanceItem): number => {
+  if (item.metricSubtype && METRIC_RANK[item.metricSubtype] != null) return METRIC_RANK[item.metricSubtype];
+  if (item.guidanceFamily && FAMILY_RANK[item.guidanceFamily] != null) return FAMILY_RANK[item.guidanceFamily];
+  return 99;
 };
 
-// Recency key for the resolved sort: the horizon's own quarter index
-// (descending = most recent first). Falls back to -Infinity (sorts last)
-// when the horizon can't be parsed, so unparseable rows don't crowd out
-// dated ones.
+// Nearest-horizon key. Standing and unparseable horizons sort last; two of
+// them tie and fall through to the next rule. `isStandingHorizon` has to be
+// checked BEFORE the index: a rolling thread can carry a real (and already
+// near) `applies_to` while never actually coming due, which would otherwise
+// hand it the top card.
+const horizonProximityIndex = (item: NormalizedGuidanceItem): number =>
+  (isStandingHorizon(item) ? null : horizonQuarterIndex(item)) ?? Number.POSITIVE_INFINITY;
+
+// The five sort keys, read once per row rather than once per comparison —
+// `horizonProximityIndex` runs regex parsing and a toLowerCase allocation,
+// which a comparator would repeat O(n log n) times (ship review, 2026-09-08).
+type MaterialityKey = {
+  fy: number;
+  scope: number;
+  news: number;
+  metric: number;
+  soonest: number;
+  depth: number;
+  key: string;
+};
+
+// A number that MOVED outranks one that didn't. `row.direction` is derived
+// from the value trail, so it catches a revision the producer never flagged
+// (status still "active") as well as a flagged one. `delayed` is included for
+// completeness, though classifyGuidanceItem grades a delay immediately, so no
+// live row currently carries that state.
+const hasMoved = (row: LiveRow): boolean =>
+  row.direction != null || row.state === "revised" || row.state === "delayed";
+
+export const materialityKey = (row: LiveRow): MaterialityKey => ({
+  fy: horizonDeadlineFy(row.item) ?? Number.POSITIVE_INFINITY,
+  scope: isSegmentScoped(row.item) ? 1 : 0,
+  news: hasMoved(row) ? 0 : 1,
+  metric: metricRank(row.item),
+  soonest: horizonProximityIndex(row.item),
+  depth: row.item.trail.length,
+  key: row.item.guidanceKey,
+});
+
+export const compareMaterialityKeys = (a: MaterialityKey, b: MaterialityKey): number => {
+  // Compared, not subtracted: a dated horizon against a standing one is
+  // Infinity - n = Infinity, which a `Number.isFinite` guard would throw
+  // away — and that silently demoted rule 1 to rule 2 for exactly the pair
+  // it exists to separate (caught on E2E, whose two "Ongoing" margin
+  // targets outranked a dated Q2 FY27 one). Two standing horizons tie and
+  // fall through.
+  if (a.fy !== b.fy) return a.fy < b.fy ? -1 : 1;
+  if (a.scope !== b.scope) return a.scope - b.scope;
+  if (a.news !== b.news) return a.news - b.news;
+  if (a.metric !== b.metric) return a.metric - b.metric;
+  if (a.soonest !== b.soonest) return a.soonest < b.soonest ? -1 : 1;
+  if (a.depth !== b.depth) return b.depth - a.depth;
+  return a.key.localeCompare(b.key);
+};
+
+export const compareLiveMateriality = (a: LiveRow, b: LiveRow): number =>
+  compareMaterialityKeys(materialityKey(a), materialityKey(b));
+
+// "the three that decide FY27" — claimable when every card on screen comes
+// due in the SAME financial year. Keyed on the deadline year rather than the
+// horizon label so a "Q3 FY27" target and a plain "FY27" one still group
+// (both decide FY27), while an "FY26–FY28" frame does not (it decides FY28).
+// Mixed years get the plain heading.
+const horizonDeadlineFy = (item: NormalizedGuidanceItem): number | null => {
+  // Same standing-horizon guard as the proximity key — a commitment with no
+  // deadline decides no particular year, so it can't contribute one to the
+  // heading.
+  if (isStandingHorizon(item)) return null;
+  const index = horizonQuarterIndex(item);
+  if (index == null) return null;
+  return Math.floor((index - 1) / 4);
+};
+
+const sharedHorizonLabel = (rows: LiveRow[]): string | null => {
+  if (rows.length === 0) return null;
+  const first = horizonDeadlineFy(rows[0].item);
+  if (first == null) return null;
+  if (!rows.every((r) => horizonDeadlineFy(r.item) === first)) return null;
+  return fyLabelFor(first);
+};
+
+// "The three that decide FY27" is an exhaustiveness claim, and it is only
+// true when nothing else for FY27 is sitting behind the toggle. When the
+// collapsed tail holds same-year commitments the heading still names the
+// year — that is useful — but drops the claim to "matter most" (adversarial
+// review, 2026-09-08).
+const buildWatchHeading = (watch: LiveRow[], rest: LiveRow[]): string => {
+  const count = words(watch.length);
+  const label = sharedHorizonLabel(watch);
+  if (!label) return `The ${count} that matter most.`;
+  const sharedFy = horizonDeadlineFy(watch[0].item);
+  const restSharesYear = rest.some((r) => horizonDeadlineFy(r.item) === sharedFy);
+  if (!restSharesYear) {
+    return `The ${count} that ${plural(watch.length, "decides", "decide")} ${label}.`;
+  }
+  return `The ${count} ${label} ${plural(watch.length, "commitment", "commitments")} that ${plural(watch.length, "matters", "matter")} most.`;
+};
+
+// What the chip on a live commitment should say. A semantic key, not a
+// label: the direction of a revision is the whole point (a raise and a cut
+// are opposite news), so the branch that decides it belongs in the tested
+// derivation layer rather than in an untestable ternary inside the section.
+// The component owns the key -> label/tone/glyph lookup, which has no logic
+// left to get wrong (ship review, 2026-09-08).
+export type LiveStateKey = "held" | "raised" | "lowered" | "revised" | "pushed_out" | "no_update";
+
+export const liveStateKey = (row: LiveRow): LiveStateKey => {
+  // Direction first, state second. A thread the producer left on status
+  // "active" after quietly revising its number still moved, and calling that
+  // "Held" contradicted the value ladder rendered directly beneath it
+  // (adversarial review, 2026-09-08).
+  if (row.direction === "up") return "raised";
+  if (row.direction === "down") return "lowered";
+  switch (row.state) {
+    case "on_track":
+      return "held";
+    case "delayed":
+      return "pushed_out";
+    case "no_update":
+      return "no_update";
+    case "revised":
+      return "revised";
+  }
+};
+
+// Recency key for the resolved sort (descending = most recent first): the
+// quarter management last spoke about the commitment, falling back to its
+// horizon, then -Infinity.
+//
+// Mention-first, not horizon-first, for two reasons. It is the more honest
+// reading of "most recent" in a TRACK RECORD — a reader wants what resolved
+// most recently, not what was due most recently. And it keeps one consistent
+// scale: horizon-first mixed horizon quarters with mention quarters for
+// exactly the rows that lack a horizon, so those systematically outranked
+// dated rows from the same period.
+//
+// This matters now that the table truncates. Two populations have no readable
+// horizon at all: companies served by the legacy `guidance_tracking` path (its
+// SELECT carries no `horizon` column, so EVERY row was -Infinity and the whole
+// table fell through to outcome order — five wins on top, every miss hidden),
+// and standing "ongoing" commitments, which sorted permanently last and so
+// were permanently below the cut even when missed. Both still carry trail
+// quarters (adversarial review, 2026-09-08).
 const horizonRecencyIndex = (item: NormalizedGuidanceItem): number =>
-  horizonQuarterIndex(item) ?? Number.NEGATIVE_INFINITY;
+  periodQuarterIndex(item.latestMentionPeriod) ??
+  (isStandingHorizon(item) ? null : horizonQuarterIndex(item)) ??
+  Number.NEGATIVE_INFINITY;
 
 export const buildGuidanceVerdict = (
   items: NormalizedGuidanceItem[],
   current: ReportingQuarter,
 ): GuidanceVerdict => {
   const resolved: ResolvedRow[] = [];
-  const live: LiveRow[] = [];
+  let live: LiveRow[] = [];
   for (const item of items) {
     const c = classifyGuidanceItem(item, current);
     if (c.phase === "resolved") resolved.push(buildResolvedRow(item, c.outcome));
@@ -481,16 +751,25 @@ export const buildGuidanceVerdict = (
   // through to the outcome tiebreak (Codex adversarial finding,
   // ship-workflow review, 2026-09-06).
   resolved.sort((a, b) => {
-    const recency = horizonRecencyIndex(b.item) - horizonRecencyIndex(a.item);
-    if (Number.isFinite(recency) && recency !== 0) return recency;
+    // Compared, not subtracted — the same defect the live sort had. An
+    // undated horizon is -Infinity, so `-Infinity - 8100` is not finite, the
+    // finiteness guard discarded the comparison, and the pair fell through to
+    // RESOLVED_ORDER, which puts `met` first: undated WINS sorted to the top,
+    // the exact opposite of this comment's promise. Cosmetic while the whole
+    // table rendered; load-bearing now that only the first
+    // RESOLVED_PREVIEW_COUNT rows show under a "Most recent first" caption
+    // (red-team review, 2026-09-08).
+    const ra = horizonRecencyIndex(a.item);
+    const rb = horizonRecencyIndex(b.item);
+    if (ra !== rb) return rb > ra ? 1 : -1;
     return RESOLVED_ORDER[a.outcome] - RESOLVED_ORDER[b.outcome];
   });
-  // Live: consolidated before segment-level, then on-track before revised.
-  live.sort((a, b) => {
-    const seg = (a.item.segment ? 1 : 0) - (b.item.segment ? 1 : 0);
-    if (seg !== 0) return seg;
-    return LIVE_ORDER[a.state] - LIVE_ORDER[b.state];
-  });
+  // Live: ranked by materiality (see compareMaterialityKeys) so the section
+  // can card the top few and collapse the tail. Keys are built once per row,
+  // not once per comparison — horizonProximityIndex parses with regexes.
+  const decorated = live.map((row) => ({ row, key: materialityKey(row) }));
+  decorated.sort((a, b) => compareMaterialityKeys(a.key, b.key));
+  live = decorated.map((d) => d.row);
 
   const graded = resolved.filter((r) => GRADED_OUTCOMES.has(r.outcome));
   const metRows = graded.filter((r) => r.outcome === "met");
@@ -581,6 +860,23 @@ export const buildGuidanceVerdict = (
     ...graded.filter((r) => r.outcome !== "met").map((r) => r.outcome),
   ];
 
+  const watch = live.slice(0, LIVE_WATCH_COUNT);
+  const watchRest = live.slice(LIVE_WATCH_COUNT);
+  const watchHorizonLabel = sharedHorizonLabel(watch);
+  const watchHeading = buildWatchHeading(watch, watchRest);
+  const watchRestLabel =
+    watchRest.length === 0
+      ? null
+      : watchRest.length === 1
+        ? "The other live commitment"
+        : `The other ${words(watchRest.length)} live commitments`;
+  const watchRestToggleLabel =
+    watchRest.length === 0
+      ? null
+      : watchRest.length === 1
+        ? "Show the other commitment"
+        : `Show the other ${words(watchRest.length)} commitments`;
+
   return {
     tier,
     tierLabel: TIER_LABELS[tier],
@@ -594,5 +890,11 @@ export const buildGuidanceVerdict = (
     bars,
     resolved,
     live,
+    watch,
+    watchRest,
+    watchHorizonLabel,
+    watchHeading,
+    watchRestLabel,
+    watchRestToggleLabel,
   };
 };
