@@ -3,11 +3,13 @@
 // Guidance section interior (the L1 SectionCard shell is provided by
 // GuidanceHistoryPanel in company-detail-sections.tsx).
 //
-// Layout (redesign 2026-09-06): verdict-first.
+// Layout (redesign 2026-09-06, live book prioritised 2026-09-08):
 //   1. "Do they keep their word?" verdict card + resolved track-record card.
-//   2. Live commitments — in flight, with a value trail on revised threads.
+//   2. What to watch — the top LIVE_WATCH_COUNT live commitments as full
+//      cards, ranked by materiality (verdict.ts compareLiveMateriality);
+//      the rest of the live book collapses to a one-line ledger.
 //   3. Track record — resolved commitments as a guided / delivered / outcome
-//      table.
+//      table, the most recent few with the tail behind a toggle.
 //   4. Sources (collapsed) and a right-side Drawer with the full trail for
 //      any row.
 // All numbers and sentences come from lib/guidance-tracking/verdict.ts, which
@@ -30,10 +32,12 @@ import { currentReportingQuarter, type ReportingQuarter } from "@/lib/current-qu
 import { formatAbsoluteValue, formatPercentValue } from "@/lib/guidance-tracking/format";
 import {
   buildGuidanceVerdict,
+  commitmentCoreLabel,
+  liveStateKey,
   readGuided,
   type GuidanceVerdict,
   type LiveRow,
-  type LiveState,
+  type LiveStateKey,
   type ResolvedOutcome,
   type ResolvedRow,
 } from "@/lib/guidance-tracking/verdict";
@@ -69,6 +73,10 @@ export type GuidanceHistorySectionProps = {
 
 const eyebrowClass = "text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground";
 const monoClass = "font-mono text-[11px] tabular-nums text-muted-foreground";
+// The design system's neutral chip recipe. Declared once — a hand-copied
+// second instance is how two chips in the same card drift apart.
+const neutralChipClass =
+  "inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground";
 
 // Shell/eyebrow styling keyed by ChipTone, not by tier directly — the
 // tier -> tone assignment lives in one place (GUIDANCE_TIER_TONE, shared
@@ -113,10 +121,22 @@ const OUTCOME_META: Record<ResolvedOutcome, { label: string; tone: ChipTone; bar
   unclear: { label: "Unclear", tone: "slate", bar: "bg-muted", ink: "text-muted-foreground" },
 };
 
-const LIVE_META: Record<LiveState, { label: string; tone: ChipTone; glyph: string }> = {
-  on_track: { label: "On track", tone: "emerald", glyph: "●" },
+// A static lookup with no branching left in it — which key a row gets (and
+// in particular which way a revision went) is decided by `liveStateKey` in
+// the verdict layer, where it is unit-tested. A green "Raised" on a guidance
+// CUT is the most misleading thing this section could print, so that choice
+// does not live in an untestable component ternary (ship review, 2026-09-08).
+//
+// "Held", not "On track": nothing here says the company is tracking to the
+// number — only that the number is unchanged. The verdict layer has no
+// progress-to-date reading for a live commitment, so the chip must not imply
+// one.
+const LIVE_META: Record<LiveStateKey, { label: string; tone: ChipTone; glyph: string }> = {
+  held: { label: "Held", tone: "sky", glyph: "●" },
+  raised: { label: "Raised", tone: "emerald", glyph: "▲" },
+  lowered: { label: "Lowered", tone: "rose", glyph: "▼" },
   revised: { label: "Revised", tone: "amber", glyph: "↻" },
-  delayed: { label: "Pushed out", tone: "amber", glyph: "↻" },
+  pushed_out: { label: "Pushed out", tone: "amber", glyph: "↻" },
   no_update: { label: "No update", tone: "slate", glyph: "○" },
 };
 
@@ -207,12 +227,18 @@ function TrackRecordCard({ verdict }: { verdict: GuidanceVerdict }) {
 // Shared row bits
 // ---------------------------------------------------------------------------
 
+// Segment names arrive from the producer in whatever case the filing used
+// ("products", "aerospace and defence"). Only the first letter is touched —
+// a title-case pass would mangle the acronyms that are common here (A&D,
+// R&D, HPP).
+const scopeLabel = (item: NormalizedGuidanceItem): string => {
+  const seg = item.segment;
+  if (!seg) return "Consolidated";
+  return seg.charAt(0).toUpperCase() + seg.slice(1);
+};
+
 function ScopeChip({ item }: { item: NormalizedGuidanceItem }) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
-      {item.segment ?? "Consolidated"}
-    </span>
-  );
+  return <span className={neutralChipClass}>{scopeLabel(item)}</span>;
 }
 
 function TrailHint({ count }: { count: number }) {
@@ -307,7 +333,7 @@ export function SelectableRow({
 // ---------------------------------------------------------------------------
 
 function LiveCommitmentRow({ row, onSelect }: { row: LiveRow; onSelect: (i: NormalizedGuidanceItem) => void }) {
-  const meta = LIVE_META[row.state];
+  const meta = LIVE_META[liveStateKey(row)];
   const { item } = row;
   return (
     <SelectableRow onSelect={() => onSelect(item)} className="px-4 py-3.5 transition-colors hover:bg-muted/30">
@@ -341,18 +367,134 @@ function LiveCommitmentRow({ row, onSelect }: { row: LiveRow; onSelect: (i: Norm
   );
 }
 
-function LiveCommitments({ rows, onSelect }: { rows: LiveRow[]; onSelect: (i: NormalizedGuidanceItem) => void }) {
-  if (rows.length === 0) return null;
+// The ranked cards. One card = one live commitment, in the order
+// compareLiveMateriality put them: what resolves soonest and covers most of
+// the company, first. The card carries only what the payload has — the
+// number they are on the hook for, how it got there, and how long it has
+// stood. There is no progress-to-date reading in this section's data, so the
+// card never implies one.
+function WatchCard({
+  row,
+  rank,
+  onSelect,
+}: {
+  row: LiveRow;
+  rank: number;
+  onSelect: (i: NormalizedGuidanceItem) => void;
+}) {
+  const meta = LIVE_META[liveStateKey(row)];
+  const { item } = row;
+  // commitmentCoreLabel only prefixes the segment when there IS a metric
+  // label; with none it falls back to raw guidanceText, which carries no
+  // guaranteed scope. Keying the chip off `item.segment` alone therefore hid
+  // the scope entirely on that branch — a segment-only guide read as a
+  // consolidated one (ship review, 2026-09-08).
+  const titleNamesScope = Boolean(item.segment && item.metricLabel);
   return (
-    <div className={cn(elevatedBlockClass, "overflow-hidden")}>
-      <div className="border-b border-border/40 px-4 py-2.5">
-        <p className={eyebrowClass}>Live commitments · in flight</p>
+    <SelectableRow
+      onSelect={() => onSelect(item)}
+      className={cn(elevatedBlockClass, "flex list-none flex-col p-4 transition-colors hover:bg-muted/20")}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className={monoClass}>{String(rank).padStart(2, "0")}</span>
+        <span className={chipClass(meta.tone)}>
+          <span aria-hidden className="mr-1">{meta.glyph}</span>
+          {meta.label}
+        </span>
       </div>
-      <ul className="divide-y divide-border/30">
-        {rows.map((row) => (
-          <LiveCommitmentRow key={row.item.guidanceKey} row={row} onSelect={onSelect} />
+      {/* The scope is named once per card, wherever it reads better. A
+          segment carries it in the title ("Blackwell (B200) revenue growth")
+          — three cards all titled "Revenue growth" under small chips is
+          unreadable, and E2E ships exactly that. Consolidated, and anything
+          whose title can't name its segment, keeps the chip instead. */}
+      <p className="mt-2 text-[14px] font-semibold leading-snug text-foreground">
+        {commitmentCoreLabel(item)}
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {titleNamesScope ? null : <ScopeChip item={item} />}
+        {item.horizonLabel ? <span className={neutralChipClass}>{item.horizonLabel}</span> : null}
+      </div>
+      {row.note ? (
+        <p className="mt-2.5 line-clamp-4 text-[12px] leading-relaxed text-muted-foreground">{row.note}</p>
+      ) : null}
+      <div className="mt-3 border-t border-border/30 pt-3">
+        {/* Same word the resolved table's column uses, so the live number and
+            the historical one read on the same axis. */}
+        <p className={eyebrowClass}>Guided</p>
+        {row.guidedLabel ? (
+          <p className="mt-1 font-mono text-[16px] font-semibold tabular-nums leading-tight text-foreground">
+            {row.guidedLabel}
+          </p>
+        ) : (
+          <p className="mt-1 text-[12px] leading-snug text-muted-foreground">
+            Stated qualitatively — no number on the record.
+          </p>
+        )}
+        {row.trail.length > 0 ? (
+          <ValueTrailLine row={row} />
+        ) : row.heldSince ? (
+          <p className={cn(monoClass, "mt-2")}>Held since {row.heldSince}</p>
+        ) : null}
+      </div>
+    </SelectableRow>
+  );
+}
+
+function WhatToWatch({
+  verdict,
+  onSelect,
+}: {
+  verdict: GuidanceVerdict;
+  onSelect: (i: NormalizedGuidanceItem) => void;
+}) {
+  const [restOpen, setRestOpen] = React.useState(false);
+  const { watch, watchRest } = verdict;
+  if (watch.length === 0) return null;
+  return (
+    <div className="space-y-3">
+      {/* The eyebrow stays a short structural label; the qualifying claim
+          reads in sentence case below it. Uppercasing a whole sentence at
+          0.16em tracking is the slowest thing on the page to read, and the
+          design system rules it out. */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <div className="min-w-0">
+          <p className={eyebrowClass}>What to watch</p>
+          <p className="mt-1 text-[13px] font-medium leading-snug text-foreground">
+            {verdict.watchHeading}
+          </p>
+        </div>
+        <p className="text-[11px] leading-snug text-muted-foreground">
+          Ranked by the year they come due, then how much of the company they cover, then what just moved
+        </p>
+      </div>
+      <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {watch.map((row, i) => (
+          <WatchCard key={row.item.guidanceKey} row={row} rank={i + 1} onSelect={onSelect} />
         ))}
       </ul>
+      {watchRest.length > 0 ? (
+        <div className={cn(elevatedBlockClass, "overflow-hidden")}>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+            <p className={eyebrowClass}>{verdict.watchRestLabel}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              aria-expanded={restOpen}
+              onClick={() => setRestOpen((open) => !open)}
+            >
+              {restOpen ? "Hide" : verdict.watchRestToggleLabel}
+            </Button>
+          </div>
+          {restOpen ? (
+            <ul className="divide-y divide-border/30 border-t border-border/40">
+              {watchRest.map((row) => (
+                <LiveCommitmentRow key={row.item.guidanceKey} row={row} onSelect={onSelect} />
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -367,7 +509,7 @@ function ResolvedRowView({ row, onSelect }: { row: ResolvedRow; onSelect: (i: No
   const meta = OUTCOME_META[row.outcome];
   const { item } = row;
   const pill = row.delta ? `${meta.label} · ${row.delta.label}` : meta.label;
-  const sub = [item.segment ?? "Consolidated", item.horizonLabel].filter(Boolean).join(" · ");
+  const sub = [scopeLabel(item), item.horizonLabel].filter(Boolean).join(" · ");
   return (
     <SelectableRow
       onSelect={() => onSelect(item)}
@@ -403,12 +545,21 @@ function ResolvedRowView({ row, onSelect }: { row: ResolvedRow; onSelect: (i: No
   );
 }
 
+// How many resolved rows show before the "show all" toggle. The table is the
+// evidence behind the verdict card, not the headline — a long back-catalogue
+// pushed the live book off the screen entirely.
+const RESOLVED_PREVIEW_COUNT = 5;
+
 function ResolvedTrackRecord({ rows, onSelect }: { rows: ResolvedRow[]; onSelect: (i: NormalizedGuidanceItem) => void }) {
+  const [showAll, setShowAll] = React.useState(false);
   if (rows.length === 0) return null;
+  const visible = showAll ? rows : rows.slice(0, RESOLVED_PREVIEW_COUNT);
+  const hidden = rows.length - visible.length;
   return (
     <div className={cn(elevatedBlockClass, "overflow-hidden")}>
-      <div className="border-b border-border/40 px-4 py-2.5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-border/40 px-4 py-2.5">
         <p className={eyebrowClass}>Track record · resolved commitments</p>
+        <p className="text-[11px] leading-snug text-muted-foreground">Most recent first</p>
       </div>
       <div className={cn("hidden gap-x-4 border-b border-border/40 px-4 py-2 md:grid", RESOLVED_GRID)}>
         <p className={eyebrowClass}>Commitment</p>
@@ -417,10 +568,23 @@ function ResolvedTrackRecord({ rows, onSelect }: { rows: ResolvedRow[]; onSelect
         <p className={cn(eyebrowClass, "text-right")}>Outcome</p>
       </div>
       <ul className="divide-y divide-border/30">
-        {rows.map((row) => (
+        {visible.map((row) => (
           <ResolvedRowView key={row.item.guidanceKey} row={row} onSelect={onSelect} />
         ))}
       </ul>
+      {rows.length > RESOLVED_PREVIEW_COUNT ? (
+        <div className="flex justify-center border-t border-border/40 px-4 py-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            aria-expanded={showAll}
+            onClick={() => setShowAll((open) => !open)}
+          >
+            {showAll ? "Show fewer" : `Show all ${rows.length} resolved (${hidden} more)`}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -634,9 +798,19 @@ function SourcesDisclosure({ sourceFiles }: { sourceFiles: unknown[] | undefined
 export function GuidanceHistorySection({ items, sourceFiles, currentQtr }: GuidanceHistorySectionProps) {
   const current = currentQtr ?? currentReportingQuarter();
   const verdict = React.useMemo(() => buildGuidanceVerdict(items, current), [items, current]);
+  const companyCode = items[0]?.companyCode ?? "";
 
   // One Drawer at the section level — any row sets the selected thread.
   const [selectedThread, setSelectedThread] = React.useState<NormalizedGuidanceItem | null>(null);
+  // Same App Router in-place re-render that carried the toggles across
+  // companies also carried this: with a thread open, navigating to another
+  // company left company A's commitment rendered in the drawer over company
+  // B's page, with nothing in the drawer body naming the company (Claude +
+  // Codex adversarial review, 2026-09-08). Keyed children can't fix state
+  // that lives in the parent, so reset it explicitly.
+  React.useEffect(() => {
+    setSelectedThread(null);
+  }, [companyCode]);
 
   if (!items.length) {
     return (
@@ -653,8 +827,18 @@ export function GuidanceHistorySection({ items, sourceFiles, currentQtr }: Guida
         <TrackRecordCard verdict={verdict} />
       </div>
 
-      <LiveCommitments rows={verdict.live} onSelect={setSelectedThread} />
-      <ResolvedTrackRecord rows={verdict.resolved} onSelect={setSelectedThread} />
+      {/* Keyed on the company so both disclosure toggles reset when the
+          reader navigates to another company. The App Router re-renders this
+          subtree in place (CompanyPageWorkspace carries no key), so without
+          this an expanded 40-row back-catalogue followed the reader to the
+          next company — defeating the truncation (red-team review,
+          2026-09-08). */}
+      <WhatToWatch key={`watch-${companyCode}`} verdict={verdict} onSelect={setSelectedThread} />
+      <ResolvedTrackRecord
+        key={`resolved-${companyCode}`}
+        rows={verdict.resolved}
+        onSelect={setSelectedThread}
+      />
       <SourcesDisclosure sourceFiles={sourceFiles} />
 
       <Drawer
