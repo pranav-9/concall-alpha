@@ -814,7 +814,15 @@ const normalizeGuidanceTrackingRow = (
   return {
     id: row.id,
     companyCode: row.company_code,
-    guidanceKey: row.guidance_key,
+    // Coerced like every sibling field rather than trusted from the row: the
+    // declared `string` type is a compile-time assertion over unvalidated
+    // pipeline JSON, and guidanceKey is now load-bearing (the live-book
+    // materiality sort calls .localeCompare on it), so a null would throw
+    // mid-render instead of just warning on a React key. The snapshot path
+    // already drops keyless items; this guards the legacy guidance_tracking
+    // fallback, which lib/activity-feed.ts also guards (ship review,
+    // 2026-09-08).
+    guidanceKey: asString(row.guidance_key) ?? `guidance-${row.id}`,
     guidanceText,
     guidanceFamily,
     metricSubtype,

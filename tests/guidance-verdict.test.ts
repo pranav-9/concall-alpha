@@ -251,16 +251,43 @@ assert.equal(v.liveNote, "Four more commitments are live — three held and one 
 assert.deepEqual(v.bars, ["met", "met", "met", "met", "missed"]);
 assert.equal(v.resolved.length, 5);
 assert.equal(v.live.length, 4);
-// Live ordering: consolidated first, then segment-level; on-track before revised.
+// Live ordering (materiality, 2026-09-08): soonest horizon first, then
+// consolidated before segment-level, then revenue before EBITDA. The FY28
+// Defence guide sorts BELOW the FY27 Medical one even though Defence is the
+// bigger line — it isn't what decides FY27.
 assert.deepEqual(
   v.live.map((r) => r.item.guidanceText),
-  ["Consolidated revenue to grow 30%+", "EBITDA to grow ~35%", "Defence revenue to roughly double", "Medical electronics to reach ₹180 cr"],
+  ["Consolidated revenue to grow 30%+", "EBITDA to grow ~35%", "Medical electronics to reach ₹180 cr", "Defence revenue to roughly double"],
 );
-assert.equal(v.live[3].trail.length, 2);
-assert.equal(v.live[3].direction, "down");
-// Resolved: met rows first, then the miss.
-assert.equal(v.resolved[4].outcome, "missed");
-assert.equal(v.resolved[4].delta?.label, "-11 pts");
+assert.equal(v.live[2].trail.length, 2);
+assert.equal(v.live[2].direction, "down");
+// The watch split: top three carded, the rest collapsed. All three FY27, so
+// the heading can name the year.
+assert.deepEqual(
+  v.watch.map((r) => r.item.guidanceText),
+  ["Consolidated revenue to grow 30%+", "EBITDA to grow ~35%", "Medical electronics to reach ₹180 cr"],
+);
+assert.deepEqual(
+  v.watchRest.map((r) => r.item.guidanceText),
+  ["Defence revenue to roughly double"],
+);
+assert.equal(v.watchHorizonLabel, "FY27");
+// The guided number rides the live row, so the card doesn't re-read it.
+assert.equal(v.live[0].guidedLabel, "+30%");
+// Resolved: most recently mentioned first, and on a tie a miss outranks a
+// win (2026-09-08 — met-first quietly collapsed misses once the table started
+// showing only its first five rows).
+assert.deepEqual(
+  v.resolved.map((r) => r.outcome),
+  ["met", "met", "met", "missed", "met"],
+);
+const missRow = v.resolved.find((r) => r.outcome === "missed")!;
+assert.equal(missRow.item.guidanceText, "PAT to grow 30%");
+assert.equal(missRow.delta?.label, "-11 pts");
+// The FY25 pair ties on recency (both last mentioned Q4 FY25), and the miss
+// takes the higher slot.
+assert.equal(v.resolved[3].item.guidanceText, "PAT to grow 30%");
+assert.equal(v.resolved[4].item.guidanceText, "Revenue to cross ₹700 cr");
 
 // Reliable band with a single slip reads as "with one slip".
 {
@@ -497,9 +524,13 @@ assert.equal(
   const grammarV = buildGuidanceVerdict(items, CURRENT);
   assert.equal(grammarV.metCount, 1);
   assert.equal(grammarV.countedCount, 6);
+  // Miss-list order follows the resolved order. Every row here was last
+  // mentioned in the same quarter, so they tie on recency and fall to the
+  // outcome tiebreak (missed -> dropped -> delayed -> met as of 2026-09-08),
+  // then to insertion order within each outcome.
   assert.equal(
     grammarV.summary,
-    "One of six resolved commitments was met. The misses: Delayed one (FY30), delayed, Miss three (FY25), Miss two (FY25), and two more.",
+    "One of six resolved commitments was met. The misses: Miss three (FY25), Miss two (FY25), Miss one (FY25), and two more.",
   );
 }
 {

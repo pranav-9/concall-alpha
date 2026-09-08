@@ -175,10 +175,12 @@ test("buildGuidanceVerdict: two resolved rows with unparseable horizons sort det
   ]);
   const v = buildGuidanceVerdict(items, CURRENT);
   assert.equal(v.resolved.length, 2);
-  // Outcome tiebreak: met (0) before missed (1) — proves the comparator
-  // didn't short-circuit on a NaN recency delta.
-  assert.equal(v.resolved[0].outcome, "met");
-  assert.equal(v.resolved[1].outcome, "missed");
+  // Outcome tiebreak — proves the comparator didn't short-circuit on a NaN
+  // recency delta. The order is miss-first as of 2026-09-08: once the table
+  // shows only its first few rows, met-first quietly collapsed the misses
+  // (Codex adversarial review).
+  assert.equal(v.resolved[0].outcome, "missed");
+  assert.equal(v.resolved[1].outcome, "met");
 });
 
 // ---------------------------------------------------------------------------

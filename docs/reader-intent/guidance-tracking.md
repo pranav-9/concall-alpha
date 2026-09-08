@@ -10,10 +10,44 @@ and the Phase 10 per-company snapshot
 This doc covers reader-side intent only.
 
 The section in `concall-alpha` is rendered as **`guidance-history-section.tsx`**
-(verdict-first since 2026-09-06: keep-their-word card, live commitments,
+(verdict-first since 2026-09-06: keep-their-word card, then the live book,
 then a Guided / Delivered / Outcome track record; the thread-style trail per
 commitment lives in the row Drawer — see `concall-alpha/CLAUDE.md` "project
-gotchas"). Don't reintroduce comparison cards.
+gotchas"). Since 2026-09-08 the live book is **prioritised, not bucketed**:
+the top `LIVE_WATCH_COUNT` (3) commitments get full "what to watch" cards and
+the rest collapse behind a toggle, ranked by `compareMaterialityKeys` in
+`lib/guidance-tracking/verdict.ts` — deadline financial year, then
+consolidated before segment, then whether the number just MOVED, then
+revenue before margin before yield, then quarter precision, then trail
+depth, then `guidanceKey` for stability. The ranking is derived from the
+payload alone; there is no per-company curation and no producer-supplied
+weighting.
+
+Three of those rules exist because of specific failures, and removing them
+reintroduces the failure:
+
+- **Year, not quarter, at the top.** `horizonQuarterIndex` defaults an
+  FY-only horizon to Q4, so ranking on the raw quarter let any quarter-dated
+  segment guide outrank the consolidated FY guide for the same year — the
+  top card decided by how precisely the producer wrote `applies_to`.
+- **"Moved" is read off the derived trail direction, not `status`.** Phase 6
+  routinely leaves a revised thread on `status: "active"`; keying off status
+  ranked those as non-news AND labelled them "Held" directly above their own
+  value ladder.
+- **Scope outranks news** so a minor segment revision can't displace the
+  flagship consolidated guide.
+
+The heading only claims *"the three that decide FY27"* when no collapsed
+commitment shares that year; otherwise it names the year without the
+exhaustiveness claim.
+
+The resolved table shows its five most recent rows with a "show all" toggle.
+It sorts on **latest mention**, not horizon (that is the honest reading of
+"most recent" in a track record, and it keeps one scale for the rows that
+carry no horizon at all — the legacy `guidance_tracking` path selects no
+`horizon` column). On a tie a miss ranks ahead of a win: met-first was
+harmless while the whole table rendered and became a flattering bias the
+moment truncation arrived. Don't reintroduce comparison cards.
 
 ## What does the reader walk away believing?
 
