@@ -11,7 +11,11 @@ import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import { assessStaleness, normalizeValuationCheck } from "@/lib/valuation-check/normalize";
 import { getWalkTheTalk } from "@/lib/walk-the-talk/get";
 import { createClient } from "@/lib/supabase/server";
-import type { GuidanceSnapshotRow } from "@/lib/guidance-snapshot/types";
+import {
+  parseForwardStrength,
+  parseStrategyNarrative,
+  type GuidanceSnapshotRow,
+} from "@/lib/guidance-snapshot/types";
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 import type { KeyVariablesSnapshotRow } from "@/lib/key-variables-snapshot/types";
 import type { WatchSwingVar } from "@/lib/next-quarter-watch/types";
@@ -418,6 +422,8 @@ export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionPro
           items={guidanceItems}
           sourceFiles={normalizedGuidanceSnapshot?.sourceFiles}
           currentQtr={guidanceQtr}
+          forwardStrength={parseForwardStrength(normalizedGuidanceSnapshot?.details ?? null)}
+          strategyNarrative={parseStrategyNarrative(normalizedGuidanceSnapshot?.details ?? null)}
         />
       ) : (
         missingSectionState(
