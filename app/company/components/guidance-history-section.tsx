@@ -3,17 +3,27 @@
 // Guidance section interior (the L1 SectionCard shell is provided by
 // GuidanceHistoryPanel in company-detail-sections.tsx).
 //
-// Layout (redesign 2026-09-06, live book prioritised 2026-09-08):
-//   1. "Do they keep their word?" verdict card + resolved track-record card.
-//   2. What to watch — the top LIVE_WATCH_COUNT live commitments as full
-//      cards, ranked by materiality (verdict.ts compareLiveMateriality);
-//      the rest of the live book collapses to a one-line ledger.
-//   3. Track record — resolved commitments as a guided / delivered / outcome
-//      table, the most recent few with the tail behind a toggle.
-//   4. Sources (collapsed) and a right-side Drawer with the full trail for
-//      any row.
-// All numbers and sentences come from lib/guidance-tracking/verdict.ts, which
-// only templates from the payload — no analyst conclusion is invented here.
+// Layout (redesign 2026-09-06, live book prioritised 2026-09-08,
+// forward-strength layer added 2026-09-09):
+//   When the snapshot carries the forward-strength blocks (details.
+//   forward_strength / .strategy_narrative from the deep-track producer) the
+//   section leads with the LIVE book and closes with the delivery record:
+//     1. "How strong is the guidance right now?" — the forward-strength
+//        verdict (ambition × evidence pills, headline, the live-book
+//        order-backed/asserted/aspiration split) beside "The strategy behind
+//        the numbers" (the single bet + one implied lever).
+//     2. What to watch — the top LIVE_WATCH_COUNT live commitments as ranked
+//        cards (verdict.ts compareLiveMateriality); the rest collapse.
+//     3. "Should you believe any of it?" — the credibility verdict + resolved
+//        track-record card.
+//     4. Track record — resolved commitments as a guided / delivered /
+//        outcome table; Sources (collapsed); a right-side Drawer per row.
+//   Snapshots WITHOUT the strength blocks keep the original credibility-first
+//   order (verdict card + track record on top, then what-to-watch).
+// The forward-strength prose comes from the producer (schema
+// guidance_strength_v1); everything else is templated in
+// lib/guidance-tracking/verdict.ts from the payload — no analyst conclusion is
+// invented in this component.
 
 import * as React from "react";
 import { ChevronDown, History } from "lucide-react";
@@ -50,6 +60,12 @@ import type {
   NormalizedGuidanceItem,
   NormalizedGuidanceStatusKey,
 } from "@/lib/guidance-tracking/types";
+import type {
+  AmbitionLabel,
+  EvidenceBand,
+  ForwardStrength,
+  StrategyNarrative,
+} from "@/lib/guidance-snapshot/types";
 
 // Kept only for tests/guidance-status-bucket.test.ts — nothing in the
 // Overview reads either of these (ship-workflow specialist review, 2026-09-06).
@@ -65,6 +81,12 @@ export type GuidanceHistorySectionProps = {
   // Reporting-quarter anchor for the live / resolved split. The panel passes
   // the same value it used for the header pills so the two never disagree.
   currentQtr?: ReportingQuarter;
+  // The forward-strength layer (details.forward_strength / .strategy_narrative,
+  // parsed server-side). Null for any company whose snapshot predates the
+  // deep-track strength upgrade — the two cards simply do not render, and the
+  // section falls back to the credibility-first layout.
+  forwardStrength?: ForwardStrength | null;
+  strategyNarrative?: StrategyNarrative | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -153,14 +175,96 @@ const STATUS_TONE: Record<NormalizedGuidanceStatusKey, ChipTone> = {
 };
 
 // ---------------------------------------------------------------------------
+// Forward-strength layer (the live-book verdict + the strategy behind it)
+// ---------------------------------------------------------------------------
+
+// The ambition pill characterises the GUIDANCE, not the stock: ambitious =
+// bold vs delivered history (amber = lean in), conservative = at/below it
+// (slate = neutral). Evidence reads green→red on how banked the live book is.
+const AMBITION_META: Record<AmbitionLabel, { label: string; tone: ChipTone }> = {
+  ambitious: { label: "Ambitious", tone: "amber" },
+  measured: { label: "Measured", tone: "sky" },
+  conservative: { label: "Conservative", tone: "slate" },
+};
+
+const EVIDENCE_META: Record<EvidenceBand, { label: string; tone: ChipTone }> = {
+  well_evidenced: { label: "Well evidenced", tone: "emerald" },
+  partly_evidenced: { label: "Partly evidenced", tone: "amber" },
+  thinly_evidenced: { label: "Thinly evidenced", tone: "rose" },
+};
+
+// The top card's shell tracks the ambition tone the same way the credibility
+// card's shell tracks its tier tone — so the two verdicts read as siblings.
+function ForwardStrengthCard({ forwardStrength }: { forwardStrength: ForwardStrength }) {
+  const amb = AMBITION_META[forwardStrength.ambition.label];
+  const ev = EVIDENCE_META[forwardStrength.evidence.label];
+  const shell = TONE_CARD_SHELL[amb.tone] ?? TONE_CARD_SHELL.slate!;
+  const { liveTotal, orderBacked, asserted, aspiration } = forwardStrength.evidence;
+  return (
+    <div className={cn("rounded-xl border p-4 shadow-md shadow-black/20 sm:p-5", shell.shell)}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className={cn(eyebrowClass, shell.eyebrow)}>How strong is the guidance right now?</p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className={chipClass(amb.tone)}>{amb.label}</span>
+          <span className={chipClass(ev.tone)}>{ev.label}</span>
+        </div>
+      </div>
+      <p className="mt-2 text-xl font-bold leading-tight text-foreground sm:text-[22px]">
+        {forwardStrength.headline}
+      </p>
+      <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-foreground/80">
+        {forwardStrength.supportingLine}
+      </p>
+      {liveTotal > 0 ? (
+        <p className={cn("mt-3", monoClass)}>
+          {`OF ${liveTotal} LIVE · ${orderBacked} order-backed · ${asserted} asserted · ${aspiration} ${
+            aspiration === 1 ? "aspiration" : "aspirations"
+          }`}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function StrategyNarrativeCard({ strategy }: { strategy: StrategyNarrative }) {
+  const lever = strategy.impliedLever;
+  const leverValue =
+    lever && (lever.from || lever.to)
+      ? [lever.from, lever.to].filter(Boolean).join(" → ")
+      : null;
+  return (
+    <div className={cn(elevatedMutedBlockClass, "p-4 sm:p-5")}>
+      <p className={eyebrowClass}>The strategy behind the numbers</p>
+      <p className="mt-2 text-base font-semibold leading-snug text-foreground sm:text-lg">
+        {strategy.headline}
+      </p>
+      <p className="mt-2 text-[13px] leading-relaxed text-foreground/80">{strategy.body}</p>
+      {lever ? (
+        <div className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className={eyebrowClass}>{lever.label}</span>
+          {leverValue ? (
+            <span className="font-mono text-sm font-semibold tabular-nums text-foreground">
+              {leverValue}
+            </span>
+          ) : null}
+          {lever.basis ? (
+            <span className="text-[11px] text-muted-foreground">{lever.basis}</span>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Verdict row
 // ---------------------------------------------------------------------------
 
-function VerdictCard({ verdict }: { verdict: GuidanceVerdict }) {
+function VerdictCard({ verdict, eyebrow }: { verdict: GuidanceVerdict; eyebrow?: string }) {
   const card = TIER_CARD[verdict.tier];
   return (
     <div className={cn("rounded-xl border p-4 shadow-md shadow-black/20 sm:p-5", card.shell)}>
-      <p className={cn(eyebrowClass, card.eyebrow)}>Do they keep their word?</p>
+      <p className={cn(eyebrowClass, card.eyebrow)}>{eyebrow ?? "Do they keep their word?"}</p>
       <p className="mt-2 text-xl font-bold leading-tight text-foreground sm:text-[22px]">
         {verdict.headline}
       </p>
@@ -795,7 +899,13 @@ function SourcesDisclosure({ sourceFiles }: { sourceFiles: unknown[] | undefined
 // Section
 // ---------------------------------------------------------------------------
 
-export function GuidanceHistorySection({ items, sourceFiles, currentQtr }: GuidanceHistorySectionProps) {
+export function GuidanceHistorySection({
+  items,
+  sourceFiles,
+  currentQtr,
+  forwardStrength,
+  strategyNarrative,
+}: GuidanceHistorySectionProps) {
   const current = currentQtr ?? currentReportingQuarter();
   const verdict = React.useMemo(() => buildGuidanceVerdict(items, current), [items, current]);
   const companyCode = items[0]?.companyCode ?? "";
@@ -820,12 +930,39 @@ export function GuidanceHistorySection({ items, sourceFiles, currentQtr }: Guida
     );
   }
 
+  // Two layouts. With the forward-strength blocks the section leads with "how
+  // strong is the guidance right now?" (the live book) and closes with "should
+  // you believe it?" (the delivery record) — strength on top, credibility at
+  // the bottom, per the 2026-09 upgrade. Without them (snapshots that predate
+  // the strength producer) it keeps the original credibility-first layout.
+  const credibilityBlock = (
+    <div className="grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <VerdictCard
+        verdict={verdict}
+        eyebrow={forwardStrength ? "Should you believe any of it?" : undefined}
+      />
+      <TrackRecordCard verdict={verdict} />
+    </div>
+  );
+
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <VerdictCard verdict={verdict} />
-        <TrackRecordCard verdict={verdict} />
-      </div>
+      {forwardStrength ? (
+        // The strategy card is optional (guidance_strength_v1 lets
+        // strategy_narrative be null when no single lever dominates). Without
+        // it the strength card goes full-width rather than sitting in a
+        // two-column grid with a blank right track.
+        strategyNarrative ? (
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+            <ForwardStrengthCard forwardStrength={forwardStrength} />
+            <StrategyNarrativeCard strategy={strategyNarrative} />
+          </div>
+        ) : (
+          <ForwardStrengthCard forwardStrength={forwardStrength} />
+        )
+      ) : (
+        credibilityBlock
+      )}
 
       {/* Keyed on the company so both disclosure toggles reset when the
           reader navigates to another company. The App Router re-renders this
@@ -834,6 +971,10 @@ export function GuidanceHistorySection({ items, sourceFiles, currentQtr }: Guida
           next company — defeating the truncation (red-team review,
           2026-09-08). */}
       <WhatToWatch key={`watch-${companyCode}`} verdict={verdict} onSelect={setSelectedThread} />
+
+      {/* Strength-first layout closes on the delivery record. */}
+      {forwardStrength ? credibilityBlock : null}
+
       <ResolvedTrackRecord
         key={`resolved-${companyCode}`}
         rows={verdict.resolved}
