@@ -229,27 +229,24 @@ const buildGuidanceBatchPreview = (threads: GuidanceBatchThread[]) => {
 };
 
 // Verdict-led one-liner for a company's guidance batch, drawn from the
-// deep-track blocks on guidance_snapshot: the credibility verdict (do they
-// keep their word) plus the forward-strength read (ambition × how backed).
-// Reads far better than a family·status jumble — "High trust · measured,
-// well-backed guide". Only the ~deep-tracked companies carry these blocks;
-// everyone else falls back to buildGuidanceBatchPreview.
-const CREDIBILITY_WORD: Record<string, string> = {
-  high_trust: "High trust",
+// deep-track blocks on guidance_snapshot. Reads as prose, three beats:
+//   <track record> management, <ambition> guidance — <the strategy driving it>
+// e.g. "Reliable management, measured guidance — Move up the US stack, from
+// contract supply to owned front end." The credibility word is a delivery
+// track-record read (not a blanket management-quality claim); the strategy is
+// the crafted strategy_narrative.headline. Only deep-tracked companies carry
+// these blocks; everyone else falls back to buildGuidanceBatchPreview.
+const CREDIBILITY_ADJ: Record<string, string> = {
+  high_trust: "Reliable",
   credible: "Credible",
-  mixed: "Mixed record",
-  low_trust: "Weak record",
-  not_assessable: "Too early",
+  mixed: "Mixed",
+  low_trust: "Weak",
+  not_assessable: "Unproven",
 };
 const AMBITION_WORD: Record<string, string> = {
   ambitious: "ambitious",
   measured: "measured",
   conservative: "conservative",
-};
-const EVIDENCE_ADJ: Record<string, string> = {
-  well_evidenced: "well-backed",
-  partly_evidenced: "partly backed",
-  thinly_evidenced: "thinly backed",
 };
 
 const asJsonObject = (value: unknown): Record<string, unknown> | null => {
@@ -273,27 +270,33 @@ const buildGuidanceVerdictLine = (
   credibilityVerdict: unknown,
   details: unknown,
 ): string | null => {
-  const verdictKey = asJsonObject(credibilityVerdict)?.verdict;
-  const credWord =
-    typeof verdictKey === "string" ? CREDIBILITY_WORD[verdictKey] : undefined;
+  const detailsObj = asJsonObject(details);
 
-  const forwardStrength = asJsonObject(asJsonObject(details)?.forward_strength);
+  const verdictKey = asJsonObject(credibilityVerdict)?.verdict;
+  const credAdj =
+    typeof verdictKey === "string" ? CREDIBILITY_ADJ[verdictKey] : undefined;
+
+  const forwardStrength = asJsonObject(detailsObj?.forward_strength);
   const ambitionKey = asJsonObject(forwardStrength?.ambition)?.label;
-  const evidenceKey = asJsonObject(forwardStrength?.evidence)?.label;
   const ambitionWord =
     typeof ambitionKey === "string" ? AMBITION_WORD[ambitionKey] : undefined;
-  const evidenceAdj =
-    typeof evidenceKey === "string" ? EVIDENCE_ADJ[evidenceKey] : undefined;
 
-  const strength = ambitionWord
-    ? evidenceAdj
-      ? `${ambitionWord}, ${evidenceAdj} guide`
-      : `${ambitionWord} guide`
-    : null;
+  const strategyHeadlineRaw = asJsonObject(detailsObj?.strategy_narrative)?.headline;
+  const strategy =
+    typeof strategyHeadlineRaw === "string"
+      ? strategyHeadlineRaw.trim().replace(/[.\s]+$/, "")
+      : "";
 
-  if (credWord && strength) return `${credWord} · ${strength}`;
-  if (credWord) return credWord;
-  if (strength) return strength.charAt(0).toUpperCase() + strength.slice(1);
+  // Lead: "<Reliable> management, <measured> guidance" (either part optional).
+  let lead = "";
+  if (credAdj && ambitionWord) lead = `${credAdj} management, ${ambitionWord} guidance`;
+  else if (credAdj) lead = `${credAdj} management`;
+  else if (ambitionWord)
+    lead = `${ambitionWord.charAt(0).toUpperCase()}${ambitionWord.slice(1)} guidance`;
+
+  if (lead && strategy) return `${lead} — ${strategy}`;
+  if (lead) return lead;
+  if (strategy) return strategy;
   return null;
 };
 
