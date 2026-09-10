@@ -29,10 +29,10 @@ const LABEL_CLASS =
   "text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground";
 
 const INPUT_CLASS =
-  "h-11 rounded-xl border border-border/40 bg-background/80 px-3 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:border-sky-300 focus-visible:ring-2 focus-visible:ring-sky-200/60 dark:focus-visible:ring-sky-800/50";
+  "h-11 rounded-xl border border-border/40 bg-background/80 px-3 text-base md:text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:border-sky-300 focus-visible:ring-2 focus-visible:ring-sky-200/60 dark:focus-visible:ring-sky-800/50";
 
 const TEXTAREA_CLASS =
-  "min-h-[8rem] rounded-xl border border-border/40 bg-background/80 px-3 py-2 text-sm text-foreground shadow-sm placeholder:text-muted-foreground outline-none focus-visible:border-sky-300 focus-visible:ring-2 focus-visible:ring-sky-200/60 dark:focus-visible:ring-sky-800/50";
+  "min-h-[8rem] rounded-xl border border-border/40 bg-background/80 px-3 py-2 text-base md:text-sm text-foreground shadow-sm placeholder:text-muted-foreground outline-none focus-visible:border-sky-300 focus-visible:ring-2 focus-visible:ring-sky-200/60 dark:focus-visible:ring-sky-800/50";
 
 const ERROR_CLASS = "text-[11px] font-medium text-rose-500";
 
