@@ -228,6 +228,75 @@ const buildGuidanceBatchPreview = (threads: GuidanceBatchThread[]) => {
   return visibleThreads.join(" · ");
 };
 
+// Verdict-led one-liner for a company's guidance batch, drawn from the
+// deep-track blocks on guidance_snapshot: the credibility verdict (do they
+// keep their word) plus the forward-strength read (ambition × how backed).
+// Reads far better than a family·status jumble — "High trust · measured,
+// well-backed guide". Only the ~deep-tracked companies carry these blocks;
+// everyone else falls back to buildGuidanceBatchPreview.
+const CREDIBILITY_WORD: Record<string, string> = {
+  high_trust: "High trust",
+  credible: "Credible",
+  mixed: "Mixed record",
+  low_trust: "Weak record",
+  not_assessable: "Too early",
+};
+const AMBITION_WORD: Record<string, string> = {
+  ambitious: "ambitious",
+  measured: "measured",
+  conservative: "conservative",
+};
+const EVIDENCE_ADJ: Record<string, string> = {
+  well_evidenced: "well-backed",
+  partly_evidenced: "partly backed",
+  thinly_evidenced: "thinly backed",
+};
+
+const asJsonObject = (value: unknown): Record<string, unknown> | null => {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
+const buildGuidanceVerdictLine = (
+  credibilityVerdict: unknown,
+  details: unknown,
+): string | null => {
+  const verdictKey = asJsonObject(credibilityVerdict)?.verdict;
+  const credWord =
+    typeof verdictKey === "string" ? CREDIBILITY_WORD[verdictKey] : undefined;
+
+  const forwardStrength = asJsonObject(asJsonObject(details)?.forward_strength);
+  const ambitionKey = asJsonObject(forwardStrength?.ambition)?.label;
+  const evidenceKey = asJsonObject(forwardStrength?.evidence)?.label;
+  const ambitionWord =
+    typeof ambitionKey === "string" ? AMBITION_WORD[ambitionKey] : undefined;
+  const evidenceAdj =
+    typeof evidenceKey === "string" ? EVIDENCE_ADJ[evidenceKey] : undefined;
+
+  const strength = ambitionWord
+    ? evidenceAdj
+      ? `${ambitionWord}, ${evidenceAdj} guide`
+      : `${ambitionWord} guide`
+    : null;
+
+  if (credWord && strength) return `${credWord} · ${strength}`;
+  if (credWord) return credWord;
+  if (strength) return strength.charAt(0).toUpperCase() + strength.slice(1);
+  return null;
+};
+
 const uniqueCompanyCodes = (rows: RawQuarterRow[]) => {
   const codes = new Map<string, string>();
   rows.forEach((row) => {
@@ -553,6 +622,31 @@ export async function getUnifiedUpdates({
       existing.atRaw = atRaw;
     }
   });
+  // Pull the deep-track verdict blocks for the companies with a guidance batch,
+  // so each row can lead with the standing read instead of a family·status list.
+  const guidanceBatchCodes = Array.from(
+    new Set(
+      Array.from(latestGuidanceBatches.values())
+        .map((item) => item.companyCode?.trim().toUpperCase())
+        .filter((code): code is string => Boolean(code)),
+    ),
+  );
+  const guidanceVerdictLines = new Map<string, string>();
+  if (guidanceBatchCodes.length > 0) {
+    const { data: guidanceSnapshotRows } = await supabase
+      .from("guidance_snapshot")
+      .select("company_code, credibility_verdict, details")
+      .in("company_code", guidanceBatchCodes);
+    (guidanceSnapshotRows ?? []).forEach(
+      (row: { company_code?: string | null; credibility_verdict?: unknown; details?: unknown }) => {
+        const code = row.company_code?.trim().toUpperCase();
+        if (!code) return;
+        const line = buildGuidanceVerdictLine(row.credibility_verdict, row.details);
+        if (line) guidanceVerdictLines.set(code, line);
+      },
+    );
+  }
+
   latestGuidanceBatches.forEach((item) => {
     if (item.guidanceThreads && item.guidanceThreads.length > 1) {
       item.guidanceThreads = [...item.guidanceThreads].sort((a, b) => {
@@ -565,13 +659,21 @@ export async function getUnifiedUpdates({
     if (item.guidanceThreads && item.guidanceThreads.length > 0) {
       const threads = item.guidanceThreads;
       const batchCount = threads.length;
-      item.detail = buildGuidanceBatchPreview(threads) ?? "Guidance updates";
       item.contextLabel = `${batchCount} update${batchCount === 1 ? "" : "s"}`;
-      if (batchCount === 1) {
+      // Deep-tracked companies lead with the verdict read; the rest keep the
+      // family·status preview (or the single-thread label).
+      const verdictLine = item.companyCode
+        ? guidanceVerdictLines.get(item.companyCode.trim().toUpperCase())
+        : undefined;
+      if (verdictLine) {
+        item.detail = verdictLine;
+      } else if (batchCount === 1) {
         const [thread] = threads;
         item.detail = thread.contextLabel
           ? `${thread.label} · ${thread.contextLabel}`
           : thread.label;
+      } else {
+        item.detail = buildGuidanceBatchPreview(threads) ?? "Guidance updates";
       }
     }
   });
