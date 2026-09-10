@@ -31,7 +31,7 @@ export function CommentComposer({
         rows={3}
         maxLength={MAX_COMMENT_LEN}
         placeholder="Share your view on this company..."
-        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40 resize-y"
+        className="w-full rounded-md border border-border bg-background px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40 resize-y"
       />
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
