@@ -31,22 +31,36 @@ function istDayIndex(now: Date): number {
   return Number.isFinite(ms) ? Math.floor(ms / 86_400_000) : 0;
 }
 
-// Rows come in already ordered by the query (feature_weight desc, published_at
-// desc). Build a bounded pool, then rotate a FEATURED_SLOTS-wide window across
-// it by the day index. Returns up to FEATURED_SLOTS reads, hero first.
+const publishedMs = (r: FeaturedRead): number => {
+  const ms = r.publishedAtRaw ? Date.parse(r.publishedAtRaw) : NaN;
+  return Number.isFinite(ms) ? ms : 0;
+};
+
+// The hero is ALWAYS the freshest eligible read — this is a "what's new"
+// surface, so the newest upgrade must headline, never get buried by the daily
+// offset. Only the two secondary slots rotate: a window slides across the rest
+// of the pool by IST day index, giving daily novelty without hiding the latest.
+// Pool and hero are ordered by recency (weight breaks ties); weight still gates
+// eligibility upstream. Returns up to FEATURED_SLOTS reads, hero first.
 export function selectFeaturedReads(
   reads: FeaturedRead[],
   now: Date = new Date(),
 ): FeaturedRead[] {
-  const pool = reads.slice(0, POOL_SIZE);
+  const pool = [...reads]
+    .sort((a, b) => publishedMs(b) - publishedMs(a) || b.weight - a.weight)
+    .slice(0, POOL_SIZE);
   if (pool.length === 0) return [];
-  if (pool.length <= FEATURED_SLOTS) return pool;
 
-  const start = ((istDayIndex(now) % pool.length) + pool.length) % pool.length;
+  const [hero, ...rest] = pool;
+  if (rest.length === 0) return [hero];
 
-  const picked: FeaturedRead[] = [];
-  for (let i = 0; i < FEATURED_SLOTS; i += 1) {
-    picked.push(pool[(start + i) % pool.length]);
+  const secSlots = FEATURED_SLOTS - 1;
+  if (rest.length <= secSlots) return [hero, ...rest];
+
+  const start = ((istDayIndex(now) % rest.length) + rest.length) % rest.length;
+  const secondaries: FeaturedRead[] = [];
+  for (let i = 0; i < secSlots; i += 1) {
+    secondaries.push(rest[(start + i) % rest.length]);
   }
-  return picked;
+  return [hero, ...secondaries];
 }

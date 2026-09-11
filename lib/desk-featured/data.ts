@@ -26,8 +26,8 @@ const readFeaturedReads = async (): Promise<FeaturedRead[]> => {
       )
       .eq("status", "eligible")
       .gte("feature_weight", MIN_FEATURE_WEIGHT)
-      .order("feature_weight", { ascending: false })
       .order("published_at", { ascending: false })
+      .order("feature_weight", { ascending: false })
       .limit(READ_LIMIT);
 
     if (error) throw error;
