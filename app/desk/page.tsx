@@ -6,6 +6,9 @@ import { getDeskLeaderboard, type DeskRow } from "@/lib/desk-leaderboard";
 import DeskRecencyLedger, {
   DeskRecencyLedgerFallback,
 } from "./desk-recency-ledger";
+import DeskFeaturedReads, {
+  DeskFeaturedReadsFallback,
+} from "./desk-featured-reads";
 import { DeskHotThemes, DeskHotThemesFallback } from "./desk-hot-themes";
 import DeskExchangeSection, {
   DeskExchangeSectionFallback,
@@ -114,6 +117,12 @@ export default async function DeskPage() {
               mostViewedInitial={board.mostViewedInitial}
             />
           </aside>
+        </div>
+
+        <div className="mt-14">
+          <Suspense fallback={<DeskFeaturedReadsFallback />}>
+            <DeskFeaturedReads />
+          </Suspense>
         </div>
 
         <div className="mt-14">
