@@ -2,6 +2,13 @@
 // two stacked secondaries). Each card foregrounds a notable section upgrade or
 // new-coverage event with a written headline + crisp summary, enticing the read.
 //
+// Hierarchy: COMPANY NAME leads every card (the display h3) — a reader tracking
+// a name must recognise it at a glance before anything else. The editorial
+// headline is the subhead beneath it, then the summary. The footer meta carries
+// the ticker code, sector and time; it does not repeat the name. The headline is
+// also folded into the h3 as screen-reader-only text so two cards for the same
+// company still have distinct headings in the outline.
+//
 // Reads its OWN table (desk_featured_read), authored by the concallyser
 // producers — not the rebuilt activity feed. The recency ledger below stays the
 // honest, complete tape; this strip is the curated skin on top. Renders the
@@ -40,7 +47,7 @@ function Eyebrow({ read }: { read: FeaturedRead }) {
 
 function Meta({ read }: { read: FeaturedRead }) {
   const time = formatRelativeActivityTime(read.publishedAtRaw);
-  const parts = [read.companyName, read.sector, time].filter(
+  const parts = [read.companyCode, read.sector, time].filter(
     (p): p is string => Boolean(p),
   );
   return (
@@ -64,9 +71,13 @@ function HeroCard({ read }: { read: FeaturedRead }) {
       )}
     >
       <Eyebrow read={read} />
-      <h3 className="house-display mt-3 text-2xl leading-[1.1] text-[var(--ink)] sm:text-3xl">
-        {read.headline}
+      <h3 className="house-display mt-3 max-w-2xl text-2xl leading-[1.1] text-[var(--ink)] sm:text-3xl">
+        {read.companyName}
+        <span className="sr-only">: {read.headline}</span>
       </h3>
+      <p className="mt-2 max-w-2xl text-lg font-medium leading-snug text-[var(--ink)] sm:text-xl">
+        {read.headline}
+      </p>
       <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[var(--ink-soft)] sm:text-base">
         {read.summary}
       </p>
@@ -93,9 +104,13 @@ function SecondaryCard({ read }: { read: FeaturedRead }) {
     >
       <Eyebrow read={read} />
       <h3 className="house-display mt-2 text-lg leading-snug text-[var(--ink)]">
-        {read.headline}
+        {read.companyName}
+        <span className="sr-only">: {read.headline}</span>
       </h3>
-      <p className="mt-2 line-clamp-3 text-sm leading-snug text-[var(--ink-soft)]">
+      <p className="mt-1 text-sm font-medium leading-snug text-[var(--ink)]">
+        {read.headline}
+      </p>
+      <p className="mt-2 line-clamp-2 text-sm leading-snug text-[var(--ink-soft)]">
         {read.summary}
       </p>
       <div className="mt-4">
