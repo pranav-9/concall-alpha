@@ -61,13 +61,25 @@ const clampWeight = (v: number | null): number => {
   return Math.min(100, Math.max(0, Math.round(v)));
 };
 
+// The company name is the card's display heading, so producer-typed names must
+// read as one style across the strip: "Suzlon Energy" beside "Physicswallah
+// Limited" looks like two conventions. Drop a trailing legal suffix by rule —
+// never per-company — so the heading is the trading name.
+const LEGAL_SUFFIX = /\s+(limited|ltd\.?)$/i;
+function stripLegalSuffix(raw: string | null | undefined): string | undefined {
+  const trimmed = raw?.trim();
+  if (!trimmed) return undefined;
+  const stripped = trimmed.replace(LEGAL_SUFFIX, "").trim();
+  return stripped.length > 0 ? stripped : trimmed;
+}
+
 // Parse one raw row into the display shape, or null if it fails the schema's
 // required-field / enum contract. A malformed row is dropped, never rendered
 // broken — same discipline as the analysis-section normalizers.
 export function parseFeaturedRead(row: DeskFeaturedReadRow): FeaturedRead | null {
   const id = row.id?.trim();
   const companyCode = row.company_code?.trim();
-  const companyName = row.company_name?.trim();
+  const companyName = stripLegalSuffix(row.company_name);
   const headline = row.headline?.trim();
   const summary = row.summary?.trim();
   const href = row.section_href?.trim();
