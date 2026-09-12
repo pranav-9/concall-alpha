@@ -11,9 +11,11 @@ import Link from "next/link";
 
 import { formatRelativeActivityTime } from "@/lib/activity-feed";
 import { cn } from "@/lib/utils";
+import { HomepageModuleLink } from "@/components/homepage-module-link";
 import { getCachedDeskFeaturedReads } from "@/lib/desk-featured/data";
 import { selectFeaturedReads } from "@/lib/desk-featured/select";
 import { changeKindSuffix, type FeaturedRead } from "@/lib/desk-featured/types";
+import { DeskFeaturedReadsTracker } from "./desk-featured-reads-tracker";
 
 // Shared whole-card affordances, matching the recency ledger: an on-brand teal
 // focus ring (the bare-<a> house skin has none) and a quiet teal hover wash.
@@ -50,9 +52,11 @@ function Meta({ read }: { read: FeaturedRead }) {
 
 function HeroCard({ read }: { read: FeaturedRead }) {
   return (
-    <Link
+    <HomepageModuleLink
+      module="featured_read_hero"
+      companyCode={read.companyCode}
+      surface="desk"
       href={read.href}
-      prefetch={false}
       className={cn(
         "flex h-full flex-col rounded-lg border border-[var(--rule)] bg-[var(--paper-2)] p-6 transition-colors sm:p-8",
         CARD_HOVER,
@@ -70,15 +74,17 @@ function HeroCard({ read }: { read: FeaturedRead }) {
         <Meta read={read} />
         <span className="house-data house-micro text-[var(--signal)]">Read the analysis →</span>
       </div>
-    </Link>
+    </HomepageModuleLink>
   );
 }
 
 function SecondaryCard({ read }: { read: FeaturedRead }) {
   return (
-    <Link
+    <HomepageModuleLink
+      module="featured_read_secondary"
+      companyCode={read.companyCode}
+      surface="desk"
       href={read.href}
-      prefetch={false}
       className={cn(
         "flex flex-col rounded-lg border border-[var(--rule)] bg-[var(--paper-2)] p-5 transition-colors",
         CARD_HOVER,
@@ -95,7 +101,7 @@ function SecondaryCard({ read }: { read: FeaturedRead }) {
       <div className="mt-4">
         <Meta read={read} />
       </div>
-    </Link>
+    </HomepageModuleLink>
   );
 }
 
@@ -119,6 +125,7 @@ export default async function DeskFeaturedReads() {
   const [hero, ...secondaries] = featured;
 
   return (
+    <DeskFeaturedReadsTracker>
     <section aria-labelledby="desk-featured" className="house-block">
       <div className="flex items-baseline justify-between border-b border-[var(--rule)] pb-3">
         <h2 id="desk-featured" className="house-data house-micro uppercase text-[var(--ink-soft)]">
@@ -143,5 +150,6 @@ export default async function DeskFeaturedReads() {
         )}
       </div>
     </section>
+    </DeskFeaturedReadsTracker>
   );
 }
