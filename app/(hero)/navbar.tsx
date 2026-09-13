@@ -10,6 +10,7 @@ import { usePathname } from "next/navigation";
 import { BrandLogo, BrandMark } from "@/components/brand/logo";
 import { JournalNewIndicator } from "@/components/journal-new-indicator";
 import { TelegramJoinLink } from "@/components/telegram-join-link";
+import { isPhoneAppRoute } from "@/lib/phone-chrome";
 
 type UserInfo = {
   email: string | null;
@@ -66,17 +67,21 @@ const Navbar = ({
 }) => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // The desk's phone presentation (handoff 2026-09-13) swaps the pill shell for
-  // a compact house-skin bar below `sm`: brand + search + sign-in, with the
-  // primary destinations living in the fixed bottom tab bar
-  // (components/desk-mobile-tab-bar). The search button opens the same menu
-  // panel — search box first, then every other destination — with the search
-  // focused, so nothing the hamburger reached (Journal, Watchlists, theme,
-  // Sign up) becomes unreachable.
-  const isDeskPhoneChrome = pathname === "/desk";
+  // The phone "app" presentation (handoffs 2026-09-13: /desk, then Filings /
+  // Themes / Ranking / Sectors) swaps the pill shell for a compact house-skin
+  // bar below `sm`: brand + search + sign-in, with the primary destinations
+  // living in the fixed bottom tab bar (components/mobile-tab-bar). Scoped by
+  // lib/phone-chrome so the two pieces of chrome can't disagree. The search
+  // button opens the same menu panel — search box first, then every other
+  // destination — with the search focused, so nothing the hamburger reached
+  // (Journal, Watchlists, theme, Sign up) becomes unreachable.
+  const isPhoneAppChrome = isPhoneAppRoute(pathname);
   const [focusSearchOnOpen, setFocusSearchOnOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  // The compact bar's search/menu button — the trigger that is actually visible
+  // on a phone-app route, where the pill shell's hamburger is display:none.
+  const phoneMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
   const navItems = [
     { href: "/desk", label: "Desk" },
@@ -161,8 +166,11 @@ const Navbar = ({
         setIsMenuOpen(false);
         // Escape is a keyboard dismissal — return focus to the trigger so the
         // tab sequence resumes where it left off (outside-tap intentionally
-        // does not, since focus is already wherever the user tapped).
-        menuButtonRef.current?.focus();
+        // does not, since focus is already wherever the user tapped). Pick the
+        // trigger that is rendered: focus() on a display:none button is a no-op.
+        const phoneTrigger = phoneMenuButtonRef.current;
+        if (phoneTrigger && phoneTrigger.offsetParent !== null) phoneTrigger.focus();
+        else menuButtonRef.current?.focus();
       }
     };
 
@@ -242,10 +250,10 @@ const Navbar = ({
       <div
         className={cn(
           "relative w-full max-w-[1440px] sm:px-6 sm:py-2 lg:px-10",
-          isDeskPhoneChrome ? "px-0 py-0" : "px-3 py-1.5",
+          isPhoneAppChrome ? "px-0 py-0" : "px-3 py-1.5",
         )}
       >
-        {isDeskPhoneChrome ? (
+        {isPhoneAppChrome ? (
           <div className="house flex items-center justify-between gap-2.5 border-b border-[var(--rule)] !bg-[color-mix(in_srgb,var(--paper)_86%,transparent)] px-3.5 py-[7px] backdrop-blur-[14px] sm:hidden">
             <Link href="/" className="flex min-w-0 items-center gap-[9px]">
               <BrandMark bare size={26} className="shrink-0 text-[var(--ink)]" />
@@ -255,6 +263,7 @@ const Navbar = ({
             </Link>
             <div className="flex shrink-0 items-center gap-1.5">
               <button
+                ref={phoneMenuButtonRef}
                 type="button"
                 aria-label="Search companies and open menu"
                 aria-expanded={isMenuOpen}
@@ -292,7 +301,7 @@ const Navbar = ({
         <div
           className={cn(
             "flex min-h-[3.5rem] items-center justify-between gap-3 rounded-[1.5rem] sm:min-h-[4.25rem] border border-border/60 bg-background/82 px-3 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.45)] dark:border-white/12 dark:bg-white/[0.05] dark:shadow-[0_18px_40px_-28px_rgba(0,0,0,0.9)] sm:px-4",
-            isDeskPhoneChrome && "hidden sm:flex",
+            isPhoneAppChrome && "hidden sm:flex",
           )}
         >
           <div className="min-w-0 shrink-0">

@@ -11,6 +11,7 @@ import { InFocusPips } from "@/components/in-focus-pips";
 import { BOARD_READS } from "@/lib/board-read";
 import { BANDS, bandForScore } from "@/lib/score-band";
 import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
+import { rankThemeMembers, splitThemeRows } from "@/lib/themes/rank";
 import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
 import type { ThemeBlock, ThemeMember } from "@/lib/themes/types";
 
@@ -208,7 +209,6 @@ export function ThemeBlockView({
   block: ThemeBlock;
   quarterLabel?: string | null;
 }) {
-  let rank = 0;
   const provisionalCount = block.members.filter(
     (member) => member.quarterSourceStatus === "unofficial",
   ).length;
@@ -247,18 +247,9 @@ export function ThemeBlockView({
         <span className="text-right text-foreground/70">Read</span>
       </div>
       {(() => {
-        // Rank every member first (below-cut / unscored carry none, matching the board),
-        // then show the top 3 by Read and collapse the rest behind a toggle. Collapse only
-        // when it saves more than one row, so a 4-member theme just shows all four.
-        const rows = block.members.map((member) => {
-          const showRank = !member.belowCut && member.readScore != null;
-          if (showRank) rank += 1;
-          return { member, rank: showRank ? rank : null };
-        });
-        const VISIBLE = 3;
-        const collapse = rows.length > VISIBLE + 1;
-        const visible = collapse ? rows.slice(0, VISIBLE) : rows;
-        const hidden = collapse ? rows.slice(VISIBLE) : [];
+        // Rank, then top 3 + collapse — the shared rule (lib/themes/rank), so the
+        // phone block and the desk card can't disagree with this one.
+        const { visible, hidden } = splitThemeRows(rankThemeMembers(block.members));
 
         return (
           <>

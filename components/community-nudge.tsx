@@ -27,6 +27,7 @@ import {
   parseNudgeState,
 } from "@/lib/community-nudge";
 import { TOUCH_TARGET, TOUCH_TARGET_ICON } from "@/lib/design/shell";
+import { isPhoneAppRoute } from "@/lib/phone-chrome";
 import { cn } from "@/lib/utils";
 
 import { TelegramJoinLink } from "./telegram-join-link";
@@ -135,9 +136,9 @@ export function CommunityNudge({ href }: { href: string }) {
     setTrigger(null);
   };
 
-  // /desk carries a fixed phone tab bar on the same edge below `sm`
-  // (components/desk-mobile-tab-bar, 4.25rem tall); sit above it there.
-  const onDesk = pathname === "/desk";
+  // The five reading routes carry a fixed phone tab bar on the same edge below
+  // `sm` (components/mobile-tab-bar, 4.25rem tall); sit above it there.
+  const hasPhoneTabBar = isPhoneAppRoute(pathname);
 
   return (
     <div
@@ -147,7 +148,7 @@ export function CommunityNudge({ href }: { href: string }) {
         // z-30: below the navbar's open-menu backdrop (z-40) so the pill is
         // covered, not tappable, while the menu is open.
         "pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-300",
-        onDesk
+        hasPhoneTabBar
           ? "pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
           : "pb-[calc(0.75rem+env(safe-area-inset-bottom))]",
       )}

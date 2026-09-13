@@ -6,7 +6,7 @@ import Link from "next/link";
 import ConcallScore from "@/components/concall-score";
 import { cn } from "@/lib/utils";
 import type { DeskTableRow } from "./desk-leaderboard-table";
-import { MOBILE_ROW } from "./desk-mobile-card";
+import { MOBILE_ROW } from "@/components/mobile-card";
 
 type Window = "week" | "month";
 

@@ -9,7 +9,10 @@ import type { Metadata } from "next";
 import { currentReportingQuarter } from "@/lib/current-quarter";
 import { HERO_CARD, PAGE_BACKGROUND_ATMOSPHERIC, PAGE_SHELL } from "@/lib/design/shell";
 import { getFeaturedThemeBlocks } from "@/lib/themes/data";
+import { BelowSm, FromSm } from "@/components/viewport-gate";
+import { MOBILE_DEK, MobileMasthead } from "@/components/mobile-card";
 import { ThemeBlockView } from "./theme-block";
+import { ThemeBlockPhone } from "./theme-block-phone";
 
 export const metadata: Metadata = {
   title: "Hot Themes – Story of a Stock",
@@ -27,6 +30,36 @@ export default async function ThemesPage() {
 
   return (
     <main className="relative isolate overflow-hidden">
+      {/* Phone (handoff 2026-09-13, "Themes — mobile"): the house skin, a compact
+          masthead and one card per theme. From sm the atmospheric shell below
+          stays as it was. Both trees are server-rendered and CSS-toggled; the
+          hidden one unmounts once matchMedia answers (components/viewport-gate). */}
+      <BelowSm className="house min-h-screen pb-6">
+        <MobileMasthead eyebrow="What’s working now" title="Hot Themes">
+          <p className={MOBILE_DEK}>
+            What&apos;s working this quarter, and which covered names are riding it — on the
+            same four scores as the leaderboard.
+            {showInFocusLegend
+              ? " Ordered by In\u00a0Focus, a measure of attention, not advice."
+              : ""}
+          </p>
+        </MobileMasthead>
+        {blocks.length > 0 ? (
+          blocks.map((block) => (
+            <ThemeBlockPhone key={block.slug} block={block} quarterLabel={quarterLabel} />
+          ))
+        ) : (
+          <p className="mx-4 mt-4 text-[12.5px] leading-[1.5] text-[var(--ink-soft)]">
+            No hot themes featured this quarter. Check back after results season — or explore
+            the{" "}
+            <a href="/leaderboards" className="house-link">
+              full leaderboard
+            </a>{" "}
+            in the meantime.
+          </p>
+        )}
+      </BelowSm>
+      <FromSm>
       <div className={PAGE_BACKGROUND_CLASS} />
       <div className={PAGE_SHELL}>
         <section className={HERO_CARD}>
@@ -65,6 +98,7 @@ export default async function ThemesPage() {
           </p>
         )}
       </div>
+      </FromSm>
     </main>
   );
 }

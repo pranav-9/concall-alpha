@@ -24,7 +24,7 @@ import { selectFeaturedReads } from "@/lib/desk-featured/select";
 import { changeKindSuffix, type FeaturedRead } from "@/lib/desk-featured/types";
 import { BelowSm, FromSm } from "@/components/viewport-gate";
 import { DeskFeaturedReadsTracker } from "./desk-featured-reads-tracker";
-import { Chevron, MOBILE_CARD, MOBILE_HEAD_RIGHT, MOBILE_ROW, MobileCardHead } from "./desk-mobile-card";
+import { Chevron, MOBILE_CARD, MOBILE_HEAD_RIGHT, MOBILE_ROW, MobileCardHead } from "@/components/mobile-card";
 
 // Shared whole-card affordances, matching the recency ledger: an on-brand teal
 // focus ring (the bare-<a> house skin has none) and a quiet teal hover wash.

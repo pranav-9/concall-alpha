@@ -12,6 +12,11 @@ import { cn } from "@/lib/utils";
  * answered, the hidden one is unmounted — the same discipline as the leaderboard
  * boards (hooks/use-min-width). Server components can pass their markup as
  * children, so a section fetches once and paints twice.
+ *
+ * Trade-offs, both deliberate: the server HTML carries both paints (no CLS, one
+ * fetch), and a later crossing of `sm` (tablet rotation, window resize)
+ * re-mounts the other paint from scratch — so state a reader can change
+ * (filters, show-all toggles) belongs in the shared parent, never in a paint.
  */
 export function BelowSm({ children, className }: { children: ReactNode; className?: string }) {
   const isSm = useMinWidth(BREAKPOINT_SM);

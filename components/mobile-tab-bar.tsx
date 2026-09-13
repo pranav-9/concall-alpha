@@ -2,26 +2,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BarChart2, Layers, LayoutGrid, Newspaper } from "lucide-react";
+import { Activity, BarChart2, Layers, LayoutGrid, Newspaper, type LucideIcon } from "lucide-react";
 
+import { isPhoneAppRoute, normalizePhonePathname, PHONE_TABS, type PhoneTabHref } from "@/lib/phone-chrome";
 import { cn } from "@/lib/utils";
 
-// The desk's phone tab bar (handoff 2026-09-13): the primary destinations the
-// compact top bar no longer carries. Fixed to the bottom edge below `sm`, on
-// /desk only — the rest of the site keeps the hamburger. Mounted in the root
-// layout after the footer so the spacer it renders keeps the footer's last
-// line above the bar.
-const TABS = [
-  { href: "/desk", label: "Desk", Icon: Newspaper },
-  { href: "/announcements", label: "Filings", Icon: Activity },
-  { href: "/themes", label: "Themes", Icon: Layers },
-  { href: "/leaderboards", label: "Ranking", Icon: BarChart2 },
-  { href: "/sectors", label: "Sectors", Icon: LayoutGrid },
-] as const;
+// The phone tab bar (handoffs 2026-09-13: "The Desk — mobile" and the four
+// sibling screens): the primary destinations the compact top bar no longer
+// carries. Fixed to the bottom edge below `sm` on the five reading routes —
+// Desk / Filings / Themes / Ranking / Sectors — the rest of the site keeps the
+// hamburger. Mounted in the root layout after the footer so the spacer it
+// renders keeps the footer's last line above the bar.
+const ICONS: Record<PhoneTabHref, LucideIcon> = {
+  "/desk": Newspaper,
+  "/announcements": Activity,
+  "/themes": Layers,
+  "/leaderboards": BarChart2,
+  "/sectors": LayoutGrid,
+};
 
-export function DeskMobileTabBar() {
+export function MobileTabBar() {
   const pathname = usePathname();
-  if (pathname !== "/desk") return null;
+  if (!isPhoneAppRoute(pathname)) return null;
+  // The bar only renders on an exact chrome route, so "active" is equality on
+  // the normalised pathname — there are no sub-routes to prefix-match.
+  const current = normalizePhonePathname(pathname);
 
   return (
     <>
@@ -30,8 +35,9 @@ export function DeskMobileTabBar() {
         aria-label="Primary"
         className="house fixed inset-x-0 bottom-0 z-30 flex items-stretch border-t border-[var(--rule)] !bg-[color-mix(in_srgb,var(--paper)_88%,transparent)] px-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-[14px] sm:hidden"
       >
-        {TABS.map(({ href, label, Icon }) => {
-          const active = pathname === href || pathname.startsWith(`${href}/`);
+        {PHONE_TABS.map(({ href, label }) => {
+          const Icon = ICONS[href];
+          const active = current === href;
           return (
             <Link
               key={href}

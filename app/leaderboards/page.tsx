@@ -25,9 +25,25 @@ import {
 } from "@/lib/leaderboard-snapshot";
 import { after } from "next/server";
 import type { Metadata } from "next";
+import { BelowSm, FromSm } from "@/components/viewport-gate";
+import {
+  MOBILE_CHIP_STRIP,
+  MOBILE_CHIP_TAB,
+  MOBILE_DEK,
+  MobileMasthead,
+} from "@/components/mobile-card";
 import { fetchLeaderboardData } from "./data";
 import { LeaderboardTabs } from "./leaderboard-tabs";
-import { GrowthTable, LeaderboardTable, MoatTable, OverallTable } from "./tables-lazy";
+import {
+  GrowthTable,
+  LeaderboardTable,
+  MoatTable,
+  OverallTable,
+  PhoneGrowthBoard,
+  PhoneMoatBoard,
+  PhoneOverallBoard,
+  PhoneQuarterBoard,
+} from "./tables-lazy";
 
 export const metadata: Metadata = {
   title: "Leaderboards – Story of a Stock",
@@ -60,7 +76,7 @@ export default async function LeaderboardsPage({
   const defaultTab = resolveLeaderboardTab(resolved?.tab);
   const [
     { rows, latestLabel, quarterLabels },
-    { growthEntries, moatEntries, growthScoreByCode, nameByCode },
+    { growthEntries, moatEntries, growthScoreByCode, nameByCode, sectorByCode },
     priorRankByCode,
   ] = await Promise.all([
     // includeBelowCut: the Overall board renders the tail greyed out rather than
@@ -144,8 +160,97 @@ export default async function LeaderboardsPage({
   const overallFreshCount = overallRows.filter((row) => row.concallScoredWithin24h).length;
   const telegramUrl = getTelegramJoinUrl();
 
+  // Phone-board props. Maps become plain Records here — they cross into client
+  // components — projected to the codes the Quarter board actually paints, so
+  // the below-cut tail's names/sectors don't ride in the RSC payload for nothing.
+  // `new` on the phone means new to coverage (the Desk's meaning), read off the
+  // quarter rows, which carry isNew for the whole universe.
+  const newCodes = rows.filter((row) => row.isNew).map((row) => String(row.company).toUpperCase());
+  const rankedCodes = rankedRows.map((row) => String(row.company).toUpperCase());
+  const nameRecord = Object.fromEntries(
+    rankedCodes.flatMap((code) => (nameByCode.has(code) ? [[code, nameByCode.get(code)!]] : [])),
+  );
+  const sectorRecord = Object.fromEntries(
+    rankedCodes.flatMap((code) => (sectorByCode.has(code) ? [[code, sectorByCode.get(code)!]] : [])),
+  );
+  const previousQuarterLabel = quarterLabels[1] ?? null;
+  const phoneNote = "house-data px-4 pt-0.5 text-[11px] text-[var(--ink-soft)] [text-wrap:pretty]";
+
   return (
     <main className="relative isolate overflow-hidden">
+      {/* Phone (handoff 2026-09-13, "Ranking — mobile"): house skin, masthead,
+          the board tabs as a chip strip, one card per board. Its own
+          LeaderboardTabs instance — the same ?tab resolver, instant client
+          switch and history.replaceState sync — since only one of the two trees
+          survives hydration (components/viewport-gate). From sm the atmospheric
+          shell below is untouched. */}
+      <BelowSm className="house min-h-screen pb-6">
+        <MobileMasthead title="Leaderboards">
+          <p className={MOBILE_DEK}>
+            Every company on the same scores — the quarter just reported, the outlook ahead, and
+            what you pay for it.
+          </p>
+          {telegramUrl ? (
+            <p className="house-data mt-2 text-[10px] text-[var(--ink-soft)]">
+              Section changes get posted in the{" "}
+              <TelegramJoinLink href={telegramUrl} surface="leaderboards" className="house-link">
+                Telegram group
+              </TelegramJoinLink>{" "}
+              first.
+            </p>
+          ) : null}
+        </MobileMasthead>
+
+        <LeaderboardTabs defaultTab={defaultTab} className="w-full gap-0">
+          <TabsList
+            aria-label="Boards"
+            className={`${MOBILE_CHIP_STRIP} h-auto w-full justify-start rounded-none bg-transparent px-4 pb-1 pt-3.5 text-[var(--ink-soft)]`}
+          >
+            <TabsTrigger value="overall" className={MOBILE_CHIP_TAB}>
+              Overall
+            </TabsTrigger>
+            <TabsTrigger value="quarter" className={MOBILE_CHIP_TAB}>
+              ConcallScore
+            </TabsTrigger>
+            <TabsTrigger value="growth" className={MOBILE_CHIP_TAB}>
+              Growth
+            </TabsTrigger>
+            <TabsTrigger value="moat" className={MOBILE_CHIP_TAB}>
+              Moat
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overall">
+            <p className={phoneNote}>Ranked by Read — the quarter, the outlook and valuation, combined.</p>
+            <PhoneOverallBoard
+              rows={overallRows}
+              priorRankByCode={priorRankByCode}
+              coverageCutRank={COVERAGE_BOARD_SIZE}
+              newCodes={newCodes}
+            />
+          </TabsContent>
+          <TabsContent value="quarter">
+            <p className={phoneNote}>The quarter just reported, scored 0–10 from the transcript and deck.</p>
+            <PhoneQuarterBoard
+              rows={rankedRows}
+              latestLabel={latestQuarterLabel}
+              previousLabel={previousQuarterLabel}
+              nameByCode={nameRecord}
+              sectorByCode={sectorRecord}
+            />
+          </TabsContent>
+          <TabsContent value="growth">
+            <p className={phoneNote}>Forward outlook, with base / upside / downside revenue scenarios.</p>
+            <PhoneGrowthBoard rows={growthEntries} />
+          </TabsContent>
+          <TabsContent value="moat">
+            <p className={phoneNote}>Grouped by moat rating; strength, active sources and cycle-tested.</p>
+            <PhoneMoatBoard rows={moatEntries} />
+          </TabsContent>
+        </LeaderboardTabs>
+      </BelowSm>
+
+      <FromSm>
       <div className={PAGE_BACKGROUND_CLASS} />
       <div className={PAGE_SHELL}>
         <section className={HERO_CARD}>
@@ -301,6 +406,7 @@ export default async function LeaderboardsPage({
         </LeaderboardTabs>
 
       </div>
+      </FromSm>
     </main>
   );
 }

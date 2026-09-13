@@ -14,7 +14,7 @@ import { GROWTH_BANDS, bandForGrowthScore, type GrowthBandDef } from "@/lib/grow
 import type { BandDef } from "@/lib/score-band";
 import { cn } from "@/lib/utils";
 import { BelowSm, FromSm } from "@/components/viewport-gate";
-import { Chevron, MOBILE_CARD, MOBILE_HEAD_RIGHT, MOBILE_ROW, MobileCardHead, NewBadge } from "./desk-mobile-card";
+import { Chevron, MOBILE_CARD, MOBILE_HEAD_RIGHT, MOBILE_ROW, MobileCardHead, NewBadge } from "@/components/mobile-card";
 
 const LEDGER_SIZE = 14;
 // The phone card is a short tape: the newest few, then "All activity →".

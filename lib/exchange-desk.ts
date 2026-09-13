@@ -1,4 +1,5 @@
 import "server-only";
+import { safeFilingHref } from "@/lib/exchange-desk/filing-href";
 
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -162,7 +163,9 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
         impact: coerceImpact(row.impact),
         summary,
         headline: (row.headline ?? "").trim(),
-        attachmentUrl: row.attachment_url,
+        // https + exchange-host allowlist (filing-href.ts): a poisoned row keeps its
+        // headline but loses the link, on every paint that renders it.
+        attachmentUrl: safeFilingHref(row.attachment_url),
         filedRaw: row.filed_at,
         filedLabel: formatRelativeActivityTime(row.filed_at),
         bucketKey: bucketFor(row.filed_at, now),

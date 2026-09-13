@@ -2,6 +2,16 @@
 
 Captured with context so a future session can pick any item up cold. Source review noted per item.
 
+## Phone views (Filings / Themes / Ranking / Sectors) — deferred review findings (2026-09-13)
+
+From the /ship review of `feat/mobile-views` (5 specialists + red team + Claude/Codex adversarial + Codex structured). Load-bearing items were fixed in that PR (raw `attachment_url` href → `safeFilingHref` at the loader, trailing-slash chrome gate, real QoQ delta, Δ a11y states, 44px chips, list semantics, shared theme rank rule, lazy phone boards); these were judged not worth the churn now.
+
+- [ ] **`leaderboard_row_click` fires for quarter/growth/moat from the phone paint only** (S, P3) — the desktop tables (`app/company/leaderboard-table.tsx`, `app/leaderboards/growth-table.tsx`, `app/leaderboards/moat-table.tsx`) never emitted it; only the Overall board does. A PostHog breakdown by `board` on those three reads as phone traffic until the desktop tables emit the same event (or a `paint` property separates them). Start at: `rowClick` in `app/leaderboards/phone-boards.tsx`.
+- [ ] **Two `<h1>`s in the server HTML on the four dual-tree routes** (XS, P4) — `MobileMasthead` + the desktop header both render until matchMedia unmounts one; `display:none` keeps the loser out of the a11y tree once CSS lands, so it only bites no-JS/reader-mode clients and crawlers that don't render. Fix if it shows up in Search Console: demote the phone title to `role="heading"` or emit the desktop h1 only. Start at: `components/mobile-card.tsx` `MobileMasthead`.
+- [ ] **Theme phone row: name + up to three tags share ~130px** (XS, P4) — `best` + `below cut` + `unofficial` can leave the truncated name a few characters. Let tags wrap under the name if a real theme ever carries two tags on one member. Start at: `MemberRow` in `app/themes/theme-block-phone.tsx`.
+- [ ] **Sector sort chips are direction toggles wearing `aria-current`** (XS, P4) — tapping the highlighted chip flips asc/desc (same as the desktop header links); the `↓`/`↑` glyph is the only cue. Consider `aria-pressed` + a visible "tap again to flip" hint if replay shows confusion. Start at: the phone `nav[aria-label="Sort sectors"]` in `app/sectors/page.tsx`.
+- [ ] **`new` badge on the phone Overall board has no desktop counterpart** (XS, P4) — the handoff drew it; `components/score-board-table.tsx` never carried newness. Either add `isNew` to `buildScoreBoardRows` and the desktop board, or drop the phone badge, so both paints agree. Start at: `PhoneOverallBoard` `newCodes`.
+
 ## Telegram community — deferred review findings (2026-09-13)
 
 From the /ship review of `feat/telegram-community` (5 specialists + Claude/Codex adversarial + Codex structured). Load-bearing items were fixed in that PR (off-site href guard, send/ledger lock, env parser); these were judged not worth the churn now.
