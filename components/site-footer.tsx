@@ -3,13 +3,18 @@ import Link from "next/link";
 import { latestChangelogEntry } from "@/app/changelog/changelog-data";
 
 import { BrandMark } from "@/components/brand/logo";
+import { getTelegramJoinUrl } from "@/lib/community";
+
 import { ChangelogNewIndicator } from "./changelog-new-indicator";
+import { TelegramJoinLink } from "./telegram-join-link";
 
 type FooterLinkItem = {
   href: string;
   label: string;
   external?: boolean;
   highlight?: boolean;
+  /** Outbound community link — rendered through TelegramJoinLink so the click is counted. */
+  telegram?: boolean;
 };
 
 const exploreLinks: FooterLinkItem[] = [
@@ -34,6 +39,14 @@ function FooterLink({ item }: { item: FooterLinkItem }) {
   const className = item.highlight
     ? "inline-flex w-fit items-center rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/35 dark:text-red-200 dark:hover:bg-red-950/55"
     : "text-xs text-muted-foreground transition-colors hover:text-foreground";
+
+  if (item.telegram) {
+    return (
+      <TelegramJoinLink href={item.href} surface="footer" className={className}>
+        {item.label}
+      </TelegramJoinLink>
+    );
+  }
 
   if (item.external) {
     return (
@@ -60,6 +73,11 @@ function FooterLink({ item }: { item: FooterLinkItem }) {
 }
 
 export function SiteFooter() {
+  const telegramUrl = getTelegramJoinUrl();
+  const communityLinks: FooterLinkItem[] = telegramUrl
+    ? [{ href: telegramUrl, label: "Telegram community", external: true, telegram: true }]
+    : [];
+
   return (
     <footer className="border-t border-border bg-muted/20">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
@@ -100,7 +118,7 @@ export function SiteFooter() {
               Learn
             </p>
             <div className="flex flex-col items-start gap-2.5">
-              {learnLinks.map((item) => (
+              {[...communityLinks, ...learnLinks].map((item) => (
                 <FooterLink key={item.href} item={item} />
               ))}
             </div>

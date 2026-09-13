@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { JournalMarkSeen } from "@/components/journal-mark-seen";
+import { TelegramJoinLink } from "@/components/telegram-join-link";
+import { getTelegramJoinUrl } from "@/lib/community";
 
 import { JournalList } from "./journal-list";
 import { getAllPostMeta } from "./posts";
@@ -15,6 +17,7 @@ export const metadata: Metadata = {
 export default function BlogIndexPage() {
   const posts = getAllPostMeta();
   const latestDate = posts[0]?.date ?? "";
+  const telegramUrl = getTelegramJoinUrl();
 
   return (
     <main>
@@ -24,6 +27,19 @@ export default function BlogIndexPage() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Journal
           </h1>
+          {telegramUrl ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Section updates and the odd question, as they happen, in the{" "}
+              <TelegramJoinLink
+                href={telegramUrl}
+                surface="journal_index"
+                className="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+              >
+                Telegram group
+              </TelegramJoinLink>
+              .
+            </p>
+          ) : null}
         </header>
 
         {posts.length === 0 ? (

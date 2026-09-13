@@ -8,6 +8,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { CATEGORY_LABELS, getAllPostMeta, getPostBySlug } from "../posts";
 import { mdxComponents } from "../mdx-components";
 import { JournalReadTracker } from "@/components/journal-read-tracker";
+import { TelegramJoinCard } from "@/components/telegram-join-card";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -91,6 +92,9 @@ export default async function BlogPostPage({ params }: PageProps) {
 
         <div className="space-y-4">
           <MDXRemote source={post.content} components={mdxComponents} />
+        </div>
+        <div className="mt-10">
+          <TelegramJoinCard surface="journal_post" />
         </div>
         <JournalReadTracker slug={slug} />
       </article>
