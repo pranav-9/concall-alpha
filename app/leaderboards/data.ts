@@ -18,6 +18,7 @@ type PublicReadClient = ReturnType<typeof createPublicReadClient>;
 type CompanyRow = {
   code: string;
   name?: string | null;
+  sector?: string | null;
   created_at?: string | null;
   market_cap_band_at_admission?: string | null;
   excluded_from_discovery?: boolean | null;
@@ -103,7 +104,7 @@ const getCachedLeaderboardSubstrate = unstable_cache(
     const [companiesRes, growthRes] = await Promise.all([
       supabase
         .from("company")
-        .select(`code, name, created_at, coverage_rank, ${COVERAGE_SELECT}`),
+        .select(`code, name, sector, created_at, coverage_rank, ${COVERAGE_SELECT}`),
       supabase
         .from("growth_outlook")
         .select(
@@ -118,7 +119,7 @@ const getCachedLeaderboardSubstrate = unstable_cache(
       growthRows: (growthRes.data ?? []) as GrowthRow[],
     };
   },
-  ["leaderboard-substrate-v1"],
+  ["leaderboard-substrate-v2"],
   { revalidate: 300 },
 );
 
@@ -352,6 +353,8 @@ export async function fetchLeaderboardData(options?: {
   growthScoreByCode: Map<string, number>;
   /** Display names across the whole universe, so a greyed row isn't just a code. */
   nameByCode: Map<string, string>;
+  /** Sector per company code — the phone Quarter board's second line (no sector on CompanyRow). */
+  sectorByCode: Map<string, string>;
   /** Mid/small companies below the composite cut — the greyed, non-clickable tail. */
   belowCutCodes: Set<string>;
 }> {
@@ -387,12 +390,14 @@ export async function fetchLeaderboardData(options?: {
 
   const coverageRankByCode = new Map<string, number>();
   const nameByCode = new Map<string, string>();
+  const sectorByCode = new Map<string, string>();
   midSmall.forEach((company) => {
     const code = company.code.toUpperCase();
     if (typeof company.coverage_rank === "number") {
       coverageRankByCode.set(code, company.coverage_rank);
     }
     if (company.name) nameByCode.set(code, company.name);
+    if (company.sector?.trim()) sectorByCode.set(code, company.sector.trim());
   });
 
   // Growth is computed over the whole universe (the Overall board needs the
@@ -438,6 +443,7 @@ export async function fetchLeaderboardData(options?: {
     coverageRankByCode,
     growthScoreByCode,
     nameByCode,
+    sectorByCode,
     belowCutCodes,
   };
 }

@@ -5,6 +5,12 @@ import type { CompanyRow } from "@/app/company/leaderboard-table";
 import type { ScoreBoardRow } from "@/components/score-board-table";
 import type { GrowthRowTable } from "./growth-table";
 import type { MoatRowTable } from "./moat-table";
+import type {
+  PhoneGrowthBoard as PhoneGrowthBoardImpl,
+  PhoneMoatBoard as PhoneMoatBoardImpl,
+  PhoneOverallBoard as PhoneOverallBoardImpl,
+  PhoneQuarterBoard as PhoneQuarterBoardImpl,
+} from "./phone-boards";
 
 // SSR stays ON. These were `ssr: false` (commit eaaac82 "speed"), which left a
 // five-row skeleton on the server HTML and let a 100+-row table pop in on the
@@ -70,4 +76,35 @@ export const OverallTable = dynamic<{
   {
     loading: () => <TableSkeleton />,
   },
+);
+
+// The phone paints (app/leaderboards/phone-boards.tsx), split the same way so a
+// desktop visitor — whose BelowSm tree unmounts right after hydration — never
+// downloads them. SSR stays on (same reasoning as above); they use no `useId`.
+// One card-shaped skeleton: the phone card is `mx-4`, so the stand-in is too.
+function PhoneBoardSkeleton() {
+  return (
+    <div className="mx-4 mt-3 space-y-px overflow-hidden rounded-xl border border-[var(--rule)] bg-[var(--paper-2)] p-3.5">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div key={i} className="h-[58px] animate-pulse rounded-md bg-[var(--paper)]" />
+      ))}
+    </div>
+  );
+}
+
+export const PhoneOverallBoard = dynamic<React.ComponentProps<typeof PhoneOverallBoardImpl>>(
+  () => import("./phone-boards").then((mod) => mod.PhoneOverallBoard),
+  { loading: () => <PhoneBoardSkeleton /> },
+);
+export const PhoneQuarterBoard = dynamic<React.ComponentProps<typeof PhoneQuarterBoardImpl>>(
+  () => import("./phone-boards").then((mod) => mod.PhoneQuarterBoard),
+  { loading: () => <PhoneBoardSkeleton /> },
+);
+export const PhoneGrowthBoard = dynamic<React.ComponentProps<typeof PhoneGrowthBoardImpl>>(
+  () => import("./phone-boards").then((mod) => mod.PhoneGrowthBoard),
+  { loading: () => <PhoneBoardSkeleton /> },
+);
+export const PhoneMoatBoard = dynamic<React.ComponentProps<typeof PhoneMoatBoardImpl>>(
+  () => import("./phone-boards").then((mod) => mod.PhoneMoatBoard),
+  { loading: () => <PhoneBoardSkeleton /> },
 );
