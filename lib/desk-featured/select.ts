@@ -1,66 +1,53 @@
-// Deterministic, stateless daily rotation for the Featured Reads strip.
+// Deterministic selection for the Featured Reads strip: the three freshest
+// eligible reads, hero first.
 //
-// "Stagger the spotlight, not the data": every eligible upgrade is live in the
-// system the instant it lands (in the recency ledger below). This module only
-// decides WHICH of them the front-page cards foreground today, and it changes
-// the pick once per IST calendar day so a daily visitor sees something fresh.
+// Recency governs EVERY slot. An earlier cut pinned only the hero to the
+// freshest read and rotated the two secondary slots by IST day index, to give a
+// daily visitor something new and to buy high-effort deep-tracks more than one
+// day of airtime. It paid for that by lying about recency: the strip would lead
+// with today's read and fill both secondaries with older cards while fresher
+// ones sat hidden, so a returning reader could not tell that new work had
+// landed. The honest, complete tape is the recency ledger directly below this
+// strip, so nothing is hidden by not featuring it; shelf life for older reads
+// belongs in an archive, not in a carousel on a "what's new" surface.
 //
-// Stateless by design — the portal is a read-only consumer and writes nothing
-// (no last_featured_at column, no cron). The rotation is a pure function of the
-// eligible pool and today's IST date, so every viewer on a given day sees the
-// same front page and it advances at IST midnight.
+// Stateless and clock-free by design — the portal is a read-only consumer and
+// writes nothing (no last_featured_at column, no cron). The pick is a pure
+// function of the eligible pool, so every viewer sees the same front page and
+// it turns over exactly when a producer promotes a new card, not on a timer.
 
 import type { FeaturedRead } from "./types";
 
 // How many cards the strip shows: 1 hero + 2 secondaries.
 export const FEATURED_SLOTS = 3;
 
-// The rotation pool: the N most recent eligible reads. The daily window slides
-// across this pool, so items cycle through the spotlight over roughly a week
-// before a fresher upgrade pushes the oldest out of the pool entirely.
-const POOL_SIZE = 12;
-
-// Integer index of the current IST calendar day (days since the Unix epoch).
-// Pinning to Asia/Kolkata means the front page turns over at IST midnight, not
-// the server's local midnight.
-function istDayIndex(now: Date): number {
-  const istDate = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
-  }).format(now); // YYYY-MM-DD
-  const ms = Date.parse(`${istDate}T00:00:00Z`);
-  return Number.isFinite(ms) ? Math.floor(ms / 86_400_000) : 0;
-}
+// The one definition of "freshest", shared with the fetch in data.ts so the SQL
+// order and this comparator cannot drift apart. Leading key decides which rows
+// survive the fetch LIMIT; weight breaks exact recency ties; id is the final,
+// unique key so a total tie resolves the same way on every fetch (Postgres
+// promises no row order among rows equal on every sort key).
+export const SELECTION_ORDER = [
+  { column: "published_at", ascending: false },
+  { column: "feature_weight", ascending: false },
+  { column: "id", ascending: true },
+] as const;
 
 const publishedMs = (r: FeaturedRead): number => {
   const ms = r.publishedAtRaw ? Date.parse(r.publishedAtRaw) : NaN;
   return Number.isFinite(ms) ? ms : 0;
 };
 
-// The hero is ALWAYS the freshest eligible read — this is a "what's new"
-// surface, so the newest upgrade must headline, never get buried by the daily
-// offset. Only the two secondary slots rotate: a window slides across the rest
-// of the pool by IST day index, giving daily novelty without hiding the latest.
-// Pool and hero are ordered by recency (weight breaks ties); weight still gates
-// eligibility upstream. Returns up to FEATURED_SLOTS reads, hero first.
-export function selectFeaturedReads(
-  reads: FeaturedRead[],
-  now: Date = new Date(),
-): FeaturedRead[] {
-  const pool = [...reads]
-    .sort((a, b) => publishedMs(b) - publishedMs(a) || b.weight - a.weight)
-    .slice(0, POOL_SIZE);
-  if (pool.length === 0) return [];
-
-  const [hero, ...rest] = pool;
-  if (rest.length === 0) return [hero];
-
-  const secSlots = FEATURED_SLOTS - 1;
-  if (rest.length <= secSlots) return [hero, ...rest];
-
-  const start = ((istDayIndex(now) % rest.length) + rest.length) % rest.length;
-  const secondaries: FeaturedRead[] = [];
-  for (let i = 0; i < secSlots; i += 1) {
-    secondaries.push(rest[(start + i) % rest.length]);
-  }
-  return [hero, ...secondaries];
+// The FEATURED_SLOTS freshest eligible reads, hero first. Feature weight only
+// breaks an exact recency tie — it gates eligibility upstream (data.ts) but
+// never promotes an older read over a newer one. Key precedence here must match
+// SELECTION_ORDER.
+export function selectFeaturedReads(reads: FeaturedRead[]): FeaturedRead[] {
+  return [...reads]
+    .sort(
+      (a, b) =>
+        publishedMs(b) - publishedMs(a) ||
+        b.weight - a.weight ||
+        (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+    )
+    .slice(0, FEATURED_SLOTS);
 }
