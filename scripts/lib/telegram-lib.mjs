@@ -1,8 +1,9 @@
 // Pure helpers shared by telegram-post-candidates.mjs and telegram-send.mjs.
-// No I/O beyond the two read* helpers, no env access at import time — so
-// tests/telegram-lib.test.ts can exercise every branch without Supabase or a
-// bot token.
+// The only I/O lives in readEnv / readLedger / appendLedgerRow / withLedgerLock;
+// nothing touches env or disk at import time, so tests/telegram-lib.test.ts can
+// exercise every branch without Supabase or a bot token.
 import fs from "node:fs";
+import path from "node:path";
 
 /** Feature-weight floor the desk strip enforces (lib/desk-featured/data.ts
  *  MIN_FEATURE_WEIGHT). Mirrored here so the drafter never offers a card the
@@ -27,8 +28,11 @@ export function getArg(args, flag, def = null) {
   return v !== undefined && !v.startsWith("--") ? v : def;
 }
 
-/** Parse an integer flag value; throws a usage error instead of letting NaN
- *  or a negative number turn into a silent empty result. */
+/** Parse an integer flag/env value; throws a usage error naming the source
+ *  instead of letting NaN or a negative number turn into a silent empty result.
+ *  @param {string|null|undefined} value
+ *  @param {string} name what supplied the value (a flag or an env var)
+ *  @returns {number|null} */
 export function parseIntArg(value, name, { min = 0 } = {}) {
   if (value === null || value === undefined) return null;
   if (!/^-?\d+$/.test(String(value))) throw new Error(`${name} must be an integer, got "${value}"`);
@@ -39,10 +43,11 @@ export function parseIntArg(value, name, { min = 0 } = {}) {
 
 // ── .env ────────────────────────────────────────────────────────────────────
 
-/** Minimal dotenv-compatible parser: `export KEY=`, single/double quotes,
- *  inline ` # comment` after an unquoted value, first `=` splits. Last write
- *  wins (as dotenv does) but duplicates are reported so the caller can warn —
- *  a stale second NEXT_PUBLIC_TELEGRAM_URL line is otherwise invisible. */
+/** Minimal dotenv-compatible parser: `export KEY=`, single/double quotes
+ *  (with or without a trailing ` # comment`), inline ` # comment` after an
+ *  unquoted value, first `=` splits. Last write wins (as dotenv does) but
+ *  duplicates are reported so the caller can warn — a stale second
+ *  NEXT_PUBLIC_TELEGRAM_URL line is otherwise invisible. */
 export function parseEnvText(text) {
   /** @type {Record<string, string>} */
   const env = {};
@@ -59,8 +64,9 @@ export function parseEnvText(text) {
     const key = line.slice(0, eq).trim();
     let val = line.slice(eq + 1).trim();
     const quote = val[0];
-    if ((quote === '"' || quote === "'") && val.length >= 2 && val.endsWith(quote)) {
-      val = val.slice(1, -1);
+    const close = quote === '"' || quote === "'" ? val.indexOf(quote, 1) : -1;
+    if (close > 0) {
+      val = val.slice(1, close);
     } else {
       const hash = val.indexOf(" #");
       if (hash >= 0) val = val.slice(0, hash).trim();
@@ -72,14 +78,27 @@ export function parseEnvText(text) {
   return { env, duplicates };
 }
 
-export function readEnv(path) {
-  return parseEnvText(fs.readFileSync(path, "utf8"));
+export function readEnv(envPath) {
+  return parseEnvText(fs.readFileSync(envPath, "utf8"));
+}
+
+/** Both scripts bootstrap the same way: read ../.env relative to the script,
+ *  warn about duplicate keys under the script's tag. */
+export function loadScriptEnv(scriptDir, tag) {
+  const { env, duplicates } = readEnv(path.join(scriptDir, "..", ".env"));
+  for (const k of duplicates) console.error(`[${tag}] .env defines ${k} more than once — last line wins`);
+  return env;
+}
+
+export function ledgerPathFor(scriptDir) {
+  return path.join(scriptDir, "..", "data", "telegram-posts", "posted.jsonl");
 }
 
 // ── posted ledger ───────────────────────────────────────────────────────────
 
-/** Read data/telegram-posts/posted.jsonl. Only `status: "posted"` rows with a
- *  card_id count for dedupe; blank or malformed lines are skipped. */
+/** Parse data/telegram-posts/posted.jsonl. Only `status: "posted"` rows with a
+ *  card_id count for dedupe. Blank lines are ignored; malformed lines are
+ *  counted so the caller can decide whether that is a corruption signal. */
 export function parseLedgerText(text) {
   /** @type {Map<string, any>} */
   const byCard = new Map();
@@ -96,24 +115,43 @@ export function parseLedgerText(text) {
       continue;
     }
     rows += 1;
-    if (row && row.card_id && row.status === "posted") byCard.set(row.card_id, row);
+    if (row && typeof row.card_id === "string" && row.status === "posted") byCard.set(row.card_id, row);
   }
   return { byCard, rows, malformed };
 }
 
-export function readLedger(path) {
-  if (!fs.existsSync(path)) return { byCard: new Map(), rows: 0, malformed: 0 };
-  return parseLedgerText(fs.readFileSync(path, "utf8"));
+export function readLedger(ledgerPath) {
+  if (!fs.existsSync(ledgerPath)) return { byCard: new Map(), rows: 0, malformed: 0 };
+  return parseLedgerText(fs.readFileSync(ledgerPath, "utf8"));
 }
 
-export function appendLedgerRow(path, row) {
-  fs.mkdirSync(dirnameOf(path), { recursive: true });
-  fs.appendFileSync(path, JSON.stringify(row) + "\n");
+export function appendLedgerRow(ledgerPath, row) {
+  fs.mkdirSync(path.dirname(ledgerPath), { recursive: true });
+  fs.appendFileSync(ledgerPath, JSON.stringify(row) + "\n");
 }
 
-function dirnameOf(p) {
-  const i = p.lastIndexOf("/");
-  return i > 0 ? p.slice(0, i) : ".";
+/** Serialise check-then-send-then-append across concurrent invocations with
+ *  an exclusive lock file next to the ledger. A stale lock (crashed run) is
+ *  reported, not silently stolen. */
+export async function withLedgerLock(ledgerPath, fn) {
+  const lockPath = `${ledgerPath}.lock`;
+  fs.mkdirSync(path.dirname(ledgerPath), { recursive: true });
+  let fd;
+  try {
+    fd = fs.openSync(lockPath, "wx");
+  } catch (err) {
+    if (err && err.code === "EEXIST") {
+      throw new Error(`another send is in progress (or crashed) — remove ${lockPath} if no other process is running`);
+    }
+    throw err;
+  }
+  try {
+    fs.writeSync(fd, String(process.pid));
+    return await fn();
+  } finally {
+    fs.closeSync(fd);
+    fs.rmSync(lockPath, { force: true });
+  }
 }
 
 // ── formatting ──────────────────────────────────────────────────────────────
@@ -125,6 +163,9 @@ export const esc = (s) =>
 
 export const stripLtd = (name) => String(name ?? "").replace(/\s+(Limited|Ltd\.?)$/i, "").trim();
 
+/** Keep in step with lib/desk-featured/types.ts (FEATURED_SECTIONS /
+ *  CHANGE_KINDS) and /schemas/desk_featured_read_v1.json. A value missing here
+ *  fails isPostableCard rather than being posted with a raw label. */
 export const SECTION_LABEL = {
   guidance: "Guidance",
   growth: "Growth outlook",
@@ -141,26 +182,43 @@ export const CHANGE_LABEL = {
   refreshed: "refreshed",
 };
 
+const REQUIRED_TEXT = ["id", "company_code", "company_name", "headline", "summary", "section_href"];
+
+/** A site-relative path: one leading slash, not `//host` (protocol-relative)
+ *  and not `/\host` (which WHATWG URL also treats as an authority). */
+export function isSiteRelativeHref(href) {
+  return typeof href === "string" && href.startsWith("/") && !/^\/[\/\\]/.test(href);
+}
+
 /** Is this desk_featured_read row something the desk would show and we can
- *  write a message from? Mirrors the portal's parse gate loosely: the three
- *  text fields must be present and the weight must clear the strip's floor. */
+ *  write a message from? Mirrors the portal's parse gate: eligible, above the
+ *  strip's weight floor, known section/change_kind, the text fields present,
+ *  and a site-relative deep link. */
 export function isPostableCard(card) {
   if (!card || typeof card !== "object") return false;
   if (card.status !== "eligible") return false;
   if (typeof card.feature_weight !== "number" || card.feature_weight < MIN_FEATURE_WEIGHT) return false;
-  for (const k of ["id", "company_code", "company_name", "headline", "summary", "section_href"]) {
+  if (!(card.section in SECTION_LABEL) || !(card.change_kind in CHANGE_LABEL)) return false;
+  for (const k of REQUIRED_TEXT) {
     if (typeof card[k] !== "string" || !card[k].trim()) return false;
   }
-  return card.section_href.startsWith("/");
+  return isSiteRelativeHref(card.section_href);
 }
+
+const stripSlash = (s) => String(s).replace(/\/$/, "");
 
 /** Deep link to the section with UTM params inserted BEFORE the #fragment,
  *  built through the URL API so a `?` already in section_href or an odd
- *  character in the card id can't corrupt the query. */
+ *  character in the card id can't corrupt the query. The result is asserted
+ *  to stay on our origin — a poisoned href fails the row, never ships. */
 export function buildSectionLink(card, siteBase) {
   const href = String(card.section_href || `/company/${card.company_code}`);
-  if (!href.startsWith("/")) throw new Error(`section_href must be site-relative, got "${href}"`);
-  const url = new URL(href, siteBase.replace(/\/$/, "") + "/");
+  if (!isSiteRelativeHref(href)) throw new Error(`section_href must be site-relative, got "${href}"`);
+  const base = stripSlash(siteBase) + "/";
+  const url = new URL(href, base);
+  if (url.origin !== new URL(base).origin) {
+    throw new Error(`section_href resolved off-site (${url.origin}), got "${href}"`);
+  }
   const campaign = String(card.id).toLowerCase();
   url.searchParams.set("utm_source", "telegram");
   url.searchParams.set("utm_medium", "community");
@@ -171,7 +229,7 @@ export function buildSectionLink(card, siteBase) {
 export function disclaimerFor(siteBase) {
   return (
     "Not investment advice or research — I read the filings and transcripts. How the scores work: " +
-    siteBase.replace(/\/$/, "") +
+    stripSlash(siteBase) +
     "/how-scores-work"
   );
 }
@@ -209,6 +267,21 @@ export function buildTexts(card, siteBase) {
   ].join("\n");
 
   return { html, plain, campaign, url };
+}
+
+/** Shape check for a row of the drafter's JSON before the sender trusts it. */
+export function isCandidate(c) {
+  return Boolean(
+    c &&
+      typeof c === "object" &&
+      typeof c.card_id === "string" &&
+      c.card_id.length > 0 &&
+      typeof c.text_html === "string" &&
+      c.text_html.length > 0 &&
+      (c.company_code === undefined || typeof c.company_code === "string") &&
+      (c.section === undefined || typeof c.section === "string") &&
+      (c.utm_campaign === undefined || typeof c.utm_campaign === "string")
+  );
 }
 
 /** Heaviest, then freshest; stable on full ties. */

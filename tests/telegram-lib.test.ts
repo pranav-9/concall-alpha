@@ -7,7 +7,9 @@ import {
   compareCards,
   esc,
   getArg,
+  isCandidate,
   isPostableCard,
+  isSiteRelativeHref,
   parseEnvText,
   parseIntArg,
   parseLedgerText,
@@ -66,6 +68,12 @@ assert.throws(() => parseIntArg("-5", "--days", { min: 1 }), />= 1/);
   assert.deepEqual(duplicates, ["PLAIN"], "duplicate keys are reported");
   assert.equal("NOEQ" in env, false);
 }
+{
+  const { env } = parseEnvText('CHAT="-100123" # the group\nTHREAD=\'2\' # updates topic\nODD="a # b"');
+  assert.equal(env.CHAT, "-100123", "quoted value followed by an inline comment is unquoted");
+  assert.equal(env.THREAD, "2");
+  assert.equal(env.ODD, "a # b", "a # inside quotes is content");
+}
 
 // ── ledger parsing ──────────────────────────────────────────────────────────
 {
@@ -122,6 +130,14 @@ assert.equal(
   "missing href falls back to the company page",
 );
 assert.throws(() => buildSectionLink({ ...card, section_href: "https://evil.example/x" }, SITE), /site-relative/);
+// Protocol-relative and backslash forms resolve to a foreign host under WHATWG URL — never ship them.
+for (const href of ["//evil.example/x", "/\\evil.example/x", "//evil.example"]) {
+  assert.throws(() => buildSectionLink({ ...card, section_href: href }, SITE), /site-relative/, href);
+  assert.equal(isPostableCard({ ...card, section_href: href }), false, `${href} is not postable`);
+  assert.equal(isSiteRelativeHref(href), false);
+}
+assert.equal(isSiteRelativeHref("/company/X#y"), true);
+assert.equal(new URL(buildSectionLink(card, SITE).url).origin, SITE, "link always stays on our origin");
 
 {
   const { html, plain, url } = buildTexts(card, SITE);
@@ -147,6 +163,15 @@ assert.equal(isPostableCard({ ...card, status: "retired" }), false);
 assert.equal(isPostableCard({ ...card, headline: "  " }), false, "blank headline");
 assert.equal(isPostableCard({ ...card, summary: null }), false);
 assert.equal(isPostableCard({ ...card, section_href: "company/X" }), false, "href must be site-relative");
+assert.equal(isPostableCard({ ...card, section: "mystery" }), false, "unknown section is not postable");
+assert.equal(isPostableCard({ ...card, change_kind: "odd" }), false, "unknown change_kind is not postable");
+
+// ── candidate shape (what the sender trusts from the drafter's JSON) ─────────
+assert.equal(isCandidate({ card_id: "a", text_html: "<b>x</b>", company_code: "A" }), true);
+assert.equal(isCandidate({ card_id: "a", text_html: "" }), false, "empty text");
+assert.equal(isCandidate({ card_id: { id: 1 }, text_html: "x" }), false, "card_id must be a string");
+assert.equal(isCandidate({ card_id: "a", text_html: "x", section: 3 }), false, "section must be a string when present");
+assert.equal(isCandidate(null), false);
 assert.equal(isPostableCard(null), false);
 
 // ── ordering ────────────────────────────────────────────────────────────────

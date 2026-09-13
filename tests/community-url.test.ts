@@ -35,6 +35,13 @@ withEnv("https://T.ME/+AbC123", () =>
   assert.equal(getTelegramJoinUrl(), "https://t.me/+AbC123", "host is case-folded"),
 );
 
+withEnv("https://t.me/storyofastock/", () =>
+  assert.equal(getTelegramJoinUrl(), "https://t.me/storyofastock", "trailing slash tolerated, not a dead link"),
+);
+withEnv("https://t.me/+AbC123#frag", () =>
+  assert.equal(getTelegramJoinUrl(), "https://t.me/+AbC123", "fragment dropped"),
+);
+
 // Rejects anything that isn't an https Telegram link — a typo'd env var must
 // never ship as a live outbound link.
 withEnv("http://t.me/storyofastock", () => assert.equal(getTelegramJoinUrl(), null));

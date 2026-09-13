@@ -46,7 +46,9 @@ export type WatchlistSource = "company_page" | "leaderboard" | "watchlist" | "ot
  *  breakdowns — instead of forking near-identical events per surface. */
 export type AnalyticsSurface = "home" | "desk" | "leaderboards";
 
-/** Where a community join link lived when it was clicked. */
+/** Where a community join link lived when it was clicked. `desk` and
+ *  `company_page` are reserved — no call site yet; they land only if the
+ *  footer/Journal clicks show demand (see docs/feature-level/telegram-community). */
 export type CommunitySurface =
   | "footer"
   | "journal_index"

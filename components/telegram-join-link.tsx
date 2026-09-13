@@ -8,7 +8,8 @@ import { analytics, type CommunitySurface } from "@/lib/analytics";
  * The outbound Telegram join link. Client-side only so the click can be counted
  * (`community_join_click`, broken down by `surface`) before the tab opens. The
  * caller decides whether to render it at all — pass the URL from
- * `getTelegramJoinUrl()`; when that is null, render nothing.
+ * `getTelegramJoinUrl()`; when that is null, render nothing. Opens in a new
+ * tab, and says so to screen readers once here for every surface.
  */
 export function TelegramJoinLink({
   href,
@@ -19,7 +20,7 @@ export function TelegramJoinLink({
   href: string;
   surface: CommunitySurface;
   className?: string;
-  children?: ReactNode;
+  children: ReactNode;
 }) {
   return (
     <a
@@ -29,7 +30,8 @@ export function TelegramJoinLink({
       className={className}
       onClick={() => analytics.communityJoinClick(surface)}
     >
-      {children ?? "Telegram community"}
+      {children}
+      <span className="sr-only"> (opens in a new tab)</span>
     </a>
   );
 }

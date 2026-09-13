@@ -29,9 +29,10 @@ export function TelegramJoinCard({ surface }: { surface: CommunitySurface }) {
       <TelegramJoinLink
         href={href}
         surface={surface}
-        className="mt-3 inline-flex items-center rounded-full border border-foreground bg-foreground px-3.5 py-1.5 text-xs font-medium text-background transition-colors hover:bg-foreground/90"
+        className="mt-3 inline-flex min-h-11 items-center gap-1 rounded-full bg-foreground px-3 py-2 text-xs font-medium text-background shadow-sm transition-colors hover:bg-foreground/90"
       >
-        Join on Telegram →
+        Join on Telegram
+        <span aria-hidden="true">→</span>
       </TelegramJoinLink>
     </aside>
   );

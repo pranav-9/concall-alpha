@@ -74,9 +74,11 @@ function FooterLink({ item }: { item: FooterLinkItem }) {
 
 export function SiteFooter() {
   const telegramUrl = getTelegramJoinUrl();
-  const communityLinks: FooterLinkItem[] = telegramUrl
-    ? [{ href: telegramUrl, label: "Telegram community", external: true, telegram: true }]
-    : [];
+  // Sits after the X link: same "where to find me" register, one noun
+  // ("Telegram group") everywhere the link appears.
+  const connectLinks: FooterLinkItem[] = telegramUrl
+    ? [learnLinks[0], { href: telegramUrl, label: "Telegram group", telegram: true }, ...learnLinks.slice(1)]
+    : learnLinks;
 
   return (
     <footer className="border-t border-border bg-muted/20">
@@ -118,7 +120,7 @@ export function SiteFooter() {
               Learn
             </p>
             <div className="flex flex-col items-start gap-2.5">
-              {[...communityLinks, ...learnLinks].map((item) => (
+              {connectLinks.map((item) => (
                 <FooterLink key={item.href} item={item} />
               ))}
             </div>

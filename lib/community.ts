@@ -21,8 +21,9 @@ export function getTelegramJoinUrl(): string | null {
     const url = new URL(raw);
     if (url.protocol !== "https:" || !ALLOWED_HOSTS.has(url.hostname)) return null;
     if (url.username || url.password || url.search) return null;
-    if (!ALLOWED_PATH.test(url.pathname)) return null;
-    return `${url.origin}${url.pathname}`;
+    const pathname = url.pathname.replace(/\/+$/, "");
+    if (!ALLOWED_PATH.test(pathname)) return null;
+    return `${url.origin}${pathname}`;
   } catch {
     return null;
   }
