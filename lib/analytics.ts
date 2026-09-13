@@ -49,7 +49,7 @@ export type AnalyticsSurface = "home" | "desk" | "leaderboards";
 /** Where a community join link lived when it was clicked. Every placement
  *  reports its own surface so the visibility push (2026-09-13: navbar, company
  *  page, desk, leaderboards, and the engagement nudge) can be read per surface
- *  and the weak ones removed — see docs/telegram-community-2026-09-13.md. */
+ *  and the weak ones removed — see docs/telegram-visibility-2026-09-13.md. */
 export type CommunitySurface =
   | "footer"
   | "journal_index"

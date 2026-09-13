@@ -50,11 +50,22 @@ Never on a cold first pageview. It appears when either rule fires:
 - `company_dwell` — 25 s on a company page.
 
 Excluded paths: `/` (the homepage's own sticky CTA owns that slot), `/blog*`
-(has its own card), `/auth*`, `/admin*`. Dismiss snoozes it 14 days
-(localStorage `community-nudge:v1`); a click-through retires it. Events:
-`community_nudge_shown` and `community_nudge_dismiss`, both with `trigger` and
-`pathname`. The click is the ordinary `community_join_click` with
-`surface=nudge`.
+(has its own card), `/auth*`, `/admin*` — checked at render time too, so a
+pill that fired on a company page hides again when the reader lands on one of
+those. Dismiss snoozes it 14 days (localStorage `community-nudge:v1`); a
+click-through retires it; a dismiss stamped in the future (clock skew) counts
+as expired. Events: `community_nudge_shown` (once per browser session, even
+if the pill is shown again after a reload) and `community_nudge_dismiss`, both
+with `trigger` and `pathname` of the page it appeared on. The click is the
+ordinary `community_join_click` with `surface=nudge`.
+
+Counter details worth knowing before reading the numbers: the session
+pageview count bumps once per pathname (so React StrictMode in `next dev`
+and error-boundary remounts do not double-count — QA the production build);
+a non-numeric stored value restarts from zero; when sessionStorage throws
+(private mode) an in-memory counter takes over for the SPA session; a new
+tab opened from the site inherits the parent's sessionStorage, so its first
+page can count as a second page (accepted noise).
 
 ## Reading it
 

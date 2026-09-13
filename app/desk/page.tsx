@@ -159,10 +159,9 @@ export default async function DeskPage() {
         </div>
 
         {/* Phone: order-3 before the ledger in DOM → Featured → Telegram → Latest
-            activity. Desktop: DOM order → ranking grid → Telegram → Featured. */}
-        <div className="order-3 mt-6 px-4 sm:mt-14 sm:px-0">
-          <DeskTelegramStrip />
-        </div>
+            activity. Desktop: DOM order → ranking grid → Telegram → Featured.
+            The strip owns its slot classes so an unset env var leaves no gap. */}
+        <DeskTelegramStrip className="order-3 mt-6 px-4 sm:mt-14 sm:px-0" />
 
         <div className="order-2 mt-4 sm:mt-14">
           <Suspense fallback={<div className="px-4 sm:px-0"><DeskFeaturedReadsFallback /></div>}>

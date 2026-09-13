@@ -27,7 +27,7 @@ const exploreLinks: FooterLinkItem[] = [
 ];
 
 // "Connect" column: where to find me — X, the Telegram group, the request form.
-const learnLinks: FooterLinkItem[] = [
+const connectBaseLinks: FooterLinkItem[] = [
   {
     href: "https://x.com/pranav_handle",
     label: "X (Twitter)",
@@ -78,8 +78,8 @@ export function SiteFooter() {
   // Sits after the X link: same "where to find me" register, one noun
   // ("Telegram group") everywhere the link appears.
   const connectLinks: FooterLinkItem[] = telegramUrl
-    ? [learnLinks[0], { href: telegramUrl, label: "Telegram group", telegram: true }, ...learnLinks.slice(1)]
-    : learnLinks;
+    ? [connectBaseLinks[0], { href: telegramUrl, label: "Telegram group", telegram: true }, ...connectBaseLinks.slice(1)]
+    : connectBaseLinks;
 
   return (
     <footer className="border-t border-border bg-muted/20">

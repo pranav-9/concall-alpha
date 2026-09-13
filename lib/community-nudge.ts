@@ -23,6 +23,10 @@ export const SECOND_PAGE_THRESHOLD = 2;
 
 export const NUDGE_STORAGE_KEY = "community-nudge:v1";
 export const NUDGE_SESSION_KEY = "community-nudge:pages";
+/** Last pathname counted, so a re-run on the same page does not count twice. */
+export const NUDGE_LAST_PATH_KEY = "community-nudge:last-path";
+/** Set once the impression event has fired this session. */
+export const NUDGE_SHOWN_KEY = "community-nudge:shown";
 
 export type NudgeState = {
   /** Epoch ms of the last dismiss, or null if never dismissed. */
@@ -61,11 +65,23 @@ export function isCompanyPath(pathname: string): boolean {
   return /^\/company\/[^/]+/.test(pathname);
 }
 
-/** Is the reader inside a snooze window or retired? */
+/** Is the reader inside a snooze window or retired? A dismiss stamped in the
+ *  future (clock skew, a hand-edited value) would otherwise snooze forever, so
+ *  it counts as expired. */
 export function isNudgeSuppressed(state: NudgeState, now: number): boolean {
   if (state.clicked) return true;
   if (state.dismissedAt == null) return false;
+  if (state.dismissedAt > now) return false;
   return now - state.dismissedAt < NUDGE_SNOOZE_MS;
+}
+
+/** The next session pageview count given the stored value. Anything that is
+ *  not a finite non-negative number (missing, "NaN" from an older bug, a
+ *  hand edit) restarts from zero instead of poisoning the counter for the
+ *  rest of the session. */
+export function nextSessionPageviews(raw: string | null): number {
+  const n = Number(raw);
+  return (Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0) + 1;
 }
 
 /** The second-page rule: fires on the Nth pageview of the session. */

@@ -431,6 +431,7 @@ const Navbar = ({
                 <TelegramJoinLink
                   href={telegramUrl}
                   surface="navbar"
+                  onClick={() => setIsMenuOpen(false)}
                   className="flex w-full items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   Telegram group

@@ -1,4 +1,5 @@
 import { getTelegramJoinUrl } from "@/lib/community";
+import { TOUCH_TARGET } from "@/lib/design/shell";
 import { cn } from "@/lib/utils";
 import type { CommunitySurface } from "@/lib/analytics";
 
@@ -51,7 +52,10 @@ export function TelegramJoinCard({
         <TelegramJoinLink
           href={href}
           surface={surface}
-          className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent"
+          className={cn(
+            "inline-flex min-h-9 shrink-0 items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent",
+            TOUCH_TARGET,
+          )}
         >
           Join on Telegram
           <span aria-hidden="true">→</span>

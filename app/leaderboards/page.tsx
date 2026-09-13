@@ -159,7 +159,7 @@ export default async function LeaderboardsPage({
             </p>
             {telegramUrl ? (
               <p className="text-xs text-muted-foreground">
-                Rank moves and section changes get posted in the{" "}
+                Section changes get posted in the{" "}
                 <TelegramJoinLink
                   href={telegramUrl}
                   surface="leaderboards"

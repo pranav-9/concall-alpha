@@ -3,20 +3,46 @@ import assert from "node:assert/strict";
 import {
   COMPANY_DWELL_MS,
   EMPTY_NUDGE_STATE,
+  NUDGE_LAST_PATH_KEY,
+  NUDGE_SESSION_KEY,
+  NUDGE_SHOWN_KEY,
+  NUDGE_SNOOZE_DAYS,
   NUDGE_SNOOZE_MS,
+  NUDGE_STORAGE_KEY,
+  SECOND_PAGE_THRESHOLD,
   isCompanyPath,
   isNudgeEligiblePath,
   isNudgeSuppressed,
+  nextSessionPageviews,
   nudgeDelayFor,
   parseNudgeState,
   secondPageRuleFires,
 } from "../lib/community-nudge";
+
+// ── Tunables and keys: pin them so a drift is a deliberate edit ──────────────
+assert.equal(NUDGE_SNOOZE_DAYS, 14);
+assert.equal(NUDGE_SNOOZE_MS, 14 * 24 * 60 * 60 * 1000);
+assert.equal(COMPANY_DWELL_MS, 25_000);
+assert.equal(SECOND_PAGE_THRESHOLD, 2);
+assert.equal(
+  new Set([NUDGE_STORAGE_KEY, NUDGE_SESSION_KEY, NUDGE_LAST_PATH_KEY, NUDGE_SHOWN_KEY]).size,
+  4,
+);
 
 // ── parseNudgeState: anything malformed is "never seen" ─────────────────────
 assert.deepEqual(parseNudgeState(null), EMPTY_NUDGE_STATE);
 assert.deepEqual(parseNudgeState(""), EMPTY_NUDGE_STATE);
 assert.deepEqual(parseNudgeState("not json"), EMPTY_NUDGE_STATE);
 assert.deepEqual(parseNudgeState("null"), EMPTY_NUDGE_STATE);
+// A JSON primitive is not a state object.
+assert.deepEqual(parseNudgeState("42"), EMPTY_NUDGE_STATE);
+assert.deepEqual(parseNudgeState("true"), EMPTY_NUDGE_STATE);
+assert.deepEqual(parseNudgeState('"x"'), EMPTY_NUDGE_STATE);
+// A non-finite timestamp is discarded, the rest of the blob survives.
+assert.deepEqual(parseNudgeState('{"dismissedAt":1e999,"clicked":true}'), {
+  dismissedAt: null,
+  clicked: true,
+});
 assert.deepEqual(parseNudgeState("[1,2]"), { dismissedAt: null, clicked: false });
 assert.deepEqual(parseNudgeState('{"dismissedAt":"yesterday","clicked":"yes"}'), {
   dismissedAt: null,
@@ -62,8 +88,24 @@ assert.equal(
   isNudgeSuppressed({ dismissedAt: now - NUDGE_SNOOZE_MS, clicked: false }, now),
   false,
 );
-// A clock that went backwards (dismissedAt in the future) still counts as snoozed.
-assert.equal(isNudgeSuppressed({ dismissedAt: now + 60_000, clicked: false }, now), true);
+// A dismiss stamped in the future (clock skew, hand edit) would snooze forever
+// under plain subtraction; it counts as expired instead.
+assert.equal(isNudgeSuppressed({ dismissedAt: now + 60_000, clicked: false }, now), false);
+assert.equal(isNudgeSuppressed({ dismissedAt: 9e15, clicked: false }, now), false);
+// Clicked wins over any timestamp.
+assert.equal(isNudgeSuppressed({ dismissedAt: now + 60_000, clicked: true }, now), true);
+
+// ── Session pageview counter: never poisoned by a bad stored value ──────────
+assert.equal(nextSessionPageviews(null), 1);
+assert.equal(nextSessionPageviews(""), 1);
+assert.equal(nextSessionPageviews("0"), 1);
+assert.equal(nextSessionPageviews("1"), 2);
+assert.equal(nextSessionPageviews("7"), 8);
+assert.equal(nextSessionPageviews("2.9"), 3);
+assert.equal(nextSessionPageviews("abc"), 1);
+assert.equal(nextSessionPageviews("NaN"), 1);
+assert.equal(nextSessionPageviews("Infinity"), 1);
+assert.equal(nextSessionPageviews("-3"), 1);
 
 // ── Rules ───────────────────────────────────────────────────────────────────
 assert.equal(secondPageRuleFires(0), false);
