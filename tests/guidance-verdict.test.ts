@@ -630,5 +630,40 @@ assert.deepEqual(
   { label: "on the number", sign: 0 },
 );
 
+// ---------------------------------------------------------------------------
+// One verdict (decision 2026-09-13): a stored credibility verdict wins over the
+// counted tier; counts, bars and rows are unchanged; only the scorer's own
+// supporting line is rendered, never an older LLM one.
+// ---------------------------------------------------------------------------
+{
+  const counted = buildGuidanceVerdict(items, CURRENT);
+  assert.equal(counted.verdictSource, "counted");
+  assert.equal(counted.countedTier, counted.tier);
+
+  const scoredV = buildGuidanceVerdict(items, CURRENT, {
+    verdict: "mixed",
+    supporting_line: "Financial delivery weak: 9 of 14 closed financial guides met or beaten (64%).",
+    components: { scorer: "guidance_credibility_score.py v1" },
+  });
+  assert.equal(scoredV.tier, "mixed");
+  assert.equal(scoredV.tierLabel, "Mixed");
+  assert.equal(scoredV.verdictSource, "scored");
+  assert.equal(scoredV.countedTier, counted.tier, "the counted tier is still computed");
+  assert.equal(scoredV.metCount, counted.metCount, "a stored verdict does not change the counts");
+  assert.equal(scoredV.countedCount, counted.countedCount);
+  assert.ok(scoredV.summary.startsWith("Financial delivery weak"), "the scorer's line leads the summary");
+
+  const legacy = buildGuidanceVerdict(items, CURRENT, { verdict: "High Trust", supporting_line: "LLM prose" });
+  assert.equal(legacy.tier, "high_trust", "verdict keys are normalized");
+  assert.equal(legacy.tierLabel, "High trust");
+  assert.ok(!legacy.summary.includes("LLM prose"), "a non-scorer supporting line is not rendered");
+
+  for (const junk of [{ verdict: "stellar" }, {}, null, "credible-ish", 42]) {
+    const j = buildGuidanceVerdict(items, CURRENT, junk);
+    assert.equal(j.verdictSource, "counted", `unrecognised stored verdict falls back: ${JSON.stringify(junk)}`);
+    assert.equal(j.tier, counted.tier);
+  }
+}
+
 console.log("guidance-verdict: all assertions passed");
 

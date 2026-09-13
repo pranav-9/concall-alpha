@@ -31,5 +31,6 @@ export const getWalkTheTalk = cache(async (code: string) => {
 
   const row = (data?.[0] as GuidanceSnapshotRow | undefined) ?? null;
   const snapshot = normalizeGuidanceSnapshot(row);
-  return normalizeWalkTheTalk(snapshot, code);
+  const scoredCredibility = (row as { credibility_verdict?: unknown } | null)?.credibility_verdict;
+  return normalizeWalkTheTalk(snapshot, code, undefined, scoredCredibility);
 });

@@ -361,11 +361,16 @@ export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionPro
   const guidanceSnapshotResult = await supabase
     .from("guidance_snapshot")
     .select(
-      "company_code, generated_at, analysis_window_quarters, guidance_items, source_files, details, updated_at",
+      "company_code, generated_at, analysis_window_quarters, credibility_verdict, guidance_items, source_files, details, updated_at",
     )
     .eq("company_code", overview.company_code)
     .order("generated_at", { ascending: false })
     .limit(1);
+  // The stored credibility verdict wins over the counted tier wherever it
+  // exists (lib/walk-the-talk/types.ts resolveCredibilityVerdict).
+  const scoredCredibility = (
+    guidanceSnapshotResult.data?.[0] as { credibility_verdict?: unknown } | undefined
+  )?.credibility_verdict;
   const normalizedGuidanceSnapshot = normalizeGuidanceSnapshot(
     (guidanceSnapshotResult.data?.[0] as GuidanceSnapshotRow | undefined) ?? null,
   );
@@ -402,7 +407,7 @@ export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionPro
   // disagree (quarter-aware — see lib/guidance-tracking/verdict.ts horizonPhase).
   const guidanceQtr = currentReportingQuarter();
   const guidanceVerdict =
-    guidanceItems.length > 0 ? buildGuidanceVerdict(guidanceItems, guidanceQtr) : null;
+    guidanceItems.length > 0 ? buildGuidanceVerdict(guidanceItems, guidanceQtr, scoredCredibility) : null;
   return (
     <SectionCard
       id="guidance-history"
@@ -424,6 +429,7 @@ export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionPro
           currentQtr={guidanceQtr}
           forwardStrength={parseForwardStrength(normalizedGuidanceSnapshot?.details ?? null)}
           strategyNarrative={parseStrategyNarrative(normalizedGuidanceSnapshot?.details ?? null)}
+          credibilityVerdict={scoredCredibility}
         />
       ) : (
         missingSectionState(

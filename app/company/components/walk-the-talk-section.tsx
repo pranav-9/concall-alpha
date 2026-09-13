@@ -4,38 +4,53 @@ import { chipClass, type ChipTone } from "./chip-tone";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 import {
   TIER_LABELS,
+  VERDICT_LABELS,
+  type CredibilityVerdictKey,
   type NormalizedWalkTheTalk,
   type WalkTheTalkCategory,
   type WalkTheTalkCategoryBucket,
-  type WalkTheTalkTier,
 } from "@/lib/walk-the-talk/types";
 import { cn } from "@/lib/utils";
 
 type Props = { snapshot: NormalizedWalkTheTalk };
 
-const TIER_TONE: Record<WalkTheTalkTier, ChipTone> = {
+// Keyed on the full verdict vocabulary: per-category buckets carry a counted
+// tier, while the overall verdict can be a stored (scored) one.
+const TIER_TONE: Record<CredibilityVerdictKey, ChipTone> = {
   reliable: "emerald",
   mixed: "sky",
   erratic: "amber",
   weak: "rose",
   not_enough_data: "slate",
+  high_trust: "emerald",
+  credible: "sky",
+  low_trust: "rose",
+  not_assessable: "slate",
 };
 
 // Static Tailwind class strings (safelist requires static, not interpolated).
-const TIER_ACCENT_BG: Record<WalkTheTalkTier, string> = {
+const TIER_ACCENT_BG: Record<CredibilityVerdictKey, string> = {
   reliable: "bg-emerald-500/75",
   mixed: "bg-sky-500/75",
   erratic: "bg-amber-500/75",
   weak: "bg-rose-500/75",
   not_enough_data: "bg-slate-500/40",
+  high_trust: "bg-emerald-500/75",
+  credible: "bg-sky-500/75",
+  low_trust: "bg-rose-500/75",
+  not_assessable: "bg-slate-500/40",
 };
 
-const TIER_TEXT_COLOR: Record<WalkTheTalkTier, string> = {
+const TIER_TEXT_COLOR: Record<CredibilityVerdictKey, string> = {
   reliable: "text-emerald-700 dark:text-emerald-300",
   mixed: "text-sky-700 dark:text-sky-300",
   erratic: "text-amber-700 dark:text-amber-400",
   weak: "text-rose-700 dark:text-rose-300",
   not_enough_data: "text-slate-700 dark:text-slate-300",
+  high_trust: "text-emerald-700 dark:text-emerald-300",
+  credible: "text-sky-700 dark:text-sky-300",
+  low_trust: "text-rose-700 dark:text-rose-300",
+  not_assessable: "text-slate-700 dark:text-slate-300",
 };
 
 const CATEGORY_LABEL: Record<WalkTheTalkCategory, string> = {
@@ -130,7 +145,7 @@ export function WalkTheTalkSection({ snapshot }: Props) {
   }
 
   const tier = snapshot.overall.tier;
-  const tierLabel = TIER_LABELS[tier];
+  const tierLabel = VERDICT_LABELS[tier];
 
   return (
     <div className="space-y-4">

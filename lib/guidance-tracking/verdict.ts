@@ -13,7 +13,12 @@
 
 import { currentReportingQuarter, fyLabelFor, type ReportingQuarter } from "@/lib/current-quarter";
 import { computeTier } from "@/lib/walk-the-talk/grade-utils";
-import { TIER_LABELS, type WalkTheTalkTier } from "@/lib/walk-the-talk/types";
+import {
+  VERDICT_LABELS,
+  parseScoredCredibility,
+  type CredibilityVerdictKey,
+  type WalkTheTalkTier,
+} from "@/lib/walk-the-talk/types";
 
 import {
   formatAbsoluteValue,
@@ -430,8 +435,14 @@ export const buildLiveRow = (item: NormalizedGuidanceItem, state: LiveState): Li
 // ---------------------------------------------------------------------------
 
 export type GuidanceVerdict = {
-  tier: WalkTheTalkTier;
+  // The ONE credibility verdict (lib/walk-the-talk/types.ts): the stored
+  // guidance_snapshot.credibility_verdict when present, else the counted tier.
+  tier: CredibilityVerdictKey;
   tierLabel: string;
+  // What the resolved-commitment ratio alone says — still computed, so the
+  // track record and tests can see it even when a stored verdict wins.
+  countedTier: WalkTheTalkTier;
+  verdictSource: "scored" | "counted";
   metCount: number;
   countedCount: number; // graded resolved commitments
   unclearCount: number; // resolved but ungradeable
@@ -467,7 +478,7 @@ const joinList = (parts: string[]) => {
   return `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
 };
 
-const headlineFor = (tier: WalkTheTalkTier, misses: number): string => {
+const headlineFor = (tier: CredibilityVerdictKey, misses: number): string => {
   switch (tier) {
     case "reliable":
       return misses === 0
@@ -481,6 +492,14 @@ const headlineFor = (tier: WalkTheTalkTier, misses: number): string => {
       return "Erratic — delivery is hit-and-miss.";
     case "weak":
       return "Weak — guidance rarely lands.";
+    case "high_trust":
+      return "High trust — they deliver what they guide.";
+    case "credible":
+      return "Credible — they mostly deliver what they guide.";
+    case "low_trust":
+      return "Low trust — guidance often doesn't land.";
+    case "not_assessable":
+      return "Not enough track record to judge yet.";
     case "not_enough_data":
     default:
       return "Too early to call.";
@@ -732,6 +751,10 @@ const horizonRecencyIndex = (item: NormalizedGuidanceItem): number =>
 export const buildGuidanceVerdict = (
   items: NormalizedGuidanceItem[],
   current: ReportingQuarter,
+  // Raw guidance_snapshot.credibility_verdict. When it carries a valid stored
+  // verdict, that verdict is the headline call (decision 2026-09-13); counts,
+  // bars and rows below are still derived from the items.
+  scoredCredibility?: unknown,
 ): GuidanceVerdict => {
   const resolved: ResolvedRow[] = [];
   let live: LiveRow[] = [];
@@ -778,13 +801,18 @@ export const buildGuidanceVerdict = (
   const missCount = countedCount - metCount;
   const unclearCount = resolved.length - countedCount;
   const beatCount = metRows.filter((r) => r.delta?.sign === 1).length;
-  const tier = computeTier(metCount, countedCount);
+  const countedTier = computeTier(metCount, countedCount);
+  const scored = parseScoredCredibility(scoredCredibility);
+  const tier: CredibilityVerdictKey = scored?.verdict ?? countedTier;
 
   // Summary — templated only from counts and labels the payload carries.
   // The unclear count is NOT prose here — it lives on the `unclearCount`
   // field so the track-record card can put it next to the ratio instead of
   // burying it in a trailing sentence (/plan-eng-review Issue 3 tension).
-  const sentences: string[] = [];
+  // A stored verdict from the deterministic scorer leads with its own line
+  // (both axes, with counts) so the reader sees why the call differs from the
+  // raw ratio below it.
+  const sentences: string[] = scored?.supportingLine ? [scored.supportingLine] : [];
   if (countedCount === 0) {
     sentences.push(
       live.length > 0
@@ -830,7 +858,7 @@ export const buildGuidanceVerdict = (
       sentences.push("No misses on record.");
     }
   }
-  if (countedCount > 0 && tier === "not_enough_data") {
+  if (countedCount > 0 && countedTier === "not_enough_data" && !scored) {
     sentences.push(`We grade from three resolved commitments; ${words(countedCount)} so far.`);
   }
 
@@ -879,7 +907,9 @@ export const buildGuidanceVerdict = (
 
   return {
     tier,
-    tierLabel: TIER_LABELS[tier],
+    tierLabel: VERDICT_LABELS[tier],
+    countedTier,
+    verdictSource: scored ? "scored" : "counted",
     metCount,
     countedCount,
     unclearCount,

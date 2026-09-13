@@ -231,17 +231,20 @@ const buildGuidanceBatchPreview = (threads: GuidanceBatchThread[]) => {
 // Verdict-led one-liner for a company's guidance batch, drawn from the
 // deep-track blocks on guidance_snapshot. Reads as prose, three beats:
 //   <track record> management, <ambition> guidance — <the strategy driving it>
-// e.g. "Reliable management, measured guidance — Move up the US stack, from
+// e.g. "High-trust management, measured guidance — Move up the US stack, from
 // contract supply to owned front end." The credibility word is a delivery
 // track-record read (not a blanket management-quality claim); the strategy is
 // the crafted strategy_narrative.headline. Only deep-tracked companies carry
 // these blocks; everyone else falls back to buildGuidanceBatchPreview.
+// Words follow VERDICT_LABELS (lib/walk-the-talk/types.ts) so the feed says the
+// same thing as the Guidance section — "Reliable"/"Weak" are counted-tier words
+// with different thresholds and must not stand in for a stored verdict.
 const CREDIBILITY_ADJ: Record<string, string> = {
-  high_trust: "Reliable",
+  high_trust: "High-trust",
   credible: "Credible",
   mixed: "Mixed",
-  low_trust: "Weak",
-  not_assessable: "Unproven",
+  low_trust: "Low-trust",
+  not_assessable: "Not-yet-assessable",
 };
 const AMBITION_WORD: Record<string, string> = {
   ambitious: "ambitious",

@@ -460,4 +460,21 @@ test("commitment fields preserved: label, source_quarter, target_period, status_
   assert.equal(c.status_label, "Met");
 });
 
+test("stored credibility verdict is the overall tier; counts and buckets stay counted", () => {
+  const items = [mk("growth", "met"), mk("growth", "met"), mk("growth", "missed"), mk("growth", "dropped")];
+  const counted = normalizeWalkTheTalk(snapshot(items));
+  const scored = normalizeWalkTheTalk(snapshot(items), undefined, undefined, {
+    verdict: "high_trust",
+    components: { scorer: "guidance_credibility_score.py v1" },
+  });
+  assert.equal(scored.overall.tier, "high_trust");
+  assert.equal(scored.overall.onTimeCount, counted.overall.onTimeCount);
+  assert.equal(scored.overall.totalCount, counted.overall.totalCount);
+  assert.deepEqual(scored.byCategory, counted.byCategory);
+  assert.equal(
+    normalizeWalkTheTalk(snapshot(items), undefined, undefined, { verdict: "bogus" }).overall.tier,
+    counted.overall.tier,
+  );
+});
+
 console.log("\nAll walk-the-talk normalize tests passed.");

@@ -10,6 +10,7 @@ import {
   type WalkTheTalkCategory,
   type WalkTheTalkCategoryBucket,
   type WalkTheTalkCommitmentRow,
+  resolveCredibilityVerdict,
   type WalkTheTalkTier,
 } from "./types";
 
@@ -161,6 +162,10 @@ export function normalizeWalkTheTalk(
   snapshot: NormalizedGuidanceSnapshot | null | undefined,
   fallbackTicker?: string,
   current: ReportingQuarter = currentReportingQuarter(),
+  // Raw guidance_snapshot.credibility_verdict. When a verdict is stored it is
+  // the overall call (see resolveCredibilityVerdict); the counted ratio still
+  // drives onTimeCount / totalCount and the per-category buckets.
+  scoredCredibility?: unknown,
 ): NormalizedWalkTheTalk {
   if (!snapshot || snapshot.guidanceItems.length === 0) {
     return {
@@ -186,7 +191,7 @@ export function normalizeWalkTheTalk(
   const graded = commitments.filter((c) => c.counts_for_grade);
   const onTimeCount = graded.filter((c) => c.on_time).length;
   const totalCount = graded.length;
-  const overallTier = computeTier(onTimeCount, totalCount);
+  const overallTier = resolveCredibilityVerdict(scoredCredibility, computeTier(onTimeCount, totalCount));
 
   const span = pickDataSpan(commitments);
 
