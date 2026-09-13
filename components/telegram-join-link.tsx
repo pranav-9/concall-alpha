@@ -16,11 +16,14 @@ export function TelegramJoinLink({
   surface,
   className,
   children,
+  onClick,
 }: {
   href: string;
   surface: CommunitySurface;
   className?: string;
   children: ReactNode;
+  /** Runs after the click is counted — e.g. the nudge retiring itself. */
+  onClick?: () => void;
 }) {
   return (
     <a
@@ -28,7 +31,10 @@ export function TelegramJoinLink({
       target="_blank"
       rel="noreferrer"
       className={className}
-      onClick={() => analytics.communityJoinClick(surface)}
+      onClick={() => {
+        analytics.communityJoinClick(surface);
+        onClick?.();
+      }}
     >
       {children}
       <span className="sr-only"> (opens in a new tab)</span>

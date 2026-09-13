@@ -17,6 +17,7 @@ import DeskLeaderboardTable, {
   type DeskTableRow,
 } from "./desk-leaderboard-table";
 import DeskTopOfBook from "./desk-top-of-book";
+import { DeskTelegramStrip } from "./desk-telegram-strip";
 
 export const metadata: Metadata = {
   title: "The Desk — every covered company, ranked and read",
@@ -118,6 +119,8 @@ export default async function DeskPage() {
             />
           </aside>
         </div>
+
+        <DeskTelegramStrip />
 
         <div className="mt-14">
           <Suspense fallback={<DeskFeaturedReadsFallback />}>

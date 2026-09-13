@@ -1,5 +1,7 @@
 import { getConcallData } from "@/app/company/get-concall-data";
 import { BandSummaryLine } from "@/components/band-summary-line";
+import { TelegramJoinLink } from "@/components/telegram-join-link";
+import { getTelegramJoinUrl } from "@/lib/community";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   HERO_CARD,
@@ -140,6 +142,7 @@ export default async function LeaderboardsPage({
   // tab — this board renders that tail, so a count that excluded it would not
   // match what the reader can see.
   const overallFreshCount = overallRows.filter((row) => row.concallScoredWithin24h).length;
+  const telegramUrl = getTelegramJoinUrl();
 
   return (
     <main className="relative isolate overflow-hidden">
@@ -154,6 +157,19 @@ export default async function LeaderboardsPage({
               Every company on the same three scores — the quarter just reported, the outlook
               ahead, and what you pay for it.
             </p>
+            {telegramUrl ? (
+              <p className="text-xs text-muted-foreground">
+                Rank moves and section changes get posted in the{" "}
+                <TelegramJoinLink
+                  href={telegramUrl}
+                  surface="leaderboards"
+                  className="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
+                >
+                  Telegram group
+                </TelegramJoinLink>{" "}
+                first.
+              </p>
+            ) : null}
           </div>
         </section>
 

@@ -26,6 +26,7 @@ const exploreLinks: FooterLinkItem[] = [
   { href: "/changelog", label: "Changelog" },
 ];
 
+// "Connect" column: where to find me — X, the Telegram group, the request form.
 const learnLinks: FooterLinkItem[] = [
   {
     href: "https://x.com/pranav_handle",
@@ -117,7 +118,7 @@ export function SiteFooter() {
 
           <nav className="space-y-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Learn
+              Connect
             </p>
             <div className="flex flex-col items-start gap-2.5">
               {connectLinks.map((item) => (

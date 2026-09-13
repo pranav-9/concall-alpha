@@ -46,15 +46,22 @@ export type WatchlistSource = "company_page" | "leaderboard" | "watchlist" | "ot
  *  breakdowns — instead of forking near-identical events per surface. */
 export type AnalyticsSurface = "home" | "desk" | "leaderboards";
 
-/** Where a community join link lived when it was clicked. `desk` and
- *  `company_page` are reserved — no call site yet; they land only if the
- *  footer/Journal clicks show demand (see docs/feature-level/telegram-community). */
+/** Where a community join link lived when it was clicked. Every placement
+ *  reports its own surface so the visibility push (2026-09-13: navbar, company
+ *  page, desk, leaderboards, and the engagement nudge) can be read per surface
+ *  and the weak ones removed — see docs/telegram-community-2026-09-13.md. */
 export type CommunitySurface =
   | "footer"
   | "journal_index"
   | "journal_post"
+  | "navbar"
   | "desk"
-  | "company_page";
+  | "company_page"
+  | "leaderboards"
+  | "nudge";
+
+/** What made the engagement nudge appear. */
+export type CommunityNudgeTrigger = "second_page" | "company_dwell";
 
 export const analytics = {
   // ── Discovery — is the door working, and what do people look for? ──────────
@@ -182,6 +189,16 @@ export const analytics = {
    *  click; actual joins are read off Telegram's member count by hand. */
   communityJoinClick: (surface: CommunitySurface) =>
     track("community_join_click", { channel: "telegram", surface }),
+
+  /** The engagement nudge was shown — the denominator for its click rate.
+   *  `trigger` says which engagement rule fired; `pathname` is the page it
+   *  appeared on so a surface that never converts can be excluded. */
+  communityNudgeShown: (trigger: CommunityNudgeTrigger, pathname: string) =>
+    track("community_nudge_shown", { channel: "telegram", trigger, pathname }),
+
+  /** The nudge was closed without a click — snoozed for NUDGE_SNOOZE_DAYS. */
+  communityNudgeDismiss: (trigger: CommunityNudgeTrigger, pathname: string) =>
+    track("community_nudge_dismiss", { channel: "telegram", trigger, pathname }),
 
   // ── Intent — Q2 intent check, Q3 monetize ─────────────────────────────────
   /** A "cover this company" request was submitted — demand + a contactable engaged user. */
