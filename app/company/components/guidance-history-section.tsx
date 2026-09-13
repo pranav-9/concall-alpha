@@ -52,7 +52,7 @@ import {
   type ResolvedRow,
 } from "@/lib/guidance-tracking/verdict";
 import { MIN_COMMITMENTS_FOR_GRADE } from "@/lib/walk-the-talk/grade-utils";
-import type { WalkTheTalkTier } from "@/lib/walk-the-talk/types";
+import type { CredibilityVerdictKey } from "@/lib/walk-the-talk/types";
 import { chipClass, type ChipTone } from "./chip-tone";
 import { GUIDANCE_TIER_TONE } from "./guidance-header-pills";
 import { elevatedBlockClass, elevatedMutedBlockClass, nestedDetailClass } from "./surface-tokens";
@@ -87,6 +87,9 @@ export type GuidanceHistorySectionProps = {
   // section falls back to the credibility-first layout.
   forwardStrength?: ForwardStrength | null;
   strategyNarrative?: StrategyNarrative | null;
+  // Raw guidance_snapshot.credibility_verdict — the stored verdict wins over
+  // the counted tier (same value the panel passes to the header pills).
+  credibilityVerdict?: unknown;
 };
 
 // ---------------------------------------------------------------------------
@@ -127,12 +130,12 @@ const TONE_CARD_SHELL: Partial<Record<ChipTone, { shell: string; eyebrow: string
   },
 };
 
-const TIER_CARD: Record<WalkTheTalkTier, { shell: string; eyebrow: string }> = Object.fromEntries(
-  (Object.keys(GUIDANCE_TIER_TONE) as WalkTheTalkTier[]).map((tier) => [
+const TIER_CARD: Record<CredibilityVerdictKey, { shell: string; eyebrow: string }> = Object.fromEntries(
+  (Object.keys(GUIDANCE_TIER_TONE) as CredibilityVerdictKey[]).map((tier) => [
     tier,
     TONE_CARD_SHELL[GUIDANCE_TIER_TONE[tier]]!,
   ]),
-) as Record<WalkTheTalkTier, { shell: string; eyebrow: string }>;
+) as Record<CredibilityVerdictKey, { shell: string; eyebrow: string }>;
 
 const OUTCOME_META: Record<ResolvedOutcome, { label: string; tone: ChipTone; bar: string; ink: string }> = {
   met: { label: "Met", tone: "emerald", bar: "bg-emerald-500", ink: "text-emerald-700 dark:text-emerald-300" },
@@ -905,9 +908,13 @@ export function GuidanceHistorySection({
   currentQtr,
   forwardStrength,
   strategyNarrative,
+  credibilityVerdict,
 }: GuidanceHistorySectionProps) {
   const current = currentQtr ?? currentReportingQuarter();
-  const verdict = React.useMemo(() => buildGuidanceVerdict(items, current), [items, current]);
+  const verdict = React.useMemo(
+    () => buildGuidanceVerdict(items, current, credibilityVerdict),
+    [items, current, credibilityVerdict],
+  );
   const companyCode = items[0]?.companyCode ?? "";
 
   // One Drawer at the section level — any row sets the selected thread.

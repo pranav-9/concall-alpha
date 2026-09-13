@@ -17,7 +17,7 @@ import {
 import { TRAJECTORIES } from "@/lib/score-trajectory";
 import { cn } from "@/lib/utils";
 import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
-import { TIER_LABELS, type WalkTheTalkTier } from "@/lib/walk-the-talk/types";
+import { VERDICT_LABELS, type CredibilityVerdictKey } from "@/lib/walk-the-talk/types";
 
 import { topShareLabel } from "../[code]/display-tokens";
 import { chipClass, type ChipTone } from "./chip-tone";
@@ -45,12 +45,16 @@ const kickerClass =
 const cardClass = "rounded-[14px] border border-border/60 bg-card";
 const bodyClass = "text-[13.5px] leading-relaxed text-foreground/80";
 
-const TIER_TONE: Record<WalkTheTalkTier, ChipTone> = {
+const TIER_TONE: Record<CredibilityVerdictKey, ChipTone> = {
   reliable: "emerald",
   mixed: "sky",
   erratic: "amber",
   weak: "rose",
   not_enough_data: "slate",
+  high_trust: "emerald",
+  credible: "sky",
+  low_trust: "rose",
+  not_assessable: "slate",
 };
 
 function OpenNudge({ sectionId, label }: { sectionId: string; label: string }) {
@@ -933,7 +937,7 @@ function StandingReads({
   const wtt = extras.walkTheTalk;
   const wttTier = wtt?.overall.tier ?? null;
   const wttTone = wttTier ? TIER_TONE[wttTier] : "slate";
-  const wttHighlight = wttTier === "reliable";
+  const wttHighlight = wttTier === "reliable" || wttTier === "high_trust";
   const kvLead = overview.overview_takeaways?.keyVariableLead;
   const kvTrend = overview.overview_takeaways?.keyVariableTrend;
   const segments = wtt
@@ -1045,7 +1049,7 @@ function StandingReads({
                     "text-[20px] leading-tight text-foreground sm:text-[22px]",
                   )}
                 >
-                  {TIER_LABELS[wttTier]}
+                  {VERDICT_LABELS[wttTier]}
                 </p>
                 {wtt.asOfQuarter && (
                   <span

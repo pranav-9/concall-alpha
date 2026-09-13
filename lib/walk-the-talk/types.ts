@@ -34,6 +34,75 @@ export const TIER_LABELS: Record<WalkTheTalkTier, string> = {
   not_enough_data: "Not enough data",
 };
 
+// ---------------------------------------------------------------------------
+// Credibility verdict — ONE verdict per company across the portal (decision
+// 2026-09-13). When guidance_snapshot.credibility_verdict is stored (written by
+// /guidance-deep-track's deterministic scorer, or an earlier producer), that
+// verdict is the call everywhere: the Guidance section, the Overview's Walk the
+// talk card, the overview cache and the activity feed. Phase 12 valuation
+// already reads the same field. The counted tier above is only the fallback
+// when nothing is stored. Before this the page counted its own tier and could
+// print "Erratic" (COFORGE) beside a stored "mixed".
+// ---------------------------------------------------------------------------
+
+export type ScoredCredibilityVerdict =
+  | "high_trust"
+  | "credible"
+  | "mixed"
+  | "low_trust"
+  | "not_assessable";
+
+export type CredibilityVerdictKey = WalkTheTalkTier | ScoredCredibilityVerdict;
+
+export const VERDICT_LABELS: Record<CredibilityVerdictKey, string> = {
+  ...TIER_LABELS,
+  high_trust: "High trust",
+  credible: "Credible",
+  low_trust: "Low trust",
+  not_assessable: "Not assessable",
+};
+
+const SCORED_VERDICTS: ReadonlySet<string> = new Set([
+  "high_trust",
+  "credible",
+  "mixed",
+  "low_trust",
+  "not_assessable",
+]);
+
+export type ScoredCredibility = {
+  verdict: ScoredCredibilityVerdict;
+  // The deterministic scorer's own sentence (both axes, with counts). Only
+  // carried when the row came from guidance_credibility_score.py
+  // (components.scorer) — older LLM-written supporting lines are not rendered.
+  supportingLine: string | null;
+};
+
+export function parseScoredCredibility(raw: unknown): ScoredCredibility | null {
+  const obj =
+    raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
+  const value = obj ? obj.verdict : raw;
+  if (typeof value !== "string") return null;
+  const key = value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (!SCORED_VERDICTS.has(key)) return null;
+  const components = obj?.components;
+  const fromScorer = Boolean(
+    components && typeof components === "object" && "scorer" in (components as Record<string, unknown>),
+  );
+  const line = obj?.supporting_line;
+  return {
+    verdict: key as ScoredCredibilityVerdict,
+    supportingLine: fromScorer && typeof line === "string" && line.trim() ? line.trim() : null,
+  };
+}
+
+export function resolveCredibilityVerdict(
+  raw: unknown,
+  countedTier: WalkTheTalkTier,
+): CredibilityVerdictKey {
+  return parseScoredCredibility(raw)?.verdict ?? countedTier;
+}
+
 export type WalkTheTalkCategory =
   | "capex"
   | "capacity"
@@ -114,7 +183,8 @@ export type NormalizedWalkTheTalk = {
   updatedAtRaw: string | null;
 
   overall: {
-    tier: WalkTheTalkTier;
+    // Stored credibility verdict when present, else the counted tier.
+    tier: CredibilityVerdictKey;
     onTimeCount: number;
     totalCount: number;
   };

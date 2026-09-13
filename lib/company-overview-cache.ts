@@ -728,14 +728,22 @@ export async function buildCompanyPageOverviewCacheRow(
 
   // Phase 6 v2 dropped the synthesis blocks (current-year revenue guidance,
   // credibility verdict), so the revenue label stays null. The credibility
-  // verdict is derived from guidance_items with the same builder and the same
-  // reporting-quarter anchor the Guidance section uses, so the cached tier can
-  // never disagree with the tier on the page. It was hard-coded null until
+  // verdict goes through the same builder, reporting-quarter anchor and stored
+  // verdict the Guidance section uses — the stored guidance_snapshot
+  // credibility_verdict wins, the counted tier is the fallback — so the cached
+  // verdict can never disagree with the page. It was hard-coded null until
   // 2026-09-13 (found auditing COFORGE, whose promoted verdict never reached
   // the cache).
   const revenueGuidanceLabel: string | null = null;
   const guidanceVerdict =
-    guidanceItems.length > 0 ? buildGuidanceVerdict(guidanceItems, currentReportingQuarter()) : null;
+    guidanceItems.length > 0
+      ? buildGuidanceVerdict(
+          guidanceItems,
+          currentReportingQuarter(),
+          (guidanceSnapshotResult.data?.[0] as { credibility_verdict?: unknown } | undefined)
+            ?.credibility_verdict,
+        )
+      : null;
   const credibilityVerdictKey: string | null = guidanceVerdict?.tier ?? null;
   const credibilityDisplay = guidanceVerdict ? { label: guidanceVerdict.tierLabel } : null;
   const segmentEntries = normalizedBusinessSnapshot?.revenueBreakdown?.bySegment ?? [];
