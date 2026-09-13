@@ -9,7 +9,9 @@
 //
 //   --days N            how far back to look for eligible cards (default 14)
 //   --include-posted    keep cards already in data/telegram-posts/posted.jsonl
-//   --card ID           only this card id (e.g. guidance-PAYTM-2027Q1)
+//   --card ID           only this card id (e.g. guidance-PAYTM-2027Q1); fetched directly,
+//                       so the lookback window does not apply — the reason it is not
+//                       postable (if any) is reported under `skipped`
 //   --site URL          origin for the links; defaults to NEXT_PUBLIC_SITE_URL, then the
 //                       Vercel production host (with a warning — set the env var on the
 //                       machine that sends so UTM attribution lands on the real domain)
@@ -21,11 +23,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  CHANGE_LABEL,
   MIN_FEATURE_WEIGHT,
+  SECTION_LABEL,
   buildTexts,
   compareCards,
   getArg,
   isPostableCard,
+  isSiteRelativeHref,
   ledgerPathFor,
   loadScriptEnv,
   parseIntArg,
@@ -48,10 +53,19 @@ const KEY = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY;
 if (!URL_BASE || !KEY) throw new Error("missing Supabase env in .env");
 const H = { apikey: KEY, Authorization: `Bearer ${KEY}` };
 
+// --- site origin: validate once, up front, naming the source ---
 const FALLBACK_SITE = "https://concall-alpha.vercel.app";
 const siteArg = getArg(args, "--site", null);
-const SITE_BASE = siteArg || env.NEXT_PUBLIC_SITE_URL || FALLBACK_SITE;
-const siteSource = siteArg ? "flag" : env.NEXT_PUBLIC_SITE_URL ? "env" : "fallback";
+const siteSource = siteArg ? "--site" : env.NEXT_PUBLIC_SITE_URL ? "NEXT_PUBLIC_SITE_URL" : "fallback";
+const siteRaw = siteArg || env.NEXT_PUBLIC_SITE_URL || FALLBACK_SITE;
+let SITE_BASE;
+try {
+  const u = new URL(siteRaw);
+  if (u.protocol !== "https:" && u.protocol !== "http:") throw new Error("not http(s)");
+  SITE_BASE = u.origin;
+} catch {
+  throw new Error(`${siteSource} must be an absolute http(s) origin like https://storyofastock.in, got "${siteRaw}"`);
+}
 if (siteSource === "fallback") {
   console.error(`[${TAG}] NEXT_PUBLIC_SITE_URL unset — links point at ${FALLBACK_SITE}; pass --site or set the env var`);
 }
@@ -77,23 +91,44 @@ async function fetchAll(pathAndQuery) {
   return out;
 }
 
+// A named card is fetched directly (no window, no floor) so the reason it is
+// not postable can be reported instead of a silent empty list.
 const cutoff = new Date(Date.now() - LOOKBACK_DAYS * 864e5).toISOString();
-const cards = await fetchAll(
-  `desk_featured_read?select=*&status=eq.eligible&feature_weight=gte.${MIN_FEATURE_WEIGHT}` +
-    `&published_at=gte.${encodeURIComponent(cutoff)}&order=published_at.desc`
-);
+const cards = ONLY_CARD
+  ? await fetchAll(`desk_featured_read?select=*&id=eq.${encodeURIComponent(ONLY_CARD)}`)
+  : await fetchAll(
+      `desk_featured_read?select=*&status=eq.eligible&feature_weight=gte.${MIN_FEATURE_WEIGHT}` +
+        `&published_at=gte.${encodeURIComponent(cutoff)}&order=published_at.desc`
+    );
+
+/** Human reason a row failed isPostableCard — for the `skipped` list. */
+function whyNotPostable(card) {
+  if (card.status !== "eligible") return `status is "${card.status}", not eligible`;
+  if (typeof card.feature_weight !== "number" || card.feature_weight < MIN_FEATURE_WEIGHT) {
+    return `feature_weight ${card.feature_weight} is below the desk floor ${MIN_FEATURE_WEIGHT}`;
+  }
+  if (!(card.section in SECTION_LABEL)) return `unknown section "${card.section}"`;
+  if (!(card.change_kind in CHANGE_LABEL)) return `unknown change_kind "${card.change_kind}"`;
+  for (const k of ["id", "company_code", "company_name", "headline", "summary", "section_href"]) {
+    if (typeof card[k] !== "string" || !card[k].trim()) return `missing ${k}`;
+  }
+  if (!isSiteRelativeHref(card.section_href)) return `section_href is not site-relative: "${card.section_href}"`;
+  return "not postable";
+}
 
 const ymd = new Date().toISOString().slice(0, 10);
 const candidates = [];
 const skipped = [];
 for (const card of cards) {
-  if (ONLY_CARD && card.id !== ONLY_CARD) continue;
   if (!isPostableCard(card)) {
-    skipped.push({ card_id: card.id ?? null, reason: "not postable (missing field, unknown enum, or off-site href)" });
+    skipped.push({ card_id: card.id ?? null, reason: whyNotPostable(card) });
     continue;
   }
   const posted = ledger.byCard.get(card.id) || null;
-  if (posted && !INCLUDE_POSTED) continue;
+  if (posted && !INCLUDE_POSTED) {
+    if (ONLY_CARD) skipped.push({ card_id: card.id, reason: `already posted on ${posted.posted_on} (pass --include-posted)` });
+    continue;
+  }
   let texts;
   try {
     texts = buildTexts(card, SITE_BASE);
@@ -121,6 +156,7 @@ for (const card of cards) {
     text_plain: plain,
   });
 }
+if (ONLY_CARD && cards.length === 0) skipped.push({ card_id: ONLY_CARD, reason: "no such card in desk_featured_read" });
 
 candidates.sort(compareCards);
 
@@ -130,7 +166,7 @@ process.stdout.write(
       generated_on: ymd,
       site: SITE_BASE,
       site_source: siteSource,
-      lookback_days: LOOKBACK_DAYS,
+      lookback_days: ONLY_CARD ? null : LOOKBACK_DAYS,
       eligible_cards: cards.length,
       skipped,
       ledger: { path: path.relative(process.cwd(), LEDGER_PATH), posted_count: ledger.byCard.size, malformed: ledger.malformed },

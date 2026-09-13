@@ -14,7 +14,7 @@ Pure parsing/formatting lives in `scripts/lib/telegram-lib.mjs` (tested in
 
 ```json
 {
-  "posted_on": "2026-09-13",
+  "posted_on": "2026-09-13",              // IST calendar date (Asia/Kolkata), not UTC
   "status": "posted",                       // only "posted" rows exist here; drafts are not logged
   "channel": "telegram",
   "card_id": "guidance-PAYTM-2027Q1",       // desk_featured_read.id — the dedupe key

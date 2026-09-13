@@ -10,6 +10,10 @@
 //   node scripts/telegram-send.mjs --from-candidates /tmp/c.json --card ID --log-only                # posted by hand; just record it
 //   … --force                                                                                        # re-send a card the ledger says went out
 //
+// Exit codes: 0 sent/logged · 1 Telegram refused (nothing posted) · 2 ambiguous
+// (may have landed — check, then --log-only) · 3 posted but the ledger write
+// failed (row printed; append it by hand). Usage errors throw.
+//
 // Env (concall-alpha/.env, server-side only): TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
 // optional TELEGRAM_UPDATES_THREAD_ID (forum topic; --thread-id overrides).
 // The bot must be a member (admin for a channel / "Updates" topic) of the chat.
@@ -26,6 +30,7 @@ import {
   loadScriptEnv,
   parseIntArg,
   readLedger,
+  todayInKolkata,
   withLedgerLock,
 } from "./lib/telegram-lib.mjs";
 
@@ -79,7 +84,7 @@ if (text.length > TELEGRAM_MAX_CHARS) {
 }
 
 const base = {
-  posted_on: new Date().toISOString().slice(0, 10),
+  posted_on: todayInKolkata(),
   channel: "telegram",
   card_id: meta.card_id,
   company: meta.company,
@@ -108,55 +113,39 @@ function assertNotAlreadyPosted() {
   }
 }
 
-function recordOrPrint(row) {
+/** Append, or hand the row back so it is never lost. Returns an outcome —
+ *  never exits — because it runs under the ledger lock. */
+function record(row) {
   try {
     appendLedgerRow(LEDGER_PATH, row);
+    return { code: 0 };
   } catch (err) {
-    // The message is already out; never lose the record. Print the row so it
-    // can be appended by hand.
-    console.error(`could not write ledger (${err?.message || err}). Append this line to ${LEDGER_PATH}:`);
-    console.error(JSON.stringify(row));
-    process.exit(3);
+    return {
+      code: 3,
+      error: `could not write ledger (${err?.message || err}). Append this line to ${LEDGER_PATH}:\n${JSON.stringify(row)}`,
+    };
   }
 }
 
-if (LOG_ONLY) {
-  await withLedgerLock(LEDGER_PATH, async () => {
-    assertNotAlreadyPosted();
-    recordOrPrint({ ...base, status: "posted", message_id: null, logged_by_hand: true });
-  });
-  console.log(`logged (by hand) -> ${path.relative(process.cwd(), LEDGER_PATH)}`);
-  process.exit(0);
-}
-
-if (!SEND) {
+/** Every path under the lock RETURNS an outcome; the process exits only after
+ *  withLedgerLock's finally has removed the lock file. */
+async function sendUnderLock() {
   assertNotAlreadyPosted();
-  console.log("── DRY RUN — nothing sent. Re-run with --send to post. ──\n");
-  console.log(text);
-  console.log(
-    `\n(${text.length} chars, parse_mode=HTML, chat=${env.TELEGRAM_CHAT_ID ? "<set>" : "<unset>"}${THREAD_ID ? `, thread=${THREAD_ID}` : ""})`
-  );
-  process.exit(0);
-}
+  const token = env.TELEGRAM_BOT_TOKEN;
+  const chatId = env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) throw new Error("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID missing in .env");
 
-const token = env.TELEGRAM_BOT_TOKEN;
-const chatId = env.TELEGRAM_CHAT_ID;
-if (!token || !chatId) throw new Error("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID missing in .env");
+  const body = {
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+    link_preview_options: { prefer_small_media: true },
+  };
+  if (THREAD_ID) body.message_thread_id = THREAD_ID;
 
-const body = {
-  chat_id: chatId,
-  text,
-  parse_mode: "HTML",
-  link_preview_options: { prefer_small_media: true },
-};
-if (THREAD_ID) body.message_thread_id = THREAD_ID;
-
-// check → send → append runs under the ledger lock so two invocations cannot
-// both pass the dedupe check. The send and the append are still two steps: a
-// timeout or a non-JSON reply AFTER Telegram delivered would leave no row, so
-// anything ambiguous is reported as "may have landed" for --log-only.
-await withLedgerLock(LEDGER_PATH, async () => {
-  assertNotAlreadyPosted();
+  // The send and the append are still two steps: a timeout or a non-JSON
+  // reply AFTER Telegram delivered would leave no row, so anything ambiguous
+  // is reported as "may have landed" for --log-only.
   let out;
   try {
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -172,15 +161,44 @@ await withLedgerLock(LEDGER_PATH, async () => {
       throw new Error(`non-JSON reply (HTTP ${res.status}): ${raw.slice(0, 120)}`);
     }
   } catch (err) {
-    console.error(`Telegram request failed: ${err?.message || err}`);
-    console.error("The message MAY have landed. Check the group; if it is there, record it with --log-only. Nothing was written to the ledger.");
-    process.exit(2);
+    return {
+      code: 2,
+      error:
+        `Telegram request failed: ${err?.message || err}\n` +
+        "The message MAY have landed. Check the group; if it is there, record it with --log-only. Nothing was written to the ledger.",
+    };
   }
   if (!out.ok) {
     // A definitive refusal (ok:false) means nothing was posted.
-    console.error("Telegram refused:", out.description || out);
-    process.exit(1);
+    return { code: 1, error: `Telegram refused: ${out.description || JSON.stringify(out)}` };
   }
-  recordOrPrint({ ...base, status: "posted", message_id: out.result?.message_id ?? null });
-  console.log(`sent message_id=${out.result?.message_id} -> logged in ${path.relative(process.cwd(), LEDGER_PATH)}`);
-});
+  const messageId = out.result?.message_id ?? null;
+  const written = record({ ...base, status: "posted", message_id: messageId });
+  if (written.code !== 0) return written;
+  return { code: 0, message: `sent message_id=${messageId} -> logged in ${path.relative(process.cwd(), LEDGER_PATH)}` };
+}
+
+let outcome;
+if (LOG_ONLY) {
+  outcome = await withLedgerLock(LEDGER_PATH, async () => {
+    assertNotAlreadyPosted();
+    const written = record({ ...base, status: "posted", message_id: null, logged_by_hand: true });
+    return written.code === 0
+      ? { code: 0, message: `logged (by hand) -> ${path.relative(process.cwd(), LEDGER_PATH)}` }
+      : written;
+  });
+} else if (!SEND) {
+  assertNotAlreadyPosted();
+  console.log("── DRY RUN — nothing sent. Re-run with --send to post. ──\n");
+  console.log(text);
+  console.log(
+    `\n(${text.length} chars, parse_mode=HTML, chat=${env.TELEGRAM_CHAT_ID ? "<set>" : "<unset>"}${THREAD_ID ? `, thread=${THREAD_ID}` : ""})`
+  );
+  outcome = { code: 0 };
+} else {
+  outcome = await withLedgerLock(LEDGER_PATH, sendUnderLock);
+}
+
+if (outcome.message) console.log(outcome.message);
+if (outcome.error) console.error(outcome.error);
+process.exit(outcome.code);

@@ -14,6 +14,7 @@ import {
   parseIntArg,
   parseLedgerText,
   stripLtd,
+  todayInKolkata,
 } from "../scripts/lib/telegram-lib.mjs";
 
 const SITE = "https://storyofastock.in";
@@ -173,6 +174,10 @@ assert.equal(isCandidate({ card_id: { id: 1 }, text_html: "x" }), false, "card_i
 assert.equal(isCandidate({ card_id: "a", text_html: "x", section: 3 }), false, "section must be a string when present");
 assert.equal(isCandidate(null), false);
 assert.equal(isPostableCard(null), false);
+
+// ── dates ───────────────────────────────────────────────────────────────────
+assert.equal(todayInKolkata(new Date("2026-09-13T20:00:00Z")), "2026-09-14", "01:30 IST is the next day");
+assert.equal(todayInKolkata(new Date("2026-09-13T12:00:00Z")), "2026-09-13");
 
 // ── ordering ────────────────────────────────────────────────────────────────
 {

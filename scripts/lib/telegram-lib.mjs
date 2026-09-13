@@ -154,6 +154,12 @@ export async function withLedgerLock(ledgerPath, fn) {
   }
 }
 
+/** Calendar date the way the operator sees it (IST), so a late-night send
+ *  is ledgered under the day it was posted, not the UTC day. */
+export function todayInKolkata(now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(now);
+}
+
 // ── formatting ──────────────────────────────────────────────────────────────
 
 /** Telegram parse_mode=HTML needs &, <, > escaped everywhere — including

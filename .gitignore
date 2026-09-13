@@ -52,3 +52,6 @@ next-env.d.ts
 /.design-sync/node_modules
 /.design-sync/build/
 /.design-sync/.srcmap.json
+
+# telegram-send.mjs exclusive lock; never commit
+data/telegram-posts/*.lock
