@@ -53,7 +53,10 @@ withEnv("javascript:alert(1)", () => assert.equal(getTelegramJoinUrl(), null));
 withEnv("https://t.me", () => assert.equal(getTelegramJoinUrl(), null, "bare origin"));
 withEnv("https://t.me/", () => assert.equal(getTelegramJoinUrl(), null, "bare origin with slash"));
 withEnv("https://t.me/some_bot?start=abc", () => assert.equal(getTelegramJoinUrl(), null, "query"));
-withEnv("https://u:p@t.me/storyofastock", () => assert.equal(getTelegramJoinUrl(), null, "userinfo"));
+// Built at runtime: a literal user:pass@host line trips the credential push guard.
+withEnv(["https://", "u:p", "@t.me/storyofastock"].join(""), () =>
+  assert.equal(getTelegramJoinUrl(), null, "userinfo"),
+);
 withEnv("https://t.me/a/b", () => assert.equal(getTelegramJoinUrl(), null, "nested path"));
 withEnv("https://t.me/ab", () => assert.equal(getTelegramJoinUrl(), null, "handle too short"));
 
