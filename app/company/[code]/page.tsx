@@ -7,6 +7,7 @@ import {
 } from "@/lib/company-overview-cache";
 import { SECTION_MAP } from "../constants";
 import { CompanyPageWorkspace } from "../components/company-page-workspace";
+import { TelegramJoinCard } from "@/components/telegram-join-card";
 import {
   OverviewSignalBoard,
   OverviewSignalBoardFallback,
@@ -156,6 +157,15 @@ export default async function Page({
                 }
               />
             </Suspense>
+            {/* Company pages are the most-viewed surface (2026-09 PostHog: ~40% of
+                views, 70% on phones), so the join strip lives here, one line
+                under the board. Env-gated: renders nothing without the URL. */}
+            <TelegramJoinCard
+              surface="company_page"
+              variant="inline"
+              companyName={overview.company_name}
+              className="mt-4"
+            />
           </div>
 
           <div data-section-id="business-overview">

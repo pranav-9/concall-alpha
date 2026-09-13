@@ -17,6 +17,7 @@ import DeskLeaderboardTable, {
   type DeskTableRow,
 } from "./desk-leaderboard-table";
 import DeskTopOfBook from "./desk-top-of-book";
+import { DeskTelegramStrip } from "./desk-telegram-strip";
 import { BelowSm, FromSm } from "@/components/viewport-gate";
 
 export const metadata: Metadata = {
@@ -156,6 +157,11 @@ export default async function DeskPage() {
             />
           </aside>
         </div>
+
+        {/* Phone: order-3 before the ledger in DOM → Featured → Telegram → Latest
+            activity. Desktop: DOM order → ranking grid → Telegram → Featured.
+            The strip owns its slot classes so an unset env var leaves no gap. */}
+        <DeskTelegramStrip className="order-3 mt-6 px-4 sm:mt-14 sm:px-0" />
 
         <div className="order-2 mt-4 sm:mt-14">
           <Suspense fallback={<div className="px-4 sm:px-0"><DeskFeaturedReadsFallback /></div>}>

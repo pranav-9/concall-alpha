@@ -26,7 +26,8 @@ const exploreLinks: FooterLinkItem[] = [
   { href: "/changelog", label: "Changelog" },
 ];
 
-const learnLinks: FooterLinkItem[] = [
+// "Connect" column: where to find me — X, the Telegram group, the request form.
+const connectBaseLinks: FooterLinkItem[] = [
   {
     href: "https://x.com/pranav_handle",
     label: "X (Twitter)",
@@ -77,8 +78,8 @@ export function SiteFooter() {
   // Sits after the X link: same "where to find me" register, one noun
   // ("Telegram group") everywhere the link appears.
   const connectLinks: FooterLinkItem[] = telegramUrl
-    ? [learnLinks[0], { href: telegramUrl, label: "Telegram group", telegram: true }, ...learnLinks.slice(1)]
-    : learnLinks;
+    ? [connectBaseLinks[0], { href: telegramUrl, label: "Telegram group", telegram: true }, ...connectBaseLinks.slice(1)]
+    : connectBaseLinks;
 
   return (
     <footer className="border-t border-border bg-muted/20">
@@ -117,7 +118,7 @@ export function SiteFooter() {
 
           <nav className="space-y-3">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Learn
+              Connect
             </p>
             <div className="flex flex-col items-start gap-2.5">
               {connectLinks.map((item) => (

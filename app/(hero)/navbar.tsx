@@ -9,6 +9,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { BrandLogo, BrandMark } from "@/components/brand/logo";
 import { JournalNewIndicator } from "@/components/journal-new-indicator";
+import { TelegramJoinLink } from "@/components/telegram-join-link";
 
 type UserInfo = {
   email: string | null;
@@ -51,10 +52,14 @@ const Navbar = ({
   initialUser = null,
   initialCompanies = [],
   latestJournalDate = null,
+  telegramUrl = null,
 }: {
   initialUser?: UserInfo;
   initialCompanies?: { code: string; name: string | null }[];
   latestJournalDate?: string | null;
+  /** Validated invite URL from `getTelegramJoinUrl()`; null renders no link.
+   *  The one join affordance on every page (2026-09-13 visibility push). */
+  telegramUrl?: string | null;
   // Accepted for backwards-compat with the layout wiring; the quarter tracker is
   // now reached from the LIVE banner, not a nav tab.
   quarterLabel?: string | null;
@@ -322,6 +327,15 @@ const Navbar = ({
                   ) : null}
                   </Link>
               ))}
+              {telegramUrl ? (
+                <TelegramJoinLink
+                  href={telegramUrl}
+                  surface="navbar"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  Telegram
+                </TelegramJoinLink>
+              ) : null}
               <ThemeSwitcher />
               {renderAuthControls(true)}
             </div>
@@ -413,6 +427,16 @@ const Navbar = ({
                   ) : null}
                 </Link>
               ))}
+              {telegramUrl ? (
+                <TelegramJoinLink
+                  href={telegramUrl}
+                  surface="navbar"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex w-full items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  Telegram group
+                </TelegramJoinLink>
+              ) : null}
               <div className="flex items-center justify-between pt-1">
                 {renderAuthControls(true)}
                 <ThemeSwitcher />

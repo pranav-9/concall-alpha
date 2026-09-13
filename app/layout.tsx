@@ -11,6 +11,8 @@ import { FeedbackPollBanner } from "@/components/feedback-poll-banner";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { IdentityBridge } from "@/components/identity-bridge";
 import { SiteFooter } from "@/components/site-footer";
+import { CommunityNudge } from "@/components/community-nudge";
+import { getTelegramJoinUrl } from "@/lib/community";
 import { DeskMobileTabBar } from "@/components/desk-mobile-tab-bar";
 import { Toaster } from "@/components/ui/sonner";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
@@ -86,6 +88,7 @@ async function NavbarWithUser() {
       <Navbar
         initialCompanies={initialCompanies}
         latestJournalDate={latestJournalDate}
+        telegramUrl={getTelegramJoinUrl()}
         quarterLabel={currentReportingQuarter().label}
         initialUser={
           user
@@ -105,6 +108,13 @@ async function ActivePollSlot() {
   const poll = await getActivePoll();
   if (!poll) return null;
   return <FeedbackPollBanner poll={poll} />;
+}
+
+/** The engagement nudge — env-gated like every other join affordance. */
+function CommunityNudgeSlot() {
+  const href = getTelegramJoinUrl();
+  if (!href) return null;
+  return <CommunityNudge href={href} />;
 }
 
 function NavbarFallback() {
@@ -151,6 +161,7 @@ export default function RootLayout({
             </div>
             <SiteFooter />
             <DeskMobileTabBar />
+            <CommunityNudgeSlot />
             <Toaster richColors />
           </div>
         </ThemeProvider>

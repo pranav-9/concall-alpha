@@ -61,3 +61,22 @@ withEnv("https://t.me/a/b", () => assert.equal(getTelegramJoinUrl(), null, "nest
 withEnv("https://t.me/ab", () => assert.equal(getTelegramJoinUrl(), null, "handle too short"));
 
 console.log("community-url: ok");
+
+// A port survives `hostname` but not `origin`; a typo'd env var must not ship
+// as a dead link.
+withEnv("https://t.me:8443/+AbC123", () => assert.equal(getTelegramJoinUrl(), null));
+withEnv("https://t.me:443/+AbC123", () =>
+  assert.equal(getTelegramJoinUrl(), "https://t.me/+AbC123"),
+);
+
+// t.me's reserved routes are not chats — /proxy and /socks change the
+// reader's Telegram network settings on tap.
+for (const reserved of ["proxy", "socks", "share", "setlanguage", "login", "addstickers", "Proxy"]) {
+  withEnv(`https://t.me/${reserved}`, () =>
+    assert.equal(getTelegramJoinUrl(), null, `reserved handle ${reserved} must be rejected`),
+  );
+}
+// A real handle that merely starts with a reserved word still passes.
+withEnv("https://t.me/proxyresearch", () =>
+  assert.equal(getTelegramJoinUrl(), "https://t.me/proxyresearch"),
+);
