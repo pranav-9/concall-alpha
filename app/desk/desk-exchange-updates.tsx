@@ -10,6 +10,15 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
+import { BREAKPOINT_SM, useMinWidth } from "@/hooks/use-min-width";
+import {
+  MOBILE_CARD,
+  MOBILE_CHIP_STRIP,
+  MOBILE_FOCUS,
+  MOBILE_ROW,
+  MobileDivider,
+  mobileChipClass,
+} from "@/components/mobile-card";
 import { cn } from "@/lib/utils";
 import {
   IMPACT_META,
@@ -171,11 +180,14 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
 function BelowCutBlock({
   updates,
   windowDays,
+  expanded,
+  onToggle,
 }: {
   updates: ExchangeUpdate[];
   windowDays: number;
+  expanded: boolean;
+  onToggle: () => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
   if (updates.length === 0) return null;
 
   const visible = expanded ? updates : updates.slice(0, MAX_BELOW_CUT);
@@ -207,7 +219,7 @@ function BelowCutBlock({
       {hiddenCount > 0 && (
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={onToggle}
           aria-expanded={expanded}
           className={cn("house-link mt-4 inline-block", ROW_FOCUS)}
         >
@@ -218,14 +230,247 @@ function BelowCutBlock({
   );
 }
 
+// ---------------------------------------------------------------------------
+// Phone presentation of the full /announcements feed (handoff 2026-09-13,
+// "Filings — mobile"): impact chips in one horizontal scroller, then a single
+// card whose spine is recency — Today / This week / Earlier sub-headers over
+// whole-row links — and the below-cut watch list as a dashed card. Same state
+// (filter, both show-all toggles) as the desktop tree; only the paint differs.
+// ---------------------------------------------------------------------------
+
+/**
+ * "4h ago" → "4h", "just now" → "now": the phone row's time gutter is sized for
+ * a short token. A date (past five weeks) or "Date unavailable" is left alone —
+ * the gutter is min-width, so it grows rather than overlapping the name.
+ */
+function shortAge(label: string): string {
+  if (label === "just now") return "now";
+  return label.replace(/ ago$/, "");
+}
+
+function PhoneImpactPill({ item }: { item: ExchangeUpdate }) {
+  const meta = IMPACT_META[item.impact];
+  return (
+    <span
+      className={cn(
+        "house-data inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-[7px] py-[2px] text-[8px] uppercase leading-none tracking-[0.08em]",
+        meta.className,
+      )}
+    >
+      {meta.label}
+    </span>
+  );
+}
+
+function PhoneUpdateRow({ item, dim = false }: { item: ExchangeUpdate; dim?: boolean }) {
+  return (
+    <div className={cn(MOBILE_ROW, "flex items-stretch")}>
+      <Link
+        href={`/company/${item.companyCode}`}
+        prefetch={false}
+        className={cn("min-w-0 flex-1 px-3.5 py-3", MOBILE_FOCUS)}
+      >
+        <span className="flex items-center gap-[9px]">
+          <span className="house-data min-w-[30px] shrink-0 whitespace-nowrap text-[10px] text-[var(--ink-soft)]">
+            {shortAge(item.filedLabel)}
+          </span>
+          <span
+            className={cn(
+              "house-display min-w-0 flex-1 truncate text-sm",
+              dim ? "text-[var(--ink-soft)]" : "text-[var(--ink)]",
+            )}
+          >
+            {item.companyName}
+          </span>
+          <PhoneImpactPill item={item} />
+        </span>
+        {/* One clamped block: line-clamp is display:-webkit-box, so it has to be
+            the container, with the category label inline inside it. */}
+        <span className="mt-[5px] line-clamp-2 block pl-[39px] text-xs leading-[1.45] text-[var(--ink-soft)] [text-wrap:pretty]">
+          <span className="house-data mr-[7px] text-[9px] uppercase tracking-[0.08em]">
+            {item.categoryLabel}
+          </span>
+          {item.summary}
+        </span>
+      </Link>
+      {item.attachmentUrl ? (
+        <a
+          href={item.attachmentUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Open the ${item.companyName} filing`}
+          className={cn(
+            "house-data flex w-11 shrink-0 touch-manipulation items-center justify-center border-l border-[var(--rule)] text-xs text-[var(--ink-soft)] transition-colors active:text-[var(--ink)]",
+            MOBILE_FOCUS,
+          )}
+        >
+          ↗
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
+function PhoneBelowCut({
+  updates,
+  expanded,
+  onToggle,
+}: {
+  updates: ExchangeUpdate[];
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  if (updates.length === 0) return null;
+  const visible = expanded ? updates : updates.slice(0, MAX_BELOW_CUT);
+  const hiddenCount = Math.max(0, updates.length - MAX_BELOW_CUT);
+
+  return (
+    <section aria-labelledby="phone-exchange-belowcut" className="pt-[22px]">
+      <MobileDivider
+        label={
+          <span id="phone-exchange-belowcut">
+            <span aria-hidden>○ </span>Just outside coverage
+          </span>
+        }
+      />
+      <p className="mx-4 mt-2 text-xs leading-[1.5] text-[var(--ink-soft)] [text-wrap:pretty]">
+        Names below the coverage cut are still ours — a strong filing here can earn a company
+        back into the ranked hundred.
+      </p>
+      <div className={cn(MOBILE_CARD, "mt-3 border-dashed opacity-[.92]")}>
+        {visible.map((item) => (
+          <PhoneUpdateRow key={item.id} item={item} dim />
+        ))}
+        {hiddenCount > 0 ? (
+          <div className="p-3.5">
+            <button
+              type="button"
+              onClick={onToggle}
+              aria-expanded={expanded}
+              className={cn("house-data house-link text-[11px]", ROW_FOCUS)}
+            >
+              {expanded ? "Show fewer" : `Show all ${updates.length} below-cut filings →`}
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function PhoneAnnouncements({
+  data,
+  filter,
+  onSelectFilter,
+  buckets,
+  filteredCount,
+  expanded,
+  onToggleExpanded,
+  hiddenCount,
+  belowCutExpanded,
+  onToggleBelowCut,
+}: {
+  data: ExchangeDeskData;
+  filter: Filter;
+  onSelectFilter: (next: Filter) => void;
+  buckets: { key: RecencyBucketKey; label: string; items: ExchangeUpdate[] }[];
+  filteredCount: number;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  hiddenCount: number;
+  belowCutExpanded: boolean;
+  onToggleBelowCut: () => void;
+}) {
+  return (
+    <div className="sm:hidden">
+      {data.total > 0 ? (
+        <section aria-label="Company announcements">
+          <div
+            role="group"
+            aria-label="Filter by impact"
+            className={cn(MOBILE_CHIP_STRIP, "px-4 pb-1 pt-3.5")}
+          >
+            <button
+              type="button"
+              aria-pressed={filter === "all"}
+              onClick={() => onSelectFilter("all")}
+              className={mobileChipClass(filter === "all")}
+            >
+              <span>All</span>
+              <span className="ml-1.5 tabular-nums">{data.total}</span>
+            </button>
+            {data.impacts.map((c) => (
+              <button
+                key={c.key}
+                type="button"
+                aria-pressed={filter === c.key}
+                onClick={() => onSelectFilter(c.key)}
+                className={mobileChipClass(filter === c.key)}
+              >
+                <span>{c.label}</span>
+                <span className="ml-1.5 tabular-nums">{c.count}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className={cn(MOBILE_CARD, "mt-2.5")}>
+            {buckets.length === 0 ? (
+              <p className="house-data px-3.5 py-6 text-[10px] uppercase tracking-[0.14em] text-[var(--ink-soft)]">
+                No filings in this band in the last {data.windowDays} days.
+              </p>
+            ) : (
+              buckets.map((bucket) => (
+                <div key={bucket.key}>
+                  <div className="flex items-baseline gap-2 border-b border-[var(--rule)] bg-[var(--paper)] px-3.5 py-[11px]">
+                    <span className="house-data text-[10px] uppercase tracking-[0.1em] text-[var(--ink)]">
+                      {bucket.label}
+                    </span>
+                    <span className="house-data text-[10px] text-[var(--ink-soft)]">
+                      {bucket.items.length} filing{bucket.items.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  {bucket.items.map((item) => (
+                    <PhoneUpdateRow key={item.id} item={item} />
+                  ))}
+                </div>
+              ))
+            )}
+            {hiddenCount > 0 ? (
+              <div className="p-3.5">
+                <button
+                  type="button"
+                  onClick={onToggleExpanded}
+                  aria-expanded={expanded}
+                  className={cn("house-data house-link text-[11px]", ROW_FOCUS)}
+                >
+                  {expanded ? "Show fewer" : `Show all ${filteredCount} filings →`}
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      <PhoneBelowCut
+        updates={data.belowCut}
+        expanded={belowCutExpanded}
+        onToggle={onToggleBelowCut}
+      />
+    </div>
+  );
+}
+
 /**
  * Full announcements experience — the covered-universe feed (recency spine +
  * impact filter tabs + show-all) followed by the below-cut watch list. Lives on
  * the dedicated /announcements page; the desk only shows the compact teaser.
  */
 function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
+  // All three live here, not in the paints, so a breakpoint crossing (tablet
+  // rotation across sm) keeps the reader's filter and both show-all toggles.
   const [filter, setFilter] = useState<Filter>("all");
   const [expanded, setExpanded] = useState(false);
+  const [belowCutExpanded, setBelowCutExpanded] = useState(false);
 
   // Changing the filter should always start from the collapsed view.
   const selectFilter = (next: Filter) => {
@@ -248,12 +493,32 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
 
   const hiddenCount = Math.max(0, filtered.length - MAX_COLLAPSED);
 
+  // null until hydration → render both presentations (matches the server HTML);
+  // then only the one the viewport needs. See hooks/use-min-width.
+  const isSm = useMinWidth(BREAKPOINT_SM);
+
   // Nothing material in the window (or the feed isn't wired yet) — render nothing.
   // The below-cut watch list can still carry the section on a quiet covered week.
   if (data.total === 0 && data.belowCut.length === 0) return null;
 
   return (
     <>
+      {isSm !== true && (
+        <PhoneAnnouncements
+          data={data}
+          filter={filter}
+          onSelectFilter={selectFilter}
+          buckets={buckets}
+          filteredCount={filtered.length}
+          expanded={expanded}
+          onToggleExpanded={() => setExpanded((v) => !v)}
+          hiddenCount={hiddenCount}
+          belowCutExpanded={belowCutExpanded}
+          onToggleBelowCut={() => setBelowCutExpanded((v) => !v)}
+        />
+      )}
+      {isSm !== false && (
+      <div className="hidden sm:block">
       {data.total > 0 && (
     <section aria-label="Company announcements" className="house-block">
       {/* No eyebrow / heading / intro here: this variant renders under the
@@ -313,7 +578,14 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
     </section>
       )}
 
-      <BelowCutBlock updates={data.belowCut} windowDays={data.windowDays} />
+      <BelowCutBlock
+        updates={data.belowCut}
+        windowDays={data.windowDays}
+        expanded={belowCutExpanded}
+        onToggle={() => setBelowCutExpanded((v) => !v)}
+      />
+      </div>
+      )}
     </>
   );
 }
