@@ -11,6 +11,7 @@ import { InFocusPips } from "@/components/in-focus-pips";
 import { BANDS, bandForScore } from "@/lib/score-band";
 import { getFeaturedThemeBlocks } from "@/lib/themes/data";
 import type { ThemeBlock, ThemeMember } from "@/lib/themes/types";
+import { themeAvgRead } from "@/lib/themes/rank";
 import { cn } from "@/lib/utils";
 
 // On-brand keyboard-focus ring for the whole-row links (house skin has none by
@@ -32,11 +33,7 @@ type ScoredTheme = ThemeBlock & {
 function scoreThemes(blocks: ThemeBlock[]): ScoredTheme[] {
   return blocks.map((block) => {
     const scored = block.members.filter((m) => !m.belowCut && m.readScore != null);
-    const avgRead =
-      scored.length > 0
-        ? scored.reduce((sum, m) => sum + (m.readScore ?? 0), 0) / scored.length
-        : null;
-    return { ...block, avgRead, leaders: scored.slice(0, 3) };
+    return { ...block, avgRead: themeAvgRead(block.members), leaders: scored.slice(0, 3) };
   });
 }
 
