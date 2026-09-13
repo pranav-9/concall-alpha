@@ -40,9 +40,13 @@ create table if not exists public.desk_featured_read (
   updated_at timestamptz not null default now()
 );
 
--- The portal reads only eligible rows, ordered by recency, filtered by weight.
-create index if not exists idx_desk_featured_read_pool
-  on public.desk_featured_read (status, feature_weight desc, published_at desc);
+-- The portal reads only eligible rows and takes the freshest few. Column order
+-- mirrors the query exactly (lib/desk-featured/data.ts, driven by
+-- SELECTION_ORDER): equality filter first, then the recency sort key, then the
+-- tie-breaker. Leading with feature_weight instead cannot serve that sort.
+drop index if exists public.idx_desk_featured_read_pool;
+create index if not exists idx_desk_featured_read_eligible_recent
+  on public.desk_featured_read (status, published_at desc, feature_weight desc, id);
 
 alter table public.desk_featured_read enable row level security;
 
