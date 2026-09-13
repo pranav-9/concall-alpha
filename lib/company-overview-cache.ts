@@ -22,7 +22,8 @@ import {
   compareNullableNumbers,
   computeAvgScore,
 } from "@/app/company/[code]/page-helpers";
-import { getGuidanceCredibilityVerdictDisplay } from "@/app/company/[code]/display-tokens";
+import { currentReportingQuarter } from "@/lib/current-quarter";
+import { buildGuidanceVerdict } from "@/lib/guidance-tracking/verdict";
 import { BOARD_READS, classifyBoardRead, type BoardReadKey } from "@/lib/board-read";
 import { mean4QFromSeries } from "@/lib/quarter-composite";
 import { toValuationScale } from "@/lib/valuation-band";
@@ -726,11 +727,17 @@ export async function buildCompanyPageOverviewCacheRow(
   })();
 
   // Phase 6 v2 dropped the synthesis blocks (current-year revenue guidance,
-  // credibility verdict). These cache fields stay nullable for now; PR 2 will
-  // re-populate them by deriving from guidance_items.
+  // credibility verdict), so the revenue label stays null. The credibility
+  // verdict is derived from guidance_items with the same builder and the same
+  // reporting-quarter anchor the Guidance section uses, so the cached tier can
+  // never disagree with the tier on the page. It was hard-coded null until
+  // 2026-09-13 (found auditing COFORGE, whose promoted verdict never reached
+  // the cache).
   const revenueGuidanceLabel: string | null = null;
-  const credibilityVerdictKey: string | null = null;
-  const credibilityDisplay = getGuidanceCredibilityVerdictDisplay(credibilityVerdictKey);
+  const guidanceVerdict =
+    guidanceItems.length > 0 ? buildGuidanceVerdict(guidanceItems, currentReportingQuarter()) : null;
+  const credibilityVerdictKey: string | null = guidanceVerdict?.tier ?? null;
+  const credibilityDisplay = guidanceVerdict ? { label: guidanceVerdict.tierLabel } : null;
   const segmentEntries = normalizedBusinessSnapshot?.revenueBreakdown?.bySegment ?? [];
   const businessSegmentMix = (() => {
     const sorted = segmentEntries
