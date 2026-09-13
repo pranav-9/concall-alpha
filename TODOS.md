@@ -2,6 +2,16 @@
 
 Captured with context so a future session can pick any item up cold. Source review noted per item.
 
+## Telegram community — deferred review findings (2026-09-13)
+
+From the /ship review of `feat/telegram-community` (5 specialists + Claude/Codex adversarial + Codex structured). Load-bearing items were fixed in that PR (off-site href guard, send/ledger lock, env parser); these were judged not worth the churn now.
+
+- [ ] **Footer column is still headed "Learn"** (XS, P4) — the Telegram link sits under it after the X link. A design pass suggested renaming the eyebrow to "Connect" (fits X + Telegram + Submit Request). Decide when the footer is next touched. Start at: `components/site-footer.tsx` `learnLinks`.
+- [ ] **Journal card caption is `text-sm` while the post body is `text-[15px]`** (XS, P4) — one-step-smaller seam at the end of every post; intentional demotion for now. Start at: `components/telegram-join-card.tsx`.
+- [ ] **`section_href` has no pattern in the shared schema** (S, P3) — `/schemas/desk_featured_read_v1.json` only sets `minLength`; the drafter now rejects off-site hrefs at read time, but the producer side should refuse to write them. Add `"pattern": "^/company/[A-Z0-9_&-]+(#[a-z0-9-]+)?$"` and mirror it in `lib/desk-featured/types.ts` + `concallyser/scripts/promote_desk_featured_read.py`. Root `schemas/` lives outside this repo.
+- [ ] **No browser-level test for the join surfaces** (S, P3) — footer, Journal index line, and post card are unit-untestable here (no component harness); coverage audit put user flows at 0/14. If a Playwright smoke suite ever lands, first cases: env unset → nothing renders; env set → three links with `community_join_click` surfaces `footer` / `journal_index` / `journal_post`.
+- [ ] **Sender still has a send→append gap** (XS, P4) — the lock stops concurrent runs, and an ambiguous reply exits 2 with a "may have landed" note, but a crash between a delivered send and the append still needs a manual `--log-only`. A `status: "sending"` reservation row would close it; deferred because the ledger is append-only and a stale reservation needs its own cleanup rule. Start at: `scripts/telegram-send.mjs`.
+
 ## Guidance "what to watch" — deferred review findings (2026-09-08)
 
 From the /ship review of `feat/guidance-what-to-watch` (5 specialists + red team + Claude/Codex adversarial). Everything load-bearing was fixed in that PR; these were judged not worth the churn.

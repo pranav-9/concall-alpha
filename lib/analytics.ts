@@ -46,6 +46,16 @@ export type WatchlistSource = "company_page" | "leaderboard" | "watchlist" | "ot
  *  breakdowns — instead of forking near-identical events per surface. */
 export type AnalyticsSurface = "home" | "desk" | "leaderboards";
 
+/** Where a community join link lived when it was clicked. `desk` and
+ *  `company_page` are reserved — no call site yet; they land only if the
+ *  footer/Journal clicks show demand (see docs/feature-level/telegram-community). */
+export type CommunitySurface =
+  | "footer"
+  | "journal_index"
+  | "journal_post"
+  | "desk"
+  | "company_page";
+
 export const analytics = {
   // ── Discovery — is the door working, and what do people look for? ──────────
   /** A covered company's page was opened. `company_code` is the join key to our data. */
@@ -166,6 +176,12 @@ export const analytics = {
   /** A watchlist was viewed — the return loop itself. */
   watchlistView: (count?: number) =>
     track("watchlist_view", { count: Number.isFinite(count) ? count : undefined }),
+
+  /** The Telegram community link was clicked — a reader opting into a contact
+   *  path (the hypothesis doc's missing sourcing pool). Fires on the outbound
+   *  click; actual joins are read off Telegram's member count by hand. */
+  communityJoinClick: (surface: CommunitySurface) =>
+    track("community_join_click", { channel: "telegram", surface }),
 
   // ── Intent — Q2 intent check, Q3 monetize ─────────────────────────────────
   /** A "cover this company" request was submitted — demand + a contactable engaged user. */
