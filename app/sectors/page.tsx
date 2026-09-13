@@ -25,6 +25,17 @@ import {
   TABLE_CARD_SKY,
   TOUCH_TARGET,
 } from "@/lib/design/shell";
+import { BelowSm, FromSm } from "@/components/viewport-gate";
+import {
+  MOBILE_CARD,
+  MOBILE_CHIP_STRIP,
+  MOBILE_DEK,
+  MOBILE_LI,
+  MOBILE_LINK,
+  MobileMasthead,
+  mobileChipClass,
+} from "@/components/mobile-card";
+import { cn } from "@/lib/utils";
 
 type CompanyRow = {
   code: string;
@@ -111,27 +122,39 @@ function valuationBand(score: number) {
   return { label: def.label, textClass: def.textClass };
 }
 
-// One leg on the phone row's single legs line: muted label, number in its band
-// colour. Same figure as the desktop column, minus the band word.
+// One leg on a compact row's legs line: muted label, number in its band
+// colour, the band word for screen readers and colour-blind readers (visually
+// the colour carries it). Same figure as the desktop column, minus the word.
+// `variant="house"` is the phone tree's 2×2 grid cell (house tokens, bold);
+// the default is the below-lg list inside the atmospheric shell.
 function LegStat({
   label,
   score,
   band,
+  variant = "shell",
 }: {
   label: string;
   score: number | null;
   band: (s: number) => { label: string; textClass: string };
+  variant?: "shell" | "house";
 }) {
+  const house = variant === "house";
   return (
-    <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
-      <span className="text-muted-foreground">{label}</span>
+    <span
+      className={cn(
+        "whitespace-nowrap",
+        house ? "text-[var(--ink-soft)]" : "inline-flex items-baseline gap-1",
+      )}
+    >
+      <span className={house ? undefined : "text-muted-foreground"}>{label}</span>
+      {house ? " " : null}
       {score == null ? (
-        <span className="text-muted-foreground">—</span>
+        <span className={house ? undefined : "text-muted-foreground"}>—</span>
       ) : (
-        <span className={`font-semibold tabular-nums ${band(score).textClass}`}>
+        <span
+          className={cn("tabular-nums", house ? "font-bold" : "font-semibold", band(score).textClass)}
+        >
           {score.toFixed(1)}
-          {/* The band word rides along for screen readers and colour-blind
-              readers; visually the colour carries it at 390px. */}
           <span className="sr-only"> {band(score).label}</span>
         </span>
       )}
@@ -218,12 +241,21 @@ export default async function SectorsPage({
   if (!companies.length) {
     return (
       <main className="relative isolate overflow-hidden">
-        <div className={PAGE_BACKGROUND_CLASS} />
-        <div className={PAGE_SHELL}>
-          <div className={PANEL_CARD_NEUTRAL}>
-            <p className="text-sm text-muted-foreground">No sector data available yet.</p>
+        {/* Same phone/desktop split as the full page, so the empty state never
+            paints the atmospheric shell between the house top bar and tab bar. */}
+        <BelowSm className="house min-h-screen pb-6">
+          <MobileMasthead title="Sectors">
+            <p className={MOBILE_DEK}>No sector data available yet.</p>
+          </MobileMasthead>
+        </BelowSm>
+        <FromSm>
+          <div className={PAGE_BACKGROUND_CLASS} />
+          <div className={PAGE_SHELL}>
+            <div className={PANEL_CARD_NEUTRAL}>
+              <p className="text-sm text-muted-foreground">No sector data available yet.</p>
+            </div>
           </div>
-        </div>
+        </FromSm>
       </main>
     );
   }
@@ -408,6 +440,16 @@ export default async function SectorsPage({
   const arrowFor = (key: SectorSortKey) =>
     sortBy === key ? (sortOrder === "desc" ? "↓" : "↑") : "";
 
+  // The single-leg re-sorts offered below lg (pills) and on the phone (chips).
+  const SORT_PILLS: Array<[SectorSortKey, string]> = [
+    ["read", "Read"],
+    ["latest_qtr", "ConcallScore"],
+    ["avg_4q", "Trailing"],
+    ["growth", "Growth"],
+    ["valuation", "Valuation"],
+    ["sector", "A–Z"],
+  ];
+
   // A sortable, two-line column header: label (link) over a quiet descriptor.
   const ColHead = ({
     sortKey,
@@ -447,6 +489,114 @@ export default async function SectorsPage({
 
   return (
     <main className="relative isolate overflow-hidden">
+      {/* Phone (handoff 2026-09-13, "Sectors — mobile"): house skin, masthead,
+          sort chips, one card of sector rows ranked by Read. From sm the
+          atmospheric shell below is untouched. Both trees are server-rendered
+          and CSS-toggled; the hidden one unmounts after hydration. */}
+      <BelowSm className="house min-h-screen pb-6">
+        <MobileMasthead title="Sectors">
+          <p className={MOBILE_DEK}>
+            Every sector on the same scores as the leaderboard, folded into one Read. Ranked by
+            Read; rank&nbsp;1 is the strongest board overall.
+          </p>
+          <p className="house-data mt-[9px] text-[10px] text-[var(--ink-soft)]">
+            {totalCompanies} companies · {rows.length} sectors
+            {latestLabel ? ` · scores as of ${latestLabel}` : ""}
+          </p>
+        </MobileMasthead>
+
+        {sortedRows.length === 0 ? (
+          <p className="mx-4 mt-4 text-[12.5px] text-[var(--ink-soft)]">
+            No sectors with more than one company available.
+          </p>
+        ) : (
+          <>
+            {/* Sorting stays on the URL, so the chips are plain links. */}
+            <nav
+              aria-label="Sort sectors"
+              className={cn(MOBILE_CHIP_STRIP, "items-center px-4 pb-1 pt-3.5")}
+            >
+              <span className="house-data shrink-0 text-[9px] uppercase tracking-[0.1em] text-[var(--ink-soft)]">
+                Sort
+              </span>
+              {SORT_PILLS.map(([key, label]) => (
+                <Link
+                  key={key}
+                  href={headerHref(key)}
+                  prefetch={false}
+                  aria-current={sortBy === key ? "true" : undefined}
+                  className={mobileChipClass(sortBy === key)}
+                >
+                  {label}
+                  {arrowFor(key) ? <span className="ml-1">{arrowFor(key)}</span> : null}
+                </Link>
+              ))}
+            </nav>
+
+            <section className={cn(MOBILE_CARD, "mt-2.5")}>
+              {/* role="list": Tailwind's preflight strips list-style, and VoiceOver
+                  then drops list semantics without it. */}
+              <ul role="list" aria-label="Sectors ranked by Read">
+                {sortedRows.map((row) => {
+                  const readDef = BOARD_READS[row.readKey];
+                  return (
+                    <li key={row.slug} className={MOBILE_LI}>
+                      <Link
+                        href={`/sector/${row.slug}`}
+                        prefetch={false}
+                        className={cn(MOBILE_LINK, "flex items-start gap-[11px] px-3.5 py-[13px]")}
+                      >
+                        <span className="house-data w-[18px] shrink-0 pt-px text-center text-[13px] font-bold tabular-nums text-[var(--ink-soft)]">
+                          {row.rank ?? "—"}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="house-display block text-[15px] [text-wrap:pretty]">
+                            {row.sector}
+                          </span>
+                          <span className="house-data mt-0.5 block text-[10px] text-[var(--ink-soft)]">
+                            {row.companyCount} companies
+                            {row.subSectorCount > 0
+                              ? ` · ${row.subSectorCount} sub-sector${row.subSectorCount === 1 ? "" : "s"}`
+                              : ""}
+                            {row.reportedCount > 0 ? ` · ${row.reportedCount} reported` : ""}
+                          </span>
+                          <span className="house-data mt-2 grid grid-cols-2 gap-x-3.5 gap-y-[5px] text-[10.5px]">
+                            <LegStat variant="house" label="Latest" score={row.avgLatest} band={quarterBand} />
+                            <LegStat variant="house" label="4Q" score={row.avg4Q} band={quarterBand} />
+                            <LegStat variant="house" label="Growth" score={row.avgGrowth} band={growthBand} />
+                            <LegStat variant="house" label="Value" score={row.avgValuation} band={valuationBand} />
+                          </span>
+                        </span>
+                        <span className="flex min-w-[58px] shrink-0 flex-col items-end text-right leading-[1.2]">
+                          <span className="house-data text-base font-bold tabular-nums text-[var(--ink)]">
+                            {row.readScore != null ? row.readScore.toFixed(1) : "—"}
+                          </span>
+                          <span
+                            className={cn(
+                              "house-data mt-0.5 max-w-[6.5rem] text-[9px] [text-wrap:pretty]",
+                              row.readScore != null ? readDef.textClass : "text-[var(--ink-soft)]",
+                            )}
+                          >
+                            {row.readLabel}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="house-data border-t border-[var(--rule)] px-3.5 py-3 text-[9px] leading-[1.5] text-[var(--ink-soft)] [text-wrap:pretty]">
+                Read = 0.88 × the average of the quarter leg and Growth, + 0.12 × Valuation — the
+                leaderboard&apos;s exact formula. The quarter leg is the recency-weighted trailing
+                four (latest counts double). Each sector figure averages its covered companies.
+                The word names the configuration — it is not a buy or sell call.
+              </p>
+            </section>
+          </>
+        )}
+      </BelowSm>
+
+      <FromSm>
       <div className={PAGE_BACKGROUND_CLASS} />
       <div className={PAGE_SHELL}>
         <header className="flex flex-col gap-4 px-1 pt-2 sm:flex-row sm:items-end sm:justify-between">
@@ -494,16 +644,7 @@ export default async function SectorsPage({
                   its 32px box, so wrapped rows need ≥12px between them. */}
               <div className="flex flex-wrap items-center gap-x-2 gap-y-3 border-b border-border/35 px-3 py-2 text-[11px] text-muted-foreground">
                 <span className="font-semibold uppercase tracking-[0.12em]">Sort</span>
-                {(
-                  [
-                    ["read", "Read"],
-                    ["latest_qtr", "ConcallScore"],
-                    ["avg_4q", "Trailing"],
-                    ["growth", "Growth"],
-                    ["valuation", "Valuation"],
-                    ["sector", "A–Z"],
-                  ] as Array<[SectorSortKey, string]>
-                ).map(([key, label]) => (
+                {SORT_PILLS.map(([key, label]) => (
                   <Link
                     key={key}
                     href={headerHref(key)}
@@ -706,6 +847,7 @@ export default async function SectorsPage({
           </section>
         )}
       </div>
+      </FromSm>
     </main>
   );
 }
