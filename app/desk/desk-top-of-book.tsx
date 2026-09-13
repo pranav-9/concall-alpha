@@ -4,7 +4,7 @@ import ConcallScore from "@/components/concall-score";
 import type { DeskTableRow } from "./desk-leaderboard-table";
 import DeskMostViewed from "./desk-most-viewed";
 import { BelowSm, FromSm } from "@/components/viewport-gate";
-import { MOBILE_CARD, MobileCardHead } from "./desk-mobile-card";
+import { MOBILE_CARD, MobileCardHead } from "@/components/mobile-card";
 import { MobileMiniList, MobileMiniLabel } from "./desk-most-viewed";
 
 // The right rail: two ranked blocks the mockup calls "Top of the book" — the

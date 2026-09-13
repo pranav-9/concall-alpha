@@ -7,7 +7,16 @@ import ConcallScore from "@/components/concall-score";
 import { BREAKPOINT_SM, useMinWidth } from "@/hooks/use-min-width";
 import { analytics } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
-import { MOBILE_CARD, MOBILE_HEAD_RIGHT, MOBILE_ROW, NewBadge } from "./desk-mobile-card";
+import {
+  MOBILE_CARD,
+  MOBILE_HEAD_RIGHT,
+  MOBILE_ROW,
+  NewBadge,
+  initials,
+  mobileChipClass,
+  signedArrow,
+  signedColor,
+} from "@/components/mobile-card";
 
 // Client-facing row: the lib's DeskRow with a server-formatted "filed" label
 // (formatting there, not here, so the relative time can't drift on hydration).
@@ -163,23 +172,6 @@ export default function DeskLeaderboardTable({
 // tab state; only the trail column changes per lens.
 // ---------------------------------------------------------------------------
 
-// Company initials for the crest: first letter of the first two words; a
-// single-word name takes its first two letters. "&" is not a word.
-function initials(name: string): string {
-  const words = name.replace(/&/g, " ").split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "";
-  const pick = words.length === 1 ? words[0].slice(0, 2) : words[0][0] + words[1][0];
-  return pick.toUpperCase();
-}
-
-function signedArrow(n: number): string {
-  return n > 0 ? "▲" : n < 0 ? "▼" : "•";
-}
-
-function signedColor(n: number): string {
-  return n > 0 ? "text-[var(--signal)]" : n < 0 ? "text-[var(--alarm)]" : "text-[var(--ink-soft)]";
-}
-
 // The one metric shown beside the score on the phone list, chosen by lens.
 function TrailMetric({ row, tab }: { row: DeskTableRow; tab: TabKey }) {
   const base = "house-data min-w-[46px] shrink-0 whitespace-nowrap text-right text-xs tabular-nums";
@@ -308,12 +300,7 @@ function MobileRanking({
               type="button"
               aria-selected={on}
               onClick={() => onSelectTab(t.key)}
-              className={cn(
-                "house-data shrink-0 whitespace-nowrap rounded-full border px-[13px] py-2 text-[10px] uppercase tracking-[0.1em] transition-colors",
-                on
-                  ? "border-[var(--ink)] bg-[var(--ink)] text-[var(--paper-2)]"
-                  : "border-[var(--rule)] bg-transparent text-[var(--ink-soft)]",
-              )}
+              className={mobileChipClass(on)}
             >
               {t.label}
             </button>
