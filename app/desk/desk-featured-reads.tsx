@@ -22,7 +22,9 @@ import { HomepageModuleLink } from "@/components/homepage-module-link";
 import { getCachedDeskFeaturedReads } from "@/lib/desk-featured/data";
 import { selectFeaturedReads } from "@/lib/desk-featured/select";
 import { changeKindSuffix, type FeaturedRead } from "@/lib/desk-featured/types";
+import { BelowSm, FromSm } from "@/components/viewport-gate";
 import { DeskFeaturedReadsTracker } from "./desk-featured-reads-tracker";
+import { Chevron, MOBILE_CARD, MOBILE_HEAD_RIGHT, MOBILE_ROW, MobileCardHead } from "./desk-mobile-card";
 
 // Shared whole-card affordances, matching the recency ledger: an on-brand teal
 // focus ring (the bare-<a> house skin has none) and a quiet teal hover wash.
@@ -120,6 +122,100 @@ function SecondaryCard({ read }: { read: FeaturedRead }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Phone presentation (< sm): one card — a lead item (kicker, editorial
+// headline, "The bet" dek, company · sector · time) and brief rows for the
+// rest. The headline leads here because the phone card is a headline list;
+// the company name stays in the meta line and in the heading's outline text.
+// ---------------------------------------------------------------------------
+
+function MobileMeta({ read, className }: { read: FeaturedRead; className?: string }) {
+  const time = formatRelativeActivityTime(read.publishedAtRaw);
+  const parts = [read.companyName, read.sector, time].filter((p): p is string => Boolean(p));
+  return (
+    <span className={cn("house-data text-[10px] text-[var(--ink-soft)]", className)}>
+      {parts.join(" · ")}
+    </span>
+  );
+}
+
+function MobileKicker({ read, className }: { read: FeaturedRead; className?: string }) {
+  const suffix = changeKindSuffix(read.changeKind);
+  return (
+    <span className={cn("house-data block uppercase text-[var(--signal)]", className)}>
+      {read.tagLabel}
+      {suffix ? ` · ${suffix}` : null}
+    </span>
+  );
+}
+
+function MobileLead({ read }: { read: FeaturedRead }) {
+  return (
+    <HomepageModuleLink
+      module="featured_read_hero"
+      companyCode={read.companyCode}
+      surface="desk"
+      href={read.href}
+      className={cn(MOBILE_ROW, "px-3.5 py-4")}
+    >
+      <MobileKicker read={read} className="text-[10px] tracking-[0.14em]" />
+      <h3 className="house-display mt-[9px] text-xl leading-[1.12] text-[var(--ink)] [text-wrap:pretty]">
+        {read.headline}
+        <span className="sr-only"> — {read.companyName}</span>
+      </h3>
+      <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink-soft)] [text-wrap:pretty]">
+        {read.summary}
+      </p>
+      <span className="mt-[13px] flex items-center justify-between gap-2.5">
+        <MobileMeta read={read} />
+        <span className="house-data whitespace-nowrap text-[10px] text-[var(--ink)]">Read →</span>
+      </span>
+    </HomepageModuleLink>
+  );
+}
+
+function MobileBrief({ read }: { read: FeaturedRead }) {
+  return (
+    <HomepageModuleLink
+      module="featured_read_secondary"
+      companyCode={read.companyCode}
+      surface="desk"
+      href={read.href}
+      className={cn(MOBILE_ROW, "flex items-center gap-3 px-3.5 py-[13px] last:border-b-0")}
+    >
+      <span className="min-w-0 flex-1">
+        <MobileKicker read={read} className="text-[9px] tracking-[0.12em]" />
+        <h3 className="house-display mt-[3px] text-sm leading-[1.2] text-[var(--ink)] [text-wrap:pretty]">
+          {read.headline}
+          <span className="sr-only"> — {read.companyName}</span>
+        </h3>
+        <MobileMeta read={read} className="mt-[5px] block" />
+      </span>
+      <Chevron />
+    </HomepageModuleLink>
+  );
+}
+
+function MobileFeatured({ hero, secondaries }: { hero: FeaturedRead; secondaries: FeaturedRead[] }) {
+  return (
+    <section aria-labelledby="desk-featured-mobile" className={MOBILE_CARD}>
+      <MobileCardHead
+        id="desk-featured-mobile"
+        eyebrow="Featured"
+        right={
+          <Link href="#desk-recency-mobile" className={MOBILE_HEAD_RIGHT}>
+            Latest reads
+          </Link>
+        }
+      />
+      <MobileLead read={hero} />
+      {secondaries.map((read) => (
+        <MobileBrief key={read.id} read={read} />
+      ))}
+    </section>
+  );
+}
+
 export function DeskFeaturedReadsFallback() {
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.6fr_1fr]">
@@ -141,6 +237,10 @@ export default async function DeskFeaturedReads() {
 
   return (
     <DeskFeaturedReadsTracker>
+    <BelowSm>
+      <MobileFeatured hero={hero} secondaries={secondaries} />
+    </BelowSm>
+    <FromSm>
     <section aria-labelledby="desk-featured" className="house-block">
       <div className="flex items-baseline justify-between border-b border-[var(--rule)] pb-3">
         <h2 id="desk-featured" className="house-data house-micro uppercase text-[var(--ink-soft)]">
@@ -165,6 +265,7 @@ export default async function DeskFeaturedReads() {
         )}
       </div>
     </section>
+    </FromSm>
     </DeskFeaturedReadsTracker>
   );
 }

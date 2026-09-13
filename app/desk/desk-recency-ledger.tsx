@@ -13,8 +13,12 @@ import { BANDS, bandForScore } from "@/lib/score-band";
 import { GROWTH_BANDS, bandForGrowthScore, type GrowthBandDef } from "@/lib/growth-band";
 import type { BandDef } from "@/lib/score-band";
 import { cn } from "@/lib/utils";
+import { BelowSm, FromSm } from "@/components/viewport-gate";
+import { Chevron, MOBILE_CARD, MOBILE_HEAD_RIGHT, MOBILE_ROW, MobileCardHead, NewBadge } from "./desk-mobile-card";
 
 const LEDGER_SIZE = 14;
+// The phone card is a short tape: the newest few, then "All activity →".
+const MOBILE_LEDGER_SIZE = 7;
 
 // Shared keyboard-focus ring for the whole-row links — the house skin has no
 // default focus-visible on bare <a>, so make it explicit and on-brand (teal),
@@ -209,6 +213,85 @@ function LedgerRow({ item }: { item: UnifiedUpdate }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Phone presentation (< sm): the "movement" card. A flat recency tape (no
+// day buckets — the relative time on each row carries recency): time · event
+// tag · company · the read, with the right column holding the update count
+// for a Guidance Monitor batch or the score pill for a scored update.
+// ---------------------------------------------------------------------------
+
+function MobileLedgerRow({ item }: { item: UnifiedUpdate }) {
+  const view = scoreView(item);
+  const href = item.artifactHref ?? (item.companyCode ? `/company/${item.companyCode}` : null);
+  const time = formatRelativeActivityTime(item.atRaw);
+  const substance = substanceFor(item);
+
+  const right = view ? (
+    <span className="flex items-center whitespace-nowrap">
+      <ScorePill score={view.score} band={view.band} />
+      <Delta prior={item.priorScore} score={item.score} />
+    </span>
+  ) : item.contextLabel ? (
+    <span className="house-data whitespace-nowrap rounded-full border border-[var(--rule)] px-2 py-[3px] text-[9px] text-[var(--ink)]">
+      {item.contextLabel}
+    </span>
+  ) : null;
+
+  const inner = (
+    <>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="house-data text-[10px] text-[var(--ink-soft)]">{time}</span>
+          <span className="house-data whitespace-nowrap text-[9px] uppercase tracking-[0.1em] text-[var(--ink-soft)]">
+            {item.sourceLabel}
+          </span>
+          {item.companyIsNew ? <NewBadge /> : null}
+        </span>
+        <span className="house-display mt-1 block text-sm text-[var(--ink)] [text-wrap:pretty]">
+          {item.companyName}
+        </span>
+        {substance ? (
+          <span className="mt-[3px] block text-xs leading-[1.45] text-[var(--ink-soft)] [text-wrap:pretty]">
+            {substance}
+          </span>
+        ) : null}
+      </span>
+      <span className="flex shrink-0 flex-col items-end gap-[7px] pt-px">
+        {right}
+        <Chevron />
+      </span>
+    </>
+  );
+
+  const rowClass = cn(MOBILE_ROW, "flex items-start gap-3 px-3.5 py-[13px] last:border-b-0");
+  if (!href) return <div className={rowClass}>{inner}</div>;
+  return (
+    <Link href={href} prefetch={false} className={rowClass}>
+      {inner}
+    </Link>
+  );
+}
+
+function MobileLedger({ updates }: { updates: UnifiedUpdate[] }) {
+  return (
+    <section aria-labelledby="desk-recency-mobile" className={cn(MOBILE_CARD, "scroll-mt-20")}>
+      <MobileCardHead
+        id="desk-recency-mobile"
+        eyebrow="Latest activity"
+        live
+        right={
+          <Link href="/activity" prefetch={false} className={MOBILE_HEAD_RIGHT}>
+            All activity →
+          </Link>
+        }
+      />
+      {updates.slice(0, MOBILE_LEDGER_SIZE).map((item) => (
+        <MobileLedgerRow key={item.id} item={item} />
+      ))}
+    </section>
+  );
+}
+
 export function DeskRecencyLedgerFallback() {
   return (
     <div className="rounded-lg border border-[var(--rule)] bg-[var(--paper-2)] p-5">
@@ -228,6 +311,11 @@ export default async function DeskRecencyLedger({ quarterLabel }: { quarterLabel
   const buckets = bucketUpdates(updates);
 
   return (
+    <>
+    <BelowSm>
+      <MobileLedger updates={updates} />
+    </BelowSm>
+    <FromSm>
     <section aria-labelledby="desk-recency" className="house-block">
       <p className="house-data house-micro flex items-center gap-2 text-[var(--ink-soft)]">
         <span aria-hidden className="text-[var(--signal)]">
@@ -264,5 +352,7 @@ export default async function DeskRecencyLedger({ quarterLabel }: { quarterLabel
         See all activity →
       </Link>
     </section>
+    </FromSm>
+    </>
   );
 }
