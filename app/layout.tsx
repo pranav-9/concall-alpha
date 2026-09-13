@@ -11,6 +11,7 @@ import { FeedbackPollBanner } from "@/components/feedback-poll-banner";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { IdentityBridge } from "@/components/identity-bridge";
 import { SiteFooter } from "@/components/site-footer";
+import { DeskMobileTabBar } from "@/components/desk-mobile-tab-bar";
 import { Toaster } from "@/components/ui/sonner";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { getSiteUrl } from "@/lib/site-url";
@@ -149,6 +150,7 @@ export default function RootLayout({
               {children}
             </div>
             <SiteFooter />
+            <DeskMobileTabBar />
             <Toaster richColors />
           </div>
         </ThemeProvider>
