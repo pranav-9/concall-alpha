@@ -73,11 +73,14 @@ export function CompanySearch({
   onNavigate,
   instanceId,
   initialCompanies,
+  autoFocus = false,
 }: {
   className?: string;
   onNavigate?: () => void;
   instanceId?: string;
   initialCompanies?: Result[];
+  /** Focus the input on mount — the desk phone top bar's search button opens the menu straight into it. */
+  autoFocus?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -241,6 +244,7 @@ export function CompanySearch({
         <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <input
           value={query}
+          autoFocus={autoFocus}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
             if (trimmedQuery) setOpen(true);

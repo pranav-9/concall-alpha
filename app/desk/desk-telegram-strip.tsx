@@ -1,8 +1,9 @@
-// Desk join strip — sits between the ranking table and Featured Reads, in the
-// house skin (paper-2 ground, hairline rule). The desk is the second most
-// viewed surface (2026-09 PostHog) and its right rail is hidden below `sm`, so
-// the strip lives in the main flow where phone readers see it too. Server
-// component; env-gated like every other join affordance.
+// Desk join strip in the house skin (paper-2 ground, hairline rule; 12px
+// radius on the phone to match the desk mobile cards). The desk is the second
+// most viewed surface (2026-09 PostHog) and its right rail is hidden below
+// `sm`, so the strip lives in the main flow where phone readers see it too —
+// the page owns its slot and spacing (app/desk/page.tsx). Server component;
+// env-gated like every other join affordance.
 
 import { getTelegramJoinUrl } from "@/lib/community";
 import { TelegramJoinLink } from "@/components/telegram-join-link";
@@ -14,7 +15,7 @@ export function DeskTelegramStrip() {
   return (
     <aside
       aria-label="Telegram group"
-      className="mt-10 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded border border-[var(--rule)] bg-[var(--paper-2)] px-4 py-3"
+      className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-xl border border-[var(--rule)] bg-[var(--paper-2)] px-4 py-3 sm:rounded"
     >
       <div className="min-w-0">
         <p className="house-data house-micro text-[var(--ink-soft)]">Telegram group</p>

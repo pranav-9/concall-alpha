@@ -4,7 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 
 import ConcallScore from "@/components/concall-score";
+import { BREAKPOINT_SM, useMinWidth } from "@/hooks/use-min-width";
 import { analytics } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
+import { MOBILE_CARD, MOBILE_HEAD_RIGHT, MOBILE_ROW, NewBadge } from "./desk-mobile-card";
 
 // Client-facing row: the lib's DeskRow with a server-formatted "filed" label
 // (formatting there, not here, so the relative time can't drift on hydration).
@@ -27,12 +30,14 @@ export type DeskTableRow = {
 
 type TabKey = "latest" | "quarter" | "twist" | "growth" | "moat";
 
-const TABS: { key: TabKey; label: string; caption: string }[] = [
-  { key: "latest", label: "Latest reads", caption: "sorted by filed" },
-  { key: "quarter", label: "Quarter leaders", caption: "sorted by score" },
-  { key: "twist", label: "Positive twist", caption: "latest vs prior 4Q avg" },
-  { key: "growth", label: "Growth leaders", caption: "by growth outlook" },
-  { key: "moat", label: "Moat leaders", caption: "by moat strength" },
+// `caption` is the desktop sort caption; `trailHead` / `sortNote` label the
+// phone list's single trail column and its column-label row.
+const TABS: { key: TabKey; label: string; caption: string; trailHead: string; sortNote: string }[] = [
+  { key: "latest", label: "Latest reads", caption: "sorted by filed", trailHead: "Filed", sortNote: "sorted by filed ↓" },
+  { key: "quarter", label: "Quarter leaders", caption: "sorted by score", trailHead: "Δ QoQ", sortNote: "sorted by ConcallScore ↓" },
+  { key: "twist", label: "Positive twist", caption: "latest vs prior 4Q avg", trailHead: "vs 4Q", sortNote: "sorted by trend twist ↓" },
+  { key: "growth", label: "Growth leaders", caption: "by growth outlook", trailHead: "Base growth", sortNote: "sorted by growth outlook ↓" },
+  { key: "moat", label: "Moat leaders", caption: "by moat strength", trailHead: "Moat", sortNote: "sorted by moat, then score ↓" },
 ];
 
 export default function DeskLeaderboardTable({
@@ -51,6 +56,9 @@ export default function DeskLeaderboardTable({
   seeAllCount: number;
 }) {
   const [tab, setTab] = useState<TabKey>("latest");
+  // null until hydration → render both layouts (matches the server HTML); then
+  // only the one the viewport needs. See hooks/use-min-width.
+  const isSm = useMinWidth(BREAKPOINT_SM);
 
   const byTab: Record<TabKey, DeskTableRow[]> = {
     latest: latestReads,
@@ -60,10 +68,28 @@ export default function DeskLeaderboardTable({
     moat: moatLeaders,
   };
   const rows = byTab[tab];
-  const caption = TABS.find((t) => t.key === tab)?.caption ?? "";
+  const active = TABS.find((t) => t.key === tab) ?? TABS[0];
+  const caption = active.caption;
+
+  const selectTab = (next: TabKey) => {
+    if (next === tab) return; // idempotent — mirrors /leaderboards
+    analytics.leaderboardTabChange(tab, next, "desk");
+    setTab(next);
+  };
 
   return (
-    <div>
+    <>
+      {isSm !== true && (
+        <MobileRanking
+          tab={tab}
+          active={active}
+          rows={rows}
+          seeAllCount={seeAllCount}
+          onSelectTab={selectTab}
+        />
+      )}
+      {isSm !== false && (
+    <div className="hidden sm:block">
       {/* Tabs + active caption */}
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-[var(--rule)] pb-2">
         <div
@@ -79,11 +105,7 @@ export default function DeskLeaderboardTable({
                 role="tab"
                 type="button"
                 aria-selected={active}
-                onClick={() => {
-                  if (t.key === tab) return; // idempotent — mirrors /leaderboards
-                  analytics.leaderboardTabChange(tab, t.key, "desk");
-                  setTab(t.key);
-                }}
+                onClick={() => selectTab(t.key)}
                 className={`house-data house-micro pb-1 transition-colors ${
                   active
                     ? "border-b-2 border-[var(--mark)] text-[var(--ink)]"
@@ -129,6 +151,203 @@ export default function DeskLeaderboardTable({
         </span>
       </div>
     </div>
+      )}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Phone presentation (< sm): the 5-column table becomes a card of list rows —
+// rank · monogram crest · name + sector · one trail metric · score circle —
+// with the lens tabs as a horizontally scrolling chip row. Same rows, same
+// tab state; only the trail column changes per lens.
+// ---------------------------------------------------------------------------
+
+// Company initials for the crest: first letter of the first two words; a
+// single-word name takes its first two letters. "&" is not a word.
+function initials(name: string): string {
+  const words = name.replace(/&/g, " ").split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "";
+  const pick = words.length === 1 ? words[0].slice(0, 2) : words[0][0] + words[1][0];
+  return pick.toUpperCase();
+}
+
+function signedArrow(n: number): string {
+  return n > 0 ? "▲" : n < 0 ? "▼" : "•";
+}
+
+function signedColor(n: number): string {
+  return n > 0 ? "text-[var(--signal)]" : n < 0 ? "text-[var(--alarm)]" : "text-[var(--ink-soft)]";
+}
+
+// The one metric shown beside the score on the phone list, chosen by lens.
+function TrailMetric({ row, tab }: { row: DeskTableRow; tab: TabKey }) {
+  const base = "house-data min-w-[46px] shrink-0 whitespace-nowrap text-right text-xs tabular-nums";
+  if (tab === "latest") {
+    return <span className={cn(base, "text-[var(--ink-soft)]")}>{row.filedLabel}</span>;
+  }
+  if (tab === "quarter") {
+    if (row.delta == null) return <span className={cn(base, "text-[var(--ink-soft)]")}>—</span>;
+    return (
+      <span className={cn(base, signedColor(row.delta))}>
+        {signedArrow(row.delta)} {Math.abs(row.delta).toFixed(1)}
+      </span>
+    );
+  }
+  if (tab === "twist") {
+    if (row.twistPct == null) return <span className={cn(base, "text-[var(--ink-soft)]")}>—</span>;
+    return (
+      <span className={cn(base, signedColor(row.twistPct))}>
+        {signedArrow(row.twistPct)} {Math.abs(row.twistPct).toFixed(1)}%
+      </span>
+    );
+  }
+  if (tab === "growth") {
+    return (
+      <span className={cn(base, row.growthLabel ? "text-[var(--ink)]" : "text-[var(--ink-soft)]")}>
+        {row.growthLabel ?? "—"}
+      </span>
+    );
+  }
+  return <span className={cn(base, "text-[var(--ink-soft)]")}>{row.moatLabel ?? "—"}</span>;
+}
+
+function MobileRow({ row, rank, tab }: { row: DeskTableRow; rank: number; tab: TabKey }) {
+  const score = tab === "growth" ? row.growthScore : row.latestScore;
+  return (
+    <Link
+      href={`/company/${row.code}`}
+      prefetch={false}
+      onClick={() =>
+        analytics.leaderboardRowClick({
+          companyCode: row.code,
+          board: tab,
+          belowCut: false,
+          rank,
+          surface: "desk",
+        })
+      }
+      className={cn(MOBILE_ROW, "flex items-center gap-[11px] px-3.5 py-3")}
+    >
+      <span className="house-data w-[18px] shrink-0 text-center text-xs text-[var(--ink-soft)]">
+        {String(rank).padStart(2, "0")}
+      </span>
+      <span
+        aria-hidden
+        className="house-data flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg border border-[var(--rule)] bg-[var(--paper)] text-[11px] text-[var(--ink-soft)]"
+      >
+        {initials(row.name)}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1.5">
+          <span className="house-display truncate text-sm tracking-[-0.01em] text-[var(--ink)]">
+            {row.name}
+          </span>
+          {row.isNew ? <NewBadge /> : null}
+        </span>
+        <span className="house-data mt-0.5 block truncate text-[10px] text-[var(--ink-soft)]">
+          {row.sector ?? row.code}
+        </span>
+      </span>
+      <TrailMetric row={row} tab={tab} />
+      <span className="flex shrink-0">
+        {score != null ? (
+          <ConcallScore score={score} kind={tab === "growth" ? "growth" : "quarterly"} size="sm" />
+        ) : (
+          <span className="house-data grid h-8 w-8 place-items-center text-xs text-[var(--ink-soft)]">—</span>
+        )}
+      </span>
+    </Link>
+  );
+}
+
+function MobileRanking({
+  tab,
+  active,
+  rows,
+  seeAllCount,
+  onSelectTab,
+}: {
+  tab: TabKey;
+  active: (typeof TABS)[number];
+  rows: DeskTableRow[];
+  seeAllCount: number;
+  onSelectTab: (key: TabKey) => void;
+}) {
+  return (
+    <section aria-labelledby="desk-ranking-mobile" className={cn(MOBILE_CARD, "sm:hidden")}>
+      <div className="border-b border-[var(--rule)] px-3.5 py-3">
+        <div className="flex items-center justify-between gap-2.5">
+          <h2
+            id="desk-ranking-mobile"
+            className="house-data whitespace-nowrap text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]"
+          >
+            Ranking
+          </h2>
+          <Link href="/how-scores-work" prefetch={false} className={MOBILE_HEAD_RIGHT}>
+            How scores work →
+          </Link>
+        </div>
+        <p className="mt-[7px] text-[11px] leading-[1.45] text-[var(--ink-soft)] [text-wrap:pretty]">
+          Our 0–10 read of the quarter from the transcript and deck — not a price call.
+        </p>
+      </div>
+
+      {/* Lens chips — one horizontal scroller, scrollbar hidden, never wraps. */}
+      <div
+        role="tablist"
+        aria-label="Leaderboard views"
+        className="flex gap-2 overflow-x-auto border-b border-[var(--rule)] px-3.5 py-[11px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {TABS.map((t) => {
+          const on = t.key === tab;
+          return (
+            <button
+              key={t.key}
+              role="tab"
+              type="button"
+              aria-selected={on}
+              onClick={() => onSelectTab(t.key)}
+              className={cn(
+                "house-data shrink-0 whitespace-nowrap rounded-full border px-[13px] py-2 text-[10px] uppercase tracking-[0.1em] transition-colors",
+                on
+                  ? "border-[var(--ink)] bg-[var(--ink)] text-[var(--paper-2)]"
+                  : "border-[var(--rule)] bg-transparent text-[var(--ink-soft)]",
+              )}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Column-label row: the sort note on the left, trail · Score on the right. */}
+      <div className="flex items-center justify-between gap-2.5 border-b border-[var(--rule)] px-3.5 py-[7px]">
+        <span className="house-data whitespace-nowrap text-[9px] uppercase tracking-[0.08em] text-[var(--ink-soft)]">
+          {active.sortNote}
+        </span>
+        <span className="house-data whitespace-nowrap text-[9px] uppercase tracking-[0.08em] text-[var(--ink-soft)]">
+          {active.trailHead} · Score
+        </span>
+      </div>
+
+      <div role="tabpanel">
+        {rows.length === 0 ? (
+          <p className="px-3.5 py-8 text-sm text-[var(--ink-soft)]">Nothing to show here yet.</p>
+        ) : (
+          rows.map((row, i) => <MobileRow key={`${row.code}-${i}`} row={row} rank={i + 1} tab={tab} />)
+        )}
+      </div>
+
+      <div className="flex items-center justify-between gap-2.5 p-3.5">
+        <Link href="/leaderboards" prefetch={false} className="house-data house-link text-[11px]">
+          See all {seeAllCount} →
+        </Link>
+        <span className="house-data text-right text-[9px] text-[var(--ink-soft)] [text-wrap:pretty]">
+          Scores read documents, not prices.
+        </span>
+      </div>
+    </section>
   );
 }
 

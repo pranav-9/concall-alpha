@@ -91,11 +91,20 @@ export function CommunityNudge({ href }: { href: string }) {
     setTrigger(null);
   };
 
+  // /desk carries a fixed phone tab bar on the same edge below `sm`
+  // (components/desk-mobile-tab-bar, 4.25rem tall); sit above it there.
+  const onDesk = pathname === "/desk";
+
   return (
     <div
       role="complementary"
       aria-label="Telegram group"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-300"
+      className={cn(
+        "pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-300",
+        onDesk
+          ? "pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+          : "pb-[calc(0.75rem+env(safe-area-inset-bottom))]",
+      )}
     >
       <div className="pointer-events-auto flex w-full max-w-md items-center gap-2 rounded-full border border-border bg-background/95 py-1.5 pl-4 pr-1.5 shadow-[0_16px_40px_-16px_rgba(15,23,42,0.45)] backdrop-blur-md dark:bg-background/90">
         <p className="min-w-0 flex-1 text-xs leading-snug text-muted-foreground">

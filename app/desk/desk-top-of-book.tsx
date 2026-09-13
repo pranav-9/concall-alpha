@@ -3,6 +3,9 @@ import Link from "next/link";
 import ConcallScore from "@/components/concall-score";
 import type { DeskTableRow } from "./desk-leaderboard-table";
 import DeskMostViewed from "./desk-most-viewed";
+import { BelowSm, FromSm } from "@/components/viewport-gate";
+import { MOBILE_CARD, MobileCardHead } from "./desk-mobile-card";
+import { MobileMiniList, MobileMiniLabel } from "./desk-most-viewed";
 
 // The right rail: two ranked blocks the mockup calls "Top of the book" — the
 // quarter's highest reads and the companies readers are viewing most.
@@ -20,6 +23,31 @@ export default function DeskTopOfBook({
   mostViewedInitial: "week" | "month";
 }) {
   return (
+    <>
+    {/* Phone (< sm): one card, two terse mini-lists — rank · name · score as
+        mono text. Lighter than the ranking rows on purpose. */}
+    <BelowSm>
+      <section aria-labelledby="desk-top-of-book-mobile" className={MOBILE_CARD}>
+        <MobileCardHead
+          id="desk-top-of-book-mobile"
+          eyebrow="Top of the book"
+          right={
+            <span className="house-data whitespace-nowrap text-[10px] uppercase tracking-[0.08em] text-[var(--ink-soft)]">
+              {quarterLabel}
+            </span>
+          }
+        />
+        <MobileMiniLabel>Top performers</MobileMiniLabel>
+        <MobileMiniList rows={topPerformers} />
+        <DeskMostViewed
+          week={mostViewedWeek}
+          month={mostViewedMonth}
+          initialWindow={mostViewedInitial}
+          variant="mobile"
+        />
+      </section>
+    </BelowSm>
+    <FromSm>
     <div className="space-y-8 lg:sticky lg:top-24">
       <Block title={`${quarterLabel} top performers`}>
         {topPerformers.map((row, i) => (
@@ -48,6 +76,8 @@ export default function DeskTopOfBook({
         initialWindow={mostViewedInitial}
       />
     </div>
+    </FromSm>
+    </>
   );
 }
 

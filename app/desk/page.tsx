@@ -18,6 +18,7 @@ import DeskLeaderboardTable, {
 } from "./desk-leaderboard-table";
 import DeskTopOfBook from "./desk-top-of-book";
 import { DeskTelegramStrip } from "./desk-telegram-strip";
+import { BelowSm, FromSm } from "@/components/viewport-gate";
 
 export const metadata: Metadata = {
   title: "The Desk — every covered company, ranked and read",
@@ -61,41 +62,76 @@ export default async function DeskPage() {
       {/* Quarter tracker strip hidden 2026-08-25 — results season over. Re-enable next season. */}
       {/* <QuarterTrackerBanner /> */}
 
-      <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      {/*
+        One tree, two presentations. Below `sm` the page is a flex column and
+        each block carries an `order-*` so the phone reads change-first —
+        masthead → Featured → Latest activity → Reference (Ranking → Top of the
+        book) → Exchange → Themes — while from `sm` the same blocks fall back
+        into the desktop grid + stacked sections. The grid wrapper and the main
+        column are `contents` on the phone so their children join the column.
+        Each section paints its own phone/desktop variant (viewport-gate).
+      */}
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col pb-6 pt-0 sm:block sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+        <div className="contents sm:grid sm:grid-cols-1 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
           {/* Main column — screener header + dense table */}
-          <div className="min-w-0">
-            <header className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4 border-b border-[var(--rule)] pb-6">
-              <div className="min-w-0">
-                <p className="house-data house-micro flex flex-wrap items-center gap-x-2 text-[var(--ink-soft)]">
-                  <span aria-hidden className="text-[var(--signal)]">
-                    ●
-                  </span>
-                  <span>A fundamental screener</span>
-                  <span aria-hidden>·</span>
-                  <span>{board.quarterLabel}</span>
-                  <span aria-hidden>·</span>
-                  <span>
-                    {board.reportedCount} of {board.coveredCount} calls read
-                  </span>
-                </p>
-                <h1 className="house-display mt-3 max-w-xl text-3xl leading-[1.05] sm:text-4xl lg:text-[2.75rem]">
-                  Ranking India&apos;s top 100 companies.
-                </h1>
-              </div>
+          <div className="contents sm:block sm:min-w-0">
+            <div className="order-1">
+              <BelowSm>
+                <header className="px-4 pb-1 pt-[18px]">
+                  <h1 className="house-display text-[30px] leading-[1.02]">The Desk</h1>
+                  <p className="house-data mt-[9px] flex items-center gap-[7px] text-[11px] text-[var(--ink-soft)]">
+                    <span aria-hidden className="text-[9px] text-[var(--signal)]">
+                      ●
+                    </span>
+                    <span>
+                      {board.quarterLabel} · {board.reportedCount} of {board.coveredCount} calls read
+                    </span>
+                  </p>
+                </header>
+              </BelowSm>
+              <FromSm>
+              <header className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4 border-b border-[var(--rule)] pb-6">
+                <div className="min-w-0">
+                  <p className="house-data house-micro flex flex-wrap items-center gap-x-2 text-[var(--ink-soft)]">
+                    <span aria-hidden className="text-[var(--signal)]">
+                      ●
+                    </span>
+                    <span>A fundamental screener</span>
+                    <span aria-hidden>·</span>
+                    <span>{board.quarterLabel}</span>
+                    <span aria-hidden>·</span>
+                    <span>
+                      {board.reportedCount} of {board.coveredCount} calls read
+                    </span>
+                  </p>
+                  <h1 className="house-display mt-3 max-w-xl text-3xl leading-[1.05] sm:text-4xl lg:text-[2.75rem]">
+                    Ranking India&apos;s top 100 companies.
+                  </h1>
+                </div>
 
-              <dl className="shrink-0 text-right">
-                <dt className="house-data house-micro text-[var(--ink-soft)]">Coverage</dt>
-                <dd className="house-display text-4xl leading-none text-[var(--ink)]">
-                  {board.coveredCount}
-                </dd>
-                <dd className="house-data house-micro mt-1 text-[var(--ink-soft)]">
-                  {board.sectorCount} sectors
-                </dd>
-              </dl>
-            </header>
+                <dl className="shrink-0 text-right">
+                  <dt className="house-data house-micro text-[var(--ink-soft)]">Coverage</dt>
+                  <dd className="house-display text-4xl leading-none text-[var(--ink)]">
+                    {board.coveredCount}
+                  </dd>
+                  <dd className="house-data house-micro mt-1 text-[var(--ink-soft)]">
+                    {board.sectorCount} sectors
+                  </dd>
+                </dl>
+              </header>
+              </FromSm>
+            </div>
 
-            <div className="mt-6">
+            <div className="order-4 sm:mt-6">
+              {/* Phone: the "Reference" divider demotes the scored ranking below the movement sections. */}
+              <BelowSm>
+                <div className="flex items-center gap-2.5 px-4 pb-3 pt-[26px]">
+                  <span className="house-data whitespace-nowrap text-[9px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">
+                    Reference
+                  </span>
+                  <span aria-hidden className="h-px flex-1 bg-[var(--ink)]" />
+                </div>
+              </BelowSm>
               <DeskLeaderboardTable
                 latestReads={latestReads}
                 quarterLeaders={quarterLeaders}
@@ -108,8 +144,10 @@ export default async function DeskPage() {
           </div>
 
           {/* Right rail — top of the book */}
-          <aside aria-label="Top of the book">
-            <p className="house-data house-micro mb-4 text-[var(--ink-soft)]">Top of the book</p>
+          <aside aria-label="Top of the book" className="order-5 mt-4 sm:mt-0">
+            <FromSm>
+              <p className="house-data house-micro mb-4 text-[var(--ink-soft)]">Top of the book</p>
+            </FromSm>
             <DeskTopOfBook
               quarterLabel={board.quarterLabel}
               topPerformers={quarterLeaders.slice(0, 5)}
@@ -120,27 +158,31 @@ export default async function DeskPage() {
           </aside>
         </div>
 
-        <DeskTelegramStrip />
+        {/* Phone: order-3 before the ledger in DOM → Featured → Telegram → Latest
+            activity. Desktop: DOM order → ranking grid → Telegram → Featured. */}
+        <div className="order-3 mt-6 px-4 sm:mt-14 sm:px-0">
+          <DeskTelegramStrip />
+        </div>
 
-        <div className="mt-14">
-          <Suspense fallback={<DeskFeaturedReadsFallback />}>
+        <div className="order-2 mt-4 sm:mt-14">
+          <Suspense fallback={<div className="px-4 sm:px-0"><DeskFeaturedReadsFallback /></div>}>
             <DeskFeaturedReads />
           </Suspense>
         </div>
 
-        <div className="mt-14">
-          <Suspense fallback={<DeskRecencyLedgerFallback />}>
+        <div className="order-3 mt-4 sm:mt-14">
+          <Suspense fallback={<div className="px-4 sm:px-0"><DeskRecencyLedgerFallback /></div>}>
             <DeskRecencyLedger quarterLabel={board.quarterLabel} />
           </Suspense>
         </div>
 
-        <div className="mt-12">
+        <div className="order-6 mt-10 px-4 sm:mt-12 sm:px-0">
           <Suspense fallback={<DeskExchangeSectionFallback />}>
             <DeskExchangeSection />
           </Suspense>
         </div>
 
-        <div className="mt-12">
+        <div className="order-7 mt-10 px-4 sm:mt-12 sm:px-0">
           <Suspense fallback={<DeskHotThemesFallback />}>
             <DeskHotThemes />
           </Suspense>

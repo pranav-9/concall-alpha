@@ -13,6 +13,7 @@ import { IdentityBridge } from "@/components/identity-bridge";
 import { SiteFooter } from "@/components/site-footer";
 import { CommunityNudge } from "@/components/community-nudge";
 import { getTelegramJoinUrl } from "@/lib/community";
+import { DeskMobileTabBar } from "@/components/desk-mobile-tab-bar";
 import { Toaster } from "@/components/ui/sonner";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { getSiteUrl } from "@/lib/site-url";
@@ -159,6 +160,7 @@ export default function RootLayout({
               {children}
             </div>
             <SiteFooter />
+            <DeskMobileTabBar />
             <CommunityNudgeSlot />
             <Toaster richColors />
           </div>
