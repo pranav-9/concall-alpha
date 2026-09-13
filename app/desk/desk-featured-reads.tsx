@@ -123,15 +123,15 @@ function SecondaryCard({ read }: { read: FeaturedRead }) {
 }
 
 // ---------------------------------------------------------------------------
-// Phone presentation (< sm): one card — a lead item (kicker, editorial
-// headline, "The bet" dek, company · sector · time) and brief rows for the
-// rest. The headline leads here because the phone card is a headline list;
-// the company name stays in the meta line and in the heading's outline text.
+// Phone presentation (< sm): one card — a lead item (kicker, company name,
+// editorial headline, "The bet" dek, code · sector · time) and brief rows for
+// the rest. Same hierarchy as desktop: company name leads as the display h3,
+// the headline is the subhead beneath it.
 // ---------------------------------------------------------------------------
 
 function MobileMeta({ read, className }: { read: FeaturedRead; className?: string }) {
   const time = formatRelativeActivityTime(read.publishedAtRaw);
-  const parts = [read.companyName, read.sector, time].filter((p): p is string => Boolean(p));
+  const parts = [read.companyCode, read.sector, time].filter((p): p is string => Boolean(p));
   return (
     <span className={cn("house-data text-[10px] text-[var(--ink-soft)]", className)}>
       {parts.join(" · ")}
@@ -160,9 +160,12 @@ function MobileLead({ read }: { read: FeaturedRead }) {
     >
       <MobileKicker read={read} className="text-[10px] tracking-[0.14em]" />
       <h3 className="house-display mt-[9px] text-xl leading-[1.12] text-[var(--ink)] [text-wrap:pretty]">
-        {read.headline}
-        <span className="sr-only"> — {read.companyName}</span>
+        {read.companyName}
+        <span className="sr-only">: {read.headline}</span>
       </h3>
+      <p className="mt-1 text-[15px] font-medium leading-snug text-[var(--ink)] [text-wrap:pretty]">
+        {read.headline}
+      </p>
       <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink-soft)] [text-wrap:pretty]">
         {read.summary}
       </p>
@@ -186,10 +189,13 @@ function MobileBrief({ read }: { read: FeaturedRead }) {
       <span className="min-w-0 flex-1">
         <MobileKicker read={read} className="text-[9px] tracking-[0.12em]" />
         <h3 className="house-display mt-[3px] text-sm leading-[1.2] text-[var(--ink)] [text-wrap:pretty]">
-          {read.headline}
-          <span className="sr-only"> — {read.companyName}</span>
+          {read.companyName}
+          <span className="sr-only">: {read.headline}</span>
         </h3>
-        <MobileMeta read={read} className="mt-[5px] block" />
+        <p className="mt-[2px] line-clamp-1 text-[12px] leading-[1.25] text-[var(--ink-soft)] [text-wrap:pretty]">
+          {read.headline}
+        </p>
+        <MobileMeta read={read} className="mt-[3px] block" />
       </span>
       <Chevron />
     </HomepageModuleLink>
