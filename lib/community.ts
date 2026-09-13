@@ -3,11 +3,16 @@
 // Telegram is the dialog venue: the hypothesis doc (§3, "Peer-dialog sourcing,
 // stated honestly") says the engaged cohort is anonymous — analytics rows with no
 // contact path. A group people opt into is that path. The invite URL is an env
-// var so it can rotate (Telegram invite links get revoked/regenerated) without a
-// code change; when it is empty every join affordance renders nothing, so a
-// preview or a local checkout never shows a dead link.
+// var so it can rotate (Telegram invite links get revoked/regenerated) with a
+// redeploy and no code change; when it is empty every join affordance renders
+// nothing, so a preview or a local checkout never shows a dead link.
 
 const ALLOWED_HOSTS = new Set(["t.me", "telegram.me", "www.t.me"]);
+
+// An invite (`/+AbC…`), a legacy invite (`/joinchat/…`), or a public handle.
+// Anything else — the bare origin, a bot deep link, a userinfo trick — is a
+// typo'd env var and must not ship as a live outbound link.
+const ALLOWED_PATH = /^\/(\+[A-Za-z0-9_-]+|joinchat\/[A-Za-z0-9_-]+|[A-Za-z][A-Za-z0-9_]{3,31})$/;
 
 export function getTelegramJoinUrl(): string | null {
   const raw = process.env.NEXT_PUBLIC_TELEGRAM_URL?.trim();
@@ -15,7 +20,9 @@ export function getTelegramJoinUrl(): string | null {
   try {
     const url = new URL(raw);
     if (url.protocol !== "https:" || !ALLOWED_HOSTS.has(url.hostname)) return null;
-    return url.toString();
+    if (url.username || url.password || url.search) return null;
+    if (!ALLOWED_PATH.test(url.pathname)) return null;
+    return `${url.origin}${url.pathname}`;
   } catch {
     return null;
   }
