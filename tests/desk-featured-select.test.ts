@@ -25,6 +25,7 @@ const mk = (
   href: `/company/${companyCode}#guidance-history`,
   weight,
   publishedAtRaw,
+  image: null,
 });
 
 const codes = (reads: FeaturedRead[]) => selectFeaturedReads(reads).map((r) => r.companyCode);

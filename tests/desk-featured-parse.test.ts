@@ -57,4 +57,23 @@ assert.equal(parsed.headline, "From turbine-maker to full-stack renewable develo
 assert.equal(parsed.sector, "Capital Goods");
 console.log("  ok  other fields pass through unchanged");
 
+// --- optional card image (schema: site-relative jpg/jpeg/png/webp, alt required) ---
+assert.deepEqual(
+  parseFeaturedRead(
+    mkRow({ image_url: "/blog/cartrade-story-2026-09-14.jpg", image_alt: " One-page summary of CarTrade Tech " }),
+  )?.image,
+  { src: "/blog/cartrade-story-2026-09-14.jpg", alt: "One-page summary of CarTrade Tech" },
+);
+assert.equal(parseFeaturedRead(mkRow())?.image, null, "absent columns (pre-DDL select) = no image");
+assert.equal(parseFeaturedRead(mkRow({ image_url: null, image_alt: null }))?.image, null);
+console.log("  ok  a valid image parses; absent or null means no image");
+
+assert.equal(parseFeaturedRead(mkRow({ image_url: "https://cdn.example.com/p.jpg", image_alt: "p" })), null);
+assert.equal(parseFeaturedRead(mkRow({ image_url: "//cdn.example.com/p.jpg", image_alt: "p" })), null);
+assert.equal(parseFeaturedRead(mkRow({ image_url: "/blog/poster.gif", image_alt: "p" })), null);
+assert.equal(parseFeaturedRead(mkRow({ image_url: "", image_alt: "p" })), null);
+assert.equal(parseFeaturedRead(mkRow({ image_url: "/blog/poster.jpg", image_alt: null })), null);
+assert.equal(parseFeaturedRead(mkRow({ image_url: "/blog/poster.jpg", image_alt: "   " })), null);
+console.log("  ok  a remote, non-image or alt-less image makes the row invalid");
+
 console.log("\nAll desk-featured parse tests passed.");

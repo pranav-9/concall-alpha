@@ -32,6 +32,9 @@ export type DeskFeaturedReadRow = {
   feature_weight: number | null;
   published_at: string | null;
   status: string | null;
+  // Optional, and absent entirely until the 2026-09-14 DDL is applied.
+  image_url?: string | null;
+  image_alt?: string | null;
 };
 
 // The validated display shape the UI renders.
@@ -48,6 +51,7 @@ export type FeaturedRead = {
   href: string;
   weight: number;
   publishedAtRaw: string | null;
+  image: { src: string; alt: string } | null;
 };
 
 const isSection = (v: unknown): v is FeaturedSection =>
@@ -73,6 +77,10 @@ function stripLegalSuffix(raw: string | null | undefined): string | undefined {
   return stripped.length > 0 ? stripped : trimmed;
 }
 
+// The schema's image_url pattern: a site-relative path to a file under public/
+// (next/image here is not configured for remote hosts), never `//host/...`.
+const IMAGE_PATH = /^\/[^/\s][^\s]*\.(jpg|jpeg|png|webp)$/;
+
 // Parse one raw row into the display shape, or null if it fails the schema's
 // required-field / enum contract. A malformed row is dropped, never rendered
 // broken — same discipline as the analysis-section normalizers.
@@ -93,6 +101,15 @@ export function parseFeaturedRead(row: DeskFeaturedReadRow): FeaturedRead | null
 
   const sector = row.sector?.trim();
 
+  // A set image must match the pattern and carry alt text (the schema's if/then);
+  // otherwise the row is invalid like any other contract breach.
+  let image: FeaturedRead["image"] = null;
+  if (typeof row.image_url === "string") {
+    const alt = row.image_alt?.trim();
+    if (!IMAGE_PATH.test(row.image_url) || !alt) return null;
+    image = { src: row.image_url, alt };
+  }
+
   return {
     id,
     companyCode,
@@ -106,6 +123,7 @@ export function parseFeaturedRead(row: DeskFeaturedReadRow): FeaturedRead | null
     href,
     weight: clampWeight(row.feature_weight),
     publishedAtRaw: row.published_at ?? null,
+    image,
   };
 }
 
