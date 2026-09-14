@@ -7,7 +7,10 @@
 // headline is the subhead beneath it. The producer's summary is deliberately
 // NOT rendered (2026-09-14): three names × name + headline + paragraph was too
 // much text for a first-time reader; it stays in the row for the Telegram
-// drafter and a future archive page. The footer meta carries
+// drafter and a future archive page. In its place, a guidance re-read carries a
+// data exhibit — the company's guidance record as one dot per commitment
+// (featured-guidance-record.tsx), derived exactly as the Guidance section
+// derives its track record. The footer meta carries
 // the ticker code, sector and time; it does not repeat the name. The headline is
 // also folded into the h3 as screen-reader-only text so two cards for the same
 // company still have distinct headings in the outline.
@@ -25,6 +28,9 @@ import { HomepageModuleLink } from "@/components/homepage-module-link";
 import { getCachedDeskFeaturedReads } from "@/lib/desk-featured/data";
 import { selectFeaturedReads } from "@/lib/desk-featured/select";
 import { changeKindSuffix, type FeaturedRead } from "@/lib/desk-featured/types";
+import type { GuidanceRecord } from "@/lib/desk-featured/guidance-record";
+import { getCachedGuidanceRecords } from "@/lib/desk-featured/guidance-record-data";
+import { FeaturedGuidanceRecord } from "./featured-guidance-record";
 import { BelowSm, FromSm } from "@/components/viewport-gate";
 import { DeskFeaturedReadsTracker } from "./desk-featured-reads-tracker";
 import { Chevron, MOBILE_CARD, MOBILE_HEAD_RIGHT, MOBILE_ROW, MobileCardHead } from "@/components/mobile-card";
@@ -62,7 +68,7 @@ function Meta({ read }: { read: FeaturedRead }) {
   );
 }
 
-function HeroCard({ read }: { read: FeaturedRead }) {
+function HeroCard({ read, record }: { read: FeaturedRead; record: GuidanceRecord | null }) {
   return (
     <HomepageModuleLink
       module="featured_read_hero"
@@ -83,7 +89,14 @@ function HeroCard({ read }: { read: FeaturedRead }) {
       <p className="mb-6 mt-2 max-w-2xl text-lg font-medium leading-snug text-[var(--ink)] sm:text-xl">
         {read.headline}
       </p>
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-[var(--rule)] pt-4">
+      {/* The record sits on the footer rule, filling the card's lower half. */}
+      {record ? <FeaturedGuidanceRecord record={record} size="hero" className="mt-auto" /> : null}
+      <div
+        className={cn(
+          "flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-[var(--rule)] pt-4",
+          record ? "mt-5" : "mt-auto",
+        )}
+      >
         <Meta read={read} />
         <span className="house-data house-micro text-[var(--signal)]">Read the analysis →</span>
       </div>
@@ -91,7 +104,7 @@ function HeroCard({ read }: { read: FeaturedRead }) {
   );
 }
 
-function SecondaryCard({ read }: { read: FeaturedRead }) {
+function SecondaryCard({ read, record }: { read: FeaturedRead; record: GuidanceRecord | null }) {
   return (
     <HomepageModuleLink
       module="featured_read_secondary"
@@ -112,6 +125,7 @@ function SecondaryCard({ read }: { read: FeaturedRead }) {
       <p className="mt-1 text-sm font-medium leading-snug text-[var(--ink)]">
         {read.headline}
       </p>
+      {record ? <FeaturedGuidanceRecord record={record} size="compact" className="mt-3" /> : null}
       <div className="mt-4">
         <Meta read={read} />
       </div>
@@ -146,7 +160,7 @@ function MobileKicker({ read, className }: { read: FeaturedRead; className?: str
   );
 }
 
-function MobileLead({ read }: { read: FeaturedRead }) {
+function MobileLead({ read, record }: { read: FeaturedRead; record: GuidanceRecord | null }) {
   return (
     <HomepageModuleLink
       module="featured_read_hero"
@@ -163,6 +177,7 @@ function MobileLead({ read }: { read: FeaturedRead }) {
       <p className="mt-1 text-[15px] font-medium leading-snug text-[var(--ink)] [text-wrap:pretty]">
         {read.headline}
       </p>
+      {record ? <FeaturedGuidanceRecord record={record} size="compact" className="mt-3" /> : null}
       <span className="mt-[13px] flex items-center justify-between gap-2.5">
         <MobileMeta read={read} />
         <span className="house-data whitespace-nowrap text-[10px] text-[var(--ink)]">Read →</span>
@@ -196,7 +211,15 @@ function MobileBrief({ read }: { read: FeaturedRead }) {
   );
 }
 
-function MobileFeatured({ hero, secondaries }: { hero: FeaturedRead; secondaries: FeaturedRead[] }) {
+function MobileFeatured({
+  hero,
+  secondaries,
+  heroRecord,
+}: {
+  hero: FeaturedRead;
+  secondaries: FeaturedRead[];
+  heroRecord: GuidanceRecord | null;
+}) {
   return (
     <section aria-labelledby="desk-featured-mobile" className={MOBILE_CARD}>
       <MobileCardHead
@@ -208,7 +231,7 @@ function MobileFeatured({ hero, secondaries }: { hero: FeaturedRead; secondaries
           </Link>
         }
       />
-      <MobileLead read={hero} />
+      <MobileLead read={hero} record={heroRecord} />
       {secondaries.map((read) => (
         <MobileBrief key={read.id} read={read} />
       ))}
@@ -235,10 +258,17 @@ export default async function DeskFeaturedReads() {
 
   const [hero, ...secondaries] = featured;
 
+  // Only guidance re-reads carry a record; other sections render as before.
+  const records = await getCachedGuidanceRecords(
+    featured.filter((read) => read.section === "guidance").map((read) => read.companyCode),
+  ).catch(() => ({}) as Record<string, GuidanceRecord>);
+  const recordFor = (read: FeaturedRead): GuidanceRecord | null =>
+    read.section === "guidance" ? (records[read.companyCode.toUpperCase()] ?? null) : null;
+
   return (
     <DeskFeaturedReadsTracker>
     <BelowSm>
-      <MobileFeatured hero={hero} secondaries={secondaries} />
+      <MobileFeatured hero={hero} secondaries={secondaries} heroRecord={recordFor(hero)} />
     </BelowSm>
     <FromSm>
     <section aria-labelledby="desk-featured" className="house-block">
@@ -255,11 +285,11 @@ export default async function DeskFeaturedReads() {
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1.6fr_1fr]">
-        <HeroCard read={hero} />
+        <HeroCard read={hero} record={recordFor(hero)} />
         {secondaries.length > 0 && (
           <div className="flex flex-col gap-5">
             {secondaries.map((read) => (
-              <SecondaryCard key={read.id} read={read} />
+              <SecondaryCard key={read.id} read={read} record={recordFor(read)} />
             ))}
           </div>
         )}
