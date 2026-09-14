@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -58,32 +59,45 @@ export function JournalList({ posts }: { posts: BlogPostMeta[] }) {
             key={post.slug}
             className="border-b border-border pb-5 last:border-0 last:pb-0"
           >
-            <Link href={`/blog/${post.slug}`} className="group block">
-              <h2 className="text-base font-semibold text-foreground group-hover:underline sm:text-lg">
-                {post.title}
-              </h2>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {post.category ? (
-                  <span
-                    className={`${pillBase} border-border/60 bg-muted/50 text-foreground`}
-                  >
-                    {CATEGORY_LABELS[post.category]}
-                  </span>
-                ) : null}
-                {post.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className={`${pillBase} border-border/50 bg-background/50 text-muted-foreground`}
-                  >
-                    {tag}
-                  </span>
-                ))}
+            <Link href={`/blog/${post.slug}`} className="group flex items-start gap-4">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-base font-semibold text-foreground group-hover:underline sm:text-lg">
+                  {post.title}
+                </h2>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  {post.category ? (
+                    <span
+                      className={`${pillBase} border-border/60 bg-muted/50 text-foreground`}
+                    >
+                      {CATEGORY_LABELS[post.category]}
+                    </span>
+                  ) : null}
+                  {post.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className={`${pillBase} border-border/50 bg-background/50 text-muted-foreground`}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <PostDate
+                  iso={post.date}
+                  label={post.dateLabel}
+                  className="mt-2 block text-xs text-muted-foreground"
+                />
               </div>
-              <PostDate
-                iso={post.date}
-                label={post.dateLabel}
-                className="mt-2 block text-xs text-muted-foreground"
-              />
+              {post.image ? (
+                <div className="relative aspect-[4/3] w-24 shrink-0 overflow-hidden rounded-md border border-border bg-muted sm:w-40">
+                  <Image
+                    src={post.image}
+                    alt={post.imageAlt ?? ""}
+                    fill
+                    sizes="(min-width: 640px) 160px, 96px"
+                    className="object-cover"
+                  />
+                </div>
+              ) : null}
             </Link>
           </li>
         ))}

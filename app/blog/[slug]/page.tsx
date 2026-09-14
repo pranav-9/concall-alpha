@@ -22,6 +22,10 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = getPostBySlug(slug);
   if (!post) return {};
+  // A cover overrides the site-wide share card for this post only.
+  const images = post.image
+    ? [{ url: post.image, alt: post.imageAlt ?? post.title }]
+    : undefined;
   return {
     title: `${post.title} – Story of a Stock`,
     description: post.summary,
@@ -34,11 +38,13 @@ export async function generateMetadata({
       siteName: "Story of a Stock",
       publishedTime: post.date,
       tags: post.tags,
+      ...(images ? { images } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title: post.title,
       description: post.summary,
+      ...(images ? { images } : {}),
     },
   };
 }
