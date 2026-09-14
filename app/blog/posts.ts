@@ -30,6 +30,16 @@ export type BlogPostMeta = {
   category?: BlogCategory;
   /** Short descriptive tags shown as pills on each row. */
   tags: string[];
+  /**
+   * Optional cover: a path under public/ (e.g. "/blog/market-voted.png").
+   * Shown as a thumbnail beside the title on the Journal index and used as the
+   * post's share card. NOT rendered on the post page — a post that wants a hero
+   * places it inline at the top of its MDX, at its natural aspect ratio.
+   * Remote URLs are ignored (no next/image remotePatterns).
+   */
+  image?: string;
+  /** Alt text for the cover; omit when the image is purely decorative. */
+  imageAlt?: string;
 };
 
 export type BlogPost = BlogPostMeta & { content: string };
@@ -54,6 +64,11 @@ function readMeta(file: string): BlogPostMeta {
     summary: String(data.summary ?? ""),
     category: asCategory(data.category),
     tags: toStringArray(data.tags),
+    image:
+      typeof data.image === "string" && data.image.startsWith("/")
+        ? data.image
+        : undefined,
+    imageAlt: typeof data.imageAlt === "string" ? data.imageAlt : undefined,
   };
 }
 

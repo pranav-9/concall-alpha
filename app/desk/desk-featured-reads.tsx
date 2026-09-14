@@ -1,10 +1,13 @@
 // Desk "Featured Reads" — the editorial front page (mockup: one hero card +
 // two stacked secondaries). Each card foregrounds a notable section upgrade or
-// new-coverage event with a written headline + crisp summary, enticing the read.
+// new-coverage event with a written headline, enticing the read.
 //
 // Hierarchy: COMPANY NAME leads every card (the display h3) — a reader tracking
 // a name must recognise it at a glance before anything else. The editorial
-// headline is the subhead beneath it, then the summary. The footer meta carries
+// headline is the subhead beneath it. The producer's summary is deliberately
+// NOT rendered (2026-09-14): three names × name + headline + paragraph was too
+// much text for a first-time reader; it stays in the row for the Telegram
+// drafter and a future archive page. The footer meta carries
 // the ticker code, sector and time; it does not repeat the name. The headline is
 // also folded into the h3 as screen-reader-only text so two cards for the same
 // company still have distinct headings in the outline.
@@ -77,13 +80,10 @@ function HeroCard({ read }: { read: FeaturedRead }) {
         {read.companyName}
         <span className="sr-only">: {read.headline}</span>
       </h3>
-      <p className="mt-2 max-w-2xl text-lg font-medium leading-snug text-[var(--ink)] sm:text-xl">
+      <p className="mb-6 mt-2 max-w-2xl text-lg font-medium leading-snug text-[var(--ink)] sm:text-xl">
         {read.headline}
       </p>
-      <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[var(--ink-soft)] sm:text-base">
-        {read.summary}
-      </p>
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-[var(--rule)] pt-4">
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-[var(--rule)] pt-4">
         <Meta read={read} />
         <span className="house-data house-micro text-[var(--signal)]">Read the analysis →</span>
       </div>
@@ -112,9 +112,6 @@ function SecondaryCard({ read }: { read: FeaturedRead }) {
       <p className="mt-1 text-sm font-medium leading-snug text-[var(--ink)]">
         {read.headline}
       </p>
-      <p className="mt-2 line-clamp-2 text-sm leading-snug text-[var(--ink-soft)]">
-        {read.summary}
-      </p>
       <div className="mt-4">
         <Meta read={read} />
       </div>
@@ -124,7 +121,7 @@ function SecondaryCard({ read }: { read: FeaturedRead }) {
 
 // ---------------------------------------------------------------------------
 // Phone presentation (< sm): one card — a lead item (kicker, company name,
-// editorial headline, "The bet" dek, code · sector · time) and brief rows for
+// editorial headline, code · sector · time) and brief rows for
 // the rest. Same hierarchy as desktop: company name leads as the display h3,
 // the headline is the subhead beneath it.
 // ---------------------------------------------------------------------------
@@ -165,9 +162,6 @@ function MobileLead({ read }: { read: FeaturedRead }) {
       </h3>
       <p className="mt-1 text-[15px] font-medium leading-snug text-[var(--ink)] [text-wrap:pretty]">
         {read.headline}
-      </p>
-      <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink-soft)] [text-wrap:pretty]">
-        {read.summary}
       </p>
       <span className="mt-[13px] flex items-center justify-between gap-2.5">
         <MobileMeta read={read} />
