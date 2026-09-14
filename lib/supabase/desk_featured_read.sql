@@ -40,6 +40,14 @@ create table if not exists public.desk_featured_read (
   updated_at timestamptz not null default now()
 );
 
+-- Optional producer-supplied card image (2026-09-14): a site-relative path to a
+-- file under concall-alpha/public (e.g. a Journal write-up's poster) plus its alt
+-- text. Additive and nullable, so it is safe to apply before or after the portal
+-- deploy — the portal falls back to its old column list until these exist.
+alter table public.desk_featured_read
+  add column if not exists image_url text null,
+  add column if not exists image_alt text null;
+
 -- The portal reads only eligible rows and takes the freshest few. Column order
 -- mirrors the query exactly (lib/desk-featured/data.ts, driven by
 -- SELECTION_ORDER): equality filter first, then the recency sort key, then the

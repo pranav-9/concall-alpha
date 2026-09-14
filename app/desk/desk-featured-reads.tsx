@@ -10,7 +10,9 @@
 // drafter and a future archive page. In its place, a guidance re-read carries a
 // data exhibit — the company's guidance record as one dot per commitment
 // (featured-guidance-record.tsx), derived exactly as the Guidance section
-// derives its track record. The footer meta carries
+// derives its track record. A card may also carry a producer-supplied image
+// (image_url — e.g. a Journal write-up's poster), drawn beside the text and
+// cropped to its top. The footer meta carries
 // the ticker code, sector and time; it does not repeat the name. The headline is
 // also folded into the h3 as screen-reader-only text so two cards for the same
 // company still have distinct headings in the outline.
@@ -20,6 +22,7 @@
 // honest, complete tape; this strip is the curated skin on top. Renders the
 // whole section or nothing — an empty pool returns null, no empty shell.
 
+import Image from "next/image";
 import Link from "next/link";
 
 import { formatRelativeActivityTime } from "@/lib/activity-feed";
@@ -68,19 +71,33 @@ function Meta({ read }: { read: FeaturedRead }) {
   );
 }
 
-function HeroCard({ read, record }: { read: FeaturedRead; record: GuidanceRecord | null }) {
+// A producer-supplied card image (e.g. a Journal write-up's one-page poster),
+// cropped to its top, where a poster's title and first exhibit sit. It stretches
+// to the height of the text beside it.
+function CardImage({
+  image,
+  sizes,
+  className,
+}: {
+  image: NonNullable<FeaturedRead["image"]>;
+  sizes: string;
+  className?: string;
+}) {
   return (
-    <HomepageModuleLink
-      module="featured_read_hero"
-      companyCode={read.companyCode}
-      surface="desk"
-      href={read.href}
+    <span
       className={cn(
-        "flex h-full flex-col rounded-lg border border-[var(--rule)] bg-[var(--paper-2)] p-6 transition-colors sm:p-8",
-        CARD_HOVER,
-        CARD_FOCUS,
+        "relative block shrink-0 overflow-hidden rounded-md border border-[var(--rule)] bg-[var(--paper)]",
+        className,
       )}
     >
+      <Image src={image.src} alt={image.alt} fill sizes={sizes} className="object-cover object-top" />
+    </span>
+  );
+}
+
+function HeroCard({ read, record }: { read: FeaturedRead; record: GuidanceRecord | null }) {
+  const body = (
+    <>
       <Eyebrow read={read} />
       <h3 className="house-display mt-3 max-w-2xl text-2xl leading-[1.1] text-[var(--ink)] sm:text-3xl">
         {read.companyName}
@@ -100,23 +117,41 @@ function HeroCard({ read, record }: { read: FeaturedRead; record: GuidanceRecord
         <Meta read={read} />
         <span className="house-data house-micro text-[var(--signal)]">Read the analysis →</span>
       </div>
+    </>
+  );
+
+  return (
+    <HomepageModuleLink
+      module="featured_read_hero"
+      companyCode={read.companyCode}
+      surface="desk"
+      href={read.href}
+      className={cn(
+        "flex h-full rounded-lg border border-[var(--rule)] bg-[var(--paper-2)] p-6 transition-colors sm:p-8",
+        read.image ? "gap-8" : "flex-col",
+        CARD_HOVER,
+        CARD_FOCUS,
+      )}
+    >
+      {read.image ? (
+        <>
+          <div className="flex min-w-0 flex-1 flex-col">{body}</div>
+          <CardImage
+            image={read.image}
+            sizes="(min-width: 1024px) 300px, 34vw"
+            className="hidden min-h-[14rem] w-[34%] md:block"
+          />
+        </>
+      ) : (
+        body
+      )}
     </HomepageModuleLink>
   );
 }
 
 function SecondaryCard({ read, record }: { read: FeaturedRead; record: GuidanceRecord | null }) {
-  return (
-    <HomepageModuleLink
-      module="featured_read_secondary"
-      companyCode={read.companyCode}
-      surface="desk"
-      href={read.href}
-      className={cn(
-        "flex flex-col rounded-lg border border-[var(--rule)] bg-[var(--paper-2)] p-5 transition-colors",
-        CARD_HOVER,
-        CARD_FOCUS,
-      )}
-    >
+  const body = (
+    <>
       <Eyebrow read={read} />
       <h3 className="house-display mt-2 text-lg leading-snug text-[var(--ink)]">
         {read.companyName}
@@ -129,6 +164,30 @@ function SecondaryCard({ read, record }: { read: FeaturedRead; record: GuidanceR
       <div className="mt-4">
         <Meta read={read} />
       </div>
+    </>
+  );
+
+  return (
+    <HomepageModuleLink
+      module="featured_read_secondary"
+      companyCode={read.companyCode}
+      surface="desk"
+      href={read.href}
+      className={cn(
+        "flex rounded-lg border border-[var(--rule)] bg-[var(--paper-2)] p-5 transition-colors",
+        read.image ? "gap-4" : "flex-col",
+        CARD_HOVER,
+        CARD_FOCUS,
+      )}
+    >
+      {read.image ? (
+        <>
+          <div className="flex min-w-0 flex-1 flex-col">{body}</div>
+          <CardImage image={read.image} sizes="112px" className="min-h-[7.5rem] w-24 lg:w-28" />
+        </>
+      ) : (
+        body
+      )}
     </HomepageModuleLink>
   );
 }
@@ -160,6 +219,21 @@ function MobileKicker({ read, className }: { read: FeaturedRead; className?: str
   );
 }
 
+function MobileLeadText({ read }: { read: FeaturedRead }) {
+  return (
+    <>
+      <MobileKicker read={read} className="text-[10px] tracking-[0.14em]" />
+      <h3 className="house-display mt-[9px] text-xl leading-[1.12] text-[var(--ink)] [text-wrap:pretty]">
+        {read.companyName}
+        <span className="sr-only">: {read.headline}</span>
+      </h3>
+      <p className="mt-1 text-[15px] font-medium leading-snug text-[var(--ink)] [text-wrap:pretty]">
+        {read.headline}
+      </p>
+    </>
+  );
+}
+
 function MobileLead({ read, record }: { read: FeaturedRead; record: GuidanceRecord | null }) {
   return (
     <HomepageModuleLink
@@ -169,14 +243,16 @@ function MobileLead({ read, record }: { read: FeaturedRead; record: GuidanceReco
       href={read.href}
       className={cn(MOBILE_ROW, "px-3.5 py-4")}
     >
-      <MobileKicker read={read} className="text-[10px] tracking-[0.14em]" />
-      <h3 className="house-display mt-[9px] text-xl leading-[1.12] text-[var(--ink)] [text-wrap:pretty]">
-        {read.companyName}
-        <span className="sr-only">: {read.headline}</span>
-      </h3>
-      <p className="mt-1 text-[15px] font-medium leading-snug text-[var(--ink)] [text-wrap:pretty]">
-        {read.headline}
-      </p>
+      {read.image ? (
+        <span className="flex gap-3">
+          <span className="min-w-0 flex-1">
+            <MobileLeadText read={read} />
+          </span>
+          <CardImage image={read.image} sizes="72px" className="h-[5.5rem] w-[4.5rem]" />
+        </span>
+      ) : (
+        <MobileLeadText read={read} />
+      )}
       {record ? <FeaturedGuidanceRecord record={record} size="compact" className="mt-3" /> : null}
       <span className="mt-[13px] flex items-center justify-between gap-2.5">
         <MobileMeta read={read} />
@@ -206,6 +282,7 @@ function MobileBrief({ read }: { read: FeaturedRead }) {
         </p>
         <MobileMeta read={read} className="mt-[3px] block" />
       </span>
+      {read.image ? <CardImage image={read.image} sizes="40px" className="h-12 w-10" /> : null}
       <Chevron />
     </HomepageModuleLink>
   );
