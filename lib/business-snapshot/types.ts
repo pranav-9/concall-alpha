@@ -1,3 +1,5 @@
+import type { normalizeBusinessProfile } from "./profile";
+
 export type BusinessSnapshotRow = {
   company: string;
   generated_at?: string | null;
@@ -16,7 +18,7 @@ export type BusinessSnapshotRow = {
   source_urls?: unknown;
 };
 
-export type NormalizedAboutCompany = {
+export type NormalizedAboutCompany = ReturnType<typeof normalizeBusinessProfile> & {
   aboutShort: string | null;
   aboutLong: string | null;
 };

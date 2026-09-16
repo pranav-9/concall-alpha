@@ -1,4 +1,3 @@
-import { ChevronDown } from "lucide-react";
 import type {
   NormalizedBusinessSnapshot,
   NormalizedHistoricalEconomics,
@@ -15,6 +14,8 @@ import { formatCompactLabel } from "../[code]/display-tokens";
 import { SCROLL_MARGIN_TOP, SectionCard, SectionUpdatedAt } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
 import { BusinessSegmentsMosaic } from "./business-segments-mosaic";
+import { BusinessCompanyBackground } from "./business-company-background";
+import { BusinessMixHistory } from "./business-mix-history";
 import { HistoricalEconomicsDataPack } from "./deferred-company-sections";
 import { SegmentHistoryPanel } from "./segment-history-panel";
 import {
@@ -62,6 +63,13 @@ function deriveState(snapshot: NormalizedBusinessSnapshot | null): DerivedState 
   const hasStructuredBusinessSnapshot = Boolean(
     aboutHeading ||
       aboutSupportingText ||
+      aboutCompany?.intro ||
+      aboutCompany?.change ||
+      aboutCompany?.hasInvalidProfile ||
+      (aboutCompany?.timeline.length ?? 0) > 0 ||
+      (aboutCompany?.facts.length ?? 0) > 0 ||
+      (snapshot?.segmentHistoryAnnual?.rows.length ?? 0) > 0 ||
+      (snapshot?.segmentHistoryQuarterly?.rows.length ?? 0) > 0 ||
       hasHistoricalEconomics ||
       (revenueBreakdown?.bySegment.length ?? 0) > 0 ||
       (revenueBreakdown?.byProductOrService.length ?? 0) > 0,
@@ -100,40 +108,6 @@ const SNAPSHOT_ANCHORS = {
 
 function anchorStyle() {
   return { scrollMarginTop: SCROLL_MARGIN_TOP };
-}
-
-function renderAboutBlock(
-  aboutHeading: string | null,
-  aboutSupportingText: string | null,
-) {
-  const aboutMainText = aboutHeading ?? aboutSupportingText ?? null;
-  const aboutDrawerText = aboutHeading && aboutSupportingText ? aboutSupportingText : null;
-  const aboutMainTextClass = aboutHeading
-    ? "text-base sm:text-lg font-semibold leading-snug text-foreground"
-    : "text-sm leading-relaxed lg:text-[13px] text-foreground";
-
-  if (!aboutMainText) return null;
-
-  return (
-    <div id={SNAPSHOT_ANCHORS.about} style={anchorStyle()} className={`${nestedDetailClass} p-3`}>
-      <div className="min-w-0 space-y-2">
-        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-          About
-        </p>
-        <p className={aboutMainTextClass}>{aboutMainText}</p>
-        {aboutDrawerText ? (
-          <details className="group/about-more">
-            <summary className="inline-flex list-none cursor-pointer items-center gap-1 rounded-sm text-xs font-medium text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
-              <span className="group-open/about-more:hidden">Read more</span>
-              <span className="hidden group-open/about-more:inline">Show less</span>
-              <ChevronDown className="h-3 w-3 transition-transform group-open/about-more:rotate-180" aria-hidden />
-            </summary>
-            <p className="mt-2 text-sm leading-relaxed lg:text-[13px] text-foreground">{aboutDrawerText}</p>
-          </details>
-        ) : null}
-      </div>
-    </div>
-  );
 }
 
 function renderBusinessSnapshotDrawer({
@@ -588,11 +562,19 @@ export function BusinessSnapshotSection({
               <div className="space-y-4">
                 {hasStructuredBusinessSnapshot ? (
                   <div className="space-y-3">
-                    {renderAboutBlock(aboutHeading, aboutSupportingText)}
+                    <BusinessCompanyBackground
+                      about={snapshot.aboutCompany}
+                      headline={aboutHeading}
+                      supportingText={aboutSupportingText}
+                    />
 
                     <div id={SNAPSHOT_ANCHORS.segments} style={anchorStyle()}>
                       <BusinessSegmentsMosaic segments={segmentEntries} />
                     </div>
+                    <BusinessMixHistory
+                      history={historicalEconomics?.revenueMixHistoryBySegment ?? null}
+                      segments={segmentEntries}
+                    />
                     {historicalEconomics || hasHistoricalEconomicsSource ? (
                       <div id={SNAPSHOT_ANCHORS.momentum} style={anchorStyle()}>
                         {historicalEconomics

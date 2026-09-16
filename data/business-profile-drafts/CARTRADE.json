@@ -1,0 +1,226 @@
+{
+  "company": "CARTRADE",
+  "company_name": "CarTrade Tech",
+  "prepared_on": "2026-09-16",
+  "review_status": "draft",
+  "source_period": "Q1 FY27",
+  "latest_source_date": "2026-08-05",
+  "about_company": {
+    "about_short": "Runs vehicle marketplaces, auctions and OLX India’s classifieds platform.",
+    "business_intro": "CarTrade connects consumers, dealers, vehicle manufacturers and other businesses through CarWale, BikeWale, CarTrade, Shriram Automall and OLX India. Its businesses provide online listings, vehicle auctions, inspection and related services; it is also adding transaction-linked services through partners.",
+    "about_long": "The consumer business operates new- and used-vehicle marketplaces, including CarWale and BikeWale. The remarketing business combines physical and online auctions with inspection and valuation services for vehicle sellers, dealers and fleet owners. OLX India runs classifieds across twelve categories, including vehicles, property, electronics and furniture. Management describes listing fees as an established revenue source and transaction fees or margin sharing as an additional opportunity in used-auto partnerships. Product launches and paid-buyer plans should be distinguished from revenue already earned.",
+    "company_timeline": [
+      {
+        "year": 2010,
+        "title": "Launches the CarTrade business",
+        "detail": "The company’s website dates the business launch to 2010; this is not its legal incorporation date.",
+        "sources": [
+          {
+            "label": "CarTrade Tech official website",
+            "url": "https://www.cartradetech.com/",
+            "locator": "Key milestones"
+          }
+        ]
+      },
+      {
+        "year": 2016,
+        "title": "Acquires CarWale and BikeWale",
+        "detail": null,
+        "sources": [
+          {
+            "label": "CarTrade Q4 FY24 investor presentation",
+            "url": "https://static.cartradetech.com/pdf/update-and-announcements/Investors-UpdatePresentation-on-Audited-Financial-Results-of-the-Company-for-the-fourth-quarter-and-financial-year-ended-March-31-2024_06-05-2024.pdf",
+            "locator": "Slide 3 · Journey so far"
+          }
+        ]
+      },
+      {
+        "year": 2018,
+        "title": "Acquires control of Shriram Automall",
+        "detail": null,
+        "sources": [
+          {
+            "label": "CarTrade Q4 FY24 investor presentation",
+            "url": "https://static.cartradetech.com/pdf/update-and-announcements/Investors-UpdatePresentation-on-Audited-Financial-Results-of-the-Company-for-the-fourth-quarter-and-financial-year-ended-March-31-2024_06-05-2024.pdf",
+            "locator": "Slide 3 · Journey so far"
+          }
+        ]
+      },
+      {
+        "year": 2021,
+        "title": "Lists on the stock market",
+        "detail": null,
+        "sources": [
+          {
+            "label": "CarTrade Q4 FY24 investor presentation",
+            "url": "https://static.cartradetech.com/pdf/update-and-announcements/Investors-UpdatePresentation-on-Audited-Financial-Results-of-the-Company-for-the-fourth-quarter-and-financial-year-ended-March-31-2024_06-05-2024.pdf",
+            "locator": "Slide 3 · Journey so far"
+          }
+        ]
+      },
+      {
+        "year": 2023,
+        "title": "Acquires OLX India",
+        "detail": null,
+        "sources": [
+          {
+            "label": "CarTrade Q4 FY24 investor presentation",
+            "url": "https://static.cartradetech.com/pdf/update-and-announcements/Investors-UpdatePresentation-on-Audited-Financial-Results-of-the-Company-for-the-fourth-quarter-and-financial-year-ended-March-31-2024_06-05-2024.pdf",
+            "locator": "Slide 3 · Journey so far"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Announces Spinny partnership and launches AI Assist",
+        "detail": "The Q1 FY27 presentation reports the partnership announcement and launch of assistance for new-car buying.",
+        "sources": [
+          {
+            "label": "CarTrade Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+            "locator": "Slide 10"
+          },
+          {
+            "label": "CarTrade Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+            "locator": "Slide 12"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Who uses and pays for the platforms",
+        "text": "The platforms serve consumers, dealers, vehicle manufacturers and fleet owners. The auction business also serves business sellers. Management describes consumers and dealers paying listing fees, with transaction fees or margin sharing being added through used-auto partners.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "CarTrade Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+            "locator": "Slide 3"
+          },
+          {
+            "label": "CarTrade Q1 FY27 earnings call · 29 Jul 2026",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=68c07833-c537-4796-acb6-47925e91e6c0.pdf",
+            "locator": "Transcript p. 8"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "Physical network",
+        "text": "The group reports more than 500 physical locations across Automall, abSure and OLX India outlets. This is a network count, not a count of company-owned manufacturing assets.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "CarTrade Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+            "locator": "Slide 5"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Digital audience",
+        "text": "The group reports approximately 80 million monthly users across platforms: about 47 million for CarWale, BikeWale and CarTrade, and 32 million for OLX India. The presentation does not establish that these totals are deduplicated across brands.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "CarTrade Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+            "locator": "Slide 5"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Organic traffic",
+        "text": "The presentation reports 95% organic unique visitors across the group, with 92% for CarWale, BikeWale and CarTrade and 100% for OLX India. This is a traffic-source measure, not a customer-retention or margin measure.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "CarTrade Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+            "locator": "Slide 5"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Beyond vehicle classifieds",
+        "text": "OLX India operates across twelve categories, including vehicles, real estate, mobile phones, electronics and furniture. Remarketing combines physical and online auctions, inspection and valuation services.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "CarTrade Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+            "locator": "Slide 3"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Buyer products and partnerships",
+        "text": "The Q1 presentation reports a Spinny partnership, the launch of new-car AI Assist and more than 100,000 Elite Buyers in a single month. Converting all business buyers to paid products was still described as a forthcoming step on the July call, rather than completed monetisation.",
+        "period": "July 2026 disclosures",
+        "sources": [
+          {
+            "label": "CarTrade Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+            "locator": "Slide 10"
+          },
+          {
+            "label": "CarTrade Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+            "locator": "Slide 11"
+          },
+          {
+            "label": "CarTrade Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+            "locator": "Slide 12"
+          },
+          {
+            "label": "CarTrade Q1 FY27 earnings call · 29 Jul 2026",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=68c07833-c537-4796-acb6-47925e91e6c0.pdf",
+            "locator": "Transcript p. 5"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "New products extend the marketplaces into transactions.",
+      "text": "CarTrade’s Q1 FY27 presentation reports the Spinny partnership and launch of new-car AI Assist. Management describes transaction fees and margin sharing alongside listing fees. Moving all business buyers onto paid products remains a plan; the disclosures do not yet establish its eventual revenue contribution.",
+      "period": "Q1 FY27 / July 2026",
+      "sources": [
+        {
+          "label": "CarTrade Q1 FY27 investor presentation",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+          "locator": "Slide 10"
+        },
+        {
+          "label": "CarTrade Q1 FY27 investor presentation",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+          "locator": "Slide 12"
+        },
+        {
+          "label": "CarTrade Q1 FY27 earnings call · 29 Jul 2026",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=68c07833-c537-4796-acb6-47925e91e6c0.pdf",
+          "locator": "Transcript pp. 5, 8"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "CarTrade Q1 FY27 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/98d8c82b-f26d-491f-bff0-e4c2fa186958.pdf",
+      "locator": "Slide 3"
+    },
+    {
+      "label": "CarTrade Q1 FY27 earnings call · 29 Jul 2026",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=68c07833-c537-4796-acb6-47925e91e6c0.pdf",
+      "locator": "Transcript p. 8"
+    }
+  ]
+}
