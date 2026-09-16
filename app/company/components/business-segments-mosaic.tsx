@@ -13,6 +13,9 @@ const pctFormatter = new Intl.NumberFormat("en-IN", {
 
 const formatPctLabel = (value: number) => `${pctFormatter.format(value)}%`;
 
+const roleLabels: Record<string, string> = { core_engine: "Core engine", support_engine: "Support engine", emerging: "Emerging", drag: "Drag" };
+const marginLabels: Record<string, string> = { high_margin: "High margin", improving: "Improving margins", pre_scale: "Pre-scale", drag: "Margin drag" };
+
 const sortRevenueEntries = (entries: NormalizedRevenueBreakdownItem[]) =>
   [...entries].sort((a, b) => {
     if (a.revenueSharePercent == null && b.revenueSharePercent == null) return 0;
@@ -101,6 +104,18 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
             {entry.description}
           </p>
         )}
+        {(roleLabels[entry.rolePill ?? ""] || marginLabels[entry.marginProfile ?? ""]) ? (
+          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-medium text-foreground/80">
+            {roleLabels[entry.rolePill ?? ""] ? <span>{roleLabels[entry.rolePill ?? ""]}</span> : null}
+            {marginLabels[entry.marginProfile ?? ""] ? <span>{marginLabels[entry.marginProfile ?? ""]}</span> : null}
+          </div>
+        ) : null}
+        {entry.marginProfile && entry.marginProfile !== "unknown" && entry.marginProfileNote ? (
+          <details className="mt-1">
+            <summary className="cursor-pointer py-1 text-[11px] text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Margin context</summary>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{entry.marginProfileNote}</p>
+          </details>
+        ) : null}
       </div>
     );
   };
@@ -130,7 +145,7 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
     <div className={`${elevatedBlockClass} p-4`}>
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/90">
-          Business Segments
+          How it makes money
         </p>
       </div>
 

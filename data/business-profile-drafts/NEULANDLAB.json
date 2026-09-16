@@ -1,0 +1,221 @@
+{
+  "company": "NEULANDLAB",
+  "company_name": "Neuland Laboratories",
+  "prepared_on": "2026-09-16",
+  "review_status": "draft",
+  "source_period": "Q1 FY27",
+  "latest_source_date": "2026-08-10",
+  "about_company": {
+    "about_short": "Makes drug ingredients for generic medicines and develops and manufactures them for drug innovators.",
+    "business_intro": "Neuland manufactures active pharmaceutical ingredients (APIs), the substances that give medicines their therapeutic effect. It sells generic APIs and provides custom development and manufacturing for pharmaceutical and biotech companies, from development-stage projects to commercial supply.",
+    "about_long": "Neuland has two main businesses: Generic Drug Substances (GDS) and Custom Manufacturing Solutions (CMS). GDS supplies non-exclusive generic APIs, with Prime and Specialty product categories. CMS develops and manufactures APIs and intermediates for innovator customers on an exclusive basis. It earns from development work and commercial manufacturing, so revenue depends on the progress and demand of customer drug programmes. Its operating footprint comprises three cGMP manufacturing facilities around Hyderabad, supported by in-house research and process-development capabilities.",
+    "company_timeline": [
+      {
+        "year": 1984,
+        "title": "Incorporated",
+        "detail": null,
+        "sources": [
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 15"
+          }
+        ]
+      },
+      {
+        "year": 1994,
+        "title": "Goes public",
+        "detail": null,
+        "sources": [
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 15"
+          }
+        ]
+      },
+      {
+        "year": 2013,
+        "title": "Focus shifts to niche APIs and custom manufacturing",
+        "detail": null,
+        "sources": [
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 15"
+          }
+        ]
+      },
+      {
+        "year": 2018,
+        "title": "Acquires the Unit III API facility",
+        "detail": null,
+        "sources": [
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 15"
+          }
+        ]
+      },
+      {
+        "year": 2021,
+        "title": "Commercialises Unit III",
+        "detail": null,
+        "sources": [
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 15"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Breaks ground on a new peptide facility",
+        "detail": "Groundbreaking is a construction milestone; it does not mean the facility is operating.",
+        "sources": [
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 15"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Customers & concentration",
+        "text": "The top five customers contribute 70% of overall company revenue; the top ten contribute 77%. Within CMS, the top five account for 96% of that business’s revenue. CMS supplies innovator customers on an exclusive basis.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 9"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Exports & end markets",
+        "text": "The company reports 92% of revenue from exports and serves more than 80 countries. Its separate end-market revenue disclosure for Q1 FY27 puts Europe at 50% and North America at 42%; this is a different basis from the export share.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 13"
+          },
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 16"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "Manufacturing footprint",
+        "text": "Three cGMP facilities around Hyderabad provide 1,226 kL of API manufacturing capacity: Unit I, 256 kL; Unit II, 389 kL; and Unit III, 581 kL. These are capacity figures, not utilisation rates.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 12"
+          },
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 17"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Research & development",
+        "text": "The R&D team comprises 406 people, supported by 15 development labs and dedicated peptide and scale-up facilities. The company reports more than 1,010 drug master filings worldwide and 75 active US DMFs; filings are not the same as product approvals.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 13"
+          },
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 18"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "CMS project portfolio",
+        "text": "The CMS portfolio has 99 active projects, including 19 at the commercial stage. These are API and intermediate projects across development stages, not 99 approved drugs.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 10"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Peptide and R&D expansion",
+        "text": "On the 5 August 2026 call, management expected the peptide plant to be commissioned the following month. The Q1 presentation also describes a forthcoming 140,000 sq ft R&D centre at Genome Valley. These disclosures describe planned openings, not confirmed commissioning.",
+        "period": "As disclosed in August 2026",
+        "sources": [
+          {
+            "label": "Neuland Q1 FY27 earnings call · 5 Aug 2026",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2741a4de-4965-4ee5-bea1-d9e45ab8d7c0.pdf",
+            "locator": "Transcript p. 7"
+          },
+          {
+            "label": "Neuland Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+            "locator": "Slide 18"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Custom manufacturing now contributes about two-thirds of revenue.",
+      "text": "CMS grew from 44% of company revenue in Q1 FY26 to 67% in Q1 FY27. Commercial CMS revenue increased from ₹120 crore to ₹418 crore over the same comparison. The shift is towards commercial supply for innovator programmes, alongside substantial customer concentration.",
+      "period": "Q1 FY26 → Q1 FY27",
+      "sources": [
+        {
+          "label": "Neuland Q1 FY27 investor presentation",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+          "locator": "Slide 9"
+        },
+        {
+          "label": "Neuland Q1 FY27 investor presentation",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+          "locator": "Slide 10"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Neuland Q1 FY27 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+      "locator": "Slide 9"
+    },
+    {
+      "label": "Neuland Q1 FY27 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+      "locator": "Slide 12"
+    },
+    {
+      "label": "Neuland Q1 FY27 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/40129e92-e9b5-4fd8-8f9a-49885d22f81a.pdf",
+      "locator": "Slide 13"
+    }
+  ]
+}

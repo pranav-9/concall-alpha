@@ -20,6 +20,8 @@ import type {
   NormalizedConsolidatedAnnualRow,
 } from "@/lib/business-snapshot/types";
 
+import { normalizeBusinessProfile } from "./profile";
+
 type JsonRecord = Record<string, unknown>;
 
 const parseJsonValue = (value: unknown): unknown => {
@@ -167,13 +169,16 @@ const normalizeAboutCompany = ({
     asString(aboutCompanySource?.business_activity) ??
     asString(aboutCompanySource?.economic_problem_solved) ??
     null;
-  if (!aboutShort && !aboutLong) {
+  const profile = normalizeBusinessProfile(aboutCompanySource);
+  if (!aboutShort && !aboutLong && !profile.intro && !profile.change &&
+      profile.timeline.length === 0 && profile.facts.length === 0 && !profile.hasInvalidProfile) {
     return null;
   }
 
   return {
     aboutShort,
     aboutLong,
+    ...profile,
   };
 };
 
