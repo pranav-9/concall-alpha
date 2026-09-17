@@ -130,6 +130,27 @@ export type ValuationCheckRow = {
     zone_vs_phase5: ValuationZone;
     /** What the zone was graded against (v2+) — mirrors the schema enum. */
     zone_basis?: "phase5_scenarios" | "delivered_cagr" | "delivered_roe" | null;
+    /**
+     * 2026-09-17: which Phase 5 ladder graded the zone. "earnings" = Phase 5 v8's earnings
+     * ladder (revenue cases carried through the issuer's guided margin), so `phase5_scenarios`
+     * and `implied_cagr_pct` are EARNINGS growth. "revenue" (or absent) = revenue cases with
+     * margins held flat.
+     */
+    ladder_basis?: "earnings" | "revenue" | null;
+    /** Margin metric the earnings ladder was bridged on; a non-PAT metric stands in for earnings. */
+    ladder_metric?: "ebitda" | "ebit" | "pat" | null;
+    /** The revenue ladder, present only when ladder_basis is "earnings". */
+    phase5_revenue_scenarios?: { downside?: number | null; base?: number | null; upside?: number | null } | null;
+    /** Summary of the issuer margin path behind the earnings ladder. */
+    margin_path?: {
+      metric?: string | null;
+      current_pct?: number | null;
+      current_period?: string | null;
+      guided_pct?: string | null;
+      guided_period?: string | null;
+    } | null;
+    /** Delivered PROFIT CAGR windows (percent) — the like-for-like markers for an earnings ladder. */
+    delivered_profit_cagr?: Record<string, number | null> | null;
     /** Phase D (v2+): which earnings the model priced — mirrors the schema enum. */
     earnings_basis?:
       | "ttm"
@@ -212,9 +233,27 @@ export type NormalizedValuationCheck = {
   deliveredRoePct: number | null;
   scenarios: { downside: number | null; base: number | null; upside: number | null };
   /**
-   * Delivered revenue CAGR markers for the reverse-DCF horizon bar, from
-   * `reverse_dcf.delivered_cagr` (percent units). Empty when the payload carries none. Sorted
-   * longest-window-first; `label` is a display string ("5-yr delivered", "TTM", …).
+   * 2026-09-17: "earnings" when the cases (and the implied number) are earnings growth —
+   * Phase 5's revenue cases carried through the issuer's guided margin. "revenue" otherwise.
+   */
+  ladderBasis: "earnings" | "revenue";
+  /** ebitda | ebit | pat when ladderBasis is "earnings"; a non-PAT metric stands in for earnings. */
+  ladderMetric: string | null;
+  /** The revenue cases, only when ladderBasis is "earnings" (so both ladders can be shown). */
+  revenueScenarios: { downside: number | null; base: number | null; upside: number | null } | null;
+  /** The issuer margin path behind the earnings ladder, only when ladderBasis is "earnings". */
+  marginPath: {
+    metric: string | null;
+    currentPct: number | null;
+    currentPeriod: string | null;
+    guidedPct: string | null;
+    guidedPeriod: string | null;
+  } | null;
+  /**
+   * Delivered CAGR markers for the reverse-DCF horizon bar (percent units): revenue windows
+   * from `reverse_dcf.delivered_cagr`, or PROFIT windows from `delivered_profit_cagr` when the
+   * ladder is earnings-based, so the markers share units with the cases. Empty when the payload
+   * carries none. Sorted longest-window-first; `label` is a display string ("5-yr delivered", …).
    */
   deliveredCagr: { key: string; label: string; pct: number }[];
   plausibilityCheck: string | null;
@@ -241,14 +280,18 @@ export type NormalizedValuationCheck = {
    * null (e.g. NOT-RATED lenders carry no base case, so `forward` drops while `trailing` may
    * survive).
    *   - trailing: current P/E ÷ trailing 5-yr EPS CAGR — textbook PEG. `hasLossYear` warns when
-   *     a loss inside the window makes the growth rate (and this ratio) unreliable.
-   *   - forward: current P/E ÷ Phase 5 base-case growth. That base case is a REVENUE CAGR, not
-   *     an EPS forecast (we don't forecast EPS), so it is directional, not a textbook PEG.
+   *     a loss inside the window makes the growth rate (and this ratio) unreliable. Withheld
+   *     (`trailingWithheld`) when EPS grew under 5% a year: PEG is not meaningful there
+   *     (a 1% CAGR printed PEG 157 on LAURUSLABS, 2026-09-17).
+   *   - forward: current P/E ÷ Phase 5 base-case growth. `basis` says what that base case is:
+   *     "earnings" (Phase 5 v8 earnings ladder — a real forward PEG, EBITDA-proxied when the
+   *     ladder metric is EBITDA) or "revenue" (older rows — directional only).
    */
   peg: {
     pe: number;
     trailing: { ratio: number; growthPct: number; hasLossYear: boolean } | null;
-    forward: { ratio: number; growthPct: number } | null;
+    trailingWithheld: { growthPct: number } | null;
+    forward: { ratio: number; growthPct: number; basis: "earnings" | "revenue" } | null;
   } | null;
   peerContext: {
     medianPe: number | null;

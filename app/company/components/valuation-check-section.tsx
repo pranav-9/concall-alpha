@@ -329,10 +329,30 @@ function PriceAssumes({ valuation }: { valuation: NormalizedValuationCheck }) {
             {impliedCagrPct.toFixed(1)}%
           </span>
           <span className="text-[12px] leading-snug text-muted-foreground">
-            revenue growth a year, implied by today&rsquo;s price
+            {valuation.ladderBasis === "earnings" ? "earnings" : "revenue"} growth a year, implied by
+            today&rsquo;s price
             {range ? ` — ${range}` : ""}
           </span>
         </div>
+      ) : null}
+      {impliedCagrPct !== null && valuation.ladderBasis === "earnings" ? (
+        <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+          Our cases here are earnings growth: the revenue cases
+          {valuation.revenueScenarios
+            ? ` (${[valuation.revenueScenarios.downside, valuation.revenueScenarios.base, valuation.revenueScenarios.upside]
+                .map((v) => (v === null ? "–" : `${(v * 100).toFixed(0)}%`))
+                .join(" / ")})`
+            : ""}{" "}
+          carried through the margin the company itself guides to
+          {valuation.marginPath?.currentPct !== null && valuation.marginPath?.currentPct !== undefined
+            ? ` (${(valuation.ladderMetric ?? "").toUpperCase()} ${valuation.marginPath.currentPct.toFixed(1)}%${
+                valuation.marginPath.currentPeriod ? ` in ${valuation.marginPath.currentPeriod}` : ""
+              }${valuation.marginPath.guidedPct ? ` to ${valuation.marginPath.guidedPct}` : ""}${
+                valuation.marginPath.guidedPeriod ? ` by ${valuation.marginPath.guidedPeriod}` : ""
+              })`
+            : ""}
+          .{valuation.ladderMetric && valuation.ladderMetric !== "pat" ? ` ${valuation.ladderMetric.toUpperCase()} growth stands in for earnings growth.` : ""}
+        </p>
       ) : null}
 
       {impliedCagrPct !== null ? (
@@ -343,7 +363,7 @@ function PriceAssumes({ valuation }: { valuation: NormalizedValuationCheck }) {
                 impliedPct: impliedCagrPct,
                 scenarios,
                 delivered: valuation.deliveredCagr,
-                metric: "growth",
+                metric: valuation.ladderBasis === "earnings" ? "earnings" : "growth",
               } satisfies PriceAssumesInput)}
             />
             <ValuationHorizonLegend hasDelivered={valuation.deliveredCagr.length > 0} />
@@ -352,7 +372,7 @@ function PriceAssumes({ valuation }: { valuation: NormalizedValuationCheck }) {
             impliedPct={impliedCagrPct}
             scenarios={scenarios}
             delivered={valuation.deliveredCagr}
-            metric="growth"
+            metric={valuation.ladderBasis === "earnings" ? "earnings" : "growth"}
           />
         </>
       ) : null}
@@ -462,17 +482,25 @@ function PegCard({
   caption,
   leg,
   hasLossYear,
+  forwardBasis,
+  ladderMetric,
 }: {
   title: string;
   ratio: number;
   caption: string;
   leg: "forward" | "trailing";
   hasLossYear?: boolean;
+  forwardBasis?: "earnings" | "revenue";
+  ladderMetric?: string | null;
 }) {
   const band = pegBandFor(ratio);
   const lead =
     leg === "forward"
-      ? "An earnings multiple over base-case revenue growth (we don't forecast EPS) — directional only."
+      ? forwardBasis === "earnings"
+        ? `An earnings multiple over base-case earnings growth — revenue growth carried through the margin the company guides to${
+            ladderMetric && ladderMetric !== "pat" ? ` (${ladderMetric.toUpperCase()} growth stands in for earnings)` : ""
+          }.`
+        : "An earnings multiple over base-case revenue growth (we don't forecast EPS) — directional only."
       : "The same multiple over delivered 5-yr EPS growth.";
   const read = leg === "forward" ? PEG_FORWARD_READ[band.key] : PEG_TRAILING_READ[band.key];
   return (
@@ -529,8 +557,26 @@ function RatioEvaluation({ valuation }: { valuation: NormalizedValuationCheck })
         title="Forward"
         leg="forward"
         ratio={peg.forward.ratio}
-        caption={`P/E ${pe} ÷ ${peg.forward.growthPct.toFixed(0)}% base-case growth`}
+        caption={`P/E ${pe} ÷ ${peg.forward.growthPct.toFixed(0)}% base-case ${
+          peg.forward.basis === "earnings" ? "earnings" : "revenue"
+        } growth`}
+        forwardBasis={peg.forward.basis}
+        ladderMetric={valuation.ladderMetric}
       />,
+    );
+  }
+  if (peg?.trailingWithheld) {
+    cards.push(
+      <div key="peg-trailing-withheld" className={cn(nestedDetailClass, "px-3.5 py-3")}>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-[12.5px] font-semibold text-foreground">PEG</span>
+          <span className="text-[9px] uppercase tracking-wide text-muted-foreground">Trailing</span>
+        </div>
+        <p className="mt-1.5 text-[11.5px] leading-snug text-muted-foreground">
+          Not meaningful: EPS grew {peg.trailingWithheld.growthPct.toFixed(0)}% a year over five years,
+          and a PEG on growth under 5% says nothing about the price.
+        </p>
+      </div>,
     );
   }
   if (peg?.trailing) {
@@ -589,9 +635,11 @@ function RatioEvaluation({ valuation }: { valuation: NormalizedValuationCheck })
       ) : null}
       {peg ? (
         <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-          PEG is context only — it doesn&rsquo;t feed the score, and the forward leg uses base-case
-          revenue growth (we don&rsquo;t forecast EPS). Bands: cheap &lt;1.0 · fair 1.0–1.5 · rich
-          1.5–2.0 · expensive &gt;2.0.
+          PEG is context only — it doesn&rsquo;t feed the score
+          {peg.forward?.basis === "earnings"
+            ? ", and the forward leg uses base-case earnings growth from the company's own margin guide"
+            : ", and the forward leg uses base-case revenue growth (we don't forecast EPS)"}
+          . Bands: cheap &lt;1.0 · fair 1.0–1.5 · rich 1.5–2.0 · expensive &gt;2.0.
         </p>
       ) : null}
     </div>

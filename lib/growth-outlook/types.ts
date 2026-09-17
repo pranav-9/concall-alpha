@@ -53,11 +53,43 @@ export type NormalizedGrowthCatalyst = {
 
 export type NormalizedGrowthScenario = {
   confidence: number | null;
+  /** Revenue growth over the horizon (issuer-guided read), e.g. "18-22%". */
   growth: string | null;
+  /**
+   * Earnings growth bridged from `growth` through the issuer's margin path
+   * (Phase 5 v8, app/phase5_growth/earnings_ladder.py). Equals `growth` when
+   * `earningsBasis` is "flat_margin". Null on pre-v8 rows.
+   */
+  earningsGrowth: string | null;
+  /** guided_margin_<metric> | flat_margin | loss_making | implausible_margin_path */
+  earningsBasis: string | null;
+  /** The margin-path metric's margin at the horizon under this scenario, e.g. "19-20%". */
+  marginAtHorizon: string | null;
   summary: string | null;
   riskWatch: string | null;
   drivers: string[];
   risks: string[];
+};
+
+/** Issuer-reported current margin + own guided band for ONE metric (Phase 5 v8, details.margin_path). */
+export type NormalizedGrowthMarginPath = {
+  metric: string | null;
+  currentPct: number | null;
+  currentPeriod: string | null;
+  currentSnippet: string | null;
+  guidedPct: string | null;
+  guidedPeriod: string | null;
+  guidedSnippet: string | null;
+  direction: "expanding" | "stable" | "compressing" | "unknown" | null;
+};
+
+/** Summary of the revenue -> earnings bridge (Phase 5 v8, details.earnings_ladder). */
+export type NormalizedGrowthEarningsLadder = {
+  basis: string | null;
+  metric: string | null;
+  currentMarginPct: number | null;
+  horizonYearsUsed: number | null;
+  note: string | null;
 };
 
 export type NormalizedGrowthScoreComponent = {
@@ -103,4 +135,6 @@ export type NormalizedGrowthOutlook = {
     upside: NormalizedGrowthScenario | null;
     downside: NormalizedGrowthScenario | null;
   } | null;
+  marginPath: NormalizedGrowthMarginPath | null;
+  earningsLadder: NormalizedGrowthEarningsLadder | null;
 };
