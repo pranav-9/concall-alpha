@@ -19,6 +19,7 @@ import CompanyWatchlistSlot, {
 import { SectionLoading } from "../components/section-loading";
 import {
   BusinessSnapshotPanel,
+  IndustryContextPanel,
   // CommunityPanel retired 2026-07 (no engagement) — re-import when re-enabling the tab.
   // CommunityPanel,
   FutureGrowthPanel,
@@ -72,6 +73,7 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
     SECTION_MAP.overview,
     SECTION_MAP.companyAnnouncements,
     SECTION_MAP.businessSnapshot,
+    SECTION_MAP.industryContext,
     SECTION_MAP.moatAnalysis,
     {
       ...SECTION_MAP.concallScore,
@@ -179,6 +181,12 @@ export default async function Page({
           <div data-section-id="business-overview">
             <Suspense fallback={<SectionLoading id="business-overview" title="Business Snapshot" size={fallbackSize(overview.section_availability.businessSnapshot)} />}>
               <BusinessSnapshotPanel overview={overview} />
+            </Suspense>
+          </div>
+
+          <div data-section-id="industry-context">
+            <Suspense fallback={<SectionLoading id="industry-context" title="Industry Context" />}>
+              <IndustryContextPanel overview={overview} />
             </Suspense>
           </div>
 
