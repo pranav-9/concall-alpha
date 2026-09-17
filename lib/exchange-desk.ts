@@ -24,8 +24,8 @@ import {
 const WINDOW_DAYS = 45;
 // Cap the rows we pull; the desk shows a live tape, not an archive.
 const ROW_LIMIT = 300;
-// A single-company tape can be longer than the initial on-screen slice, but it
-// is still a recent-event surface rather than a filing archive.
+// A single company's Announcements tab is a filing archive, not a recent-
+// event surface — unlike the desk-wide feed, it does not apply WINDOW_DAYS.
 const COMPANY_ROW_LIMIT = 120;
 
 const upper = (v: string | null | undefined) => (v ?? "").toUpperCase();
@@ -206,6 +206,9 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
  * This deliberately skips the coverage gate used by the all-company desk: a
  * reader has already navigated to this company's page, so its own filings are
  * useful whether it is currently in the ranked universe or just outside it.
+ * It also deliberately skips WINDOW_DAYS: unlike the desk-wide feed (a live
+ * "what's happening" tape), a company's Announcements tab is its filing
+ * history, so it returns everything on record up to COMPANY_ROW_LIMIT.
  * Query failures degrade to an empty tape so a missing announcement table
  * cannot take down the company page.
  */
@@ -219,7 +222,6 @@ export async function getCompanyExchangeDeskData(
   try {
     const supabase = await createClient();
     const now = new Date();
-    const cutoff = new Date(now.getTime() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
     const { data, error } = await supabase
       .from("bse_announcements")
       .select(
@@ -227,7 +229,6 @@ export async function getCompanyExchangeDeskData(
       )
       .eq("company_code", normalizedCode)
       .eq("is_material", true)
-      .gte("filed_at", cutoff.toISOString())
       // A future-dated parsed row must not become the latest filing card.
       .lte("filed_at", now.toISOString())
       .order("filed_at", { ascending: false })
@@ -261,6 +262,9 @@ export async function getCompanyExchangeDeskData(
       updates,
       impacts: buildImpactFacet(updates),
       total: updates.length,
+      // Vestigial for this path — the query above applies no date cutoff, so
+      // nothing here should render it as a real window. Kept only because
+      // ExchangeDeskData is shared with the windowed desk-wide feed.
       windowDays: WINDOW_DAYS,
       belowCut: [],
     };

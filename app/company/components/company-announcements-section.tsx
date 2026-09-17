@@ -30,7 +30,7 @@ function SignalMix({ data }: { data: ExchangeDeskData }) {
   return (
     <div className={cn(elevatedBlockClass, "min-w-0 p-4 sm:p-5")}>
       <p className="house-data text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--ink-soft)]">
-        45-day signal mix
+        Signal mix
       </p>
       <p className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
         {pluralize(data.total, "material filing")}
@@ -97,7 +97,7 @@ export async function CompanyAnnouncementsSection({
     <SectionCard id="company-announcements" title="Announcements">
       {data.total === 0 ? (
         <div className="rounded-xl border border-dashed border-border/50 bg-muted/35 p-5">
-          <p className="text-sm font-medium text-foreground">No material filings in the last {data.windowDays} days.</p>
+          <p className="text-sm font-medium text-foreground">No material filings on record.</p>
           <p className="mt-1 text-sm text-muted-foreground">
             New material exchange announcements will appear here with their plain-English read.
           </p>
@@ -118,7 +118,7 @@ export async function CompanyAnnouncementsSection({
                   Material exchange filings, filtered into business events and read into plain English.
                 </p>
               </div>
-              <span className="house-data text-[10px] text-[var(--ink-soft)]">Last {data.windowDays} days</span>
+              <span className="house-data text-[10px] text-[var(--ink-soft)]">Full history</span>
             </div>
             <DeskExchangeUpdates data={data} variant="company" />
           </div>
