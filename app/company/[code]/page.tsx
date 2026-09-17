@@ -7,6 +7,7 @@ import {
 } from "@/lib/company-overview-cache";
 import { SECTION_MAP } from "../constants";
 import { CompanyPageWorkspace } from "../components/company-page-workspace";
+import { CompanyAnnouncementsSection } from "../components/company-announcements-section";
 import { TelegramJoinCard } from "@/components/telegram-join-card";
 import {
   OverviewSignalBoard,
@@ -69,6 +70,7 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
   // is label-only.
   return [
     SECTION_MAP.overview,
+    SECTION_MAP.companyAnnouncements,
     SECTION_MAP.businessSnapshot,
     SECTION_MAP.moatAnalysis,
     {
@@ -166,6 +168,12 @@ export default async function Page({
               companyName={overview.company_name}
               className="mt-4"
             />
+          </div>
+
+          <div data-section-id="company-announcements">
+            <Suspense fallback={<SectionLoading id="company-announcements" title="Announcements" size="block" />}>
+              <CompanyAnnouncementsSection overview={overview} />
+            </Suspense>
           </div>
 
           <div data-section-id="business-overview">

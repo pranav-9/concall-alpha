@@ -24,6 +24,9 @@ import {
 const WINDOW_DAYS = 45;
 // Cap the rows we pull; the desk shows a live tape, not an archive.
 const ROW_LIMIT = 300;
+// A single-company tape can be longer than the initial on-screen slice, but it
+// is still a recent-event surface rather than a filing archive.
+const COMPANY_ROW_LIMIT = 120;
 
 const upper = (v: string | null | undefined) => (v ?? "").toUpperCase();
 
@@ -193,6 +196,79 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
   } catch (err) {
     // Table missing (pre-DDL) or transient read failure — degrade to empty.
     console.warn("[exchange-desk] feed unavailable:", (err as Error)?.message ?? err);
+    return EMPTY;
+  }
+}
+
+/**
+ * Material filings for one company, in the same shape as the Exchange Desk.
+ *
+ * This deliberately skips the coverage gate used by the all-company desk: a
+ * reader has already navigated to this company's page, so its own filings are
+ * useful whether it is currently in the ranked universe or just outside it.
+ * Query failures degrade to an empty tape so a missing announcement table
+ * cannot take down the company page.
+ */
+export async function getCompanyExchangeDeskData(
+  companyCode: string,
+  companyName: string | null | undefined,
+): Promise<ExchangeDeskData> {
+  const normalizedCode = companyCode.trim().toUpperCase();
+  if (!normalizedCode) return EMPTY;
+
+  try {
+    const supabase = await createClient();
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
+    const { data, error } = await supabase
+      .from("bse_announcements")
+      .select(
+        "announcement_id, company_code, filed_at, headline, subject, attachment_url, category, impact, summary",
+      )
+      .eq("company_code", normalizedCode)
+      .eq("is_material", true)
+      .gte("filed_at", cutoff.toISOString())
+      // A future-dated parsed row must not become the latest filing card.
+      .lte("filed_at", now.toISOString())
+      .order("filed_at", { ascending: false })
+      .limit(COMPANY_ROW_LIMIT);
+
+    if (error) throw error;
+
+    const updates = ((data ?? []) as AnnouncementRow[]).flatMap((row) => {
+      if (!isKnownCategory(row.category)) return [];
+      const summary = (row.summary ?? "").trim() || (row.headline ?? "").trim();
+      if (!summary) return [];
+
+      const category = row.category as ExchangeCategory;
+      return [{
+        id: row.announcement_id,
+        companyCode: normalizedCode,
+        companyName: companyName?.trim() || normalizedCode,
+        category,
+        categoryLabel: categoryLabel(category),
+        impact: coerceImpact(row.impact),
+        summary,
+        headline: (row.headline ?? "").trim(),
+        attachmentUrl: safeFilingHref(row.attachment_url),
+        filedRaw: row.filed_at,
+        filedLabel: formatRelativeActivityTime(row.filed_at),
+        bucketKey: bucketFor(row.filed_at, now),
+      } satisfies ExchangeUpdate];
+    });
+
+    return {
+      updates,
+      impacts: buildImpactFacet(updates),
+      total: updates.length,
+      windowDays: WINDOW_DAYS,
+      belowCut: [],
+    };
+  } catch (err) {
+    console.warn(
+      "[exchange-desk] company feed unavailable:",
+      (err as Error)?.message ?? err,
+    );
     return EMPTY;
   }
 }

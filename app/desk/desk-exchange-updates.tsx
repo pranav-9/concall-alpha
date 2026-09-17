@@ -93,7 +93,14 @@ function ImpactBadge({ item }: { item: ExchangeUpdate }) {
   );
 }
 
-function UpdateRow({ item }: { item: ExchangeUpdate }) {
+function UpdateRow({
+  item,
+  companyContext = false,
+}: {
+  item: ExchangeUpdate;
+  /** On a company page, repeating the company name on every row adds no signal. */
+  companyContext?: boolean;
+}) {
   return (
     <div
       className={cn(
@@ -101,19 +108,29 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
         ROW_HOVER,
       )}
     >
-      {/* Desktop: time · company · impact · category · summary · filing */}
-      <div className="hidden items-center gap-4 sm:grid sm:grid-cols-[3.25rem_minmax(8rem,1fr)_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]">
+      {/* Desktop: the dedicated feed needs a company column; the company tab
+          uses that space for the actual filing summary. */}
+      <div
+        className={cn(
+          "hidden items-center gap-4 sm:grid",
+          companyContext
+            ? "sm:grid-cols-[3.25rem_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]"
+            : "sm:grid-cols-[3.25rem_minmax(8rem,1fr)_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]",
+        )}
+      >
         <span className="house-data house-micro text-[var(--ink-soft)]">{item.filedLabel}</span>
-        <Link
-          href={`/company/${item.companyCode}`}
-          prefetch={false}
-          className={cn(
-            "house-display min-w-0 truncate text-sm text-[var(--ink)] hover:text-[var(--signal)]",
-            ROW_FOCUS,
-          )}
-        >
-          {item.companyName}
-        </Link>
+        {!companyContext ? (
+          <Link
+            href={`/company/${item.companyCode}`}
+            prefetch={false}
+            className={cn(
+              "house-display min-w-0 truncate text-sm text-[var(--ink)] hover:text-[var(--signal)]",
+              ROW_FOCUS,
+            )}
+          >
+            {item.companyName}
+          </Link>
+        ) : null}
         <span>
           <ImpactBadge item={item} />
         </span>
@@ -262,18 +279,22 @@ function PhoneImpactPill({ item }: { item: ExchangeUpdate }) {
   );
 }
 
-function PhoneUpdateRow({ item, dim = false }: { item: ExchangeUpdate; dim?: boolean }) {
-  return (
-    <div className={cn(MOBILE_ROW, "flex items-stretch")}>
-      <Link
-        href={`/company/${item.companyCode}`}
-        prefetch={false}
-        className={cn("min-w-0 flex-1 px-3.5 py-3", MOBILE_FOCUS)}
-      >
-        <span className="flex items-center gap-[9px]">
-          <span className="house-data min-w-[30px] shrink-0 whitespace-nowrap text-[10px] text-[var(--ink-soft)]">
-            {shortAge(item.filedLabel)}
-          </span>
+function PhoneUpdateRow({
+  item,
+  dim = false,
+  companyContext = false,
+}: {
+  item: ExchangeUpdate;
+  dim?: boolean;
+  companyContext?: boolean;
+}) {
+  const rowBody = (
+    <>
+      <span className="flex items-center gap-[9px]">
+        <span className="house-data min-w-[30px] shrink-0 whitespace-nowrap text-[10px] text-[var(--ink-soft)]">
+          {shortAge(item.filedLabel)}
+        </span>
+        {!companyContext ? (
           <span
             className={cn(
               "house-display min-w-0 flex-1 truncate text-sm",
@@ -282,17 +303,35 @@ function PhoneUpdateRow({ item, dim = false }: { item: ExchangeUpdate; dim?: boo
           >
             {item.companyName}
           </span>
-          <PhoneImpactPill item={item} />
+        ) : (
+          <span className="min-w-0 flex-1" />
+        )}
+        <PhoneImpactPill item={item} />
+      </span>
+      {/* One clamped block: line-clamp is display:-webkit-box, so it has to be
+          the container, with the category label inline inside it. */}
+      <span className="mt-[5px] line-clamp-2 block pl-[39px] text-xs leading-[1.45] text-[var(--ink-soft)] [text-wrap:pretty]">
+        <span className="house-data mr-[7px] text-[9px] uppercase tracking-[0.08em]">
+          {item.categoryLabel}
         </span>
-        {/* One clamped block: line-clamp is display:-webkit-box, so it has to be
-            the container, with the category label inline inside it. */}
-        <span className="mt-[5px] line-clamp-2 block pl-[39px] text-xs leading-[1.45] text-[var(--ink-soft)] [text-wrap:pretty]">
-          <span className="house-data mr-[7px] text-[9px] uppercase tracking-[0.08em]">
-            {item.categoryLabel}
-          </span>
-          {item.summary}
-        </span>
-      </Link>
+        {item.summary}
+      </span>
+    </>
+  );
+
+  return (
+    <div className={cn(MOBILE_ROW, "flex items-stretch")}>
+      {companyContext ? (
+        <div className="min-w-0 flex-1 px-3.5 py-3">{rowBody}</div>
+      ) : (
+        <Link
+          href={`/company/${item.companyCode}`}
+          prefetch={false}
+          className={cn("min-w-0 flex-1 px-3.5 py-3", MOBILE_FOCUS)}
+        >
+          {rowBody}
+        </Link>
+      )}
       {item.attachmentUrl ? (
         <a
           href={item.attachmentUrl}
@@ -369,6 +408,7 @@ function PhoneAnnouncements({
   hiddenCount,
   belowCutExpanded,
   onToggleBelowCut,
+  companyContext = false,
 }: {
   data: ExchangeDeskData;
   filter: Filter;
@@ -380,6 +420,7 @@ function PhoneAnnouncements({
   hiddenCount: number;
   belowCutExpanded: boolean;
   onToggleBelowCut: () => void;
+  companyContext?: boolean;
 }) {
   return (
     <div className="sm:hidden">
@@ -430,7 +471,7 @@ function PhoneAnnouncements({
                     </span>
                   </div>
                   {bucket.items.map((item) => (
-                    <PhoneUpdateRow key={item.id} item={item} />
+                    <PhoneUpdateRow key={item.id} item={item} companyContext={companyContext} />
                   ))}
                 </div>
               ))
@@ -465,7 +506,13 @@ function PhoneAnnouncements({
  * impact filter tabs + show-all) followed by the below-cut watch list. Lives on
  * the dedicated /announcements page; the desk only shows the compact teaser.
  */
-function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
+function FullAnnouncements({
+  data,
+  companyContext = false,
+}: {
+  data: ExchangeDeskData;
+  companyContext?: boolean;
+}) {
   // All three live here, not in the paints, so a breakpoint crossing (tablet
   // rotation across sm) keeps the reader's filter and both show-all toggles.
   const [filter, setFilter] = useState<Filter>("all");
@@ -515,6 +562,7 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
           hiddenCount={hiddenCount}
           belowCutExpanded={belowCutExpanded}
           onToggleBelowCut={() => setBelowCutExpanded((v) => !v)}
+          companyContext={companyContext}
         />
       )}
       {isSm !== false && (
@@ -557,7 +605,7 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
               </p>
               <div className="mt-1">
                 {bucket.items.map((item) => (
-                  <UpdateRow key={item.id} item={item} />
+                  <UpdateRow key={item.id} item={item} companyContext={companyContext} />
                 ))}
               </div>
             </div>
@@ -639,12 +687,13 @@ export default function DeskExchangeUpdates({
 }: {
   data: ExchangeDeskData;
   // "compact" = desk teaser (top slice + link out); "full" = the /announcements
-  // page (whole covered feed + below-cut watch list).
-  variant?: "full" | "compact";
+  // page (whole covered feed + below-cut watch list); "company" reuses the
+  // full feed controls but removes the redundant company-name column.
+  variant?: "full" | "compact" | "company";
 }) {
   return variant === "compact" ? (
     <CompactAnnouncements data={data} />
   ) : (
-    <FullAnnouncements data={data} />
+    <FullAnnouncements data={data} companyContext={variant === "company"} />
   );
 }
