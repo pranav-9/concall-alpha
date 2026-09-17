@@ -103,7 +103,10 @@ export function normalizeValuationCheck(
 
   // PEG lenses, derived purely for display (never an input to the score). Read the P/E level
   // from relative.pe directly, not from `lenses` — pe may exist even when it isn't the
-  // primary/cross-check lens. Both legs divide the same P/E; each is independently gated.
+  // primary/cross-check lens. A no-history company can still expose its current P/E via
+  // `current_from_ratios`; that is sufficient for display-only PEG, but never creates a
+  // history-band valuation lens or changes the score. Both legs divide the same P/E; each
+  // is independently gated.
   //   - trailing: 5-yr EPS CAGR (fraction; already null unless earnings ran positive-to-
   //     positive, so a present value is genuine positive growth). Textbook PEG.
   //   - forward: Phase 5 base case, which is a REVENUE CAGR — directional, not a real PEG.
@@ -111,7 +114,7 @@ export function normalizeValuationCheck(
     | { cagr_5y?: number | null; has_loss_year?: boolean }
     | null
     | undefined;
-  const pegPe = toNumber(relative.pe?.current);
+  const pegPe = toNumber(relative.pe?.current) ?? toNumber(relative.pe?.current_from_ratios);
   const epsCagr = toNumber(epsSummary?.cagr_5y);
   const baseCagr = toNumber(scenarios.base);
   const trailing =
