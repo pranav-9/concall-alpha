@@ -95,6 +95,15 @@ const Navbar = ({
     { href: "/blog", label: "Journal" },
   ];
 
+  // The brand cluster is the "take me home" affordance, so "home" should mean
+  // whatever base serves the person clicking. A signed-out visitor may still
+  // need the pitch, so it points at the marketing hero (/); once signed in they
+  // have bought in, so it points at the working surface (/desk) — consistent
+  // with where login already lands them, and sparing returning users a full-
+  // viewport explainer on every logo tap. Used by both the desktop shell and
+  // the phone bar below.
+  const brandHref = initialUser ? "/desk" : "/";
+
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   const renderSignedOutAuth = (compact: boolean) => {
@@ -255,7 +264,7 @@ const Navbar = ({
       >
         {isPhoneAppChrome ? (
           <div className="house flex items-center justify-between gap-2.5 border-b border-[var(--rule)] !bg-[color-mix(in_srgb,var(--paper)_86%,transparent)] px-3.5 py-[7px] backdrop-blur-[14px] sm:hidden">
-            <Link href="/" className="flex min-w-0 items-center gap-[9px]">
+            <Link href={brandHref} className="flex min-w-0 items-center gap-[9px]">
               <BrandMark bare size={26} className="shrink-0 text-[var(--ink)]" />
               <span className="house-data whitespace-nowrap text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">
                 Story of a Stock
@@ -305,7 +314,7 @@ const Navbar = ({
           )}
         >
           <div className="min-w-0 shrink-0">
-            <Link href="/" className="group inline-flex items-center gap-3">
+            <Link href={brandHref} className="group inline-flex items-center gap-3">
               <BrandLogo size={40} showEyebrow />
             </Link>
           </div>
