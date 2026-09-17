@@ -247,6 +247,16 @@ export function FutureGrowthSection({
       outlook?.scenarios?.upside ||
       outlook?.scenarios?.downside,
   );
+  // Earnings ladder (Phase 5 v8). The cards lead with revenue growth (the
+  // issuer-guided read); an earnings line is shown only when the pipeline
+  // bridged it through a quantified issuer margin target — a flat-margin
+  // fallback would just repeat the revenue number under a stronger label.
+  const marginPath = outlook?.marginPath ?? null;
+  const earningsLadder = outlook?.earningsLadder ?? null;
+  const earningsBridged = Boolean(earningsLadder?.basis?.startsWith("guided_margin"));
+  const marginMetricLabel = (earningsLadder?.metric ?? marginPath?.metric ?? "").toUpperCase();
+  const currentMarginLabel =
+    typeof marginPath?.currentPct === "number" ? `${marginPath.currentPct.toFixed(1)}%` : null;
 
   return (
     <SectionCard
@@ -584,6 +594,43 @@ export function FutureGrowthSection({
                   <p className="text-[11px] leading-snug text-muted-foreground">
                     Bear, base, and bull cases side by side — base case is the anchor read.
                   </p>
+                  {earningsBridged && marginPath ? (
+                    <div className="space-y-1">
+                      <p className="text-[11px] leading-snug text-muted-foreground">
+                        Revenue growth is the headline. Earnings growth is bridged from it through the
+                        issuer&rsquo;s own {marginMetricLabel} margin target
+                        {currentMarginLabel ? `: ${currentMarginLabel}` : ""}
+                        {marginPath.currentPeriod ? ` in ${marginPath.currentPeriod}` : ""}
+                        {marginPath.guidedPct ? ` to ${marginPath.guidedPct}` : ""}
+                        {marginPath.guidedPeriod ? ` by ${marginPath.guidedPeriod}` : ""}
+                        {earningsLadder?.metric && earningsLadder.metric !== "pat"
+                          ? `. ${marginMetricLabel} growth stands in for earnings growth.`
+                          : "."}
+                      </p>
+                      {(marginPath.currentSnippet || marginPath.guidedSnippet) && (
+                        <details className="group">
+                          <summary className="cursor-pointer list-none text-[11px] text-muted-foreground hover:text-foreground">
+                            <span className="group-open:hidden">Margin source</span>
+                            <span className="hidden group-open:inline">Hide margin source</span>
+                          </summary>
+                          <ul className="mt-1.5 space-y-1 text-[11px] leading-snug text-muted-foreground">
+                            {marginPath.currentSnippet && (
+                              <li>&ldquo;{marginPath.currentSnippet}&rdquo;</li>
+                            )}
+                            {marginPath.guidedSnippet && (
+                              <li>&ldquo;{marginPath.guidedSnippet}&rdquo;</li>
+                            )}
+                          </ul>
+                        </details>
+                      )}
+                    </div>
+                  ) : marginPath?.direction && marginPath.direction !== "unknown" ? (
+                    <p className="text-[11px] leading-snug text-muted-foreground">
+                      Earnings are read as growing with revenue: the issuer describes
+                      {marginMetricLabel ? ` ${marginMetricLabel}` : ""} margins as{" "}
+                      {marginPath.direction} but gives no quantified target.
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-start">
@@ -631,15 +678,44 @@ export function FutureGrowthSection({
                           )}
                         </div>
                         {scenario.growth && (
-                          <p
-                            className={`text-2xl font-bold leading-none ${
-                              isBase
-                                ? "text-emerald-700 dark:text-emerald-300"
-                                : "text-foreground"
-                            }`}
-                          >
-                            {String(scenario.growth)}
-                          </p>
+                          <div className="space-y-0.5">
+                            {earningsBridged && (
+                              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                Revenue
+                              </p>
+                            )}
+                            <p
+                              className={`text-2xl font-bold leading-none ${
+                                isBase
+                                  ? "text-emerald-700 dark:text-emerald-300"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {String(scenario.growth)}
+                            </p>
+                          </div>
+                        )}
+                        {earningsBridged && scenario.earningsGrowth && (
+                          <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
+                            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                              Earnings
+                            </span>
+                            <span
+                              className={`text-sm font-semibold tabular-nums ${
+                                isBase
+                                  ? "text-emerald-700 dark:text-emerald-300"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {scenario.earningsGrowth}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {scenario.earningsBasis?.startsWith("guided_margin") &&
+                              scenario.marginAtHorizon
+                                ? `at ${scenario.marginAtHorizon} ${marginMetricLabel} margin`
+                                : "margins held flat"}
+                            </span>
+                          </div>
                         )}
                         {conf != null && (
                           <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
