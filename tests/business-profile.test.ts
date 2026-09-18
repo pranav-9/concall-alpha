@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { normalizeBusinessSnapshot } from "../lib/business-snapshot/normalize";
 import { businessProfileSchema, normalizeBusinessProfile } from "../lib/business-snapshot/profile";
-import { buildBusinessMixPeriods } from "../lib/business-snapshot/mix-history";
-import type { NormalizedRevenueMixHistoryBySegmentRow } from "../lib/business-snapshot/types";
+import { buildBusinessMixPeriods, buildDeltaShareBySegment, getBaselineToLatestPpDelta, pickComparisonPeriods } from "../lib/business-snapshot/mix-history";
+import type { NormalizedRevenueMixHistoryBySegment, NormalizedRevenueMixHistoryBySegmentRow } from "../lib/business-snapshot/types";
 
 const source = { label: "FY26 annual report", url: "https://example.test/report.pdf", locator: "p. 12" };
 const milestone = { year: 2010, title: "Founded", sources: [source] };
@@ -22,10 +22,21 @@ for (const bad of [
   { business_facts: [{ ...fact, sources: [{ ...source, url: "javascript:alert(1)" }] }] },
   { business_facts: [{ ...fact, sources: [{ ...source, url: "https://example.test/a b" }] }] },
   { what_changed: { ...profile.what_changed, unsupported_extra: true } },
+  { business_facts: [{ ...fact, metrics: [] }] },
+  { business_facts: [{ ...fact, metrics: Array(7).fill({ label: "Top 5", value: 62, unit: "%" }) }] },
+  { business_facts: [{ ...fact, metrics: [{ label: "Top 5", value: -1, unit: "%" }] }] },
+  { business_facts: [{ ...fact, metrics: [{ label: "Top 5", value: 62 }] }] },
 ]) {
   assert.equal(businessProfileSchema.safeParse(bad).success, false, JSON.stringify(bad));
   assert.equal(normalizeBusinessProfile(bad).hasInvalidProfile, true);
 }
+
+const metrics = [{ label: "Top 5", value: 62, unit: "%" }, { label: "6-10", value: 12, unit: "%" }];
+const withMetrics = { ...profile, business_facts: [{ ...fact, metrics }] };
+assert.equal(businessProfileSchema.safeParse(withMetrics).success, true, "a fact may carry prose + structured metrics together");
+assert.deepEqual(normalizeBusinessProfile(withMetrics).facts[0].metrics, metrics);
+assert.equal(normalizeBusinessProfile(profile).facts[0].metrics, undefined, "a fact without metrics stays prose-only, not an empty array");
+console.log("business fact metrics: optional, additive, and schema-validated passed");
 
 const normalize = (row: Record<string, unknown>) => normalizeBusinessSnapshot({ companyCode: "TEST", companyWebsite: null, snapshotRow: { company: "TEST", ...row } });
 const about = { about_short: "Component maker", about_long: "A longer explanation.", ...profile };
@@ -65,3 +76,52 @@ assert.equal(mix([mixRow("A", 70), mixRow("B", 30, "restated")]).valid, true);
 assert.equal(mix([mixRow("A", null), mixRow("B", null)]).valid, false);
 assert.equal(mix([mixRow("A", NaN), mixRow("B", Infinity)]).valid, false);
 console.log("business mix history: partial, missing, estimated, restated and inconsistent totals passed");
+
+const mixRowYears = (segment: string, valuesByYear: Record<string, number | null>, comparabilityLabel = "reported", isTotal = false): NormalizedRevenueMixHistoryBySegmentRow => {
+  const years = Object.keys(valuesByYear);
+  return { segment, mixPercentByYear: valuesByYear, isTotal, comparabilityLabel, directionLabel: null, latestMixPercent: valuesByYear[years[years.length - 1]] };
+};
+const history = (years: string[], rows: NormalizedRevenueMixHistoryBySegmentRow[]): NormalizedRevenueMixHistoryBySegment => ({ years, rows, insights: [], latestPeriod: years[years.length - 1] });
+
+const fiveYear = history(["FY22", "FY23", "FY24", "FY25", "FY26"], [
+  mixRowYears("Alpha", { FY22: 60, FY23: 58, FY24: 55, FY25: 52, FY26: 50 }),
+  mixRowYears("Beta", { FY22: 40, FY23: 42, FY24: 45, FY25: 48, FY26: 50 }),
+]);
+const fiveYearPeriods = buildBusinessMixPeriods(fiveYear);
+const cmp = pickComparisonPeriods(fiveYearPeriods)!;
+assert.equal(cmp.baseline.year, "FY22", "picks the earliest valid period as the baseline");
+assert.equal(cmp.latest.year, "FY26", "picks the latest valid period");
+
+// FY22 is single-segment (not comparable — buildBusinessMixPeriods requires >=2
+// known segments), so the baseline must skip to the first genuinely VALID year,
+// not assume years[0].
+const staggeredHistory = history(["FY22", "FY23", "FY24"], [
+  mixRowYears("Alpha", { FY22: 100, FY23: 58, FY24: 55 }),
+  mixRowYears("Beta", { FY22: null, FY23: 42, FY24: 45 }),
+]);
+const staggeredCmp = pickComparisonPeriods(buildBusinessMixPeriods(staggeredHistory))!;
+assert.equal(staggeredCmp.baseline.year, "FY23", "baseline is the first VALID year, not years[0]");
+assert.equal(staggeredCmp.latest.year, "FY24");
+
+assert.equal(pickComparisonPeriods(buildBusinessMixPeriods(history(["FY26"], [mixRowYears("Alpha", { FY26: 60 }), mixRowYears("Beta", { FY26: 40 })]))), null, "fewer than 2 valid periods returns null, not a same-period compare");
+console.log("pickComparisonPeriods: earliest/latest VALID period selection passed");
+
+const periods3 = ["FY24", "FY25", "FY26"];
+assert.equal(getBaselineToLatestPpDelta({ FY24: 30, FY25: 35, FY26: 42 }, periods3), 12, "latest minus baseline, in points");
+assert.equal(getBaselineToLatestPpDelta({ FY24: 30, FY25: 35, FY26: null }, periods3), null, "missing latest value with no fallback yields no delta");
+assert.equal(getBaselineToLatestPpDelta({ FY24: 30, FY25: 35, FY26: null }, periods3, 42), 12, "latestFallback covers a row whose latest period is unset but has a disclosed latest value");
+assert.equal(getBaselineToLatestPpDelta({ FY24: null, FY25: 35, FY26: 42 }, periods3), null, "missing baseline value yields no delta even when latest is known");
+assert.equal(getBaselineToLatestPpDelta({}, []), null, "empty period list yields no delta");
+console.log("getBaselineToLatestPpDelta: baseline-to-latest point delta passed");
+
+const deltaMap = buildDeltaShareBySegment(history(["FY22", "FY26"], [
+  mixRowYears(" Defence & Aerospace ", { FY22: 29, FY26: 46 }),
+  mixRowYears("industrial electronics", { FY22: 34, FY26: 27 }),
+  mixRowYears("Total", { FY22: 100, FY26: 100 }, "reported", true),
+]));
+assert.equal(deltaMap.get("defence & aerospace"), 17, "matched by trim+lowercase, independent of the caller's own casing/whitespace");
+assert.equal(deltaMap.get("industrial electronics"), -7);
+assert.equal(deltaMap.has("total"), false, "the isTotal row is excluded — it is not a real segment");
+assert.equal(deltaMap.get("medical electronics"), undefined, "a segment_history_annual name with no match in revenue-mix-history is silently absent, not fuzzy-matched");
+assert.deepEqual([...buildDeltaShareBySegment(null).entries()], [], "no history slot yields an empty map, not a throw");
+console.log("buildDeltaShareBySegment: segment-name matching for the Δ Share column passed");

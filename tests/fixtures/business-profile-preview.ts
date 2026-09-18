@@ -14,9 +14,9 @@ export const businessProfilePreview = {
       { year: 2025, title: "Commissions a dedicated testing facility", sources },
     ],
     business_facts: [
-      { category: "customers", title: "Customers & concentration", text: "Sells to industrial and medical equipment manufacturers. Its five largest customers account for 54% of consolidated revenue.", period: "FY26", sources },
+      { category: "customers", title: "Customers & concentration", text: "Sells to industrial and medical equipment manufacturers. Its five largest customers account for 54% of consolidated revenue.", period: "FY26", sources, metrics: [{ label: "Top 5", value: 54, unit: "%" }, { label: "6-10", value: 14, unit: "%" }, { label: "Others", value: 32, unit: "%" }] },
       { category: "geography", title: "Markets served", text: "Exports contribute 62% of consolidated revenue. Domestic customers contribute the remaining 38%.", period: "FY26", sources },
-      { category: "footprint", title: "Operating footprint", text: "Two manufacturing sites handle assembly, testing and complete system integration. The dedicated testing facility began operating in 2025.", period: "FY26", sources },
+      { category: "footprint", title: "Operating footprint", text: "Two manufacturing sites handle assembly, testing and complete system integration. The dedicated testing facility began operating in 2025.", period: "FY26", sources, metrics: [{ label: "Installed lines", value: 23, unit: "lines" }] },
       { category: "capabilities", title: "Engineering capabilities", text: "In-house engineering covers design for manufacturing, traceability and product testing for industrial and medical customers.", period: "FY26", sources },
       { category: "expansion", title: "Planned expansion", text: "An additional production line is approved. It is not included in the operating footprint until commissioned.", period: "FY26", sources },
     ],
@@ -36,5 +36,19 @@ export const businessProfilePreview = {
         { segment: "Medical electronics", mix_percent_by_year: { FY22: 15, FY23: 15, FY24: 15, FY25: 15, FY26: 15 }, latest_mix_percent: 15, direction_label: "stable_share", comparability_label: "reported" },
       ], insights: [],
     },
+  },
+  // "Medical devices" is deliberately NOT "Medical electronics" (the name used
+  // above in revenue_mix_history_by_segment) — same free-text-segment-naming
+  // risk a real company's LLM extraction can hit. Exercises the Δ Share
+  // column's graceful no-match fallback for that one row, not just its
+  // matched-name path.
+  segment_history_annual: {
+    periods: ["FY22", "FY23", "FY24", "FY25", "FY26"],
+    rows: [
+      { segment: "Complete systems", amount_by_period: { FY22: 120, FY23: 162, FY24: 210, FY25: 264, FY26: 324 }, unit: "Rs Cr", mix_pct_latest: 60, comparability_label: "reported" },
+      { segment: "Electronic assemblies", amount_by_period: { FY22: 135, FY23: 144, FY24: 147, FY25: 144, FY26: 135 }, unit: "Rs Cr", mix_pct_latest: 25, comparability_label: "reported" },
+      { segment: "Medical devices", amount_by_period: { FY22: 45, FY23: 54, FY24: 63, FY25: 72, FY26: 81 }, unit: "Rs Cr", mix_pct_latest: 15, comparability_label: "reported" },
+    ],
+    insights: [],
   },
 };
