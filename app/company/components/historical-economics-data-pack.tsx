@@ -32,6 +32,12 @@ import { getDeltaToneClass } from "./delta-tone";
 // holds for the top series, which is acceptable.
 import { colorPalette as unitPalette } from "./business-segment-mix-constants";
 import { formatPeriodDelta, getPeriodOverPeriodDelta } from "@/lib/period-delta";
+import {
+  formatMixDeltaLabel,
+  getBaselineToLatestPpDelta,
+  getCagrDisplayClassName,
+  getPeriodOverPeriodPpChange,
+} from "@/lib/business-snapshot/mix-history";
 import type {
   NormalizedHistoricalEconomics,
   NormalizedRevenueHistoryBySegment,
@@ -65,13 +71,6 @@ const formatAbsoluteValue = (value: number | null | undefined) =>
 
 const formatPercentValue = (value: number | null | undefined) =>
   value == null ? "—" : `${percentFormatter.format(value)}%`;
-
-const formatMixDeltaLabel = (value: number | null | undefined) => {
-  if (value == null) return "—";
-  const rounded = Math.round(value);
-  const sign = rounded > 0 ? "+" : "";
-  return `${sign}${rounded}pp`;
-};
 
 const getStableSeriesColors = (labels: string[]) => {
   const orderedLabels: string[] = [];
@@ -192,19 +191,6 @@ const renderEndLineLabel = (
   );
 };
 
-const getCagrDisplayClassName = (value: number | null | undefined) => {
-  if (value == null) {
-    return "border-border/60 bg-muted/60 text-muted-foreground";
-  }
-  if (value > 0) {
-    return "border-emerald-200/80 bg-emerald-100 text-emerald-800 dark:border-emerald-700/40 dark:bg-emerald-900/30 dark:text-emerald-200";
-  }
-  if (value < 0) {
-    return "border-rose-200/80 bg-rose-100 text-rose-800 dark:border-rose-700/40 dark:bg-rose-900/30 dark:text-rose-200";
-  }
-  return "border-border/60 bg-muted/60 text-foreground";
-};
-
 const getLatestNumericValue = (
   periods: string[],
   valuesByPeriod: Record<string, number | null>,
@@ -216,24 +202,6 @@ const getLatestNumericValue = (
     }
   }
   return Number.NEGATIVE_INFINITY;
-};
-
-const getPeriodOverPeriodPpChange = (
-  periods: string[],
-  valuesByPeriod: Record<string, number | null>,
-  period: string,
-) => {
-  const periodIndex = periods.indexOf(period);
-  if (periodIndex <= 0) return null;
-
-  const currentValue = valuesByPeriod[periods[periodIndex]];
-  const previousValue = valuesByPeriod[periods[periodIndex - 1]];
-
-  if (typeof currentValue !== "number" || typeof previousValue !== "number") {
-    return null;
-  }
-
-  return currentValue - previousValue;
 };
 
 const getOrderedRevenueHistoryRows = (
@@ -624,13 +592,8 @@ function RevenueMixHistoryModule({
   const hasAnyValue = hasAnyNumericValue(module.rows, displayPeriods, (row) => row.mixByPeriod);
   if (!hasAnyValue && module.insights.length === 0) return null;
 
-  const computeMixDelta = (row: NormalizedRevenueMixHistoryByUnitRow) => {
-    if (displayPeriods.length === 0) return null;
-    const firstValue = row.mixByPeriod[displayPeriods[0]];
-    const latestValue = row.mixByPeriod[displayPeriods[displayPeriods.length - 1]];
-    if (typeof firstValue !== "number" || typeof latestValue !== "number") return null;
-    return latestValue - firstValue;
-  };
+  const computeMixDelta = (row: NormalizedRevenueMixHistoryByUnitRow) =>
+    getBaselineToLatestPpDelta(row.mixByPeriod, displayPeriods);
 
   return (
     <div
@@ -1034,15 +997,8 @@ function RevenueMixHistorySegmentModule({
   const hasAnyValue = hasAnyNumericValue(module.rows, displayPeriods, (row) => row.mixPercentByYear);
   if (!hasAnyValue && module.insights.length === 0) return null;
 
-  const computeMixDelta = (row: NormalizedRevenueMixHistoryBySegmentRow) => {
-    if (displayPeriods.length === 0) return null;
-    const firstValue = row.mixPercentByYear[displayPeriods[0]];
-    const latestValue =
-      row.mixPercentByYear[displayPeriods[displayPeriods.length - 1]] ??
-      row.latestMixPercent;
-    if (typeof firstValue !== "number" || typeof latestValue !== "number") return null;
-    return latestValue - firstValue;
-  };
+  const computeMixDelta = (row: NormalizedRevenueMixHistoryBySegmentRow) =>
+    getBaselineToLatestPpDelta(row.mixPercentByYear, displayPeriods, row.latestMixPercent);
 
   return (
     <div

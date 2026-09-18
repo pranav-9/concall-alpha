@@ -13,10 +13,12 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { nestedDetailClass } from "./surface-tokens";
 import { getDeltaToneClass } from "./delta-tone";
 import { getPeriodOverPeriodDelta, formatPeriodDelta } from "@/lib/period-delta";
+import { buildDeltaShareBySegment, formatMixDeltaLabel } from "@/lib/business-snapshot/mix-history";
 import { KpiSparkline } from "./kpi-sparkline-lazy";
 import type {
   NormalizedSegmentHistoryQuarterly,
   NormalizedSegmentHistoryAnnual,
+  NormalizedRevenueMixHistoryBySegment,
 } from "@/lib/business-snapshot/types";
 
 const numberFmt = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 1 });
@@ -133,9 +135,13 @@ type SegmentView = { table: NormalizedSegmentHistoryQuarterly; derived: boolean 
 export function SegmentHistoryPanel({
   quarterly,
   annual,
+  revenueMixHistoryBySegment,
 }: {
   quarterly: NormalizedSegmentHistoryQuarterly | null;
   annual: NormalizedSegmentHistoryAnnual | null;
+  // Multi-year, FY-keyed — only meaningful next to the annual view; the
+  // quarterly view's column grain doesn't match a year-over-year delta.
+  revenueMixHistoryBySegment?: NormalizedRevenueMixHistoryBySegment | null;
 }) {
   const hasQuarterly = Boolean(quarterly && quarterly.rows.length > 0 && quarterly.periods.length > 0);
 
@@ -149,6 +155,11 @@ export function SegmentHistoryPanel({
   }, [annual, quarterly]);
 
   const hasAnnualSegment = Boolean(annualView);
+
+  const deltaShareBySegment = useMemo(
+    () => buildDeltaShareBySegment(revenueMixHistoryBySegment),
+    [revenueMixHistoryBySegment],
+  );
 
   // Default to quarterly when available, else whatever segment view exists.
   const [view, setView] = useState<"quarterly" | "annual">(hasQuarterly ? "quarterly" : "annual");
@@ -220,10 +231,12 @@ export function SegmentHistoryPanel({
                   label: r.segment,
                   byPeriod: r.amountByPeriod,
                   latestPct: r.mixPctLatest,
+                  deltaShare: view === "annual" ? deltaShareBySegment.get(r.segment.trim().toLowerCase()) ?? null : null,
                 }))
                 // Order by latest mix % so the default top-4 are the biggest segments.
                 .sort((a, b) => (b.latestPct ?? -1) - (a.latestPct ?? -1))}
               showLatestPct
+              showDeltaShare={view === "annual" && deltaShareBySegment.size > 0}
               showTrend
               trendPeriods={activeFull?.table.periods}
               collapseRowsTo={4}
@@ -254,6 +267,7 @@ function PeriodTable({
   rowLabel,
   rows,
   showLatestPct,
+  showDeltaShare = false,
   showDeltas = true,
   showTrend = false,
   trendPeriods,
@@ -262,8 +276,11 @@ function PeriodTable({
 }: {
   periods: string[];
   rowLabel: string;
-  rows: { label: string; byPeriod: Record<string, number | null>; latestPct: number | null }[];
+  rows: { label: string; byPeriod: Record<string, number | null>; latestPct: number | null; deltaShare?: number | null }[];
   showLatestPct: boolean;
+  // Adds the first-to-latest-year Δ (percentage points) beside Mix % — only
+  // meaningful when `rows[].deltaShare` is populated (annual view).
+  showDeltaShare?: boolean;
   showDeltas?: boolean;
   showTrend?: boolean;
   // Periods to draw the sparkline over (often a longer window than the visible
@@ -321,7 +338,9 @@ function PeriodTable({
               </TableHead>
             ))}
             {showLatestPct ? (
-              <TableHead className="text-right text-[11px] whitespace-nowrap">Mix %</TableHead>
+              <TableHead className="text-right text-[11px] whitespace-nowrap">
+                {showDeltaShare ? "Mix % · Δ Share" : "Mix %"}
+              </TableHead>
             ) : null}
           </TableRow>
         </TableHeader>
@@ -376,8 +395,17 @@ function PeriodTable({
               {showLatestPct ? (() => {
                 const mix = mixPctFor(row);
                 return (
-                  <TableCell className="text-right text-[11px] tabular-nums text-muted-foreground align-top">
-                    {mix == null ? "—" : `${numberFmt.format(mix)}%`}
+                  <TableCell className="text-right align-top">
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className="text-[11px] tabular-nums text-muted-foreground">
+                        {mix == null ? "—" : `${numberFmt.format(mix)}%`}
+                      </span>
+                      {showDeltaShare ? (
+                        <span className={`text-[10px] leading-none ${getDeltaToneClass(row.deltaShare)}`}>
+                          {row.deltaShare == null ? " " : formatMixDeltaLabel(row.deltaShare)}
+                        </span>
+                      ) : null}
+                    </div>
                   </TableCell>
                 );
               })() : null}

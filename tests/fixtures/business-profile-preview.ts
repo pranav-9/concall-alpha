@@ -37,4 +37,18 @@ export const businessProfilePreview = {
       ], insights: [],
     },
   },
+  // "Medical devices" is deliberately NOT "Medical electronics" (the name used
+  // above in revenue_mix_history_by_segment) — same free-text-segment-naming
+  // risk a real company's LLM extraction can hit. Exercises the Δ Share
+  // column's graceful no-match fallback for that one row, not just its
+  // matched-name path.
+  segment_history_annual: {
+    periods: ["FY22", "FY23", "FY24", "FY25", "FY26"],
+    rows: [
+      { segment: "Complete systems", amount_by_period: { FY22: 120, FY23: 162, FY24: 210, FY25: 264, FY26: 324 }, unit: "Rs Cr", mix_pct_latest: 60, comparability_label: "reported" },
+      { segment: "Electronic assemblies", amount_by_period: { FY22: 135, FY23: 144, FY24: 147, FY25: 144, FY26: 135 }, unit: "Rs Cr", mix_pct_latest: 25, comparability_label: "reported" },
+      { segment: "Medical devices", amount_by_period: { FY22: 45, FY23: 54, FY24: 63, FY25: 72, FY26: 81 }, unit: "Rs Cr", mix_pct_latest: 15, comparability_label: "reported" },
+    ],
+    insights: [],
+  },
 };
