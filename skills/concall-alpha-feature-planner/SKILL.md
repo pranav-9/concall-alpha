@@ -27,6 +27,7 @@ Surface the actual problem before sketching a solution.
 - **What IR-document evidence backs it?** Concallyser ingests transcripts, investor presentations, and annual reports. Name the source-type. If the answer is "we'd need to extract new fields," this is concallyser work first.
 - **Does the data already exist in Supabase?** Concall-alpha is a read-only consumer of analysis tables. If the answer is no, scope the concallyser side before scoping the portal side.
 - **What shape is the feature?** New section on the company page, new surface on an existing section, new global capability (watchlist / comments / search / leaderboard), or a homepage/leaderboard surface. The shape determines which patterns apply.
+- **Does it lean on search indexing?** The company page renders only the ACTIVE tab into the HTML (`company-page-workspace.tsx`); every other tab ships in the data payload but was never crawlable. Content that must rank belongs on Overview or its own URL — and "this will hurt SEO" is not an argument against changing a deep tab.
 - **Is anything similar shipped?** Sibling sections (Moat, Growth, Business Snapshot, Guidance, Key Variables, Sector Intelligence) often handle the same primitive. Pick a sibling to imitate before designing fresh.
 
 ## Phase 2 — Discussion
@@ -52,6 +53,8 @@ Make the build small and concrete.
 - **Writes.** Mutations go through `app/api/<route>/route.ts` with validation, not direct client queries. The portal owns four mutable tables: `page_view_events`, `user_requests`, `company_comments`, `watchlists`. Everything else is read-only.
 - **SQL.** New tables/indexes live in `lib/supabase/<name>.sql`. These files are **not migrations** — they are applied manually in the Supabase SQL editor. After any DDL, run `notify pgrst, 'reload schema';` to clear the PostgREST cache.
 - **Admin and service-role.** If the feature reads across users, it belongs behind the existing `/admin` gate ([lib/supabase/admin.ts](lib/supabase/admin.ts)). Do not broaden service-role-key code paths to user-facing routes.
+- **Split plumbing from the feature.** If the feature needs a cross-cutting fix first (auth, middleware, caching, a shared helper), that fix is its own PR, live before the feature lands, and the feature ships dark behind a server-read env flag. One deploy that changes both means a regression cannot be attributed (sign-up gate, 2026-09-18: #112 then #114).
+- **Falsifier sanity (any feature with a keep/kill test).** Before coding, check the ruler: (1) can the success event double-fire or fire for returning users? (2) does the guardrail metric move BY CONSTRUCTION when the feature works (e.g. "anonymous deep readers" falls whenever people sign up)? (3) does "shown" mean seen — viewport exposure, not mount? (4) can an abandoned attempt credit a later, unrelated conversion? Measure the pre-launch baseline the day the flag flips, and exclude the owner's own events.
 - **Out-of-scope list.** Force one explicit list of cuts. Anything not on the file list below is out.
 
 ## Phase 4 — Execution Handoff
@@ -86,6 +89,10 @@ Before exiting the planner:
 - SQL plan acknowledged as manual-apply with a `notify pgrst` follow-up?
 - Sibling section checked for the same primitive before designing fresh?
 - One explicit out-of-scope list exists?
+- Cross-cutting plumbing split into its own earlier PR, and the feature behind a server-read flag?
+- Falsifier passes the four ruler checks (double-fire, moves-by-construction, shown-vs-seen, leaked attribution) and a baseline date is named?
+- Anything placed relative to lazy (`ssr:false`) content waits for that content — no guessed heights — and `npm run perf:cls` is in the verify list?
+- Every NEW path is exercised before calling it live: an auth or sign-up change is tested with a brand-new account, not the owner's existing one (an existing account proves `login_completed`, never `signup_completed`)?
 - Charter and current hypothesis doc both consulted, with the newer one winning on conflict?
 
 ## Common File Map
