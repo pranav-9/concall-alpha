@@ -1,0 +1,85 @@
+{
+  "company": "VINYAS",
+  "company_name": "Vinyas Innovative Technologies",
+  "prepared_on": "2026-09-16",
+  "review_status": "user_approved",
+  "source_period": "H1 FY26",
+  "latest_source_date": "2025-11-13",
+  "about_company": {
+    "about_short": "Builds high-reliability electronics for defence, aerospace, industrial and medical customers.",
+    "business_intro": "Vinyas is an electronics manufacturing services provider for mission-critical, high-mix programmes. It earns revenue by assembling printed circuit boards, integrating systems and subsystems, building cable harnesses and supporting products through their lifecycle for OEMs, Tier-1 suppliers and defence customers.",
+    "about_long": "Vinyas manufactures electronics for defence and aerospace, industrial, medical and transportation applications. Its work spans build-to-print PCB assembly, electro-mechanical integration, cable harnesses, functional testing and lifecycle support. Defence and aerospace are the largest end-markets, while management is adding system-integration work and qualifying for commercial aerospace, medical and export-controlled programmes.",
+    "company_timeline": [
+      {"year": 2001, "title": "Incorporates and sets up semi-automatic SMT lines", "detail": null, "sources": [{"label": "Vinyas company timeline", "url": "https://www.vinyasit.com/timelines/", "locator": "2001"}]},
+      {"year": 2003, "title": "Wins its first export order", "detail": null, "sources": [{"label": "Vinyas company timeline", "url": "https://www.vinyasit.com/timelines/", "locator": "2003"}]},
+      {"year": 2004, "title": "Begins manufacturing for Indian defence companies", "detail": null, "sources": [{"label": "Vinyas company timeline", "url": "https://www.vinyasit.com/timelines/", "locator": "2004"}]},
+      {"year": 2014, "title": "Opens its 150,000 sq ft manufacturing facility", "detail": "The same milestone records ISO 13485 certification for medical-device quality management.", "sources": [{"label": "Vinyas company timeline", "url": "https://www.vinyasit.com/timelines/", "locator": "2014"}]},
+      {"year": 2016, "title": "Obtains a Government of India defence licence", "detail": null, "sources": [{"label": "Vinyas company timeline", "url": "https://www.vinyasit.com/timelines/", "locator": "2016"}]},
+      {"year": 2023, "title": "Lists on NSE Emerge", "detail": "The investor presentation reports the listing date as 6 October 2023.", "sources": [{"label": "Vinyas H1 FY26 investor presentation", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_06112025180228_Investor_Presentation_H1_202526.pdf", "locator": "Slide 6"}]}
+    ],
+    "business_facts": [
+      {
+        "category": "business_model",
+        "title": "How it earns",
+        "text": "Vinyas provides PCB assembly, system-level manufacturing, subsystem integration and lifecycle support. It works on long-cycle, high-reliability programmes for global OEMs, Tier-1 suppliers and Indian defence customers rather than mass-market consumer electronics.",
+        "period": "H1 FY26",
+        "sources": [{"label": "Vinyas H1 FY26 investor presentation", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_06112025180228_Investor_Presentation_H1_202526.pdf", "locator": "Slides 4 and 7"}]
+      },
+      {
+        "category": "geography",
+        "title": "End-market mix",
+        "text": "Defence and aerospace contributed 78.5% of H1 FY26 operating revenue, industrial electronics 18.5%, medical 1.3% and other businesses 1.7%. These are end-market shares, not export shares.",
+        "period": "H1 FY26",
+        "sources": [{"label": "Vinyas H1 FY26 investor presentation", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_06112025180228_Investor_Presentation_H1_202526.pdf", "locator": "Slide 14"}]
+      },
+      {
+        "category": "footprint",
+        "title": "Manufacturing base",
+        "text": "The company reports one 150,000 sq ft manufacturing unit in Mysuru and a team of 408. The site supports printed-board assembly, cable harnesses, electro-mechanical work, functional testing and system integration.",
+        "period": "30 September 2025",
+        "sources": [{"label": "Vinyas H1 FY26 investor presentation", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_06112025180228_Investor_Presentation_H1_202526.pdf", "locator": "Slides 6–7"}]
+      },
+      {
+        "category": "capabilities",
+        "title": "Quality credentials",
+        "text": "Certifications disclosed include NADCAP AC7120 for electronics printed-board assemblies, AS9100-D for aerospace, IATF 16949 for automotive and ISO 13485 for medical devices. NADCAP enables qualification for programmes that require that accreditation; it does not itself represent an order.",
+        "period": "H1 FY26",
+        "sources": [
+          {"label": "Vinyas H1 FY26 investor presentation", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_06112025180228_Investor_Presentation_H1_202526.pdf", "locator": "Slide 6"},
+          {"label": "Vinyas Q2 FY26 earnings-call transcript", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_13112025110338_Vinyas_Innovative_Technologies_Limited_Q2_FY26_Earnings_Call_transcript.pdf", "locator": "Management remarks"}
+        ]
+      },
+      {
+        "category": "customers",
+        "title": "Order book",
+        "text": "The order book was ₹1,062 crore at 30 September 2025. Management said a large portion came from defence and aerospace requirements; the investor presentation assigns ₹727 crore to the defence and aerospace programme pipeline and ₹290 crore to system-integration work.",
+        "period": "30 September 2025",
+        "sources": [
+          {"label": "Vinyas H1 FY26 investor presentation", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_06112025180228_Investor_Presentation_H1_202526.pdf", "locator": "Slides 6–7"},
+          {"label": "Vinyas Q2 FY26 earnings-call transcript", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_13112025110338_Vinyas_Innovative_Technologies_Limited_Q2_FY26_Earnings_Call_transcript.pdf", "locator": "Pages 4 and 8"}
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Capital raised for scale-up",
+        "text": "Vinyas raised ₹150.04 crore through a preferential issue in September 2025. Management said the proceeds were intended mainly for working capital and capacity expansion; new capacity was expected to require customer qualification before contributing fully.",
+        "period": "September 2025",
+        "sources": [
+          {"label": "Vinyas H1 FY26 investor presentation", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_06112025180228_Investor_Presentation_H1_202526.pdf", "locator": "Slide 5"},
+          {"label": "Vinyas Q2 FY26 earnings-call transcript", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_13112025110338_Vinyas_Innovative_Technologies_Limited_Q2_FY26_Earnings_Call_transcript.pdf", "locator": "Pages 7–8"}
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "The mix is broadening beyond defence assembly.",
+      "text": "Industrial electronics rose from 10.7% of FY24 operating revenue to 18.4% in FY25 and 18.5% in H1 FY26. Vinyas also says it has moved from PCB assembly into qualified system integration, commissioned a medical-device line and entered the commercial-aerospace supply chain; these newer verticals remain much smaller than defence and aerospace.",
+      "period": "FY24 to H1 FY26",
+      "sources": [{"label": "Vinyas H1 FY26 investor presentation", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_06112025180228_Investor_Presentation_H1_202526.pdf", "locator": "Slides 7 and 14"}]
+    }
+  },
+  "about_sources": [
+    {"label": "Vinyas company timeline", "url": "https://www.vinyasit.com/timelines/", "locator": "Milestones"},
+    {"label": "Vinyas H1 FY26 investor presentation", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_06112025180228_Investor_Presentation_H1_202526.pdf", "locator": "Slides 4–7 and 14"},
+    {"label": "Vinyas Q2 FY26 earnings-call transcript", "url": "https://nsearchives.nseindia.com/corporate/VINYAS_13112025110338_Vinyas_Innovative_Technologies_Limited_Q2_FY26_Earnings_Call_transcript.pdf", "locator": "Management remarks and Q&A"}
+  ]
+}

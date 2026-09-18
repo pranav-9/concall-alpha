@@ -1,0 +1,78 @@
+{
+  "company": "ASTRAMICRO",
+  "company_name": "Astra Microwave Products",
+  "prepared_on": "2026-09-16",
+  "review_status": "user_approved",
+  "source_period": "Q1 FY27",
+  "latest_source_date": "2026-08-17",
+  "about_company": {
+    "about_short": "Designs RF and microwave electronics for radar, electronic warfare, missiles, space and weather systems.",
+    "business_intro": "Astra Microwave develops and manufactures radio-frequency and microwave components, subsystems and complete systems. Its customers include Indian defence agencies and public-sector manufacturers, ISRO, the India Meteorological Department and overseas OEMs; revenue comes from development programmes, production orders, exports and lifecycle services.",
+    "about_long": "Astra works across radar, electronic warfare, missile electronics, telemetry, satellites, weather radar and hydrology. It designs its own GaN and GaAs microwave chips and builds higher-level subsystems and systems around them. Most revenue comes from government-linked defence, space and meteorology customers, with exports made directly and through its Astra Rafael Comsys joint venture and Singapore-based Aelius semiconductor business.",
+    "company_timeline": [
+      {"year": 1991, "title": "Begins with telecom electronics", "detail": null, "sources": [{"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slide 16"}]},
+      {"year": 1994, "title": "Goes public", "detail": null, "sources": [{"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slide 16"}]},
+      {"year": 2005, "title": "Enters strategic semiconductors", "detail": "The company identifies MMIC development as the milestone.", "sources": [{"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slide 16"}]},
+      {"year": 2015, "title": "Enters complete radar systems", "detail": null, "sources": [{"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slide 16"}]},
+      {"year": 2018, "title": "Delivers its first system to defence", "detail": null, "sources": [{"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slide 16"}]},
+      {"year": 2023, "title": "Delivers an airborne AESA radar antenna unit", "detail": "The disclosed milestone is an Active Antenna Array Unit for an airborne AESA radar.", "sources": [{"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slide 16"}]}
+    ],
+    "business_facts": [
+      {
+        "category": "business_model",
+        "title": "Revenue mix",
+        "text": "Q1 FY27 standalone revenue was 80.4% defence, 7.7% space, 5.0% exports including deemed exports, 4.9% meteorology and 2.0% other work. Production orders contributed 93%, development 5%, AMC or service work 2%, and direct export orders were nil in the order-type view.",
+        "period": "Q1 FY27",
+        "sources": [{"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slide 6"}]
+      },
+      {
+        "category": "customers",
+        "title": "Customer concentration",
+        "text": "On FY26 standalone revenue, DRDO contributed 28.2%, BEL and other defence PSUs 22.7%, IMD or the Meteorological Department 18.0%, exports through ARC and Aelius 11.9%, ISRO or SAC 6.4%, and private customers 3.0%.",
+        "period": "FY26",
+        "sources": [{"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slide 7"}]
+      },
+      {
+        "category": "customers",
+        "title": "Order book",
+        "text": "The standalone order book was ₹2,156 crore at 30 June 2026. Defence and public-sector work represented 71.3%, space 26.3%, exports 2.0% and meteorology 0.4% of that quarter-end backlog; percentages are rounded.",
+        "period": "30 June 2026",
+        "sources": [{"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slide 4"}]
+      },
+      {
+        "category": "footprint",
+        "title": "Engineering footprint",
+        "text": "The company reports four manufacturing facilities in Hyderabad, an R&D facility in Hyderabad and an R&D facility in Bengaluru. Its broader site table covers six operating locations with antenna ranges, environmental testing and RF test facilities.",
+        "period": "Q1 FY27",
+        "sources": [{"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slides 12 and 17"}]
+      },
+      {
+        "category": "capabilities",
+        "title": "R&D and microwave chips",
+        "text": "Astra reports 701 R&D professionals, including nine doctorates, and more than 40 GaN and GaAs MMIC products operating up to 40 GHz. The chips support its radar, electronic-warfare, space and communications subsystems.",
+        "period": "30 June 2026",
+        "sources": [{"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slides 12 and 15"}]
+      },
+      {
+        "category": "expansion",
+        "title": "Proposed demerger",
+        "text": "The board has given in-principle approval to separate the space, meteorology and hydrology undertakings. The structure, share-exchange ratio and other terms remained subject to reports, opinions and a final board decision at the time of the presentation.",
+        "period": "Q1 FY27",
+        "sources": [{"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slide 21"}]
+      }
+    ],
+    "what_changed": {
+      "headline": "A major radar win changed the scale of the backlog.",
+      "text": "The standalone order book was ₹2,156 crore at 30 June 2026. After a large July order, management said the current order book had risen to about ₹4,300 crore. This expands execution visibility, but it is an order-book step-up rather than revenue already recognised.",
+      "period": "30 June to 11 August 2026",
+      "sources": [
+        {"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slide 4"},
+        {"label": "Astra Microwave Q1 FY27 earnings-call transcript", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a3759892-3c11-4a78-9966-85a0d50319e3.pdf", "locator": "Pages 3–5"}
+      ]
+    }
+  },
+  "about_sources": [
+    {"label": "Astra Microwave Q1 FY27 investor presentation", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c4b03964-affd-4c16-a7e2-384c4ab877f4.pdf", "locator": "Slides 4–7, 12, 15–17 and 21"},
+    {"label": "Astra Microwave Q1 FY27 earnings-call transcript", "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a3759892-3c11-4a78-9966-85a0d50319e3.pdf", "locator": "Management remarks and Q&A"}
+  ]
+}
