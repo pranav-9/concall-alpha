@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { BusinessSnapshotSection } from "@/app/company/components/business-snapshot-section";
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
+import { profileSourceSchema } from "@/lib/business-snapshot/profile";
 import { businessProfilePreview } from "@/tests/fixtures/business-profile-preview";
 import neuland from "@/data/business-profile-drafts/NEULANDLAB.json";
 import cartrade from "@/data/business-profile-drafts/CARTRADE.json";
@@ -10,7 +11,6 @@ import astramicro from "@/data/business-profile-drafts/ASTRAMICRO.json";
 import Link from "next/link";
 
 const companyDrafts = [neuland, cartrade, aeroflex, vinyas, astramicro];
-const publishedCompanies = new Set(["NEULANDLAB", "CARTRADE", "AEROFLEX", "VINYAS", "ASTRAMICRO"]);
 
 export default async function BusinessSnapshotPreview({ searchParams }: {
   searchParams: Promise<{ state?: string; company?: string }>;
@@ -18,7 +18,8 @@ export default async function BusinessSnapshotPreview({ searchParams }: {
   if (process.env.NODE_ENV !== "development") notFound();
   const { state, company } = await searchParams;
   const draft = companyDrafts.find((item) => item.company === company) ?? neuland;
-  const isPublished = publishedCompanies.has(draft.company);
+  const isPublished = draft.review_status === "user_approved";
+  const aboutSources = (draft.about_sources ?? []).filter((source) => profileSourceSchema.safeParse(source).success);
   const isTestState = state === "legacy" || state === "empty" || state === "synthetic";
   const companyCode = isTestState ? "EXAMPLE" : draft.company;
   const companyName = isTestState ? "Example Components" : draft.company_name;
@@ -40,14 +41,14 @@ export default async function BusinessSnapshotPreview({ searchParams }: {
         </nav>
         <p className="text-sm text-muted-foreground">{isTestState
           ? "Synthetic test data · not investment research"
-          : `${draft.source_period} disclosures · latest source filed ${draft.latest_source_date}. ${isPublished ? "Reviewed pilot · published 16 September 2026." : "Prepared for review · not published."}`}</p>
+          : `${draft.source_period} disclosures · latest source filed ${draft.latest_source_date}. ${isPublished ? `Reviewed pilot · approved ${draft.prepared_on}.` : "Prepared for review · not published."}`}</p>
       </div>
       <BusinessSnapshotSection snapshot={snapshot} companyCode={companyCode} companyName={companyName} generatedAtShort={null} />
       {!isTestState ? (
         <details className="mt-5 text-sm text-muted-foreground">
           <summary className="cursor-pointer py-2">Sources for the company introduction</summary>
           <ul className="mt-2 space-y-2">
-            {(draft.about_sources ?? []).map((source, index) => <li key={`${source.url}-${index}`}><a className="break-words underline underline-offset-4" href={source.url} target="_blank" rel="noopener noreferrer">{source.label} · {source.locator}</a></li>)}
+            {aboutSources.map((source, index) => <li key={`${source.url}-${index}`}><a className="break-words underline underline-offset-4" href={source.url} target="_blank" rel="noopener noreferrer">{source.label} · {source.locator}</a></li>)}
           </ul>
         </details>
       ) : null}
