@@ -47,7 +47,7 @@ export default async function BusinessSnapshotPreview({ searchParams }: {
         <details className="mt-5 text-sm text-muted-foreground">
           <summary className="cursor-pointer py-2">Sources for the company introduction</summary>
           <ul className="mt-2 space-y-2">
-            {draft.about_sources.map((source, index) => <li key={`${source.url}-${index}`}><a className="break-words underline underline-offset-4" href={source.url} target="_blank" rel="noopener noreferrer">{source.label} · {source.locator}</a></li>)}
+            {(draft.about_sources ?? []).map((source, index) => <li key={`${source.url}-${index}`}><a className="break-words underline underline-offset-4" href={source.url} target="_blank" rel="noopener noreferrer">{source.label} · {source.locator}</a></li>)}
           </ul>
         </details>
       ) : null}
