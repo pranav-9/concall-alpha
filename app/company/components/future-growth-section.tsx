@@ -35,7 +35,10 @@ import {
   splitCatalystQuantifiedLabel,
   toDisplayLabel,
 } from "../[code]/display-tokens";
+import { buildGrowthSummary, isEarningsBridged, rankCatalysts, type GrowthSummary } from "@/lib/growth-outlook/summary";
+import type { StrategyNarrative } from "@/lib/guidance-snapshot/types";
 import { SectionCard, SectionUpdatedAt } from "./section-card";
+import { StrategyNarrativeCard } from "./strategy-narrative-card";
 import { MissingSectionState } from "./missing-section-state";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 import { chipClass, type ChipTone } from "./chip-tone";
@@ -224,8 +227,177 @@ function CatalystTrackerDrawer({
   );
 }
 
+// The page in one card: the base case and its range, the bridged earnings
+// read, and the single biggest lever — every figure is one the sections below
+// already show (lib/growth-outlook/summary.ts), so this is a summary and not a
+// second opinion.
+function GrowthSummaryCard({
+  summary,
+  scorePill,
+}: {
+  summary: GrowthSummary;
+  scorePill: React.ReactNode;
+}) {
+  const { topCatalyst } = summary;
+  const impact = topCatalyst
+    ? splitCatalystQuantifiedLabel(formatCatalystQuantifiedLabel(topCatalyst))
+    : null;
+  const range =
+    summary.bearGrowth && summary.bullGrowth
+      ? `${summary.bearGrowth} bear → ${summary.bullGrowth} bull`
+      : summary.bearGrowth
+        ? `${summary.bearGrowth} bear`
+        : summary.bullGrowth
+          ? `${summary.bullGrowth} bull`
+          : null;
+  return (
+    <div className={`${elevatedBlockClass} p-4 sm:p-5`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground/90">
+          Growth summary
+        </p>
+        {scorePill}
+      </div>
+      {summary.revenueGrowth ? (
+        <div className="mt-3 flex flex-wrap items-end gap-x-8 gap-y-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Base-case revenue growth
+              {summary.horizonYears ? ` · ${summary.horizonYears}Y view` : ""}
+            </p>
+            <p className="mt-1 text-[28px] font-black leading-none tracking-[-0.02em] text-emerald-700 dark:text-emerald-300">
+              {summary.revenueGrowth}
+            </p>
+            {range ? (
+              <p className="mt-1.5 font-mono text-[11px] tabular-nums text-muted-foreground">{range}</p>
+            ) : null}
+          </div>
+          {summary.earnings ? (
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                {summary.earnings.metricLabel ? `${summary.earnings.metricLabel} growth` : "Earnings growth"}
+              </p>
+              <p className="mt-1 text-[28px] font-black leading-none tracking-[-0.02em] text-foreground">
+                {summary.earnings.growth}
+              </p>
+              {summary.earnings.marginAtHorizon ? (
+                <p className="mt-1.5 font-mono text-[11px] tabular-nums text-muted-foreground">
+                  at {summary.earnings.marginAtHorizon} margin
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {topCatalyst?.catalyst ? (
+        <div className="mt-4 border-t border-border/30 pt-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Biggest lever
+          </p>
+          <p className="mt-1 text-sm font-semibold leading-snug text-foreground">
+            {topCatalyst.catalyst}
+            {impact?.headline ? (
+              <span className="font-normal text-muted-foreground"> · {impact.headline}</span>
+            ) : null}
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function GrowthScorePill({
+  outlook,
+  growthScore,
+  growthBand,
+}: {
+  outlook: NormalizedGrowthOutlook;
+  growthScore: number | null;
+  growthBand: (typeof GROWTH_BANDS)[keyof typeof GROWTH_BANDS] | null;
+}) {
+  if (outlook.growthScoreComponents.length === 0) return null;
+  return (
+    <Drawer direction="right">
+      <DrawerTrigger asChild>
+        <button
+          type="button"
+          aria-label="View growth score breakdown"
+          data-drawer-type="growth-score-breakdown"
+          className="flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1 shadow-none transition-colors hover:bg-accent"
+        >
+          {typeof growthScore === "number" && growthBand ? (
+            <>
+              <span className="inline-flex items-center gap-0.5">
+                <ConcallScore score={growthScore} size="sm" kind="growth" />
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  /10
+                </span>
+              </span>
+              <span
+                className={`text-[13px] font-semibold ${growthBand.tone}`}
+              >
+                {growthBand.label}
+              </span>
+            </>
+          ) : (
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground">
+              View score breakdown
+            </span>
+          )}
+        </button>
+      </DrawerTrigger>
+      <DrawerContent className="w-full max-w-xl">
+        <DrawerHeader className="border-b border-border">
+          <DrawerTitle>Growth score breakdown</DrawerTitle>
+          <DrawerDescription>
+            Component-level view of what is currently driving the forward growth score.
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="space-y-3 overflow-y-auto px-4 py-4">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {outlook.growthScoreComponents.map((component) => {
+              const display = formatGrowthScoreComponent(
+                component.key,
+                component.score,
+              );
+              if (!display) return null;
+              return (
+                <div
+                  key={component.key}
+                  className={`${nestedDetailClass} px-3 py-2.5`}
+                >
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
+                    {getGrowthScoreComponentLabel(component.key)}
+                  </p>
+                  <p className="mt-1 text-2xl font-semibold leading-none text-foreground">
+                    {display.value}
+                    {display.suffix && (
+                      <span className="ml-1 text-[10px] font-medium text-muted-foreground">
+                        {display.suffix}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <DrawerFooter className="border-t border-border">
+          <DrawerClose asChild>
+            <Button variant="outline">Close</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
 type FutureGrowthSectionProps = {
   outlook: NormalizedGrowthOutlook | null;
+  // details.strategy_narrative from the guidance deep-track, when the company
+  // has one (~half of coverage). Null = the summary card takes the full row.
+  growthEngine?: StrategyNarrative | null;
+  growthEngineAsOf?: string | null;
   companyCode: string;
   companyName: string | null;
 };
@@ -233,9 +405,12 @@ type FutureGrowthSectionProps = {
 
 export function FutureGrowthSection({
   outlook,
+  growthEngine = null,
+  growthEngineAsOf = null,
   companyCode,
   companyName,
 }: FutureGrowthSectionProps) {
+  const summary = buildGrowthSummary(outlook);
   const growthScore = outlook?.growthScore ?? null;
   const growthBand =
     typeof growthScore === "number"
@@ -253,7 +428,7 @@ export function FutureGrowthSection({
   // fallback would just repeat the revenue number under a stronger label.
   const marginPath = outlook?.marginPath ?? null;
   const earningsLadder = outlook?.earningsLadder ?? null;
-  const earningsBridged = Boolean(earningsLadder?.basis?.startsWith("guided_margin"));
+  const earningsBridged = isEarningsBridged(outlook);
   const marginMetricLabel = (earningsLadder?.metric ?? marginPath?.metric ?? "").toUpperCase();
   const currentMarginLabel =
     typeof marginPath?.currentPct === "number" ? `${marginPath.currentPct.toFixed(1)}%` : null;
@@ -269,114 +444,28 @@ export function FutureGrowthSection({
     >
         {outlook ? (
           <div className="flex flex-col gap-4">
-            {(outlook.summaryBullets.length > 0 ||
-              outlook.growthScoreComponents.length > 0) && (
-              <div className={`${elevatedBlockClass} p-4 space-y-2`}>
-                {outlook.summaryBullets.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/90 font-semibold">
-                        Summary
-                      </p>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {outlook.growthScoreComponents.length > 0 && (
-                          <Drawer direction="right">
-                            <DrawerTrigger asChild>
-                              <button
-                                type="button"
-                                aria-label="View growth score breakdown"
-                                data-drawer-type="growth-score-breakdown"
-                                className="flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1 shadow-none transition-colors hover:bg-accent"
-                              >
-                                {typeof growthScore === "number" && growthBand ? (
-                                  <>
-                                    <span className="inline-flex items-center gap-0.5">
-                                      <ConcallScore score={growthScore} size="sm" kind="growth" />
-                                      <span className="text-[11px] font-medium text-muted-foreground">
-                                        /10
-                                      </span>
-                                    </span>
-                                    <span
-                                      className={`text-[13px] font-semibold ${growthBand.tone}`}
-                                    >
-                                      {growthBand.label}
-                                    </span>
-                                  </>
-                                ) : (
-                                  <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground">
-                                    View score breakdown
-                                  </span>
-                                )}
-                              </button>
-                            </DrawerTrigger>
-                            <DrawerContent className="w-full max-w-xl">
-                              <DrawerHeader className="border-b border-border">
-                                <DrawerTitle>Growth score breakdown</DrawerTitle>
-                                <DrawerDescription>
-                                  Component-level view of what is currently driving the forward growth score.
-                                </DrawerDescription>
-                              </DrawerHeader>
-                              <div className="space-y-3 overflow-y-auto px-4 py-4">
-                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                  {outlook.growthScoreComponents.map((component) => {
-                                    const display = formatGrowthScoreComponent(
-                                      component.key,
-                                      component.score,
-                                    );
-                                    if (!display) return null;
-                                    return (
-                                      <div
-                                        key={component.key}
-                                        className={`${nestedDetailClass} px-3 py-2.5`}
-                                      >
-                                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground font-semibold">
-                                          {getGrowthScoreComponentLabel(component.key)}
-                                        </p>
-                                        <p className="mt-1 text-2xl font-semibold leading-none text-foreground">
-                                          {display.value}
-                                          {display.suffix && (
-                                            <span className="ml-1 text-[10px] font-medium text-muted-foreground">
-                                              {display.suffix}
-                                            </span>
-                                          )}
-                                        </p>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                              <DrawerFooter className="border-t border-border">
-                                <DrawerClose asChild>
-                                  <Button variant="outline">Close</Button>
-                                </DrawerClose>
-                              </DrawerFooter>
-                            </DrawerContent>
-                          </Drawer>
-                        )}
-                      </div>
-                    </div>
-                    {outlook.summaryBullets[0] && (
-                      <p className="text-sm font-semibold leading-snug text-foreground">
-                        {outlook.summaryBullets[0]}
-                      </p>
-                    )}
-                    {outlook.summaryBullets.length > 1 && (
-                      <ul className="space-y-1 border-l border-border/50 pl-3">
-                        {outlook.summaryBullets.slice(1, 5).map((bullet, idx) => (
-                          <li
-                            key={idx}
-                            className="text-[11px] leading-snug text-muted-foreground"
-                          >
-                            {bullet}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
-
+            {summary && (
+              <div
+                className={
+                  growthEngine
+                    ? "grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]"
+                    : undefined
+                }
+              >
+                <GrowthSummaryCard
+                  summary={summary}
+                  scorePill={
+                    <GrowthScorePill outlook={outlook} growthScore={growthScore} growthBand={growthBand} />
+                  }
+                />
+                {growthEngine ? (
+                  <StrategyNarrativeCard strategy={growthEngine} asOf={growthEngineAsOf} />
+                ) : null}
               </div>
             )}
+            {!summary && growthEngine ? (
+              <StrategyNarrativeCard strategy={growthEngine} asOf={growthEngineAsOf} />
+            ) : null}
 
             {outlook.catalysts.length > 0 && (
               <div className={`${elevatedBlockClass} p-4 space-y-3`}>
@@ -488,16 +577,7 @@ export function FutureGrowthSection({
                   </div>
                 </div>
                 <ol className="mt-1">
-                  {[...outlook.catalysts]
-                    .sort((a, b) => {
-                      const aPriority = a.priority?.weightedPriority;
-                      const bPriority = b.priority?.weightedPriority;
-
-                      if (aPriority == null && bPriority == null) return 0;
-                      if (aPriority == null) return 1;
-                      if (bPriority == null) return -1;
-                      return bPriority - aPriority;
-                    })
+                  {rankCatalysts(outlook.catalysts)
                     .slice(0, 3)
                     .map((c, idx) => {
                       const timelineItems = c.timelineItems;

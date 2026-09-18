@@ -1,7 +1,9 @@
 import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
+import { getGuidanceSnapshotRow } from "@/lib/guidance-snapshot/get";
 import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
+import { buildEvidenceByKey } from "@/lib/guidance-tracking/horizon-split";
 import { buildGuidanceVerdict } from "@/lib/guidance-tracking/verdict";
 import { currentReportingQuarter } from "@/lib/current-quarter";
 import { normalizeKeyVariablesSnapshot } from "@/lib/key-variables-snapshot/normalize";
@@ -12,7 +14,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   parseForwardStrength,
   parseStrategyNarrative,
-  type GuidanceSnapshotRow,
 } from "@/lib/guidance-snapshot/types";
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 import type { KeyVariablesSnapshotRow } from "@/lib/key-variables-snapshot/types";
@@ -278,12 +279,25 @@ export async function KeyVariablesPanel({ overview }: CompanyDetailSectionProps)
 
 export async function FutureGrowthPanel({ overview }: CompanyDetailSectionProps) {
   const supabase = await createClient();
-  const { data: growthData } = await supabase
-    .from("growth_outlook")
-    .select("*")
-    .or(`company.eq.${overview.company_code},company.eq.${overview.company_name}`)
-    .order("run_timestamp", { ascending: false })
-    .limit(1);
+  // The "Growth engine" card is the guidance deep-track's strategy narrative:
+  // the single bet the live guides express is how the company grows, so it
+  // reads here rather than on the Guidance tab (2026-09-18). It comes off the
+  // same cached guidance_snapshot row the Guidance panel renders. A failed or
+  // absent read resolves to null and the summary card simply takes the row.
+  const [{ data: growthData }, guidanceSnapshotRow] = await Promise.all([
+    supabase
+      .from("growth_outlook")
+      .select("*")
+      .or(`company.eq.${overview.company_code},company.eq.${overview.company_name}`)
+      .order("run_timestamp", { ascending: false })
+      .limit(1),
+    getGuidanceSnapshotRow(overview.company_code).catch(() => null),
+  ]);
+  const guidanceSnapshot = normalizeGuidanceSnapshot(guidanceSnapshotRow);
+  const growthEngine = parseStrategyNarrative(guidanceSnapshot?.details ?? null);
+  const growthEngineAsOf = growthEngine
+    ? formatShortDate(guidanceSnapshot?.updatedAtRaw ?? guidanceSnapshot?.generatedAtRaw)
+    : null;
   const normalizedGrowthOutlook = normalizeGrowthOutlook({
     details: growthData?.[0]?.details,
     growthScore: growthData?.[0]?.growth_score,
@@ -306,6 +320,8 @@ export async function FutureGrowthPanel({ overview }: CompanyDetailSectionProps)
   return (
     <FutureGrowthSection
       outlook={normalizedGrowthOutlook}
+      growthEngine={growthEngine}
+      growthEngineAsOf={growthEngineAsOf}
       companyCode={overview.company_code}
       companyName={overview.company_name}
     />
@@ -342,22 +358,30 @@ export async function WalkTheTalkPanel({ overview }: CompanyDetailSectionProps) 
 
 export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionProps) {
   const supabase = await createClient();
-  const guidanceSnapshotResult = await supabase
-    .from("guidance_snapshot")
-    .select(
-      "company_code, generated_at, analysis_window_quarters, credibility_verdict, guidance_items, source_files, details, updated_at",
-    )
-    .eq("company_code", overview.company_code)
-    .order("generated_at", { ascending: false })
-    .limit(1);
+  const guidanceSnapshotRow = await getGuidanceSnapshotRow(overview.company_code);
   // The stored credibility verdict wins over the counted tier wherever it
   // exists (lib/walk-the-talk/types.ts resolveCredibilityVerdict).
   const scoredCredibility = (
-    guidanceSnapshotResult.data?.[0] as { credibility_verdict?: unknown } | undefined
+    guidanceSnapshotRow as { credibility_verdict?: unknown } | null
   )?.credibility_verdict;
-  const normalizedGuidanceSnapshot = normalizeGuidanceSnapshot(
-    (guidanceSnapshotResult.data?.[0] as GuidanceSnapshotRow | undefined) ?? null,
-  );
+  const normalizedGuidanceSnapshot = normalizeGuidanceSnapshot(guidanceSnapshotRow);
+  const forwardStrength = parseForwardStrength(normalizedGuidanceSnapshot?.details ?? null);
+  // Per-thread evidence_class lives on guidance_tracking.details, not on the
+  // snapshot's guidance_items, so the This year / Long-term cards join it in
+  // by guidance_key. Only deep-tracked snapshots (the ones with a
+  // forward-strength block) have classes to read; everyone else skips the
+  // round-trip. A failed read just hides the per-card evidence line.
+  let evidenceByKey: ReturnType<typeof buildEvidenceByKey> = {};
+  if (forwardStrength) {
+    const { data: evidenceRows } = await supabase
+      .from("guidance_tracking")
+      .select("guidance_key, evidence_class:details->>evidence_class")
+      .eq("company_code", overview.company_code)
+      .not("details->>evidence_class", "is", null);
+    evidenceByKey = buildEvidenceByKey(
+      evidenceRows as { guidance_key?: unknown; evidence_class?: unknown }[] | null,
+    );
+  }
   // Legacy guidance_tracking predates the Phase 6 v2 snapshot and has no
   // horizon data. Fetch it only when the snapshot came back empty — most
   // companies have both rows and the snapshot always wins, so fetching
@@ -411,8 +435,8 @@ export async function GuidanceHistoryPanel({ overview }: CompanyDetailSectionPro
           items={guidanceItems}
           sourceFiles={normalizedGuidanceSnapshot?.sourceFiles}
           currentQtr={guidanceQtr}
-          forwardStrength={parseForwardStrength(normalizedGuidanceSnapshot?.details ?? null)}
-          strategyNarrative={parseStrategyNarrative(normalizedGuidanceSnapshot?.details ?? null)}
+          forwardStrength={forwardStrength}
+          evidenceByKey={evidenceByKey}
           credibilityVerdict={scoredCredibility}
         />
       ) : (

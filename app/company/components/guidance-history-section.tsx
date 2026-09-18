@@ -4,22 +4,28 @@
 // GuidanceHistoryPanel in company-detail-sections.tsx).
 //
 // Layout (redesign 2026-09-06, live book prioritised 2026-09-08,
-// forward-strength layer added 2026-09-09):
-//   When the snapshot carries the forward-strength blocks (details.
-//   forward_strength / .strategy_narrative from the deep-track producer) the
-//   section leads with the LIVE book and closes with the delivery record:
+// forward-strength layer added 2026-09-09, horizon cards 2026-09-18):
+//   When the snapshot carries the forward-strength block (details.
+//   forward_strength from the deep-track producer) the section leads with the
+//   LIVE book and closes with the delivery record:
 //     1. "How strong is the guidance right now?" — the forward-strength
-//        verdict (ambition × evidence pills, headline, the live-book
-//        order-backed/asserted/aspiration split) beside "The strategy behind
-//        the numbers" (the single bet + one implied lever).
-//     2. What to watch — the top LIVE_WATCH_COUNT live commitments as ranked
-//        cards (verdict.ts compareLiveMateriality); the rest collapse.
+//        verdict (ambition × evidence pills, headline, supporting line).
+//     2. This year / Long-term — the live book split by when each commitment
+//        comes due (lib/guidance-tracking/horizon-split.ts). Each card holds
+//        its own ranked, clickable commitments (top HORIZON_PREVIEW_COUNT,
+//        rest behind a toggle) and the evidence split of the rows on it.
+//        Commitments with no deadline collapse into "Ongoing". These cards
+//        ARE the watch list on this layout — every live commitment appears
+//        exactly once.
 //     3. "Should you believe any of it?" — the credibility verdict + resolved
 //        track-record card.
 //     4. Track record — resolved commitments as a guided / delivered /
 //        outcome table; Sources (collapsed); a right-side Drawer per row.
-//   Snapshots WITHOUT the strength blocks keep the original credibility-first
-//   order (verdict card + track record on top, then what-to-watch).
+//   "The strategy behind the numbers" moved to the Growth tab as its "Growth
+//   engine" card (strategy-narrative-card.tsx) — it is about how the company
+//   grows, not what it promised.
+//   Snapshots WITHOUT the strength block keep the original credibility-first
+//   order (verdict card + track record on top, then "What to watch").
 // The forward-strength prose comes from the producer (schema
 // guidance_strength_v1); everything else is templated in
 // lib/guidance-tracking/verdict.ts from the payload — no analyst conclusion is
@@ -51,6 +57,12 @@ import {
   type ResolvedOutcome,
   type ResolvedRow,
 } from "@/lib/guidance-tracking/verdict";
+import {
+  evidenceCountLine,
+  splitLiveByHorizon,
+  type EvidenceByKey,
+  type HorizonBucket,
+} from "@/lib/guidance-tracking/horizon-split";
 import { MIN_COMMITMENTS_FOR_GRADE } from "@/lib/walk-the-talk/grade-utils";
 import type { CredibilityVerdictKey } from "@/lib/walk-the-talk/types";
 import { chipClass, type ChipTone } from "./chip-tone";
@@ -64,7 +76,6 @@ import type {
   AmbitionLabel,
   EvidenceBand,
   ForwardStrength,
-  StrategyNarrative,
 } from "@/lib/guidance-snapshot/types";
 
 // Kept only for tests/guidance-status-bucket.test.ts — nothing in the
@@ -81,12 +92,14 @@ export type GuidanceHistorySectionProps = {
   // Reporting-quarter anchor for the live / resolved split. The panel passes
   // the same value it used for the header pills so the two never disagree.
   currentQtr?: ReportingQuarter;
-  // The forward-strength layer (details.forward_strength / .strategy_narrative,
-  // parsed server-side). Null for any company whose snapshot predates the
-  // deep-track strength upgrade — the two cards simply do not render, and the
-  // section falls back to the credibility-first layout.
+  // The forward-strength layer (details.forward_strength, parsed server-side).
+  // Null for any company whose snapshot predates the deep-track strength
+  // upgrade — the section then falls back to the credibility-first layout.
   forwardStrength?: ForwardStrength | null;
-  strategyNarrative?: StrategyNarrative | null;
+  // guidance_key -> evidence_class, joined in from guidance_tracking by the
+  // panel. Empty for non-deep-tracked companies; the per-card evidence line
+  // simply does not render.
+  evidenceByKey?: EvidenceByKey;
   // Raw guidance_snapshot.credibility_verdict — the stored verdict wins over
   // the counted tier (same value the panel passes to the header pills).
   credibilityVerdict?: unknown;
@@ -202,7 +215,6 @@ function ForwardStrengthCard({ forwardStrength }: { forwardStrength: ForwardStre
   const amb = AMBITION_META[forwardStrength.ambition.label];
   const ev = EVIDENCE_META[forwardStrength.evidence.label];
   const shell = TONE_CARD_SHELL[amb.tone] ?? TONE_CARD_SHELL.slate!;
-  const { liveTotal, orderBacked, asserted, aspiration } = forwardStrength.evidence;
   return (
     <div className={cn("rounded-xl border p-4 shadow-md shadow-black/20 sm:p-5", shell.shell)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -218,43 +230,6 @@ function ForwardStrengthCard({ forwardStrength }: { forwardStrength: ForwardStre
       <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-foreground/80">
         {forwardStrength.supportingLine}
       </p>
-      {liveTotal > 0 ? (
-        <p className={cn("mt-3", monoClass)}>
-          {`OF ${liveTotal} LIVE · ${orderBacked} order-backed · ${asserted} asserted · ${aspiration} ${
-            aspiration === 1 ? "aspiration" : "aspirations"
-          }`}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function StrategyNarrativeCard({ strategy }: { strategy: StrategyNarrative }) {
-  const lever = strategy.impliedLever;
-  const leverValue =
-    lever && (lever.from || lever.to)
-      ? [lever.from, lever.to].filter(Boolean).join(" → ")
-      : null;
-  return (
-    <div className={cn(elevatedMutedBlockClass, "p-4 sm:p-5")}>
-      <p className={eyebrowClass}>The strategy behind the numbers</p>
-      <p className="mt-2 text-base font-semibold leading-snug text-foreground sm:text-lg">
-        {strategy.headline}
-      </p>
-      <p className="mt-2 text-[13px] leading-relaxed text-foreground/80">{strategy.body}</p>
-      {lever ? (
-        <div className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className={eyebrowClass}>{lever.label}</span>
-          {leverValue ? (
-            <span className="font-mono text-sm font-semibold tabular-nums text-foreground">
-              {leverValue}
-            </span>
-          ) : null}
-          {lever.basis ? (
-            <span className="text-[11px] text-muted-foreground">{lever.basis}</span>
-          ) : null}
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -607,8 +582,195 @@ function WhatToWatch({
 }
 
 // ---------------------------------------------------------------------------
+// This year / Long-term — the live book by when it comes due
+// ---------------------------------------------------------------------------
+
+// How many commitments each horizon card shows before its toggle. Matches the
+// old watch-card count so the top of the section stays one screen tall.
+const HORIZON_PREVIEW_COUNT = 3;
+
+// One live commitment inside a horizon card: what they are on the hook for,
+// the number, how it has moved. Same payload-only discipline as WatchCard —
+// no progress-to-date reading exists, so none is implied.
+function HorizonRow({ row, onSelect }: { row: LiveRow; onSelect: (i: NormalizedGuidanceItem) => void }) {
+  const meta = LIVE_META[liveStateKey(row)];
+  const { item } = row;
+  const titleNamesScope = Boolean(item.segment && item.metricLabel);
+  // The number column is for numbers. A producer value_text with no digit in
+  // it ("increase in the EBITDA") is a sentence fragment, and set in mono at
+  // headline size it reads as a broken figure; the note below already says it.
+  const guidedNumber = row.guidedLabel && /\d/.test(row.guidedLabel) ? row.guidedLabel : null;
+  return (
+    <SelectableRow onSelect={() => onSelect(item)} className="px-4 py-3 transition-colors hover:bg-muted/30">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-semibold leading-snug text-foreground">{commitmentCoreLabel(item)}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {titleNamesScope ? null : <span className={monoClass}>{scopeLabel(item)}</span>}
+            {item.horizonLabel ? <span className={monoClass}>{item.horizonLabel}</span> : null}
+            <span className={chipClass(meta.tone)}>
+              <span aria-hidden className="mr-1">{meta.glyph}</span>
+              {meta.label}
+            </span>
+          </div>
+        </div>
+        <div className="shrink-0 text-right">
+          {guidedNumber ? (
+            <p className="font-mono text-[15px] font-semibold tabular-nums leading-tight text-foreground">
+              {guidedNumber}
+            </p>
+          ) : (
+            <p className="text-[11px] leading-snug text-muted-foreground">Qualitative</p>
+          )}
+        </div>
+      </div>
+      {row.note ? (
+        <p className="mt-1.5 line-clamp-2 text-[12px] leading-relaxed text-muted-foreground">{row.note}</p>
+      ) : null}
+      {row.trail.length > 0 ? (
+        <ValueTrailLine row={row} />
+      ) : row.heldSince ? (
+        <p className={cn(monoClass, "mt-1.5")}>Held since {row.heldSince}</p>
+      ) : null}
+    </SelectableRow>
+  );
+}
+
+function HorizonCard({
+  title,
+  horizonLabel,
+  caption,
+  bucket,
+  onSelect,
+}: {
+  title: string;
+  horizonLabel: string;
+  caption: string;
+  bucket: HorizonBucket;
+  onSelect: (i: NormalizedGuidanceItem) => void;
+}) {
+  const [showAll, setShowAll] = React.useState(false);
+  const { rows } = bucket;
+  const visible = showAll ? rows : rows.slice(0, HORIZON_PREVIEW_COUNT);
+  const hidden = rows.length - visible.length;
+  const evidenceLine = evidenceCountLine(bucket.evidence);
+  return (
+    <div className={cn(elevatedBlockClass, "flex flex-col overflow-hidden")}>
+      <div className="border-b border-border/40 px-4 py-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <p className={eyebrowClass}>
+            {title} <span className="text-foreground/70">· {horizonLabel}</span>
+          </p>
+          <p className={monoClass}>
+            {rows.length} {rows.length === 1 ? "commitment" : "commitments"}
+          </p>
+        </div>
+        <p className="mt-1 text-[12px] leading-snug text-muted-foreground">{caption}</p>
+        {evidenceLine ? <p className={cn(monoClass, "mt-1.5 uppercase")}>{evidenceLine}</p> : null}
+      </div>
+      <ul className="divide-y divide-border/30">
+        {visible.map((row) => (
+          <HorizonRow key={row.item.guidanceKey} row={row} onSelect={onSelect} />
+        ))}
+      </ul>
+      {rows.length > HORIZON_PREVIEW_COUNT ? (
+        <div className="mt-auto flex justify-center border-t border-border/40 px-4 py-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            aria-expanded={showAll}
+            onClick={() => setShowAll((open) => !open)}
+          >
+            {showAll ? "Show fewer" : `Show ${hidden} more`}
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function HorizonCards({
+  live,
+  current,
+  evidenceByKey,
+  onSelect,
+}: {
+  live: LiveRow[];
+  current: ReportingQuarter;
+  evidenceByKey: EvidenceByKey;
+  onSelect: (i: NormalizedGuidanceItem) => void;
+}) {
+  const [ongoingOpen, setOngoingOpen] = React.useState(false);
+  const split = React.useMemo(
+    () => splitLiveByHorizon(live, current, evidenceByKey),
+    [live, current, evidenceByKey],
+  );
+  const { thisYear, longTerm, ongoing } = split;
+  if (live.length === 0) return null;
+  const hasThisYear = thisYear.rows.length > 0;
+  const hasLongTerm = longTerm.rows.length > 0;
+  return (
+    <div className="space-y-3">
+      {hasThisYear || hasLongTerm ? (
+        // One populated horizon takes the full row rather than sitting beside
+        // a blank track.
+        <div className={cn("grid gap-3 lg:items-start", hasThisYear && hasLongTerm ? "lg:grid-cols-2" : null)}>
+          {hasThisYear ? (
+            <HorizonCard
+              title="This year"
+              horizonLabel={split.thisYearLabel}
+              caption="What they have committed to before this financial year closes."
+              bucket={thisYear}
+              onSelect={onSelect}
+            />
+          ) : null}
+          {hasLongTerm ? (
+            <HorizonCard
+              title="Long-term"
+              horizonLabel={split.longTermLabel}
+              caption="The multi-year targets and vision — further out, and further from proof."
+              bucket={longTerm}
+              onSelect={onSelect}
+            />
+          ) : null}
+        </div>
+      ) : null}
+      {ongoing.rows.length > 0 ? (
+        <div className={cn(elevatedBlockClass, "overflow-hidden")}>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+            <p className={eyebrowClass}>
+              Ongoing · no fixed deadline ({ongoing.rows.length})
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              aria-expanded={ongoingOpen}
+              onClick={() => setOngoingOpen((open) => !open)}
+            >
+              {ongoingOpen ? "Hide" : "Show"}
+            </Button>
+          </div>
+          {ongoingOpen ? (
+            <ul className="divide-y divide-border/30 border-t border-border/40">
+              {ongoing.rows.map((row) => (
+                <LiveCommitmentRow key={row.item.guidanceKey} row={row} onSelect={onSelect} />
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Resolved track record
 // ---------------------------------------------------------------------------
+
+// Stable identity so HorizonCards' memo doesn't re-split on every render.
+const EMPTY_EVIDENCE: EvidenceByKey = {};
 
 const RESOLVED_GRID = "md:grid-cols-[minmax(0,1fr)_7rem_7rem_9.5rem]";
 
@@ -907,7 +1069,7 @@ export function GuidanceHistorySection({
   sourceFiles,
   currentQtr,
   forwardStrength,
-  strategyNarrative,
+  evidenceByKey,
   credibilityVerdict,
 }: GuidanceHistorySectionProps) {
   const current = currentQtr ?? currentReportingQuarter();
@@ -954,30 +1116,26 @@ export function GuidanceHistorySection({
 
   return (
     <div className="space-y-4">
-      {forwardStrength ? (
-        // The strategy card is optional (guidance_strength_v1 lets
-        // strategy_narrative be null when no single lever dominates). Without
-        // it the strength card goes full-width rather than sitting in a
-        // two-column grid with a blank right track.
-        strategyNarrative ? (
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-            <ForwardStrengthCard forwardStrength={forwardStrength} />
-            <StrategyNarrativeCard strategy={strategyNarrative} />
-          </div>
-        ) : (
-          <ForwardStrengthCard forwardStrength={forwardStrength} />
-        )
-      ) : (
-        credibilityBlock
-      )}
+      {forwardStrength ? <ForwardStrengthCard forwardStrength={forwardStrength} /> : credibilityBlock}
 
-      {/* Keyed on the company so both disclosure toggles reset when the
+      {/* Keyed on the company so every disclosure toggle resets when the
           reader navigates to another company. The App Router re-renders this
           subtree in place (CompanyPageWorkspace carries no key), so without
-          this an expanded 40-row back-catalogue followed the reader to the
-          next company — defeating the truncation (red-team review,
-          2026-09-08). */}
-      <WhatToWatch key={`watch-${companyCode}`} verdict={verdict} onSelect={setSelectedThread} />
+          this an expanded list followed the reader to the next company
+          (red-team review, 2026-09-08). The strength layout's horizon cards
+          are its watch list; the credibility-first layout keeps the ranked
+          "What to watch" cards. */}
+      {forwardStrength ? (
+        <HorizonCards
+          key={`horizon-${companyCode}`}
+          live={verdict.live}
+          current={current}
+          evidenceByKey={evidenceByKey ?? EMPTY_EVIDENCE}
+          onSelect={setSelectedThread}
+        />
+      ) : (
+        <WhatToWatch key={`watch-${companyCode}`} verdict={verdict} onSelect={setSelectedThread} />
+      )}
 
       {/* Strength-first layout closes on the delivery record. */}
       {forwardStrength ? credibilityBlock : null}
