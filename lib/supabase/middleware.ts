@@ -44,20 +44,14 @@ export async function updateSession(request: NextRequest) {
 
   // IMPORTANT: If you remove getClaims() and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
-
-  if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    return NextResponse.redirect(url);
+  // Refresh only — the portal is public, so there is no redirect-to-login
+  // here. getClaims() rotates an expired access token and setAll() above writes
+  // the new cookies onto the response. A Supabase blip must never take a page
+  // down: fall through and let the request render with whatever session it had.
+  try {
+    await supabase.auth.getClaims();
+  } catch {
+    return NextResponse.next({ request });
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { identifyUser } from "@/lib/analytics";
+import { writePendingAuthIntent } from "@/lib/auth-intent";
 import {
   AuthDivider,
   GoogleSignInButton,
@@ -64,6 +65,9 @@ export function SignUpForm({
         );
         return;
       }
+      // Consumed by IdentityBridge on the first signed-in load — right away when
+      // confirmation is off, or after the emailed link otherwise.
+      writePendingAuthIntent({ method: "email", source: "auth_page" });
       identifyUser(data.user?.id ?? email, { email });
       // With email confirmation disabled, signUp returns a live session —
       // the user is already signed in, so skip the "check your email" page.
@@ -84,8 +88,10 @@ export function SignUpForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Sign up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
+          <CardTitle className="text-2xl">Create your free account</CardTitle>
+          <CardDescription>
+            Free to read. No card, no trial. Build watchlists of the companies you follow.
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <GoogleSignInButton nextPath={nextPath} />

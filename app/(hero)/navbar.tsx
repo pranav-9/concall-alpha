@@ -7,6 +7,7 @@ import { cn, hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
+import { authHrefWithNext } from "@/lib/safe-next-path";
 import { BrandLogo, BrandMark } from "@/components/brand/logo";
 import { JournalNewIndicator } from "@/components/journal-new-indicator";
 import { TelegramJoinLink } from "@/components/telegram-join-link";
@@ -104,6 +105,10 @@ const Navbar = ({
   // the phone bar below.
   const brandHref = initialUser ? "/desk" : "/";
 
+  // Sign in / Sign up return the reader to the page they were on.
+  const loginHref = authHrefWithNext("/auth/login", pathname);
+  const signUpHref = authHrefWithNext("/auth/sign-up", pathname);
+
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   const renderSignedOutAuth = (compact: boolean) => {
@@ -111,7 +116,7 @@ const Navbar = ({
       return (
         <div className="flex items-center gap-3">
           <Link
-            href="/auth/login"
+            href={loginHref}
             onClick={() => setIsMenuOpen(false)}
             className={cn(
               "inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
@@ -120,7 +125,7 @@ const Navbar = ({
             Sign in
           </Link>
           <Link
-            href="/auth/sign-up"
+            href={signUpHref}
             onClick={() => setIsMenuOpen(false)}
             className={cn(
               "inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-foreground bg-foreground px-3 py-2 text-xs font-medium text-background transition-colors hover:bg-foreground/90",
@@ -135,14 +140,14 @@ const Navbar = ({
     return (
       <div className="flex gap-2">
         <Link
-          href="/auth/login"
+          href={loginHref}
           onClick={() => setIsMenuOpen(false)}
           className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-foreground"
         >
           Sign in
         </Link>
         <Link
-          href="/auth/sign-up"
+          href={signUpHref}
           onClick={() => setIsMenuOpen(false)}
           className="inline-flex h-9 items-center justify-center rounded-md border border-transparent bg-foreground px-3 text-sm font-medium text-background shadow-sm transition-colors hover:bg-foreground/90"
         >
@@ -298,7 +303,7 @@ const Navbar = ({
                 <LogoutButton compact />
               ) : (
                 <Link
-                  href="/auth/login"
+                  href={loginHref}
                   className="house-data whitespace-nowrap rounded-full border border-[var(--rule)] px-3 py-[9px] text-[10px] uppercase tracking-[0.12em] text-[var(--ink)] transition-colors active:bg-[var(--paper-2)]"
                 >
                   Sign in

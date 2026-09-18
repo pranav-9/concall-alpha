@@ -30,6 +30,13 @@ function track(event: string, props?: AnalyticsProps) {
   }
 }
 
+export type AuthCompletedProps = {
+  method: "google" | "email" | "unknown";
+  source: "auth_page" | "gate" | "unattributed";
+  companyCode?: string;
+  sectionId?: string;
+};
+
 export type LeaderboardBoard =
   | "overall"
   | "quarter"
@@ -199,6 +206,29 @@ export const analytics = {
   /** The nudge was closed without a click — snoozed for NUDGE_SNOOZE_DAYS. */
   communityNudgeDismiss: (trigger: CommunityNudgeTrigger, pathname: string) =>
     track("community_nudge_dismiss", { channel: "telegram", trigger, pathname }),
+
+  // ── Auth — did a sign-up / log-in finish, and from where ──────────────────
+  /** A brand-new account reached a signed-in page (user created < 10 min ago).
+   *  Fired once per user per browser by IdentityBridge — it covers Google OAuth
+   *  and email-confirm, which finish server-side. `method`/`source` come from
+   *  the click marker (lib/auth-intent.ts); "unknown"/"unattributed" when the
+   *  marker was lost (e.g. confirmation opened in another browser). */
+  signupCompleted: (props: AuthCompletedProps) =>
+    track("signup_completed", {
+      method: props.method,
+      source: props.source,
+      company_code: props.companyCode,
+      section_id: props.sectionId,
+    }),
+
+  /** A returning user finished a log-in that started from a tracked click. */
+  loginCompleted: (props: AuthCompletedProps) =>
+    track("login_completed", {
+      method: props.method,
+      source: props.source,
+      company_code: props.companyCode,
+      section_id: props.sectionId,
+    }),
 
   // ── Intent — Q2 intent check, Q3 monetize ─────────────────────────────────
   /** A "cover this company" request was submitted — demand + a contactable engaged user. */

@@ -84,7 +84,11 @@ async function NavbarWithUser() {
 
   return (
     <>
-      <IdentityBridge userId={user?.id ?? null} email={user?.email ?? null} />
+      <IdentityBridge
+        userId={user?.id ?? null}
+        email={user?.email ?? null}
+        createdAt={user?.created_at ?? null}
+      />
       <Navbar
         initialCompanies={initialCompanies}
         latestJournalDate={latestJournalDate}
