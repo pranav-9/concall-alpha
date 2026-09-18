@@ -22,10 +22,21 @@ for (const bad of [
   { business_facts: [{ ...fact, sources: [{ ...source, url: "javascript:alert(1)" }] }] },
   { business_facts: [{ ...fact, sources: [{ ...source, url: "https://example.test/a b" }] }] },
   { what_changed: { ...profile.what_changed, unsupported_extra: true } },
+  { business_facts: [{ ...fact, metrics: [] }] },
+  { business_facts: [{ ...fact, metrics: Array(7).fill({ label: "Top 5", value: 62, unit: "%" }) }] },
+  { business_facts: [{ ...fact, metrics: [{ label: "Top 5", value: -1, unit: "%" }] }] },
+  { business_facts: [{ ...fact, metrics: [{ label: "Top 5", value: 62 }] }] },
 ]) {
   assert.equal(businessProfileSchema.safeParse(bad).success, false, JSON.stringify(bad));
   assert.equal(normalizeBusinessProfile(bad).hasInvalidProfile, true);
 }
+
+const metrics = [{ label: "Top 5", value: 62, unit: "%" }, { label: "6-10", value: 12, unit: "%" }];
+const withMetrics = { ...profile, business_facts: [{ ...fact, metrics }] };
+assert.equal(businessProfileSchema.safeParse(withMetrics).success, true, "a fact may carry prose + structured metrics together");
+assert.deepEqual(normalizeBusinessProfile(withMetrics).facts[0].metrics, metrics);
+assert.equal(normalizeBusinessProfile(profile).facts[0].metrics, undefined, "a fact without metrics stays prose-only, not an empty array");
+console.log("business fact metrics: optional, additive, and schema-validated passed");
 
 const normalize = (row: Record<string, unknown>) => normalizeBusinessSnapshot({ companyCode: "TEST", companyWebsite: null, snapshotRow: { company: "TEST", ...row } });
 const about = { about_short: "Component maker", about_long: "A longer explanation.", ...profile };

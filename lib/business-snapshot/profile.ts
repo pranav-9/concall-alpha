@@ -15,12 +15,21 @@ export const companyMilestoneSchema = z.object({
   detail: z.string().max(400).nullable().optional(),
   sources,
 }).strict();
+export const factMetricSchema = z.object({
+  label: text(40),
+  value: z.number().min(0),
+  unit: text(24),
+}).strict();
 export const businessFactSchema = z.object({
   category: z.enum(["customers", "geography", "footprint", "capabilities", "expansion", "business_model"]),
   title: text(80),
   text: text(700),
   period: text(60),
   sources,
+  // Optional structured numeric breakdown backing the prose (e.g. customer-
+  // concentration bands, manufacturing line counts, an order-book coverage
+  // ratio). Omitted entirely for a narrative-only fact, never an empty array.
+  metrics: z.array(factMetricSchema).min(1).max(6).optional(),
 }).strict();
 export const businessChangeSchema = z.object({
   headline: text(160),
@@ -37,6 +46,7 @@ export const businessProfileSchema = z.object({
 
 export type ProfileSource = z.infer<typeof profileSourceSchema>;
 export type CompanyMilestone = z.infer<typeof companyMilestoneSchema>;
+export type FactMetric = z.infer<typeof factMetricSchema>;
 export type BusinessFact = z.infer<typeof businessFactSchema>;
 export type BusinessChange = z.infer<typeof businessChangeSchema>;
 
