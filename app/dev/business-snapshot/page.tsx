@@ -4,14 +4,21 @@ import { normalizeBusinessSnapshot } from "@/lib/business-snapshot/normalize";
 import { businessProfilePreview } from "@/tests/fixtures/business-profile-preview";
 import neuland from "@/data/business-profile-drafts/NEULANDLAB.json";
 import cartrade from "@/data/business-profile-drafts/CARTRADE.json";
+import aeroflex from "@/data/business-profile-drafts/AEROFLEX.json";
+import vinyas from "@/data/business-profile-drafts/VINYAS.json";
+import astramicro from "@/data/business-profile-drafts/ASTRAMICRO.json";
 import Link from "next/link";
+
+const companyDrafts = [neuland, cartrade, aeroflex, vinyas, astramicro];
+const publishedCompanies = new Set(["NEULANDLAB", "CARTRADE", "AEROFLEX", "VINYAS", "ASTRAMICRO"]);
 
 export default async function BusinessSnapshotPreview({ searchParams }: {
   searchParams: Promise<{ state?: string; company?: string }>;
 }) {
   if (process.env.NODE_ENV !== "development") notFound();
   const { state, company } = await searchParams;
-  const draft = company === "CARTRADE" ? cartrade : neuland;
+  const draft = companyDrafts.find((item) => item.company === company) ?? neuland;
+  const isPublished = publishedCompanies.has(draft.company);
   const isTestState = state === "legacy" || state === "empty" || state === "synthetic";
   const companyCode = isTestState ? "EXAMPLE" : draft.company;
   const companyName = isTestState ? "Example Components" : draft.company_name;
@@ -21,10 +28,10 @@ export default async function BusinessSnapshotPreview({ searchParams }: {
   return (
     <main className="mx-auto max-w-6xl px-3 py-8 sm:px-6">
       <div className="mb-5 space-y-3">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Company background · reviewed pilot</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Company background · {isPublished ? "reviewed pilot" : "review draft"}</p>
         <h1 className="text-2xl font-semibold text-foreground">{companyName}</h1>
         <nav aria-label="Preview company" className="flex flex-wrap gap-2">
-          {[neuland, cartrade].map((item) => <Link
+          {companyDrafts.map((item) => <Link
             key={item.company}
             href={`/dev/business-snapshot?company=${item.company}`}
             aria-current={!isTestState && item.company === draft.company ? "page" : undefined}
@@ -33,7 +40,7 @@ export default async function BusinessSnapshotPreview({ searchParams }: {
         </nav>
         <p className="text-sm text-muted-foreground">{isTestState
           ? "Synthetic test data · not investment research"
-          : `${draft.source_period} disclosures · latest source filed ${draft.latest_source_date}. Reviewed pilot · published 16 September 2026.`}</p>
+          : `${draft.source_period} disclosures · latest source filed ${draft.latest_source_date}. ${isPublished ? "Reviewed pilot · published 16 September 2026." : "Prepared for review · not published."}`}</p>
       </div>
       <BusinessSnapshotSection snapshot={snapshot} companyCode={companyCode} companyName={companyName} generatedAtShort={null} />
       {!isTestState ? (

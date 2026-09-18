@@ -72,3 +72,26 @@ mixing it with synthetic financials or unreviewed older snapshot blocks.
 Promotion: `concallyser/scripts/promote_business_profile.py`; local rollback
 backup: `concallyser/data/analysis/business_profile_backups/pilots_20260916.json`.
 Sources and review timestamp are recorded in `details.business_profile_review`.
+
+## Review batch — 16 September 2026
+
+`AEROFLEX.json`, `VINYAS.json` and `ASTRAMICRO.json` are source-backed profiles
+approved and promoted on 16 September 2026. Preview them with
+`?company=AEROFLEX`, `?company=VINYAS` or `?company=ASTRAMICRO` on the local
+development route.
+
+- Aeroflex uses its Q1 FY27 presentation and call, plus the FY25 annual report.
+  The draft separates the operating 17.5 million-metre hose / 9,000-skid base
+  from the planned 20 million-metre / 15,000-skid expansion. Its 58% export
+  share and the regional split use different denominators and are labelled.
+- Vinyas uses the issuer's milestone page, H1 FY26 presentation and Q2 FY26
+  call. Industrial growth is a realised mix change; medical, commercial
+  aerospace and global expansion targets remain identified as developing.
+- Astra Microwave uses its Q1 FY27 presentation and call. The 30 June order
+  book is kept distinct from the larger post-July figure, and the proposed
+  demerger is described as in-principle rather than completed.
+
+The three outgoing rows were backed up together before promotion. As with the
+first pilot batch, only `about_company`, its existing JSON mirror and the review
+audit metadata were updated; financial blocks and generation dates were kept.
+Rollback backup: `concallyser/data/analysis/business_profile_backups/batch_20260916_aeroflex_vinyas_astramic.json`.
