@@ -1,12 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
+import { safeNextPath } from "@/lib/safe-next-path";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/watchlists";
   // Only same-site paths; blocks open-redirect via absolute/protocol-relative URLs.
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/watchlists";
+  const safeNext = safeNextPath(searchParams.get("next"), "/watchlists");
 
   if (code) {
     const supabase = await createClient();

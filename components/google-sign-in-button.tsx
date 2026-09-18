@@ -1,10 +1,22 @@
 "use client";
 
+import {
+  clearPendingAuthIntent,
+  writePendingAuthIntent,
+  type AuthIntent,
+} from "@/lib/auth-intent";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
-export function GoogleSignInButton({ nextPath }: { nextPath?: string | null }) {
+export function GoogleSignInButton({
+  nextPath,
+  intent,
+}: {
+  nextPath?: string | null;
+  /** Where this attempt started; defaults to the plain auth pages. */
+  intent?: Pick<AuthIntent, "source" | "companyCode" | "sectionId">;
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,6 +24,8 @@ export function GoogleSignInButton({ nextPath }: { nextPath?: string | null }) {
     const supabase = createClient();
     setIsLoading(true);
     setError(null);
+    // The flow finishes in a server route, so leave the attribution marker now.
+    writePendingAuthIntent({ method: "google", source: "auth_page", ...intent });
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -22,6 +36,7 @@ export function GoogleSignInButton({ nextPath }: { nextPath?: string | null }) {
     });
     // On success the browser navigates away to Google; only errors land here.
     if (error) {
+      clearPendingAuthIntent();
       setError(error.message);
       setIsLoading(false);
     }

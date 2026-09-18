@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { identifyUser } from "@/lib/analytics";
+import { writePendingAuthIntent } from "@/lib/auth-intent";
 import {
   AuthDivider,
   GoogleSignInButton,
@@ -50,6 +51,7 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
+      writePendingAuthIntent({ method: "email", source: "auth_page" });
       identifyUser(data.user?.id ?? email, { email: data.user?.email ?? email });
       router.refresh();
       router.push(nextPath || "/watchlists");

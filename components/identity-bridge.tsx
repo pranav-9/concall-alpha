@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { identifyUser } from "@/lib/analytics";
+import { analytics, identifyUser } from "@/lib/analytics";
+import { claimSignupFired, consumePendingAuthIntent, isNewUser } from "@/lib/auth-intent";
 
 /**
  * Ties the PostHog session to the signed-in user on every authenticated page
@@ -17,17 +18,37 @@ import { identifyUser } from "@/lib/analytics";
  * id, so mounting this on each load is cheap. Reset-on-logout stays in
  * logout-button.tsx — resetting here for anonymous loads would churn the
  * anonymous distinct id and fragment anonymous sessions. Renders nothing.
+ *
+ * It is also the one place a finished sign-up / log-in becomes an event, for
+ * the same reason: consume the click marker left by lib/auth-intent.ts (single
+ * use) and fire `signup_completed` for a fresh account, `login_completed` for
+ * a returning one. A fresh account with no marker still counts, unattributed.
  */
 export function IdentityBridge({
   userId,
   email,
+  createdAt,
 }: {
   userId: string | null;
   email: string | null;
+  createdAt: string | null;
 }) {
   useEffect(() => {
     if (!userId) return;
     identifyUser(userId, email ? { email } : undefined);
-  }, [userId, email]);
+
+    const intent = consumePendingAuthIntent();
+    const attribution = {
+      method: intent?.method ?? ("unknown" as const),
+      source: intent?.source ?? ("unattributed" as const),
+      companyCode: intent?.companyCode,
+      sectionId: intent?.sectionId,
+    };
+    if (isNewUser(createdAt, Date.now())) {
+      if (claimSignupFired(userId)) analytics.signupCompleted(attribution);
+    } else if (intent) {
+      analytics.loginCompleted(attribution);
+    }
+  }, [userId, email, createdAt]);
   return null;
 }
