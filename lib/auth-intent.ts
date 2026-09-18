@@ -92,6 +92,45 @@ export function clearPendingAuthIntent(): void {
   }
 }
 
+/**
+ * Record the start of an auth attempt. An explicit intent (the gate card) wins;
+ * otherwise a still-valid gate marker is kept and only its method updated — the
+ * gate's email path hands off to /auth/sign-up, whose form and Google button
+ * must not overwrite where the attempt began.
+ */
+export function recordAuthAttempt(
+  method: AuthMethod,
+  explicit?: Pick<AuthIntent, "source" | "companyCode" | "sectionId">,
+): void {
+  if (explicit) {
+    writePendingAuthIntent({ method, ...explicit });
+    return;
+  }
+  let pending: AuthIntent | null = null;
+  try {
+    pending = parseAuthIntent(window.localStorage.getItem(AUTH_INTENT_KEY), Date.now());
+  } catch {
+    pending = null;
+  }
+  writePendingAuthIntent(nextAuthIntent(method, pending));
+}
+
+/** Pure half of recordAuthAttempt, for tests. */
+export function nextAuthIntent(
+  method: AuthMethod,
+  pending: AuthIntent | null,
+): Omit<AuthIntent, "at"> {
+  if (pending?.source === "gate") {
+    return {
+      method,
+      source: "gate",
+      companyCode: pending.companyCode,
+      sectionId: pending.sectionId,
+    };
+  }
+  return { method, source: "auth_page" };
+}
+
 /** Read and remove the marker in one step, so it can only ever credit one load. */
 export function consumePendingAuthIntent(): AuthIntent | null {
   try {

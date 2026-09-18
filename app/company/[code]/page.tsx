@@ -16,6 +16,7 @@ import {
 import CompanyWatchlistSlot, {
   WatchlistSlotFallback,
 } from "../components/company-watchlist-slot";
+import { GatedPanel } from "../components/gated-panel";
 import { SectionLoading } from "../components/section-loading";
 import {
   BusinessSnapshotPanel,
@@ -180,7 +181,9 @@ export default async function Page({
 
           <div data-section-id="business-overview">
             <Suspense fallback={<SectionLoading id="business-overview" title="Business Snapshot" size={fallbackSize(overview.section_availability.businessSnapshot)} />}>
-              <BusinessSnapshotPanel overview={overview} />
+              <GatedPanel sectionId="business-overview" companyCode={overview.company_code}>
+                <BusinessSnapshotPanel overview={overview} />
+              </GatedPanel>
             </Suspense>
           </div>
 
@@ -192,7 +195,9 @@ export default async function Page({
 
           <div data-section-id="moat-analysis">
             <Suspense fallback={<SectionLoading id="moat-analysis" title="Moat Analysis" size={fallbackSize(overview.section_availability.moatAnalysis)} />}>
-              <MoatAnalysisPanel overview={overview} />
+              <GatedPanel sectionId="moat-analysis" companyCode={overview.company_code}>
+                <MoatAnalysisPanel overview={overview} />
+              </GatedPanel>
             </Suspense>
           </div>
 
@@ -204,13 +209,17 @@ export default async function Page({
 
           <div data-section-id="key-variables">
             <Suspense fallback={<SectionLoading id="key-variables" title="Key Variables" size={fallbackSize(overview.section_availability.keyVariables)} />}>
-              <KeyVariablesPanel overview={overview} />
+              <GatedPanel sectionId="key-variables" companyCode={overview.company_code}>
+                <KeyVariablesPanel overview={overview} />
+              </GatedPanel>
             </Suspense>
           </div>
 
           <div data-section-id="future-growth">
             <Suspense fallback={<SectionLoading id="future-growth" title="Future Growth" size={fallbackSize(overview.section_availability.futureGrowth)} />}>
-              <FutureGrowthPanel overview={overview} />
+              <GatedPanel sectionId="future-growth" companyCode={overview.company_code}>
+                <FutureGrowthPanel overview={overview} />
+              </GatedPanel>
             </Suspense>
           </div>
 
@@ -224,13 +233,17 @@ export default async function Page({
 
           <div data-section-id="valuation-check">
             <Suspense fallback={<SectionLoading id="valuation-check" title="Valuation Check" size={fallbackSize(overview.section_availability.valuationCheck && !overview.valuation_stale)} />}>
-              <ValuationCheckPanel overview={overview} />
+              <GatedPanel sectionId="valuation-check" companyCode={overview.company_code}>
+                <ValuationCheckPanel overview={overview} />
+              </GatedPanel>
             </Suspense>
           </div>
 
           <div data-section-id="guidance-history">
             <Suspense fallback={<SectionLoading id="guidance-history" title="Guidance" size={fallbackSize(overview.section_availability.guidanceHistory)} />}>
-              <GuidanceHistoryPanel overview={overview} />
+              <GatedPanel sectionId="guidance-history" companyCode={overview.company_code}>
+                <GuidanceHistoryPanel overview={overview} />
+              </GatedPanel>
             </Suspense>
           </div>
 

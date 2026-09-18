@@ -446,7 +446,7 @@ export function MoatAnalysisSection({
       </div>
 
       {/* Will the edge last? */}
-      <div className={cn(elevatedBlockClass, "p-4 sm:p-5 space-y-3")}>
+      <div className={cn(elevatedBlockClass, "p-4 sm:p-5 space-y-3")} data-gate-cut>
         <div className="space-y-1">
           <p className="text-lg font-bold leading-tight text-foreground">
             Will the edge last?

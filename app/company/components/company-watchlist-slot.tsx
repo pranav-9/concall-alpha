@@ -1,4 +1,5 @@
 import dynamic from "next/dynamic";
+import { getAuthenticatedUserId } from "@/lib/supabase/auth-state";
 import { createClient } from "@/lib/supabase/server";
 
 type WatchlistOption = {
@@ -42,12 +43,9 @@ export default async function CompanyWatchlistSlot({
 }: {
   companyCode: string;
 }) {
+  // Shared, per-request answer — the gated panels ask the same question.
+  const authenticatedUserId = await getAuthenticatedUserId();
   const supabase = await createClient();
-  const { data: authClaimsData } = await supabase.auth.getClaims();
-  const authenticatedUserId =
-    typeof authClaimsData?.claims?.sub === "string"
-      ? authClaimsData.claims.sub
-      : null;
 
   let watchlists: WatchlistOption[] = [];
   let containingIds: number[] = [];

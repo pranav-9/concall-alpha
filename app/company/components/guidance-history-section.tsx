@@ -1125,17 +1125,22 @@ export function GuidanceHistorySection({
           (red-team review, 2026-09-08). The strength layout's horizon cards
           are its watch list; the credibility-first layout keeps the ranked
           "What to watch" cards. */}
-      {forwardStrength ? (
-        <HorizonCards
-          key={`horizon-${companyCode}`}
-          live={verdict.live}
-          current={current}
-          evidenceByKey={evidenceByKey ?? EMPTY_EVIDENCE}
-          onSelect={setSelectedThread}
-        />
-      ) : (
-        <WhatToWatch key={`watch-${companyCode}`} verdict={verdict} onSelect={setSelectedThread} />
-      )}
+      {/* Sign-up gate cut (lib/signup-gate.ts): the verdict above stays open; the
+          watch list and the delivery record sit behind the free sign-up card. A
+          real DOM node because neither child forwards props. */}
+      <div data-gate-cut className="empty:hidden">
+        {forwardStrength ? (
+          <HorizonCards
+            key={`horizon-${companyCode}`}
+            live={verdict.live}
+            current={current}
+            evidenceByKey={evidenceByKey ?? EMPTY_EVIDENCE}
+            onSelect={setSelectedThread}
+          />
+        ) : (
+          <WhatToWatch key={`watch-${companyCode}`} verdict={verdict} onSelect={setSelectedThread} />
+        )}
+      </div>
 
       {/* Strength-first layout closes on the delivery record. */}
       {forwardStrength ? credibilityBlock : null}
