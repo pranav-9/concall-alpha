@@ -63,7 +63,9 @@ from issuer source texts and checked against original PDF charts where required.
 
 ## Review boundaries
 
-Only the two approved backgrounds were promoted. The promotion script backed up
+Only the reviewed backgrounds were promoted — NEULANDLAB and CARTRADE in the
+first pilot, then AEROFLEX, VINYAS and ASTRAMICRO in the batch below. The
+promotion script backed up
 the prior rows, guarded against concurrent changes, and verified that existing
 financial blocks and generation dates were preserved. No all-company backfill
 was performed. These profiles do not revalidate older stored financial tables. The pilot preview therefore shows the background being reviewed without

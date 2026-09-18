@@ -36,16 +36,23 @@ Run `npm run dev -- --port 3017` and open `/dev/business-snapshot`. This route i
 development-only (404 in production). It now defaults to a source-backed Neuland
 background draft; use `?company=CARTRADE`, `?company=AEROFLEX`, `?company=VINYAS`
 or `?company=ASTRAMICRO` for the other four. The drafts and content audit are in
-`data/business-profile-drafts/`; all five backgrounds are now published. The JSON
-envelopes retain the original review draft for audit.
+`data/business-profile-drafts/`; all five backgrounds have been reviewed and
+promoted to Supabase. The JSON envelopes retain the original review draft for
+audit — `NEULANDLAB.json` and `CARTRADE.json` still carry their pre-approval
+`review_status: "draft"`, so the preview labels those two "review draft" /
+"Prepared for review · not published" even though both are live; the second
+batch's files carry `review_status: "user_approved"` and label "reviewed pilot"
+(tracked as a known preview-badge mismatch in TODOS.md, not a promotion issue).
 Use `?state=synthetic` for the full synthetic chart fixture, `?state=legacy` or
 `?state=empty` to review older and missing snapshots.
 
 Checks: `npx tsx tests/business-profile.test.ts`, `npx tsx tests/business-profile-drafts.test.ts`
-(schema-validates every draft file's `about_company` against `businessProfileSchema`
+(validates each of the five named draft files' `about_company` fields via
+`normalizeBusinessProfile`/`businessProfileSchema` in `lib/business-snapshot/profile.ts`,
 so a hand-edit that exceeds a field limit fails loudly instead of being silently
-dropped), `npm run typecheck`, and targeted ESLint on the changed files. Pipeline
-checks: from `concallyser`, run `.venv/bin/python -m pytest tests/test_business_profile.py -q`.
+dropped — the file list is a hardcoded import, so a new draft file needs its own
+import added to the test), `npm run typecheck`, and targeted ESLint on the changed
+files. Pipeline checks: from `concallyser`, run `.venv/bin/python -m pytest tests/test_business_profile.py -q`.
 
 Promotion uses `concallyser/scripts/promote_business_profile.py`: dry-run with
 `--backup PATH` first, inspect the plan, then repeat with `--apply` after user
