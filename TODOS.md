@@ -2,6 +2,12 @@
 
 Captured with context so a future session can pick any item up cold. Source review noted per item.
 
+## Business profile batch 2 (Aeroflex/Vinyas/Astra Microwave) — deferred review findings (2026-09-18)
+
+From the /ship review of `data/business-profile-batch2` (testing + maintainability specialists + red team + Claude/Codex adversarial, Codex ran with web search). Load-bearing items were fixed in that PR (schema-regression test for the draft JSON files, `about_sources` routed through `profileSourceSchema` before rendering, published badge/date derived from each draft's own `review_status`/`prepared_on` instead of a hand-maintained allowlist + hardcoded date). The "no CI enforcement of `npm test`" finding (package.json:9) re-surfaced but is already tracked below under Featured Reads latest-three — not duplicated here.
+
+- [ ] **`profileSourceSchema.url` has no length bound** (XS, P4) — unlike every sibling field in the same schema (`label` 160, `locator` 80, `title`/`detail`/`text`/`period` all capped), `url` in `lib/business-snapshot/profile.ts:8` is an unbounded regex. Pre-existing, not introduced by this diff — surfaced because this diff is the first to push real citation content through it at volume. Not an active ReDoS shape and nothing validates it on a request path today, so low urgency; cap it (e.g. `.max(500)`) next time this file is touched.
+
 ## Featured Reads latest-three — deferred review findings (2026-09-13)
 
 From the /ship review of `feat/featured-reads-latest-three` (testing + maintainability specialists + Claude/Codex adversarial). Load-bearing items were fixed in that PR (unique `id` tie-breaker, future-dated rows hidden at the fetch, fetch order and comparator driven from one `SELECTION_ORDER`, index reordered to match the query, vacuous clock/mutation tests made falsifiable, stale rotation docs corrected); these were judged not worth the churn now.
