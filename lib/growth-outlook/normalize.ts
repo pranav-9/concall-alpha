@@ -4,6 +4,8 @@ import type {
   NormalizedGrowthEvidenceLine,
   NormalizedGrowthAlsoConsidered,
   NormalizedGrowthOutlook,
+  NormalizedGrowthEarningsLadder,
+  NormalizedGrowthMarginPath,
   NormalizedGrowthScenario,
   NormalizedGrowthScoreComponent,
   NormalizedGrowthSourceFile,
@@ -226,6 +228,11 @@ const normalizeScenario = (value: unknown): NormalizedGrowthScenario | null => {
   const growth =
     typeof growthRaw === "string" || typeof growthRaw === "number" ? String(growthRaw) : null;
   const confidence = normalizeScenarioConfidence(item.confidence_pct ?? item.confidence);
+  const earningsRaw = item.earnings_growth_pct;
+  const earningsGrowth =
+    typeof earningsRaw === "string" || typeof earningsRaw === "number" ? String(earningsRaw) : null;
+  const earningsBasis = asString(item.earnings_basis);
+  const marginAtHorizon = asString(item.margin_at_horizon_pct);
 
   if (
     !summary &&
@@ -241,10 +248,53 @@ const normalizeScenario = (value: unknown): NormalizedGrowthScenario | null => {
   return {
     confidence,
     growth,
+    earningsGrowth,
+    earningsBasis,
+    marginAtHorizon,
     summary,
     riskWatch,
     drivers,
     risks,
+  };
+};
+
+const MARGIN_DIRECTIONS = new Set(["expanding", "stable", "compressing", "unknown"]);
+
+const normalizeMarginPath = (value: unknown): NormalizedGrowthMarginPath | null => {
+  const item = parseJsonObject(value);
+  if (!item) return null;
+  const directionRaw = asString(item.direction);
+  const direction =
+    directionRaw && MARGIN_DIRECTIONS.has(directionRaw)
+      ? (directionRaw as NormalizedGrowthMarginPath["direction"])
+      : null;
+  const normalized: NormalizedGrowthMarginPath = {
+    metric: asString(item.metric),
+    currentPct: asNumber(item.current_pct),
+    currentPeriod: asString(item.current_period),
+    currentSnippet: asString(item.current_snippet),
+    guidedPct: asString(item.guided_pct),
+    guidedPeriod: asString(item.guided_period),
+    guidedSnippet: asString(item.guided_snippet),
+    direction,
+  };
+  if (!normalized.metric && normalized.currentPct == null && !normalized.guidedPct) {
+    return null;
+  }
+  return normalized;
+};
+
+const normalizeEarningsLadder = (value: unknown): NormalizedGrowthEarningsLadder | null => {
+  const item = parseJsonObject(value);
+  if (!item) return null;
+  const basis = asString(item.basis);
+  if (!basis) return null;
+  return {
+    basis,
+    metric: asString(item.metric),
+    currentMarginPct: asNumber(item.current_margin_pct),
+    horizonYearsUsed: asNumber(item.horizon_years_used),
+    note: asString(item.note),
   };
 };
 
@@ -434,5 +484,7 @@ export function normalizeGrowthOutlook(input: {
     sourceFiles,
     catalysts,
     scenarios,
+    marginPath: normalizeMarginPath(details?.margin_path),
+    earningsLadder: normalizeEarningsLadder(details?.earnings_ladder),
   };
 }

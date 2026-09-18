@@ -20,8 +20,9 @@ export type PriceAssumesInput = {
   impliedPct: number;
   scenarios: { downside: number | null; base: number | null; upside: number | null };
   delivered: { key: string; label: string; pct: number }[];
-  /** "growth" = reverse-DCF implied revenue CAGR; "roe" = reverse residual-income implied RoE. */
-  metric: "growth" | "roe";
+  /** "growth" = reverse-DCF implied revenue CAGR; "earnings" = the same solve graded on Phase 5's
+   * earnings ladder (2026-09-17); "roe" = reverse residual-income implied RoE. */
+  metric: "growth" | "roe" | "earnings";
 };
 
 /** Unsorted markers in source order: cases, delivered, then the ask. */

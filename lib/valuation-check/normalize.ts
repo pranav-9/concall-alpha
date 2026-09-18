@@ -26,6 +26,9 @@ export const VALUATION_STALE_AFTER_MOVE_PCT = 10;
 const toNumber = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
 
+/** Below this 5-yr EPS CAGR (fraction) the trailing PEG is withheld as not meaningful. */
+export const TRAILING_PEG_MIN_EPS_CAGR = 0.05;
+
 // Display labels + ordering weight for the delivered-CAGR markers on the horizon bar. Unknown
 // keys still render (label falls back to "<key> delivered") but sort last.
 const DELIVERED_CAGR_META: Record<string, { label: string; order: number }> = {
@@ -103,33 +106,47 @@ export function normalizeValuationCheck(
 
   // PEG lenses, derived purely for display (never an input to the score). Read the P/E level
   // from relative.pe directly, not from `lenses` — pe may exist even when it isn't the
-  // primary/cross-check lens. Both legs divide the same P/E; each is independently gated.
+  // primary/cross-check lens. A no-history company can still expose its current P/E via
+  // `current_from_ratios`; that is sufficient for display-only PEG, but never creates a
+  // history-band valuation lens or changes the score. Both legs divide the same P/E; each
+  // is independently gated.
   //   - trailing: 5-yr EPS CAGR (fraction; already null unless earnings ran positive-to-
-  //     positive, so a present value is genuine positive growth). Textbook PEG.
-  //   - forward: Phase 5 base case, which is a REVENUE CAGR — directional, not a real PEG.
+  //     positive, so a present value is genuine positive growth). Textbook PEG. Withheld below
+  //     TRAILING_PEG_MIN_EPS_CAGR — dividing by a 1% growth rate prints a 150x "PEG" that
+  //     means nothing.
+  //   - forward: Phase 5 base case. Since 2026-09-17 that is the EARNINGS ladder when the
+  //     pipeline bridged it through an issuer-guided margin (ladder_basis "earnings"); older
+  //     rows carry a revenue CAGR, which is directional, not a real PEG. `basis` says which.
+  const ladderBasis: "earnings" | "revenue" = rdcf?.ladder_basis === "earnings" ? "earnings" : "revenue";
   const epsSummary = ((row.market_data ?? {}) as Record<string, unknown>).eps_summary as
     | { cagr_5y?: number | null; has_loss_year?: boolean }
     | null
     | undefined;
-  const pegPe = toNumber(relative.pe?.current);
+  const pegPe = toNumber(relative.pe?.current) ?? toNumber(relative.pe?.current_from_ratios);
   const epsCagr = toNumber(epsSummary?.cagr_5y);
   const baseCagr = toNumber(scenarios.base);
   const trailing =
-    pegPe !== null && pegPe > 0 && epsCagr !== null && epsCagr > 0
+    pegPe !== null && pegPe > 0 && epsCagr !== null && epsCagr >= TRAILING_PEG_MIN_EPS_CAGR
       ? {
           ratio: pegPe / (epsCagr * 100),
           growthPct: epsCagr * 100,
           hasLossYear: Boolean(epsSummary?.has_loss_year),
         }
       : null;
+  const trailingWithheld =
+    pegPe !== null && pegPe > 0 && epsCagr !== null && epsCagr > 0 && epsCagr < TRAILING_PEG_MIN_EPS_CAGR
+      ? { growthPct: epsCagr * 100 }
+      : null;
   const forward =
     pegPe !== null && pegPe > 0 && baseCagr !== null && baseCagr > 0
-      ? { ratio: pegPe / (baseCagr * 100), growthPct: baseCagr * 100 }
+      ? { ratio: pegPe / (baseCagr * 100), growthPct: baseCagr * 100, basis: ladderBasis }
       : null;
   const peg =
-    pegPe !== null && pegPe > 0 && (trailing || forward)
-      ? { pe: pegPe, trailing, forward }
+    pegPe !== null && pegPe > 0 && (trailing || forward || trailingWithheld)
+      ? { pe: pegPe, trailing, trailingWithheld, forward }
       : null;
+  const revenueScenariosRaw = ladderBasis === "earnings" ? (rdcf?.phase5_revenue_scenarios ?? null) : null;
+  const marginPathRaw = ladderBasis === "earnings" ? (rdcf?.margin_path ?? null) : null;
 
   return {
     companyCode: row.company_code,
@@ -150,7 +167,28 @@ export function normalizeValuationCheck(
       base: toNumber(scenarios.base),
       upside: toNumber(scenarios.upside),
     },
-    deliveredCagr: normalizeDeliveredCagr(rdcf?.delivered_cagr),
+    ladderBasis,
+    ladderMetric: ladderBasis === "earnings" ? (rdcf?.ladder_metric ?? null) : null,
+    revenueScenarios: revenueScenariosRaw
+      ? {
+          downside: toNumber(revenueScenariosRaw.downside),
+          base: toNumber(revenueScenariosRaw.base),
+          upside: toNumber(revenueScenariosRaw.upside),
+        }
+      : null,
+    marginPath: marginPathRaw
+      ? {
+          metric: marginPathRaw.metric ?? null,
+          currentPct: toNumber(marginPathRaw.current_pct),
+          currentPeriod: marginPathRaw.current_period ?? null,
+          guidedPct: marginPathRaw.guided_pct ?? null,
+          guidedPeriod: marginPathRaw.guided_period ?? null,
+        }
+      : null,
+    // Markers must share units with the cases: profit windows for an earnings ladder.
+    deliveredCagr: normalizeDeliveredCagr(
+      ladderBasis === "earnings" ? rdcf?.delivered_profit_cagr : rdcf?.delivered_cagr,
+    ),
     plausibilityCheck: rdcf?.plausibility_check ?? null,
     // v14 §9.3 rules a cash-flow DCF out for lenders, insurers and asset managers; the block
     // is returned not-applicable rather than run anyway.

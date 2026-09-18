@@ -36,6 +36,7 @@ interface SectionCardProps {
 }
 
 const SECTION_TONE_BY_ID: Record<string, SectionTone> = {
+  "company-announcements": "sky",
   "industry-context": "sky",
   "sub-sector": "sky",
   "business-overview": "emerald",

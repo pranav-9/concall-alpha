@@ -79,9 +79,10 @@ export function ValuationHorizonBar({
   impliedPct: number;
   scenarios: { downside: number | null; base: number | null; upside: number | null };
   delivered: { key: string; label: string; pct: number }[];
-  /** "growth" = reverse-DCF implied revenue CAGR (default). "roe" = reverse residual-income
-   * implied sustainable return on equity (Phase E) — only the axis wording changes. */
-  metric?: "growth" | "roe";
+  /** "growth" = reverse-DCF implied revenue CAGR (default). "earnings" = the same solve graded on
+   * the earnings ladder (2026-09-17). "roe" = reverse residual-income implied sustainable return
+   * on equity (Phase E) — only the axis wording changes. */
+  metric?: "growth" | "roe" | "earnings";
 }) {
   // One builder for the bar and the phone list (lib/valuation-check/price-assumes-rows).
   const markers: Marker[] = buildPriceMarkers({ impliedPct, scenarios, delivered });
@@ -118,7 +119,9 @@ export function ValuationHorizonBar({
   const impliedPhrase =
     metric === "roe"
       ? `Today's price implies a ${fmtPct(impliedPct)} sustainable return on equity. `
-      : `Today's price implies ${fmtPct(impliedPct)} revenue growth a year. `;
+      : metric === "earnings"
+        ? `Today's price implies ${fmtPct(impliedPct)} earnings growth a year. `
+        : `Today's price implies ${fmtPct(impliedPct)} revenue growth a year. `;
   const ariaLabel =
     impliedPhrase + below.map((m) => `${m.label} ${fmtPct(m.pct)}`).join(", ") + ".";
 
@@ -235,7 +238,7 @@ export function ValuationHorizonLegend({
   metric = "growth",
 }: {
   hasDelivered: boolean;
-  metric?: "growth" | "roe";
+  metric?: "growth" | "roe" | "earnings";
 }) {
   const ri = metric === "roe";
   return (
