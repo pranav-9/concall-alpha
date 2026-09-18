@@ -692,10 +692,15 @@ export function ValuationCheckSection({ valuation, staleness, scoreHistory }: Pr
       )}
 
       {/* 2. WHAT THE PRICE IS ASSUMING — full width. */}
-      {valuation.reverseDcfApplicable ? <PriceAssumes valuation={valuation} /> : null}
+      {/* Sign-up gate cut (lib/signup-gate.ts): logged-out readers get the read
+          above; the pricing + ratio layers below sit behind the free sign-up card.
+          A real DOM node because neither child forwards props. */}
+      <div data-gate-cut className="space-y-4 empty:hidden">
+        {valuation.reverseDcfApplicable ? <PriceAssumes valuation={valuation} /> : null}
 
-      {/* 3. RATIO EVALUATION — multiples + PEG in a 2x2 grid. */}
-      {hasRatioBlock ? <RatioEvaluation valuation={valuation} /> : null}
+        {/* 3. RATIO EVALUATION — multiples + PEG in a 2x2 grid. */}
+        {hasRatioBlock ? <RatioEvaluation valuation={valuation} /> : null}
+      </div>
 
       {/* 4. Footer: pricing note + derivation disclosure. */}
       {valuation.pricedAsOf || valuation.derivation.length ? (

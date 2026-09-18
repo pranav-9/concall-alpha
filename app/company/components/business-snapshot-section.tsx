@@ -568,7 +568,7 @@ export function BusinessSnapshotSection({
                       supportingText={aboutSupportingText}
                     />
 
-                    <div id={SNAPSHOT_ANCHORS.segments} style={anchorStyle()}>
+                    <div id={SNAPSHOT_ANCHORS.segments} style={anchorStyle()} data-gate-cut>
                       <BusinessSegmentsMosaic segments={segmentEntries} />
                     </div>
                     <BusinessMixHistory

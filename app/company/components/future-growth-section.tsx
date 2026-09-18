@@ -468,7 +468,7 @@ export function FutureGrowthSection({
             ) : null}
 
             {outlook.catalysts.length > 0 && (
-              <div className={`${elevatedBlockClass} p-4 space-y-3`}>
+              <div className={`${elevatedBlockClass} p-4 space-y-3`} data-gate-cut>
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/90 font-semibold">

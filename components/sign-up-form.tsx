@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { identifyUser } from "@/lib/analytics";
-import { writePendingAuthIntent } from "@/lib/auth-intent";
+import { recordAuthAttempt } from "@/lib/auth-intent";
 import {
   AuthDivider,
   GoogleSignInButton,
@@ -25,8 +25,13 @@ import { useState } from "react";
 export function SignUpForm({
   className,
   nextPath,
+  readingCompany,
   ...props
-}: React.ComponentPropsWithoutRef<"div"> & { nextPath?: string | null }) {
+}: React.ComponentPropsWithoutRef<"div"> & {
+  nextPath?: string | null;
+  /** Set when the reader arrived from a company page (the sign-up gate). */
+  readingCompany?: string | null;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
@@ -67,7 +72,7 @@ export function SignUpForm({
       }
       // Consumed by IdentityBridge on the first signed-in load — right away when
       // confirmation is off, or after the emailed link otherwise.
-      writePendingAuthIntent({ method: "email", source: "auth_page" });
+      recordAuthAttempt("email");
       identifyUser(data.user?.id ?? email, { email });
       // With email confirmation disabled, signUp returns a live session —
       // the user is already signed in, so skip the "check your email" page.
@@ -88,9 +93,15 @@ export function SignUpForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Create your free account</CardTitle>
+          <CardTitle className="text-2xl">
+            {readingCompany
+              ? `Create your free account to keep reading ${readingCompany}`
+              : "Create your free account"}
+          </CardTitle>
           <CardDescription>
-            Free to read. No card, no trial. Build watchlists of the companies you follow.
+            {readingCompany
+              ? "Free to read. No card, no trial. You'll land back on the section you were reading."
+              : "Free to read. No card, no trial. Build watchlists of the companies you follow."}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">

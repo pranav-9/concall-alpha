@@ -230,6 +230,22 @@ export const analytics = {
       section_id: props.sectionId,
     }),
 
+  // ── Sign-up gate — viewed → click → signup_completed{source:"gate"} ────────
+  /** The gate card was actually seen (≥50% in the viewport), once per company +
+   *  section per session — the funnel's denominator. Mounting is not viewing. */
+  signupGateViewed: (companyCode: string, sectionId: string) =>
+    track("signup_gate_viewed", { company_code: companyCode, section_id: sectionId }),
+
+  /** A gate action was taken. `open_in_browser` is the in-app-browser fallback
+   *  where Google OAuth is blocked; its click → return drop-off is how that
+   *  loss is measured (Google's block page is off-site, no error can fire). */
+  signupGateClick: (
+    companyCode: string,
+    sectionId: string,
+    method: "google" | "email" | "login" | "open_in_browser",
+  ) =>
+    track("signup_gate_click", { company_code: companyCode, section_id: sectionId, method }),
+
   // ── Intent — Q2 intent check, Q3 monetize ─────────────────────────────────
   /** A "cover this company" request was submitted — demand + a contactable engaged user. */
   requestIntakeSubmit: (companyCode?: string, textLen?: number) =>
