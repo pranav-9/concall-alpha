@@ -4,6 +4,7 @@ import type { NormalizedAboutCompany } from "@/lib/business-snapshot/types";
 import type { BusinessFact, ProfileSource } from "@/lib/business-snapshot/profile";
 import { elevatedBlockClass } from "./surface-tokens";
 import { SCROLL_MARGIN_TOP } from "./section-card";
+import { FactMetricBar, formatMetric } from "./fact-metric-bar";
 
 const labelClass = "text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground";
 const copyClass = "text-sm leading-relaxed text-foreground/85";
@@ -44,6 +45,14 @@ function FactGrid({ facts }: { facts: BusinessFact[] }) {
           </dt>
           <dd className="mt-1.5">
             <p className={`${copyClass} break-words`}>{fact.text}</p>
+            {fact.metrics && fact.metrics.length === 1 ? (
+              <p className="mt-2 text-lg font-bold tabular-nums text-foreground">
+                {formatMetric(fact.metrics[0])}
+                <span className="ml-2 text-xs font-medium text-muted-foreground">{fact.metrics[0].label}</span>
+              </p>
+            ) : fact.metrics && fact.metrics.length >= 2 ? (
+              <FactMetricBar metrics={fact.metrics} />
+            ) : null}
             <Sources sources={fact.sources} />
           </dd>
         </div>

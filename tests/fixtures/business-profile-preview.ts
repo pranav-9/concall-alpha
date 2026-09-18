@@ -14,9 +14,9 @@ export const businessProfilePreview = {
       { year: 2025, title: "Commissions a dedicated testing facility", sources },
     ],
     business_facts: [
-      { category: "customers", title: "Customers & concentration", text: "Sells to industrial and medical equipment manufacturers. Its five largest customers account for 54% of consolidated revenue.", period: "FY26", sources },
+      { category: "customers", title: "Customers & concentration", text: "Sells to industrial and medical equipment manufacturers. Its five largest customers account for 54% of consolidated revenue.", period: "FY26", sources, metrics: [{ label: "Top 5", value: 54, unit: "%" }, { label: "6-10", value: 14, unit: "%" }, { label: "Others", value: 32, unit: "%" }] },
       { category: "geography", title: "Markets served", text: "Exports contribute 62% of consolidated revenue. Domestic customers contribute the remaining 38%.", period: "FY26", sources },
-      { category: "footprint", title: "Operating footprint", text: "Two manufacturing sites handle assembly, testing and complete system integration. The dedicated testing facility began operating in 2025.", period: "FY26", sources },
+      { category: "footprint", title: "Operating footprint", text: "Two manufacturing sites handle assembly, testing and complete system integration. The dedicated testing facility began operating in 2025.", period: "FY26", sources, metrics: [{ label: "Installed lines", value: 23, unit: "lines" }] },
       { category: "capabilities", title: "Engineering capabilities", text: "In-house engineering covers design for manufacturing, traceability and product testing for industrial and medical customers.", period: "FY26", sources },
       { category: "expansion", title: "Planned expansion", text: "An additional production line is approved. It is not included in the operating footprint until commissioned.", period: "FY26", sources },
     ],
