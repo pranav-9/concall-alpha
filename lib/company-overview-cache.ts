@@ -25,7 +25,7 @@ import {
 import { currentReportingQuarter } from "@/lib/current-quarter";
 import { buildGuidanceVerdict } from "@/lib/guidance-tracking/verdict";
 import { BOARD_READS, classifyBoardRead, type BoardReadKey } from "@/lib/board-read";
-import { mean4QFromSeries } from "@/lib/quarter-composite";
+import { blendQuarterLegFromSeries, quarterSeriesFromNewestFirst } from "@/lib/quarter-composite";
 import { toValuationScale } from "@/lib/valuation-band";
 import { assessStaleness } from "@/lib/valuation-check/normalize";
 
@@ -113,12 +113,13 @@ export type CompanyPageOverviewCacheRow = {
   market_cap_band: string | null;
   latest_score: number | null;
   /**
-   * The STANDING quarter leg: trailing 4-quarter mean (lib/quarter-composite),
-   * the leg that feeds The Read and the ConcallScore ring. Derived on read from
-   * quarter_series, never persisted. latest_score stays the single latest print
-   * (the "this quarter" card).
+   * The STANDING quarter leg: the recency-weighted 4Q blend (lib/quarter-composite
+   * blendQuarterLeg, "latest counts double") — the SAME leg the leaderboard feeds
+   * its Read, so this page's Read number equals the board's for the same company.
+   * Derived on read from quarter_series, never persisted. latest_score stays the
+   * single latest print (the "this quarter" card).
    */
-  quarter_4q_avg: number | null;
+  quarter_leg: number | null;
   quarter_label: string | null;
   qoq_delta: number | null;
   quarter_series: number[] | null;
@@ -240,8 +241,8 @@ function normalizeCacheRow(row: Record<string, unknown>): CompanyPageOverviewCac
   // populated store it as null — those would otherwise drop the whole quarter leg
   // and read "no data". They show the single latest print (the old behaviour, no
   // regression) until refresh-overview-cache rebuilds them, at which point the
-  // real 4Q mean takes over. Rows with a populated series never hit the fallback.
-  const quarter4qAvg = mean4QFromSeries(quarterSeries) ?? latestScore;
+  // real blend takes over. Rows with a populated series never hit the fallback.
+  const quarterLeg = blendQuarterLegFromSeries(quarterSeries) ?? latestScore;
   return {
     company_code: String(row.company_code ?? ""),
     company_name: String(row.company_name ?? row.company_code ?? ""),
@@ -250,7 +251,7 @@ function normalizeCacheRow(row: Record<string, unknown>): CompanyPageOverviewCac
     sub_sector: typeof row.sub_sector === "string" ? row.sub_sector : null,
     market_cap_band: typeof row.market_cap_band === "string" ? row.market_cap_band : null,
     latest_score: latestScore,
-    quarter_4q_avg: quarter4qAvg,
+    quarter_leg: quarterLeg,
     quarter_label: typeof row.quarter_label === "string" ? row.quarter_label : null,
     qoq_delta: toNumeric(row.qoq_delta),
     quarter_series: quarterSeries,
@@ -282,10 +283,10 @@ function normalizeCacheRow(row: Record<string, unknown>): CompanyPageOverviewCac
     business_segment_mix: asSegmentMix(row.business_segment_mix),
     overview_takeaways: asOverviewTakeaways(row.overview_takeaways),
     section_availability: asAvailability(row.section_availability),
-    // The Read runs on the STANDING quarter leg (4Q mean), not the single latest
-    // print — this is what reconciles the company page with the leaderboard board
-    // and the coverage cut.
-    read: deriveOverviewRead(quarter4qAvg, growthScore, valuationScore),
+    // The Read runs on the STANDING quarter leg (recency-weighted 4Q blend), not
+    // the single latest print — the same leg the leaderboard board feeds its Read,
+    // so the two surfaces show the same number for the same company.
+    read: deriveOverviewRead(quarterLeg, growthScore, valuationScore),
     refreshed_at: String(row.refreshed_at ?? new Date().toISOString()),
   };
 }
@@ -434,14 +435,11 @@ export async function buildCompanyPageOverviewCacheRow(
     latestScore != null && priorScore != null
       ? Math.round((latestScore - priorScore) * 10) / 10
       : null;
-  const quarterSeries = (() => {
-    const series = concallRows
-      .slice(0, 8)
-      .map((r) => toNumeric(r.score))
-      .filter((v): v is number => v != null)
-      .reverse();
-    return series.length > 0 ? series : null;
-  })();
+  // Filter-then-slice (lib/quarter-composite quarterSeriesFromNewestFirst): the
+  // newest 8 SCORED prints, oldest→newest. The old slice(0, 8)-then-filter shape
+  // let a null-score row inside the newest 8 raw rows shrink the window, so the
+  // page's blend could cover different quarters than the board's.
+  const quarterSeries = quarterSeriesFromNewestFirst(concallRows.map((r) => toNumeric(r.score)));
 
   const growthOutlookDetailPromise = supabase
     .from("growth_outlook")
@@ -794,13 +792,14 @@ export async function buildCompanyPageOverviewCacheRow(
   })();
 
   const growthScore = normalizedGrowthOutlook?.growthScore ?? null;
-  // Standing quarter leg (4Q mean) from the same quarter_series the cache-hit
-  // path recomputes it from — so a freshly built row and a served one produce the
-  // identical Read. NOT latestScore, which is the single latest print. The
-  // `?? latestScore` mirrors the cache-hit fallback for symmetry; on this build
-  // path quarterSeries is always populated when any score exists, so it is inert.
-  const quarter4qAvg = mean4QFromSeries(quarterSeries) ?? latestScore;
-  const read = deriveOverviewRead(quarter4qAvg, growthScore, valuationScore);
+  // Standing quarter leg (recency-weighted 4Q blend, same as the board) from the
+  // same quarter_series the cache-hit path recomputes it from — so a freshly
+  // built row and a served one produce the identical Read. NOT latestScore, which
+  // is the single latest print. The `?? latestScore` mirrors the cache-hit
+  // fallback for symmetry; on this build path quarterSeries is always populated
+  // when any score exists, so it is inert.
+  const quarterLeg = blendQuarterLegFromSeries(quarterSeries) ?? latestScore;
+  const read = deriveOverviewRead(quarterLeg, growthScore, valuationScore);
 
   return {
     company_code: normalizedCode,
@@ -810,7 +809,7 @@ export async function buildCompanyPageOverviewCacheRow(
     sub_sector: companySubSector,
     market_cap_band: companyMarketCapBand,
     latest_score: latestScore,
-    quarter_4q_avg: quarter4qAvg,
+    quarter_leg: quarterLeg,
     quarter_label: quarterLabel,
     qoq_delta: qoqDelta,
     quarter_series: quarterSeries,
@@ -915,7 +914,10 @@ export async function getCachedCompanyPageOverview(
     // v2: row shape gained `read` + valuation/qoq/series/scenarios fields (The
     // Read redesign). Bumping the key invalidates stale pre-redesign entries so
     // a deploy never serves a read-less object that throws in the component.
-    ["company-page-overview-v2", normalizedCode],
+    // v3 (2026-09-19): the cached JSON's read.score moved from the flat 4Q mean to
+    // the recency blend and the row's quarter_4q_avg became quarter_leg. Bumping
+    // the key drops pre-deploy payloads so the fixed Read is live immediately.
+    ["company-page-overview-v3", normalizedCode],
     {
       revalidate: 300,
       tags: [companyOverviewCacheTag(normalizedCode)],
@@ -935,11 +937,11 @@ export async function getCachedCompanyPageOverview(
 }
 
 export function toCompanyPageOverviewUpsert(row: CompanyPageOverviewCacheRow) {
-  // `read` and `quarter_4q_avg` are both derived on read — no column, and a stored
+  // `read` and `quarter_leg` are both derived on read — no column, and a stored
   // copy could drift from the quarter_series they're computed from. quarter_series
   // IS persisted, so the cache-hit path rebuilds both identically.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { read: _read, quarter_4q_avg: _quarter4qAvg, ...persisted } = row;
+  const { read: _read, quarter_leg: _quarterLeg, ...persisted } = row;
   return {
     ...persisted,
     company_code: row.company_code.toUpperCase(),

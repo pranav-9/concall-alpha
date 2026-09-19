@@ -219,8 +219,9 @@ async function fetchConcallData({
       const scoresNewestFirst = companyRecords.map((r) => r.score);
       row["Latest 4Q Avg"] = mean4Q(scoresNewestFirst);
       row["Latest 12Q Avg"] = meanLatestScored(scoresNewestFirst, 12);
-      // Recency-weighted leg for the Overall board ONLY (score-board-rows reads
-      // this; the Quarter tab and sector pages stay on the flat "Latest 4Q Avg").
+      // Recency-weighted leg — the LIVE Read leg on every surface (score-board-rows,
+      // sectors, watchlists, themes; the company page and hero compute the same
+      // blend from their series). "Latest 4Q Avg" above is display-only ("4Q" column).
       // Latest counts double — see lib/quarter-composite blendQuarterLeg.
       row["Latest 4Q Blend"] = blendQuarterLeg(scoresNewestFirst);
 
