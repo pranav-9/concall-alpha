@@ -8,7 +8,10 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-/** Rounded card shell: `mx-4` is the 16px page gutter. */
+/**
+ * Rounded card shell: `mx-4` is the 16px page gutter. Inside an already-padded
+ * host (the company page's SectionCard) add `mx-0`; `cn` resolves it over `mx-4`.
+ */
 export const MOBILE_CARD =
   "mx-4 overflow-hidden rounded-xl border border-[var(--rule)] bg-[var(--paper-2)]";
 
@@ -123,7 +126,10 @@ export function MobileTag({
 // scroller, scrollbar hidden, never wraps; active = ink fill on paper-2 text.
 // ---------------------------------------------------------------------------
 
-/** The scroller that holds a chip row. Add `px-4` (page) or `px-3.5` (in-card). */
+/**
+ * The scroller that holds a chip row. Add `px-4` (page) or `px-3.5` (in-card);
+ * no px inside an already-padded host (the company page's SectionCard).
+ */
 export const MOBILE_CHIP_STRIP =
   "flex gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 

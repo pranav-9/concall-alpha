@@ -114,6 +114,7 @@ Tokens live at [`lib/design/shell.ts`](../lib/design/shell.ts).
 - **Never mix tokens across families in the same surface.** A research `SectionCard` does not contain an atmospheric panel as an inner card, and an atmospheric page does not host a research `SectionCard` as a top-level shell.
 - **Family is a property of the page, not of the component.** A `Tabs` primitive can render in either family; the page's family decides which token the trigger background uses.
 - **Chrome is shared.** The navbar, footer, banner, and fade-out gradients use the same chrome tokens regardless of which family the page belongs to.
+- **One sanctioned crossing: `.house-tokens`.** The house skin (`.house` in `app/globals.css`: the landing page, `/desk` and the phone reading routes) is the style the portal is migrating to. A house component may sit inside a research `SectionCard` only through `.house-tokens`, which carries the house palette and ink with no paper ground, so it adds no second background. Today that is the Exchange Desk feed on the company Announcements tab. There its phone primitives drop their page gutters (no `px-4` on `MOBILE_CHIP_STRIP`, `mx-0` on `MOBILE_CARD`), because the card is already padded.
 
 ---
 

@@ -434,7 +434,8 @@ function PhoneAnnouncements({
           {/* Page gutters (px-4 / MOBILE_CARD's mx-4) line up with the phone
               page edge on /announcements; inside the company SectionCard,
               which is already padded, they double up and knock the feed out
-              of line with the cards above it. */}
+              of line with the cards above it. The page top pad (pt-3.5) goes
+              too: the "Filing tape" header above already spaces the chips. */}
           <div
             role="group"
             aria-label="Filter by impact"
