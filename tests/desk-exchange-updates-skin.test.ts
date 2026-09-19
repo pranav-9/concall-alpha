@@ -44,7 +44,7 @@ const update = (over: Partial<ExchangeUpdate> & Pick<ExchangeUpdate, "id">): Exc
 const updates = [
   update({ id: "a1" }),
   update({ id: "a2", impact: "negative", filedLabel: "3d ago", bucketKey: "week", attachmentUrl: null }),
-  update({ id: "a3", impact: "transformative", filedLabel: "24 Jun 2026", bucketKey: "earlier" }),
+  update({ id: "a3", impact: "transformative", filedLabel: "24 Sept 2025", bucketKey: "earlier" }),
 ];
 const base = { updates, impacts: buildImpactFacet(updates), total: updates.length, windowDays: 35 };
 // getCompanyExchangeDeskData always returns belowCut: [] — mirror it.
@@ -192,8 +192,10 @@ const compact = render("compact", fullData);
     assert.equal(textOf(row.children[0]).trim(), updates[i].filedLabel, "track 0 is the filed date");
     assert.deepEqual(md.slice(1), sm.slice(1), "from md only the date track changes");
     assert.ok(toPx(md[0]) > toPx(sm[0]), "from md the date track is wider than at sm");
-    // "24 Jun 2026" in house-micro measures 82px (see the comment on UpdateRow).
-    assert.ok(toPx(md[0]) >= 82, `md date track ${md[0]} fits an absolute date (82px) on one line`);
+    // The longest label is en-IN's "24 Sept 2025" (formatRelativeActivityTime
+    // writes September as "Sept"): 88.8px in house-micro, so the track needs
+    // 89px (see the comment on UpdateRow).
+    assert.ok(toPx(md[0]) >= 89, `md date track ${md[0]} fits the longest absolute date (89px) on one line`);
   });
 }
 
