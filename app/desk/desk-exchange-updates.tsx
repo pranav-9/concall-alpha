@@ -312,8 +312,10 @@ function PhoneUpdateRow({
         <PhoneImpactPill item={item} />
       </span>
       {/* One clamped block: line-clamp is display:-webkit-box, so it has to be
-          the container, with the category label inline inside it. */}
-      <span className="mt-[5px] line-clamp-2 block pl-[39px] text-xs leading-[1.45] text-[var(--ink-soft)] [text-wrap:pretty]">
+          the container, with the category label inline inside it. No `block`
+          here — it's emitted after line-clamp-2 and its display:block
+          silently cancels the -webkit-box, so nothing clamps. */}
+      <span className="mt-[5px] line-clamp-2 pl-[39px] text-xs leading-[1.45] text-[var(--ink-soft)] [text-wrap:pretty]">
         <span className="house-data mr-[7px] text-[9px] uppercase tracking-[0.08em]">
           {item.categoryLabel}
         </span>
