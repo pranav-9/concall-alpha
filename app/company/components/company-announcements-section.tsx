@@ -108,7 +108,10 @@ export async function CompanyAnnouncementsSection({
             <LatestSignal data={data} />
             <SignalMix data={data} />
           </div>
-          <div>
+          {/* The feed is a house-skin component (Exchange Desk); give it the
+              house palette without the paper ground so it reads the same as
+              /announcements inside this SectionCard. */}
+          <div className="house-tokens">
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <div>
                 <p className="house-data text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--ink-soft)]">
