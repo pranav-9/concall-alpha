@@ -109,12 +109,16 @@ function UpdateRow({
       )}
     >
       {/* Desktop: the dedicated feed needs a company column; the company tab
-          uses that space for the actual filing summary. */}
+          uses that space for the actual filing summary. The company tab is
+          full history, so most dates are absolute, and the longest, en-IN's
+          "24 Sept 2025", is 89px: it wrapped in 3.25rem. Widen from md, where
+          the summary can spare it (at sm it has only ~80px left, so a wrapped
+          date is the lesser cost). */}
       <div
         className={cn(
           "hidden items-center gap-4 sm:grid",
           companyContext
-            ? "sm:grid-cols-[3.25rem_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]"
+            ? "sm:grid-cols-[3.25rem_7.5rem_8rem_minmax(0,1.5fr)_4.5rem] md:grid-cols-[5.75rem_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]"
             : "sm:grid-cols-[3.25rem_minmax(8rem,1fr)_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]",
         )}
       >
@@ -309,8 +313,10 @@ function PhoneUpdateRow({
         <PhoneImpactPill item={item} />
       </span>
       {/* One clamped block: line-clamp is display:-webkit-box, so it has to be
-          the container, with the category label inline inside it. */}
-      <span className="mt-[5px] line-clamp-2 block pl-[39px] text-xs leading-[1.45] text-[var(--ink-soft)] [text-wrap:pretty]">
+          the container, with the category label inline inside it. No `block`
+          here — it's emitted after line-clamp-2 and its display:block
+          silently cancels the -webkit-box, so nothing clamps. */}
+      <span className="mt-[5px] line-clamp-2 pl-[39px] text-xs leading-[1.45] text-[var(--ink-soft)] [text-wrap:pretty]">
         <span className="house-data mr-[7px] text-[9px] uppercase tracking-[0.08em]">
           {item.categoryLabel}
         </span>
@@ -426,10 +432,15 @@ function PhoneAnnouncements({
     <div className="sm:hidden">
       {data.total > 0 ? (
         <section aria-label="Company announcements">
+          {/* Page gutters (px-4 / MOBILE_CARD's mx-4) line up with the phone
+              page edge on /announcements; inside the company SectionCard,
+              which is already padded, they double up and knock the feed out
+              of line with the cards above it. The page top pad (pt-3.5) goes
+              too: the "Filing tape" header above already spaces the chips. */}
           <div
             role="group"
             aria-label="Filter by impact"
-            className={cn(MOBILE_CHIP_STRIP, "px-4 pb-1 pt-3.5")}
+            className={cn(MOBILE_CHIP_STRIP, companyContext ? "pb-1" : "px-4 pb-1 pt-3.5")}
           >
             <button
               type="button"
@@ -454,7 +465,7 @@ function PhoneAnnouncements({
             ))}
           </div>
 
-          <div className={cn(MOBILE_CARD, "mt-2.5")}>
+          <div className={cn(MOBILE_CARD, "mt-2.5", companyContext && "mx-0")}>
             {buckets.length === 0 ? (
               <p className="house-data px-3.5 py-6 text-[10px] uppercase tracking-[0.14em] text-[var(--ink-soft)]">
                 No filings in this band in the last {data.windowDays} days.
@@ -568,7 +579,13 @@ function FullAnnouncements({
       {isSm !== false && (
       <div className="hidden sm:block">
       {data.total > 0 && (
-    <section aria-label="Company announcements" className="house-block">
+    <section
+      aria-label="Company announcements"
+      // house-block is a page-level section divider (top rule + 2.25rem).
+      // Inside the company SectionCard it drew a rule tight under the
+      // "Filing tape" header with a dead gap below it; the card is the frame.
+      className={companyContext ? undefined : "house-block"}
+    >
       {/* No eyebrow / heading / intro here: this variant renders under the
           /announcements page header, which already says all three. */}
       <div className="flex flex-wrap gap-2">

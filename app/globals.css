@@ -125,21 +125,30 @@
 }
 
 /* ---------------------------------------------------------------------------
- * House style — scoped to `.house` (the landing page).
+ * House style — scoped to `.house` and `.house-tokens` (see below).
  *
  * Deliberately NOT wired into the shadcn tokens above: this is the reference
  * the rest of the portal migrates to, so it has to be able to live beside the
  * current company-page surfaces without touching them. Every value here is a
- * plain custom property; nothing leaks past the `.house` element.
+ * plain custom property; nothing leaks past a `.house` or `.house-tokens` element.
  *
  * The palette is derived from the product's own score ramp (teal → amber →
  * red, the same CVD-safe ladder lib/score-trajectory uses for Trend labels) on
  * a cool paper ground. `--mark` is the one colour outside that ramp: it is an
  * annotation mark for interaction only, never a data colour, so a highlight can
  * never be mistaken for a score.
+ *
+ * `.house-tokens` is the same palette and ink WITHOUT the paper ground — for a
+ * house component set inside a surface that already paints its own background
+ * (the company page's Announcements SectionCard: the Exchange Desk feed and its
+ * summary cards).
+ * `.house` there drops an opaque paper block, and `bg-transparent` can't lift
+ * it: `.house` is emitted after the utilities at equal specificity, so it wins.
+ * Both share one rule so the palettes cannot drift apart.
  * ------------------------------------------------------------------------- */
 
-.house {
+.house,
+.house-tokens {
   --paper: #edf0ed;
   --paper-2: #f8faf8;
   --ink: #101a18;
@@ -150,11 +159,15 @@
   --alarm: #b3261e;
   --mark: #d99b1c;
 
-  background: var(--paper);
   color: var(--ink);
 }
 
-.dark .house {
+.house {
+  background: var(--paper);
+}
+
+.dark .house,
+.dark .house-tokens {
   --paper: #0a100f;
   --paper-2: #111a18;
   --ink: #e3ebe8;
