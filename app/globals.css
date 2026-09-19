@@ -140,7 +140,8 @@
  *
  * `.house-tokens` is the same palette and ink WITHOUT the paper ground — for a
  * house component set inside a surface that already paints its own background
- * (the Exchange Desk feed inside the company page's Announcements SectionCard).
+ * (the company page's Announcements SectionCard: the Exchange Desk feed and its
+ * summary cards).
  * `.house` there drops an opaque paper block, and `bg-transparent` can't lift
  * it: `.house` is emitted after the utilities at equal specificity, so it wins.
  * Both share one rule so the palettes cannot drift apart.

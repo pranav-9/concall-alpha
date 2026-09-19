@@ -103,15 +103,16 @@ export async function CompanyAnnouncementsSection({
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="house-tokens flex flex-col gap-6">
+          {/* Both summary cards and the feed (a house-skin Exchange Desk
+              component) paint with house tokens. .house-tokens gives them the
+              house palette without the paper ground, so they read the same as
+              /announcements inside this SectionCard. */}
           <div className="grid gap-3 lg:grid-cols-2">
             <LatestSignal data={data} />
             <SignalMix data={data} />
           </div>
-          {/* The feed is a house-skin component (Exchange Desk); give it the
-              house palette without the paper ground so it reads the same as
-              /announcements inside this SectionCard. */}
-          <div className="house-tokens">
+          <div>
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <div>
                 <p className="house-data text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--ink-soft)]">

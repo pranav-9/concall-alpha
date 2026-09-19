@@ -12,8 +12,9 @@ import ts from "typescript";
 //      drift apart,
 //   2. `.house-tokens` never paints a background, while `.house` still does,
 //   3. every token the feed paints with resolves under that palette,
-//   4. the company page actually wraps the feed in `.house-tokens` (and not in
-//      `.house`, which would drop an opaque paper block into the card).
+//   4. the company page wraps the feed AND both summary cards in `.house-tokens`
+//      (and not in `.house`, which would drop an opaque paper block into the
+//      card).
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -153,28 +154,44 @@ for (const path of FEED_SOURCES) {
     return strings.flatMap((s) => s.split(/\s+/).filter(Boolean));
   };
 
-  const feeds: ts.JsxSelfClosingElement[] = [];
-  const find = (n: ts.Node) => {
-    if (ts.isJsxSelfClosingElement(n) && n.tagName.getText(source) === "DeskExchangeUpdates") feeds.push(n);
-    n.forEachChild(find);
+  const usages = (name: string) => {
+    const out: ts.JsxSelfClosingElement[] = [];
+    const find = (n: ts.Node) => {
+      if (ts.isJsxSelfClosingElement(n) && n.tagName.getText(source) === name) out.push(n);
+      n.forEachChild(find);
+    };
+    find(source);
+    return out;
   };
-  find(source);
+  const ancestorClasses = (el: ts.Node) => {
+    const out: string[][] = [];
+    for (let n: ts.Node | undefined = el.parent; n; n = n.parent) {
+      if (ts.isJsxElement(n)) out.push(classTokens(n.openingElement));
+    }
+    return out;
+  };
+
+  const feeds = usages("DeskExchangeUpdates");
   assert.equal(feeds.length, 1, "the company section renders the Exchange Desk feed once");
   const variant = attr(feeds[0], "variant")?.initializer;
   assert.ok(variant && ts.isStringLiteral(variant) && variant.text === "company", 'the feed uses variant="company"');
 
-  const ancestorClasses: string[][] = [];
-  for (let n: ts.Node | undefined = feeds[0].parent; n; n = n.parent) {
-    if (ts.isJsxElement(n)) ancestorClasses.push(classTokens(n.openingElement));
+  // The feed and both summary cards paint with house tokens (IMPACT_META pills,
+  // --ink-soft labels, --signal hovers), so each one needs the scope. A card left
+  // outside it renders its impact pill black beside the coloured feed row.
+  for (const name of ["DeskExchangeUpdates", "LatestSignal", "SignalMix"]) {
+    const [site, ...extra] = usages(name);
+    assert.ok(site && extra.length === 0, `the company section renders <${name}> once`);
+    const classes = ancestorClasses(site);
+    assert.ok(
+      classes.some((c) => c.includes("house-tokens")),
+      `<${name}> must sit inside a .house-tokens wrapper, or its var(--ink-soft)/--rule/--signal are undefined`,
+    );
+    assert.ok(
+      classes.every((c) => !c.includes("house")),
+      `no .house ancestor on <${name}> — it paints an opaque paper block over the SectionCard`,
+    );
   }
-  assert.ok(
-    ancestorClasses.some((c) => c.includes("house-tokens")),
-    "the company feed must sit inside a .house-tokens wrapper, or its var(--ink-soft)/--rule/--signal are undefined",
-  );
-  assert.ok(
-    ancestorClasses.every((c) => !c.includes("house")),
-    "no .house ancestor on the company feed — it paints an opaque paper block over the SectionCard",
-  );
 }
 
 console.log("house-tokens: all assertions passed");
