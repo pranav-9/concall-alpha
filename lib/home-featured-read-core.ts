@@ -29,7 +29,7 @@ export type FeaturedCandidate = {
   code: string;
   name: string;
   sector: string | null;
-  /** Standing quarter leg: trailing 4-quarter mean ConcallScore, 0-10. */
+  /** Standing quarter leg: recency-weighted 4Q blend ConcallScore, 0-10 (same as the board). */
   concallScore: number | null;
   /** Growth outlook score, 0-10. */
   growthScore: number | null;

@@ -1,17 +1,28 @@
-// The trailing-quarter mean: the ONE definition of "the latest N scored quarters,
-// averaged" shared by every surface that shows a standing quarter number — the
-// leaderboard board (app/company/get-concall-data.ts), the company-page Read and
-// its ConcallScore ring (lib/company-overview-cache.ts), and the homepage hero
-// (lib/home-featured-read.ts).
+// The standing quarter leg: ONE definition per shape, shared by every surface
+// that shows a standing quarter number.
 //
-// WHY ONE HELPER. The quarter leg is also computed on the pipeline side by
-// concallyser/scripts/compute_composite_score.py, which averages the latest 4
-// scored prints for the coverage cut. Until 2026-08-11 the live surfaces fed
-// classifyBoardRead the SINGLE latest quarter while the cut used the 4Q mean, so
-// a company greyed as below-cut could still out-rank on the live Read. Unifying
-// every live surface on this 4Q mean is what makes the board reconcile with the
-// cut on the quarter leg. Route all four sites through here so they can't drift
-// into three subtly different "4Q averages".
+//   - blendQuarterLeg / blendQuarterLegFromSeries — the RECENCY-WEIGHTED 4Q leg.
+//     This is what every LIVE Read uses: the leaderboard board (app/company/
+//     get-concall-data.ts → score-board-rows), sectors, watchlists, themes, the
+//     company-page Read (lib/company-overview-cache.ts) and the homepage hero
+//     (lib/home-featured-read.ts). Same company, same number, everywhere.
+//   - mean4Q / mean4QFromSeries — the FLAT 4Q mean. Displayed as the "4Q" trail
+//     column and mirrored by the coverage cut (compute_composite_score.py). It is
+//     NOT a Read input anywhere on the live site any more.
+//
+// 2026-09-19: the overview and hero were still feeding the flat mean into
+// classifyBoardRead while the board fed the blend, so the same company showed a
+// different Read on its own page than on /leaderboards (SKYGOLD: 7.5 vs 7.4 —
+// blend 8.0 vs mean 8.025 crossed the one-decimal line). Both now use the blend.
+//
+// WHY ONE HELPER (history). The quarter leg is also computed on the pipeline
+// side by concallyser/scripts/compute_composite_score.py, which averages the
+// latest 4 scored prints for the coverage cut. Until 2026-08-11 the live surfaces
+// fed classifyBoardRead the SINGLE latest quarter while the cut used the 4Q mean,
+// so a greyed below-cut company could out-rank on the live Read; the live
+// surfaces were then unified on the 4Q mean, and on 2026-08-11 the live leg moved
+// to the recency blend (the cut stays on the mean). Every leg computation lives
+// in this file so the surfaces cannot drift into subtly different definitions.
 //
 // SELECTION, pinned to the Python side. Take the N NEWEST prints that HAVE a
 // score, then average them. This is FILTER-then-slice, not slice-then-filter: a
@@ -40,7 +51,8 @@ export function meanLatestScored(
   return scored.reduce((a, b) => a + b, 0) / scored.length;
 }
 
-/** The trailing 4-quarter mean — the standing quarter leg on every live surface. */
+/** The FLAT trailing 4-quarter mean — the "4Q" trail column and the coverage
+ *  cut's leg (compute_composite_score.py). NOT a live Read input. */
 export function mean4Q(scores: ReadonlyArray<number | null | undefined>): number | null {
   return meanLatestScored(scores, 4);
 }
@@ -90,15 +102,54 @@ export function blendQuarterLeg(
 }
 
 /**
+ * Build the persisted quarter_series shape from NEWEST-FIRST scores: drop the
+ * unscored rows FIRST, then keep the newest `cap`, then reverse to
+ * oldest→newest. Filter-then-slice, same as the board's leg selection above — a
+ * null inside the newest `cap` raw rows must not shrink the window, or the page
+ * and the board would blend different quarters. Returns null when nothing is
+ * scored. Used by lib/company-overview-cache.ts's build path and pinned against
+ * the board in tests/quarter-composite.test.ts.
+ */
+export function quarterSeriesFromNewestFirst(
+  scoresNewestFirst: ReadonlyArray<number | null | undefined>,
+  cap = 8,
+): number[] | null {
+  const scored: number[] = [];
+  for (const s of scoresNewestFirst) {
+    if (typeof s === "number" && Number.isFinite(s)) {
+      scored.push(s);
+      if (scored.length === cap) break;
+    }
+  }
+  if (scored.length === 0) return null;
+  return scored.reverse();
+}
+
+/**
  * The 4Q mean from an OLDEST→NEWEST series (the shape the overview cache persists
- * as quarter_series). Reverses to the newest-first order mean4Q expects. Used on
- * BOTH the overview build path and its cache-hit path so a freshly built row and
- * a served one produce the identical quarter leg — the one place build/cache-hit
- * parity is enforced.
+ * as quarter_series). Reverses to the newest-first order mean4Q expects. No live
+ * caller since 2026-09-19 (the Read moved to blendQuarterLegFromSeries); kept as
+ * the flat-mean twin, pinned by tests, for any future "4Q" column fed from a
+ * persisted series.
  */
 export function mean4QFromSeries(
   series: ReadonlyArray<number | null | undefined> | null | undefined,
 ): number | null {
   if (!series || series.length === 0) return null;
   return mean4Q([...series].reverse());
+}
+
+/**
+ * The recency-weighted leg from an OLDEST→NEWEST series (quarter_series, or the
+ * hero's trail.points). Reverses to the newest-first order blendQuarterLeg
+ * expects. Used on BOTH the overview build path and its cache-hit path so a
+ * freshly built row and a served one produce the identical quarter leg — and the
+ * same one the board computes from raw newest-first rows (pinned by the parity
+ * block in tests/quarter-composite.test.ts).
+ */
+export function blendQuarterLegFromSeries(
+  series: ReadonlyArray<number | null | undefined> | null | undefined,
+): number | null {
+  if (!series || series.length === 0) return null;
+  return blendQuarterLeg([...series].reverse());
 }

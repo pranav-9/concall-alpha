@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 
 import {
   blendQuarterLeg,
+  blendQuarterLegFromSeries,
   mean4Q,
   mean4QFromSeries,
   meanLatestScored,
+  quarterSeriesFromNewestFirst,
   RECENCY_WEIGHTS,
 } from "../lib/quarter-composite";
 
@@ -169,23 +171,32 @@ for (const { name, prints } of vectors) {
 }
 
 // ---------------------------------------------------------------------------
-// build == cache-hit == board (T4). The overview cache derives its 4Q leg from
-// quarter_series (oldest→newest, null-filtered, capped at 8) on BOTH the fresh
-// build path and the cache-hit path; the board derives it from the raw
-// newest-first prints. All three must land on the same number, or the company
-// page and the leaderboard disagree on the same company. This pins
-// mean4QFromSeries(quarter_series) == mean4Q(rawNewestFirst).
+// Flat-mean series/raw parity (T4). The overview cache persists quarter_series
+// (oldest→newest, null-filtered, capped at 8, built by quarterSeriesFromNewestFirst)
+// and the board works from raw newest-first prints. This pins
+// mean4QFromSeries(quarter_series) == mean4Q(rawNewestFirst) for the flat-mean
+// shape (the "4Q" column). The LIVE Read parity is the blend block further down.
 // ---------------------------------------------------------------------------
 
-// Mirrors company-overview-cache.ts's quarter_series construction: newest ≤8
-// prints, nulls dropped, reversed to oldest→newest.
-function quarterSeriesFromRows(rowsNewestFirst: Array<number | null>): number[] | null {
-  const series = rowsNewestFirst
-    .slice(0, 8)
-    .filter((v): v is number => typeof v === "number" && Number.isFinite(v))
-    .reverse();
-  return series.length > 0 ? series : null;
-}
+// The REAL series builder company-overview-cache.ts uses — imported, not
+// re-implemented, so a change to its cap or null handling is exercised here.
+const quarterSeriesFromRows = (rowsNewestFirst: Array<number | null>) =>
+  quarterSeriesFromNewestFirst(rowsNewestFirst);
+
+// The builder's own contract: filter-then-slice, oldest→newest, null when empty.
+assert.deepEqual(quarterSeriesFromNewestFirst([]), null, "series: empty → null");
+assert.deepEqual(quarterSeriesFromNewestFirst([null, undefined]), null, "series: all null → null");
+assert.deepEqual(quarterSeriesFromNewestFirst([8, null, 7]), [7, 8], "series: null dropped, reversed");
+assert.deepEqual(
+  quarterSeriesFromNewestFirst([null, null, null, null, null, null, null, null, 8, 7, 6, 5]),
+  [5, 6, 7, 8],
+  "series: 8 nulls in front do not shrink the window (filter-then-slice)",
+);
+assert.deepEqual(
+  quarterSeriesFromNewestFirst([9, 8, 7, 6, 5, 4, 3, 2, 1, 0]),
+  [2, 3, 4, 5, 6, 7, 8, 9],
+  "series: caps at the newest 8 scored",
+);
 
 const rowVectors: Array<{ name: string; rows: Array<number | null> }> = [
   { name: "clean 5 prints", rows: [8.1, 7.6, 7.9, 6.4, 5.0] },
@@ -194,6 +205,10 @@ const rowVectors: Array<{ name: string; rows: Array<number | null> }> = [
   { name: "more than 8 (series caps at 8; newest 4 identical)", rows: [9, 8, 7, 6, 5, 4, 3, 2, 1, 0] },
   { name: "single print", rows: [7.3] },
   { name: "all null", rows: [null, null] },
+  // Nulls stacked at the front: slice-then-filter would blend only [8,7,6] on the
+  // page while the board blends [8,7,6,5]. Codex adversarial probe, 2026-09-19.
+  { name: "null-heavy front, 4 scored behind", rows: [null, null, null, null, null, 8, 7, 6, 5] },
+  { name: "8 nulls then 4 scored (beyond the old slice window)", rows: [null, null, null, null, null, null, null, null, 8, 7, 6, 5] },
 ];
 for (const { name, rows } of rowVectors) {
   const boardLeg = mean4Q(rows); // board: raw newest-first
@@ -252,5 +267,116 @@ approx(
 // Degenerate weight arg: no positive weight → guarded by scored.length check only,
 // so pass the default in practice. A custom flat vector reproduces the mean.
 approx(blendQuarterLeg([8, 6, 4, 2], [1, 1, 1, 1]), 5, "flat custom weights → mean");
+
+
+// ---------------------------------------------------------------------------
+// Cross-surface parity for the LIVE Read leg (2026-09-19). The board computes
+// blendQuarterLeg from raw newest-first rows; the company page and the homepage
+// hero compute blendQuarterLegFromSeries from an oldest→newest series. Same
+// company, same number — SKYGOLD showed Read 7.5 on its page and 7.4 on the
+// board when the page was still on the flat mean (8.025 vs blend 8.0).
+// ---------------------------------------------------------------------------
+
+for (const { name, rows } of rowVectors) {
+  const boardLeg = blendQuarterLeg(rows);
+  const pageLeg = blendQuarterLegFromSeries(quarterSeriesFromRows(rows));
+  if (boardLeg === null) {
+    assert.equal(pageLeg, null, `${name}: board null, page ${pageLeg}`);
+  } else {
+    assert.ok(
+      pageLeg != null && Math.abs(pageLeg - boardLeg) < 1e-9,
+      `${name}: board blend ${boardLeg} != page blend ${pageLeg} — company page and ` +
+        `board would show a different Read for the same company`,
+    );
+  }
+}
+
+// The SKYGOLD case itself, pinned: newest-first 7.9, 7.4, 8.5, 8.3.
+approx(blendQuarterLeg([7.9, 7.4, 8.5, 8.3]), 8.0, "SKYGOLD blend");
+approx(blendQuarterLegFromSeries([8.3, 8.5, 7.4, 7.9]), 8.0, "SKYGOLD blend via series");
+assert.equal(blendQuarterLegFromSeries(null), null, "null series → null");
+assert.equal(blendQuarterLegFromSeries([]), null, "empty series → null");
+
+
+// ---------------------------------------------------------------------------
+// blendQuarterLegFromSeries — the series-shaped entry's own contract, beyond the
+// parity loop above (which only ever feeds it a null-free, ≤8-long series via
+// quarterSeriesFromRows). These pin the branches the two live callers rely on:
+// the overview cache's `?? latestScore` fallback fires ONLY on a null/empty
+// series, and the homepage hero feeds an UNCAPPED oldest→newest trail.points.
+// ---------------------------------------------------------------------------
+
+// undefined (missing column) → null, same as null/[] — the overview cache's
+// `?? latestScore` fallback then takes over.
+assert.equal(blendQuarterLegFromSeries(undefined), null, "undefined series → null");
+// A non-empty series with no finite value is ALSO null (no phantom 0 leg).
+assert.equal(
+  blendQuarterLegFromSeries([null, undefined, Number.NaN]),
+  null,
+  "all non-finite series → null",
+);
+
+// Nulls INSIDE an oldest→newest series: FILTER-then-slice survives the reversal.
+// Oldest→newest [5, 6, 7, null, 8] is newest-first [8, null, 7, 6, 5] → the null
+// reaches past to 5, so all four of 8,7,6,5 are weighted — never 8,7,6 on 0.5/0.25/0.25.
+approx(
+  blendQuarterLegFromSeries([5, 6, 7, null, 8]),
+  0.4 * 8 + 0.2 * (7 + 6 + 5),
+  "null inside series reaches past it after reversal",
+);
+approx(
+  blendQuarterLegFromSeries([5, 6, 7, null, 8]),
+  blendQuarterLeg([8, null, 7, 6, 5]) as number,
+  "series-with-null == newest-first-with-null",
+);
+
+// Fewer than 4 in series form renormalises exactly like the newest-first entry
+// (a thin-history company on its own page == that company on the board).
+approx(blendQuarterLegFromSeries([9]), 9, "1-print series → itself");
+approx(blendQuarterLegFromSeries([3, 9]), (0.4 * 9 + 0.2 * 3) / 0.6, "2-print series: newest is LAST");
+approx(blendQuarterLegFromSeries([3, 3, 9]), (0.4 * 9 + 0.4 * 3) / 0.8, "3-print series → 0.5/0.25/0.25");
+
+// The hero feeds every scored quarter (trail.points is uncapped — a long-history
+// company can have 12+). Only the NEWEST 4 may count; the older 8 are ignored.
+{
+  const twelveOldestFirst = [1, 1, 1, 1, 1, 1, 1, 1, 5, 6, 7, 8];
+  approx(
+    blendQuarterLegFromSeries(twelveOldestFirst),
+    0.4 * 8 + 0.2 * (7 + 6 + 5),
+    "12-point trail: only newest 4 weighted, older 8 ignored",
+  );
+  approx(
+    blendQuarterLegFromSeries(twelveOldestFirst),
+    blendQuarterLeg([...twelveOldestFirst].reverse()) as number,
+    "12-point trail == board blend of the same prints newest-first",
+  );
+}
+
+// The regression this fix closes: on SKYGOLD's prints the FLAT mean (8.025) and
+// the BLEND (8.0) straddle a one-decimal rounding line, which is exactly how the
+// page read 7.5 while the board read 7.4. The series entry must be the blend,
+// not the mean — pin both numbers so a future "simplify to mean4QFromSeries"
+// re-opens this test, not the bug.
+{
+  const skygoldOldestFirst = [8.3, 8.5, 7.4, 7.9];
+  approx(mean4QFromSeries(skygoldOldestFirst), 8.025, "SKYGOLD flat mean is 8.025");
+  approx(blendQuarterLegFromSeries(skygoldOldestFirst), 8.0, "SKYGOLD blend is 8.0");
+  assert.notEqual(
+    blendQuarterLegFromSeries(skygoldOldestFirst),
+    mean4QFromSeries(skygoldOldestFirst),
+    "the live Read leg is the blend, not the flat mean",
+  );
+}
+
+// Input is not mutated: the overview cache persists quarter_series AFTER deriving
+// the leg from it, and the hero re-reads trail.points for the sparkline — an
+// in-place reverse would flip the persisted/rendered order.
+{
+  const series = [6.0, 6.7, 6.4];
+  blendQuarterLegFromSeries(series);
+  assert.deepEqual(series, [6.0, 6.7, 6.4], "series is not reversed in place");
+}
+
+console.log("quarter-composite: blendQuarterLegFromSeries contract ok");
 
 console.log("quarter-composite: all assertions passed");
