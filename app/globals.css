@@ -125,12 +125,12 @@
 }
 
 /* ---------------------------------------------------------------------------
- * House style — scoped to `.house` (the landing page).
+ * House style — scoped to `.house` and `.house-tokens` (see below).
  *
  * Deliberately NOT wired into the shadcn tokens above: this is the reference
  * the rest of the portal migrates to, so it has to be able to live beside the
  * current company-page surfaces without touching them. Every value here is a
- * plain custom property; nothing leaks past the `.house` element.
+ * plain custom property; nothing leaks past a `.house` or `.house-tokens` element.
  *
  * The palette is derived from the product's own score ramp (teal → amber →
  * red, the same CVD-safe ladder lib/score-trajectory uses for Trend labels) on
