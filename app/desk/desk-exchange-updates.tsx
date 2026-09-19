@@ -109,12 +109,15 @@ function UpdateRow({
       )}
     >
       {/* Desktop: the dedicated feed needs a company column; the company tab
-          uses that space for the actual filing summary. */}
+          uses that space for the actual filing summary. The company tab is
+          full history, so most dates are absolute ("24 Jun 2026", 82px) and
+          wrapped in 3.25rem; widen from md, where the summary can spare it
+          (at sm it has only ~80px left, so a wrapped date is the lesser cost). */}
       <div
         className={cn(
           "hidden items-center gap-4 sm:grid",
           companyContext
-            ? "sm:grid-cols-[3.25rem_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]"
+            ? "sm:grid-cols-[3.25rem_7.5rem_8rem_minmax(0,1.5fr)_4.5rem] md:grid-cols-[5.5rem_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]"
             : "sm:grid-cols-[3.25rem_minmax(8rem,1fr)_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]",
         )}
       >
