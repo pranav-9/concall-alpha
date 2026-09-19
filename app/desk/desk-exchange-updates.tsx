@@ -426,10 +426,14 @@ function PhoneAnnouncements({
     <div className="sm:hidden">
       {data.total > 0 ? (
         <section aria-label="Company announcements">
+          {/* Page gutters (px-4 / MOBILE_CARD's mx-4) line up with the phone
+              page edge on /announcements; inside the company SectionCard,
+              which is already padded, they double up and knock the feed out
+              of line with the cards above it. */}
           <div
             role="group"
             aria-label="Filter by impact"
-            className={cn(MOBILE_CHIP_STRIP, "px-4 pb-1 pt-3.5")}
+            className={cn(MOBILE_CHIP_STRIP, companyContext ? "pb-1" : "px-4 pb-1 pt-3.5")}
           >
             <button
               type="button"
@@ -454,7 +458,7 @@ function PhoneAnnouncements({
             ))}
           </div>
 
-          <div className={cn(MOBILE_CARD, "mt-2.5")}>
+          <div className={cn(MOBILE_CARD, "mt-2.5", companyContext && "mx-0")}>
             {buckets.length === 0 ? (
               <p className="house-data px-3.5 py-6 text-[10px] uppercase tracking-[0.14em] text-[var(--ink-soft)]">
                 No filings in this band in the last {data.windowDays} days.
@@ -568,7 +572,13 @@ function FullAnnouncements({
       {isSm !== false && (
       <div className="hidden sm:block">
       {data.total > 0 && (
-    <section aria-label="Company announcements" className="house-block">
+    <section
+      aria-label="Company announcements"
+      // house-block is a page-level section divider (top rule + 2.25rem).
+      // Inside the company SectionCard it drew a rule tight under the
+      // "Filing tape" header with a dead gap below it; the card is the frame.
+      className={companyContext ? undefined : "house-block"}
+    >
       {/* No eyebrow / heading / intro here: this variant renders under the
           /announcements page header, which already says all three. */}
       <div className="flex flex-wrap gap-2">
