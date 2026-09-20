@@ -23,7 +23,9 @@ export const elevatedMutedBlockClass =
  * sits around other L2 blocks: on a phone its border + padding were one of six
  * nested paddings squeezing text to 216px of a 390px screen, so the box drops
  * out there and the children stand on their own. Keep in step with
- * elevatedBlockClass — same recipe, prefixed.
+ * elevatedBlockClass — same recipe, prefixed. No section wraps its blocks in one
+ * today (the Business Snapshot dropped its wrapper on 2026-09-20); it stays for the
+ * next section that needs a box around other boxes.
  */
 export const elevatedBlockClassFromSm =
   "sm:rounded-xl sm:border sm:border-border/35 sm:bg-background/75 sm:shadow-md sm:shadow-black/20";

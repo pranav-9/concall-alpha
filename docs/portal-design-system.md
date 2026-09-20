@@ -176,7 +176,7 @@ Tokens live at [`app/company/components/surface-tokens.ts`](../app/company/compo
 |---|---|---|---|
 | **L1** | Section shell | `SectionCard` | Rendered by [`section-card.tsx`](../app/company/components/section-card.tsx). Outer `rounded-[1.55rem]` shell with tone-tinted border + background, radial tone glow, and a `h-1` tone accent bar on top. Always use `SectionCard` for a new section — never hand-roll the shell. |
 | **L2** | Summary / primary block | `elevatedBlockClass` | `rounded-xl border border-border/35 bg-background/75 shadow-md shadow-black/20` |
-| **L2 (sm+ only)** | An L2 wrapper around other L2 blocks — boxless on phones | `elevatedBlockClassFromSm` | `elevatedBlockClass` with every class `sm:`-prefixed |
+| **L2 (sm+ only)** | An L2 wrapper around other L2 blocks — boxless on phones. No section uses one today: the Business Snapshot dropped its wrapper (2026-09-20) and lets its blocks stand on the shell | `elevatedBlockClassFromSm` | `elevatedBlockClass` with every class `sm:`-prefixed |
 | **L3** | Nested detail / mini-card | `nestedDetailClass` | `rounded-md border border-border/25 bg-background/45` |
 | **L4** | Quietest subsection wrapper | `snapshotSubsectionClass` | `rounded-xl border border-border/20 bg-background/25` |
 
@@ -218,6 +218,8 @@ Section tone comes from the `SectionCard` shell — never from tinting an inner 
 - Ad-hoc opacities like `bg-background/70`, `bg-background/85` on L3 — use `nestedDetailClass` (`/45`).
 
 If a research section wants visual emphasis beyond L2, promote the content to its own `SectionCard`-style sub-surface rather than tinting or softening the inner L2 card.
+
+**The one sanctioned exception: the Business Snapshot's top block (design update 2026-09-20).** "The business" and "What is changing?" are one L2 split card (`business-company-background.tsx`), and the change half carries the section tone as a wash — `bg-emerald-500/[0.06]` in light, `dark:bg-emerald-400/5` — with a divider and label in the same tone. That is the only tinted inner surface on the company page; it marks the half of the card that is about movement, and it does not spread to other sections. The company timeline directly below it is the only prose block that sits on the shell with no L2 card: label, heading, rail and dots, nothing boxed. Quiet text on these surfaces uses `text-foreground/60` rather than `text-muted-foreground`, which measures just under AA (4.5:1) on the wash in the light theme.
 
 ### Decision tree (Research)
 
@@ -365,6 +367,10 @@ A small, fixed scale. Hand-sized values outside this scale are not allowed witho
 | Metadata | `text-[11px] text-muted-foreground` | Chip text, captions, timestamps, source attributions |
 | Caption | `text-[12px] leading-snug` | Compact body, table cell text, drawer caption |
 | Body compact | `text-[13px] leading-snug text-foreground/80` | Section descriptions, summary text inside L2 cards |
+| Panel prose | `text-[13px] leading-relaxed text-foreground/70` | Prose inside the Business Snapshot split card and timeline captions |
+| Panel headline | `text-xl sm:text-[22px] font-semibold leading-tight tracking-tight` | The two headlines of the Business Snapshot split card |
+| Stat numeral | `text-[26px] font-bold leading-none tracking-tighter tabular-nums`, unit `text-[13px] font-semibold` | The change's headline number (`what_changed.stat`) |
+| Milestone year | `text-[17px] font-bold leading-tight tracking-tight tabular-nums` | Company-timeline years |
 | Body | `text-sm leading-relaxed` (14px) | Default prose, list items, form field text |
 | Body lead | `text-base leading-7` (16px) | Hero subtitle, intro paragraph |
 | Section title | `text-lg font-bold leading-tight` | `SectionCard` titles, atmospheric panel titles |
@@ -422,7 +428,7 @@ Raw palette utilities (`bg-emerald-100`, `border-sky-700/35`, `text-amber-200`) 
 
 ### Tinted overlays
 
-The atmospheric family uses translucent tone washes by definition (the `to-{tone}-50/N` segment of its gradient). Research surfaces never repaint tone onto an inner card — tone lives on the L1 `SectionCard` only.
+The atmospheric family uses translucent tone washes by definition (the `to-{tone}-50/N` segment of its gradient). Research surfaces never repaint tone onto an inner card — tone lives on the L1 `SectionCard` only (one exception: the Business Snapshot's change half, see "L2 background is non-negotiable").
 
 ### Forbidden literals
 
@@ -449,6 +455,7 @@ Spacing is intentionally generous but controlled. Use the named scale; do not ha
 |---|---|---|
 | `SectionCard` (L1) | `p-4` | `p-5` |
 | `elevatedBlockClass` (L2) | `p-3` | `p-4` |
+| Business Snapshot split-card panel (an L2 with two halves) | `p-5` | `px-6 py-5` |
 | `nestedDetailClass` (L3) | `p-3` | `p-3` |
 | `snapshotSubsectionClass` (L4) | `p-3` | `p-4` |
 | `HERO_CARD` (A1) | `p-4` | `p-6` |
@@ -652,11 +659,12 @@ Should feel exploratory and analytical.
 Should feel grounded, structured, and slightly greener than the rest.
 
 - emerald-tinted outer shell
-- stronger summary block
+- stronger summary block: "The business" and "What is changing?" are **one split card** (`business-company-background.tsx`) — equal columns from `lg`, stacked below with a horizontal divider. The change half carries the section tone (`emerald-500/[0.06]` light / `emerald-400/5` dark wash, a divider and label in the same tone) and, when the payload has `what_changed.stat`, its headline number bottom-left with `Sources` bottom-right. The footers are pinned to the card's bottom edge.
+- the company timeline has no card of its own — it sits on the shell (label, heading, rail, dots) — and the section does not wrap its blocks in an extra L2 box, so the split card is flush with the shell padding
 - nested blocks for segments, momentum, moat, and exceptions
 - on desktop, use a 3-column mosaic with the donut in the rightmost rail and the segment cards filling the left 2x2 field when share data is available
 - mix-shift callout treated as a distinct sub-surface
-- inner cards use neutral L2/L3 tokens — never sky- or amber-tinted gradients (the section is emerald; tone is the shell's job)
+- inner cards use neutral L2/L3 tokens — never sky- or amber-tinted gradients (the section is emerald; tone is the shell's job; the change half of the split card is the single sanctioned emerald wash)
 
 ### ConcallScore
 
@@ -786,7 +794,7 @@ Never:
 
 - mix research and atmospheric tokens in the same surface
 - nest atmospheric panels inside other atmospheric panels
-- paint tone onto a research inner card (it lives on the shell)
+- paint tone onto a research inner card (it lives on the shell; the Business Snapshot's change half is the one sanctioned exception)
 - paint a tone-mismatched accent (e.g., violet inside a sky section)
 - use raw palette utilities outside the four legal color sources
 - hand-roll a card shell instead of importing the canonical token

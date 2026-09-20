@@ -20,7 +20,7 @@ export const businessProfilePreview = {
       { category: "capabilities", title: "Engineering capabilities", text: "In-house engineering covers design for manufacturing, traceability and product testing for industrial and medical customers.", period: "FY26", sources },
       { category: "expansion", title: "Planned expansion", text: "An additional production line is approved. It is not included in the operating footprint until commissioned.", period: "FY26", sources },
     ],
-    what_changed: { headline: "Complete systems are a larger part of the business.", text: "System integration grew from 50% to 60% of revenue between FY24 and FY26. That changes the scope of work delivered to customers; it does not by itself establish better margins.", period: "FY24–FY26", sources },
+    what_changed: { headline: "Complete systems are a larger part of the business.", text: "System integration grew from 50% to 60% of revenue between FY24 and FY26. That changes the scope of work delivered to customers; it does not by itself establish better margins.", period: "FY24 to FY26", sources, stat: { value: "+10", unit: "pts", label: "system-integration share" } },
   },
   revenue_breakdown: { by_segment: [
     { segment: "Complete systems", segment_explained: "Manufactures and tests complete industrial systems.", revenue_share_percent: 60, role_pill: "core_engine", growth_direction_pill: "stable", margin_profile: "improving", margin_profile_note: "Management reports a greater contribution from integration services." },
