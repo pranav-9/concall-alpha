@@ -233,6 +233,7 @@ const normalizeScenario = (value: unknown): NormalizedGrowthScenario | null => {
     typeof earningsRaw === "string" || typeof earningsRaw === "number" ? String(earningsRaw) : null;
   const earningsBasis = asString(item.earnings_basis);
   const marginAtHorizon = asString(item.margin_at_horizon_pct);
+  const earningsAssumption = asString(item.earnings_assumption);
 
   if (
     !summary &&
@@ -251,6 +252,7 @@ const normalizeScenario = (value: unknown): NormalizedGrowthScenario | null => {
     earningsGrowth,
     earningsBasis,
     marginAtHorizon,
+    earningsAssumption,
     summary,
     riskWatch,
     drivers,

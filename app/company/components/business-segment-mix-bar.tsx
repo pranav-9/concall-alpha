@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { DERIVED_SHARE_TITLE, revenueMixCaptionWord } from "@/lib/business-snapshot/revenue-share-basis";
 import type { NormalizedRevenueBreakdownItem } from "@/lib/business-snapshot/types";
 import { colorPalette, maxSlices } from "./business-segment-mix-constants";
 import { snapshotSubsectionClass } from "./surface-tokens";
@@ -81,6 +82,9 @@ export function BusinessSegmentMixBar({
   // Gate on the *displayed* value so a sub-0.05% rounding sliver does not read
   // as "undisclosed 0%" against a "Disclosed 100%" caption.
   const showUndisclosed = formatPct(undisclosed) !== formatPct(0);
+  // "disclosed" unless a share on the bar was derived (the company reports one
+  // segment and the split comes from other management figures).
+  const captionWord = revenueMixCaptionWord(segments);
 
   // The bar is the mix's only text equivalent now that the legend row is gone;
   // the cards below carry the visible per-segment names, shares, and detail.
@@ -103,8 +107,12 @@ export function BusinessSegmentMixBar({
           />
         ))}
       </div>
-      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/80">
-        <span className="font-semibold text-foreground/80">{formatPct(knownShareTotal)}</span> disclosed
+      <span
+        className="shrink-0 text-[11px] tabular-nums text-muted-foreground/80"
+        title={captionWord === "derived" ? DERIVED_SHARE_TITLE : undefined}
+      >
+        <span className="font-semibold text-foreground/80">{formatPct(knownShareTotal)}</span>
+        {` ${captionWord}`}
       </span>
     </div>
   );

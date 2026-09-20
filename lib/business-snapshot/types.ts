@@ -23,10 +23,19 @@ export type NormalizedAboutCompany = ReturnType<typeof normalizeBusinessProfile>
   aboutLong: string | null;
 };
 
+/**
+ * How a segment's revenue share was obtained. "reported": read off the company's
+ * own segment disclosure. "derived": worked out from other management figures
+ * because the company reports one segment (e.g. brand sales vs turnover).
+ */
+export type RevenueShareBasis = "reported" | "derived";
+
 export type NormalizedRevenueBreakdownItem = {
   name: string;
   description: string | null;
   revenueSharePercent: number | null;
+  /** revenue_share_basis. Null on rows written before the field existed; those read as reported. */
+  revenueShareBasis: RevenueShareBasis | null;
   marginProfile: string | null;
   marginProfileNote: string | null;
   rolePill: string | null;

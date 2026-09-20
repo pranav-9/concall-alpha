@@ -4,6 +4,7 @@
 // prose is generated here and none is taken from the LLM's summary bullets,
 // so the card can never drift from, or merely restate, the sections under it.
 
+import { isGuidedMarginBasis } from "@/lib/growth-outlook/earnings-display";
 import type {
   NormalizedGrowthCatalyst,
   NormalizedGrowthOutlook,
@@ -12,10 +13,12 @@ import type {
 // Earnings growth is a separate number only when the pipeline bridged it
 // through a quantified issuer margin target. A flat-margin fallback repeats
 // the revenue figure; loss_making / implausible_margin_path are not
-// trustworthy. One rule, shared with the scenario cards.
+// trustworthy. The scenario cards apply this rule plus one more basis,
+// derived_from_guidance (earnings-display.ts); this summary card stays
+// revenue-only for it.
 export const isEarningsBridged = (
   outlook: Pick<NormalizedGrowthOutlook, "earningsLadder"> | null | undefined,
-): boolean => Boolean(outlook?.earningsLadder?.basis?.startsWith("guided_margin"));
+): boolean => isGuidedMarginBasis(outlook?.earningsLadder?.basis);
 
 // Highest weighted priority first; unranked catalysts keep their stored order
 // at the tail. Returns a copy.

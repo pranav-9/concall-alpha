@@ -21,6 +21,7 @@ import type {
 } from "@/lib/business-snapshot/types";
 
 import { normalizeBusinessProfile } from "./profile";
+import { parseRevenueShareBasis } from "./revenue-share-basis";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -136,6 +137,7 @@ const toRevenueItem = (
     name,
     description,
     revenueSharePercent: asNumber(row.revenue_share_percent),
+    revenueShareBasis: parseRevenueShareBasis(row.revenue_share_basis),
     marginProfile: asLowerString(row.margin_profile),
     marginProfileNote: asString(row.margin_profile_note),
     rolePill: asLowerString(row.role_pill),
