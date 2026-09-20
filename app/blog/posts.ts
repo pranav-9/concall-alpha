@@ -40,6 +40,18 @@ export type BlogPostMeta = {
   image?: string;
   /** Alt text for the cover; omit when the image is purely decorative. */
   imageAlt?: string;
+  /**
+   * Company write-ups only: the company's display name (e.g. "Neuland
+   * Laboratories"). Drives the "Company Stories" lane — grouping a company's
+   * stories together and building the per-company history ledger.
+   */
+  company?: string;
+  /**
+   * Company write-ups only: the portal company CODE (e.g. "NEULANDLAB"). Used
+   * as the stable grouping key and to link a company to its /company/<CODE>
+   * page. Falls back to `company`/`slug` for grouping when absent.
+   */
+  companyCode?: string;
 };
 
 export type BlogPost = BlogPostMeta & { content: string };
@@ -69,6 +81,11 @@ function readMeta(file: string): BlogPostMeta {
         ? data.image
         : undefined,
     imageAlt: typeof data.imageAlt === "string" ? data.imageAlt : undefined,
+    company: typeof data.company === "string" ? data.company : undefined,
+    companyCode:
+      typeof data.companyCode === "string"
+        ? data.companyCode.toUpperCase()
+        : undefined,
   };
 }
 
