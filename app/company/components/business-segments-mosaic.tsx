@@ -1,3 +1,4 @@
+import { DERIVED_SHARE_TITLE, isDerivedShare } from "@/lib/business-snapshot/revenue-share-basis";
 import type { NormalizedRevenueBreakdownItem } from "@/lib/business-snapshot/types";
 import { BusinessSegmentMixBar } from "./business-segment-mix-bar";
 import { colorPalette, maxSlices } from "./business-segment-mix-constants";
@@ -49,6 +50,18 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
   ) => {
     const isVisible = variant === "visible";
     const accentColor = segmentColorMap[entry.name];
+    // A share we worked out (the company reports one segment) says so beside
+    // the number. On a phone the share shares a row with the segment name, so
+    // the cue stacks under the number instead of widening that row.
+    const derivedCue = (placement: string) =>
+      isDerivedShare(entry) ? (
+        <span
+          title={DERIVED_SHARE_TITLE}
+          className={`text-[10px] font-normal tracking-normal text-muted-foreground ${placement}`}
+        >
+          derived
+        </span>
+      ) : null;
 
     return (
       <div
@@ -80,6 +93,7 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
           {entry.revenueSharePercent != null && (
             <p className="shrink-0 text-lg font-semibold leading-none tracking-tight text-foreground sm:hidden">
               {formatPctLabel(entry.revenueSharePercent)}
+              {derivedCue("block text-right leading-tight")}
             </p>
           )}
         </div>
@@ -92,6 +106,7 @@ export function BusinessSegmentsMosaic({ segments }: BusinessSegmentsMosaicProps
             } mt-1.5 hidden font-semibold leading-none tracking-tight text-foreground sm:block`}
           >
             {formatPctLabel(entry.revenueSharePercent)}
+            {derivedCue("ml-1")}
           </p>
         )}
 

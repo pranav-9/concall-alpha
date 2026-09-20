@@ -35,6 +35,12 @@ import {
   splitCatalystQuantifiedLabel,
   toDisplayLabel,
 } from "../[code]/display-tokens";
+import {
+  getEarningsMetricLabel,
+  isDerivedBasis,
+  scenarioEarningsLine,
+  shouldShowEarnings,
+} from "@/lib/growth-outlook/earnings-display";
 import { buildGrowthSummary, isEarningsBridged, rankCatalysts, type GrowthSummary } from "@/lib/growth-outlook/summary";
 import type { StrategyNarrative } from "@/lib/guidance-snapshot/types";
 import { SectionCard, SectionUpdatedAt } from "./section-card";
@@ -424,11 +430,15 @@ export function FutureGrowthSection({
   );
   // Earnings ladder (Phase 5 v8). The cards lead with revenue growth (the
   // issuer-guided read); an earnings line is shown only when the pipeline
-  // bridged it through a quantified issuer margin target — a flat-margin
-  // fallback would just repeat the revenue number under a stronger label.
+  // bridged it through a quantified issuer margin target, or derived it from
+  // the issuer's own guidance (derived_from_guidance, when no margin is
+  // guided) — a flat-margin fallback would just repeat the revenue number
+  // under a stronger label.
   const marginPath = outlook?.marginPath ?? null;
   const earningsLadder = outlook?.earningsLadder ?? null;
   const earningsBridged = isEarningsBridged(outlook);
+  const earningsDerived = isDerivedBasis(earningsLadder?.basis);
+  const earningsShown = shouldShowEarnings(earningsLadder?.basis);
   const marginMetricLabel = (earningsLadder?.metric ?? marginPath?.metric ?? "").toUpperCase();
   const currentMarginLabel =
     typeof marginPath?.currentPct === "number" ? `${marginPath.currentPct.toFixed(1)}%` : null;
@@ -674,7 +684,12 @@ export function FutureGrowthSection({
                   <p className="text-[11px] leading-snug text-muted-foreground">
                     Bear, base, and bull cases side by side — base case is the anchor read.
                   </p>
-                  {earningsBridged && marginPath ? (
+                  {earningsDerived ? (
+                    <p className="text-[11px] leading-snug text-muted-foreground">
+                      Revenue growth is the headline. {getEarningsMetricLabel(earningsLadder?.basis)} growth is
+                      derived from the issuer&rsquo;s own guidance and the assumptions stated with each case.
+                    </p>
+                  ) : earningsBridged && marginPath ? (
                     <div className="space-y-1">
                       <p className="text-[11px] leading-snug text-muted-foreground">
                         Revenue growth is the headline. Earnings growth is bridged from it through the
@@ -732,6 +747,11 @@ export function FutureGrowthSection({
                       typeof scenario.confidence === "number"
                         ? Math.round(scenario.confidence * 100)
                         : null;
+                    const earningsLine = scenarioEarningsLine(
+                      earningsLadder?.basis,
+                      scenario,
+                      marginMetricLabel,
+                    );
                     return (
                       <div
                         key={key}
@@ -759,7 +779,7 @@ export function FutureGrowthSection({
                         </div>
                         {scenario.growth && (
                           <div className="space-y-0.5">
-                            {earningsBridged && (
+                            {earningsShown && (
                               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                                 Revenue
                               </p>
@@ -775,10 +795,10 @@ export function FutureGrowthSection({
                             </p>
                           </div>
                         )}
-                        {earningsBridged && scenario.earningsGrowth && (
+                        {earningsLine && (
                           <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
                             <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                              Earnings
+                              {earningsLine.label}
                             </span>
                             <span
                               className={`text-sm font-semibold tabular-nums ${
@@ -787,14 +807,19 @@ export function FutureGrowthSection({
                                   : "text-foreground"
                               }`}
                             >
-                              {scenario.earningsGrowth}
+                              {earningsLine.value}
                             </span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {scenario.earningsBasis?.startsWith("guided_margin") &&
-                              scenario.marginAtHorizon
-                                ? `at ${scenario.marginAtHorizon} ${marginMetricLabel} margin`
-                                : "margins held flat"}
-                            </span>
+                            {earningsLine.note && (
+                              <span
+                                className={
+                                  earningsLine.derived
+                                    ? "mt-0.5 basis-full text-[10px] leading-snug text-muted-foreground"
+                                    : "text-[10px] text-muted-foreground"
+                                }
+                              >
+                                {earningsLine.note}
+                              </span>
+                            )}
                           </div>
                         )}
                         {conf != null && (

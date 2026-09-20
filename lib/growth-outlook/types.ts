@@ -58,13 +58,26 @@ export type NormalizedGrowthScenario = {
   /**
    * Earnings growth bridged from `growth` through the issuer's margin path
    * (Phase 5 v8, app/phase5_growth/earnings_ladder.py). Equals `growth` when
-   * `earningsBasis` is "flat_margin". Null on pre-v8 rows.
+   * `earningsBasis` is "flat_margin". Under "derived_from_guidance" it is the
+   * derived EPS growth and `growth` the derived revenue growth. Null on pre-v8 rows.
    */
   earningsGrowth: string | null;
-  /** guided_margin_<metric> | flat_margin | loss_making | implausible_margin_path */
+  /**
+   * guided_margin_<metric> | flat_margin | loss_making | implausible_margin_path
+   * | derived_from_guidance (earnings derived from guided volume / unit economics
+   * when the issuer guides no margin). Not whitelisted here: display decisions go
+   * through lib/growth-outlook/earnings-display.ts, which shows nothing for a
+   * basis it does not recognise.
+   */
   earningsBasis: string | null;
-  /** The margin-path metric's margin at the horizon under this scenario, e.g. "19-20%". */
+  /** The margin-path metric's margin at the horizon under this scenario, e.g. "19-20%". Null under "derived_from_guidance". */
   marginAtHorizon: string | null;
+  /**
+   * The assumptions behind a derived earnings figure, one line (<=160 chars), e.g.
+   * "Volume +15% a year; EBITDA per kg held; 17% tax". Written with
+   * "derived_from_guidance" scenarios (null on the rest); only those print it.
+   */
+  earningsAssumption: string | null;
   summary: string | null;
   riskWatch: string | null;
   drivers: string[];
