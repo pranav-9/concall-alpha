@@ -16,6 +16,11 @@ export const CATEGORY_LABELS: Record<BlogCategory, string> = {
   companies: "Company write-ups",
 };
 
+// The Journal is split into two lanes. Company write-ups get their own elevated
+// "Company Stories" section, so the Notebook feed's filter covers only these
+// two topical categories.
+export const NOTEBOOK_CATEGORIES: BlogCategory[] = ["product", "investing"];
+
 export function asCategory(value: unknown): BlogCategory | undefined {
   return typeof value === "string" && value in CATEGORY_LABELS
     ? (value as BlogCategory)
