@@ -20,14 +20,10 @@ import { HistoricalEconomicsDataPack } from "./deferred-company-sections";
 import { SegmentHistoryPanel } from "./segment-history-panel";
 import {
   elevatedBlockClass,
-  elevatedBlockClassFromSm,
   nestedDetailClass,
   snapshotSubsectionClass,
 } from "./surface-tokens";
 
-// Below sm this wrapper is invisible: it is an L2 box around other L2 boxes (see
-// the token's note). From sm it is the elevated block it always was.
-const businessSnapshotSurfaceClass = `${elevatedBlockClassFromSm} sm:p-4`;
 const businessSnapshotBlockClass = elevatedBlockClass;
 
 type DerivedState = {
@@ -558,168 +554,166 @@ export function BusinessSnapshotSection({
     >
         <div className="flex flex-col gap-4">
           {snapshot ? (
-            <div className={businessSnapshotSurfaceClass}>
-              <div className="space-y-4">
-                {hasStructuredBusinessSnapshot ? (
-                  <div className="space-y-3">
-                    <BusinessCompanyBackground
-                      about={snapshot.aboutCompany}
-                      headline={aboutHeading}
-                      supportingText={aboutSupportingText}
-                    />
+            <div className="space-y-4">
+              {hasStructuredBusinessSnapshot ? (
+                <div className="space-y-3">
+                  <BusinessCompanyBackground
+                    about={snapshot.aboutCompany}
+                    headline={aboutHeading}
+                    supportingText={aboutSupportingText}
+                  />
 
-                    <div id={SNAPSHOT_ANCHORS.segments} style={anchorStyle()} data-gate-cut>
-                      <BusinessSegmentsMosaic segments={segmentEntries} />
-                    </div>
-                    <BusinessMixHistory
-                      history={historicalEconomics?.revenueMixHistoryBySegment ?? null}
-                      segments={segmentEntries}
-                    />
-                    {historicalEconomics || hasHistoricalEconomicsSource ? (
-                      <div id={SNAPSHOT_ANCHORS.momentum} style={anchorStyle()}>
-                        {historicalEconomics
-                          ? renderHistoricalEconomicsCard(historicalEconomics)
-                          : renderHistoricalEconomicsUnavailableCard()}
-                      </div>
-                    ) : null}
-                    <SegmentHistoryPanel
-                      quarterly={snapshot.segmentHistoryQuarterly}
-                      annual={snapshot.segmentHistoryAnnual}
-                      revenueMixHistoryBySegment={historicalEconomics?.revenueMixHistoryBySegment ?? null}
-                    />
+                  <div id={SNAPSHOT_ANCHORS.segments} style={anchorStyle()} data-gate-cut>
+                    <BusinessSegmentsMosaic segments={segmentEntries} />
                   </div>
-                ) : hasLegacyBusinessSnapshot ? (
-                  <>
-                    <div className="grid grid-cols-1 gap-3">
-                      <div>
-                        {snapshot.businessSummaryShort || snapshot.businessSummaryLong ? (
-                          <div className={`${businessSnapshotBlockClass} p-4 space-y-2`}>
-                            {snapshot.businessSummaryShort && (
-                              <p className="text-sm sm:text-base font-semibold text-foreground leading-relaxed">
-                                {snapshot.businessSummaryShort}
-                              </p>
-                            )}
-                            {snapshot.businessSummaryLong && (
-                              <p className="text-sm text-muted-foreground leading-relaxed">
-                                {snapshot.businessSummaryLong}
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No business snapshot summary available yet.
-                          </p>
-                        )}
-                      </div>
+                  <BusinessMixHistory
+                    history={historicalEconomics?.revenueMixHistoryBySegment ?? null}
+                    segments={segmentEntries}
+                  />
+                  {historicalEconomics || hasHistoricalEconomicsSource ? (
+                    <div id={SNAPSHOT_ANCHORS.momentum} style={anchorStyle()}>
+                      {historicalEconomics
+                        ? renderHistoricalEconomicsCard(historicalEconomics)
+                        : renderHistoricalEconomicsUnavailableCard()}
                     </div>
-
-                    {(snapshot.topRevenueDrivers.length > 0 ||
-                      snapshot.keyDependencies.length > 0 ||
-                      snapshot.keyRisksToModel.length > 0) && (
-                      <div className="space-y-3">
-                        {snapshot.topRevenueDrivers.length > 0 && (
-                          renderBusinessSnapshotDrawer({
-                            title: "Top Revenue Drivers",
-                            preview: `${snapshot.topRevenueDrivers.length} driver${
-                              snapshot.topRevenueDrivers.length === 1 ? "" : "s"
-                            } tracked.`,
-                            children: (
-                              <div className={`${snapshotSubsectionClass} p-3`}>
-                                <ul className="space-y-1">
-                                  {snapshot.topRevenueDrivers.map((driver, idx) => (
-                                    <li
-                                      key={idx}
-                                      className="text-xs text-foreground leading-snug border-l border-border/70 pl-2"
-                                    >
-                                      {driver}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ),
-                          })
-                        )}
-
-                        {(snapshot.keyDependencies.length > 0 ||
-                          snapshot.keyRisksToModel.length > 0) && (
-                          renderBusinessSnapshotDrawer({
-                            title: "Model Watchpoints",
-                            preview: [
-                              snapshot.keyDependencies.length > 0
-                                ? `${snapshot.keyDependencies.length} dependenc${
-                                    snapshot.keyDependencies.length === 1 ? "y" : "ies"
-                                  }`
-                                : null,
-                              snapshot.keyRisksToModel.length > 0
-                                ? `${snapshot.keyRisksToModel.length} risk${
-                                    snapshot.keyRisksToModel.length === 1 ? "" : "s"
-                                  }`
-                                : null,
-                            ]
-                              .filter((value): value is string => Boolean(value))
-                              .join(" · "),
-                            children: (
-                              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                                {snapshot.keyDependencies.length > 0 && (
-                                  <div className={`${snapshotSubsectionClass} p-3`}>
-                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                                      Dependencies
-                                    </p>
-                                    <ul className="mt-1.5 space-y-0.5">
-                                      {snapshot.keyDependencies.map((dependency, idx) => (
-                                        <li
-                                          key={idx}
-                                          className="text-xs text-foreground leading-snug border-l border-border/70 pl-1.5"
-                                        >
-                                          {dependency}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {snapshot.keyRisksToModel.length > 0 && (
-                                  <div className={`${snapshotSubsectionClass} p-3`}>
-                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                                      Risks
-                                    </p>
-                                    <ul className="mt-1.5 space-y-0.5">
-                                      {snapshot.keyRisksToModel.map((risk, idx) => (
-                                        <li
-                                          key={idx}
-                                          className="text-xs text-foreground leading-snug border-l border-border/70 pl-1.5"
-                                        >
-                                          {risk}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
-                            ),
-                          })
-                        )}
-                      </div>
-                    )}
-
-                    {snapshot.mixShiftSummary && (
-                      <div
-                        id={SNAPSHOT_ANCHORS.mixShift}
-                        style={anchorStyle()}
-                        className={`${nestedDetailClass} p-3 space-y-0.5`}
-                      >
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Mix Shift
+                  ) : null}
+                  <SegmentHistoryPanel
+                    quarterly={snapshot.segmentHistoryQuarterly}
+                    annual={snapshot.segmentHistoryAnnual}
+                    revenueMixHistoryBySegment={historicalEconomics?.revenueMixHistoryBySegment ?? null}
+                  />
+                </div>
+              ) : hasLegacyBusinessSnapshot ? (
+                <>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div>
+                      {snapshot.businessSummaryShort || snapshot.businessSummaryLong ? (
+                        <div className={`${businessSnapshotBlockClass} p-4 space-y-2`}>
+                          {snapshot.businessSummaryShort && (
+                            <p className="text-sm sm:text-base font-semibold text-foreground leading-relaxed">
+                              {snapshot.businessSummaryShort}
+                            </p>
+                          )}
+                          {snapshot.businessSummaryLong && (
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              {snapshot.businessSummaryLong}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No business snapshot summary available yet.
                         </p>
-                        <p className="text-xs text-foreground/90 leading-relaxed">
-                          {snapshot.mixShiftSummary}
-                        </p>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  missingState
-                )}
-              </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {(snapshot.topRevenueDrivers.length > 0 ||
+                    snapshot.keyDependencies.length > 0 ||
+                    snapshot.keyRisksToModel.length > 0) && (
+                    <div className="space-y-3">
+                      {snapshot.topRevenueDrivers.length > 0 && (
+                        renderBusinessSnapshotDrawer({
+                          title: "Top Revenue Drivers",
+                          preview: `${snapshot.topRevenueDrivers.length} driver${
+                            snapshot.topRevenueDrivers.length === 1 ? "" : "s"
+                          } tracked.`,
+                          children: (
+                            <div className={`${snapshotSubsectionClass} p-3`}>
+                              <ul className="space-y-1">
+                                {snapshot.topRevenueDrivers.map((driver, idx) => (
+                                  <li
+                                    key={idx}
+                                    className="text-xs text-foreground leading-snug border-l border-border/70 pl-2"
+                                  >
+                                    {driver}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ),
+                        })
+                      )}
+
+                      {(snapshot.keyDependencies.length > 0 ||
+                        snapshot.keyRisksToModel.length > 0) && (
+                        renderBusinessSnapshotDrawer({
+                          title: "Model Watchpoints",
+                          preview: [
+                            snapshot.keyDependencies.length > 0
+                              ? `${snapshot.keyDependencies.length} dependenc${
+                                  snapshot.keyDependencies.length === 1 ? "y" : "ies"
+                                }`
+                              : null,
+                            snapshot.keyRisksToModel.length > 0
+                              ? `${snapshot.keyRisksToModel.length} risk${
+                                  snapshot.keyRisksToModel.length === 1 ? "" : "s"
+                                }`
+                              : null,
+                          ]
+                            .filter((value): value is string => Boolean(value))
+                            .join(" · "),
+                          children: (
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                              {snapshot.keyDependencies.length > 0 && (
+                                <div className={`${snapshotSubsectionClass} p-3`}>
+                                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                                    Dependencies
+                                  </p>
+                                  <ul className="mt-1.5 space-y-0.5">
+                                    {snapshot.keyDependencies.map((dependency, idx) => (
+                                      <li
+                                        key={idx}
+                                        className="text-xs text-foreground leading-snug border-l border-border/70 pl-1.5"
+                                      >
+                                        {dependency}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {snapshot.keyRisksToModel.length > 0 && (
+                                <div className={`${snapshotSubsectionClass} p-3`}>
+                                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                                    Risks
+                                  </p>
+                                  <ul className="mt-1.5 space-y-0.5">
+                                    {snapshot.keyRisksToModel.map((risk, idx) => (
+                                      <li
+                                        key={idx}
+                                        className="text-xs text-foreground leading-snug border-l border-border/70 pl-1.5"
+                                      >
+                                        {risk}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          ),
+                        })
+                      )}
+                    </div>
+                  )}
+
+                  {snapshot.mixShiftSummary && (
+                    <div
+                      id={SNAPSHOT_ANCHORS.mixShift}
+                      style={anchorStyle()}
+                      className={`${nestedDetailClass} p-3 space-y-0.5`}
+                    >
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Mix Shift
+                      </p>
+                      <p className="text-xs text-foreground/90 leading-relaxed">
+                        {snapshot.mixShiftSummary}
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                missingState
+              )}
             </div>
         ) : (
           missingState
