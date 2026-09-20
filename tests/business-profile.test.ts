@@ -26,6 +26,10 @@ for (const bad of [
   { business_facts: [{ ...fact, metrics: Array(7).fill({ label: "Top 5", value: 62, unit: "%" }) }] },
   { business_facts: [{ ...fact, metrics: [{ label: "Top 5", value: -1, unit: "%" }] }] },
   { business_facts: [{ ...fact, metrics: [{ label: "Top 5", value: 62 }] }] },
+  { what_changed: { ...profile.what_changed, stat: { value: "+17 pts", label: "defence share" } } },
+  { what_changed: { ...profile.what_changed, stat: { value: "+17", unit: "percent", label: "defence share" } } },
+  { what_changed: { ...profile.what_changed, stat: { value: "+17", label: " " } } },
+  { what_changed: { ...profile.what_changed, stat: { value: "+17", label: "defence share", unsupported_extra: true } } },
 ]) {
   assert.equal(businessProfileSchema.safeParse(bad).success, false, JSON.stringify(bad));
   assert.equal(normalizeBusinessProfile(bad).hasInvalidProfile, true);
@@ -37,6 +41,13 @@ assert.equal(businessProfileSchema.safeParse(withMetrics).success, true, "a fact
 assert.deepEqual(normalizeBusinessProfile(withMetrics).facts[0].metrics, metrics);
 assert.equal(normalizeBusinessProfile(profile).facts[0].metrics, undefined, "a fact without metrics stays prose-only, not an empty array");
 console.log("business fact metrics: optional, additive, and schema-validated passed");
+
+// The change's headline number is optional: absent, null and well-formed values all pass.
+for (const stat of [undefined, null, { value: "+17", unit: "pts", label: "defence share" }, { value: "-4.5", unit: null, label: "customer concentration" }, { value: "3.2", unit: "x", label: "order-book cover" }, { value: "36", label: "segment growth a year" }]) {
+  const withStat = { ...profile, what_changed: { ...profile.what_changed, stat } };
+  assert.equal(businessProfileSchema.safeParse(withStat).success, true, JSON.stringify(stat));
+  assert.deepEqual(normalizeBusinessProfile(withStat).change?.stat, stat);
+}
 
 const normalize = (row: Record<string, unknown>) => normalizeBusinessSnapshot({ companyCode: "TEST", companyWebsite: null, snapshotRow: { company: "TEST", ...row } });
 const about = { about_short: "Component maker", about_long: "A longer explanation.", ...profile };
