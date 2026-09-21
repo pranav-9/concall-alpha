@@ -385,39 +385,6 @@ export function KeyVariablesSection({
               <div className="mt-4 space-y-3">
                 {item.kpiHistory ? <KpiHistoryTable history={item.kpiHistory} /> : null}
 
-                {item.currentRead ? (
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      Current Read
-                    </p>
-                    <p className="text-[13px] leading-relaxed lg:text-[12px] text-foreground">
-                      {item.currentRead}
-                    </p>
-                  </div>
-                ) : null}
-
-                {item.whatItTracks ? (
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      What It Tracks
-                    </p>
-                    <p className="text-[11px] leading-relaxed text-muted-foreground">
-                      {item.whatItTracks}
-                    </p>
-                  </div>
-                ) : null}
-
-                {item.whyItMattersNow ? (
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      Why It Matters Now
-                    </p>
-                    <p className="text-[11px] leading-relaxed text-muted-foreground">
-                      {item.whyItMattersNow}
-                    </p>
-                  </div>
-                ) : null}
-
                 {item.transition === "promoted" && item.transitionReason ? (
                   <div className="space-y-1">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
