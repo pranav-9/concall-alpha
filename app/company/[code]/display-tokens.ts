@@ -1,4 +1,5 @@
 import type { NormalizedGrowthCatalyst } from "@/lib/growth-outlook/types";
+import type { ChipTone } from "@/app/company/components/chip-tone";
 import { pctFormatter } from "./page-helpers";
 
 
@@ -83,6 +84,83 @@ export const getImpactDirectionDisplay = (value: string | null): DisplayBadge | 
           }
         : null;
   }
+};
+
+// Capital-cycle position for a sub-sector, keyed off the schema enums
+// (early_upcycle / mid_upcycle / late_upcycle / defensive_stable / downcycle /
+// unclear for stage; tightening / loosening / stable / mixed for direction).
+// `positionIndex` places the stage on a 4-step Down → Late rail; null keeps a
+// stage OFF the rail (defensive_stable sits beside it; unclear has no reading).
+// `uncertain` drives the dashed "designed empty" chip — an honest read beats a
+// fake position when the supply signals genuinely conflict.
+export type CapitalCycleDisplay = {
+  stageLabel: string;
+  stageTone: ChipTone;
+  positionIndex: number | null;
+  directionLabel: string | null;
+  uncertain: boolean;
+};
+
+export const CAPITAL_CYCLE_RAIL_LABELS = ["Down", "Early", "Mid", "Late"] as const;
+
+const CAPITAL_CYCLE_STAGE: Record<
+  string,
+  { label: string; tone: ChipTone; positionIndex: number | null; uncertain?: boolean }
+> = {
+  downcycle: { label: "Downcycle", tone: "rose", positionIndex: 0 },
+  early_upcycle: { label: "Early upcycle", tone: "emerald", positionIndex: 1 },
+  mid_upcycle: { label: "Mid-upcycle", tone: "emerald", positionIndex: 2 },
+  late_upcycle: { label: "Late upcycle", tone: "amber", positionIndex: 3 },
+  defensive_stable: { label: "Defensive / stable", tone: "sky", positionIndex: null },
+  unclear: { label: "Mixed signals", tone: "slate", positionIndex: null, uncertain: true },
+};
+
+const CAPITAL_CYCLE_DIRECTION: Record<string, string> = {
+  tightening: "Supply tightening",
+  loosening: "Supply loosening",
+  stable: "Supply stable",
+  mixed: "Signals conflict",
+};
+
+export const getCapitalCycleDisplay = (
+  stage: string | null,
+  direction: string | null,
+): CapitalCycleDisplay | null => {
+  const stageKey = stage?.trim().toLowerCase().replace(/\s+/g, "_") || null;
+  const dirKey = direction?.trim().toLowerCase().replace(/\s+/g, "_") || null;
+  const directionLabel = dirKey
+    ? CAPITAL_CYCLE_DIRECTION[dirKey] ?? formatCompactLabel(dirKey)
+    : null;
+  const mapped = stageKey ? CAPITAL_CYCLE_STAGE[stageKey] : undefined;
+
+  if (mapped) {
+    return {
+      stageLabel: mapped.label,
+      stageTone: mapped.tone,
+      positionIndex: mapped.positionIndex,
+      directionLabel,
+      uncertain: mapped.uncertain ?? false,
+    };
+  }
+  if (stageKey) {
+    return {
+      stageLabel: toDisplayLabel(stageKey) ?? formatCompactLabel(stageKey),
+      stageTone: "slate",
+      positionIndex: null,
+      directionLabel,
+      uncertain: false,
+    };
+  }
+  if (directionLabel) {
+    return {
+      stageLabel: "Capital cycle",
+      stageTone: "slate",
+      positionIndex: null,
+      directionLabel,
+      uncertain: false,
+    };
+  }
+  return null;
 };
 
 export const getTimeHorizonDisplay = (value: string | null): DisplayBadge | null => {
