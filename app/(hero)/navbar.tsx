@@ -68,14 +68,15 @@ const Navbar = ({
 }) => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // The phone "app" presentation (handoffs 2026-09-13: /desk, then Filings /
-  // Themes / Ranking / Sectors) swaps the pill shell for a compact house-skin
-  // bar below `sm`: brand + search + sign-in, with the primary destinations
-  // living in the fixed bottom tab bar (components/mobile-tab-bar). Scoped by
-  // lib/phone-chrome so the two pieces of chrome can't disagree. The search
-  // button opens the same menu panel — search box first, then every other
-  // destination — with the search focused, so nothing the hamburger reached
-  // (Journal, Watchlists, theme, Sign up) becomes unreachable.
+  // The phone "app" presentation (handoffs 2026-09-13: /desk and its sibling
+  // screens; tab bar re-cut 2026-09-22 to Desk / Filings / Ranking / Journal /
+  // Other) swaps the pill shell for a compact house-skin bar below `sm`: brand
+  // + search + sign-in, with the primary destinations living in the fixed
+  // bottom tab bar (components/mobile-tab-bar). Scoped by lib/phone-chrome so
+  // the two pieces of chrome can't disagree. The search button opens the same
+  // menu panel — search box first, then every other destination — with the
+  // search focused, so nothing the hamburger reached (theme, Sign up)
+  // becomes unreachable.
   const isPhoneAppChrome = isPhoneAppRoute(pathname);
   const [focusSearchOnOpen, setFocusSearchOnOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);

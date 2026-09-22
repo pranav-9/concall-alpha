@@ -136,7 +136,7 @@ export function CommunityNudge({ href }: { href: string }) {
     setTrigger(null);
   };
 
-  // The five reading routes carry a fixed phone tab bar on the same edge below
+  // The phone-app routes carry a fixed phone tab bar on the same edge below
   // `sm` (components/mobile-tab-bar, 4.25rem tall); sit above it there.
   const hasPhoneTabBar = isPhoneAppRoute(pathname);
 
