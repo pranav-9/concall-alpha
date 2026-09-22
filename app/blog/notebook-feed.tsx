@@ -5,13 +5,13 @@ import Link from "next/link";
 
 import { CATEGORY_LABELS } from "./categories";
 import { filterNotebook, notebookCatalog } from "./lanes";
-import { useNotebookFilter } from "./notebook-filter";
+import { useNotebookFilter } from "./journal-view-state";
 import type { BlogPostMeta } from "./posts";
 
 // The Notebook lane: Product / How-I-invest essays. Company write-ups live in
 // their own "Company Stories" section, so this feed's filter covers only the
 // two notebook categories. `posts` arrives newest-first, notebook-only. The
-// filter lives in NotebookFilterProvider (shared with the phone paint); the
+// filter lives in JournalViewProvider (shared with the phone paint); the
 // catalog (stable "No.", categories, counts) comes from lanes.ts.
 export function NotebookFeed({ posts }: { posts: BlogPostMeta[] }) {
   const { filter, setFilter } = useNotebookFilter();

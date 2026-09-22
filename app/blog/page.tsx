@@ -9,7 +9,7 @@ import { CompanyStories } from "./company-stories";
 import { JournalPhone } from "./journal-phone";
 import { deriveJournalLanes } from "./lanes";
 import { NotebookFeed } from "./notebook-feed";
-import { NotebookFilterProvider } from "./notebook-filter";
+import { JournalViewProvider } from "./journal-view-state";
 import { getAllPostMeta } from "./posts";
 
 export const metadata: Metadata = {
@@ -33,9 +33,10 @@ export default function BlogIndexPage() {
     <main className="house min-h-screen">
       <JournalMarkSeen latestKey={latestDate} />
       {/* Phone (<sm) and desktop paints of the same lanes; the hidden one
-          unmounts after hydration (components/viewport-gate.tsx). The Notebook
-          filter sits above both so a resize across `sm` keeps it. */}
-      <NotebookFilterProvider>
+          unmounts after hydration (components/viewport-gate.tsx). Reader state
+          (Notebook filter, stories fold) sits above both so a resize across
+          `sm` keeps it. */}
+      <JournalViewProvider>
       <BelowSm>
         <JournalPhone lanes={lanes} telegramUrl={telegramUrl} hasPosts={hasPosts} />
       </BelowSm>
@@ -102,7 +103,7 @@ export default function BlogIndexPage() {
         </footer>
       </div>
       </FromSm>
-      </NotebookFilterProvider>
+      </JournalViewProvider>
     </main>
   );
 }

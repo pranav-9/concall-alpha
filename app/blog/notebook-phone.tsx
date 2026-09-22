@@ -14,11 +14,11 @@ import {
 import { CATEGORY_LABELS } from "./categories";
 import { shortDateLabel } from "./dates";
 import { filterNotebook, notebookCatalog } from "./lanes";
-import { useNotebookFilter } from "./notebook-filter";
+import { useNotebookFilter } from "./journal-view-state";
 import type { BlogPostMeta } from "./posts";
 
 // The Notebook lane on the phone: a chip strip over one list card, no cover
-// plates. The filter is the same NotebookFilterProvider state the desktop feed
+// plates. The filter is the same JournalViewProvider state the desktop feed
 // reads (so a crossing of `sm` keeps the reader's choice), and the catalog
 // (stable "No.", categories, counts) is lanes.ts's, so the two paints cannot
 // drift. `posts` arrives newest-first, notebook-only.
