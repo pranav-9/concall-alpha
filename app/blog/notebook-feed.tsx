@@ -3,39 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import {
-  CATEGORY_LABELS,
-  NOTEBOOK_CATEGORIES,
-  type BlogCategory,
-} from "./categories";
+import { CATEGORY_LABELS } from "./categories";
+import { filterNotebook, notebookCatalog } from "./lanes";
+import { useNotebookFilter } from "./journal-view-state";
 import type { BlogPostMeta } from "./posts";
-
-type Filter = BlogCategory | "all";
 
 // The Notebook lane: Product / How-I-invest essays. Company write-ups live in
 // their own "Company Stories" section, so this feed's filter covers only the
-// two notebook categories. `posts` arrives newest-first, notebook-only.
+// two notebook categories. `posts` arrives newest-first, notebook-only. The
+// filter lives in JournalViewProvider (shared with the phone paint); the
+// catalog (stable "No.", categories, counts) comes from lanes.ts.
 export function NotebookFeed({ posts }: { posts: BlogPostMeta[] }) {
-  const [filter, setFilter] = useState<Filter>("all");
-
-  // Stable catalog number per post, from the full (unfiltered) order, so a
-  // post keeps its "No." when a filter is applied.
-  const numberFor = useMemo(() => {
-    const map = new Map<string, string>();
-    posts.forEach((p, i) => map.set(p.slug, String(i + 1).padStart(2, "0")));
-    return map;
-  }, [posts]);
-
-  const availableCategories = useMemo(
-    () => NOTEBOOK_CATEGORIES.filter((cat) => posts.some((p) => p.category === cat)),
-    [posts],
-  );
-
-  const countFor = (cat: BlogCategory) =>
-    posts.filter((p) => p.category === cat).length;
-
-  const visible =
-    filter === "all" ? posts : posts.filter((p) => p.category === filter);
+  const { filter, setFilter } = useNotebookFilter();
+  const { numberFor, categories, counts } = useMemo(() => notebookCatalog(posts), [posts]);
+  const visible = filterNotebook(posts, filter);
 
   return (
     <section aria-labelledby="notebook-heading" className="mt-14 sm:mt-16">
@@ -56,11 +37,11 @@ export function NotebookFeed({ posts }: { posts: BlogPostMeta[] }) {
           >
             All
           </FilterPill>
-          {availableCategories.map((cat) => (
+          {categories.map((cat) => (
             <FilterPill
               key={cat}
               active={filter === cat}
-              count={countFor(cat)}
+              count={counts[cat]}
               onClick={() => setFilter(cat)}
             >
               {CATEGORY_LABELS[cat]}
