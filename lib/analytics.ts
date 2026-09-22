@@ -65,7 +65,8 @@ export type CommunitySurface =
   | "desk"
   | "company_page"
   | "leaderboards"
-  | "nudge";
+  | "nudge"
+  | "tab_bar";
 
 /** What made the engagement nudge appear. */
 export type CommunityNudgeTrigger = "second_page" | "company_dwell";

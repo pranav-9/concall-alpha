@@ -14,6 +14,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { CommunityNudge } from "@/components/community-nudge";
 import { getTelegramJoinUrl } from "@/lib/community";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
+import { getIsAuthenticated } from "@/lib/supabase/auth-state";
 import { Toaster } from "@/components/ui/sonner";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { getSiteUrl } from "@/lib/site-url";
@@ -121,6 +122,23 @@ function CommunityNudgeSlot() {
   return <CommunityNudge href={href} />;
 }
 
+/**
+ * The phone bottom tab bar. Its "Other" sheet needs the same two facts the
+ * navbar's hamburger has — is anyone signed in (Watchlists row) and the
+ * Telegram invite — so it renders in its own Suspense boundary and asks
+ * `getIsAuthenticated()` (React-cached claims read, no network round trip).
+ */
+async function MobileTabBarSlot() {
+  const isSignedIn = await getIsAuthenticated();
+  return (
+    <MobileTabBar
+      telegramUrl={getTelegramJoinUrl()}
+      isSignedIn={isSignedIn}
+      latestJournalDate={getAllPostMeta()[0]?.date ?? null}
+    />
+  );
+}
+
 function NavbarFallback() {
   return (
     <nav
@@ -164,7 +182,9 @@ export default function RootLayout({
               {children}
             </div>
             <SiteFooter />
-            <MobileTabBar />
+            <Suspense fallback={null}>
+              <MobileTabBarSlot />
+            </Suspense>
             <CommunityNudgeSlot />
             <Toaster richColors />
           </div>
