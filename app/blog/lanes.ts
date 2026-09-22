@@ -6,8 +6,13 @@
 // and can run in either a server or client context. Nothing here is
 // hand-curated per company — the grouping falls out of the frontmatter.
 
-import { NOTEBOOK_CATEGORIES } from "./categories";
+import { CATEGORY_ORDER, NOTEBOOK_CATEGORIES, type BlogCategory } from "./categories";
 import type { BlogPostMeta } from "./posts";
+
+/** Two-digit counter ("06") — the lane count and the Notebook's "No." gutter. */
+export function pad(n: number): string {
+  return String(n).padStart(2, "0");
+}
 
 export type CompanyStory = BlogPostMeta & {
   /** 1-based position in this company's history, oldest story = 1. */
@@ -102,11 +107,53 @@ export function deriveJournalLanes(posts: BlogPostMeta[]): JournalLanes {
   };
 }
 
+/**
+ * The Notebook's catalog, derived once from the unfiltered newest-first list so
+ * both paints number and filter identically: a stable "No." per post (a post
+ * keeps its number under a filter), the categories that actually have posts
+ * (in NOTEBOOK_CATEGORIES order), and a count per category.
+ */
+export type NotebookCatalog = {
+  numberFor: Map<string, string>;
+  categories: BlogCategory[];
+  counts: Record<BlogCategory, number>;
+};
+
+export function notebookCatalog(posts: BlogPostMeta[]): NotebookCatalog {
+  const numberFor = new Map<string, string>();
+  posts.forEach((p, i) => numberFor.set(p.slug, pad(i + 1)));
+  // Zeroed from the category list itself, so a new BlogCategory can never be
+  // missing here (a missing key would count to NaN and vanish from the strip).
+  const counts = Object.fromEntries(CATEGORY_ORDER.map((c) => [c, 0])) as Record<
+    BlogCategory,
+    number
+  >;
+  for (const p of posts) if (p.category) counts[p.category] += 1;
+  const categories = NOTEBOOK_CATEGORIES.filter((cat) => counts[cat] > 0);
+  return { numberFor, categories, counts };
+}
+
+/** Posts visible under a Notebook filter ("all" or one category). */
+export function filterNotebook(
+  posts: BlogPostMeta[],
+  filter: BlogCategory | "all",
+): BlogPostMeta[] {
+  return filter === "all" ? posts : posts.filter((p) => p.category === filter);
+}
+
 /** "Story 2 of 3", or "Story 1" for a company's only story so far. */
 export function storyLabel(story: CompanyStory): string {
   return story.storyTotal > 1
     ? `Story ${story.storyIndex} of ${story.storyTotal}`
     : "Story 1";
+}
+
+/**
+ * Link text for the prior-story line: `priorStory` returns the story directly
+ * before this one, which is only "the first" when this is the second.
+ */
+export function priorLinkLabel(story: CompanyStory): string {
+  return story.storyIndex === 2 ? "read the first" : "read the previous";
 }
 
 /**

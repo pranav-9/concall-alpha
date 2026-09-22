@@ -7,10 +7,20 @@ const MONTHS = [
 ] as const;
 
 export function shortDateLabel(iso: string, fallback: string): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  // The date must be the whole string or be followed by a time part; a
+  // trailing "garbage" suffix is corruption, not a date.
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:$|T)/.exec(iso);
   if (!m) return fallback;
-  const month = MONTHS[Number(m[2]) - 1];
+  const year = Number(m[1]);
+  const monthIndex = Number(m[2]) - 1;
   const day = Number(m[3]);
-  if (!month || !Number.isFinite(day) || day < 1 || day > 31) return fallback;
+  const month = MONTHS[monthIndex];
+  if (!month || day < 1) return fallback;
+  // Round-trip through UTC so "2026-02-31" (which Date would roll to March)
+  // falls back instead of printing a day that doesn't exist.
+  const d = new Date(Date.UTC(year, monthIndex, day));
+  if (d.getUTCFullYear() !== year || d.getUTCMonth() !== monthIndex || d.getUTCDate() !== day) {
+    return fallback;
+  }
   return `${day} ${month} ${m[1]}`;
 }

@@ -9,6 +9,7 @@ import { CompanyStories } from "./company-stories";
 import { JournalPhone } from "./journal-phone";
 import { deriveJournalLanes } from "./lanes";
 import { NotebookFeed } from "./notebook-feed";
+import { NotebookFilterProvider } from "./notebook-filter";
 import { getAllPostMeta } from "./posts";
 
 export const metadata: Metadata = {
@@ -21,6 +22,9 @@ export const metadata: Metadata = {
 export default function BlogIndexPage() {
   const posts = getAllPostMeta();
   const lanes = deriveJournalLanes(posts);
+  // One empty-state rule for both paints, keyed off what the lanes will paint
+  // (not the raw post count): posts with no known category join neither lane.
+  const hasPosts = lanes.companyCount + lanes.notebook.length > 0;
   const latestDate = posts[0]?.date ?? "";
   const latestLabel = posts[0]?.dateLabel ?? "";
   const telegramUrl = getTelegramJoinUrl();
@@ -29,9 +33,11 @@ export default function BlogIndexPage() {
     <main className="house min-h-screen">
       <JournalMarkSeen latestKey={latestDate} />
       {/* Phone (<sm) and desktop paints of the same lanes; the hidden one
-          unmounts after hydration (components/viewport-gate.tsx). */}
+          unmounts after hydration (components/viewport-gate.tsx). The Notebook
+          filter sits above both so a resize across `sm` keeps it. */}
+      <NotebookFilterProvider>
       <BelowSm>
-        <JournalPhone lanes={lanes} telegramUrl={telegramUrl} hasPosts={posts.length > 0} />
+        <JournalPhone lanes={lanes} telegramUrl={telegramUrl} hasPosts={hasPosts} />
       </BelowSm>
       <FromSm>
       <div className="mx-auto w-full max-w-[1200px] px-4 py-10 sm:px-6 sm:py-14 lg:px-10">
@@ -77,7 +83,7 @@ export default function BlogIndexPage() {
           </div>
         </header>
 
-        {posts.length === 0 ? (
+        {!hasPosts ? (
           <p className="mt-10 text-sm text-[var(--ink-soft)]">No posts yet.</p>
         ) : (
           <>
@@ -96,6 +102,7 @@ export default function BlogIndexPage() {
         </footer>
       </div>
       </FromSm>
+      </NotebookFilterProvider>
     </main>
   );
 }

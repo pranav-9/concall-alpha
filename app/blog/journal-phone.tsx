@@ -18,12 +18,8 @@ import { TelegramJoinLink } from "@/components/telegram-join-link";
 
 import { shortDateLabel } from "./dates";
 import type { CompanyStory, JournalLanes } from "./lanes";
-import { priorStory, storyLabel } from "./lanes";
+import { pad, priorLinkLabel, priorStory, storyLabel } from "./lanes";
 import { NotebookPhone } from "./notebook-phone";
-
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
 
 export function JournalPhone({
   lanes,
@@ -32,6 +28,7 @@ export function JournalPhone({
 }: {
   lanes: JournalLanes;
   telegramUrl: string | null;
+  /** page.tsx derives this from the lanes so both paints share one empty-state rule. */
   hasPosts: boolean;
 }) {
   return (
@@ -48,7 +45,7 @@ export function JournalPhone({
           <TelegramJoinLink
             href={telegramUrl}
             surface="journal_index"
-            className={`house-data mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--rule)] bg-[var(--paper-2)] px-4 py-2.5 text-[12px] text-[var(--ink)] transition-colors hover:border-[var(--ink)] ${MOBILE_FOCUS}`}
+            className={`house-data mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--rule)] bg-[var(--paper-2)] px-4 py-2.5 text-[12px] text-[var(--ink)] transition-colors hover:border-[var(--ink)] active:border-[var(--ink)] ${MOBILE_FOCUS}`}
           >
             Updates land in the Telegram group →
           </TelegramJoinLink>
@@ -62,7 +59,13 @@ export function JournalPhone({
           <CompanyStoriesPhone lanes={lanes} />
           {lanes.notebook.length ? (
             <>
-              <MobileDivider label="The Notebook" strong className="mt-8" />
+              {/* aria-hidden: the section's sr-only h2 carries the name, so a
+                  screen reader hears "The Notebook" once. */}
+              <MobileDivider
+                label={<span aria-hidden>The Notebook</span>}
+                strong
+                className="mt-8"
+              />
               <NotebookPhone posts={lanes.notebook} />
             </>
           ) : null}
@@ -147,14 +150,14 @@ function CompanyStoriesPhone({ lanes }: { lanes: JournalLanes }) {
           <p className="mt-3 text-[13px] leading-5 text-[var(--ink-soft)]">
             Story {featured.storyIndex} on {featured.company ?? "this company"} —{" "}
             <Link href={`/blog/${prior.slug}`} className="house-link">
-              read the first
+              {priorLinkLabel(featured)}
             </Link>
             .
           </p>
         ) : null}
         <Link
           href={href}
-          className="house-data mt-4 inline-flex min-h-11 items-center text-[13px] font-semibold text-[var(--ink)] underline decoration-[var(--mark)] decoration-2 underline-offset-4"
+          className="house-data house-link mt-4 inline-flex min-h-11 items-center text-[13px] font-semibold"
         >
           Read the story →
         </Link>
@@ -176,7 +179,13 @@ function CompanyStoriesPhone({ lanes }: { lanes: JournalLanes }) {
 
 // Landscape crop of the story's poster (its title band and first exhibit sit
 // at the top), inside the plate's own hairline; a text plate when a post
-// shipped without one.
+// shipped without one. `loading="eager"`, NOT `priority`: both paints are in
+// the server HTML and next/image's `priority` preload is unconditional, so it
+// would make every desktop visit download a full-width copy of a poster that
+// unmounts on hydration. Eager emits no preload but still starts the phone's
+// LCP image with the HTML. `sizes` is in px (a `vw` would limit the srcset
+// to deviceSizes ≥640w), so the hidden desktop copy resolves to the 16w
+// candidate (<1 KB) while the phone gets a candidate matched to its DPR.
 function PosterPhone({ story }: { story: CompanyStory }) {
   if (story.image) {
     return (
@@ -185,8 +194,8 @@ function PosterPhone({ story }: { story: CompanyStory }) {
           src={story.image}
           alt={story.imageAlt ?? story.title}
           fill
-          sizes="100vw"
-          priority
+          sizes="(min-width: 640px) 16px, 420px"
+          loading="eager"
           className="object-cover object-top"
         />
       </span>
@@ -228,7 +237,7 @@ function StoryRow({ story }: { story: CompanyStory }) {
         </span>
         <span className="mt-auto flex items-center justify-between gap-2 pt-2.5">
           <time
-            dateTime={story.date}
+            dateTime={story.date || undefined}
             className="house-data whitespace-nowrap text-[10px] text-[var(--ink-soft)]"
           >
             {shortDateLabel(story.date, story.dateLabel)}
@@ -258,7 +267,7 @@ function ThumbPhone({ story }: { story: CompanyStory }) {
         />
       ) : (
         <span className="flex h-full flex-col justify-between p-1.5">
-          <span className="house-data text-[7px] uppercase tracking-[0.14em] text-[var(--signal)]">
+          <span className="house-data text-[8px] uppercase tracking-[0.14em] text-[var(--signal)]">
             Story
           </span>
           <span>

@@ -62,7 +62,12 @@ function fileToSlug(filename: string): string {
 }
 
 function listPostFiles(): string[] {
-  return fs.readdirSync(POSTS_DIR).filter((f) => /\.mdx?$/.test(f));
+  // readdir order is filesystem-dependent (APFS sorts, ext4 on Vercel does
+  // not); sort so same-date posts and the Notebook's "No." agree everywhere.
+  return fs
+    .readdirSync(POSTS_DIR)
+    .filter((f) => /\.mdx?$/.test(f))
+    .sort();
 }
 
 function readMeta(file: string): BlogPostMeta {

@@ -7,11 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { CompanyStory, JournalLanes, LedgerEntry } from "./lanes";
-import { priorStory, storyLabel } from "./lanes";
-
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
+import { pad, priorLinkLabel, priorStory, storyLabel } from "./lanes";
 
 export function CompanyStories({ lanes }: { lanes: JournalLanes }) {
   const { featured, companyRest, ledger, companyCount, companyNameCount } =
@@ -97,7 +93,7 @@ export function CompanyStories({ lanes }: { lanes: JournalLanes }) {
             <p className="mt-4 text-sm leading-6 text-[var(--ink-soft)]">
               {storyLabel(featured)} on {featured.company} —{" "}
               <Link href={`/blog/${prior.slug}`} className="house-link">
-                read the first
+                {priorLinkLabel(featured)}
               </Link>
               .
             </p>
