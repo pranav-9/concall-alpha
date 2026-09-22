@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 
 import { JournalMarkSeen } from "@/components/journal-mark-seen";
 import { TelegramJoinLink } from "@/components/telegram-join-link";
+import { BelowSm, FromSm } from "@/components/viewport-gate";
 import { getTelegramJoinUrl } from "@/lib/community";
 
 import { CompanyStories } from "./company-stories";
+import { JournalPhone } from "./journal-phone";
 import { deriveJournalLanes } from "./lanes";
 import { NotebookFeed } from "./notebook-feed";
 import { getAllPostMeta } from "./posts";
@@ -26,6 +28,12 @@ export default function BlogIndexPage() {
   return (
     <main className="house min-h-screen">
       <JournalMarkSeen latestKey={latestDate} />
+      {/* Phone (<sm) and desktop paints of the same lanes; the hidden one
+          unmounts after hydration (components/viewport-gate.tsx). */}
+      <BelowSm>
+        <JournalPhone lanes={lanes} telegramUrl={telegramUrl} hasPosts={posts.length > 0} />
+      </BelowSm>
+      <FromSm>
       <div className="mx-auto w-full max-w-[1200px] px-4 py-10 sm:px-6 sm:py-14 lg:px-10">
         {/* Masthead */}
         <header>
@@ -87,6 +95,7 @@ export default function BlogIndexPage() {
           </div>
         </footer>
       </div>
+      </FromSm>
     </main>
   );
 }
