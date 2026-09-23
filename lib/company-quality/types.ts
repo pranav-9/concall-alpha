@@ -106,6 +106,8 @@ export const companyQualityV1Schema = z
     annual_report_checks: z
       .object({
         as_of: z.string().nullable().optional(),
+        /** Which annual report / note each hand-filled value came from (Step 6 provenance). */
+        source_note: z.string().nullable().optional(),
         related_party_pct_revenue: num,
         promoter_pledge_pct: num,
         auditor: auditorSchema.nullable(),
