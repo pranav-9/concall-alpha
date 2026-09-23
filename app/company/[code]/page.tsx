@@ -26,7 +26,7 @@ import {
   FutureGrowthPanel,
   GuidanceHistoryPanel,
   KeyVariablesPanel,
-  MoatAnalysisPanel,
+  QualityPanel,
   ValuationCheckPanel,
   ConcallScorePanel,
   // WalkTheTalkPanel hidden for now — re-import when re-enabling the tab.
@@ -75,7 +75,7 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
     SECTION_MAP.companyAnnouncements,
     SECTION_MAP.businessSnapshot,
     SECTION_MAP.industryContext,
-    SECTION_MAP.moatAnalysis,
+    SECTION_MAP.quality,
     {
       ...SECTION_MAP.concallScore,
       meta:
@@ -193,10 +193,12 @@ export default async function Page({
             </Suspense>
           </div>
 
-          <div data-section-id="moat-analysis">
-            <Suspense fallback={<SectionLoading id="moat-analysis" title="Moat Analysis" size={fallbackSize(overview.section_availability.moatAnalysis)} />}>
-              <GatedPanel sectionId="moat-analysis" companyCode={overview.company_code}>
-                <MoatAnalysisPanel overview={overview} />
+          <div data-section-id="quality">
+            {/* Five stacked cards; the moat card alone is short, so the panel
+                is always viewport-tall once the substrate row exists. */}
+            <Suspense fallback={<SectionLoading id="quality" title="Quality" />}>
+              <GatedPanel sectionId="quality" companyCode={overview.company_code}>
+                <QualityPanel overview={overview} />
               </GatedPanel>
             </Suspense>
           </div>

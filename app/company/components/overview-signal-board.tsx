@@ -982,7 +982,7 @@ function StandingReads({
             </p>
           )}
           <div className="pt-3" />
-          <OpenNudge sectionId="moat-analysis" label="Open moat analysis" />
+          <OpenNudge sectionId="quality" label="Open the quality read" />
         </div>
 
         {/* Key variables */}

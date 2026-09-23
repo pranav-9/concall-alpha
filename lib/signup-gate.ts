@@ -31,12 +31,12 @@ const GATED_SECTIONS = {
       "Segment revenue and growth history, quarter by quarter",
     ],
   },
-  "moat-analysis": {
-    label: "Moat",
+  quality: {
+    label: "Quality",
     below: [
-      "Whether the edge is likely to last, and why",
-      "The evidence behind each advantage",
-      "What would change the call, and who could attack it",
+      "Return ratios and margins, year by year, with the read",
+      "The moat: what protects the business and whether it lasts",
+      "Who owns the stock, and nine forensic checks on the books",
     ],
   },
   "key-variables": {

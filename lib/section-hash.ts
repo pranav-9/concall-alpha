@@ -7,12 +7,29 @@
  * When several section ids prefix-match, the longest wins so a section whose
  * id extends another's (`foo` vs `foo-bar`) is never shadowed.
  */
+/**
+ * Section ids that were renamed. Old deep links (Journal posts, X replies,
+ * bookmarks) keep working: the legacy id — and any `<legacy>-<block>`
+ * sub-anchor — resolves to the current section.
+ */
+export const LEGACY_SECTION_IDS: Readonly<Record<string, string>> = {
+  "moat-analysis": "quality",
+};
+
+export function canonicalSectionId(sectionId: string): string {
+  for (const [legacy, current] of Object.entries(LEGACY_SECTION_IDS)) {
+    if (sectionId === legacy) return current;
+    if (sectionId.startsWith(`${legacy}-`)) return `${current}${sectionId.slice(legacy.length)}`;
+  }
+  return sectionId;
+}
+
 export function resolveSectionId(
   hash: string,
   validIds: ReadonlySet<string>,
   fallbackSectionId: string,
 ): string {
-  const sectionId = hash.replace(/^#/, "").trim();
+  const sectionId = canonicalSectionId(hash.replace(/^#/, "").trim());
   if (!sectionId) return fallbackSectionId;
   if (validIds.has(sectionId)) return sectionId;
 

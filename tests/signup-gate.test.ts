@@ -18,7 +18,7 @@ import { isInAppBrowser } from "../lib/in-app-browser";
 // ── Which tabs gate ─────────────────────────────────────────────────────────
 const GATED = [
   "business-overview",
-  "moat-analysis",
+  "quality",
   "key-variables",
   "future-growth",
   "valuation-check",
@@ -44,21 +44,21 @@ assert.equal(isSignupGateEnabled({ SIGNUP_GATE: "on" }), true);
 // ── The one rule, every branch ──────────────────────────────────────────────
 const gate = (enabled: boolean, isAuthenticated: boolean, sectionId: string) =>
   shouldGateSection({ enabled, isAuthenticated, sectionId });
-assert.equal(gate(true, false, "moat-analysis"), true);
-assert.equal(gate(false, false, "moat-analysis"), false); // flag off
-assert.equal(gate(true, true, "moat-analysis"), false); // signed in
+assert.equal(gate(true, false, "quality"), true);
+assert.equal(gate(false, false, "quality"), false); // flag off
+assert.equal(gate(true, true, "quality"), false); // signed in
 assert.equal(gate(true, false, "overview"), false); // open tab
 assert.equal(gate(true, false, "sentiment-score"), false);
 assert.equal(gate(true, false, "nope"), false); // unknown id
 
 // ── Return path: lands on the same tab and survives the redirect guard ──────
-assert.equal(buildGateNext("HFCL", "moat-analysis"), "/company/HFCL#moat-analysis");
+assert.equal(buildGateNext("HFCL", "quality"), "/company/HFCL#quality");
 assert.equal(buildGateNext("M&M", "future-growth"), "/company/M%26M#future-growth");
 assert.equal(isSafeNextPath(buildGateNext("M&M", "future-growth")), true);
 assert.equal(isSafeNextPath(buildGateNext("../../evil", "x")), true); // encoded, still same-site
 assert.equal(buildGateNext("../../evil", "x"), "/company/..%2F..%2Fevil#x");
 
-assert.equal(companyCodeFromNext("/company/HFCL#moat-analysis"), "HFCL");
+assert.equal(companyCodeFromNext("/company/HFCL#quality"), "HFCL");
 assert.equal(companyCodeFromNext("/company/M%26M?x=1"), "M&M");
 assert.equal(companyCodeFromNext("/company/HFCL/extra"), "HFCL");
 assert.equal(companyCodeFromNext("/watchlists"), null);
@@ -86,12 +86,12 @@ assert.equal(resolveClipHeight({ markerTop: 100, contentHeight: 0 }), null);
 assert.equal(resolveClipHeight({ markerTop: 100, contentHeight: Number.NaN }), null);
 
 // ── Attribution survives the hand-off to /auth/sign-up ──────────────────────
-const gateIntent = { method: "email", source: "gate", companyCode: "HFCL", sectionId: "moat-analysis", at: 1 } as const;
+const gateIntent = { method: "email", source: "gate", companyCode: "HFCL", sectionId: "quality", at: 1 } as const;
 assert.deepEqual(nextAuthIntent("google", gateIntent), {
   method: "google",
   source: "gate",
   companyCode: "HFCL",
-  sectionId: "moat-analysis",
+  sectionId: "quality",
 });
 assert.deepEqual(nextAuthIntent("email", null), { method: "email", source: "auth_page" });
 assert.deepEqual(
