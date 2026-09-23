@@ -43,6 +43,7 @@ This repository is no longer a starter template. The README below reflects the c
 - `/leaderboards` – sentiment + growth leaderboards
 - `/sectors` – sector overview
 - `/how-scores-work` – scoring methodology explainer
+- `/blog` – the Journal (founder's posts); `/blog/[slug]` is one post, with a derived "Next read" and a phone-only poster strip
 - `/requests` – request intake form
 - `/watchlists` – authenticated watchlist page
 - `/admin` – passcode-gated admin dashboard
