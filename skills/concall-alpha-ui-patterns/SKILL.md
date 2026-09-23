@@ -73,20 +73,22 @@ Do not surface the raw framework enums (`WIDE/NARROW MOAT`, `STRONG/MID/WEAK`,
 static plain-language maps in `moat-analysis-section.tsx`
 (`edgePhrase`, `advantageLabel`, `advantageMeaning`, `durabilityRead`).
 
-Default (always-visible) display, in order:
+Since 2026-09-23 the moat is ONE card on the Quality tab (`quality-section.tsx`),
+not a tab of its own. Default (always-visible) display, side by side:
 
-- Verdict header — plain edge phrase (from `rating`×`tier`), a plain sentence,
-  and the "How strong" Weak/Moderate/Strong meter (from `tier`).
-- Advantages table — all four sources, applies-first, ruled-out greyed with the
-  real `does_not_apply_reason`.
-- "Will the edge last?" — a `Likely/Mixed/Unlikely` read derived from
-  `cycle_tested` + `gatekeeper.barrier_strength`, with the two real prose cards
-  (`step_0.headline`, `gatekeeper.rationale`).
+- Outcome column — plain edge phrase (from `rating`×`tier`), the payload
+  `headline`, the applies/ruled-out counts sentence, and the "How strong"
+  Weak/Moderate/Strong meter (from `tier`).
+- Advantages table — all four sources, applies-first (filled dot), ruled-out
+  greyed (hollow dot) with the real `does_not_apply_reason`.
 
-Put everything else in ONE collapsed "Full analysis" `<details>` (discoverable by
-label): per-source `presence`/`durability` bullets, `why_this_tier`,
-`what_would_change_the_call`, credible attackers, `data_limitations`, generated
-date. Do not surface schema/version metadata to the reader.
+Everything else lives in ONE collapsed "Full analysis" `<details>` (discoverable
+by label): a 2×2 of mini-cards — "Will the edge last?" (`Likely/Mixed/Unlikely`
+from `cycle_tested` + `gatekeeper.barrier_strength`, plus `step_0.headline` and
+`gatekeeper.rationale`), "Who could challenge it", "Why this rating", "What would
+change the call" — then per-source `presence`/`durability` cards,
+`data_limitations`, generated date. Do not surface schema/version metadata to
+the reader.
 
 Do NOT invent data the payload does not carry:
 

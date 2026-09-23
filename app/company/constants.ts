@@ -47,8 +47,10 @@ export const SECTIONS = [
     label: "Guidance",
   },
   {
-    id: "moat-analysis",
-    label: "Moat Analysis",
+    // Was "moat-analysis" (Moat tab) until 2026-09-23; #moat-analysis links still
+    // resolve here via LEGACY_SECTION_IDS in lib/section-hash.ts.
+    id: "quality",
+    label: "Quality",
   },
   {
     id: "community",
@@ -78,7 +80,7 @@ export const SECTION_MAP = {
   concallScore: SECTIONS[6],
   futureGrowth: SECTIONS[7],
   guidanceHistory: SECTIONS[8],
-  moatAnalysis: SECTIONS[9],
+  quality: SECTIONS[9],
   community: SECTIONS[10],
   topBusinessStrategies: SECTIONS[11],
   walkTheTalk: SECTIONS[12],

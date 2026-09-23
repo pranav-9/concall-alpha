@@ -8,6 +8,8 @@ import { buildGuidanceVerdict } from "@/lib/guidance-tracking/verdict";
 import { currentReportingQuarter } from "@/lib/current-quarter";
 import { normalizeKeyVariablesSnapshot } from "@/lib/key-variables-snapshot/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
+import { getCompanyQualityRow } from "@/lib/company-quality/get";
+import { normalizeCompanyQuality } from "@/lib/company-quality/normalize";
 import { assessStaleness, normalizeValuationCheck } from "@/lib/valuation-check/normalize";
 import { getWalkTheTalk } from "@/lib/walk-the-talk/get";
 import { createClient } from "@/lib/supabase/server";
@@ -34,7 +36,7 @@ import { FutureGrowthSection } from "../components/future-growth-section";
 import { IndustryContextSection } from "../components/industry-context-section";
 import { KeyVariablesSection } from "../components/key-variables-section";
 import { MissingSectionState } from "../components/missing-section-state";
-import { MoatAnalysisSection } from "../components/moat-analysis-section";
+import { QualitySection } from "../components/quality-section";
 import { ValuationCheckSection } from "../components/valuation-check-section";
 import { WalkTheTalkSection } from "../components/walk-the-talk-section";
 import { GuidanceHeaderPills } from "../components/guidance-header-pills";
@@ -115,43 +117,32 @@ export async function BusinessSnapshotPanel({ overview }: CompanyDetailSectionPr
   );
 }
 
-export async function MoatAnalysisPanel({ overview }: CompanyDetailSectionProps) {
+export async function QualityPanel({ overview }: CompanyDetailSectionProps) {
   const supabase = await createClient();
-  const { data: moatAnalysisData } = await supabase
-    .from("moat_analysis")
-    .select(
-      "id, company_code, company_name, industry, rating, tier, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
-    )
-    .eq("company_code", overview.company_code)
-    .limit(1);
+  const [{ data: moatAnalysisData }, qualityRow] = await Promise.all([
+    supabase
+      .from("moat_analysis")
+      .select(
+        "id, company_code, company_name, industry, rating, tier, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
+      )
+      .eq("company_code", overview.company_code)
+      .limit(1),
+    getCompanyQualityRow(overview.company_code),
+  ]);
   const normalizedMoatAnalysis = normalizeMoatAnalysis(
     (moatAnalysisData?.[0] as MoatAnalysisRow | undefined) ?? null,
   );
-  const moatGeneratedAtShort = formatShortDate(normalizedMoatAnalysis?.updatedAtRaw);
+  const quality = normalizeCompanyQuality(qualityRow);
 
   return (
-    <SectionCard
-      id="moat-analysis"
-      title="Moat"
-      feedbackEnabled={Boolean(normalizedMoatAnalysis)}
-      feedbackCompanyCode={overview.company_code}
-      feedbackCompanyName={overview.company_name}
-      headerAction={<SectionUpdatedAt date={moatGeneratedAtShort} />}
-    >
-      {normalizedMoatAnalysis ? (
-        <MoatAnalysisSection
-          analysis={normalizedMoatAnalysis}
-          generatedAtShort={moatGeneratedAtShort}
-        />
-      ) : (
-        missingSectionState(
-          overview,
-          "moat-analysis",
-          "Moat Analysis",
-          "We haven't published a moat read for this company yet.",
-        )
-      )}
-    </SectionCard>
+    <QualitySection
+      companyCode={overview.company_code}
+      companyName={overview.company_name}
+      quality={quality}
+      qualityGeneratedAtShort={formatShortDate(quality?.generatedAtRaw)}
+      moat={normalizedMoatAnalysis}
+      moatGeneratedAtShort={formatShortDate(normalizedMoatAnalysis?.updatedAtRaw)}
+    />
   );
 }
 

@@ -27,7 +27,7 @@ const SHORT_LABELS: Record<string, string> = {
   "future-growth": "Growth",
   "walk-the-talk": "Walk the Talk",
   "guidance-history": "Guidance",
-  "moat-analysis": "Moat",
+  quality: "Quality",
   "valuation-check": "Valuation",
   community: "Community",
 };
