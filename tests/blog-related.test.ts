@@ -56,4 +56,71 @@ const chart = '<figure className="my-6">\n  <img src="/blog/market-voted.png" al
 assert.equal(liftPoster(chart), chart, "a non-poster figure is left as written");
 const svg = '<figure className="my-6">\n  <svg viewBox="0 0 1 1"></svg>\n</figure>';
 assert.equal(liftPoster(svg), svg, "an inline chart is left as written");
+
+// A company post with no companyCode has nothing to key on: no own stories, no comparisons.
+assert.deepEqual(nextReads(meta("loose-co", { category: "companies", company: "Loose Co" }), posts, bodyLinks), [], "code-less company post → nothing next");
+// Own stories come before comparisons, newest first, and the company list is capped too.
+const crowded: BlogPostMeta[] = [
+  meta("x-vs-y", { category: "companies", companyCode: "X", date: "2026-09-30" }),
+  meta("y-vs-ccl", { category: "companies", companyCode: "Y", date: "2026-09-29" }),
+  meta("x-vs-ccl", { category: "companies", companyCode: "X", date: "2026-09-28" }),
+  meta("ccl-two", { category: "companies", companyCode: "CCL", date: "2026-09-27" }),
+  meta("ccl-one", { category: "companies", companyCode: "CCL", date: "2026-09-26" }),
+  meta("ccl-zero", { category: "companies", companyCode: "CCL", date: "2026-09-25" }),
+  meta("essay", { category: "investing", date: "2026-09-24" }),
+];
+const crowdedBodies: Record<string, string> = {
+  "x-vs-y": "[X](/company/X) [Y](/company/Y)",
+  "y-vs-ccl": "[Y](/company/Y) [CCL](/company/CCL)",
+  "x-vs-ccl": "[X](/company/X) [CCL](/company/CCL)",
+  essay: "an essay that links [CCL](/company/CCL) is not a company story",
+};
+const asked: string[] = [];
+const spyLinks = (p: BlogPostMeta, code: string) => {
+  asked.push(p.slug);
+  return linksCompanyPage(crowdedBodies[p.slug] ?? "", code);
+};
+assert.deepEqual(nextReads(crowded[4], crowded, spyLinks).map((p) => p.slug), ["ccl-two", "ccl-zero", "y-vs-ccl"], "own stories (newest first) before comparisons, capped at NEXT_READ_MAX");
+assert.deepEqual(asked, ["x-vs-y", "y-vs-ccl", "x-vs-ccl"], "bodyLinks is asked only for other companies' posts — never own stories, never Notebook posts");
+assert.equal(nextReads(crowded[4], crowded, spyLinks).some((p) => p.slug === "essay"), false, "a Notebook post that links the page is not a next read");
+
+assert.equal(linksCompanyPage("[x](/company/HFCL2)", "HFCL"), false, "digit boundary");
+assert.equal(linksCompanyPage("[x](/company/HFCL?tab=guidance)", "HFCL"), true, "a query string counts");
+assert.equal(linksCompanyPage("[x](/company/ABCD)", "AB.D"), false, "regex specials in the code are literal");
+assert.equal(linksCompanyPage("[x](/company/M&M)", "M&M"), true);
+
+assert.equal(readMinutes(Array(299).fill("w").join(" ")), 1, "1.495 rounds down");
+assert.equal(readMinutes(Array(300).fill("w").join(" ")), 2, "1.5 rounds up");
+assert.equal(readMinutes(Array(50).fill("w").join(" ")), 1, "a short note clamps to one minute");
+
+const noAlt = '<figure className="my-6"><img src="/blog/hfcl-story-2026-09-21.png" className="x" /></figure>';
+assert.equal(liftPoster(noAlt), '<PostPoster src="/blog/hfcl-story-2026-09-21.png" alt="" />', "a missing alt becomes an empty alt");
+const noSrc = '<figure className="my-6"><img alt="poster" className="x" /></figure>';
+assert.equal(liftPoster(noSrc), noSrc, "no src → left as written");
+const reordered = '<figure>\n<img alt="Sterlite poster" className="x" src="/blog/stltech-story-2026-09-21.jpeg">\n</figure>\ntext\n<figure className="my-6"><img src="/blog/hfcl-story-2026-09-21.PNG" alt="HFCL poster"/></figure>';
+assert.equal(liftPoster(reordered), '<PostPoster src="/blog/stltech-story-2026-09-21.jpeg" alt="Sterlite poster" />\ntext\n<PostPoster src="/blog/hfcl-story-2026-09-21.PNG" alt="HFCL poster" />', "every figure lifts: attributes in any order, not self-closing, jpeg, upper-case extension");
+// A poster the lift cannot read fails the build instead of quietly shipping the full-width paint to phones.
+const captioned = '<figure className="my-6"><img src="/blog/ccl-story-2026-09-20.png" alt="a" /><figcaption>Source: CCL</figcaption></figure>';
+assert.throws(() => liftPoster(captioned), /was not lifted/, "a captioned poster figure throws");
+const gtInAlt = '<figure className="my-6"><img src="/blog/ccl-story-2026-09-20.png" alt="growth > 20%" /></figure>';
+assert.throws(() => liftPoster(gtInAlt), /was not lifted/, "a > inside alt throws rather than skipping the lift");
+const exprAlt = '<figure className="my-6"><img src="/blog/ccl-story-2026-09-20.png" alt={"a"} /></figure>';
+assert.throws(() => liftPoster(exprAlt), /double-quoted/, "alt={…} throws rather than lifting with an empty alt");
+const dataAlt = '<figure className="my-6"><img data-alt="nope" src="/blog/ccl-story-2026-09-20.png" alt="real" /></figure>';
+assert.equal(liftPoster(dataAlt), '<PostPoster src="/blog/ccl-story-2026-09-20.png" alt="real" />', "data-alt is not alt");
+const fenced = 'Text.\n\n```mdx\n<figure className="my-6"><img src="/blog/ccl-story-2026-09-20.png" alt="a" /></figure>\n```\n\nMore.';
+assert.equal(liftPoster(fenced), fenced, "a poster figure inside a code fence is a code sample, not a poster");
+const chartOnly = '<figure className="my-6"><img src="/blog/market-voted.png" alt="chart > 1" /></figure>';
+assert.equal(liftPoster(chartOnly), chartOnly, "a non-poster img with > in alt is left alone, no throw");
+
+// Two posts with no known category never recommend each other (a frontmatter typo must not pair posts up).
+assert.deepEqual(nextReads(meta("u1"), [meta("u1"), meta("u2")], bodyLinks), []);
+
+assert.equal(linksCompanyPage("[x](/company/hfcl)", "HFCL"), true, "the portal route uppercases, so case does not matter");
+assert.equal(linksCompanyPage("[x](/company/HFCL-ARCHIVE)", "HFCL"), false, "a hyphenated longer code is not this code");
+
+const lonely = Array(20000).fill("< ").join("") + " " + Array(200).fill("w").join(" ");
+const t0 = Date.now();
+assert.equal(readMinutes(lonely) >= 1, true);
+assert.ok(Date.now() - t0 < 500, "20k unclosed < must not be quadratic");
 console.log("blog-related: ok");
