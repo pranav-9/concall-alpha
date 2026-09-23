@@ -57,9 +57,17 @@ export default async function BlogPostPage({ params }: PageProps) {
   const minutes = readMinutes(post.content);
   // Derived, never hand-picked: the company's other stories and any comparison
   // that links its page; for a Notebook post, the newest in its category.
-  const next = nextReads(post, getAllPostMeta(), (p, code) =>
-    linksCompanyPage(getPostBySlug(p.slug)?.content ?? "", code),
-  );
+  // Each candidate's body is read at most once per page (the lookup is asked
+  // per company code; a comparison links two).
+  const bodies = new Map<string, string>();
+  const next = nextReads(post, getAllPostMeta(), (p, code) => {
+    let body = bodies.get(p.slug);
+    if (body === undefined) {
+      body = getPostBySlug(p.slug)?.content ?? "";
+      bodies.set(p.slug, body);
+    }
+    return linksCompanyPage(body, code);
+  });
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -115,7 +123,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             <ul className="mt-3 space-y-3">
               {next.map((p) => (
                 <li key={p.slug}>
-                  <Link href={`/blog/${p.slug}`} className="group block">
+                  <Link href={`/blog/${p.slug}`} className="group block py-1">
                     <span className="block text-[15px] font-semibold leading-snug text-foreground group-hover:underline">
                       {p.title}
                     </span>

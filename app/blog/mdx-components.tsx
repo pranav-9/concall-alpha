@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ComponentPropsWithoutRef } from "react";
 import type { MDXComponents } from "mdx/types";
 
-import { PostImage, PostPoster } from "./post-image";
+import { PostPoster } from "./post-image";
 
 // Hand-styled component map so build-log prose matches the portal's tokens
 // (no @tailwindcss/typography). Same ethos as how-scores-work.
@@ -30,7 +30,7 @@ export const mdxComponents: MDXComponents = {
   ol: (props: ComponentPropsWithoutRef<"ol">) => (
     <ol className={`ml-5 list-decimal space-y-2 ${BODY}`} {...props} />
   ),
-  img: PostImage,
+  // The poster figure, lifted out of the source by `liftPoster` (app/blog/related.ts).
   PostPoster,
   li: (props: ComponentPropsWithoutRef<"li">) => (
     <li className="pl-1" {...props} />
