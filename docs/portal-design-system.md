@@ -373,6 +373,9 @@ A small, fixed scale. Hand-sized values outside this scale are not allowed witho
 | Milestone year | `text-[17px] font-bold leading-tight tracking-tight tabular-nums` | Company-timeline years |
 | Body | `text-sm leading-relaxed` (14px) | Default prose, list items, form field text |
 | Body lead | `text-base leading-7` (16px) | Hero subtitle, intro paragraph |
+| Journal prose | `text-[17px] leading-[1.7] text-foreground/90` | Post bodies on `/blog/<slug>` (lists, quotes) — a 1,500-word read, sized for it (2026-09-23) |
+| Journal heading | `text-[22px] font-semibold leading-snug tracking-tight` | Post `h2`; `h3` is `text-lg` |
+| Journal card title | `text-[15px] font-semibold` | Story rows, company-story cards, the post page's Next read |
 | Section title | `text-lg font-bold leading-tight` | `SectionCard` titles, atmospheric panel titles |
 | Page title (research) | `text-2xl sm:text-3xl font-bold` | Page H1 inside a research surface |
 | Page title (atmospheric) | `text-3xl sm:text-4xl font-black tracking-[-0.04em]` | Hero H1 inside `HERO_CARD` |
