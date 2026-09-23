@@ -7,6 +7,7 @@ import { getSiteUrl } from "@/lib/site-url";
 
 import { CATEGORY_LABELS, getAllPostMeta, getPostBySlug } from "../posts";
 import { mdxComponents } from "../mdx-components";
+import { liftPoster, linksCompanyPage, nextReads, readMinutes } from "../related";
 import { JournalReadTracker } from "@/components/journal-read-tracker";
 import { TelegramJoinCard } from "@/components/telegram-join-card";
 
@@ -53,6 +54,20 @@ export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params;
   const post = getPostBySlug(slug);
   if (!post) notFound();
+  const minutes = readMinutes(post.content);
+  // Derived, never hand-picked: the company's other stories and any comparison
+  // that links its page; for a Notebook post, the newest in its category.
+  // Each candidate's body is read at most once per page (the lookup is asked
+  // per company code; a comparison links two).
+  const bodies = new Map<string, string>();
+  const next = nextReads(post, getAllPostMeta(), (p, code) => {
+    let body = bodies.get(p.slug);
+    if (body === undefined) {
+      body = getPostBySlug(p.slug)?.content ?? "";
+      bodies.set(p.slug, body);
+    }
+    return linksCompanyPage(body, code);
+  });
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -88,17 +103,40 @@ export default async function BlogPostPage({ params }: PageProps) {
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             {post.title}
           </h1>
-          <time
-            dateTime={post.date}
-            className="mt-2 block text-xs text-muted-foreground"
-          >
-            {post.dateLabel}
-          </time>
+          <p className="mt-2 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground/80">Pranav Yadav</span>
+            {" · "}
+            <time dateTime={post.date}>{post.dateLabel}</time>
+            {" · "}
+            <span>{minutes} min read</span>
+          </p>
         </header>
 
-        <div className="space-y-4">
-          <MDXRemote source={post.content} components={mdxComponents} />
+        <div className="space-y-5">
+          <MDXRemote source={liftPoster(post.content)} components={mdxComponents} />
         </div>
+        {next.length > 0 ? (
+          <nav aria-label="Next read" className="mt-12 border-t border-border pt-6">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Next read
+            </p>
+            <ul className="mt-3 space-y-3">
+              {next.map((p) => (
+                <li key={p.slug}>
+                  <Link href={`/blog/${p.slug}`} className="group block py-1">
+                    <span className="block text-[15px] font-semibold leading-snug text-foreground group-hover:underline">
+                      {p.title}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      {p.company ? `${p.company} · ` : ""}
+                      {p.dateLabel}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
         <div className="mt-10">
           <TelegramJoinCard surface="journal_post" />
         </div>
