@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { ComponentPropsWithoutRef } from "react";
 import type { MDXComponents } from "mdx/types";
 
+import { JOURNAL_CONTINUE_ANCHOR } from "@/lib/signup-gate";
+
 import { PostPoster } from "./post-image";
 
 // Hand-styled component map so build-log prose matches the portal's tokens
@@ -32,6 +34,9 @@ export const mdxComponents: MDXComponents = {
   ),
   // The poster figure, lifted out of the source by `liftPoster` (app/blog/related.ts).
   PostPoster,
+  // Where the sign-up gate clips a post, placed by `gatePost` (app/blog/related.ts).
+  // Also the anchor a new sign-up lands on (`buildJournalGateNext`).
+  GateCut: () => <div id={JOURNAL_CONTINUE_ANCHOR} data-gate-cut aria-hidden="true" />,
   li: (props: ComponentPropsWithoutRef<"li">) => (
     <li className="pl-1" {...props} />
   ),

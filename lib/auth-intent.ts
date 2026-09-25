@@ -26,6 +26,8 @@ export type AuthIntent = {
   source: AuthSource;
   companyCode?: string;
   sectionId?: string;
+  /** Journal gate only: the post the sign-up started from. */
+  postSlug?: string;
   at: number;
 };
 
@@ -61,6 +63,7 @@ export function parseAuthIntent(raw: string | null | undefined, nowMs: number): 
     source: v.source as AuthSource,
     companyCode: typeof v.companyCode === "string" ? v.companyCode : undefined,
     sectionId: typeof v.sectionId === "string" ? v.sectionId : undefined,
+    postSlug: typeof v.postSlug === "string" ? v.postSlug : undefined,
     at: v.at,
   };
 }
@@ -100,7 +103,7 @@ export function clearPendingAuthIntent(): void {
  */
 export function recordAuthAttempt(
   method: AuthMethod,
-  explicit?: Pick<AuthIntent, "source" | "companyCode" | "sectionId">,
+  explicit?: Pick<AuthIntent, "source" | "companyCode" | "sectionId" | "postSlug">,
 ): void {
   if (explicit) {
     writePendingAuthIntent({ method, ...explicit });
@@ -126,6 +129,7 @@ export function nextAuthIntent(
       source: "gate",
       companyCode: pending.companyCode,
       sectionId: pending.sectionId,
+      postSlug: pending.postSlug,
     };
   }
   return { method, source: "auth_page" };
