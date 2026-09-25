@@ -1,12 +1,15 @@
-// Splits the flat post list into the Journal's two lanes:
+// Splits the flat post list into the Journal's lanes:
 //   - Company Stories: the "companies" write-ups, grouped by company so each
-//     name builds a tracked history (story N of M) plus a per-company ledger.
+//     name builds a tracked history (story N of M).
+//   - Head to head (desktop only): posts tagged with a `comparison` block.
 //   - The Notebook: the Product / How-I-invest essays.
 // Pure and node-dep-free (derives from BlogPostMeta only), so it stays testable
 // and can run in either a server or client context. Nothing here is
 // hand-curated per company — the grouping falls out of the frontmatter.
 
 import { CATEGORY_ORDER, NOTEBOOK_CATEGORIES, type BlogCategory } from "./categories";
+import { isComparison, type Comparison } from "./comparison";
+import { weekGroup, type WeekGroup } from "./dates";
 import type { BlogPostMeta } from "./posts";
 
 /** Two-digit counter ("06") — the lane count and the Notebook's "No." gutter. */
@@ -21,23 +24,11 @@ export type CompanyStory = BlogPostMeta & {
   storyTotal: number;
 };
 
-export type LedgerEntry = {
-  /** Portal CODE, "" when a post didn't set one. */
-  code: string;
-  name: string;
-  /** Stories for this company. */
-  count: number;
-  /** Slug of the company's newest story, for a deep link. */
-  latestSlug: string;
-};
-
 export type JournalLanes = {
   /** Newest company write-up, given the featured treatment. */
   featured: CompanyStory | null;
   /** The remaining company write-ups, newest-first. */
   companyRest: CompanyStory[];
-  /** One row per company, newest-story-first. */
-  ledger: LedgerEntry[];
   /** Product / How-I-invest posts, newest-first. */
   notebook: BlogPostMeta[];
   /** Total company stories. */
@@ -50,21 +41,20 @@ function companyKey(p: BlogPostMeta): string {
   return p.companyCode ?? p.company ?? p.slug;
 }
 
-/** `posts` must be newest-first (as `getAllPostMeta` returns). */
-export function deriveJournalLanes(posts: BlogPostMeta[]): JournalLanes {
-  const companyPosts = posts.filter((p) => p.category === "companies");
-  const notebook = posts.filter(
-    (p) => p.category !== undefined && NOTEBOOK_CATEGORIES.includes(p.category),
-  );
-
-  // Stories per company.
+/**
+ * Number a newest-first run of company posts: storyIndex counts up
+ * chronologically (oldest = 1) within each company, storyTotal is the
+ * company's count within the SAME run.
+ */
+function indexStories(companyPosts: BlogPostMeta[]): {
+  stories: CompanyStory[];
+  totals: Map<string, number>;
+} {
   const totals = new Map<string, number>();
   for (const p of companyPosts) {
     const k = companyKey(p);
     totals.set(k, (totals.get(k) ?? 0) + 1);
   }
-
-  // storyIndex counts up chronologically (oldest = 1) within each company.
   const runningIndex = new Map<string, number>();
   const indexBySlug = new Map<string, number>();
   for (const p of [...companyPosts].reverse()) {
@@ -73,38 +63,102 @@ export function deriveJournalLanes(posts: BlogPostMeta[]): JournalLanes {
     runningIndex.set(k, next);
     indexBySlug.set(p.slug, next);
   }
-
-  const stories: CompanyStory[] = companyPosts.map((p) => ({
+  const stories = companyPosts.map((p) => ({
     ...p,
     storyIndex: indexBySlug.get(p.slug) ?? 1,
     storyTotal: totals.get(companyKey(p)) ?? 1,
   }));
+  return { stories, totals };
+}
+
+/**
+ * The phone paint's lanes. Comparison posts still count as company stories
+ * here — the phone Journal predates the Head to head lane and is unchanged.
+ * `posts` must be newest-first (as `getAllPostMeta` returns).
+ */
+export function deriveJournalLanes(posts: BlogPostMeta[]): JournalLanes {
+  const companyPosts = posts.filter((p) => p.category === "companies");
+  const notebook = posts.filter(
+    (p) => p.category !== undefined && NOTEBOOK_CATEGORIES.includes(p.category),
+  );
+  const { stories, totals } = indexStories(companyPosts);
 
   const [featured = null, ...companyRest] = stories;
-
-  // Ledger: first occurrence of each company wins (companyPosts is newest-first).
-  const ledgerSeen = new Set<string>();
-  const ledger: LedgerEntry[] = [];
-  for (const p of companyPosts) {
-    const k = companyKey(p);
-    if (ledgerSeen.has(k)) continue;
-    ledgerSeen.add(k);
-    ledger.push({
-      code: p.companyCode ?? "",
-      name: p.company ?? p.companyCode ?? "Company",
-      count: totals.get(k) ?? 1,
-      latestSlug: p.slug,
-    });
-  }
 
   return {
     featured,
     companyRest,
-    ledger,
     notebook,
     companyCount: companyPosts.length,
     companyNameCount: totals.size,
   };
+}
+
+export type ComparisonPost = BlogPostMeta & { comparison: Comparison };
+
+export type DesktopJournal = {
+  /** Company write-ups minus comparisons, newest-first, numbered among themselves. */
+  stories: CompanyStory[];
+  /** Posts tagged with a `comparison` block, newest-first. */
+  headToHead: ComparisonPost[];
+  /** Product / How-I-invest posts, newest-first. */
+  notebook: BlogPostMeta[];
+  /** Distinct companies across `stories`. */
+  companyNameCount: number;
+  /** The desktop paint's empty-state key: any of its three lanes has a post. */
+  hasPosts: boolean;
+};
+
+/**
+ * The desktop paint's three lanes. A post with a `comparison` block (only a
+ * company write-up may carry one — parseComparison enforces it) appears only
+ * in Head to head, so Company Stories counts and "Story N of M" ignore it.
+ * `posts` must be newest-first.
+ */
+export function deriveDesktopJournal(posts: BlogPostMeta[]): DesktopJournal {
+  const headToHead = posts.filter(isComparison);
+  const plain = posts.filter((p) => !p.comparison);
+  const { stories, totals } = indexStories(plain.filter((p) => p.category === "companies"));
+  const notebook = plain.filter(
+    (p) => p.category !== undefined && NOTEBOOK_CATEGORIES.includes(p.category),
+  );
+  return {
+    stories,
+    headToHead,
+    notebook,
+    companyNameCount: totals.size,
+    hasPosts: stories.length + headToHead.length + notebook.length > 0,
+  };
+}
+
+/** Rows "More stories" shows before "Show all". */
+export const MORE_STORIES_ROWS = 5;
+
+const WEEK_ORDER: WeekGroup[] = ["this", "last", "earlier"];
+
+export type MoreStoriesView = {
+  /** More than MORE_STORIES_ROWS stories, so the toggle shows. */
+  canFold: boolean;
+  /** Folded open (or nothing to fold). */
+  expanded: boolean;
+  /** Visible rows by week, newest group first, empty groups dropped. */
+  groups: { key: WeekGroup; rows: CompanyStory[] }[];
+};
+
+/** The archive's visible rows: the row limit applies first, then week grouping. */
+export function moreStoriesView(
+  stories: CompanyStory[],
+  today: string,
+  expandedFlag: boolean,
+): MoreStoriesView {
+  const canFold = stories.length > MORE_STORIES_ROWS;
+  const expanded = expandedFlag || !canFold;
+  const visible = expanded ? stories : stories.slice(0, MORE_STORIES_ROWS);
+  const groups = WEEK_ORDER.map((key) => ({
+    key,
+    rows: visible.filter((s) => weekGroup(s.date, today) === key),
+  })).filter((g) => g.rows.length);
+  return { canFold, expanded, groups };
 }
 
 /**

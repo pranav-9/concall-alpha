@@ -9,7 +9,10 @@ export type NotebookFilter = BlogCategory | "all";
 type Ctx = {
   filter: NotebookFilter;
   setFilter: (f: NotebookFilter) => void;
-  /** Phone Company Stories: whether the rows past the first few are shown. */
+  /**
+   * Company Stories archive fold, shared by the phone rows (PHONE_STORY_ROWS)
+   * and the desktop "More stories" (MORE_STORIES_ROWS).
+   */
   storiesExpanded: boolean;
   setStoriesExpanded: (v: boolean) => void;
 };
