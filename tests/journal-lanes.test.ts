@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 
+import { parseComparison } from "../app/blog/comparison";
 import {
+  comparisonTitle,
+  deriveDesktopJournal,
   deriveJournalLanes,
   filterNotebook,
   notebookCatalog,
@@ -61,16 +64,6 @@ assert.deepEqual(
   ["p2", "i1", "p1"],
   "notebook = product + investing only; uncategorised posts drop out of both lanes",
 );
-assert.deepEqual(
-  lanes.ledger.map((l) => [l.code, l.name, l.count, l.latestSlug]),
-  [
-    ["NEULANDLAB", "Neuland", 3, "n3"],
-    ["CARTRADE", "CarTrade", 1, "c1"],
-    ["", "Loose Co", 1, "nocode"],
-  ],
-  "ledger: one row per company, newest-story-first, code-less companies keep an empty code",
-);
-
 // --- storyLabel / priorStory / priorLinkLabel
 assert.equal(storyLabel(lanes.featured!), "Story 3 of 3");
 assert.equal(storyLabel(lanes.companyRest[1]), "Story 1", "single-story company");
@@ -101,5 +94,46 @@ assert.equal(cat.numberFor.get("p1"), "03", "a filtered post keeps its No.");
 const productOnly = notebookCatalog(lanes.notebook.filter((p) => p.category === "product"));
 assert.deepEqual(productOnly.categories, ["product"], "a category with zero posts drops out of the chip strip");
 assert.deepEqual(notebookCatalog([]).categories, [], "empty notebook → no chips");
+
+// --- comparison frontmatter
+assert.equal(parseComparison(undefined, "f.mdx"), undefined, "no block = not a comparison");
+const cmp = parseComparison(
+  { industry: "Optical fibre", a: { name: "Sterlite", code: "stltech" }, b: { name: "HFCL", code: "HFCL" } },
+  "f.mdx",
+  "STLTECH",
+);
+assert.deepEqual(cmp?.a, { name: "Sterlite", code: "STLTECH" }, "codes upper-cased");
+assert.throws(
+  () => parseComparison({ industry: "x", a: { name: "A" }, b: { name: "B", code: "B" } }, "f.mdx"),
+  /f\.mdx.*missing a\.code/,
+  "a partial block fails the build, naming the file and field",
+);
+assert.throws(() => parseComparison({ a: {}, b: {} }, "f.mdx"), /industry, a\.name, a\.code, b\.name, b\.code/);
+assert.throws(() => parseComparison("Optical fibre", "f.mdx"), /must be a mapping/);
+assert.throws(
+  () => parseComparison({ industry: "x", a: { name: "B", code: "B" }, b: { name: "A", code: "A" } }, "f.mdx", "A"),
+  /a\.code \(B\) must be the post's companyCode \(A\)/,
+  "a = the post's primary company",
+);
+assert.equal(comparisonTitle("CCL Products: It has the kitchen. Dinner: served"), "It has the kitchen. Dinner: served");
+assert.equal(comparisonTitle("No prefix here"), "No prefix here");
+
+// --- deriveDesktopJournal: comparisons leave Company Stories for Head to head
+const vs = mk("n-vs-c", "2026-09-23", "companies", {
+  company: "Neuland",
+  companyCode: "NEULANDLAB",
+  comparison: { industry: "Pharma", a: { name: "Neuland", code: "NEULANDLAB" }, b: { name: "CarTrade", code: "CARTRADE" } },
+});
+const desk = deriveDesktopJournal([vs, ...posts]);
+assert.deepEqual(desk.headToHead.map((p) => p.slug), ["n-vs-c"]);
+assert.ok(!desk.stories.some((s) => s.slug === "n-vs-c"), "no duplicate in Company Stories");
+assert.equal(desk.stories[0].slug, "n3");
+assert.equal(storyLabel(desk.stories[0]), "Story 3 of 3", "story numbering ignores the comparison");
+assert.equal(desk.companyNameCount, 3);
+assert.deepEqual(desk.notebook.map((p) => p.slug), ["p2", "i1", "p1"]);
+const untagged = deriveDesktopJournal([{ ...vs, comparison: undefined }, ...posts]);
+assert.deepEqual(untagged.headToHead, [], "untagged → back in Company Stories");
+assert.equal(storyLabel(untagged.stories[0]), "Story 4 of 4");
+assert.equal(deriveJournalLanes([vs, ...posts]).featured?.slug, "n-vs-c", "phone lanes unchanged: comparisons stay in");
 
 console.log("journal-lanes: ok");
