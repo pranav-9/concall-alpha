@@ -4,6 +4,7 @@ import {
   GATE_MIN_HIDDEN_PX,
   GATE_PEEK_PX,
   buildGateNext,
+  buildJournalGateNext,
   companyCodeFromNext,
   gatedSectionCopy,
   isGatedSection,
@@ -55,6 +56,9 @@ assert.equal(gate(true, false, "nope"), false); // unknown id
 assert.equal(buildGateNext("HFCL", "quality"), "/company/HFCL#quality");
 assert.equal(buildGateNext("M&M", "future-growth"), "/company/M%26M#future-growth");
 assert.equal(isSafeNextPath(buildGateNext("M&M", "future-growth")), true);
+assert.equal(buildJournalGateNext("shreeref-stores-resupply"), "/blog/shreeref-stores-resupply");
+assert.equal(isSafeNextPath(buildJournalGateNext("a b")), true);
+assert.equal(companyCodeFromNext(buildJournalGateNext("ccl-toll-road")), null, "journal return → generic sign-up headline");
 assert.equal(isSafeNextPath(buildGateNext("../../evil", "x")), true); // encoded, still same-site
 assert.equal(buildGateNext("../../evil", "x"), "/company/..%2F..%2Fevil#x");
 
