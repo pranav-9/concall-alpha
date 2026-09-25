@@ -5,9 +5,13 @@ import matter from "gray-matter";
 
 import { asCategory } from "./categories";
 import type { BlogCategory } from "./categories";
+import { parseComparison } from "./comparison";
+import type { Comparison } from "./comparison";
 
 export { CATEGORY_LABELS } from "./categories";
 export type { BlogCategory } from "./categories";
+export { isComparison } from "./comparison";
+export type { Comparison } from "./comparison";
 
 // Server-only: reads the MDX files in app/blog/posts at request/build time.
 const POSTS_DIR = path.join(process.cwd(), "app/blog/posts");
@@ -43,7 +47,7 @@ export type BlogPostMeta = {
   /**
    * Company write-ups only: the company's display name (e.g. "Neuland
    * Laboratories"). Drives the "Company Stories" lane — grouping a company's
-   * stories together and building the per-company history ledger.
+   * stories together and numbering its stories (story N of M).
    */
   company?: string;
   /**
@@ -52,6 +56,11 @@ export type BlogPostMeta = {
    * page. Falls back to `company`/`slug` for grouping when absent.
    */
   companyCode?: string;
+  /**
+   * Head-to-head posts only: the two peers and their shared industry. Tagged
+   * posts leave Company Stories for the Head to head lane (desktop).
+   */
+  comparison?: Comparison;
 };
 
 export type BlogPost = BlogPostMeta & { content: string };
@@ -73,6 +82,8 @@ function listPostFiles(): string[] {
 function readMeta(file: string): BlogPostMeta {
   const raw = fs.readFileSync(path.join(POSTS_DIR, file), "utf8");
   const { data } = matter(raw);
+  const companyCode =
+    typeof data.companyCode === "string" ? data.companyCode.toUpperCase() : undefined;
   return {
     slug: fileToSlug(file),
     date: String(data.date ?? ""),
@@ -87,10 +98,8 @@ function readMeta(file: string): BlogPostMeta {
         : undefined,
     imageAlt: typeof data.imageAlt === "string" ? data.imageAlt : undefined,
     company: typeof data.company === "string" ? data.company : undefined,
-    companyCode:
-      typeof data.companyCode === "string"
-        ? data.companyCode.toUpperCase()
-        : undefined,
+    companyCode,
+    comparison: parseComparison(data.comparison, file, companyCode),
   };
 }
 
