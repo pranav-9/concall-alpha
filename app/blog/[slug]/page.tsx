@@ -3,11 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 
+import { isSignupGateEnabled } from "@/lib/signup-gate";
 import { getSiteUrl } from "@/lib/site-url";
 
 import { CATEGORY_LABELS, getAllPostMeta, getPostBySlug } from "../posts";
 import { mdxComponents } from "../mdx-components";
-import { liftPoster, linksCompanyPage, nextReads, readMinutes } from "../related";
+import { gatePost, liftPoster, linksCompanyPage, nextReads, readMinutes } from "../related";
+import { JournalGate } from "../journal-gate";
 import { JournalReadTracker } from "@/components/journal-read-tracker";
 import { TelegramJoinCard } from "@/components/telegram-join-card";
 
@@ -55,6 +57,14 @@ export default async function BlogPostPage({ params }: PageProps) {
   const post = getPostBySlug(slug);
   if (!post) notFound();
   const minutes = readMinutes(post.content);
+  // Sign-up gate: read at build (posts are static), so like the company page it
+  // flips with a redeploy. Who is reading is decided on the client (JournalGate).
+  const gate = isSignupGateEnabled() ? gatePost(post.content) : null;
+  const postBody = (
+    <div className="space-y-5">
+      <MDXRemote source={liftPoster(gate?.source ?? post.content)} components={mdxComponents} />
+    </div>
+  );
   // Derived, never hand-picked: the company's other stories and any comparison
   // that links its page; for a Notebook post, the newest in its category.
   // Each candidate's body is read at most once per page (the lookup is asked
@@ -112,9 +122,13 @@ export default async function BlogPostPage({ params }: PageProps) {
           </p>
         </header>
 
-        <div className="space-y-5">
-          <MDXRemote source={liftPoster(post.content)} components={mdxComponents} />
-        </div>
+        {gate ? (
+          <JournalGate slug={slug} companyCode={post.companyCode} below={gate.below}>
+            {postBody}
+          </JournalGate>
+        ) : (
+          postBody
+        )}
         {next.length > 0 ? (
           <nav aria-label="Next read" className="mt-12 border-t border-border pt-6">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">

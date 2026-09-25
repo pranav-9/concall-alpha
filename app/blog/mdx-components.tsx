@@ -32,6 +32,8 @@ export const mdxComponents: MDXComponents = {
   ),
   // The poster figure, lifted out of the source by `liftPoster` (app/blog/related.ts).
   PostPoster,
+  // Where the sign-up gate clips a post, placed by `gatePost` (app/blog/related.ts).
+  GateCut: () => <div data-gate-cut aria-hidden="true" />,
   li: (props: ComponentPropsWithoutRef<"li">) => (
     <li className="pl-1" {...props} />
   ),
