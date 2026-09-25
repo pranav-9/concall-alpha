@@ -38,6 +38,7 @@ const chrome = [
   "/usr/bin/google-chrome",
   "/usr/bin/google-chrome-stable",
   "/usr/bin/chromium",
+  "/usr/bin/chromium-browser",
 ].find((p) => p && existsSync(p));
 if (!chrome) {
   console.error("No Chrome binary found; set CHROME_PATH.");
@@ -83,6 +84,8 @@ try {
         clipScroll: clip ? (clip.scrollTop = 500, clip.scrollTop) : null,
         email,
         nextReadOutside: !inClip(document.querySelector('nav[aria-label="Next read"]')),
+        telegram: !!document.querySelector('[aria-label="Telegram group"]'),
+        telegramOutside: !inClip(document.querySelector('[aria-label="Telegram group"]')),
         title: document.querySelector("h1")?.textContent ?? "",
         cls: window.__cls,
       };
@@ -97,8 +100,10 @@ try {
       check(r.markerInert && r.afterInert, `${slug}: cut and below are inert`);
       check(r.overflow === "clip" && r.maxHeight !== "none", `${slug}: clipped`, `max-height ${r.maxHeight}`);
       check(r.clipScroll === 0, `${slug}: clip box can't scroll`);
-      check(r.email === `/auth/sign-up?next=${encodeURIComponent(`/blog/${slug}`)}`, `${slug}: sign-up returns to the post`, r.email ?? "");
+      check(r.email === `/auth/sign-up?next=${encodeURIComponent(`/blog/${slug}#continue-reading`)}`, `${slug}: sign-up returns to the post, at the cut`, r.email ?? "");
       check(r.nextReadOutside, `${slug}: Next read stays outside the gate`);
+      // The Telegram card renders only when NEXT_PUBLIC_TELEGRAM_URL is set.
+      check(!r.telegram || r.telegramOutside, `${slug}: Telegram card stays outside the gate`, r.telegram ? "" : "not rendered");
     }
     check(r.cls <= 0.01, `${slug}: CLS ≤ 0.01`, r.cls.toFixed(4));
     await page.close();

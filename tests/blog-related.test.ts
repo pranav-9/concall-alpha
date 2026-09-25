@@ -143,10 +143,14 @@ const storyGate = gatePost(story);
 assert.ok(storyGate);
 assert.equal(cutBefore(storyGate.source), "## 1. It met **all three** guides");
 assert.deepEqual(storyGate.below, ["It met all three guides", "The order book fell", "The lock"], "next 3 headings, plain");
-assert.equal(storyGate.source.replace(`${GATE_CUT_TAG}\n\n`, ""), story, "only the marker is added");
+assert.equal(storyGate.source.replace(`\n${GATE_CUT_TAG}\n\n`, ""), story, "only the marker (and its blank lines) is added");
+
+// The marker never joins the paragraph above: a blank line on both sides even when the heading hugs prose.
+const hug = gatePost(doc("Intro line", "## One", "a", "## Two", "b"));
+assert.ok(hug?.source.includes(`Intro line\n## One\na\n\n${GATE_CUT_TAG}\n\n## Two`));
 
 // 2. Unnumbered story: the heading after "At a glance".
-const netweb = gatePost(doc("## The central takeaway", "", "## At a glance", "", "## Two promises", "", "## The backlog", ""));
+const netweb = gatePost(doc("## The central takeaway", "", "t", "", "## At a glance", "", "g", "", "## Two promises", "", "## The backlog", ""));
 assert.equal(netweb && cutBefore(netweb.source), "## Two promises");
 
 // 3. A Notebook post: the second heading.
@@ -156,9 +160,18 @@ assert.deepEqual(notebook?.below, ["Quarterly Score", "Guidance Tracker"]);
 
 // Too little structure → no gate; headings inside code fences don't count.
 assert.equal(gatePost("Intro\n\n## Only one\n\ntext"), null);
+assert.equal(gatePost("Intro\n\n## 1. Only one\n\ntext"), null, "a numbered heading alone is still one heading");
+assert.equal(gatePost(doc("## 1. First", "", "a", "", "## 2. Second", "", "b")), null, "no prose above the cut = no opening = no gate");
+assert.equal(gatePost(doc("Intro", "", "## Takeaway", "", "t", "", "## At a glance", "", "g")), null, "never cut at the glance itself");
+assert.equal(gatePost(doc("## One", "", "~~~", "## 1. not a heading", "~~~", "")), null, "tilde fences count too");
+assert.equal(cutBefore(gatePost(doc("Intro", "", "## A", "", "````", "```", "## 1. inside", "```", "````", "", "## B", ""))!.source), "## B", "a backtick line inside a tilde/longer fence doesn't end it");
 assert.equal(gatePost("no headings at all"), null);
 assert.equal(gatePost(doc("## One", "", "```", "## 1. not a heading", "```", "")), null);
 assert.equal(plainHeading("12. `Code` and _em_"), "Code and em");
+assert.equal(plainHeading("A closed heading ##"), "A closed heading");
+// The poster alone is not an opening: prose must sit above the cut.
+assert.equal(gatePost(doc('<figure className="my-6">', '  <img src="/blog/x-story-2026-09-01.png" alt="a" />', "</figure>", "", "## 1. A", "", "## 2. B")), null);
+assert.equal(gatePost(doc("{/* note */}", "", "## 1. A", "", "## 2. B")), null);
 
 // Every live post: a gate, when there is one, leaves an opening and hides something.
 for (const file of readdirSync(POSTS_DIR).filter((f) => f.endsWith(".mdx"))) {
@@ -166,7 +179,7 @@ for (const file of readdirSync(POSTS_DIR).filter((f) => f.endsWith(".mdx"))) {
   const gate = gatePost(body);
   if (!gate) continue;
   const at = gate.source.indexOf(GATE_CUT_TAG);
-  assert.ok(at > 0 && gate.below.length > 0, file);
+  assert.ok(gate.source.slice(0, at).trim().length > 0 && gate.below.length > 0, file);
   assert.doesNotThrow(() => liftPoster(gate.source), file);
 }
 

@@ -106,9 +106,12 @@ export function buildGateNext(companyCode: string, sectionId: string): string {
 /** `section_id` the Journal gate reports under; the post is its own property. */
 export const JOURNAL_GATE_SECTION = "journal";
 
-/** Return path that lands the reader back on the same Journal post. */
+/** Id of the Journal cut marker — where a reader lands after signing up. */
+export const JOURNAL_CONTINUE_ANCHOR = "continue-reading";
+
+/** Return path that lands the reader back on the same Journal post, at the cut. */
 export function buildJournalGateNext(slug: string): string {
-  return `/blog/${encodeURIComponent(slug)}`;
+  return `/blog/${encodeURIComponent(slug)}#${JOURNAL_CONTINUE_ANCHOR}`;
 }
 
 /** Company code from a gate return path, for the sign-up page's headline. */

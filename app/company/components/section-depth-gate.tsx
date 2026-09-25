@@ -42,14 +42,11 @@ import { elevatedBlockClass } from "./surface-tokens";
  * before paint, so the full section is never flashed. No `useId` here — this
  * renders inside lazily-loaded panels.
  *
- * Journal posts reuse it (`scope="post"`, see JournalGate). A post is a static
- * page, so the auth answer arrives on the client: until it does, `active` is
- * false and the gate stays open without remounting the post body.
+ * Journal posts reuse it (`scope="post"`, `postSlug`, no company code — see
+ * app/blog/[slug]/page.tsx), with the same server-side auth check.
  */
 type GateState = { kind: "gated"; height: number } | { kind: "open" };
 type GateScope = "section" | "post";
-
-const SCOPE_NOUN: Record<GateScope, string> = { section: "section", post: "post" };
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
@@ -83,7 +80,6 @@ export function SectionDepthGate({
   sectionId,
   below,
   nextPath,
-  active = true,
   scope = "section",
   postSlug,
   children,
@@ -92,8 +88,6 @@ export function SectionDepthGate({
   sectionId: string;
   below: readonly string[];
   nextPath: string;
-  /** false = render open (no clip, no card) without remounting the children. */
-  active?: boolean;
   scope?: GateScope;
   postSlug?: string;
   children: React.ReactNode;
@@ -106,10 +100,6 @@ export function SectionDepthGate({
     const clip = clipRef.current;
     const content = contentRef.current;
     if (!clip || !content) return;
-    if (!active) {
-      setState((prev) => (prev.kind === "open" ? prev : { kind: "open" }));
-      return;
-    }
 
     let inerted: Element[] = [];
     const release = () => {
@@ -169,7 +159,7 @@ export function SectionDepthGate({
       resize?.disconnect();
       release();
     };
-  }, [active]);
+  }, []);
 
   const isOpen = state.kind === "open";
   const height = state.kind === "gated" ? state.height : undefined;
@@ -218,8 +208,8 @@ function GateCard({
 }) {
   const cardRef = React.useRef<HTMLElement>(null);
   const intent = React.useMemo(
-    () => ({ source: "gate" as const, companyCode, sectionId }),
-    [companyCode, sectionId],
+    () => ({ source: "gate" as const, companyCode, sectionId, postSlug }),
+    [companyCode, sectionId, postSlug],
   );
   const google = useGoogleSignIn({ nextPath, intent });
   const [inApp, setInApp] = React.useState(false);
@@ -272,11 +262,11 @@ function GateCard({
   return (
     <aside
       ref={cardRef}
-      aria-label={`Sign up to read the rest of this ${SCOPE_NOUN[scope]}`}
+      aria-label={`Sign up to read the rest of this ${scope}`}
       className={cn(elevatedBlockClass, "relative mx-3 -mt-6 max-w-md bg-background p-4 sm:mx-5 sm:p-5")}
     >
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        Below in this {SCOPE_NOUN[scope]}
+        Below in this {scope}
       </p>
       <h3 className="mt-1 text-base font-bold leading-tight text-foreground">
         Sign up free to read the rest

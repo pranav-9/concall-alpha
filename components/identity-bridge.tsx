@@ -43,6 +43,7 @@ export function IdentityBridge({
       source: intent?.source ?? ("unattributed" as const),
       companyCode: intent?.companyCode,
       sectionId: intent?.sectionId,
+      postSlug: intent?.postSlug,
     };
     if (isNewUser(createdAt, Date.now())) {
       if (claimSignupFired(userId)) analytics.signupCompleted(attribution);

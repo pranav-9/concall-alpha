@@ -35,6 +35,7 @@ export type AuthCompletedProps = {
   source: "auth_page" | "gate" | "unattributed";
   companyCode?: string;
   sectionId?: string;
+  postSlug?: string;
 };
 
 export type LeaderboardBoard =
@@ -220,6 +221,7 @@ export const analytics = {
       source: props.source,
       company_code: props.companyCode,
       section_id: props.sectionId,
+      post_slug: props.postSlug,
     }),
 
   /** A returning user finished a log-in that started from a tracked click. */
@@ -229,6 +231,7 @@ export const analytics = {
       source: props.source,
       company_code: props.companyCode,
       section_id: props.sectionId,
+      post_slug: props.postSlug,
     }),
 
   // ── Sign-up gate — viewed → click → signup_completed{source:"gate"} ────────
@@ -291,8 +294,10 @@ export const analytics = {
   journalPostView: (slug: string) => track("journal_post_view", { slug }),
 
   /** A Journal post was read to the bottom (or near it). */
-  journalReadComplete: (slug: string, scrollPct: number) =>
-    track("journal_read_complete", { slug, scroll_pct: Math.round(scrollPct) }),
+  /** `gated`: the sign-up gate was clipping the post, so the scroll reached the
+   *  card and footer, not the end of the post — exclude from the believer cohort. */
+  journalReadComplete: (slug: string, scrollPct: number, gated = false) =>
+    track("journal_read_complete", { slug, scroll_pct: Math.round(scrollPct), gated }),
 
   // Monetization surfaces that don't exist yet — names reserved so Q3 is a wiring
   // job, not a redesign. Call sites land when the pages do.

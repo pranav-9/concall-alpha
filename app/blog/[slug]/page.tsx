@@ -3,13 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 
-import { isSignupGateEnabled } from "@/lib/signup-gate";
+import { SectionDepthGate } from "@/app/company/components/section-depth-gate";
+import { buildJournalGateNext, isSignupGateEnabled, JOURNAL_GATE_SECTION } from "@/lib/signup-gate";
+import { getIsAuthenticated } from "@/lib/supabase/auth-state";
 import { getSiteUrl } from "@/lib/site-url";
 
 import { CATEGORY_LABELS, getAllPostMeta, getPostBySlug } from "../posts";
 import { mdxComponents } from "../mdx-components";
 import { gatePost, liftPoster, linksCompanyPage, nextReads, readMinutes } from "../related";
-import { JournalGate } from "../journal-gate";
 import { JournalReadTracker } from "@/components/journal-read-tracker";
 import { TelegramJoinCard } from "@/components/telegram-join-card";
 
@@ -57,9 +58,13 @@ export default async function BlogPostPage({ params }: PageProps) {
   const post = getPostBySlug(slug);
   if (!post) notFound();
   const minutes = readMinutes(post.content);
-  // Sign-up gate: read at build (posts are static), so like the company page it
-  // flips with a redeploy. Who is reading is decided on the client (JournalGate).
+  // Sign-up gate, decided on the server like the company tabs (posts render per
+  // request — the root layout reads the session). The marker goes in whenever
+  // the post has a cut, so a new sign-up's return link has an anchor to land on;
+  // only logged-out readers get the clip and the card. Any auth failure reads
+  // as anonymous (auth-state.ts).
   const gate = isSignupGateEnabled() ? gatePost(post.content) : null;
+  const gated = gate !== null && !(await getIsAuthenticated());
   const postBody = (
     <div className="space-y-5">
       <MDXRemote source={liftPoster(gate?.source ?? post.content)} components={mdxComponents} />
@@ -122,10 +127,18 @@ export default async function BlogPostPage({ params }: PageProps) {
           </p>
         </header>
 
-        {gate ? (
-          <JournalGate slug={slug} companyCode={post.companyCode} below={gate.below}>
+        {gated ? (
+          // No company code: Journal gate events stay out of per-company gate funnels.
+          <SectionDepthGate
+            companyCode={undefined}
+            sectionId={JOURNAL_GATE_SECTION}
+            postSlug={slug}
+            scope="post"
+            below={gate.below}
+            nextPath={buildJournalGateNext(slug)}
+          >
             {postBody}
-          </JournalGate>
+          </SectionDepthGate>
         ) : (
           postBody
         )}
