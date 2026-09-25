@@ -10,7 +10,6 @@ import type { Comparison } from "./comparison";
 
 export { CATEGORY_LABELS } from "./categories";
 export type { BlogCategory } from "./categories";
-export { isComparison } from "./comparison";
 export type { Comparison } from "./comparison";
 
 // Server-only: reads the MDX files in app/blog/posts at request/build time.
@@ -82,15 +81,19 @@ function listPostFiles(): string[] {
 function readMeta(file: string): BlogPostMeta {
   const raw = fs.readFileSync(path.join(POSTS_DIR, file), "utf8");
   const { data } = matter(raw);
+  // A numeric BSE scrip code arrives from YAML as a number.
   const companyCode =
-    typeof data.companyCode === "string" ? data.companyCode.toUpperCase() : undefined;
+    typeof data.companyCode === "string" || typeof data.companyCode === "number"
+      ? String(data.companyCode).toUpperCase()
+      : undefined;
+  const category = asCategory(data.category);
   return {
     slug: fileToSlug(file),
     date: String(data.date ?? ""),
     dateLabel: String(data.dateLabel ?? data.date ?? ""),
     title: String(data.title ?? ""),
     summary: String(data.summary ?? ""),
-    category: asCategory(data.category),
+    category,
     tags: toStringArray(data.tags),
     image:
       typeof data.image === "string" && data.image.startsWith("/")
@@ -99,7 +102,7 @@ function readMeta(file: string): BlogPostMeta {
     imageAlt: typeof data.imageAlt === "string" ? data.imageAlt : undefined,
     company: typeof data.company === "string" ? data.company : undefined,
     companyCode,
-    comparison: parseComparison(data.comparison, file, companyCode),
+    comparison: parseComparison(data.comparison, file, { companyCode, category }),
   };
 }
 

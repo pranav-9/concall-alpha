@@ -7,7 +7,7 @@ import { CATEGORY_LABELS } from "./categories";
 import { shortDateLabel } from "./dates";
 import { filterNotebook, notebookCatalog } from "./lanes";
 import { useNotebookFilter } from "./journal-view-state";
-import { PlateHeader } from "./plate-header";
+import { FOCUS_RING, PlateHeader, PlateTitle, ROW_FOCUS, plateLabel } from "./plate-header";
 import type { BlogPostMeta } from "./posts";
 
 // The Notebook lane: Product / How-I-invest essays. Company write-ups live in
@@ -15,43 +15,40 @@ import type { BlogPostMeta } from "./posts";
 // two notebook categories. `posts` arrives newest-first, notebook-only. The
 // filter lives in JournalViewProvider (shared with the phone paint); the
 // catalog (stable "No.", categories, counts) comes from lanes.ts.
-export function NotebookFeed({ posts }: { posts: BlogPostMeta[] }) {
+export function NotebookFeed({ posts, plate }: { posts: BlogPostMeta[]; plate: number }) {
   const { filter, setFilter } = useNotebookFilter();
   const { numberFor, categories, counts } = useMemo(() => notebookCatalog(posts), [posts]);
   const visible = filterNotebook(posts, filter);
 
   return (
     <section aria-labelledby="notebook-heading" className="mt-[72px]">
-      <PlateHeader label="Plate 03 — The Notebook" />
-      <div className="mt-[26px] flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
-        <div className="flex flex-col gap-2">
-          <h2 id="notebook-heading" className="house-display text-[34px] leading-[1.05]">
-            The Notebook
-          </h2>
-          <p className="text-[14px] leading-6 text-[var(--ink-soft)]">
-            What I&rsquo;m building, how I invest, and the method behind the scores.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2.5 sm:justify-end" role="group" aria-label="Filter notebook entries">
-          <FilterPill
-            active={filter === "all"}
-            count={posts.length}
-            onClick={() => setFilter("all")}
-          >
-            All
-          </FilterPill>
-          {categories.map((cat) => (
+      <PlateHeader label={plateLabel(plate, "The Notebook")} />
+      <PlateTitle
+        id="notebook-heading"
+        title="The Notebook"
+        blurb={<>What I&rsquo;m building, how I invest, and the method behind the scores.</>}
+        aside={
+          <div className="flex flex-wrap gap-2.5 sm:justify-end" role="group" aria-label="Filter notebook entries">
             <FilterPill
-              key={cat}
-              active={filter === cat}
-              count={counts[cat]}
-              onClick={() => setFilter(cat)}
+              active={filter === "all"}
+              count={posts.length}
+              onClick={() => setFilter("all")}
             >
-              {CATEGORY_LABELS[cat]}
+              All
             </FilterPill>
-          ))}
-        </div>
-      </div>
+            {categories.map((cat) => (
+              <FilterPill
+                key={cat}
+                active={filter === cat}
+                count={counts[cat]}
+                onClick={() => setFilter(cat)}
+              >
+                {CATEGORY_LABELS[cat]}
+              </FilterPill>
+            ))}
+          </div>
+        }
+      />
 
       <ol className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(min(100%,380px),1fr))] gap-x-12 border-t border-[var(--rule)]">
         {visible.map((post) => (
@@ -68,7 +65,7 @@ function NotebookRow({ post, no }: { post: BlogPostMeta; no: string }) {
   return (
     <Link
       href={`/blog/${post.slug}`}
-      className="grid h-full grid-cols-[56px_1fr] gap-4 px-2.5 py-[22px] transition-colors duration-150 hover:bg-[var(--paper-2)]"
+      className={`grid h-full grid-cols-[56px_1fr] gap-4 px-2.5 py-[22px] transition-colors duration-150 hover:bg-[var(--paper-2)] ${ROW_FOCUS}`}
     >
       <span className="house-display text-[30px] leading-none text-[var(--ink-soft)]">{no}</span>
       <span className="min-w-0">
@@ -119,7 +116,7 @@ function FilterPill({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`house-data inline-flex items-center gap-2 rounded-full border px-[15px] py-2 text-[12px] transition-colors duration-150 ${
+      className={`house-data inline-flex items-center gap-2 rounded-full border px-[15px] py-2 text-[12px] transition-colors duration-150 ${FOCUS_RING} ${
         active
           ? "border-[var(--ink)] bg-[var(--ink)] font-semibold text-[var(--paper-2)]"
           : "border-[var(--rule)] bg-[var(--paper-2)] text-[var(--ink-soft)] hover:border-[var(--ink-soft)] hover:text-[var(--ink)]"
@@ -127,7 +124,8 @@ function FilterPill({
     >
       {children}
       {typeof count === "number" ? (
-        <span className="tabular-nums opacity-55">{count}</span>
+        // Full-strength --ink-soft on an inactive pill: at 55% it fell below AA.
+        <span className={`tabular-nums ${active ? "opacity-70" : ""}`}>{count}</span>
       ) : null}
     </button>
   );

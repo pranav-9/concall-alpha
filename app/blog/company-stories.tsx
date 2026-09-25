@@ -1,4 +1,4 @@
-// Plate 01 — the Journal's flagship lane on desktop: the three newest company
+// The Company Stories plate — the Journal's flagship lane on desktop: the three newest company
 // stories as poster cards, then the archive ("More stories", more-stories.tsx).
 // Comparison posts are not here — they have their own plate (head-to-head.tsx).
 // Server component; `today` (IST yyyy-mm-dd) comes from the page so every
@@ -10,7 +10,7 @@ import Link from "next/link";
 import { isFresh, relativeDayLabel } from "./dates";
 import type { CompanyStory } from "./lanes";
 import { MoreStories } from "./more-stories";
-import { CARD_CTA, PlateHeader } from "./plate-header";
+import { CARD_CTA, FOCUS_RING, PlateHeader, plateLabel } from "./plate-header";
 
 const LATEST = 3;
 
@@ -18,10 +18,13 @@ export function CompanyStories({
   stories,
   companyNameCount,
   today,
+  plate,
 }: {
   stories: CompanyStory[];
   companyNameCount: number;
   today: string;
+  /** This plate's number on the page (page.tsx counts the plates it paints). */
+  plate: number;
 }) {
   if (!stories.length) return null;
   const latest = stories.slice(0, LATEST);
@@ -33,8 +36,10 @@ export function CompanyStories({
         Company Stories
       </h2>
       <PlateHeader
-        label="Plate 01 — Company Stories"
-        right={`${stories.length} stories · ${companyNameCount} companies`}
+        label={plateLabel(plate, "Company Stories")}
+        right={`${stories.length} ${stories.length === 1 ? "story" : "stories"} · ${companyNameCount} ${
+          companyNameCount === 1 ? "company" : "companies"
+        }`}
       />
 
       <div className="mt-[26px] grid grid-cols-1 gap-4 min-[860px]:grid-cols-3">
@@ -53,7 +58,7 @@ function LatestCard({ story, today }: { story: CompanyStory; today: string }) {
   return (
     <Link
       href={`/blog/${story.slug}`}
-      className="flex flex-col rounded-[14px] border border-[var(--rule)] bg-[var(--paper-2)] p-[18px] transition-colors duration-150 hover:border-[var(--ink)]"
+      className={`flex flex-col rounded-[14px] border border-[var(--rule)] bg-[var(--paper-2)] p-[18px] transition-colors duration-150 hover:border-[var(--ink)] ${FOCUS_RING}`}
     >
       <span className="m-[5px] block rounded-[4px] border border-[var(--rule)] bg-[var(--paper)] p-2 shadow-[0_0_0_4px_var(--paper-2),0_0_0_5px_var(--rule)]">
         <span className="relative block aspect-[16/10] overflow-hidden rounded-[2px] border border-[var(--rule)] bg-[var(--paper-2)]">
@@ -62,7 +67,7 @@ function LatestCard({ story, today }: { story: CompanyStory; today: string }) {
             // phone's HTML, hidden — a preload would cost the phone a fetch.
             <Image
               src={story.image}
-              alt={story.imageAlt ?? story.title}
+              alt={story.imageAlt ?? ""}
               fill
               sizes="(min-width: 860px) 360px, 100vw"
               className="object-cover object-top"
@@ -71,7 +76,7 @@ function LatestCard({ story, today }: { story: CompanyStory; today: string }) {
         </span>
       </span>
 
-      <span className="house-data mt-5 flex min-w-0 items-center gap-2 text-[10px] uppercase tracking-[0.08em]">
+      <span className="house-data mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] uppercase tracking-[0.08em]">
         <span
           aria-hidden
           className={`h-[7px] w-[7px] shrink-0 rounded-full ${fresh ? "bg-[var(--signal)]" : "bg-[var(--rule)]"}`}
@@ -82,7 +87,7 @@ function LatestCard({ story, today }: { story: CompanyStory; today: string }) {
         <span aria-hidden className="text-[var(--rule)]">
           /
         </span>
-        <span className="truncate text-[var(--signal)]">{story.company ?? "Company"}</span>
+        <span className="text-[var(--signal)]">{story.company ?? "Company"}</span>
       </span>
 
       <span className="house-display mt-2.5 block text-[22px] leading-[1.18] tracking-[-0.01em] [text-wrap:pretty]">

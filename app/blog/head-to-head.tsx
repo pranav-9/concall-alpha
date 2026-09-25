@@ -1,33 +1,29 @@
-// Plate 02 — comparison posts, one matchup card each. Membership comes from the
+// The Head to head plate: comparison posts, one matchup card each. Membership comes from the
 // post's `comparison` frontmatter (comparison.ts), never from its slug. The two
 // companies get identical type: neither side is styled as the primary.
 // Server component.
 
 import Link from "next/link";
 
-import type { ComparisonSide } from "./comparison";
-import { comparisonTitle, pad } from "./lanes";
-import { CARD_CTA, PlateHeader } from "./plate-header";
-import type { BlogPostMeta } from "./posts";
+import { comparisonTitle, type ComparisonSide } from "./comparison";
+import { pad, type ComparisonPost } from "./lanes";
+import { CARD_CTA, FOCUS_RING, PlateHeader, PlateTitle, plateLabel } from "./plate-header";
 
-export function HeadToHead({ posts }: { posts: BlogPostMeta[] }) {
+export function HeadToHead({ posts, plate }: { posts: ComparisonPost[]; plate: number }) {
   if (!posts.length) return null;
   return (
     <section aria-labelledby="head-to-head-heading" className="mt-[72px]">
-      <PlateHeader label="Plate 02 — Head to head" />
-      <div className="mt-[26px] flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
-        <div className="flex flex-col gap-2">
-          <h2 id="head-to-head-heading" className="house-display text-[34px] leading-[1.05]">
-            Head to head
-          </h2>
-          <p className="text-[14px] leading-6 text-[var(--ink-soft)]">
-            Two listed peers in the same business, read side by side from their own filings.
-          </p>
-        </div>
-        <span className="house-data shrink-0 text-[11px] text-[var(--ink-soft)]">
-          {pad(posts.length)} {posts.length === 1 ? "comparison" : "comparisons"}
-        </span>
-      </div>
+      <PlateHeader label={plateLabel(plate, "Head to head")} />
+      <PlateTitle
+        id="head-to-head-heading"
+        title="Head to head"
+        blurb="Two listed peers in the same business, read side by side from their own filings."
+        aside={
+          <span className="house-data shrink-0 text-[11px] text-[var(--ink-soft)]">
+            {pad(posts.length)} {posts.length === 1 ? "comparison" : "comparisons"}
+          </span>
+        }
+      />
 
       <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(min(100%,460px),1fr))] gap-5">
         {posts.map((post) => (
@@ -38,13 +34,12 @@ export function HeadToHead({ posts }: { posts: BlogPostMeta[] }) {
   );
 }
 
-function MatchupCard({ post }: { post: BlogPostMeta }) {
+function MatchupCard({ post }: { post: ComparisonPost }) {
   const c = post.comparison;
-  if (!c) return null;
   return (
     <Link
       href={`/blog/${post.slug}`}
-      className="flex flex-col overflow-hidden rounded-xl border border-[var(--rule)] bg-[var(--paper-2)] transition-colors duration-150 hover:border-[var(--ink)]"
+      className={`flex flex-col overflow-hidden rounded-xl border border-[var(--rule)] bg-[var(--paper-2)] transition-colors duration-150 hover:border-[var(--ink)] ${FOCUS_RING}`}
     >
       <span className="flex items-center justify-center gap-3 border-b border-[var(--rule)] px-4 py-[11px]">
         <span className="house-data text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">
@@ -56,6 +51,7 @@ function MatchupCard({ post }: { post: BlogPostMeta }) {
 
       <span className="relative grid grid-cols-2 border-b border-[var(--rule)] bg-[var(--paper)]">
         <Side side={c.a} />
+        <span className="sr-only"> versus </span>
         <Side side={c.b} />
         <span aria-hidden className="absolute bottom-3.5 left-1/2 top-3.5 w-px bg-[var(--rule)]" />
         <span
@@ -72,7 +68,7 @@ function MatchupCard({ post }: { post: BlogPostMeta }) {
           <time dateTime={post.date || undefined}>{post.dateLabel}</time>
         </span>
         <span className="house-display mt-3 block text-[20px] leading-[1.25] [text-wrap:pretty]">
-          {comparisonTitle(post.title)}
+          {comparisonTitle(post.title, c.a.name)}
         </span>
         <span className="mt-2.5 line-clamp-3 text-[13px] leading-[1.55] text-[var(--ink-soft)]">
           {post.summary}

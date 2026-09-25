@@ -8,6 +8,8 @@
 // hand-curated per company — the grouping falls out of the frontmatter.
 
 import { CATEGORY_ORDER, NOTEBOOK_CATEGORIES, type BlogCategory } from "./categories";
+import { isComparison, type Comparison } from "./comparison";
+import { weekGroup, type WeekGroup } from "./dates";
 import type { BlogPostMeta } from "./posts";
 
 /** Two-digit counter ("06") — the lane count and the Notebook's "No." gutter. */
@@ -92,38 +94,71 @@ export function deriveJournalLanes(posts: BlogPostMeta[]): JournalLanes {
   };
 }
 
+export type ComparisonPost = BlogPostMeta & { comparison: Comparison };
+
 export type DesktopJournal = {
   /** Company write-ups minus comparisons, newest-first, numbered among themselves. */
   stories: CompanyStory[];
   /** Posts tagged with a `comparison` block, newest-first. */
-  headToHead: BlogPostMeta[];
+  headToHead: ComparisonPost[];
   /** Product / How-I-invest posts, newest-first. */
   notebook: BlogPostMeta[];
   /** Distinct companies across `stories`. */
   companyNameCount: number;
+  /** The desktop paint's empty-state key: any of its three lanes has a post. */
+  hasPosts: boolean;
 };
 
 /**
- * The desktop paint's three lanes. A post with a `comparison` block appears
- * only in Head to head, so Company Stories counts and "Story N of M" ignore
- * it. `posts` must be newest-first.
+ * The desktop paint's three lanes. A post with a `comparison` block (only a
+ * company write-up may carry one — parseComparison enforces it) appears only
+ * in Head to head, so Company Stories counts and "Story N of M" ignore it.
+ * `posts` must be newest-first.
  */
 export function deriveDesktopJournal(posts: BlogPostMeta[]): DesktopJournal {
-  const headToHead = posts.filter((p) => p.comparison);
+  const headToHead = posts.filter(isComparison);
   const plain = posts.filter((p) => !p.comparison);
   const { stories, totals } = indexStories(plain.filter((p) => p.category === "companies"));
   const notebook = plain.filter(
     (p) => p.category !== undefined && NOTEBOOK_CATEGORIES.includes(p.category),
   );
-  return { stories, headToHead, notebook, companyNameCount: totals.size };
+  return {
+    stories,
+    headToHead,
+    notebook,
+    companyNameCount: totals.size,
+    hasPosts: stories.length + headToHead.length + notebook.length > 0,
+  };
 }
 
 /** Rows "More stories" shows before "Show all". */
 export const MORE_STORIES_ROWS = 5;
 
-/** A comparison title without its leading "Company:" prefix. */
-export function comparisonTitle(title: string): string {
-  return title.replace(/^[^:]+:\s*/, "");
+const WEEK_ORDER: WeekGroup[] = ["this", "last", "earlier"];
+
+export type MoreStoriesView = {
+  /** More than MORE_STORIES_ROWS stories, so the toggle shows. */
+  canFold: boolean;
+  /** Folded open (or nothing to fold). */
+  expanded: boolean;
+  /** Visible rows by week, newest group first, empty groups dropped. */
+  groups: { key: WeekGroup; rows: CompanyStory[] }[];
+};
+
+/** The archive's visible rows: the row limit applies first, then week grouping. */
+export function moreStoriesView(
+  stories: CompanyStory[],
+  today: string,
+  expandedFlag: boolean,
+): MoreStoriesView {
+  const canFold = stories.length > MORE_STORIES_ROWS;
+  const expanded = expandedFlag || !canFold;
+  const visible = expanded ? stories : stories.slice(0, MORE_STORIES_ROWS);
+  const groups = WEEK_ORDER.map((key) => ({
+    key,
+    rows: visible.filter((s) => weekGroup(s.date, today) === key),
+  })).filter((g) => g.rows.length);
+  return { canFold, expanded, groups };
 }
 
 /**

@@ -5,6 +5,7 @@ import {
   isFresh,
   istToday,
   relativeDayLabel,
+  rowDateLabel,
   shortDateLabel,
   weekGroup,
   weekRanges,
@@ -51,4 +52,27 @@ assert.deepEqual(weekRanges("2026-09-25"), {
   earlier: "Before 14 Sep",
 });
 assert.equal(weekRanges("2026-09-21").this, "21 Sep", "a Monday's week is one day");
+assert.equal(daysAgo("2026-09-20", "bad"), null);
+assert.equal(daysAgo("2026-09-31", "2026-10-02"), null, "a day that doesn't exist is not a date");
+assert.equal(relativeDayLabel("", "21 September 2026", "2026-09-25"), "21 September 2026", "unparseable → fallback label");
+assert.equal(relativeDayLabel("2026-09-31", "fallback", "2026-10-02"), "fallback", "no 'Yesterday' for 31 Sep");
+assert.equal(isFresh("2026-09-25", "2026-09-25"), true, "today is fresh");
+assert.equal(isFresh("bad", "2026-09-25"), false);
+assert.equal(isFresh("2026-09-26", "2026-09-25"), false, "future-dated is not fresh");
+assert.equal(isFresh("2026-09-31", "2026-10-01"), false);
+assert.equal(weekGroup("bad", "2026-09-25"), "earlier");
+assert.equal(weekGroup("2026-13-01", "2026-09-25"), "earlier", "impossible month → earlier, not this week");
+assert.equal(weekGroup("2026-09-27", "2026-09-25"), "this", "a future-dated post sits with this week");
+assert.deepEqual(weekRanges("bad"), { this: "", last: "", earlier: "" });
+assert.deepEqual(
+  weekRanges("2026-10-01"),
+  { this: "28 Sep – 1 Oct", last: "21 Sep – 27 Sep", earlier: "Before 21 Sep" },
+  "ranges cross a month boundary",
+);
+assert.equal(weekGroup("2026-01-01", "2026-01-02"), "this", "week spanning New Year (Mon 29 Dec 2025)");
+assert.equal(weekGroup("2025-12-29", "2026-01-02"), "this");
+assert.equal(weekGroup("2025-12-28", "2026-01-02"), "last");
+assert.equal(rowDateLabel("2026-09-24", "x", "2026-09-25"), "24 Sep", "same year → no year");
+assert.equal(rowDateLabel("2025-12-30", "x", "2026-01-02"), "30 Dec 2025", "a previous year keeps its year");
+assert.equal(rowDateLabel("bad", "24 September 2025", "2026-09-25"), "24 September 2025", "fallback untouched");
 console.log("blog-dates relative: ok");

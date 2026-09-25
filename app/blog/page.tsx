@@ -24,10 +24,15 @@ export const metadata: Metadata = {
 export default function BlogIndexPage() {
   const posts = getAllPostMeta();
   const lanes = deriveJournalLanes(posts);
-  // One empty-state rule for both paints, keyed off what the lanes will paint
-  // (not the raw post count): posts with no known category join neither lane.
+  // Each paint's empty state is keyed off what its lanes will paint (not the
+  // raw post count): posts with no known category join no lane.
   const hasPosts = lanes.companyCount + lanes.notebook.length > 0;
   const desktop = deriveDesktopJournal(posts);
+  // Plates are numbered by what paints, so an empty lane never leaves a gap.
+  let plate = 0;
+  const storiesPlate = desktop.stories.length ? ++plate : 0;
+  const headToHeadPlate = desktop.headToHead.length ? ++plate : 0;
+  const notebookPlate = desktop.notebook.length ? ++plate : 0;
   // IST date for the desktop paint's "Today", fresh dot and week groups. The
   // route renders per request (the root layout reads the session), so it
   // never goes stale.
@@ -63,14 +68,14 @@ export default function BlogIndexPage() {
             <TelegramJoinLink
               href={telegramUrl}
               surface="journal_index"
-              className="house-data shrink-0 text-[12px] text-[var(--ink)] underline decoration-[var(--mark)] decoration-2 underline-offset-4 transition-colors duration-150 hover:text-[var(--signal)]"
+              className="house-data shrink-0 text-[12px] text-[var(--ink)] underline decoration-[var(--mark)] decoration-2 underline-offset-4 transition-colors duration-150 hover:text-[var(--signal)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--signal)]"
             >
               Get updates on Telegram →
             </TelegramJoinLink>
           ) : null}
         </header>
 
-        {!desktop.stories.length && !desktop.headToHead.length && !desktop.notebook.length ? (
+        {!desktop.hasPosts ? (
           <p className="mt-10 text-sm text-[var(--ink-soft)]">No posts yet.</p>
         ) : (
           <>
@@ -78,9 +83,12 @@ export default function BlogIndexPage() {
               stories={desktop.stories}
               companyNameCount={desktop.companyNameCount}
               today={today}
+              plate={storiesPlate}
             />
-            <HeadToHead posts={desktop.headToHead} />
-            {desktop.notebook.length ? <NotebookFeed posts={desktop.notebook} /> : null}
+            <HeadToHead posts={desktop.headToHead} plate={headToHeadPlate} />
+            {desktop.notebook.length ? (
+              <NotebookFeed posts={desktop.notebook} plate={notebookPlate} />
+            ) : null}
           </>
         )}
 

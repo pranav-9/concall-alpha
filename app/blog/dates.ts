@@ -1,4 +1,4 @@
-// Short absolute date for the phone Journal ("21 Sep 2026"). Deterministic —
+// Short absolute date for the Journal ("21 Sep 2026"). Deterministic —
 // no Intl/locale — so SSR and hydration always agree. Falls back to the
 // frontmatter's own label when the ISO date doesn't parse.
 const MONTHS = [
@@ -36,11 +36,23 @@ export function istToday(now: Date = new Date()): string {
   return new Date(now.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
 }
 
+/** Days since the epoch for a real yyyy-mm-dd date; null for garbage or a day that doesn't exist ("2026-09-31"). */
 function isoDay(iso: string): number | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})(?:$|T)/.exec(iso);
   if (!m) return null;
-  const t = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  return Number.isNaN(t) ? null : t / DAY_MS;
+  const year = Number(m[1]);
+  const monthIndex = Number(m[2]) - 1;
+  const day = Number(m[3]);
+  const d = new Date(Date.UTC(year, monthIndex, day));
+  if (d.getUTCFullYear() !== year || d.getUTCMonth() !== monthIndex || d.getUTCDate() !== day) {
+    return null;
+  }
+  return d.getTime() / DAY_MS;
+}
+
+/** The Monday on or before `day` (epoch days). 1970-01-01 was a Thursday, so shift by 3. */
+function mondayOf(day: number): number {
+  return day - ((day + 3) % 7);
 }
 
 /** Whole days from `iso` to `today` (both yyyy-mm-dd); null if either won't parse. */
@@ -72,8 +84,8 @@ export function weekGroup(iso: string, today: string): WeekGroup {
   const d = isoDay(iso);
   const t = isoDay(today);
   if (d === null || t === null) return "earlier";
-  // 1970-01-01 was a Thursday; shift so Monday = 0.
-  const monday = t - ((t + 3) % 7);
+  // A future-dated post (rare: a scheduled publish) sits with this week.
+  const monday = mondayOf(t);
   if (d >= monday) return "this";
   if (d >= monday - 7) return "last";
   return "earlier";
@@ -84,14 +96,20 @@ function dayMonth(day: number): string {
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
 }
 
-/** Date-range labels for the week groups: this week "22 Sep – 25 Sep", last week "15 Sep – 21 Sep", earlier "Before 15 Sep". */
+/** Date-range labels for the week groups. For Fri 25 Sep 2026: "21 Sep – 25 Sep", "14 Sep – 20 Sep", "Before 14 Sep". */
 export function weekRanges(today: string): Record<WeekGroup, string> {
   const t = isoDay(today);
   if (t === null) return { this: "", last: "", earlier: "" };
-  const monday = t - ((t + 3) % 7);
+  const monday = mondayOf(t);
   return {
     this: monday === t ? dayMonth(t) : `${dayMonth(monday)} – ${dayMonth(t)}`,
     last: `${dayMonth(monday - 7)} – ${dayMonth(monday - 1)}`,
     earlier: `Before ${dayMonth(monday - 7)}`,
   };
+}
+
+/** "24 Sep" when `iso` falls in `today`'s year, else "24 Sep 2025" — the archive rows' date. */
+export function rowDateLabel(iso: string, fallback: string, today: string): string {
+  const label = shortDateLabel(iso, fallback);
+  return iso.slice(0, 4) === today.slice(0, 4) ? label.replace(/ \d{4}$/, "") : label;
 }
