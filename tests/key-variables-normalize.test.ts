@@ -297,3 +297,21 @@ test("the 7a preview fixture normalizes into the shape the section renders", asy
   );
   assert.equal(radar.filter((item) => item.nextToPromote).length, 1);
 });
+
+test("section_headline is read from details when the row has no top-level column", () => {
+  const { section_headline, ...noColumn } = richRow;
+  const snapshot = normalizeKeyVariablesSnapshot({
+    ...noColumn,
+    details: { section_headline: `  ${section_headline.trim()}  `, import_mode: "manual_json_overwrite" },
+  });
+  assert.ok(snapshot);
+  assert.equal(snapshot.sectionHeadline, section_headline.trim());
+  // a top-level value still wins over details
+  const both = normalizeKeyVariablesSnapshot({ ...richRow, details: { section_headline: "from details" } });
+  assert.ok(both);
+  assert.equal(both.sectionHeadline, section_headline.trim());
+  // neither → null
+  const neither = normalizeKeyVariablesSnapshot({ ...noColumn, details: {} });
+  assert.ok(neither);
+  assert.equal(neither.sectionHeadline, null);
+});

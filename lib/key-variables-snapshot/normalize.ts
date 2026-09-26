@@ -312,9 +312,12 @@ export function normalizeKeyVariablesSnapshot(
     .filter((entry): entry is NormalizedKeyVariableDroppedItem => Boolean(entry));
 
   const sectionSynthesis = asString(row.section_synthesis);
-  const sectionHeadline = asString(row.section_headline);
   const discoverySummary = normalizeDiscoverySummary(row.discovery_summary);
   const details = parseJsonObjectLike(row.details);
+  // `key_variables_snapshot` has no section_headline column: the pipeline's
+  // import routes every top-level key it does not promote into `details`, so a
+  // hand-built row's headline lives at details.section_headline. Read both.
+  const sectionHeadline = asString(row.section_headline) ?? asString(details?.section_headline);
 
   if (
     fullVariableList.length === 0 &&
