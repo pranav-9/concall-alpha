@@ -529,7 +529,11 @@ const buildLeadMetric = (item: NormalizedKeyVariableDeepTreatmentItem): LeadMetr
   const values = shownPeriods.map((period) => asNumericValue(row.valuesByPeriod[period]));
   const latestValue = values[values.length - 1] ?? null;
   const firstValue = values.find((value): value is number => value != null) ?? null;
-  const change = formatFirstToLatestChange(firstValue, latestValue, classifyUnit(unit), "long");
+  // One shown period has no "first → latest": a lone value must not print "0 pp".
+  const change =
+    shownPeriods.length >= 2
+      ? formatFirstToLatestChange(firstValue, latestValue, classifyUnit(unit), "long")
+      : null;
   const direction = item.metricDirections?.[row.metric] ?? "higher_is_better";
 
   return {
@@ -718,7 +722,8 @@ function AlsoTrackedTable({
         const first = values.find((value): value is number => value != null) ?? null;
         const latest = values[values.length - 1] ?? null;
         const { unit } = splitMetricName(row.metric);
-        const change = formatFirstToLatestChange(first, latest, classifyUnit(unit), "short");
+        const change =
+          shown.length >= 2 ? formatFirstToLatestChange(first, latest, classifyUnit(unit), "short") : null;
         const direction = item.metricDirections?.[row.metric] ?? "higher_is_better";
         const effect = getThesisEffect(change?.delta ?? null, direction);
         return (
