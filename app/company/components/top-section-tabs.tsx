@@ -30,6 +30,7 @@ const SHORT_LABELS: Record<string, string> = {
   quality: "Quality",
   "valuation-check": "Valuation",
   community: "Community",
+  "company-journal": "Journal",
 };
 
 // "Live" is a placeholder, not a signal — hiding it from an always-on badge

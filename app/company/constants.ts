@@ -68,6 +68,11 @@ export const SECTIONS = [
     id: "valuation-check",
     label: "Valuation Check",
   },
+  {
+    // Not "journal": that section_id already tags the Journal post-gate events.
+    id: "company-journal",
+    label: "Journal",
+  },
 ] as const;
 
 export const SECTION_MAP = {
@@ -85,4 +90,5 @@ export const SECTION_MAP = {
   topBusinessStrategies: SECTIONS[11],
   walkTheTalk: SECTIONS[12],
   valuationCheck: SECTIONS[13],
+  companyJournal: SECTIONS[14],
 } as const;
