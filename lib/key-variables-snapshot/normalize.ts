@@ -1,14 +1,18 @@
 import type {
   KeyVariablesSnapshotRow,
+  MetricDirection,
   NormalizedKeyVariableDeepTreatmentItem,
   NormalizedKeyVariableDiscoverySummary,
   NormalizedKeyVariableDroppedItem,
+  NormalizedKeyVariableGuide,
   NormalizedKeyVariableKpiHistory,
   NormalizedKeyVariableKpiHistoryRow,
+  NormalizedKeyVariableLatest,
   NormalizedKeyVariableListItem,
   NormalizedKeyVariableSourceBasis,
   NormalizedKeyVariablesSnapshot,
   NormalizedKeyVariableTransition,
+  ThesisEffect,
 } from "@/lib/key-variables-snapshot/types";
 
 type JsonRecord = Record<string, unknown>;
@@ -103,6 +107,37 @@ const normalizeDiscoverySummary = (
   return normalized;
 };
 
+const normalizeThesisEffect = (value: unknown): ThesisEffect => {
+  const normalized = asString(value)?.toLowerCase();
+  switch (normalized) {
+    case "helps":
+    case "hurts":
+    case "caution":
+    case "neutral":
+      return normalized;
+    default:
+      return "neutral";
+  }
+};
+
+const normalizeLatest = (value: unknown): NormalizedKeyVariableLatest | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+  const rawValue = row.value;
+  const displayValue =
+    typeof rawValue === "number" && Number.isFinite(rawValue)
+      ? String(rawValue)
+      : asString(rawValue);
+  if (!displayValue) return null;
+
+  return {
+    value: displayValue,
+    deltaLabel: asString(row.delta_label),
+    effect: normalizeThesisEffect(row.effect),
+    asOf: asString(row.as_of),
+  };
+};
+
 const normalizeFullVariableListItem = (
   value: unknown,
 ): NormalizedKeyVariableListItem | null => {
@@ -114,6 +149,9 @@ const normalizeFullVariableListItem = (
     variable,
     whyFlagged: asString(row?.why_flagged),
     sourceBasis: normalizeSourceBasis(row?.source_basis),
+    latest: normalizeLatest(row?.latest),
+    watchFor: asString(row?.watch_for),
+    nextToPromote: row?.next_to_promote === true,
   };
 };
 
@@ -165,6 +203,56 @@ const normalizeTransition = (value: unknown): NormalizedKeyVariableTransition | 
   return normalized === "retained" || normalized === "promoted" ? normalized : null;
 };
 
+const normalizeMetricDirection = (value: unknown): MetricDirection => {
+  const normalized = asString(value)?.toLowerCase().replace(/[\s-]+/g, "_");
+  return normalized === "lower_is_better" ? "lower_is_better" : "higher_is_better";
+};
+
+/**
+ * Every row in the history gets a direction, defaulting to higher_is_better,
+ * so the UI never has to reason about a missing key. Null when there is no
+ * history to key off.
+ */
+const normalizeMetricDirections = (
+  value: unknown,
+  history: NormalizedKeyVariableKpiHistory | null,
+): Record<string, MetricDirection> | null => {
+  if (!history || history.rows.length === 0) return null;
+  const raw = parseJsonObjectLike(value) ?? {};
+  const rawByKey = new Map<string, unknown>();
+  for (const [metric, direction] of Object.entries(raw)) {
+    rawByKey.set(metric.trim().toLowerCase(), direction);
+  }
+  return history.rows.reduce<Record<string, MetricDirection>>((acc, row) => {
+    acc[row.metric] = normalizeMetricDirection(rawByKey.get(row.metric.trim().toLowerCase()));
+    return acc;
+  }, {});
+};
+
+/** Clamp to the rows; anything invalid (missing, negative, non-integer, out of range) is 0. */
+const normalizeLeadMetricIndex = (
+  value: unknown,
+  history: NormalizedKeyVariableKpiHistory | null,
+): number => {
+  const rowCount = history?.rows.length ?? 0;
+  if (rowCount === 0) return 0;
+  const parsed = asNumber(value);
+  if (parsed == null || !Number.isInteger(parsed) || parsed < 0 || parsed >= rowCount) return 0;
+  return parsed;
+};
+
+/** A guide needs a finite numeric value; otherwise the whole guide is dropped. */
+const normalizeGuide = (value: unknown): NormalizedKeyVariableGuide | null => {
+  const row = parseJsonObjectLike(value);
+  if (!row) return null;
+  const guideValue = asNumber(row.value);
+  if (guideValue == null) return null;
+  return {
+    value: guideValue,
+    label: asString(row.label) ?? `Guide ${guideValue}`,
+  };
+};
+
 const normalizeDeepTreatmentItem = (
   value: unknown,
 ): NormalizedKeyVariableDeepTreatmentItem | null => {
@@ -172,15 +260,22 @@ const normalizeDeepTreatmentItem = (
   const variable = asString(row?.variable);
   if (!variable) return null;
 
+  const kpiHistory = normalizeKpiHistory(row?.kpi_history);
+
   return {
     variable,
-    kpiHistory: normalizeKpiHistory(row?.kpi_history),
+    kpiHistory,
     currentRead: asString(row?.current_read),
     whatItTracks: asString(row?.what_it_tracks),
     whyItMattersNow: asString(row?.why_it_matters_now),
     trendInterpretation: asString(row?.trend_interpretation),
     transition: normalizeTransition(row?.transition),
     transitionReason: asString(row?.transition_reason),
+    thesisRole: asString(row?.thesis_role),
+    leadMetricIndex: normalizeLeadMetricIndex(row?.lead_metric_index, kpiHistory),
+    leadUnit: asString(row?.lead_unit),
+    metricDirections: normalizeMetricDirections(row?.metric_directions, kpiHistory),
+    guide: normalizeGuide(row?.guide),
   };
 };
 
@@ -217,6 +312,7 @@ export function normalizeKeyVariablesSnapshot(
     .filter((entry): entry is NormalizedKeyVariableDroppedItem => Boolean(entry));
 
   const sectionSynthesis = asString(row.section_synthesis);
+  const sectionHeadline = asString(row.section_headline);
   const discoverySummary = normalizeDiscoverySummary(row.discovery_summary);
   const details = parseJsonObjectLike(row.details);
 
@@ -237,6 +333,7 @@ export function normalizeKeyVariablesSnapshot(
     fullVariableList,
     deepTreatment,
     droppedVariables,
+    sectionHeadline,
     sectionSynthesis,
     details,
   };
