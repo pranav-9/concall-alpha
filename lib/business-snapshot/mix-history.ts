@@ -1,5 +1,10 @@
 import type { NormalizedRevenueMixHistoryBySegment } from "./types";
 
+/** Issuer shares are printed to two decimals, so three segments can sum to 100.01
+ * (SBCL FY26: 40.27 + 40.37 + 19.37). Allow that rounding; anything larger is a
+ * real overlap and the year stays invalid. */
+export const MIX_TOTAL_ROUNDING_TOLERANCE = 0.05;
+
 export function buildBusinessMixPeriods(history: NormalizedRevenueMixHistoryBySegment) {
   const rows = history.rows.filter((row) => !row.isTotal);
   return history.years.map((year) => {
@@ -10,7 +15,7 @@ export function buildBusinessMixPeriods(history: NormalizedRevenueMixHistoryBySe
         ? [{ name: row.segment, value }] : [];
     });
     const total = known.reduce((sum, item) => sum + item.value, 0);
-    return { year, known, total, valid: known.length >= 2 && total > 0 && total <= 100 };
+    return { year, known, total, valid: known.length >= 2 && total > 0 && total <= 100 + MIX_TOTAL_ROUNDING_TOLERANCE };
   });
 }
 
