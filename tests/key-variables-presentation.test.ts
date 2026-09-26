@@ -70,8 +70,12 @@ test("period labels shorten and the span reads in the right noun", () => {
   assert.equal(shortPeriodLabel("H1 FY26"), "H1");
   assert.equal(shortPeriodLabel("FY24"), "FY24");
   assert.equal(spanLabel(["Q3 FY26", "Q4 FY26", "Q1 FY27"]), "2 qtrs");
+  assert.equal(spanLabel(["Q4 FY26", "Q1 FY27"]), "1 qtr"); // Q4 → Q1 rolls the fiscal year
   assert.equal(spanLabel(["FY24", "FY25", "FY26"]), "2 yrs");
-  assert.equal(spanLabel(["FY25", "Q1 FY27"]), "1 period");
+  // call answers years apart are not "2 qtrs": name the start instead
+  assert.equal(spanLabel(["Q3 FY24", "Q1 FY25", "Q4 FY26"]), "since Q3 FY24");
+  assert.equal(spanLabel(["FY24", "FY26"]), "since FY24");
+  assert.equal(spanLabel(["FY25", "Q1 FY27"]), "since FY25");
   assert.equal(spanLabel(["Q1 FY27"]), null);
 });
 

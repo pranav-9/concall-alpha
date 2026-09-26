@@ -118,11 +118,31 @@ export const periodNounLong = (periods: string[]): string => {
   return "periods";
 };
 
-/** "▲ +34% · 2 qtrs" span suffix: the number of steps between first shown and latest. */
+/** "Q3 FY26" → 26*4+2; null when the label is not a plain quarter. FY rolls over Q4 → Q1 of the next year. */
+const quarterOrdinal = (period: string): number | null => {
+  const m = period.trim().match(/^Q([1-4])\s*FY\s?(\d{2,4})$/i);
+  return m ? (Number(m[2]) % 100) * 4 + Number(m[1]) - 1 : null;
+};
+
+const yearOrdinal = (period: string): number | null => {
+  const m = period.trim().match(/^(?:FY|CY)\s?(\d{2,4})$/i);
+  return m ? Number(m[1]) % 100 : null;
+};
+
+const isConsecutive = (ordinals: Array<number | null>) =>
+  ordinals.every((o): o is number => o != null) && ordinals.slice(1).every((o, i) => o - ordinals[i] === 1);
+
+/**
+ * "▲ +34% · 2 qtrs" span suffix. Counts steps only when the shown periods are
+ * consecutive quarters or consecutive fiscal years; otherwise it names the start
+ * ("since Q3 FY24"), because call answers given years apart are not "2 qtrs".
+ */
 export const spanLabel = (shownPeriods: string[]) => {
   const steps = Math.max(shownPeriods.length - 1, 0);
   if (steps === 0) return null;
-  return `${steps} ${periodNoun(shownPeriods, steps)}`;
+  if (isConsecutive(shownPeriods.map(quarterOrdinal))) return `${steps} ${steps === 1 ? "qtr" : "qtrs"}`;
+  if (isConsecutive(shownPeriods.map(yearOrdinal))) return `${steps} ${steps === 1 ? "yr" : "yrs"}`;
+  return `since ${shownPeriods[0].trim()}`;
 };
 
 export const firstSentence = (text: string): string => {
