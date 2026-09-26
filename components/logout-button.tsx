@@ -5,7 +5,14 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { resetIdentity } from "@/lib/analytics";
 
-export function LogoutButton({ compact = false }: { compact?: boolean }) {
+export function LogoutButton({
+  compact = false,
+  className,
+}: {
+  compact?: boolean;
+  /** Compact only: replaces the default pill styling (the house-skin bars pass their own). */
+  className?: string;
+}) {
   const router = useRouter();
 
   const logout = async () => {
@@ -21,7 +28,10 @@ export function LogoutButton({ compact = false }: { compact?: boolean }) {
       <button
         type="button"
         onClick={logout}
-        className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className={
+          className ??
+          "inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        }
       >
         Logout
       </button>

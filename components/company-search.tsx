@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { analytics } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
 
 type Result = {
   code: string;
@@ -74,8 +75,11 @@ export function CompanySearch({
   instanceId,
   initialCompanies,
   autoFocus = false,
+  inputClassName,
 }: {
   className?: string;
+  /** Merged over the input's default look — the house-skin desktop bar passes paper/ink tokens. */
+  inputClassName?: string;
   onNavigate?: () => void;
   instanceId?: string;
   initialCompanies?: Result[];
@@ -284,7 +288,10 @@ export function CompanySearch({
             }
           }}
           placeholder="Search company name or code"
-          className="h-10 w-full rounded-2xl border border-border/60 bg-background/82 pl-9 pr-3 text-base md:text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus-visible:border-ring/40 focus-visible:ring-2 focus-visible:ring-ring/20"
+          className={cn(
+            "h-10 w-full rounded-2xl border border-border/60 bg-background/82 pl-9 pr-3 text-base md:text-sm text-foreground placeholder:text-muted-foreground outline-none transition-colors focus-visible:border-ring/40 focus-visible:ring-2 focus-visible:ring-ring/20",
+            inputClassName,
+          )}
           role="combobox"
           aria-controls={listId}
           aria-autocomplete="list"
