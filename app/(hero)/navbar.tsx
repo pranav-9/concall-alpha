@@ -11,7 +11,22 @@ import { authHrefWithNext } from "@/lib/safe-next-path";
 import { BrandLogo, BrandMark } from "@/components/brand/logo";
 import { JournalNewIndicator } from "@/components/journal-new-indicator";
 import { TelegramJoinLink } from "@/components/telegram-join-link";
-import { isPhoneAppRoute } from "@/lib/phone-chrome";
+import {
+  ActiveMark,
+  MORE_ICONS,
+  SheetRow,
+  TAB_ICONS,
+  TELEGRAM_ROW,
+  WATCHLISTS_ROW,
+} from "@/components/nav-destinations";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown, Ellipsis } from "lucide-react";
+import { isPhoneAppRoute, PHONE_MORE_LINKS, PHONE_TABS } from "@/lib/phone-chrome";
 
 type UserInfo = {
   email: string | null;
@@ -21,6 +36,7 @@ type UserInfo = {
 
 type LogoutButtonProps = {
   compact?: boolean;
+  className?: string;
 };
 
 type CompanySearchProps = {
@@ -29,6 +45,7 @@ type CompanySearchProps = {
   instanceId?: string;
   initialCompanies?: { code: string; name: string | null }[];
   autoFocus?: boolean;
+  inputClassName?: string;
 };
 
 const CompanySearch = dynamic<CompanySearchProps>(
@@ -49,6 +66,27 @@ const ThemeSwitcher = dynamic(
     loading: () => <div aria-hidden className="h-8 w-9" />,
   },
 );
+
+// The house-skin auth pill — the phone bar's Sign in, reused for Logout and,
+// filled, for Sign up. The desktop variant adds a hover state (Tailwind 3's
+// `hover:` isn't gated on a hover-capable pointer, so the phone one leaves it off).
+const HOUSE_AUTH_PILL =
+  "house-data inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-3 py-[9px] text-[10px] uppercase tracking-[0.12em] transition-colors";
+const HOUSE_AUTH_OUTLINE = `${HOUSE_AUTH_PILL} border-[var(--rule)] text-[var(--ink)] active:bg-[var(--paper-2)]`;
+const HOUSE_AUTH_OUTLINE_DESKTOP = `${HOUSE_AUTH_OUTLINE} hover:bg-[var(--paper-2)]`;
+const HOUSE_AUTH_FILLED_DESKTOP = `${HOUSE_AUTH_PILL} border-[var(--ink)] bg-[var(--ink)] text-[var(--paper)] hover:opacity-90`;
+
+// The shadcn item paints every un-coloured svg muted; the house rows colour
+// their own icons (ink, or paper on the active row), so hand that back.
+const HOUSE_MENU_ITEM =
+  "cursor-pointer gap-3 rounded-xl px-2.5 py-2.5 focus:bg-[var(--paper-2)] focus:text-[var(--ink)] [&_svg:not([class*='text-'])]:text-current";
+
+const DESKTOP_TAB_CLASS =
+  "relative flex items-center gap-1.5 whitespace-nowrap px-3 transition-colors";
+
+function DesktopTabLabel({ children }: { children: React.ReactNode }) {
+  return <span className="house-data text-[10.5px] uppercase tracking-[0.1em]">{children}</span>;
+}
 
 const Navbar = ({
   initialUser = null,
@@ -85,16 +123,21 @@ const Navbar = ({
   // on a phone-app route, where the pill shell's hamburger is display:none.
   const phoneMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
+  // One destination list for every piece of chrome (lib/phone-chrome): the
+  // four tabs, then what sits behind "Other". Watchlists are user-owned — only
+  // surfaced when signed in, so the signed-out nav stays lean.
+  const moreItems = [
+    ...PHONE_MORE_LINKS.map(({ href, label, blurb }) => ({
+      href,
+      label,
+      blurb,
+      icon: MORE_ICONS[href],
+    })),
+    ...(initialUser ? [WATCHLISTS_ROW] : []),
+  ];
   const navItems = [
-    { href: "/desk", label: "Desk" },
-    { href: "/announcements", label: "Announcements" },
-    { href: "/themes", label: "Themes" },
-    { href: "/leaderboards", label: "Leaderboards" },
-    { href: "/sectors", label: "Sectors" },
-    // Watchlists are user-owned — only surface the tab when signed in, so the
-    // signed-out nav stays lean (matches the desk design).
-    ...(initialUser ? [{ href: "/watchlists", label: "Watchlists" }] : []),
-    { href: "/blog", label: "Journal" },
+    ...PHONE_TABS.map(({ href, label }) => ({ href, label })),
+    ...moreItems.map(({ href, label }) => ({ href, label })),
   ];
 
   // The brand cluster is the "take me home" affordance, so "home" should mean
@@ -111,6 +154,10 @@ const Navbar = ({
   const signUpHref = authHrefWithNext("/auth/sign-up", pathname);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  // Desktop strip: "Other" lights when the page is one of its destinations
+  // (prefix match, so /sectors/<slug> counts — unlike the phone bar, which only
+  // renders on exact routes).
+  const isOtherActive = moreItems.some((item) => isActive(item.href));
 
   const renderSignedOutAuth = (compact: boolean) => {
     if (compact) {
@@ -260,11 +307,11 @@ const Navbar = ({
     <nav
       ref={navRef}
       id="global-navbar"
-      className="sticky top-0 z-50 flex justify-center bg-background/38 backdrop-blur-lg dark:bg-background/70"
+      className="sticky top-0 z-50 flex flex-col items-center bg-background/38 backdrop-blur-lg dark:bg-background/70 min-[1152px]:bg-transparent dark:min-[1152px]:bg-transparent"
     >
       <div
         className={cn(
-          "relative w-full max-w-[1440px] sm:px-6 sm:py-2 lg:px-10",
+          "relative w-full max-w-[1440px] sm:px-6 sm:py-2 lg:px-10 min-[1152px]:hidden",
           isPhoneAppChrome ? "px-0 py-0" : "px-3 py-1.5",
         )}
       >
@@ -301,12 +348,9 @@ const Navbar = ({
                 )}
               </button>
               {initialUser ? (
-                <LogoutButton compact />
+                <LogoutButton compact className={HOUSE_AUTH_OUTLINE} />
               ) : (
-                <Link
-                  href={loginHref}
-                  className="house-data whitespace-nowrap rounded-full border border-[var(--rule)] px-3 py-[9px] text-[10px] uppercase tracking-[0.12em] text-[var(--ink)] transition-colors active:bg-[var(--paper-2)]"
-                >
+                <Link href={loginHref} className={HOUSE_AUTH_OUTLINE}>
                   Sign in
                 </Link>
               )}
@@ -325,52 +369,7 @@ const Navbar = ({
             </Link>
           </div>
 
-          {/* The desktop cluster must fit inside the pill: the nav pills carry
-              their own px-3, so they sit gap-1 apart, and the search box is the
-              one flexible item — it gives up width (down to min-w-40) before
-              anything can overflow. At gap-3/gap-4 with a fixed w-72 search the
-              cluster ran 30-290px past the pill's right edge at every desktop
-              width, pushing Logout / Sign up outside the bar. The full cluster
-              needs ~1280px; below that the hamburger takes over. */}
-          <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-            <div className="hidden min-w-0 flex-1 items-center justify-end gap-1 min-[1280px]:flex">
-              <div className="mr-2 min-w-40 max-w-72 flex-1">
-                <CompanySearch
-                  instanceId="navbar-company-search"
-                  initialCompanies={initialCompanies}
-                />
-              </div>
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  prefetch={false}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-colors whitespace-nowrap",
-                    isActive(item.href)
-                      ? "bg-foreground text-background shadow-sm"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                  )}
-                >
-                  {item.label}
-                  {item.href === "/blog" && latestJournalDate ? (
-                    <JournalNewIndicator latestKey={latestJournalDate} />
-                  ) : null}
-                  </Link>
-              ))}
-              {telegramUrl ? (
-                <TelegramJoinLink
-                  href={telegramUrl}
-                  surface="navbar"
-                  className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  Telegram
-                </TelegramJoinLink>
-              ) : null}
-              <ThemeSwitcher />
-              {renderAuthControls(true)}
-            </div>
-
+          <div className="flex items-center gap-2">
             <button
               ref={menuButtonRef}
               type="button"
@@ -389,7 +388,7 @@ const Navbar = ({
               // its corners hit-tested to the div behind, so edge taps did
               // nothing — the "mash the menu and it won't open" report at 354px.
               className={cn(
-                "relative z-50 min-[1280px]:hidden inline-flex h-11 w-11 touch-manipulation items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground active:bg-accent active:text-foreground dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground/80",
+                "relative z-50 inline-flex h-11 w-11 touch-manipulation items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground active:bg-accent active:text-foreground dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground/80",
                 TOUCH_TARGET_ICON,
               )}
             >
@@ -418,7 +417,7 @@ const Navbar = ({
             aria-label="Close navigation menu"
             tabIndex={-1}
             onClick={() => setIsMenuOpen(false)}
-            className="min-[1280px]:hidden fixed inset-0 z-40 cursor-default bg-foreground/10 backdrop-blur-[2px]"
+            className="fixed inset-0 z-40 cursor-default bg-foreground/10 backdrop-blur-[2px]"
           />
         )}
 
@@ -429,7 +428,7 @@ const Navbar = ({
             role="menu"
             aria-label="Navigation menu"
             tabIndex={-1}
-            className="min-[1280px]:hidden absolute z-50 left-3 right-3 top-[calc(100%+0.5rem)] max-h-[calc(100dvh-var(--global-navbar-height,4.25rem)-1.5rem)] overflow-y-auto overscroll-contain rounded-[1.5rem] border border-border/60 bg-background shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl outline-none dark:border-white/12 dark:bg-[hsl(0_0%_8%)] dark:shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)]"
+            className="absolute z-50 left-3 right-3 top-[calc(100%+0.5rem)] max-h-[calc(100dvh-var(--global-navbar-height,4.25rem)-1.5rem)] overflow-y-auto overscroll-contain rounded-[1.5rem] border border-border/60 bg-background shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl outline-none dark:border-white/12 dark:bg-[hsl(0_0%_8%)] dark:shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)]"
           >
             <div className="space-y-2 px-3 py-3">
               <CompanySearch
@@ -480,6 +479,121 @@ const Navbar = ({
             </div>
           </div>
         )}
+      </div>
+      {/* Desktop: the phone tab strip's grammar carried up to a top bar (house
+          skin, same Desk / Filings / Ranking / Journal tabs and icons, the amber
+          active tick on the edge that meets the page, and "Other" as a menu of
+          the same rows the phone sheet shows). Replaces the pill + hamburger
+          shell from 1152px up; everything below keeps it. Five tabs
+          instead of seven pills plus Telegram is also what makes the row fit —
+          the old desktop cluster overflowed the pill at every width. */}
+      <div className="house hidden w-full border-b border-[var(--rule)] !bg-[color-mix(in_srgb,var(--paper)_86%,transparent)] min-[1152px]:block">
+        <div className="mx-auto flex h-14 w-full max-w-[1440px] items-stretch gap-4 px-6 lg:px-10">
+          <Link href={brandHref} className="flex shrink-0 items-center gap-2.5">
+            <BrandMark bare size={30} className="shrink-0 text-[var(--ink)]" />
+            <span className="house-data whitespace-nowrap text-[11px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">
+              Story of a Stock
+            </span>
+          </Link>
+
+          <div className="flex min-w-40 max-w-72 flex-1 items-center">
+            <CompanySearch
+              className="w-full"
+              inputClassName="h-9 rounded-full border-[var(--rule)] bg-[var(--paper-2)] text-[var(--ink)] placeholder:text-[var(--ink-soft)] focus-visible:border-[var(--ink-soft)] focus-visible:ring-0"
+              instanceId="navbar-company-search"
+              initialCompanies={initialCompanies}
+            />
+          </div>
+
+          <div className="ml-auto flex items-stretch">
+            {PHONE_TABS.map(({ href, label }) => {
+              const Icon = TAB_ICONS[href];
+              const active = isActive(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  prefetch={false}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    DESKTOP_TAB_CLASS,
+                    active ? "text-[var(--ink)]" : "text-[var(--ink-soft)] hover:text-[var(--ink)]",
+                  )}
+                >
+                  <span className="relative">
+                    <Icon aria-hidden size={16} strokeWidth={1.8} />
+                    {href === "/blog" && latestJournalDate ? (
+                      <span className="absolute -right-1.5 -top-0.5">
+                        <JournalNewIndicator latestKey={latestJournalDate} />
+                      </span>
+                    ) : null}
+                  </span>
+                  <DesktopTabLabel>{label}</DesktopTabLabel>
+                  {active ? <ActiveMark edge="bottom" /> : null}
+                </Link>
+              );
+            })}
+
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger
+                className={cn(
+                  DESKTOP_TAB_CLASS,
+                  "outline-none focus-visible:text-[var(--ink)] data-[state=open]:text-[var(--ink)]",
+                  isOtherActive ? "text-[var(--ink)]" : "text-[var(--ink-soft)] hover:text-[var(--ink)]",
+                )}
+              >
+                <Ellipsis aria-hidden size={16} strokeWidth={1.8} />
+                <DesktopTabLabel>Other</DesktopTabLabel>
+                <ChevronDown aria-hidden size={12} strokeWidth={2} className="-ml-0.5" />
+                {isOtherActive ? <ActiveMark edge="bottom" /> : null}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={6}
+                className="house w-72 rounded-2xl border-[var(--rule)] p-1.5 shadow-[0_24px_50px_-30px_rgba(15,23,42,0.45)] dark:shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)]"
+              >
+                {moreItems.map(({ href, label, blurb, icon }) => (
+                  <DropdownMenuItem
+                    key={href}
+                    asChild
+                    className={HOUSE_MENU_ITEM}
+                  >
+                    <Link href={href} prefetch={false} aria-current={isActive(href) ? "page" : undefined}>
+                      <SheetRow icon={icon} label={label} blurb={blurb} active={isActive(href)} />
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+                {telegramUrl ? (
+                  <DropdownMenuItem
+                    asChild
+                    className={HOUSE_MENU_ITEM}
+                  >
+                    <TelegramJoinLink href={telegramUrl} surface="navbar">
+                      <SheetRow icon={TELEGRAM_ROW.icon} label={TELEGRAM_ROW.label} blurb={TELEGRAM_ROW.blurb} />
+                    </TelegramJoinLink>
+                  </DropdownMenuItem>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <ThemeSwitcher />
+            {initialUser ? (
+              <LogoutButton compact className={HOUSE_AUTH_OUTLINE_DESKTOP} />
+            ) : (
+              <>
+                <Link href={loginHref} className={HOUSE_AUTH_OUTLINE_DESKTOP}>
+                  Sign in
+                </Link>
+                <Link href={signUpHref} className={HOUSE_AUTH_FILLED_DESKTOP}>
+                  Sign up
+                </Link>
+              </>
+            )}
+            {!hasEnvVars ? <EnvVarWarning /> : null}
+          </div>
+        </div>
       </div>
     </nav>
   );

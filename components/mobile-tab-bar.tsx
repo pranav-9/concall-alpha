@@ -3,22 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Activity,
-  BarChart2,
-  BookOpen,
-  ChevronRight,
-  Ellipsis,
-  Layers,
-  LayoutGrid,
-  ListChecks,
-  Newspaper,
-  Send,
-  type LucideIcon,
-} from "lucide-react";
+import { Ellipsis } from "lucide-react";
 
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { JournalNewIndicator } from "@/components/journal-new-indicator";
+import {
+  ActiveMark,
+  MORE_ICONS,
+  SheetRow,
+  TAB_ICONS,
+  TELEGRAM_ROW,
+  WATCHLISTS_ROW,
+} from "@/components/nav-destinations";
 import { TelegramJoinLink } from "@/components/telegram-join-link";
 import {
   isPhoneAppRoute,
@@ -26,8 +22,6 @@ import {
   normalizePhonePathname,
   PHONE_MORE_LINKS,
   PHONE_TABS,
-  type PhoneMoreHref,
-  type PhoneTabHref,
 } from "@/lib/phone-chrome";
 import { cn } from "@/lib/utils";
 
@@ -39,29 +33,10 @@ import { cn } from "@/lib/utils";
 // a bottom sheet with the remaining destinations (Themes, Sectors, Watchlists
 // when signed in, the Telegram group). Mounted in the root layout after the
 // footer so the spacer it renders keeps the footer's last line above the bar.
-const TAB_ICONS: Record<PhoneTabHref, LucideIcon> = {
-  "/desk": Newspaper,
-  "/announcements": Activity,
-  "/leaderboards": BarChart2,
-  "/blog": BookOpen,
-};
-
-const MORE_ICONS: Record<PhoneMoreHref, LucideIcon> = {
-  "/themes": Layers,
-  "/sectors": LayoutGrid,
-};
-
+// Icons, the active tick and the sheet rows are shared with the desktop tab
+// strip via components/nav-destinations.
 const TAB_CLASS =
   "relative flex flex-1 touch-manipulation flex-col items-center gap-1 px-0.5 py-2 transition-colors";
-
-function ActiveMark() {
-  return (
-    <span
-      aria-hidden
-      className="absolute left-1/2 top-0 h-0.5 w-[22px] -translate-x-1/2 rounded-sm bg-[var(--mark)]"
-    />
-  );
-}
 
 function TabLabel({ children }: { children: React.ReactNode }) {
   return <span className="house-data text-[9px] uppercase tracking-[0.06em]">{children}</span>;
@@ -69,40 +44,6 @@ function TabLabel({ children }: { children: React.ReactNode }) {
 
 const SHEET_ROW_CLASS =
   "flex w-full touch-manipulation items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors active:bg-[var(--paper-2)]";
-
-function SheetRow({
-  icon: Icon,
-  label,
-  blurb,
-  active,
-}: {
-  icon: LucideIcon;
-  label: string;
-  blurb?: string;
-  active?: boolean;
-}) {
-  return (
-    <>
-      <span
-        className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--rule)]",
-          active ? "bg-[var(--ink)] text-[var(--paper)]" : "text-[var(--ink)]",
-        )}
-      >
-        <Icon aria-hidden size={17} strokeWidth={1.8} />
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="house-data text-[12px] uppercase tracking-[0.08em] text-[var(--ink)]">
-          {label}
-        </span>
-        {blurb ? (
-          <span className="text-[12.5px] leading-snug text-[var(--ink-soft)]">{blurb}</span>
-        ) : null}
-      </span>
-      <ChevronRight aria-hidden size={16} className="shrink-0 text-[var(--ink-soft)]" />
-    </>
-  );
-}
 
 export function MobileTabBar({
   telegramUrl = null,
@@ -208,12 +149,12 @@ export function MobileTabBar({
             ))}
             {isSignedIn ? (
               <Link
-                href="/watchlists"
+                href={WATCHLISTS_ROW.href}
                 prefetch={false}
                 onClick={() => setMoreOpen(false)}
                 className={SHEET_ROW_CLASS}
               >
-                <SheetRow icon={ListChecks} label="Watchlists" blurb="The companies you follow" />
+                <SheetRow icon={WATCHLISTS_ROW.icon} label={WATCHLISTS_ROW.label} blurb={WATCHLISTS_ROW.blurb} />
               </Link>
             ) : null}
             {telegramUrl ? (
@@ -223,7 +164,7 @@ export function MobileTabBar({
                 onClick={() => setMoreOpen(false)}
                 className={SHEET_ROW_CLASS}
               >
-                <SheetRow icon={Send} label="Telegram group" blurb="Results-day notes, first" />
+                <SheetRow icon={TELEGRAM_ROW.icon} label={TELEGRAM_ROW.label} blurb={TELEGRAM_ROW.blurb} />
               </TelegramJoinLink>
             ) : null}
           </div>
