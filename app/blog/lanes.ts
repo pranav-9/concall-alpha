@@ -131,6 +131,31 @@ export function deriveDesktopJournal(posts: BlogPostMeta[]): DesktopJournal {
   };
 }
 
+export type CompanyJournal = {
+  /** The company's own write-ups, newest-first, numbered among themselves. */
+  stories: CompanyStory[];
+  /** Comparison posts with the company on either side, newest-first. */
+  headToHead: ComparisonPost[];
+};
+
+/**
+ * Everything the Journal has on one company, for its company-page tab: its own
+ * stories (numbered as on the desktop Journal — comparisons don't count) and
+ * every comparison that names it as `a` or `b`. Matched on the portal CODE
+ * only, never on a name. `posts` must be newest-first.
+ */
+export function companyJournal(posts: BlogPostMeta[], code: string): CompanyJournal {
+  const key = code.trim().toUpperCase();
+  if (!key) return { stories: [], headToHead: [] };
+  const headToHead = posts
+    .filter(isComparison)
+    .filter((p) => p.comparison.a.code === key || p.comparison.b.code === key);
+  const own = posts.filter(
+    (p) => !p.comparison && p.category === "companies" && p.companyCode === key,
+  );
+  return { stories: indexStories(own).stories, headToHead };
+}
+
 /** Rows "More stories" shows before "Show all". */
 export const MORE_STORIES_ROWS = 5;
 

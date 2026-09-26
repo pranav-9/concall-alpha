@@ -48,6 +48,7 @@ const SECTION_TONE_BY_ID: Record<string, SectionTone> = {
   "guidance-history": "amber",
   "valuation-check": "violet",
   "community": "rose",
+  "company-journal": "rose",
 };
 
 const TONE_CLASSES: Record<

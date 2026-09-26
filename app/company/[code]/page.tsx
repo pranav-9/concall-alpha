@@ -8,7 +8,10 @@ import {
 import { SECTION_MAP } from "../constants";
 import { CompanyPageWorkspace } from "../components/company-page-workspace";
 import { CompanyAnnouncementsSection } from "../components/company-announcements-section";
+import { CompanyJournalSection } from "../components/company-journal-section";
 import { TelegramJoinCard } from "@/components/telegram-join-card";
+import { getAllPostMeta } from "@/app/blog/posts";
+import { companyJournal, type CompanyJournal } from "@/app/blog/lanes";
 import {
   OverviewSignalBoard,
   OverviewSignalBoardFallback,
@@ -63,7 +66,7 @@ export async function generateMetadata({
 // moves the footer when the panel lands (see section-loading.tsx).
 const fallbackSize = (available: boolean): "panel" | "block" => (available ? "panel" : "block");
 
-function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
+function buildSidebarSections(overview: CompanyPageOverviewCacheRow, hasJournal: boolean) {
   // Only three tabs carry a badge, and each carries a score circle — nothing
   // else (decision 2026-08-26). The tab bar reads as a three-number scorecard:
   // ConcallScore (quarterly), Future Growth, and Valuation, each in its own band
@@ -108,6 +111,9 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow) {
     // Community tab retired for now — no engagement (1 comment total as of 2026-07).
     // Component + API routes + Supabase tables kept intact; re-enable when ready.
     // { ...SECTION_MAP.community },
+    // Last, and only when the Journal has a post on this company — an empty tab
+    // on the ~75% of pages without one would be a dead click.
+    ...(hasJournal ? [SECTION_MAP.companyJournal] : []),
   ];
 }
 
@@ -127,7 +133,11 @@ export default async function Page({
     );
   }
 
-  const sidebarSections = buildSidebarSections(overview);
+  // Posts are read from disk (the root layout already does, so they're in the
+  // deployed bundle); cheap enough to derive per request.
+  const journal: CompanyJournal = companyJournal(getAllPostMeta(), overview.company_code);
+  const hasJournal = journal.stories.length + journal.headToHead.length > 0;
+  const sidebarSections = buildSidebarSections(overview, hasJournal);
 
   return (
     <div className="relative isolate w-full overflow-hidden px-3 py-3 pb-14 sm:px-4 sm:py-4 sm:pb-28 lg:px-8">
@@ -248,6 +258,15 @@ export default async function Page({
               </GatedPanel>
             </Suspense>
           </div>
+
+          {hasJournal ? (
+            <div data-section-id="company-journal">
+              <CompanyJournalSection
+                journal={journal}
+                companyName={overview.company_name || overview.company_code}
+              />
+            </div>
+          ) : null}
 
           {/* Community panel retired for now — re-enable alongside the
               tab nav entry above when ready. */}

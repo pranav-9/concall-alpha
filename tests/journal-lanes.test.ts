@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { comparisonTitle, parseComparison } from "../app/blog/comparison";
 import {
   MORE_STORIES_ROWS,
+  companyJournal,
   deriveDesktopJournal,
   deriveJournalLanes,
   filterNotebook,
@@ -207,11 +208,43 @@ assert.deepEqual(
 );
 assert.deepEqual(moreStoriesView([], TODAY, false).groups, []);
 
+// --- companyJournal: one company's stories + every head-to-head naming it
+{
+  const vs = (a: string, b: string) => ({
+    industry: "Coffee",
+    a: { name: a, code: a },
+    b: { name: b, code: b },
+  });
+  const set: BlogPostMeta[] = [
+    mk("ccl-3", "2026-09-24", "companies", { companyCode: "CCL" }),
+    mk("vin-vs-ccl", "2026-09-23", "companies", { companyCode: "VINCOFE", comparison: vs("VINCOFE", "CCL") }),
+    mk("ccl-vs-vin", "2026-09-21", "companies", { companyCode: "CCL", comparison: vs("CCL", "VINCOFE") }),
+    mk("vin-1", "2026-09-20", "companies", { companyCode: "VINCOFE" }),
+    mk("ccl-1", "2026-09-18", "companies", { companyCode: "CCL" }),
+    mk("note", "2026-09-17", "product", { companyCode: "CCL" }),
+  ];
+  const ccl = companyJournal(set, "ccl");
+  assert.deepEqual(ccl.stories.map((s) => [s.slug, storyLabel(s)]), [
+    ["ccl-3", "Story 2 of 2"],
+    ["ccl-1", "Story 1 of 2"],
+  ], "own stories only, numbered without comparisons or non-company posts");
+  assert.deepEqual(
+    ccl.headToHead.map((p) => p.slug),
+    ["vin-vs-ccl", "ccl-vs-vin"],
+    "comparisons match on either side",
+  );
+  const vin = companyJournal(set, "VINCOFE");
+  assert.deepEqual(vin.stories.map((s) => s.slug), ["vin-1"]);
+  assert.equal(vin.headToHead.length, 2);
+  assert.deepEqual(companyJournal(set, "NOPE"), { stories: [], headToHead: [] });
+  assert.deepEqual(companyJournal(set, "  "), { stories: [], headToHead: [] });
+}
+
 // --- the real corpus: every post parses, and exactly the tagged ones are comparisons
 const corpus = getAllPostMeta();
 assert.deepEqual(
   corpus.filter((p) => p.comparison).map((p) => p.slug).sort(),
-  ["ccl-vs-vintage", "stltech-vs-hfcl"],
+  ["ccl-vs-vintage", "e2e-vs-netweb", "stltech-vs-hfcl"],
 );
 const realDesk = deriveDesktopJournal(corpus);
 assert.ok(!realDesk.stories.some((s) => s.comparison), "no comparison in Company Stories");
