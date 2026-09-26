@@ -35,6 +35,7 @@ export type AuthCompletedProps = {
   source: "auth_page" | "gate" | "unattributed";
   companyCode?: string;
   sectionId?: string;
+  postSlug?: string;
 };
 
 export type LeaderboardBoard =
@@ -220,6 +221,7 @@ export const analytics = {
       source: props.source,
       company_code: props.companyCode,
       section_id: props.sectionId,
+      post_slug: props.postSlug,
     }),
 
   /** A returning user finished a log-in that started from a tracked click. */
@@ -229,23 +231,36 @@ export const analytics = {
       source: props.source,
       company_code: props.companyCode,
       section_id: props.sectionId,
+      post_slug: props.postSlug,
     }),
 
   // ── Sign-up gate — viewed → click → signup_completed{source:"gate"} ────────
   /** The gate card was actually seen (≥50% in the viewport), once per company +
-   *  section per session — the funnel's denominator. Mounting is not viewing. */
-  signupGateViewed: (companyCode: string, sectionId: string) =>
-    track("signup_gate_viewed", { company_code: companyCode, section_id: sectionId }),
+   *  section (or Journal post) per session — the funnel's denominator. Mounting
+   *  is not viewing. Journal gates report `section_id: "journal"` + `post_slug`,
+   *  and `company_code` only on a company story. */
+  signupGateViewed: (companyCode: string | undefined, sectionId: string, postSlug?: string) =>
+    track("signup_gate_viewed", {
+      company_code: companyCode || undefined,
+      section_id: sectionId,
+      post_slug: postSlug,
+    }),
 
   /** A gate action was taken. `open_in_browser` is the in-app-browser fallback
    *  where Google OAuth is blocked; its click → return drop-off is how that
    *  loss is measured (Google's block page is off-site, no error can fire). */
   signupGateClick: (
-    companyCode: string,
+    companyCode: string | undefined,
     sectionId: string,
     method: "google" | "email" | "login" | "open_in_browser",
+    postSlug?: string,
   ) =>
-    track("signup_gate_click", { company_code: companyCode, section_id: sectionId, method }),
+    track("signup_gate_click", {
+      company_code: companyCode || undefined,
+      section_id: sectionId,
+      method,
+      post_slug: postSlug,
+    }),
 
   // ── Intent — Q2 intent check, Q3 monetize ─────────────────────────────────
   /** A "cover this company" request was submitted — demand + a contactable engaged user. */
@@ -279,8 +294,10 @@ export const analytics = {
   journalPostView: (slug: string) => track("journal_post_view", { slug }),
 
   /** A Journal post was read to the bottom (or near it). */
-  journalReadComplete: (slug: string, scrollPct: number) =>
-    track("journal_read_complete", { slug, scroll_pct: Math.round(scrollPct) }),
+  /** `gated`: the sign-up gate was clipping the post, so the scroll reached the
+   *  card and footer, not the end of the post — exclude from the believer cohort. */
+  journalReadComplete: (slug: string, scrollPct: number, gated = false) =>
+    track("journal_read_complete", { slug, scroll_pct: Math.round(scrollPct), gated }),
 
   // Monetization surfaces that don't exist yet — names reserved so Q3 is a wiring
   // job, not a redesign. Call sites land when the pages do.

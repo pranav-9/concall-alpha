@@ -1,7 +1,8 @@
-// Three pure helpers for the post page, node-dep-free so they stay testable and
-// never hand-curate per company: the "Next read" set (derived from frontmatter
-// and from which company pages a post links), the read time, and the lift that
-// turns a post's literal poster figure into the <PostPoster/> component.
+// Pure helpers for the post page, node-dep-free so they stay testable and never
+// hand-curate per company: the "Next read" set (derived from frontmatter and
+// from which company pages a post links), the read time, the lift that turns a
+// post's literal poster figure into the <PostPoster/> component, and where the
+// sign-up gate cuts a post.
 
 import type { BlogPostMeta } from "./posts";
 
@@ -93,4 +94,65 @@ function liftSegment(segment: string): string {
     }
   }
   return out;
+}
+
+// ── Sign-up gate cut ────────────────────────────────────────────────────────
+// Logged-out readers get a post's opening; the gate clips the rest (see
+// lib/signup-gate.ts). The cut sits before a `## ` heading, derived from the
+// post's own structure, never chosen per post:
+//   1. the first numbered section (`## 1. …`) — company stories and comparisons
+//      open with a takeaway and "At a glance", then number their sections;
+//   2. else the first heading after "At a glance";
+//   3. else the second heading (a Notebook post's intro + first section).
+// Not cut: a post with fewer than two headings, one whose only heading after
+// "At a glance" is none (the glance stays open), and a cut with no prose above
+// it (the reader must get an opening). The marker gets a blank line on both
+// sides so MDX never folds it into the paragraph above. The card's "below"
+// list is the next few hidden headings, so it names what the reader is missing.
+export const GATE_CUT_TAG = "<GateCut />";
+const GATE_BELOW_MAX = 3;
+
+type Heading = { line: number; text: string };
+
+function h2Headings(lines: string[]): Heading[] {
+  const out: Heading[] = [];
+  // A fence closes on the same character, at least as long as it opened (CommonMark).
+  let fence: string | null = null;
+  lines.forEach((line, i) => {
+    const marker = /^\s*(`{3,}|~{3,})/.exec(line)?.[1];
+    if (marker && fence === null) fence = marker;
+    else if (marker && marker[0] === fence?.[0] && marker.length >= fence.length) fence = null;
+    else if (fence === null && /^## /.test(line)) out.push({ line: i, text: line.slice(3).trim() });
+  });
+  return out;
+}
+
+/** A heading as the card shows it: no section number, no Markdown marks. */
+export function plainHeading(text: string): string {
+  return text
+    .replace(/^\d+\.\s+/, "")
+    .replace(/\s+#+\s*$/, "")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[*_`]/g, "")
+    .trim();
+}
+
+/** The post with `<GateCut />` inserted before the cut heading, plus the hidden headings; null = no cut. */
+export function gatePost(content: string): { source: string; below: string[] } | null {
+  const lines = content.split("\n");
+  const headings = h2Headings(lines);
+  if (headings.length < 2) return null;
+  const glance = headings.findIndex((h) => /^at a glance$/i.test(plainHeading(h.text)));
+  let cut = headings.findIndex((h) => /^\d+\.\s/.test(h.text));
+  if (cut === -1 && glance !== -1) cut = glance + 1 < headings.length ? glance + 1 : -1;
+  else if (cut === -1) cut = 1;
+  if (cut === -1) return null;
+  const at = headings[cut].line;
+  // Prose only: a heading, a JSX line (the poster figure) or an expression is not an opening.
+  const opening = lines.slice(0, at).some((line) => /^\s*[^\s#<{]/.test(line) && !/^\s*<\/?[A-Za-z]/.test(line));
+  if (!opening) return null;
+  return {
+    source: [...lines.slice(0, at), "", GATE_CUT_TAG, "", ...lines.slice(at)].join("\n"),
+    below: headings.slice(cut, cut + GATE_BELOW_MAX).map((h) => plainHeading(h.text)),
+  };
 }

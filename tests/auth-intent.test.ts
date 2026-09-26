@@ -12,13 +12,17 @@ const NOW = Date.parse("2026-09-18T12:00:00Z");
 
 // Round trip, with and without the gate's company/section.
 const gate = { method: "google", source: "gate", companyCode: "HFCL", sectionId: "moat-analysis", at: NOW - 60_000 } as const;
-assert.deepEqual(parseAuthIntent(encodeAuthIntent(gate), NOW), gate);
+assert.deepEqual(parseAuthIntent(encodeAuthIntent(gate), NOW), { ...gate, postSlug: undefined });
 const plain = { method: "email", source: "auth_page", at: NOW } as const;
 assert.deepEqual(parseAuthIntent(encodeAuthIntent(plain), NOW), {
   ...plain,
   companyCode: undefined,
   sectionId: undefined,
+  postSlug: undefined,
 });
+// The Journal gate's post rides along.
+const journal = { method: "email", source: "gate", sectionId: "journal", postSlug: "ccl-vs-vintage", at: NOW } as const;
+assert.deepEqual(parseAuthIntent(encodeAuthIntent(journal), NOW), { ...journal, companyCode: undefined });
 
 // Garbage never parses.
 for (const raw of [null, undefined, "", "not json", "null", "[]", "42", "{}"]) {
@@ -36,10 +40,11 @@ assert.equal(parseAuthIntent(JSON.stringify({ ...plain, at: NOW - 40 * 60_000 })
 assert.equal(parseAuthIntent(JSON.stringify({ ...plain, at: NOW + 1 }), NOW), null);
 
 // Non-string company/section are dropped, not trusted.
-assert.deepEqual(parseAuthIntent(JSON.stringify({ ...plain, companyCode: 7, sectionId: {} }), NOW), {
+assert.deepEqual(parseAuthIntent(JSON.stringify({ ...plain, companyCode: 7, sectionId: {}, postSlug: 1 }), NOW), {
   ...plain,
   companyCode: undefined,
   sectionId: undefined,
+  postSlug: undefined,
 });
 
 // New vs returning: 10 minutes from created_at.

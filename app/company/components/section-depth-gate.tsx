@@ -41,8 +41,12 @@ import { elevatedBlockClass } from "./surface-tokens";
  * arrived. Observer-driven updates commit with flushSync: the callbacks run
  * before paint, so the full section is never flashed. No `useId` here — this
  * renders inside lazily-loaded panels.
+ *
+ * Journal posts reuse it (`scope="post"`, `postSlug`, no company code — see
+ * app/blog/[slug]/page.tsx), with the same server-side auth check.
  */
 type GateState = { kind: "gated"; height: number } | { kind: "open" };
+type GateScope = "section" | "post";
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
@@ -76,12 +80,16 @@ export function SectionDepthGate({
   sectionId,
   below,
   nextPath,
+  scope = "section",
+  postSlug,
   children,
 }: {
-  companyCode: string;
+  companyCode: string | undefined;
   sectionId: string;
   below: readonly string[];
   nextPath: string;
+  scope?: GateScope;
+  postSlug?: string;
   children: React.ReactNode;
 }) {
   const clipRef = React.useRef<HTMLDivElement>(null);
@@ -175,6 +183,8 @@ export function SectionDepthGate({
           sectionId={sectionId}
           below={below}
           nextPath={nextPath}
+          scope={scope}
+          postSlug={postSlug}
         />
       )}
     </div>
@@ -186,16 +196,20 @@ function GateCard({
   sectionId,
   below,
   nextPath,
+  scope,
+  postSlug,
 }: {
-  companyCode: string;
+  companyCode: string | undefined;
   sectionId: string;
   below: readonly string[];
   nextPath: string;
+  scope: GateScope;
+  postSlug?: string;
 }) {
   const cardRef = React.useRef<HTMLElement>(null);
   const intent = React.useMemo(
-    () => ({ source: "gate" as const, companyCode, sectionId }),
-    [companyCode, sectionId],
+    () => ({ source: "gate" as const, companyCode, sectionId, postSlug }),
+    [companyCode, sectionId, postSlug],
   );
   const google = useGoogleSignIn({ nextPath, intent });
   const [inApp, setInApp] = React.useState(false);
@@ -205,11 +219,11 @@ function GateCard({
     setInApp(isInAppBrowser(window.navigator.userAgent));
   }, []);
 
-  // Viewed = at least half the card on screen, once per company + tab per session.
+  // Viewed = at least half the card on screen, once per company + tab (or post) per session.
   React.useEffect(() => {
     const card = cardRef.current;
     if (!card || typeof IntersectionObserver === "undefined") return;
-    const key = `signup-gate:viewed:${companyCode}:${sectionId}`;
+    const key = `signup-gate:viewed:${postSlug ?? companyCode}:${sectionId}`;
     try {
       if (window.sessionStorage.getItem(key)) return;
     } catch {
@@ -224,19 +238,19 @@ function GateCard({
         } catch {
           /* noop */
         }
-        analytics.signupGateViewed(companyCode, sectionId);
+        analytics.signupGateViewed(companyCode, sectionId, postSlug);
       },
       { threshold: 0.5 },
     );
     observer.observe(card);
     return () => observer.disconnect();
-  }, [companyCode, sectionId]);
+  }, [companyCode, sectionId, postSlug]);
 
   const encodedNext = encodeURIComponent(nextPath);
   const emailClass = cn(inApp ? primaryPill : outlinePill, TOUCH_TARGET, "min-h-11");
 
   const copyLink = async () => {
-    analytics.signupGateClick(companyCode, sectionId, "open_in_browser");
+    analytics.signupGateClick(companyCode, sectionId, "open_in_browser", postSlug);
     try {
       await window.navigator.clipboard.writeText(window.location.href);
       setCopied(true);
@@ -248,11 +262,11 @@ function GateCard({
   return (
     <aside
       ref={cardRef}
-      aria-label="Sign up to read the rest of this section"
+      aria-label={`Sign up to read the rest of this ${scope}`}
       className={cn(elevatedBlockClass, "relative mx-3 -mt-6 max-w-md bg-background p-4 sm:mx-5 sm:p-5")}
     >
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        Below in this section
+        Below in this {scope}
       </p>
       <h3 className="mt-1 text-base font-bold leading-tight text-foreground">
         Sign up free to read the rest
@@ -278,7 +292,7 @@ function GateCard({
             type="button"
             disabled={google.isLoading}
             onClick={() => {
-              analytics.signupGateClick(companyCode, sectionId, "google");
+              analytics.signupGateClick(companyCode, sectionId, "google", postSlug);
               void google.start();
             }}
             className={cn(primaryPill, TOUCH_TARGET, "min-h-11")}
@@ -292,7 +306,7 @@ function GateCard({
           aria-disabled={google.isLoading || undefined}
           onClick={() => {
             recordAuthAttempt("email", intent);
-            analytics.signupGateClick(companyCode, sectionId, "email");
+            analytics.signupGateClick(companyCode, sectionId, "email", postSlug);
           }}
           className={cn(emailClass, google.isLoading && "pointer-events-none opacity-60")}
         >
@@ -313,7 +327,7 @@ function GateCard({
           href={`/auth/login?next=${encodedNext}`}
           onClick={() => {
             recordAuthAttempt("email", intent);
-            analytics.signupGateClick(companyCode, sectionId, "login");
+            analytics.signupGateClick(companyCode, sectionId, "login", postSlug);
           }}
           className="font-medium text-foreground underline underline-offset-4"
         >

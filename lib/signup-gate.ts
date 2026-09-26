@@ -3,9 +3,10 @@
  *
  * Logged-out readers get the top of each gated section; the rest is clipped at
  * the section's `data-gate-cut` element behind a free sign-up card. Overview,
- * Announcements and Quarterly stay fully open (Quarterly is where tweets land),
- * and so does everything outside the company page. The content is still sent —
- * this is a nudge with an incentive, not a paywall.
+ * Announcements and Quarterly stay fully open (Quarterly is where tweets land).
+ * Journal posts gate the same way past their opening (the cut is derived in
+ * app/blog/related.ts `gatePost`); everything else stays open. The content is
+ * still sent — this is a nudge with an incentive, not a paywall.
  *
  * Rollback: unset `SIGNUP_GATE` and redeploy. Read server-side only, so it is
  * not an instant switch.
@@ -100,6 +101,17 @@ export function shouldGateSection(input: {
 /** Return path that lands the reader back on the same company tab. */
 export function buildGateNext(companyCode: string, sectionId: string): string {
   return `/company/${encodeURIComponent(companyCode)}#${sectionId}`;
+}
+
+/** `section_id` the Journal gate reports under; the post is its own property. */
+export const JOURNAL_GATE_SECTION = "journal";
+
+/** Id of the Journal cut marker — where a reader lands after signing up. */
+export const JOURNAL_CONTINUE_ANCHOR = "continue-reading";
+
+/** Return path that lands the reader back on the same Journal post, at the cut. */
+export function buildJournalGateNext(slug: string): string {
+  return `/blog/${encodeURIComponent(slug)}#${JOURNAL_CONTINUE_ANCHOR}`;
 }
 
 /** Company code from a gate return path, for the sign-up page's headline. */

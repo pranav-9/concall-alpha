@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import type { BlogPostMeta } from "../app/blog/posts";
-import { liftPoster, linksCompanyPage, nextReads, readMinutes } from "../app/blog/related";
+import { GATE_CUT_TAG, gatePost, liftPoster, linksCompanyPage, nextReads, plainHeading, readMinutes } from "../app/blog/related";
+
+const POSTS_DIR = join(__dirname, "../app/blog/posts");
 
 const meta = (slug: string, over: Partial<BlogPostMeta> = {}): BlogPostMeta => ({
   slug, date: "2026-09-01", dateLabel: "1 September 2026", title: slug, summary: "", tags: [], ...over,
@@ -123,4 +127,60 @@ const lonely = Array(20000).fill("< ").join("") + " " + Array(200).fill("w").joi
 const t0 = Date.now();
 assert.equal(readMinutes(lonely) >= 1, true);
 assert.ok(Date.now() - t0 < 500, "20k unclosed < must not be quadratic");
+// ── Sign-up gate cut ────────────────────────────────────────────────────────
+const doc = (...lines: string[]) => lines.join("\n");
+const cutBefore = (source: string) => {
+  const lines = source.split("\n");
+  const i = lines.indexOf(GATE_CUT_TAG);
+  return i === -1 ? null : lines[i + 2];
+};
+
+// 1. A company story: the takeaway and "At a glance" stay open; the cut is the first numbered section.
+const story = doc("Intro.", "", "## The central takeaway", "", "t", "", "## At a glance", "", "- a", "",
+  "## How both make money", "", "m", "", "## 1. It met **all three** guides", "", "x", "",
+  "## 2. The [order book](/company/SHREEREF) fell", "", "y", "", "## 3. The lock", "", "## 4. Refill", "");
+const storyGate = gatePost(story);
+assert.ok(storyGate);
+assert.equal(cutBefore(storyGate.source), "## 1. It met **all three** guides");
+assert.deepEqual(storyGate.below, ["It met all three guides", "The order book fell", "The lock"], "next 3 headings, plain");
+assert.equal(storyGate.source.replace(`\n${GATE_CUT_TAG}\n\n`, ""), story, "only the marker (and its blank lines) is added");
+
+// The marker never joins the paragraph above: a blank line on both sides even when the heading hugs prose.
+const hug = gatePost(doc("Intro line", "## One", "a", "## Two", "b"));
+assert.ok(hug?.source.includes(`Intro line\n## One\na\n\n${GATE_CUT_TAG}\n\n## Two`));
+
+// 2. Unnumbered story: the heading after "At a glance".
+const netweb = gatePost(doc("## The central takeaway", "", "t", "", "## At a glance", "", "g", "", "## Two promises", "", "## The backlog", ""));
+assert.equal(netweb && cutBefore(netweb.source), "## Two promises");
+
+// 3. A Notebook post: the second heading.
+const notebook = gatePost(doc("Intro", "", "## Business Snapshot", "", "b", "", "## Quarterly Score", "", "## Guidance Tracker", ""));
+assert.equal(notebook && cutBefore(notebook.source), "## Quarterly Score");
+assert.deepEqual(notebook?.below, ["Quarterly Score", "Guidance Tracker"]);
+
+// Too little structure → no gate; headings inside code fences don't count.
+assert.equal(gatePost("Intro\n\n## Only one\n\ntext"), null);
+assert.equal(gatePost("Intro\n\n## 1. Only one\n\ntext"), null, "a numbered heading alone is still one heading");
+assert.equal(gatePost(doc("## 1. First", "", "a", "", "## 2. Second", "", "b")), null, "no prose above the cut = no opening = no gate");
+assert.equal(gatePost(doc("Intro", "", "## Takeaway", "", "t", "", "## At a glance", "", "g")), null, "never cut at the glance itself");
+assert.equal(gatePost(doc("## One", "", "~~~", "## 1. not a heading", "~~~", "")), null, "tilde fences count too");
+assert.equal(cutBefore(gatePost(doc("Intro", "", "## A", "", "````", "```", "## 1. inside", "```", "````", "", "## B", ""))!.source), "## B", "a backtick line inside a tilde/longer fence doesn't end it");
+assert.equal(gatePost("no headings at all"), null);
+assert.equal(gatePost(doc("## One", "", "```", "## 1. not a heading", "```", "")), null);
+assert.equal(plainHeading("12. `Code` and _em_"), "Code and em");
+assert.equal(plainHeading("A closed heading ##"), "A closed heading");
+// The poster alone is not an opening: prose must sit above the cut.
+assert.equal(gatePost(doc('<figure className="my-6">', '  <img src="/blog/x-story-2026-09-01.png" alt="a" />', "</figure>", "", "## 1. A", "", "## 2. B")), null);
+assert.equal(gatePost(doc("{/* note */}", "", "## 1. A", "", "## 2. B")), null);
+
+// Every live post: a gate, when there is one, leaves an opening and hides something.
+for (const file of readdirSync(POSTS_DIR).filter((f) => f.endsWith(".mdx"))) {
+  const body = readFileSync(join(POSTS_DIR, file), "utf8").replace(/^---[\s\S]*?\n---\n/, "");
+  const gate = gatePost(body);
+  if (!gate) continue;
+  const at = gate.source.indexOf(GATE_CUT_TAG);
+  assert.ok(gate.source.slice(0, at).trim().length > 0 && gate.below.length > 0, file);
+  assert.doesNotThrow(() => liftPoster(gate.source), file);
+}
+
 console.log("blog-related: ok");
