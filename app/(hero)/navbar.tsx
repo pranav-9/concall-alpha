@@ -325,9 +325,16 @@ const Navbar = ({
             </Link>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="hidden min-[1200px]:flex items-center gap-3 lg:gap-4">
-              <div className="w-60 lg:w-72">
+          {/* The desktop cluster must fit inside the pill: the nav pills carry
+              their own px-3, so they sit gap-1 apart, and the search box is the
+              one flexible item — it gives up width (down to min-w-40) before
+              anything can overflow. At gap-3/gap-4 with a fixed w-72 search the
+              cluster ran 30-290px past the pill's right edge at every desktop
+              width, pushing Logout / Sign up outside the bar. The full cluster
+              needs ~1280px; below that the hamburger takes over. */}
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+            <div className="hidden min-w-0 flex-1 items-center justify-end gap-1 min-[1280px]:flex">
+              <div className="mr-2 min-w-40 max-w-72 flex-1">
                 <CompanySearch
                   instanceId="navbar-company-search"
                   initialCompanies={initialCompanies}
@@ -382,7 +389,7 @@ const Navbar = ({
               // its corners hit-tested to the div behind, so edge taps did
               // nothing — the "mash the menu and it won't open" report at 354px.
               className={cn(
-                "relative z-50 min-[1200px]:hidden inline-flex h-11 w-11 touch-manipulation items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground active:bg-accent active:text-foreground dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground/80",
+                "relative z-50 min-[1280px]:hidden inline-flex h-11 w-11 touch-manipulation items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-muted-foreground transition-colors hover:border-ring/50 hover:text-foreground active:bg-accent active:text-foreground dark:border-white/15 dark:bg-white/[0.06] dark:text-foreground/80",
                 TOUCH_TARGET_ICON,
               )}
             >
@@ -411,7 +418,7 @@ const Navbar = ({
             aria-label="Close navigation menu"
             tabIndex={-1}
             onClick={() => setIsMenuOpen(false)}
-            className="min-[1200px]:hidden fixed inset-0 z-40 cursor-default bg-foreground/10 backdrop-blur-[2px]"
+            className="min-[1280px]:hidden fixed inset-0 z-40 cursor-default bg-foreground/10 backdrop-blur-[2px]"
           />
         )}
 
@@ -422,7 +429,7 @@ const Navbar = ({
             role="menu"
             aria-label="Navigation menu"
             tabIndex={-1}
-            className="min-[1200px]:hidden absolute z-50 left-3 right-3 top-[calc(100%+0.5rem)] max-h-[calc(100dvh-var(--global-navbar-height,4.25rem)-1.5rem)] overflow-y-auto overscroll-contain rounded-[1.5rem] border border-border/60 bg-background shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl outline-none dark:border-white/12 dark:bg-[hsl(0_0%_8%)] dark:shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)]"
+            className="min-[1280px]:hidden absolute z-50 left-3 right-3 top-[calc(100%+0.5rem)] max-h-[calc(100dvh-var(--global-navbar-height,4.25rem)-1.5rem)] overflow-y-auto overscroll-contain rounded-[1.5rem] border border-border/60 bg-background shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)] backdrop-blur-xl outline-none dark:border-white/12 dark:bg-[hsl(0_0%_8%)] dark:shadow-[0_24px_50px_-30px_rgba(0,0,0,0.9)]"
           >
             <div className="space-y-2 px-3 py-3">
               <CompanySearch
