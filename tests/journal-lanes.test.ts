@@ -244,7 +244,7 @@ assert.deepEqual(moreStoriesView([], TODAY, false).groups, []);
 const corpus = getAllPostMeta();
 assert.deepEqual(
   corpus.filter((p) => p.comparison).map((p) => p.slug).sort(),
-  ["ccl-vs-vintage", "e2e-vs-netweb", "stltech-vs-hfcl"],
+  ["ccl-vs-vintage", "e2e-vs-netweb", "jyoticnc-vs-macpower", "stltech-vs-hfcl"],
 );
 const realDesk = deriveDesktopJournal(corpus);
 assert.ok(!realDesk.stories.some((s) => s.comparison), "no comparison in Company Stories");
