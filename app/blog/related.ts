@@ -9,8 +9,12 @@ import type { BlogPostMeta } from "./posts";
 export const NEXT_READ_MAX = 3;
 const WORDS_PER_MINUTE = 200;
 
-/** A company post's one-page poster: `/blog/<code>-story-<date>.png|jpg`. The one gate for the lift and the component. */
-export const POSTER_SRC = /^\/blog\/[a-z0-9-]+-story-\d{4}-\d{2}-\d{2}\.(?:png|jpe?g)$/i;
+/**
+ * A company post's one-page poster: `/blog/<code>-story-<date>.png|jpg`, or `…-<date>-vs-<peer>.png` for a
+ * comparison filed the same day as the anchor's own story (whose poster already holds the bare path —
+ * JYOTICNC vs MACPOWER, 2026-09-28). The one gate for the lift and the component.
+ */
+export const POSTER_SRC = /^\/blog\/[a-z0-9-]+-story-\d{4}-\d{2}-\d{2}(?:-vs-[a-z0-9]+)?\.(?:png|jpe?g)$/i;
 
 /** Whether an MDX body links a company's portal page (`/company/<CODE>`), on a code boundary, any case. */
 export function linksCompanyPage(content: string, code: string): boolean {

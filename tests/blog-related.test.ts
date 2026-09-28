@@ -56,6 +56,10 @@ const figure = '<figure className="my-6">\n  <img\n    src="/blog/ccl-story-2026
 assert.equal(liftPoster(figure), '<PostPoster src="/blog/ccl-story-2026-09-20.png" alt="One-page summary of CCL Products: a timeline." />\nThat\'s the whole story.', "the poster figure becomes the component");
 const jpg = '<figure className="my-6">\n  <img\n    src="/blog/cartrade-story-2026-09-14.jpg"\n    alt="One-page summary of CarTrade Tech"\n    className="x"\n  />\n</figure>';
 assert.equal(liftPoster(jpg), '<PostPoster src="/blog/cartrade-story-2026-09-14.jpg" alt="One-page summary of CarTrade Tech" />', "CarTrade's jpg counts");
+const vsPeer = '<figure className="my-6">\n  <img\n    src="/blog/jyoticnc-story-2026-09-28-vs-macpower.png"\n    alt="Comparison poster"\n    className="x"\n  />\n</figure>';
+assert.equal(liftPoster(vsPeer), '<PostPoster src="/blog/jyoticnc-story-2026-09-28-vs-macpower.png" alt="Comparison poster" />', "a same-day comparison poster (-vs-<peer>) lifts too");
+const freeSuffix = '<figure className="my-6">\n  <img src="/blog/jyoticnc-story-2026-09-28-final.png" alt="x" />\n</figure>';
+assert.equal(liftPoster(freeSuffix), freeSuffix, "only a -vs-<peer> suffix is a poster");
 const chart = '<figure className="my-6">\n  <img src="/blog/market-voted.png" alt="chart" />\n</figure>';
 assert.equal(liftPoster(chart), chart, "a non-poster figure is left as written");
 const svg = '<figure className="my-6">\n  <svg viewBox="0 0 1 1"></svg>\n</figure>';
