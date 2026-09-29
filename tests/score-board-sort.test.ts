@@ -34,6 +34,10 @@ const row = (
     "growthScore",
     "valuationScore",
     "read",
+    "moat",
+    "checks",
+    "guidance",
+    "management",
   ];
   assert.deepEqual(
     keys.map((k) => [k, defaultDirectionForKey(k)]),
@@ -45,8 +49,54 @@ const row = (
       ["growthScore", "desc"],
       ["valuationScore", "desc"],
       ["read", "desc"],
+      ["moat", "desc"],
+      ["checks", "desc"],
+      ["guidance", "desc"],
+      ["management", "desc"],
     ],
   );
+}
+
+// The watchlist's categorical columns sort best-first on desc and pin a row
+// without the signal last in both directions — the same null rule as a score.
+{
+  const withSignals = (code: string, signals: ScoreBoardRow["signals"]): ScoreBoardRow => ({
+    ...row(code, { concall: 7, growth: 7, valuation: 5 }),
+    signals,
+  });
+  const none = { moat: null, forensics: null, guidance: null, management: null };
+  const rows = [
+    withSignals("NAR", {
+      ...none,
+      moat: { rating: "narrow_moat", tier: "strong" },
+      forensics: { clean: 5, watch: 3, flag: 1, assessed: 9 },
+      guidance: { ambition: "ambitious", evidence: "thinly_evidenced" },
+      management: { tier: "mixed", tierLabel: "Mixed", metCount: 2, countedCount: 4, verdictSource: "counted" },
+    }),
+    withSignals("WID", {
+      ...none,
+      moat: { rating: "wide_moat", tier: "mid" },
+      forensics: { clean: 8, watch: 1, flag: 0, assessed: 9 },
+      guidance: { ambition: "measured", evidence: "well_evidenced" },
+      management: { tier: "reliable", tierLabel: "Reliable", metCount: 4, countedCount: 4, verdictSource: "counted" },
+    }),
+    withSignals("NON", none),
+    withSignals("NOM", {
+      ...none,
+      moat: { rating: "no_moat", tier: null },
+      forensics: { clean: 3, watch: 3, flag: 3, assessed: 9 },
+      guidance: { ambition: "conservative", evidence: "partly_evidenced" },
+      management: { tier: "low_trust", tierLabel: "Low trust", metCount: 1, countedCount: 4, verdictSource: "scored" },
+    }),
+  ];
+  const derived = deriveRows(rows);
+  const order = (key: SortKey, direction: "asc" | "desc") =>
+    sortRows(derived, { key, direction }).map((r) => r.companyCode);
+  assert.deepEqual(order("moat", "desc"), ["WID", "NAR", "NOM", "NON"], "wide > narrow > none; missing last");
+  assert.deepEqual(order("moat", "asc"), ["NOM", "NAR", "WID", "NON"], "missing still last ascending");
+  assert.deepEqual(order("checks", "desc"), ["WID", "NAR", "NOM", "NON"], "fewest flags first");
+  assert.deepEqual(order("guidance", "desc"), ["WID", "NOM", "NAR", "NON"], "best-evidenced first");
+  assert.deepEqual(order("management", "desc"), ["WID", "NAR", "NOM", "NON"], "tier first");
 }
 
 const universe = [

@@ -49,6 +49,13 @@ import {
 } from "@/components/ui/table";
 import { BOARD_READS } from "@/lib/board-read";
 import { FreshScoreChip } from "@/components/score-provenance-chips";
+import {
+  ForensicChecksCell,
+  GuidanceCell,
+  ManagementCell,
+  MoatCell,
+  PhoneSignalsLine,
+} from "@/components/signal-cells";
 import { BANDS, bandForScore } from "@/lib/score-band";
 import { formatScoredAt } from "@/lib/score-freshness";
 import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
@@ -142,6 +149,79 @@ const COLUMN_INFO = {
         <span className="font-medium text-foreground">Outlook-led</span>, not just &ldquo;7.2&rdquo;.
         It describes the setup — it is not a buy or sell call.
       </p>
+    </>
+  ),
+  // --- the watchlist ("signals") layout's own columns -------------------------
+  soas: (
+    <>
+      <p>
+        The <span className="font-medium text-foreground">SOAS score</span> — the Read, and the
+        number this list is ranked by:{" "}
+        <span className="font-medium text-foreground">0.88 × the average of Quarter and Growth,
+        plus 0.12 × Valuation</span>, where Quarter is a recency-weighted blend of the latest print
+        and the trailing four (the latest quarter counts double). Quality counts roughly twice
+        what price does.
+      </p>
+      <p>
+        The word names the configuration behind the number: a soft quarter against a strong
+        outlook reads <span className="font-medium text-foreground">Outlook-led</span>, not just
+        &ldquo;7.2&rdquo;. It describes the setup — it is not a buy or sell call.
+      </p>
+    </>
+  ),
+  quarter: (
+    <>
+      <p>
+        The company&apos;s <span className="font-medium text-foreground">latest ConcallScore</span>,
+        0–10, with the band it falls in. A quarter label beneath it means the company hasn&apos;t
+        reported the list&apos;s newest quarter yet. The trailing four-quarter average is in the
+        hover.
+      </p>
+    </>
+  ),
+  moat: (
+    <>
+      <p>
+        The moat rating from the Quality tab —{" "}
+        <span className="font-medium text-foreground">Wide, Narrow, At risk or None</span> — and,
+        where one is graded, how strong it is (strong / mid / weak).
+      </p>
+      <p>
+        No trajectory is shown: the portal stores no moat history, so it never claims
+        &ldquo;widening&rdquo; or &ldquo;eroding&rdquo;.
+      </p>
+    </>
+  ),
+  checks: (
+    <>
+      <p>
+        The nine forensic checks from the Quality tab (cash conversion, receivables, debt,
+        related parties, pledges, auditor, contingent liabilities, other income, dilution), each
+        a fixed threshold rule on Screener numbers:{" "}
+        <span className="font-medium text-foreground">clean · watch · flag</span>.
+      </p>
+      <p>Checks the data can&apos;t run (needs the annual report; bank statement model) stay out of the count.</p>
+    </>
+  ),
+  guidance: (
+    <>
+      <p>
+        How strong the forward guidance is, from the Guidance tab: its{" "}
+        <span className="font-medium text-foreground">ambition</span> (ambitious / measured /
+        conservative against what the company has actually delivered), qualified when the live
+        book behind it is only partly or thinly evidenced.
+      </p>
+      <p>Only companies with a full-read guidance track carry this; the rest show a dash.</p>
+    </>
+  ),
+  management: (
+    <>
+      <p>
+        Guidance credibility: the tier from the Guidance tab, and beneath it how many{" "}
+        <span className="font-medium text-foreground">graded commitments were met</span> — a miss,
+        a drop, or a revision past its own deadline all count against.
+      </p>
+      <p>The ratio waits for at least three graded commitments; before that the cell says so.</p>
     </>
   ),
 } as const;
@@ -353,6 +433,7 @@ export function ScoreBoardTable({
   priorRankByCode,
   coverageCutRank,
   overallRankByCode,
+  layout = "board",
 }: {
   rows: ScoreBoardRow[];
   /**
@@ -382,6 +463,14 @@ export function ScoreBoardTable({
    * admitted large cap, or no Read yet) renders no chip either.
    */
   overallRankByCode?: Record<string, number>;
+  /**
+   * "board" (default) is the leaderboard's Latest / 4Q / Growth / Valuation /
+   * Read grammar. "signals" is the watchlist layout (2026-09-29): the SOAS score
+   * leads, the quarter collapses to the latest print, and four categorical
+   * columns (Moat, Forensic checks, Guidance, Management) join from each row's
+   * `signals`. Same rows, same sort state, same remove action — one component.
+   */
+  layout?: "board" | "signals";
 }) {
   const router = useRouter();
   const [sort, setSort] = useState<SortState>({ key: "coverageRank", direction: "asc" });
@@ -397,7 +486,8 @@ export function ScoreBoardTable({
   // Only show Δ once there is prior data to compare against — otherwise the first
   // week (or forever, pre-DDL) would render a column of empty dots.
   const showDelta = priorRankByCode != null && Object.keys(priorRankByCode).length > 0;
-  const columnCount = 6 + (showRemove ? 1 : 0);
+  const signals = layout === "signals";
+  const columnCount = (signals ? 9 : 6) + (showRemove ? 1 : 0);
   // Index of the first greyed row, so a divider row can be dropped in just above
   // the pinned tail. -1 when nothing is greyed (e.g. a watchlist, or a board with
   // ≤ coverageCutRank scored rows).
@@ -530,6 +620,15 @@ export function ScoreBoardTable({
                   · #{overallRank} overall
                 </span>
               )}
+              {overallRank == null && row.largeCap && (
+                <span
+                  className="whitespace-nowrap font-mono text-[10px]"
+                  style={{ color: "var(--ink-soft)", opacity: 0.75 }}
+                  title="Admitted as a large cap — outside the ranked mid/small-cap universe"
+                >
+                  · large cap · unranked
+                </span>
+              )}
               {row.latestIsStale && row.latestQuarterLabel && (
                 <span className="whitespace-nowrap text-[10px] text-muted-foreground">
                   · latest {row.latestQuarterLabel}
@@ -540,7 +639,7 @@ export function ScoreBoardTable({
                 coloured by their own band so the row keeps the board's grammar. */}
             <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[11px] leading-tight">
               <LegStat
-                label="Latest"
+                label={signals ? "Qtr" : "Latest"}
                 score={row.latestConcallScore}
                 bandClass={
                   row.latestConcallScore != null
@@ -552,6 +651,7 @@ export function ScoreBoardTable({
                 }
                 dimmed={dim}
               />
+              {!signals && (
               <LegStat
                 label="4Q"
                 score={row.fourConcallScore}
@@ -565,6 +665,7 @@ export function ScoreBoardTable({
                 }
                 dimmed={dim}
               />
+              )}
               <LegStat
                 label="Growth"
                 score={row.growthScore}
@@ -597,6 +698,7 @@ export function ScoreBoardTable({
                 <FreshScoreChip scoredAt={formatScoredAt(row.concallScoredAt)} dimmed={dim} />
               )}
             </div>
+            {signals && row.signals && <PhoneSignalsLine signals={row.signals} dimmed={dim} />}
           </div>
           {/* Read — the number the list is ranked by — on the right, where the
               eye lands after the name. */}
@@ -662,11 +764,15 @@ export function ScoreBoardTable({
               className="min-h-11 rounded-md border border-border/60 bg-background px-2 py-1.5 text-[12px] font-medium text-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <option value="coverageRank">Rank</option>
-              <option value="read">Read</option>
-              <option value="latestScore">Latest</option>
-              <option value="fourQScore">4Q avg</option>
+              <option value="read">{signals ? "SOAS score" : "Read"}</option>
+              <option value="latestScore">{signals ? "Quarter" : "Latest"}</option>
+              {!signals && <option value="fourQScore">4Q avg</option>}
               <option value="growthScore">Growth</option>
               <option value="valuationScore">Valuation</option>
+              {signals && <option value="moat">Moat</option>}
+              {signals && <option value="checks">Forensic checks</option>}
+              {signals && <option value="guidance">Guidance</option>}
+              {signals && <option value="management">Management</option>}
               <option value="companyName">Company</option>
             </select>
             </label>
@@ -684,8 +790,10 @@ export function ScoreBoardTable({
             </button>
           </div>
           <div className="flex items-center gap-0.5 text-[11px] font-bold uppercase tracking-[0.09em] text-amber-700 dark:text-amber-300">
-            <span>Read</span>
-            <ColumnInfo label="Read">{COLUMN_INFO.read}</ColumnInfo>
+            <span>{signals ? "SOAS score" : "Read"}</span>
+            <ColumnInfo label={signals ? "SOAS score" : "Read"}>
+              {signals ? COLUMN_INFO.soas : COLUMN_INFO.read}
+            </ColumnInfo>
           </div>
         </div>
         {sortedRows.length ? (
@@ -712,7 +820,7 @@ export function ScoreBoardTable({
             ? "Watchlist companies by read, with ConcallScore, growth outlook and valuation"
             : "Companies by overall rank, with ConcallScore, growth outlook, valuation and read"
         }
-        className="min-w-[900px] w-full text-sm"
+        className={`${signals ? "min-w-[1040px]" : "min-w-[900px]"} w-full text-sm`}
       >
         <TableHeader>
           <TableRow className="border-b bg-transparent hover:bg-transparent" style={{ borderColor: "var(--rule)" }}>
@@ -753,6 +861,96 @@ export function ScoreBoardTable({
                 })}
               </div>
             </TableHead>
+            {signals ? (
+              <>
+            <TableHead
+              aria-sort={sortDirectionLabel("read")}
+              className="border-l px-2.5 py-3"
+              style={{ borderColor: "var(--rule)", backgroundColor: "rgba(180,83,9,0.06)" }}
+            >
+              {renderSortHead({
+                label: "SOAS score",
+                columnKey: "read",
+                sort,
+                onSort: handleSort,
+                subtitle: "0–10 · the read",
+                info: COLUMN_INFO.soas,
+                emphasis: true,
+              })}
+            </TableHead>
+            <TableHead aria-sort={sortDirectionLabel("moat")} className="border-l px-2.5 py-3 text-foreground" style={{ borderColor: "var(--rule)" }}>
+              {renderSortHead({
+                label: "Moat",
+                columnKey: "moat",
+                sort,
+                onSort: handleSort,
+                subtitle: "quality section",
+                info: COLUMN_INFO.moat,
+              })}
+            </TableHead>
+            <TableHead aria-sort={sortDirectionLabel("checks")} className="px-2.5 py-3 text-foreground">
+              {renderSortHead({
+                label: "Forensics",
+                columnKey: "checks",
+                sort,
+                onSort: handleSort,
+                subtitle: "clean · watch · flag",
+                info: COLUMN_INFO.checks,
+              })}
+            </TableHead>
+            <TableHead aria-sort={sortDirectionLabel("latestScore")} className="px-2.5 py-3 text-foreground">
+              {renderSortHead({
+                label: "Quarter",
+                columnKey: "latestScore",
+                sort,
+                onSort: handleSort,
+                subtitle: "ConcallScore",
+                info: COLUMN_INFO.quarter,
+              })}
+            </TableHead>
+            <TableHead aria-sort={sortDirectionLabel("growthScore")} className="px-2.5 py-3 text-foreground">
+              {renderSortHead({
+                label: "Growth",
+                columnKey: "growthScore",
+                sort,
+                onSort: handleSort,
+                subtitle: "forward",
+                info: COLUMN_INFO.growth,
+              })}
+            </TableHead>
+            <TableHead aria-sort={sortDirectionLabel("valuationScore")} className="px-2.5 py-3 text-foreground">
+              {renderSortHead({
+                label: "Valuation",
+                columnKey: "valuationScore",
+                sort,
+                onSort: handleSort,
+                subtitle: "higher = cheaper",
+                info: COLUMN_INFO.valuation,
+              })}
+            </TableHead>
+            <TableHead aria-sort={sortDirectionLabel("guidance")} className="px-2.5 py-3 text-foreground">
+              {renderSortHead({
+                label: "Guidance",
+                columnKey: "guidance",
+                sort,
+                onSort: handleSort,
+                subtitle: "how strong",
+                info: COLUMN_INFO.guidance,
+              })}
+            </TableHead>
+            <TableHead aria-sort={sortDirectionLabel("management")} className="px-2.5 py-3 text-foreground">
+              {renderSortHead({
+                label: "Management",
+                columnKey: "management",
+                sort,
+                onSort: handleSort,
+                subtitle: "reliability · met",
+                info: COLUMN_INFO.management,
+              })}
+            </TableHead>
+              </>
+            ) : (
+              <>
             <TableHead aria-sort={sortDirectionLabel("latestScore")} className="px-3 py-3 text-foreground">
               {renderSortHead({
                 label: "ConcallScore",
@@ -808,6 +1006,8 @@ export function ScoreBoardTable({
                 emphasis: true,
               })}
             </TableHead>
+              </>
+            )}
             {showRemove && (
               <TableHead className="px-2 py-3 text-foreground">
                 <span className="sr-only">Remove</span>
@@ -873,7 +1073,7 @@ export function ScoreBoardTable({
                             the flex row; only bites under the sm cap. */}
                         {/* Name on top, ticker beneath it (not inline) — the
                             house company-cell shape. */}
-                        <div className="flex min-w-0 flex-col leading-tight">
+                        <div className={`flex min-w-0 flex-col leading-tight ${signals ? "max-w-[12.5rem]" : ""}`}>
                           <Link
                             href={`/company/${row.companyCode}`}
                             prefetch={false}
@@ -910,10 +1110,128 @@ export function ScoreBoardTable({
                                 · #{overallRankByCode[row.companyCode.toUpperCase()]} overall
                               </span>
                             )}
+                            {overallRankByCode?.[row.companyCode.toUpperCase()] == null && row.largeCap && (
+                              <span
+                                className="whitespace-nowrap font-mono text-[10px]"
+                                style={{ color: "var(--ink-soft)", opacity: 0.75 }}
+                                title="Admitted as a large cap — outside the ranked mid/small-cap universe"
+                              >
+                                · large cap · unranked
+                              </span>
+                            )}
                           </span>
                         </div>
                       </div>
                     </TableCell>
+                  {signals ? (
+                    <>
+                  {/* SOAS score — the Read, leading the row. */}
+                  <TableCell
+                    className="border-l px-2.5 py-3"
+                    style={{ borderColor: "var(--rule)", backgroundColor: "rgba(180,83,9,0.05)" }}
+                  >
+                    <div className="leading-tight" title={row.readDescription}>
+                      {row.readScore != null ? (
+                        <div className="text-base tabular-nums font-semibold text-foreground">
+                          {row.readScore.toFixed(1)}
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground">—</div>
+                      )}
+                      <div
+                        className={`max-w-[7.5rem] text-[10px] font-medium leading-tight ${dim ? "text-muted-foreground" : read.textClass}`}
+                      >
+                        {read.label}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="border-l px-2.5 py-3" style={{ borderColor: "var(--rule)" }}>
+                    <MoatCell moat={row.signals?.moat ?? null} dimmed={dim} />
+                  </TableCell>
+                  <TableCell className="px-2.5 py-3">
+                    <ForensicChecksCell forensics={row.signals?.forensics ?? null} dimmed={dim} />
+                  </TableCell>
+                  {/* Quarter: the single newest print — the one the freshness /
+                      unofficial chips describe. The 4Q average rides in the hover. */}
+                  <TableCell
+                    className="px-2.5 py-3"
+                    title={row.fourConcallScore != null ? `Trailing 4Q average ${row.fourConcallScore.toFixed(1)}` : undefined}
+                  >
+                    {row.latestConcallScore != null ? (
+                      <div className="leading-tight">
+                        <div className="tabular-nums font-semibold text-foreground">
+                          {row.latestConcallScore.toFixed(1)}
+                        </div>
+                        <div className="flex items-baseline gap-1.5">
+                          <span
+                            className={`text-[10px] font-medium ${
+                              dim
+                                ? "text-muted-foreground"
+                                : BANDS[bandForScore(row.latestConcallScore)].textClass
+                            }`}
+                          >
+                            {BANDS[bandForScore(row.latestConcallScore)].label}
+                          </span>
+                          {row.latestIsStale && row.latestQuarterLabel && (
+                            <span className="whitespace-nowrap text-[10px] text-muted-foreground">
+                              {row.latestQuarterLabel}
+                            </span>
+                          )}
+                        </div>
+                        {row.concallScoredWithin24h && (
+                          <div className="mt-1 flex flex-wrap items-center gap-1">
+                            <FreshScoreChip
+                              scoredAt={formatScoredAt(row.concallScoredAt)}
+                              dimmed={dim}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="px-2.5 py-3">
+                    <ScoreCell
+                      score={row.growthScore}
+                      bandLabel={
+                        row.growthScore != null
+                          ? GROWTH_BANDS[bandForGrowthScore(row.growthScore)].label
+                          : null
+                      }
+                      bandClass={
+                        row.growthScore != null
+                          ? GROWTH_BANDS[bandForGrowthScore(row.growthScore)].textClass
+                          : ""
+                      }
+                      dimmed={dim}
+                    />
+                  </TableCell>
+                  <TableCell className="px-2.5 py-3">
+                    <ScoreCell
+                      score={row.valuationScore}
+                      bandLabel={
+                        row.valuationScore != null
+                          ? VALUATION_BANDS[bandForValuationScore(row.valuationScore)].label
+                          : null
+                      }
+                      bandClass={
+                        row.valuationScore != null
+                          ? VALUATION_BANDS[bandForValuationScore(row.valuationScore)].textClass
+                          : ""
+                      }
+                      dimmed={dim}
+                    />
+                  </TableCell>
+                  <TableCell className="px-2.5 py-3">
+                    <GuidanceCell guidance={row.signals?.guidance ?? null} dimmed={dim} />
+                  </TableCell>
+                  <TableCell className="px-2.5 py-3">
+                    <ManagementCell management={row.signals?.management ?? null} dimmed={dim} />
+                  </TableCell>
+                    </>
+                  ) : (
+                    <>
                   {/* Latest: the single newest print, its quarter label, and the
                       only place the freshness / unofficial chips live — a
                       one-quarter badge must name the one quarter it describes. */}
@@ -1020,6 +1338,8 @@ export function ScoreBoardTable({
                       </div>
                     </div>
                   </TableCell>
+                    </>
+                  )}
                   {showRemove && (
                     <TableCell className="px-2 py-3 text-right">
                       <button

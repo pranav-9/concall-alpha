@@ -4,49 +4,22 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getConcallData } from "@/app/company/get-concall-data";
+import { buildWatchlistBoard, type CompanyNameRow, type GrowthRankRow } from "./build-board";
 import { WatchlistManageMenu } from "./watchlist-manage-menu";
 import { WatchlistTabs } from "./watchlist-tabs";
-import { BandSummaryLine } from "@/components/band-summary-line";
 import {
   ReadDistributionCurve,
   ReadDistributionHeadline,
   ReadDistributionLegend,
 } from "@/components/read-distribution-curve";
-import { ScoreBoardTable, type ScoreBoardRow } from "@/components/score-board-table";
+import { ScoreBoardTable } from "@/components/score-board-table";
 import { AnalyticsBeacon } from "@/components/analytics-beacon";
-import { BOARD_READS, classifyBoardRead } from "@/lib/board-read";
-import { COVERAGE_SELECT, isAdmittedLargeCap } from "@/lib/coverage-policy";
-import { computeBoardReadCounts } from "@/lib/leaderboard-distribution";
-import { computeBoardRanks, type RankableRow } from "@/lib/leaderboard-rank";
-import { buildReadDistribution } from "@/lib/read-distribution";
-import { buildScoreBoardRows } from "@/lib/score-board-rows";
+import { COVERAGE_SELECT } from "@/lib/coverage-policy";
 import { createClient } from "@/lib/supabase/server";
-import {
-  CHIP_BASE,
-  CHIP_NEUTRAL,
-  CHIP_PRIMARY,
-  HERO_CARD,
-  PAGE_BACKGROUND_ATMOSPHERIC,
-  PAGE_SHELL,
-  PANEL_CARD_SKY,
-  TABLE_CARD_SKY,
-} from "@/lib/design/shell";
+import { PAGE_SHELL } from "@/lib/design/shell";
 
 type WatchlistItemRow = {
   company_code?: string | null;
-};
-
-type CompanyNameRow = {
-  code: string;
-  name?: string | null;
-  market_cap_band_at_admission?: string | null;
-  excluded_from_discovery?: boolean | null;
-};
-
-type GrowthRankRow = {
-  company?: string | null;
-  growth_score?: string | number | null;
-  run_timestamp?: string | null;
 };
 
 type WatchlistDetailPageProps = {
@@ -61,69 +34,65 @@ export async function generateMetadata({ params }: WatchlistDetailPageProps): Pr
   };
 }
 
-const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
-const PAGE_SHELL_CLASS = PAGE_SHELL;
-const HERO_CARD_CLASS = HERO_CARD;
-const PANEL_CARD_CLASS = PANEL_CARD_SKY;
-const TABLE_CARD_CLASS = TABLE_CARD_SKY;
-const CHIP_CLASS = CHIP_BASE;
-const CHIP_PRIMARY_CLASS = CHIP_PRIMARY;
-const CHIP_NEUTRAL_CLASS = CHIP_NEUTRAL;
+// House skin (2026-09-29 redesign): the watchlist is the reader's own desk,
+// so it takes the house paper, ink and rule the Desk and the leaderboard's
+// Overall frame already use — one masthead (count · latest quarter over the
+// list's name), the board in a house frame, nothing atmospheric.
+const PANEL_CLASS = "rounded-[1.45rem] border p-4";
+const PANEL_STYLE = { borderColor: "var(--rule)", background: "var(--paper-2)" } as const;
 
 function WatchlistShell({
   tabs,
   title,
   description,
-  chips,
+  eyebrow,
+  aside,
   actions,
   children,
 }: {
   tabs?: ReactNode;
   title: string;
   description?: string;
-  chips?: ReactNode;
+  /** The line over the title: "8 companies · latest quarter Q1 FY27". */
+  eyebrow?: ReactNode;
+  /** Right of the title, on the baseline: what the board is ranked by. */
+  aside?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <>
+    <main className="house relative min-h-screen">
       {tabs}
-      <main className="relative isolate overflow-hidden">
-        <div className={PAGE_BACKGROUND_CLASS} />
-        <div className={PAGE_SHELL_CLASS}>
-          <section className={HERO_CARD_CLASS}>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-2">
-                {chips ? <div className="flex flex-wrap items-center gap-2">{chips}</div> : null}
-                <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
-                  {title}
-                </h1>
-                {description ? (
-                  <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                    {description}
-                  </p>
-                ) : null}
-              </div>
+      <div className={`${PAGE_SHELL} gap-4 pt-6 sm:pt-8`}>
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0 space-y-2">
+            {eyebrow ? (
+              <p className="house-data text-[12px]" style={{ color: "var(--ink-soft)" }}>
+                {eyebrow}
+              </p>
+            ) : null}
+            <div className="flex items-center gap-3">
+              <h1 className="house-display text-3xl sm:text-[2.6rem]">{title}</h1>
               {actions ? <div className="shrink-0">{actions}</div> : null}
             </div>
-          </section>
+            {description ? (
+              <p className="max-w-3xl text-sm leading-relaxed" style={{ color: "var(--ink-soft)" }}>
+                {description}
+              </p>
+            ) : null}
+          </div>
+          {aside ? (
+            <p className="shrink-0 text-[12px] sm:pb-1.5" style={{ color: "var(--ink-soft)" }}>
+              {aside}
+            </p>
+          ) : null}
+        </header>
 
-          {children}
-        </div>
-      </main>
-    </>
+        {children}
+      </div>
+    </main>
   );
 }
-
-const toNumeric = (value: unknown): number | null => {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = Number.parseFloat(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-};
-
 
 export default async function WatchlistDetailPage({ params }: WatchlistDetailPageProps) {
   const { id: rawId } = await params;
@@ -178,13 +147,9 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
 
   if (watchlistError) {
     return (
-      <WatchlistShell
-        title="Watchlist"
-        description="Unable to load this watchlist right now."
-        chips={<span className={`${CHIP_CLASS} ${CHIP_PRIMARY_CLASS}`}>Watchlist</span>}
-      >
-        <div className={PANEL_CARD_CLASS}>
-          <p className="text-sm text-muted-foreground">
+      <WatchlistShell title="Watchlist" description="Unable to load this watchlist right now.">
+        <div className={PANEL_CLASS} style={PANEL_STYLE}>
+          <p className="text-sm" style={{ color: "var(--ink-soft)" }}>
             Please refresh the page or try again in a moment.
           </p>
         </div>
@@ -209,11 +174,10 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
         tabs={tabsNode}
         title={watchlist.name}
         description="Unable to load your watchlist companies right now."
-        chips={<span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>Watchlist</span>}
         actions={<WatchlistManageMenu watchlistId={watchlist.id} currentName={watchlist.name} />}
       >
-        <div className={PANEL_CARD_CLASS}>
-          <p className="text-sm text-muted-foreground">
+        <div className={PANEL_CLASS} style={PANEL_STYLE}>
+          <p className="text-sm" style={{ color: "var(--ink-soft)" }}>
             Please refresh the page or try again in a moment.
           </p>
         </div>
@@ -230,162 +194,75 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
       <WatchlistShell
         tabs={tabsNode}
         title={watchlist.name}
+        eyebrow="0 companies"
         description="No companies added yet. Add a company from its detail page."
-        chips={
-          <>
-            <span className={`${CHIP_CLASS} ${CHIP_PRIMARY_CLASS}`}>Watchlist</span>
-            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>0 companies</span>
-          </>
-        }
         actions={<WatchlistManageMenu watchlistId={watchlist.id} currentName={watchlist.name} />}
       >
-        <div className={PANEL_CARD_CLASS + " space-y-3"}>
-          <p className="text-sm text-muted-foreground">
+        <div className={`${PANEL_CLASS} space-y-3`} style={PANEL_STYLE}>
+          <p className="text-sm" style={{ color: "var(--ink-soft)" }}>
             Open a company detail page and use the watchlist button to start populating this list.
           </p>
           <Link
-            href="/sectors"
+            href="/leaderboards"
             prefetch={false}
-            className="inline-flex items-center rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+            className="house-link inline-flex items-center text-xs font-medium"
           >
-            Browse sectors
+            Browse the leaderboards
           </Link>
         </div>
       </WatchlistShell>
     );
   }
 
-  const latestGrowthByCompany = new Map<string, GrowthRankRow>();
-  ((growthRows ?? []) as GrowthRankRow[]).forEach((row) => {
-    const key = (row.company ?? "").trim().toUpperCase();
-    if (!key || latestGrowthByCompany.has(key)) return;
-    latestGrowthByCompany.set(key, row);
+  const { tableRows, overallRankByCode, readDistribution } = await buildWatchlistBoard({
+    watchlistCodes,
+    rows,
+    latestLabel: latestLabel ?? null,
+    companyNameRows: (companyNameRows ?? []) as CompanyNameRow[],
+    growthRows: (growthRows ?? []) as GrowthRankRow[],
   });
-
-  const growthScoreByCode = new Map<string, number | null>();
-  latestGrowthByCompany.forEach((row, companyCode) => {
-    growthScoreByCode.set(companyCode, toNumeric(row.growth_score));
-  });
-
-  const companyNameByCode = new Map<string, string>();
-  const coverageByCode = new Map<string, CompanyNameRow>();
-  ((companyNameRows ?? []) as CompanyNameRow[]).forEach((row) => {
-    const code = row.code.toUpperCase();
-    companyNameByCode.set(code, row.name?.trim() || row.code);
-    coverageByCode.set(code, row);
-  });
-
-  // Same builder the leaderboard's Overall tab uses, so the four columns mean
-  // exactly the same thing on both surfaces — including the stale-quarter
-  // fallback and the 0-100 -> 0-10 valuation rescale.
-  const boardRowsByCode = new Map(
-    buildScoreBoardRows(rows, latestLabel ?? null, growthScoreByCode, companyNameByCode).map(
-      (row) => [row.companyCode, row],
-    ),
-  );
-
-  // A watchlisted company with no scored quarter at all never reaches
-  // getConcallData's output, so it needs a placeholder row rather than silently
-  // disappearing from a list the user built by hand.
-  const tableRows: ScoreBoardRow[] = watchlistCodes.map(
-    (companyCode) =>
-      boardRowsByCode.get(companyCode) ?? {
-        companyCode,
-        companyName: companyNameByCode.get(companyCode) ?? companyCode,
-        concallScore: null,
-        fourConcallScore: null,
-        latestConcallScore: null,
-        latestQuarterLabel: null,
-        growthScore: growthScoreByCode.get(companyCode) ?? null,
-        valuationScore: null,
-        belowCut: false,
-      },
-  );
-
   const latestQuarterLabel = latestLabel ?? null;
 
-  // Summarised in the Read column's own configuration vocabulary — the same line
-  // the leaderboard runs above its Overall board.
-  const reads = tableRows.map((row) =>
-    classifyBoardRead({
-      concallScore: row.concallScore,
-      growthScore: row.growthScore,
-      valuationScore: row.valuationScore,
-    }),
-  );
-  const readBandCounts = computeBoardReadCounts(reads.map((r) => r.key));
-  const readScored = reads.filter((r) => r.key !== "no_read").length;
-
-  // The reference population for the curve AND the overall-rank chips. Only the
-  // ADMISSION gate applies: large caps are outside the positioning entirely, but
-  // the below-the-cut tail is still ours and belongs in a picture of the universe
-  // — the same population the leaderboard's Overall board renders
-  // (excludeLargeCaps + includeBelowCut). Note this is the covered universe, not
-  // the watchlist's own peers: a holding that's a large cap still gets a needle,
-  // it just isn't in the shape (and carries no overall rank).
-  const universeReadScores: number[] = [];
-  const universeRankableRows: RankableRow[] = [];
-  boardRowsByCode.forEach((row, code) => {
-    if (isAdmittedLargeCap(coverageByCode.get(code))) return;
-    const read = classifyBoardRead({
-      concallScore: row.concallScore,
-      growthScore: row.growthScore,
-      valuationScore: row.valuationScore,
-    });
-    universeRankableRows.push({
-      companyCode: code,
-      companyName: row.companyName,
-      readScore: read.key === "no_read" ? null : read.score,
-      growthScore: row.growthScore,
-    });
-    // "Has a read" is the same test the summary line above the board uses, so
-    // the two counts on this page can't mean different things.
-    if (read.key === "no_read" || read.score == null) return;
-    universeReadScores.push(read.score);
-  });
-  // Each holding's live # on the leaderboard's Overall board — the same ranking
-  // fn over the same universe, so the chip can never disagree with the board. A
-  // plain Record: it crosses into the client table component.
-  const overallRankByCode = Object.fromEntries(computeBoardRanks(universeRankableRows));
-
-  const readDistribution = buildReadDistribution(
-    universeReadScores,
-    tableRows.map((row, i) => ({
-      code: row.companyCode,
-      name: row.companyName,
-      score: reads[i].key === "no_read" ? null : reads[i].score,
-      readLabel: BOARD_READS[reads[i].key].label,
-    })),
-  );
+  const companyCount = `${tableRows.length} ${tableRows.length === 1 ? "company" : "companies"}`;
 
   return (
     <WatchlistShell
       tabs={tabsNode}
       title={watchlist.name}
-      chips={
-        <>
-          <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
-            {tableRows.length} {tableRows.length === 1 ? "company" : "companies"}
-          </span>
-          {latestQuarterLabel && (
-            <span className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
-              Latest quarter: {latestQuarterLabel}
-            </span>
-          )}
-        </>
+      eyebrow={
+        latestQuarterLabel ? `${companyCount} · latest quarter ${latestQuarterLabel}` : companyCount
       }
+      // Same caption as the leaderboard's Overall board: the SOAS column shows
+      // the very number the # column ranks on, so this line only has to say
+      // which way the weighting leans.
+      aside="Ranked by SOAS score · quality weighted 2:1 over price"
       actions={<WatchlistManageMenu watchlistId={watchlist.id} currentName={watchlist.name} />}
     >
       <div className="space-y-3">
+        <AnalyticsBeacon event="watchlist_view" count={tableRows.length} />
+        {/* The board in the house frame the leaderboard's Overall board uses. The
+            "signals" layout leads with the SOAS score and adds the four
+            categorical columns — see components/score-board-table.tsx. */}
+        <div
+          className="overflow-hidden rounded-[1.45rem] border shadow-[0_18px_38px_-32px_rgba(15,23,42,0.24)]"
+          style={{ borderColor: "var(--rule)", background: "var(--paper-2)" }}
+        >
+          <ScoreBoardTable
+            rows={tableRows}
+            watchlistId={watchlist.id}
+            overallRankByCode={overallRankByCode}
+            layout="signals"
+          />
+        </div>
         {/* Collapsed by default. The curve is supporting evidence for the board,
             not a headline, and open it cost more vertical space than the thing
             it supports. The summary keeps the one number worth reading at a
             glance, so the closed state is still informative. */}
         {readDistribution && (
-          <details className={`${PANEL_CARD_CLASS} group`}>
+          <details className={`${PANEL_CLASS} group`} style={PANEL_STYLE}>
             <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-2.5 gap-y-1">
               <ChevronDown className="size-3.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
-              <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              <h2 className="house-micro font-semibold" style={{ color: "var(--ink-soft)" }}>
                 Where this list sits
               </h2>
               <ReadDistributionHeadline distribution={readDistribution} />
@@ -397,7 +274,7 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
                   subjectLabel="this watchlist"
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Read, 0–10 — the composite the board below ranks on
+                  SOAS score, 0–10 — the composite the board above ranks on
                 </p>
               </div>
               <ReadDistributionCurve
@@ -412,31 +289,6 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
             </div>
           </details>
         )}
-        <AnalyticsBeacon event="watchlist_view" count={tableRows.length} />
-        <BandSummaryLine
-          scored={readScored}
-          total={tableRows.length}
-          scopeNote="with a read"
-          bandCounts={readBandCounts}
-        />
-        <div className={TABLE_CARD_CLASS}>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/35 px-4 py-3">
-            <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Watchlist board
-            </h2>
-            {/* Same caption as the leaderboard's Overall board: the Read column
-                shows the very number the # column ranks on, so this line only
-                has to say which way the weighting leans. */}
-            <p className="text-[11px] text-muted-foreground">
-              Ranked by Read · quality weighted 2:1 over price
-            </p>
-          </div>
-          <ScoreBoardTable
-            rows={tableRows}
-            watchlistId={watchlist.id}
-            overallRankByCode={overallRankByCode}
-          />
-        </div>
       </div>
     </WatchlistShell>
   );

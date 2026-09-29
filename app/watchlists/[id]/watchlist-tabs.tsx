@@ -16,7 +16,8 @@ export function WatchlistTabs({
   return (
     <nav
       aria-label="Watchlists"
-      className="flex items-center gap-2 border-b border-border/45 bg-background/70 px-2 backdrop-blur-sm"
+      className="flex items-center gap-2 border-b px-2"
+      style={{ borderColor: "var(--rule)", background: "var(--paper-2)" }}
     >
       <div className="flex-1 overflow-x-auto">
         <ul className="flex min-w-max items-stretch">
@@ -30,10 +31,10 @@ export function WatchlistTabs({
                   aria-current={isActive ? "page" : undefined}
                   className={[
                     "inline-flex h-11 items-center whitespace-nowrap px-4 text-sm transition-colors",
-                    "border-b-2",
+                    "-mb-px border-b-2",
                     isActive
                       ? "border-sky-500 font-semibold text-sky-600 dark:text-sky-300"
-                      : "border-transparent text-muted-foreground hover:text-foreground",
+                      : "border-transparent text-[var(--ink-soft)] hover:text-[var(--ink)]",
                   ].join(" ")}
                 >
                   {list.name}
