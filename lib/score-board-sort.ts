@@ -11,6 +11,13 @@ import {
 } from "@/lib/board-read";
 import type { ScoreSourceStatus } from "@/lib/score-freshness";
 import { computeBoardRanks } from "@/lib/leaderboard-rank";
+import {
+  forensicSortScore,
+  guidanceSortScore,
+  managementSortScore,
+  moatSortScore,
+  type BoardSignals,
+} from "@/lib/board-signals";
 
 export type ScoreBoardRow = {
   companyCode: string;
@@ -59,6 +66,18 @@ export type ScoreBoardRow = {
   concallScoredWithin24h?: boolean;
   /** ISO; feeds the chip titles only. */
   concallScoredAt?: string | null;
+  /**
+   * The four categorical columns of the watchlist layout (Moat / Checks /
+   * Guidance / Management). Only the watchlist page builds them; the
+   * leaderboard's rows leave this undefined and its board never renders them.
+   */
+  signals?: BoardSignals;
+  /**
+   * Admitted as a large cap, so the company sits outside the ranked universe
+   * — the watchlist prints "large cap · unranked" beside the ticker instead of
+   * an overall rank.
+   */
+  largeCap?: boolean;
 };
 
 export type DerivedRow = ScoreBoardRow & {
@@ -145,7 +164,21 @@ export function deriveRows(rows: ScoreBoardRow[], coverageCutRank?: number): Der
 }
 
 
-export type SortKey = "coverageRank" | "companyName" | "latestScore" | "fourQScore" | "growthScore" | "valuationScore" | "read";
+export type SortKey =
+  | "coverageRank"
+  | "companyName"
+  | "latestScore"
+  | "fourQScore"
+  | "growthScore"
+  | "valuationScore"
+  | "read"
+  // The watchlist layout's categorical columns. Each sorts on a numeric
+  // "better first" score from lib/board-signals, so desc = best first like
+  // every score column, and a row without the signal sorts last both ways.
+  | "moat"
+  | "checks"
+  | "guidance"
+  | "management";
 export type SortDirection = "asc" | "desc";
 export type SortState = { key: SortKey; direction: SortDirection };
 
@@ -215,6 +248,34 @@ export function sortRows(rows: DerivedRow[], sort: SortState) {
         break;
       case "valuationScore":
         diff = compareNumber(a.valuationScore, b.valuationScore, sort.direction);
+        break;
+      case "moat":
+        diff = compareNumber(
+          moatSortScore(a.signals?.moat),
+          moatSortScore(b.signals?.moat),
+          sort.direction,
+        );
+        break;
+      case "checks":
+        diff = compareNumber(
+          forensicSortScore(a.signals?.forensics),
+          forensicSortScore(b.signals?.forensics),
+          sort.direction,
+        );
+        break;
+      case "guidance":
+        diff = compareNumber(
+          guidanceSortScore(a.signals?.guidance),
+          guidanceSortScore(b.signals?.guidance),
+          sort.direction,
+        );
+        break;
+      case "management":
+        diff = compareNumber(
+          managementSortScore(a.signals?.management),
+          managementSortScore(b.signals?.management),
+          sort.direction,
+        );
         break;
       case "read": {
         // Sorted on the composite, so Read and the # column agree by construction.
