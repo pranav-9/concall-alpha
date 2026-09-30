@@ -1,4 +1,7 @@
 import DeskExchangeUpdates from "@/app/desk/desk-exchange-updates";
+import { getCompanyAnnouncementDigest } from "@/lib/announcement-digest";
+import { countNewerThan } from "@/lib/announcement-digest/normalize";
+import type { NormalizedAnnouncementDigest } from "@/lib/announcement-digest/types";
 import { getCompanyExchangeDeskData } from "@/lib/exchange-desk";
 import { IMPACT_META, type ExchangeDeskData } from "@/lib/exchange-desk/types";
 import type { CompanyPageOverviewCacheRow } from "@/lib/company-overview-cache";
@@ -8,6 +11,16 @@ import { elevatedBlockClass } from "./surface-tokens";
 
 const pluralize = (count: number, singular: string) =>
   `${count} ${singular}${count === 1 ? "" : "s"}`;
+
+const EYEBROW = "house-data text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--ink-soft)]";
+const META = "house-data text-[10px] text-[var(--ink-soft)]";
+const PILL = "house-data inline-flex rounded-full border px-2 py-0.5 text-[10px] leading-none";
+
+// ---------------------------------------------------------------------------
+// Plain cards — the pre-synthesis top row, kept as the fallback for a company
+// with no digest (fewer than two filings in the 90-day window, a payload that
+// failed the schema, or the table not yet applied).
+// ---------------------------------------------------------------------------
 
 function SignalMix({ data }: { data: ExchangeDeskData }) {
   const positive = data.updates.filter(
@@ -29,9 +42,7 @@ function SignalMix({ data }: { data: ExchangeDeskData }) {
 
   return (
     <div className={cn(elevatedBlockClass, "min-w-0 p-4 sm:p-5")}>
-      <p className="house-data text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--ink-soft)]">
-        Signal mix
-      </p>
+      <p className={EYEBROW}>Signal mix</p>
       <p className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
         {pluralize(data.total, "material filing")}
       </p>
@@ -55,22 +66,13 @@ function LatestSignal({ data }: { data: ExchangeDeskData }) {
   return (
     <div className={cn(elevatedBlockClass, "min-w-0 p-4 sm:p-5")}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="house-data text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--ink-soft)]">
-          Latest material filing
-        </p>
-        <span className="house-data text-[10px] text-[var(--ink-soft)]">{latest.filedLabel}</span>
+        <p className={EYEBROW}>Latest material filing</p>
+        <span className={META}>{latest.filedLabel}</span>
       </div>
       <p className="mt-2 text-base font-semibold leading-snug text-foreground">{latest.summary}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/45 pt-3">
-        <span
-          className={cn(
-            "house-data inline-flex rounded-full border px-2 py-0.5 text-[10px] leading-none",
-            impact.className,
-          )}
-        >
-          {impact.label}
-        </span>
-        <span className="house-data text-[10px] text-[var(--ink-soft)]">{latest.categoryLabel}</span>
+        <span className={cn(PILL, impact.className)}>{impact.label}</span>
+        <span className={META}>{latest.categoryLabel}</span>
         {latest.attachmentUrl ? (
           <a
             href={latest.attachmentUrl}
@@ -86,12 +88,176 @@ function LatestSignal({ data }: { data: ExchangeDeskData }) {
   );
 }
 
+export function AnnouncementPlainCards({ data }: { data: ExchangeDeskData }) {
+  return (
+    <div className="grid gap-3 lg:grid-cols-2">
+      <LatestSignal data={data} />
+      <SignalMix data={data} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Synthesis cards — producer-written (concallyser/scripts/synthesize_announcements.py),
+// schema announcement_digest_v1. Card 1 reads the 90-day window; card 2 reads
+// the one filing that matters, from its PDF. Copy describes, never advises: the
+// producer's guards refuse stance and price language, and nothing here adds any.
+// ---------------------------------------------------------------------------
+
+function QuarterInFilings({
+  digest,
+  newerCount,
+}: {
+  digest: NormalizedAnnouncementDigest;
+  newerCount: number;
+}) {
+  const { summary } = digest;
+  return (
+    <div className={cn(elevatedBlockClass, "flex min-w-0 flex-col p-4 sm:p-5")}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className={EYEBROW}>The quarter in filings</p>
+        <span className={META}>
+          {digest.windowFromLabel}
+          <span aria-hidden> · </span>
+          {pluralize(digest.materialCount, "filing")}
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <span
+          className={cn(
+            PILL,
+            summary.activity === "routine"
+              ? "border-[var(--rule)] text-[var(--ink-soft)]"
+              : "border-transparent bg-[color-mix(in_srgb,var(--signal)_14%,transparent)] font-semibold text-[var(--signal)]",
+          )}
+        >
+          {summary.activityLabel}
+        </span>
+        {summary.chips.map((chip) => (
+          <span key={chip.label} className={cn(PILL, "border-[var(--rule)] text-[var(--ink-soft)]")}>
+            <span className="font-semibold text-[var(--ink)]">{chip.value}</span>
+            <span aria-hidden>&nbsp;</span>
+            {chip.label}
+            {chip.detail ? <span className="text-[var(--ink-soft)]">{" · "}{chip.detail}</span> : null}
+          </span>
+        ))}
+      </div>
+      <p className="mt-3 text-sm leading-relaxed text-foreground [text-wrap:pretty]">{summary.text}</p>
+      {newerCount > 0 ? (
+        <p className={cn(META, "mt-auto border-t border-border/45 pt-3")}>
+          {pluralize(newerCount, "filing")} since this read — see the tape below.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function TheOneThatMatters({
+  digest,
+  data,
+}: {
+  digest: NormalizedAnnouncementDigest;
+  data: ExchangeDeskData;
+}) {
+  const biggest = digest.biggest;
+  if (!biggest) {
+    return (
+      <div className={cn(elevatedBlockClass, "flex min-w-0 flex-col p-4 sm:p-5")}>
+        <p className={EYEBROW}>The one that matters</p>
+        <p className="mt-2 text-base font-semibold leading-snug text-foreground">
+          Nothing needle-moving in the window.
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          No filing rose above routine this window. The quarter&rsquo;s read covers what the tape adds up to.
+        </p>
+      </div>
+    );
+  }
+  const impact = IMPACT_META[biggest.impact];
+  // The tape row for the pick, when it's still inside the loaded window: its
+  // summary line and filing link are the freshest copy of both.
+  const tapeRow = data.updates.find((u) => u.id === biggest.announcementId) ?? null;
+  const title = tapeRow?.summary ?? biggest.title;
+  const attachmentUrl = tapeRow?.attachmentUrl ?? null;
+
+  return (
+    <div className={cn(elevatedBlockClass, "flex min-w-0 flex-col p-4 sm:p-5")}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className={EYEBROW}>The one that matters</p>
+        <span className={META}>{biggest.filedLabel}</span>
+      </div>
+      <p className="mt-2 text-base font-semibold leading-snug text-foreground [text-wrap:pretty]">{title}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <span className={cn(PILL, impact.className)}>{impact.label}</span>
+        <span className={META}>{biggest.categoryLabel}</span>
+      </div>
+      <dl className="mt-3 space-y-2.5 border-t border-border/45 pt-3 text-sm leading-relaxed">
+        <div>
+          <dt className={EYEBROW}>What was filed</dt>
+          <dd className="mt-1 text-foreground [text-wrap:pretty]">{biggest.what}</dd>
+        </div>
+        <div>
+          <dt className={EYEBROW}>What it changes</dt>
+          <dd className="mt-1 text-foreground [text-wrap:pretty]">{biggest.soWhat}</dd>
+        </div>
+      </dl>
+      {biggest.scale ? (
+        <p className="mt-3 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">{biggest.scale.valueLabel}</span> {biggest.scale.valueBasis}
+          <span aria-hidden> · </span>
+          {biggest.scale.ratioLabel} ({biggest.scale.basisValueLabel})
+        </p>
+      ) : null}
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/45 pt-3">
+        <span className={cn(META, "min-w-0 flex-1 [text-wrap:pretty]")}>Why this one: {biggest.pickReason}</span>
+        {attachmentUrl ? (
+          <a
+            href={attachmentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="house-data ml-auto shrink-0 text-[10px] text-[var(--ink-soft)] transition-colors hover:text-[var(--signal)]"
+          >
+            Open filing ↗
+          </a>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+export function AnnouncementSynthesisCards({
+  digest,
+  data,
+}: {
+  digest: NormalizedAnnouncementDigest;
+  data: ExchangeDeskData;
+}) {
+  const newerCount = countNewerThan(data.updates, digest.maxFiledAt);
+  return (
+    <div className="grid gap-3 lg:grid-cols-2">
+      <QuarterInFilings digest={digest} newerCount={newerCount} />
+      <TheOneThatMatters digest={digest} data={data} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
 export async function CompanyAnnouncementsSection({
   overview,
 }: {
   overview: CompanyPageOverviewCacheRow;
 }) {
-  const data = await getCompanyExchangeDeskData(overview.company_code, overview.company_name);
+  const [data, digestResult] = await Promise.all([
+    getCompanyExchangeDeskData(overview.company_code, overview.company_name),
+    getCompanyAnnouncementDigest(overview.company_code),
+  ]);
+  if (digestResult.error) {
+    // A stored payload that fails the v1 schema: fall back to the plain cards,
+    // but say so — never render a broken digest, never hide the defect.
+    console.warn("[announcement-digest]", digestResult.error);
+  }
+  const digest = digestResult.digest;
 
   return (
     <SectionCard id="company-announcements" title="Announcements">
@@ -104,25 +270,24 @@ export async function CompanyAnnouncementsSection({
         </div>
       ) : (
         <div className="house-tokens flex flex-col gap-6">
-          {/* Both summary cards and the feed (a house-skin Exchange Desk
-              component) paint with house tokens. .house-tokens gives them the
-              house palette without the paper ground, so they read the same as
+          {/* The top row and the feed (a house-skin Exchange Desk component)
+              paint with house tokens. .house-tokens gives them the house
+              palette without the paper ground, so they read the same as
               /announcements inside this SectionCard. */}
-          <div className="grid gap-3 lg:grid-cols-2">
-            <LatestSignal data={data} />
-            <SignalMix data={data} />
-          </div>
+          {digest ? (
+            <AnnouncementSynthesisCards digest={digest} data={data} />
+          ) : (
+            <AnnouncementPlainCards data={data} />
+          )}
           <div>
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <div>
-                <p className="house-data text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--ink-soft)]">
-                  Filing tape
-                </p>
+                <p className={EYEBROW}>Filing tape</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Material exchange filings, filtered into business events and read into plain English.
                 </p>
               </div>
-              <span className="house-data text-[10px] text-[var(--ink-soft)]">Full history</span>
+              <span className={META}>Full history</span>
             </div>
             <DeskExchangeUpdates data={data} variant="company" />
           </div>
