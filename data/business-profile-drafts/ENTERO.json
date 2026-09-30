@@ -1,0 +1,272 @@
+{
+  "company": "ENTERO",
+  "company_name": "Entero Healthcare Solutions Limited",
+  "prepared_on": "2026-09-29",
+  "review_status": "user_approved",
+  "source_period": "Q1 FY27",
+  "latest_source_date": "2026-08-17",
+  "about_company": {
+    "about_short": "India's fastest-growing healthcare products distributor, offering demand fulfillment and generation solutions.",
+    "about_long": "Entero Healthcare Solutions Limited is one of India's largest and fastest-growing healthcare products distribution platforms, serving as a specialized supply chain solutions provider. In FY26 it served over 105,300 retail pharmacies and 3,600 hospitals across 523 districts from 136 warehouses (138 by June 2026). Entero offers both demand fulfillment (end-to-end distribution of pharmaceuticals, OTC, medical devices, nutraceuticals, surgical consumables, and vaccines) and demand generation (sales, marketing, and supply chain solutions) to healthcare product manufacturers. Revenue is primarily generated through distribution margins on product sales, with an increasing contribution from higher-margin MedTech and specialty pharma segments. It has grown by buying regional distributors (51 acquisitions since inception), usually taking a majority stake with a pre-agreed option to buy out the minority partners later, and in 2025 it reversed one such purchase, Suprabhat Pharmaceuticals. The company targets the highly fragmented Indian healthcare distribution market, benefiting from consolidation trends.",
+    "business_intro": "Entero buys medicines, OTC products, surgical consumables, medical devices and diagnostics from manufacturers and delivers them to over 105,300 retail pharmacies and 3,600 hospitals from 136 warehouses (FY26). It earns a thin distribution margin (consolidated gross margin 10.3% in FY26), and more where it also markets products for the manufacturer (demand generation), which is most of its MedTech business. It was built by buying regional distributors: 51 acquisitions since inception.",
+    "company_timeline": [
+      {
+        "year": 2018,
+        "title": "Incorporated by Prabhat Agrawal and Prem Sethi",
+        "detail": "Set up in January 2018 to build an organised, pan-India, technology-driven healthcare products distribution platform.",
+        "sources": [
+          {
+            "label": "Entero FY24 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/a60229af-cfb8-4872-9fe0-983d08bfa537.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Lists on NSE and BSE after a ₹1,600 Cr IPO",
+        "detail": "The issue closed on 13 February 2024 and the shares listed on 16 February 2024. ₹1,000 Cr of the ₹1,600 Cr issue was fresh money, earmarked for working capital, acquisitions and debt repayment; the rest was an offer for sale.",
+        "sources": [
+          {
+            "label": "Entero Q3 FY24 earnings-call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/fc264a25-4e8c-4b8d-b9f4-9383cdde4360.pdf",
+            "locator": null
+          },
+          {
+            "label": "Entero FY24 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/a60229af-cfb8-4872-9fe0-983d08bfa537.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Buys Peerless Biotech, expanding into medical devices and diagnostics",
+        "detail": "Acquired on 16 August 2024; management said it took the portfolio into medical devices, diagnostic equipment and consumables.",
+        "sources": [
+          {
+            "label": "Entero FY25 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1ee92e80-ec9c-45f5-ae7d-a2809837e81b.pdf",
+            "locator": null
+          },
+          {
+            "label": "Entero Q1 FY25 earnings-call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/d9d35c12-0e78-4cc5-8ac1-bef5a1266007.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Reverses the Suprabhat Pharmaceuticals acquisition",
+        "detail": "After a misalignment with the seller, Entero reversed the deal and took its money back with interest. The divestment is one of the two adjustments in the company's like-for-like growth figures.",
+        "sources": [
+          {
+            "label": "Entero Q2 FY26 earnings-call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/842e8a5c-9bb1-4e03-b4c6-50eb7d5afbcf.pdf",
+            "locator": null
+          },
+          {
+            "label": "Entero Q4 FY26 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/dab0db13-9113-4734-9ef1-b6742781c66d.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Scales MedTech with three acquisitions (Oct 2025 to Feb 2026)",
+        "detail": "Ace Cardiopathy Solutions (cardiology, 60%, closed Oct 2025), Bioaide Technologies (cardiology, ENT, CNS, 80%, Nov 2025) and Anand Chemiceutics (IVD, 51.5%, Feb 2026).",
+        "sources": [
+          {
+            "label": "Entero Q4 FY26 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/dab0db13-9113-4734-9ef1-b6742781c66d.pdf",
+            "locator": null
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "expansion",
+        "title": "How much of the growth was bought",
+        "text": "Consolidated revenue was ₹6,591 Cr in FY26, up 29.3%: 13.4% organic, 5.3% from the full-year effect of earlier acquisitions (calendarisation) and 10.7% from new acquisitions. On the company's like-for-like basis (adjusting for revenue booked on a net-margin basis and a divested subsidiary) growth was 31.5%. In Q1 FY27 revenue was ₹1,940.5 Cr, up 38.2%: 17.8% organic and 20.4% calendarisation, with no new acquisitions in the quarter.",
+        "period": "FY26 and Q1 FY27",
+        "sources": [
+          {
+            "label": "Entero Q4 FY26 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/dab0db13-9113-4734-9ef1-b6742781c66d.pdf",
+            "locator": null
+          },
+          {
+            "label": "Entero Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/f86ed28d-3165-49db-8c2b-1e0bf36a82f2.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Margins are rising from a thin base",
+        "text": "Consolidated gross margin went from 9.5% in FY25 to 10.3% in FY26 and 11.4% in Q1 FY27; EBITDA margin from 3.4% to 4.0% and 5.0%. Management attributes the pharma gain to scale-driven procurement, and says MedTech earns more because Entero runs demand generation there, not only fulfilment.",
+        "period": "FY25 to Q1 FY27",
+        "sources": [
+          {
+            "label": "Entero Q4 FY26 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/dab0db13-9113-4734-9ef1-b6742781c66d.pdf",
+            "locator": null
+          },
+          {
+            "label": "Entero Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/f86ed28d-3165-49db-8c2b-1e0bf36a82f2.pdf",
+            "locator": null
+          },
+          {
+            "label": "Entero Q1 FY27 earnings-call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/808d85fd-f6c7-4f4a-98d3-f57a32a6e78f.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "Warehouse and supplier network",
+        "text": "136 warehouses covering 523 districts in FY26 (101 warehouses and 500 districts in FY25), rising to 138 warehouses by 30 June 2026. It handles 97,500+ SKUs and works with 3,300+ healthcare product manufacturers (FY26).",
+        "period": "FY26; warehouses to Jun 2026",
+        "sources": [
+          {
+            "label": "Entero Q4 FY26 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/dab0db13-9113-4734-9ef1-b6742781c66d.pdf",
+            "locator": null
+          },
+          {
+            "label": "Entero Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/f86ed28d-3165-49db-8c2b-1e0bf36a82f2.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "customers",
+        "title": "Pharmacies and hospitals",
+        "text": "Served 1,05,300+ retail pharmacies and 3,600+ hospitals in FY26 (95,300+ and 3,600+ in FY25). Management put hospitals at around 20% to 25% of consolidated revenue in FY25; it has given no later split.",
+        "period": "FY25 to FY26",
+        "sources": [
+          {
+            "label": "Entero Q4 FY26 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/dab0db13-9113-4734-9ef1-b6742781c66d.pdf",
+            "locator": null
+          },
+          {
+            "label": "Entero Q4 FY25 earnings-call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/042d196e-564e-4d03-82ae-734195b66e19.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "MedTech's weight in the business",
+        "text": "Entero does not report MedTech revenue separately. Management said on the Q4 FY26 call that, with the FY26 acquisitions consolidated, MedTech is more than 15% of consolidated revenue; it expects MedTech revenue above ₹1,000 Cr in FY27, which is a plan, not a result.",
+        "period": "Q4 FY26 call (May 2026)",
+        "sources": [
+          {
+            "label": "Entero Q4 FY26 earnings-call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/4e299570-e98e-4b7b-bd68-c3ecaaa2ff59.pdf",
+            "locator": null
+          },
+          {
+            "label": "Entero Q4 FY26 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/dab0db13-9113-4734-9ef1-b6742781c66d.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Majority stakes, minorities to be bought out",
+        "text": "Entero usually buys a majority of each distributor (51.5% to 80% in the FY26 deals) and holds call options to buy the rest over a pre-defined horizon at the multiple paid originally; management says 2 to 5 years is the normal timeline. Minority partners took ₹30.8 Cr of FY26's ₹145.8 Cr profit after tax, and goodwill rose to ₹749 Cr at March 2026 from ₹424 Cr a year earlier.",
+        "period": "FY26 and Q1 FY27",
+        "sources": [
+          {
+            "label": "Entero Q4 FY26 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/dab0db13-9113-4734-9ef1-b6742781c66d.pdf",
+            "locator": null
+          },
+          {
+            "label": "Entero Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/f86ed28d-3165-49db-8c2b-1e0bf36a82f2.pdf",
+            "locator": null
+          },
+          {
+            "label": "Entero Q1 FY27 earnings-call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/808d85fd-f6c7-4f4a-98d3-f57a32a6e78f.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Working capital and cash flow",
+        "text": "Net working capital days improved from 66 in Q1 FY26 to 59 in Q4 FY26 and were 61 in Q1 FY27. Operating cash flow was ₹96.2 Cr in FY26, after outflows in each of FY22 to FY25 (₹76.9 Cr outflow in FY25).",
+        "period": "FY22 to Q1 FY27",
+        "sources": [
+          {
+            "label": "Entero Q4 FY26 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/dab0db13-9113-4734-9ef1-b6742781c66d.pdf",
+            "locator": null
+          },
+          {
+            "label": "Entero Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/f86ed28d-3165-49db-8c2b-1e0bf36a82f2.pdf",
+            "locator": null
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "From a pharma fulfilment distributor to a pharma plus MedTech platform, with margins rising",
+      "text": "Between FY25 and Q1 FY27 Entero added MedTech at scale through three acquisitions (October 2025 to February 2026) and lifted EBITDA margin from 3.4% in FY25 to 4.0% in FY26 and 5.0% in Q1 FY27, while operating cash flow went from a ₹76.9 Cr outflow in FY25 to a ₹96.2 Cr inflow in FY26. Part of the margin step was bought: management put the MedTech deals' effect at 50 to 75 bps on EBITDA margin on a pro forma basis.",
+      "period": "FY25 to Q1 FY27",
+      "sources": [
+        {
+          "label": "Entero Q4 FY26 investor presentation",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/dab0db13-9113-4734-9ef1-b6742781c66d.pdf",
+          "locator": null
+        },
+        {
+          "label": "Entero Q1 FY27 investor presentation",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/f86ed28d-3165-49db-8c2b-1e0bf36a82f2.pdf",
+          "locator": null
+        },
+        {
+          "label": "Entero Q3 FY26 earnings-call transcript",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/d1aff0cd-f2a8-4892-b3d4-40f3df5afdb7.pdf",
+          "locator": null
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Entero Q4 FY26 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/dab0db13-9113-4734-9ef1-b6742781c66d.pdf",
+      "locator": null
+    },
+    {
+      "label": "Entero Q4 FY26 earnings-call transcript",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/4e299570-e98e-4b7b-bd68-c3ecaaa2ff59.pdf",
+      "locator": null
+    },
+    {
+      "label": "Entero Q1 FY27 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/f86ed28d-3165-49db-8c2b-1e0bf36a82f2.pdf",
+      "locator": null
+    },
+    {
+      "label": "Entero Q1 FY27 earnings-call transcript",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/808d85fd-f6c7-4f4a-98d3-f57a32a6e78f.pdf",
+      "locator": null
+    }
+  ]
+}
