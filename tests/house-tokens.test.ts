@@ -176,10 +176,11 @@ for (const path of FEED_SOURCES) {
   const variant = attr(feeds[0], "variant")?.initializer;
   assert.ok(variant && ts.isStringLiteral(variant) && variant.text === "company", 'the feed uses variant="company"');
 
-  // The feed and both summary cards paint with house tokens (IMPACT_META pills,
-  // --ink-soft labels, --signal hovers), so each one needs the scope. A card left
-  // outside it renders its impact pill black beside the coloured feed row.
-  for (const name of ["DeskExchangeUpdates", "LatestSignal", "SignalMix"]) {
+  // The feed and the top-row composites (synthesis cards, or the plain cards
+  // they fall back to) paint with house tokens (IMPACT_META pills, --ink-soft
+  // labels, --signal hovers), so each one needs the scope. A card left outside
+  // it renders its impact pill black beside the coloured feed row.
+  for (const name of ["DeskExchangeUpdates", "AnnouncementPlainCards", "AnnouncementSynthesisCards"]) {
     const [site, ...extra] = usages(name);
     assert.ok(site && extra.length === 0, `the company section renders <${name}> once`);
     const classes = ancestorClasses(site);
@@ -191,6 +192,24 @@ for (const path of FEED_SOURCES) {
       classes.every((c) => !c.includes("house")),
       `no .house ancestor on <${name}> — it paints an opaque paper block over the SectionCard`,
     );
+  }
+
+  // Each composite renders its two cards exactly once, from its own body — so
+  // the wrapper check above covers every card that reads a house token.
+  const enclosingFunction = (n: ts.Node | undefined) => {
+    for (; n; n = n.parent) if (ts.isFunctionDeclaration(n)) return n.name?.getText(source);
+    return undefined;
+  };
+  const composites: [string, string[]][] = [
+    ["AnnouncementPlainCards", ["LatestSignal", "SignalMix"]],
+    ["AnnouncementSynthesisCards", ["QuarterInFilings", "TheOneThatMatters"]],
+  ];
+  for (const [composite, cards] of composites) {
+    for (const name of cards) {
+      const [site, ...extra] = usages(name);
+      assert.ok(site && extra.length === 0, `<${name}> is rendered once`);
+      assert.equal(enclosingFunction(site), composite, `<${name}> is rendered by ${composite}`);
+    }
   }
 }
 
