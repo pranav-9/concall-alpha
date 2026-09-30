@@ -4,12 +4,21 @@
 // GuidanceHistoryPanel in company-detail-sections.tsx).
 //
 // Layout (redesign 2026-09-06, live book prioritised 2026-09-08,
-// forward-strength layer added 2026-09-09, horizon cards 2026-09-18):
+// forward-strength layer added 2026-09-09, horizon cards 2026-09-18,
+// strength split by horizon 2026-09-30):
 //   When the snapshot carries the forward-strength block (details.
 //   forward_strength from the deep-track producer) the section leads with the
 //   LIVE book and closes with the delivery record:
-//     1. "How strong is the guidance right now?" — the forward-strength
-//        verdict (ambition × evidence pills, headline, supporting line).
+//     1. The strength verdict (ambition × evidence pills, headline, supporting
+//        line). With forward_strength.horizons (schema v2) it is TWO cards —
+//        "How strong is this year's guidance? · FY27" beside "How strong is the
+//        long-term guidance? · FY28–FY31" — one per horizon, each read on the
+//        live threads due in that window, so a cautious year-in-hand guide
+//        and a large unbuilt vision no longer average into one label. The
+//        long-term card also carries the company's own name for its vision
+//        when it set one ("'Advait 2030'"). One populated horizon takes the
+//        full row; a v1 snapshot (no horizons) keeps the single whole-book
+//        card, "How strong is the guidance right now?".
 //     2. This year / Long-term — the live book split by when each commitment
 //        comes due (lib/guidance-tracking/horizon-split.ts). Each card holds
 //        its own ranked, clickable commitments (top HORIZON_PREVIEW_COUNT,
@@ -27,7 +36,7 @@
 //   Snapshots WITHOUT the strength block keep the original credibility-first
 //   order (verdict card + track record on top, then "What to watch").
 // The forward-strength prose comes from the producer (schema
-// guidance_strength_v1); everything else is templated in
+// guidance_strength_v2); everything else is templated in
 // lib/guidance-tracking/verdict.ts from the payload — no analyst conclusion is
 // invented in this component.
 
@@ -76,6 +85,8 @@ import type {
   AmbitionLabel,
   EvidenceBand,
   ForwardStrength,
+  ForwardStrengthHorizon,
+  ForwardStrengthHorizons,
 } from "@/lib/guidance-snapshot/types";
 
 // Kept only for tests/guidance-status-bucket.test.ts — nothing in the
@@ -209,27 +220,80 @@ const EVIDENCE_META: Record<EvidenceBand, { label: string; tone: ChipTone }> = {
   thinly_evidenced: { label: "Thinly evidenced", tone: "rose" },
 };
 
-// The top card's shell tracks the ambition tone the same way the credibility
-// card's shell tracks its tier tone — so the two verdicts read as siblings.
-function ForwardStrengthCard({ forwardStrength }: { forwardStrength: ForwardStrength }) {
-  const amb = AMBITION_META[forwardStrength.ambition.label];
-  const ev = EVIDENCE_META[forwardStrength.evidence.label];
+// One strength verdict — whole book or one horizon. The shell tracks the
+// ambition tone the same way the credibility card's shell tracks its tier
+// tone, so every verdict on the tab reads as a sibling. `visionLabel` (long
+// term only) is the company's own name or number for its multi-year frame,
+// shown as a neutral chip beside the two axes — it is a quote, not a rating.
+function StrengthVerdictCard({
+  eyebrow,
+  ambitionLabel,
+  evidenceLabel,
+  headline,
+  supportingLine,
+  visionLabel,
+}: {
+  eyebrow: string;
+  ambitionLabel: AmbitionLabel;
+  evidenceLabel: EvidenceBand;
+  headline: string;
+  supportingLine: string;
+  visionLabel?: string | null;
+}) {
+  const amb = AMBITION_META[ambitionLabel];
+  const ev = EVIDENCE_META[evidenceLabel];
   const shell = TONE_CARD_SHELL[amb.tone] ?? TONE_CARD_SHELL.slate!;
   return (
-    <div className={cn("rounded-xl border p-4 shadow-md shadow-black/20 sm:p-5", shell.shell)}>
+    <div className={cn("flex h-full flex-col rounded-xl border p-4 shadow-md shadow-black/20 sm:p-5", shell.shell)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className={cn(eyebrowClass, shell.eyebrow)}>How strong is the guidance right now?</p>
+        <p className={cn(eyebrowClass, shell.eyebrow)}>{eyebrow}</p>
         <div className="flex flex-wrap items-center gap-1.5">
+          {visionLabel ? <span className={neutralChipClass}>{visionLabel}</span> : null}
           <span className={chipClass(amb.tone)}>{amb.label}</span>
           <span className={chipClass(ev.tone)}>{ev.label}</span>
         </div>
       </div>
-      <p className="mt-2 text-xl font-bold leading-tight text-foreground sm:text-[22px]">
-        {forwardStrength.headline}
-      </p>
-      <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-foreground/80">
-        {forwardStrength.supportingLine}
-      </p>
+      <p className="mt-2 text-xl font-bold leading-tight text-foreground sm:text-[22px]">{headline}</p>
+      <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-foreground/80">{supportingLine}</p>
+    </div>
+  );
+}
+
+// The whole-book card — the only strength verdict a v1 snapshot carries.
+function ForwardStrengthCard({ forwardStrength }: { forwardStrength: ForwardStrength }) {
+  return (
+    <StrengthVerdictCard
+      eyebrow="How strong is the guidance right now?"
+      ambitionLabel={forwardStrength.ambition.label}
+      evidenceLabel={forwardStrength.evidence.label}
+      headline={forwardStrength.headline}
+      supportingLine={forwardStrength.supportingLine}
+    />
+  );
+}
+
+// The v2 pair: the same question asked of this year's commitments and of the
+// long-term ones, each on its own live threads. Column order matches the
+// This year / Long-term commitment cards below so a reader's eye can drop
+// straight from a verdict to the commitments it was read on. A horizon the
+// scorer nulled (nothing due in that window) renders nothing, and the other
+// card takes the full row rather than sitting beside a blank.
+function StrengthHorizonCards({ horizons }: { horizons: ForwardStrengthHorizons }) {
+  const { thisYear, longTerm } = horizons;
+  const card = (horizon: ForwardStrengthHorizon, eyebrow: string) => (
+    <StrengthVerdictCard
+      eyebrow={`${eyebrow} · ${horizon.horizonLabel}`}
+      ambitionLabel={horizon.ambition.label}
+      evidenceLabel={horizon.evidence.label}
+      headline={horizon.headline}
+      supportingLine={horizon.supportingLine}
+      visionLabel={horizon.visionLabel}
+    />
+  );
+  return (
+    <div className={cn("grid gap-3 lg:items-stretch", thisYear && longTerm ? "lg:grid-cols-2" : null)}>
+      {thisYear ? card(thisYear, "How strong is this year's guidance?") : null}
+      {longTerm ? card(longTerm, "How strong is the long-term guidance?") : null}
     </div>
   );
 }
@@ -1100,10 +1164,12 @@ export function GuidanceHistorySection({
   }
 
   // Two layouts. With the forward-strength blocks the section leads with "how
-  // strong is the guidance right now?" (the live book) and closes with "should
-  // you believe it?" (the delivery record) — strength on top, credibility at
-  // the bottom, per the 2026-09 upgrade. Without them (snapshots that predate
-  // the strength producer) it keeps the original credibility-first layout.
+  // strong is the guidance right now?" (the live book — split into this year /
+  // long term when the snapshot carries forward_strength.horizons) and closes
+  // with "should you believe it?" (the delivery record) — strength on top,
+  // credibility at the bottom, per the 2026-09 upgrade. Without them
+  // (snapshots that predate the strength producer) it keeps the original
+  // credibility-first layout.
   const credibilityBlock = (
     <div className="grid gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
       <VerdictCard
@@ -1116,7 +1182,15 @@ export function GuidanceHistorySection({
 
   return (
     <div className="space-y-4">
-      {forwardStrength ? <ForwardStrengthCard forwardStrength={forwardStrength} /> : credibilityBlock}
+      {forwardStrength ? (
+        forwardStrength.horizons ? (
+          <StrengthHorizonCards horizons={forwardStrength.horizons} />
+        ) : (
+          <ForwardStrengthCard forwardStrength={forwardStrength} />
+        )
+      ) : (
+        credibilityBlock
+      )}
 
       {/* Keyed on the company so every disclosure toggle resets when the
           reader navigates to another company. The App Router re-renders this

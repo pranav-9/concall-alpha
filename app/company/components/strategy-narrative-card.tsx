@@ -1,6 +1,6 @@
 // The single strategic bet the live guides collectively express, plus the one
 // derived lever it depends on (details.strategy_narrative, schema
-// guidance_strength_v1, written by /guidance-deep-track). It answers "how does
+// guidance_strength_v2, written by /company-deep-track). It answers "how does
 // this company grow?", so it renders on the Growth tab as the "Growth engine"
 // (moved from the Guidance tab 2026-09-18). No hooks — usable from a server
 // component.

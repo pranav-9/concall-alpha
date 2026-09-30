@@ -47,41 +47,75 @@ export type NormalizedGuidanceSnapshot = {
 //
 // The second guidance verdict — "how strong is the guidance RIGHT NOW?" — on
 // the live/forward book, distinct from the backward credibility verdict. Shape
-// authority: /schemas/guidance_strength_v1.json. The deep-track producer routes
-// these into the details jsonb (store_guidance_snapshot's non-promoted keys),
+// authority: /schemas/guidance_strength_v2.json (v1 payloads still parse: the
+// per-horizon block is optional there). The deep-track producer routes these
+// into the details jsonb (store_guidance_snapshot's non-promoted keys),
 // alongside deep_track. These types mirror the schema and reject payloads the
 // schema would reject (types-are-the-gate); malformed blocks parse to null and
 // the section simply does not render the card.
+//
+// v2 adds `horizons`: the same ambition × evidence read separately for THIS
+// YEAR (live commitments due inside the anchor FY) and the LONG TERM (the
+// multi-year vision, as far out as the company set it). A cautious year-in-hand
+// guide and a large unbuilt vision average away into one whole-book label, so
+// the Guidance tab renders the two horizons as its top pair of cards when they
+// are present and falls back to the single whole-book card when they are not.
 // ---------------------------------------------------------------------------
 
 export type AmbitionLabel = "ambitious" | "measured" | "conservative";
 export type EvidenceBand = "well_evidenced" | "partly_evidenced" | "thinly_evidenced";
 export type EvidenceClass = "order_backed" | "asserted" | "aspiration";
 
-export type ForwardStrength = {
-  ambition: {
-    label: AmbitionLabel;
-    rationale: string | null;
-    // Deterministic guardrail written by guidance_strength_score.py. Kept for
-    // provenance; the card reads the label, not the guardrail.
-    guardrail: {
-      fwdGrowthPct: number | null;
-      trailingDeliveredCagrPct: number | null;
-      ratio: number | null;
-      expectedBand: AmbitionLabel | null;
-      overrideFlagged: boolean;
-      note: string | null;
-    } | null;
-  };
-  evidence: {
-    label: EvidenceBand;
-    liveTotal: number;
-    orderBacked: number;
-    asserted: number;
-    aspiration: number;
-  };
+export type ForwardStrengthAmbition = {
+  label: AmbitionLabel;
+  rationale: string | null;
+  // Deterministic guardrail written by guidance_strength_score.py. Kept for
+  // provenance; the card reads the label, not the guardrail.
+  guardrail: {
+    fwdGrowthPct: number | null;
+    trailingDeliveredCagrPct: number | null;
+    ratio: number | null;
+    expectedBand: AmbitionLabel | null;
+    overrideFlagged: boolean;
+    note: string | null;
+  } | null;
+};
+
+export type ForwardStrengthEvidence = {
+  label: EvidenceBand;
+  liveTotal: number;
+  orderBacked: number;
+  asserted: number;
+  aspiration: number;
+};
+
+// One horizon's verdict (schema definitions/horizon_verdict). `visionLabel` is
+// the company's own name or number for its long-range frame ("'Advait 2030'",
+// "₹1,000 Cr by FY30") — long-term only, null on this-year and when management
+// set none.
+export type ForwardStrengthHorizon = {
+  horizonLabel: string; // "FY27" · "FY28–FY31"
+  ambition: ForwardStrengthAmbition;
+  evidence: ForwardStrengthEvidence;
   headline: string;
   supportingLine: string;
+  visionLabel: string | null;
+};
+
+export type ForwardStrengthHorizons = {
+  anchorFyLabel: string; // "FY27" — the FY the split was anchored on at scoring time
+  thisYear: ForwardStrengthHorizon | null;
+  longTerm: ForwardStrengthHorizon | null;
+};
+
+export type ForwardStrength = {
+  ambition: ForwardStrengthAmbition;
+  evidence: ForwardStrengthEvidence;
+  headline: string;
+  supportingLine: string;
+  // Null on v1 payloads and on a malformed v2 block — the section then shows
+  // the whole-book card. When non-null at least one horizon is populated.
+  horizons: ForwardStrengthHorizons | null;
 };
 
 export type StrategyNarrative = {
@@ -117,7 +151,7 @@ const asTrimmed = (value: unknown): string | null => {
   return trimmed ? trimmed : null;
 };
 
-// The evidence counts are `integer, minimum 0` in guidance_strength_v1 — reject
+// The evidence counts are `integer, minimum 0` in guidance_strength_v2 — reject
 // (not truncate) anything that isn't a non-negative integer, so the frontend
 // gate rejects what the schema rejects (concall-alpha CLAUDE.md).
 const asCount = (value: unknown): number | null =>
@@ -126,23 +160,39 @@ const asCount = (value: unknown): number | null =>
 const asFiniteNumber = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
 
-export function parseForwardStrength(details: Record<string, unknown> | null): ForwardStrength | null {
-  const fs = asRecord(details?.forward_strength);
-  if (!fs) return null;
+const parseAmbition = (raw: unknown): ForwardStrengthAmbition | null => {
+  const ambitionRaw = asRecord(raw);
+  const label = asTrimmed(ambitionRaw?.label);
+  if (!label || !AMBITION_LABELS.has(label)) return null;
+  const guardrailRaw = asRecord(ambitionRaw?.guardrail);
+  const expectedBand = asTrimmed(guardrailRaw?.expected_band);
+  return {
+    label: label as AmbitionLabel,
+    rationale: asTrimmed(ambitionRaw?.rationale),
+    guardrail: guardrailRaw
+      ? {
+          fwdGrowthPct: asFiniteNumber(guardrailRaw.fwd_growth_pct),
+          trailingDeliveredCagrPct: asFiniteNumber(guardrailRaw.trailing_delivered_cagr_pct),
+          ratio: asFiniteNumber(guardrailRaw.ratio),
+          expectedBand:
+            expectedBand && AMBITION_LABELS.has(expectedBand) ? (expectedBand as AmbitionLabel) : null,
+          overrideFlagged: guardrailRaw.override_flagged === true,
+          note: asTrimmed(guardrailRaw.note),
+        }
+      : null,
+  };
+};
 
-  const ambitionRaw = asRecord(fs.ambition);
-  const ambitionLabel = asTrimmed(ambitionRaw?.label);
-  if (!ambitionLabel || !AMBITION_LABELS.has(ambitionLabel)) return null;
-
-  const evidenceRaw = asRecord(fs.evidence);
-  const evidenceLabel = asTrimmed(evidenceRaw?.label);
+const parseEvidence = (raw: unknown): ForwardStrengthEvidence | null => {
+  const evidenceRaw = asRecord(raw);
+  const label = asTrimmed(evidenceRaw?.label);
   const liveTotal = asCount(evidenceRaw?.live_total);
   const orderBacked = asCount(evidenceRaw?.order_backed);
   const asserted = asCount(evidenceRaw?.asserted);
   const aspiration = asCount(evidenceRaw?.aspiration);
   if (
-    !evidenceLabel ||
-    !EVIDENCE_BANDS.has(evidenceLabel) ||
+    !label ||
+    !EVIDENCE_BANDS.has(label) ||
     liveTotal == null ||
     orderBacked == null ||
     asserted == null ||
@@ -150,39 +200,68 @@ export function parseForwardStrength(details: Record<string, unknown> | null): F
   ) {
     return null;
   }
+  return { label: label as EvidenceBand, liveTotal, orderBacked, asserted, aspiration };
+};
+
+// One horizon block → verdict, or null when anything the schema requires is
+// missing or malformed (the card for that horizon then does not render). The
+// scorer nulls a horizon with no live threads, so a null here is expected, not
+// an error; `vision_label` is read only for the long-term block.
+const parseHorizon = (raw: unknown, longTerm: boolean): ForwardStrengthHorizon | null => {
+  const block = asRecord(raw);
+  if (!block) return null;
+  const horizonLabel = asTrimmed(block.horizon_label);
+  const ambition = parseAmbition(block.ambition);
+  const evidence = parseEvidence(block.evidence);
+  const headline = asTrimmed(block.headline);
+  const supportingLine = asTrimmed(block.supporting_line);
+  if (!horizonLabel || !ambition || !evidence || !headline || !supportingLine) return null;
+  return {
+    horizonLabel,
+    ambition,
+    evidence,
+    headline,
+    supportingLine,
+    visionLabel: longTerm ? asTrimmed(block.vision_label) : null,
+  };
+};
+
+// The schema pins anchor_fy to /^FY\d{2}$/; anything else fails the whole
+// horizons block (never a half-parsed split), and the section falls back to
+// the whole-book card.
+const ANCHOR_FY = /^FY\d{2}$/;
+
+const parseHorizons = (raw: unknown): ForwardStrengthHorizons | null => {
+  const block = asRecord(raw);
+  if (!block) return null;
+  const anchorFyLabel = asTrimmed(block.anchor_fy);
+  if (!anchorFyLabel || !ANCHOR_FY.test(anchorFyLabel)) return null;
+  const thisYear = parseHorizon(block.this_year, false);
+  const longTerm = parseHorizon(block.long_term, true);
+  if (!thisYear && !longTerm) return null;
+  return { anchorFyLabel, thisYear, longTerm };
+};
+
+export function parseForwardStrength(details: Record<string, unknown> | null): ForwardStrength | null {
+  const fs = asRecord(details?.forward_strength);
+  if (!fs) return null;
+
+  const ambition = parseAmbition(fs.ambition);
+  if (!ambition) return null;
+
+  const evidence = parseEvidence(fs.evidence);
+  if (!evidence) return null;
 
   const headline = asTrimmed(fs.headline);
   const supportingLine = asTrimmed(fs.supporting_line);
   if (!headline || !supportingLine) return null;
 
-  const guardrailRaw = asRecord(ambitionRaw?.guardrail);
-  const expectedBand = asTrimmed(guardrailRaw?.expected_band);
-
   return {
-    ambition: {
-      label: ambitionLabel as AmbitionLabel,
-      rationale: asTrimmed(ambitionRaw?.rationale),
-      guardrail: guardrailRaw
-        ? {
-            fwdGrowthPct: asFiniteNumber(guardrailRaw.fwd_growth_pct),
-            trailingDeliveredCagrPct: asFiniteNumber(guardrailRaw.trailing_delivered_cagr_pct),
-            ratio: asFiniteNumber(guardrailRaw.ratio),
-            expectedBand:
-              expectedBand && AMBITION_LABELS.has(expectedBand) ? (expectedBand as AmbitionLabel) : null,
-            overrideFlagged: guardrailRaw.override_flagged === true,
-            note: asTrimmed(guardrailRaw.note),
-          }
-        : null,
-    },
-    evidence: {
-      label: evidenceLabel as EvidenceBand,
-      liveTotal,
-      orderBacked,
-      asserted,
-      aspiration,
-    },
+    ambition,
+    evidence,
     headline,
     supportingLine,
+    horizons: parseHorizons(fs.horizons),
   };
 }
 

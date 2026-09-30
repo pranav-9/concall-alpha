@@ -101,7 +101,20 @@ test("due inside the current FY → thisYear; later → longTerm", () => {
   assert.deepEqual(keys(s.longTerm.rows), ["fy30"]);
   assert.deepEqual(s.ongoing.rows, []);
   assert.equal(s.thisYearLabel, "FY27");
-  assert.equal(s.longTermLabel, "FY28+");
+  assert.equal(s.longTermLabel, "FY28–FY30"); // as far out as the company set it
+});
+
+test("the long-term label spans to the furthest live deadline; a bare next-FY when nothing runs past it", () => {
+  const next = item({ guidanceKey: "fy28", statusKey: "active", appliesTo: "FY28" });
+  assert.equal(splitLiveByHorizon(liveOf([next]), CURRENT).longTermLabel, "FY28");
+  const q2fy29 = item({ guidanceKey: "q2fy29", statusKey: "active", appliesTo: "Q2 FY29" });
+  assert.equal(splitLiveByHorizon(liveOf([next, q2fy29]), CURRENT).longTermLabel, "FY28–FY29");
+  // a company whose first long-term deadline is FY30 still spans from the year after this one
+  const fy30 = item({ guidanceKey: "fy30", statusKey: "active", appliesTo: "FY30" });
+  assert.equal(splitLiveByHorizon(liveOf([fy30]), CURRENT).longTermLabel, "FY28–FY30");
+  // standing rows never stretch the span
+  const rolling = item({ guidanceKey: "roll", statusKey: "active", horizonType: "rolling", appliesTo: "FY36" });
+  assert.equal(splitLiveByHorizon(liveOf([next, rolling]), CURRENT).longTermLabel, "FY28");
 });
 
 test("Q4 of the current FY is the boundary: Q4 FY27 is this year, Q1 FY28 is long-term", () => {
@@ -160,6 +173,7 @@ test("no live rows → three empty buckets, labels still set", () => {
   assert.deepEqual([s.thisYear.rows.length, s.longTerm.rows.length, s.ongoing.rows.length], [0, 0, 0]);
   assert.equal(s.thisYear.evidence.classed, 0);
   assert.equal(s.thisYearLabel, "FY27");
+  assert.equal(s.longTermLabel, "FY28");
 });
 
 test("evidence counts cover only the rows in the bucket; unclassed rows are skipped", () => {
