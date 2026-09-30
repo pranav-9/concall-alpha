@@ -68,7 +68,13 @@ export type HorizonSplit = {
   longTerm: HorizonBucket;
   ongoing: HorizonBucket;
   thisYearLabel: string; // "FY27"
-  longTermLabel: string; // "FY28+"
+  // "FY28–FY31": from the year after the current FY to the furthest live
+  // deadline on the card — the long term is as long as the company itself
+  // set it (a two-year plan and a 2030 vision read differently). Just "FY28"
+  // when nothing on the card runs past it. Same rule as the producer's
+  // forward_strength.horizons.long_term.horizon_label (guidance_strength_score.py),
+  // though over a different population (the card's rows vs the full live book).
+  longTermLabel: string;
 };
 
 const countEvidence = (rows: LiveRow[], evidenceByKey: EvidenceByKey): EvidenceCount => {
@@ -106,8 +112,21 @@ export const splitLiveByHorizon = (
     longTerm: bucket(longTerm),
     ongoing: bucket(ongoing),
     thisYearLabel: fyLabelFor(current.fy),
-    longTermLabel: `${fyLabelFor(current.fy + 1)}+`,
+    longTermLabel: longTermSpanLabel(current.fy + 1, longTerm),
   };
+};
+
+// horizonQuarterIndex packs fy*4 + qtr (qtr 1..4), so the FY is recovered
+// from the index rather than re-parsing applies_to here.
+const fyOfIndex = (index: number): number => Math.floor((index - 1) / 4);
+
+export const longTermSpanLabel = (startFy: number, rows: LiveRow[]): string => {
+  let endFy = startFy;
+  for (const row of rows) {
+    const index = horizonQuarterIndex(row.item);
+    if (index != null) endFy = Math.max(endFy, fyOfIndex(index));
+  }
+  return endFy > startFy ? `${fyLabelFor(startFy)}–${fyLabelFor(endFy)}` : fyLabelFor(startFy);
 };
 
 // "3 order-backed · 1 asserted" — zero classes are left out, and the whole
