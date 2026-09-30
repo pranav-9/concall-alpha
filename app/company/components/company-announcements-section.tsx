@@ -138,7 +138,7 @@ function QuarterInFilings({
             <span className="font-semibold text-[var(--ink)]">{chip.value}</span>
             <span aria-hidden>&nbsp;</span>
             {chip.label}
-            {chip.detail ? <span className="text-[var(--ink-soft)]"> · {chip.detail}</span> : null}
+            {chip.detail ? <span className="text-[var(--ink-soft)]">{" · "}{chip.detail}</span> : null}
           </span>
         ))}
       </div>
@@ -168,8 +168,7 @@ function TheOneThatMatters({
           Nothing needle-moving in the window.
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          No filing rose above routine — the tape is {digest.summary.activityLabel.toLowerCase()}.
-          The read on the left says what it adds up to.
+          No filing rose above routine this window. The quarter&rsquo;s read covers what the tape adds up to.
         </p>
       </div>
     );
