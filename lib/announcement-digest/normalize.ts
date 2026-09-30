@@ -104,6 +104,7 @@ export function normalizeAnnouncementDigest(
             filedAt: biggest.filed_at,
             filedLabel: formatFiledLabel(biggest.filed_at, now),
             headline: biggest.headline,
+            title: biggest.summary.trim() || biggest.headline.trim() || categoryLabel(biggest.category),
             category: biggest.category,
             categoryLabel: categoryLabel(biggest.category),
             impact: biggest.impact,

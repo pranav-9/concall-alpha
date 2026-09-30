@@ -89,13 +89,13 @@ export default async function AnnouncementDigestPreview({
           {codes.map((code) => (
             <Link
               key={code}
-              href={`/dev/announcement-digest?company=${code}`}
+              href={`/dev/announcement-digest?company=${encodeURIComponent(code)}`}
               className={code === active && source !== "live" ? "font-semibold text-foreground" : "text-muted-foreground"}
             >
               {code}
             </Link>
           ))}
-          <Link href={`/dev/announcement-digest?company=${active}&source=live`} className="text-muted-foreground">
+          <Link href={`/dev/announcement-digest?company=${encodeURIComponent(active)}&source=live`} className="text-muted-foreground">
             [live]
           </Link>
         </p>

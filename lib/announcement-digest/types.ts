@@ -87,6 +87,8 @@ export const BiggestSchema = z.object({
   announcement_id: z.string().min(1),
   filed_at: z.string().min(1),
   headline: z.string(),
+  /** The tape row's classified one-liner — the card title when the row is off the loaded tape. */
+  summary: z.string(),
   category: z.enum(CATEGORY_KEYS),
   impact: z.enum(IMPACT_KEYS),
   what: z.string().min(20).max(300),
@@ -149,6 +151,8 @@ export type DigestBiggest = {
   /** "14 Sept" (or "14 Sept 2025" when not this year) */
   filedLabel: string;
   headline: string;
+  /** Never empty: the classified one-liner, else the BSE headline, else the category label. */
+  title: string;
   category: ExchangeCategory;
   categoryLabel: string;
   impact: ExchangeImpact;

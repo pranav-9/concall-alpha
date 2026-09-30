@@ -33,6 +33,7 @@ const payload = {
     announcement_id: "a2",
     filed_at: "2026-09-01T09:30:00+00:00",
     headline: "Receipt of Order",
+    summary: "Company entered into a three-year supply agreement. (~₹2,329 cr)",
     category: "order_win",
     impact: "positive",
     what: "A three-year supply agreement worth about Rs 2,329 crore for optical fibre cables with a domestic telecom operator.",
@@ -61,6 +62,7 @@ const payload = {
   assert.deepEqual(digest.summary.chips[1], { label: "Capex & expansion", value: "2", detail: null });
   assert.ok(digest.biggest);
   assert.equal(digest.biggest.filedLabel, "1 Sept");
+  assert.equal(digest.biggest.title, "Company entered into a three-year supply agreement. (~₹2,329 cr)");
   assert.equal(digest.biggest.categoryLabel, "Order Wins");
   assert.equal(digest.biggest.impactLabel, "Positive");
   assert.equal(digest.biggest.scale?.valueLabel, "₹2,329 cr");
@@ -91,6 +93,15 @@ const payload = {
 
   const stance = { ...payload, summary: { ...payload.summary, activity: "bullish" } };
   assert.ok(normalizeAnnouncementDigest({ company_code: "HFCL", payload: stance }, NOW).error?.includes("summary.activity"));
+}
+
+// ── title never blank: summary → headline → category label ────────────────────
+{
+  const bare = { ...payload, biggest: { ...payload.biggest, summary: "", headline: "" } };
+  const { digest } = normalizeAnnouncementDigest({ company_code: "HFCL", payload: bare }, NOW);
+  assert.equal(digest?.biggest?.title, "Order Wins");
+  const raw = { ...payload, biggest: { ...payload.biggest, summary: "  ", headline: "Intimation attached" } };
+  assert.equal(normalizeAnnouncementDigest({ company_code: "HFCL", payload: raw }, NOW).digest?.biggest?.title, "Intimation attached");
 }
 
 // ── scale: sub-1% reads "under 1%" ────────────────────────────────────────────

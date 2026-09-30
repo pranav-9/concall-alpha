@@ -177,7 +177,7 @@ function TheOneThatMatters({
   // The tape row for the pick, when it's still inside the loaded window: its
   // summary line and filing link are the freshest copy of both.
   const tapeRow = data.updates.find((u) => u.id === biggest.announcementId) ?? null;
-  const title = tapeRow?.summary ?? biggest.headline;
+  const title = tapeRow?.summary ?? biggest.title;
   const attachmentUrl = tapeRow?.attachmentUrl ?? null;
 
   return (
