@@ -30,6 +30,19 @@ function track(event: string, props?: AnalyticsProps) {
   }
 }
 
+/** Overrides PostHog's auto-filled $pathname/$current_url with the page an event
+ *  belongs to — for events fired on leave, after App Router may have swapped the
+ *  URL. `path` is pathname + search: $pathname is the path alone (PostHog's
+ *  convention); $current_url keeps the query string so it agrees with the
+ *  $pageview recorded for the same load (UTM/deep-link attribution). */
+function pinnedPage(path?: string): AnalyticsProps {
+  return {
+    $pathname: path ? path.split("?")[0] : undefined,
+    $current_url:
+      path && typeof window !== "undefined" ? window.location.origin + path : undefined,
+  };
+}
+
 export type AuthCompletedProps = {
   method: "google" | "email" | "unknown";
   source: "auth_page" | "gate" | "unattributed";
@@ -154,9 +167,7 @@ export const analytics = {
       section_id: sectionId,
       ms: Math.round(ms),
       company_code: companyCode,
-      $pathname: path ? path.split("?")[0] : undefined,
-      $current_url:
-        path && typeof window !== "undefined" ? window.location.origin + path : undefined,
+      ...pinnedPage(path),
     }),
 
   /** An evidence/detail drawer was opened — the deep readers. */
@@ -298,6 +309,15 @@ export const analytics = {
    *  card and footer, not the end of the post — exclude from the believer cohort. */
   journalReadComplete: (slug: string, scrollPct: number, gated = false) =>
     track("journal_read_complete", { slug, scroll_pct: Math.round(scrollPct), gated }),
+
+  /** Reading time on a Journal post — foreground time only (a hidden tab's time
+   *  is not counted). Like section_dwell it flushes on every tab-hide and on
+   *  leave, so one visit can emit several events: SUM ms per slug, don't count
+   *  events. `gated` as on journal_read_complete. `path` pins $pathname /
+   *  $current_url to the post, since a "Next read" click has already swapped
+   *  the URL by the time the leave flush fires. */
+  journalDwell: (slug: string, ms: number, gated: boolean, path?: string) =>
+    track("journal_dwell", { slug, ms: Math.round(ms), gated, ...pinnedPage(path) }),
 
   // Monetization surfaces that don't exist yet — names reserved so Q3 is a wiring
   // job, not a redesign. Call sites land when the pages do.
