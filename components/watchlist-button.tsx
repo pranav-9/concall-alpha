@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Plus, Star } from "lucide-react";
+import { Plus, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -211,35 +211,36 @@ export function WatchlistButton({
     }
   };
 
+  // One round star button in both states (overview redesign 2026-10-01): it
+  // sits beside the company name, so the label moves to the tooltip.
+  const iconButtonClass = "h-9 w-9 shrink-0 rounded-full p-0";
+
   if (!isAuthenticated) {
     return (
       <Button
         type="button"
         variant="outline"
-        size="sm"
-        className="inline-flex items-center gap-1.5 rounded-full lg:rounded-md"
+        size="icon"
+        className={iconButtonClass}
+        title="Add to watchlist"
+        aria-label="Add to watchlist"
         onClick={() => {
           router.push(
             `/auth/login?next=${encodeURIComponent(loginRedirectPath)}`,
           );
         }}
       >
-        <Star className="h-3.5 w-3.5 lg:hidden" aria-hidden />
-        <span className="lg:hidden">Watchlist</span>
-        <span className="hidden lg:inline">Add to Watchlist</span>
+        <Star className="h-4 w-4" aria-hidden />
       </Button>
     );
   }
 
   const triggerLabel =
     containingCount === 0
-      ? "Add to Watchlist"
+      ? "Add to watchlist"
       : containingCount === 1
-        ? "In 1 list"
-        : `In ${containingCount} lists`;
-  // Mobile pill keeps the label short (design 4a: "☆ Watchlist"); the star
-  // fills once the company is in any list.
-  const compactLabel = containingCount === 0 ? "Watchlist" : triggerLabel;
+        ? "In 1 watchlist"
+        : `In ${containingCount} watchlists`;
 
   return (
     <DropdownMenu>
@@ -247,20 +248,20 @@ export function WatchlistButton({
         <Button
           type="button"
           variant={containingCount > 0 ? "secondary" : "outline"}
-          size="sm"
+          size="icon"
           disabled={isWorking}
-          className="inline-flex items-center gap-1.5 rounded-full lg:rounded-md"
+          className={iconButtonClass}
+          title={triggerLabel}
+          aria-label={triggerLabel}
         >
+          {/* The star fills once the company is in any list. */}
           <Star
-            className={`h-3.5 w-3.5 lg:hidden ${containingCount > 0 ? "fill-current" : ""}`}
+            className={`h-4 w-4 ${containingCount > 0 ? "fill-amber-400 text-amber-500" : ""}`}
             aria-hidden
           />
-          <span className="lg:hidden">{compactLabel}</span>
-          <span className="hidden lg:inline">{triggerLabel}</span>
-          <ChevronDown className="hidden h-4 w-4 lg:inline" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60">
+      <DropdownMenuContent align="start" className="w-60">
         <DropdownMenuLabel>Save to watchlists</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {watchlists.length === 0 ? (
