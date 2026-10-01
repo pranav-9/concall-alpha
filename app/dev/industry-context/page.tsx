@@ -2,17 +2,18 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { IndustryContextSection } from "@/app/company/components/industry-context-section";
 
-// Dev-only preview harness for the redesigned Industry Context section. Renders
-// the real server component against live Supabase data. The company set is
-// chosen to exercise the branches: two-sided vs linear chains, clear vs
-// "mixed" capital cycles, real market-share matches vs none, and companies
-// with the most regulations / player dimensions.
+// Dev-only preview harness for the Industry Context section. Renders the real
+// server component against live Supabase data. The company set exercises the
+// branches: no company layer / own margin (VINYAS), own margin inside vs above
+// its layer (CCL, LAURUSLABS), no policy shifts (LAURUSLABS), layers that can't
+// be banded + a bank-style statement (HDFCLIFE), a one-band chain (ASTRAMICRO).
 const PREVIEW_COMPANIES: { code: string; name: string; note: string }[] = [
-  { code: "CCL", name: "CCL Products", note: "Linear chain · mixed cycle · share matches" },
-  { code: "CARTRADE", name: "CarTrade Tech", note: "Two-sided · clear cycles · real shares" },
-  { code: "ASTRAMICRO", name: "Astra Microwave", note: "Richest payload · 3 regs · 3 cards" },
-  { code: "HDFCLIFE", name: "HDFC Life", note: "Life insurance · 4 cards · 3 regs" },
-  { code: "TECHM", name: "Tech Mahindra", note: "IT services" },
+  { code: "VINYAS", name: "Vinyas Innovative Technologies", note: "Word bands · no own layer or margin · lens match" },
+  { code: "CCL", name: "CCL Products (India)", note: "Own margin + layer · numeric bands · 1 policy" },
+  { code: "LAURUSLABS", name: "Laurus Labs", note: "Out-earns a thin layer · no policy shifts" },
+  { code: "CARTRADE", name: "CarTrade Tech", note: "Two-sided · defensive cycle · real shares" },
+  { code: "ASTRAMICRO", name: "Astra Microwave Products", note: "All layers one band · 3 policies" },
+  { code: "HDFCLIFE", name: "HDFC Life Insurance Company", note: "Unbanded layers · 4 markets · financial statements" },
 ];
 
 export default async function IndustryContextPreview({
@@ -28,7 +29,7 @@ export default async function IndustryContextPreview({
     <main className="mx-auto max-w-5xl px-3 py-8 sm:px-6">
       <div className="mb-5 space-y-3">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Industry Context · redesign preview (dev only)
+          Industry Context · preview (dev only)
         </p>
         <h1 className="text-2xl font-semibold text-foreground">{active.name}</h1>
         <nav aria-label="Preview company" className="flex flex-wrap gap-2">

@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle, ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
+import { ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
 import {
   Drawer,
   DrawerClose,
@@ -15,13 +15,40 @@ import { cn } from "@/lib/utils";
 import type {
   NormalizedCompanyIndustryAnalysis,
   NormalizedIndustryCapitalCycle,
-  NormalizedIndustryMarketShareSnapshot,
+  NormalizedIndustryPlayerTypeDimension,
   NormalizedIndustryRegulatoryChange,
-  NormalizedIndustrySupplySideEvidencePack,
   NormalizedIndustryTheme,
   NormalizedIndustryValueChainMap,
 } from "@/lib/company-industry-analysis/types";
 import { getCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/get";
+import {
+  EBITDA_TIER_CUTS,
+  MARGIN_TIER_LABELS,
+  buildSubSectorEntries,
+  companyLayerIndexes,
+  findCompanyShare,
+  formatMarketShareValue,
+  latestCompanyMargin,
+  marginBandPosition,
+  marginReadShort,
+  matchesCompany,
+  moneyHeadline,
+  parseMarketShareValue,
+  pickPlayerLens,
+  policySortKey,
+  policyTally,
+  policyTone,
+  readLayerMargin,
+  shareHead,
+  shortName,
+  whereItSitsLine,
+  type CompanyMargin,
+  type LayerMarginRead,
+  type PolicyTone,
+  type SubSectorEntry,
+} from "@/lib/company-industry-analysis/view";
+import { getCompanyQualityRow } from "@/lib/company-quality/get";
+import { parseCompanyQualityPayload } from "@/lib/company-quality/types";
 import {
   CAPITAL_CYCLE_RAIL_LABELS,
   formatCompactLabel,
@@ -32,11 +59,31 @@ import {
   marginQualityPillClass,
   toDisplayLabel,
 } from "../[code]/display-tokens";
-import { chipBaseClass, chipClass, type ChipTone } from "./chip-tone";
+import { chipClass, type ChipTone } from "./chip-tone";
 import { formatShortDate } from "../[code]/page-helpers";
 import { SectionCard, SectionUpdatedAt } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
+
+// Industry Context (redesign 2026-10-01). Five blocks, each one glance:
+//   1. Industry at a glance (the analysis's own industry sentence) beside
+//      Where <CODE> sits — margin band, lead-market cycle, forces tally.
+//   2. Where the money is made — every value-chain layer on a Thin / Adequate /
+//      Rich margin ladder, the company's layer and own margin marked.
+//   3. The markets <CODE> sells into — one row per sub-sector (share, cycle,
+//      forces); each row opens its market map.
+//   4. Policy shifts on a timeline beside Types of players on the lens the
+//      company is named in.
+// Everything is read off the stored row (plus the company's EBITDA margin from
+// company_quality); the only portal-written words are the templated one-liners
+// in lib/company-industry-analysis/view.ts.
+
+const displayClass = "[font-family:var(--font-display)] font-bold tracking-[-0.02em]";
+const monoClass = "[font-family:var(--font-data)] tabular-nums";
+const kickerClass =
+  "text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground";
+const cardClass = "rounded-[14px] border border-border/60 bg-card";
+const accentTextClass = "text-sky-700 dark:text-sky-300";
 
 const eyebrowClass =
   "text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground";
@@ -52,6 +99,27 @@ const CYCLE_BAR_CLASS: Record<ChipTone, string> = {
   slate: "bg-muted-foreground",
 };
 
+const POLICY_DOT: Record<PolicyTone, string> = {
+  helps: "bg-emerald-500",
+  mixed: "bg-amber-500",
+  hurts: "bg-rose-500",
+  unclear: "bg-muted-foreground/60",
+};
+
+const POLICY_TEXT: Record<PolicyTone, string> = {
+  helps: "text-emerald-700 dark:text-emerald-400",
+  mixed: "text-amber-700 dark:text-amber-400",
+  hurts: "text-rose-700 dark:text-rose-400",
+  unclear: "text-muted-foreground",
+};
+
+const POLICY_LEGEND: Record<PolicyTone, string> = {
+  helps: "Helps",
+  mixed: "Mixed",
+  hurts: "Hurts",
+  unclear: "Unclear",
+};
+
 const STRUCTURE_LABEL: Record<string, string> = {
   linear: "Linear chain",
   two_sided: "Two-sided market",
@@ -65,197 +133,19 @@ const STRUCTURE_LABEL: Record<string, string> = {
 
 const structureLabel = (value: string | null): string | null => {
   if (!value) return null;
-  const key = value.trim().toLowerCase().replace(/\s+/g, "_");
+  const key = value.trim().toLowerCase().replace(/[\s-]+/g, "_");
   return STRUCTURE_LABEL[key] ?? toDisplayLabel(value) ?? formatCompactLabel(value);
 };
 
-// ---- Company ↔ player name matching (for "where the company sits") ----------
-// Deterministic and conservative: attribute a share to the company only when a
-// player's name shares its ticker or a distinctive word. Keeps the parenthetical
-// owner ("CarWale (CarTrade Tech)"), which is the token we actually match on.
-const NAME_STOPWORDS = new Set([
-  "ltd",
-  "limited",
-  "inc",
-  "plc",
-  "tech",
-  "technologies",
-  "products",
-  "industries",
-  "india",
-  "the",
-  "group",
-  "company",
-  "co",
-  "holdings",
-  "corporation",
-  "corp",
-  "enterprises",
-  "global",
-]);
-
-const normId = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-const coreTokens = (value: string) =>
-  value
-    .toLowerCase()
-    .replace(/[^a-z0-9 ]/g, " ")
-    .split(/\s+/)
-    .map((token) => token.trim())
-    .filter((token) => token.length >= 3 && !NAME_STOPWORDS.has(token));
-
-const matchesCompany = (
-  name: string,
-  companyName: string | null,
-  companyCode: string,
-): boolean => {
-  const player = normId(name);
-  if (player.length < 3) return false;
-  const keys = new Set<string>();
-  const code = normId(companyCode);
-  if (code.length >= 3) keys.add(code);
-  for (const token of coreTokens(companyName ?? "")) keys.add(token);
-  for (const key of keys) {
-    if (player.includes(key)) return true;
-  }
-  return false;
-};
-
-const isInformativeShare = (value: string | null): value is string =>
-  Boolean(value) && !/^(not disclosed|n\/a|n\/d|undisclosed|unknown|—|-)$/i.test(value!.trim());
-
-// The share figure is the headline; keep only the leading number/range for the
-// big display (producers sometimes append a vintage or qualifier inline, e.g.
-// "10-11% (Jul 2026); estimates 6-13%"). The full string stays on `title`.
-const shareHead = (value: string): string => {
-  const trimmed = value.trim();
-  const num = trimmed.match(/^[~<>≈]?\s*\d[\d.,]*\s*%?(?:\s*[-–—]\s*\d[\d.,]*\s*%?)?/);
-  if (num && num[0].trim().length >= 2) return num[0].trim();
-  const idx = trimmed.search(/[(;]/);
-  return idx > 0 ? trimmed.slice(0, idx).trim() : trimmed;
-};
-
-type ShareTile = {
-  subSector: string;
-  shareValue: string;
-  basis: string | null;
-  estimated: boolean;
-};
-
-const findCompanyShare = (
-  snapshot: NormalizedIndustryMarketShareSnapshot | null,
-  subSector: string,
-  companyName: string | null,
-  companyCode: string,
-): ShareTile | null => {
-  if (!snapshot) return null;
-  const me = snapshot.players.find(
-    (player) => matchesCompany(player.playerName, companyName, companyCode) && isInformativeShare(player.shareValue),
-  );
-  if (!me || !me.shareValue) return null;
-  return {
-    subSector,
-    shareValue: me.shareValue,
-    basis: snapshot.shareBasis,
-    estimated: me.shareIsEstimated,
-  };
-};
-
-// ---- Market-share bar maths (ported from the retired SubSectorTabs) ----------
-const parseMarketShareValue = (value: string | null) => {
-  if (!value) return null;
-  const normalizedValue = value.trim().replace(/,/g, "");
-  const numericMatch = normalizedValue.match(/-?\d+(?:\.\d+)?/);
-  if (!numericMatch) return null;
-  const parsed = Number(numericMatch[0]);
-  if (!Number.isFinite(parsed)) return null;
-  if (normalizedValue.includes("%")) return Math.max(0, parsed);
-  if (parsed >= 0 && parsed <= 1) return parsed * 100;
-  return Math.max(0, parsed);
-};
-
-const formatMarketShareValue = (value: string | null) => {
-  if (!value) return null;
-  const trimmedValue = value.trim();
-  const normalizedValue = trimmedValue.replace(/,/g, "");
-  const parsed = parseMarketShareValue(trimmedValue);
-  if (parsed == null) return trimmedValue;
-  if (normalizedValue.includes("%")) return trimmedValue;
-  const formattedValue = Number.isInteger(parsed)
-    ? `${Math.round(parsed)}`
-    : `${parsed.toFixed(1).replace(/\.0$/, "")}`;
-  return `${formattedValue}%`;
-};
-
-// ---- Sub-sector entries: merge company_fit context with the depth cards ------
-// Replaces buildEntries/SubSectorTabs. Same merge (qualifying order wins, cards
-// enrich their match, card-only appended) but also carries tailwinds/headwinds,
-// which the tabbed entry type dropped.
-type SubSectorEntry = {
-  subSector: string;
-  description: string | null;
-  relevanceRationale: string | null;
-  capitalCycle: NormalizedIndustryCapitalCycle | null;
-  marketShareSnapshot: NormalizedIndustryMarketShareSnapshot | null;
-  supplySideEvidencePack: NormalizedIndustrySupplySideEvidencePack | null;
-  tailwinds: NormalizedIndustryTheme[];
-  headwinds: NormalizedIndustryTheme[];
-};
-
-const buildSubSectorEntries = (analysis: NormalizedCompanyIndustryAnalysis): SubSectorEntry[] => {
-  const normalizeKey = (value: string) => value.trim().toLowerCase();
-  const order: string[] = [];
-  const byKey = new Map<string, SubSectorEntry>();
-
-  for (const item of analysis.companyFit?.qualifyingSubSectors ?? []) {
-    const key = normalizeKey(item.subSector);
-    if (!key || byKey.has(key)) continue;
-    order.push(key);
-    byKey.set(key, {
-      subSector: item.subSector,
-      description: item.description ?? null,
-      relevanceRationale: item.relevanceRationale ?? null,
-      capitalCycle: null,
-      marketShareSnapshot: null,
-      supplySideEvidencePack: null,
-      tailwinds: [],
-      headwinds: [],
-    });
-  }
-
-  for (const card of analysis.subSectorCards) {
-    const key = normalizeKey(card.subSector);
-    if (!key) continue;
-    const existing = byKey.get(key);
-    if (existing) {
-      byKey.set(key, {
-        ...existing,
-        description: existing.description ?? card.subSectorDescription ?? null,
-        relevanceRationale: existing.relevanceRationale ?? card.relevanceRationale ?? null,
-        capitalCycle: card.capitalCycle,
-        marketShareSnapshot: card.marketShareSnapshot,
-        supplySideEvidencePack: card.supplySideEvidencePack,
-        tailwinds: card.tailwinds,
-        headwinds: card.headwinds,
-      });
-    } else {
-      order.push(key);
-      byKey.set(key, {
-        subSector: card.subSector,
-        description: card.subSectorDescription ?? null,
-        relevanceRationale: card.relevanceRationale ?? null,
-        capitalCycle: card.capitalCycle,
-        marketShareSnapshot: card.marketShareSnapshot,
-        supplySideEvidencePack: card.supplySideEvidencePack,
-        tailwinds: card.tailwinds,
-        headwinds: card.headwinds,
-      });
-    }
-  }
-
-  return order
-    .map((key) => byKey.get(key))
-    .filter((entry): entry is SubSectorEntry => Boolean(entry));
+// "Mid · tightening" — the rail word plus the supply direction, for tight cells.
+const cycleShort = (capitalCycle: NormalizedIndustryCapitalCycle | null) => {
+  const cycle = getCapitalCycleDisplay(capitalCycle?.stage ?? null, capitalCycle?.direction ?? null);
+  if (!cycle) return null;
+  const stageWord =
+    cycle.positionIndex != null ? CAPITAL_CYCLE_RAIL_LABELS[cycle.positionIndex] : cycle.stageLabel;
+  const direction = cycle.directionLabel?.replace(/^Supply\s+/i, "").toLowerCase() ?? null;
+  // "Mixed signals · signals conflict" says it twice — the stage word is enough.
+  return { cycle, stageWord, direction: cycle.uncertain && direction === "signals conflict" ? null : direction };
 };
 
 // ---- Right-hand drawer ------------------------------------------------------
@@ -282,48 +172,65 @@ function renderDrawer(
   );
 }
 
-// ---- Capital-cycle read -----------------------------------------------------
+function drawerRowTrigger(label: string) {
+  return (
+    <button
+      type="button"
+      className="mt-4 flex w-full items-center justify-between gap-3 rounded-[10px] border border-border/60 bg-background/40 px-4 py-3 text-left text-[12.5px] font-semibold text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+    >
+      <span>{label}</span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+    </button>
+  );
+}
+
+function drawerLinkTrigger(label: string) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded text-left text-[12px] font-semibold transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+        accentTextClass,
+      )}
+    >
+      {label}
+      <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+    </button>
+  );
+}
+
+// ---- Capital-cycle read (drawer) --------------------------------------------
 function renderCapitalCycle(capitalCycle: NormalizedIndustryCapitalCycle | null) {
   const cycle = getCapitalCycleDisplay(capitalCycle?.stage ?? null, capitalCycle?.direction ?? null);
-  const supplyRead = capitalCycle?.supplySideRead ?? null;
-  if (!cycle && !supplyRead) return null;
+  if (!cycle) return null;
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className={cn(eyebrowClass, "text-[9px]")}>Capital cycle</span>
-        {cycle ? (
-          <span
-            className={cn(
-              chipClass(cycle.stageTone),
-              "px-2 py-0.5 text-[10px]",
-              cycle.uncertain && "border-dashed bg-transparent text-muted-foreground",
-            )}
-          >
-            {cycle.stageLabel}
-          </span>
-        ) : null}
-        {cycle && cycle.positionIndex != null ? (
-          <div className="flex items-center gap-1" aria-hidden>
-            {CAPITAL_CYCLE_RAIL_LABELS.map((label, index) => (
-              <span
-                key={label}
-                className={cn(
-                  "h-1.5 w-4 rounded-full",
-                  index === cycle.positionIndex
-                    ? CYCLE_BAR_CLASS[cycle.stageTone]
-                    : "bg-muted-foreground/25",
-                )}
-              />
-            ))}
-          </div>
-        ) : null}
-        {cycle?.directionLabel ? (
-          <span className="text-[10px] text-muted-foreground">{cycle.directionLabel}</span>
-        ) : null}
-      </div>
-      {supplyRead ? (
-        <p className="text-[10.5px] leading-snug text-muted-foreground line-clamp-2">{supplyRead}</p>
+    <div className="flex flex-wrap items-center gap-2">
+      <span className={cn(eyebrowClass, "text-[9px]")}>Capital cycle</span>
+      <span
+        className={cn(
+          chipClass(cycle.stageTone),
+          "px-2 py-0.5 text-[10px]",
+          cycle.uncertain && "border-dashed bg-transparent text-muted-foreground",
+        )}
+      >
+        {cycle.stageLabel}
+      </span>
+      {cycle.positionIndex != null ? (
+        <div className="flex items-center gap-1" aria-hidden>
+          {CAPITAL_CYCLE_RAIL_LABELS.map((label, index) => (
+            <span
+              key={label}
+              className={cn(
+                "h-1.5 w-4 rounded-full",
+                index === cycle.positionIndex ? CYCLE_BAR_CLASS[cycle.stageTone] : "bg-muted-foreground/25",
+              )}
+            />
+          ))}
+        </div>
+      ) : null}
+      {cycle.directionLabel ? (
+        <span className="text-[10px] text-muted-foreground">{cycle.directionLabel}</span>
       ) : null}
     </div>
   );
@@ -349,13 +256,13 @@ function renderThemeGroup(
       {items.length === 0 ? (
         <p className="text-[10.5px] text-muted-foreground/70">None tracked.</p>
       ) : (
-        <ul className="space-y-1.5">
+        <ul className="space-y-2">
           {items.map((item, index) => {
             const horizon = getTimeHorizonDisplay(item.timeHorizon);
             return (
               <li key={`${label}-${item.theme}-${index}`} className="min-w-0">
                 <div className="flex flex-wrap items-baseline gap-1.5">
-                  <span className="text-[11px] leading-snug text-foreground/90">{item.theme}</span>
+                  <span className="text-[11.5px] leading-snug text-foreground/90">{item.theme}</span>
                   {horizon ? (
                     <span className={cn("rounded-full border px-1.5 py-0.5 text-[9px]", horizon.className)}>
                       {horizon.label}
@@ -363,9 +270,7 @@ function renderThemeGroup(
                   ) : null}
                 </div>
                 {item.companyMechanism ? (
-                  <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground line-clamp-2">
-                    {item.companyMechanism}
-                  </p>
+                  <p className="mt-0.5 text-[10.5px] leading-snug text-muted-foreground">{item.companyMechanism}</p>
                 ) : null}
               </li>
             );
@@ -484,169 +389,29 @@ function renderSubSectorDetail(entry: SubSectorEntry) {
   );
 }
 
-function renderSubSectorCard(entry: SubSectorEntry, companyName: string | null, companyCode: string) {
-  const share = findCompanyShare(entry.marketShareSnapshot, entry.subSector, companyName, companyCode);
-  const context = entry.relevanceRationale ?? entry.description;
+// Everything one market row holds: context, cycle, forces, then the market map.
+function renderMarketDrawer(entry: SubSectorEntry) {
   const hasThemes = entry.tailwinds.length > 0 || entry.headwinds.length > 0;
-  const hasDetail =
-    (entry.marketShareSnapshot?.players.length ?? 0) > 0 || Boolean(entry.supplySideEvidencePack?.interpretation);
-
   return (
-    <div className={cn(elevatedBlockClass, "flex flex-col gap-3 p-4")}>
-      <div className="flex items-start justify-between gap-2">
-        <h4 className="min-w-0 text-[13px] font-bold leading-snug text-foreground">{entry.subSector}</h4>
-        {share ? (
-          <span
-            className={cn(chipClass("sky"), "max-w-[10rem] shrink-0 truncate px-2 py-0.5 text-[10px]")}
-            title={`${companyCode} ${share.shareValue}`}
-          >
-            {companyCode} {shareHead(share.shareValue)}
-          </span>
-        ) : null}
-      </div>
-      {context ? (
-        <p className="text-[11px] leading-snug text-muted-foreground line-clamp-2">{context}</p>
+    <div className="space-y-4">
+      {entry.description || entry.relevanceRationale ? (
+        <div className="space-y-1.5">
+          {entry.description ? (
+            <p className="text-[12.5px] leading-relaxed text-foreground/90">{entry.description}</p>
+          ) : null}
+          {entry.relevanceRationale ? (
+            <p className="text-[12px] leading-relaxed text-muted-foreground">{entry.relevanceRationale}</p>
+          ) : null}
+        </div>
       ) : null}
-
       {renderCapitalCycle(entry.capitalCycle)}
-
       {hasThemes ? (
-        <>
-          <div className="border-t border-border/50" />
-          <div className="grid grid-cols-2 gap-3">
-            {renderThemeGroup("Tailwinds", entry.tailwinds, "tailwind")}
-            {renderThemeGroup("Headwinds", entry.headwinds, "headwind")}
-          </div>
-        </>
-      ) : null}
-
-      {hasDetail
-        ? renderDrawer(
-            <button
-              type="button"
-              className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/50 px-3 py-2 text-left text-[11px] font-semibold text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-            >
-              <span>Market map &amp; supply-side</span>
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-            </button>,
-            {
-              title: entry.subSector,
-              description: "Market-share picture and supply-side read for this sub-sector.",
-              children: renderSubSectorDetail(entry),
-            },
-          )
-        : null}
-    </div>
-  );
-}
-
-// ---- Value-chain: summary rail (always on) ---------------------------------
-function renderValueChainRail(
-  valueChainMap: NormalizedIndustryValueChainMap,
-  companyName: string | null,
-  companyCode: string,
-) {
-  const { layers, pinchPoints } = valueChainMap;
-  const rationale = valueChainMap.chainTypeRationale ?? valueChainMap.synthesis ?? null;
-
-  return (
-    <div className={cn(elevatedBlockClass, "space-y-3 p-4")}>
-      <div className="flex items-baseline justify-between gap-3">
-        <p className={eyebrowClass}>How the industry makes money</p>
-        <span className="shrink-0 text-[10px] text-muted-foreground">margin = EBITDA unless noted</span>
-      </div>
-      {rationale ? (
-        <p className="text-[11.5px] leading-relaxed text-muted-foreground line-clamp-2">{rationale}</p>
-      ) : null}
-
-      {layers.length > 0 ? (
-        <div className="grid gap-2 lg:flex lg:items-stretch lg:gap-1.5">
-          {layers.map((layer, index) => {
-            const marginLabel = layer.marginReturnProfile?.rangeOrLabel ?? null;
-            const belongs =
-              Boolean(layer.connectionToCompany) ||
-              layer.topParticipants.some((participant) => matchesCompany(participant.name, companyName, companyCode));
-            return (
-              <React.Fragment key={`${layer.layerName}-${index}`}>
-                <div className={cn(nestedDetailClass, "flex flex-col p-3 lg:flex-1 lg:min-w-0")}>
-                  <div className="flex items-start gap-2">
-                    <span className="mt-0.5 inline-flex shrink-0 items-center rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[9px] font-semibold tabular-nums text-muted-foreground">
-                      {index + 1}
-                    </span>
-                    <p className="text-[12px] font-semibold leading-snug text-foreground">{layer.layerName}</p>
-                  </div>
-                  {marginLabel ? (
-                    <div className="mt-2.5">
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium tabular-nums",
-                          marginQualityPillClass[getMarginQualityTone(marginLabel)],
-                        )}
-                      >
-                        {marginLabel}
-                      </span>
-                    </div>
-                  ) : null}
-                  {layer.topParticipants.length > 0 ? (
-                    <div className="mt-2.5 flex flex-wrap gap-1">
-                      {layer.topParticipants.slice(0, 2).map((participant, pIdx) => (
-                        <span key={`${participant.name}-${pIdx}`} className={miniChipClass}>
-                          {participant.name.replace(/\s*\(.*$/, "")}
-                        </span>
-                      ))}
-                      {layer.topParticipants.length > 2 ? (
-                        <span className={cn(miniChipClass, "bg-muted/55 text-muted-foreground")}>
-                          +{layer.topParticipants.length - 2}
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {belongs ? (
-                    <div className="mt-auto flex items-center gap-1.5 pt-2.5 text-[9.5px] font-semibold text-sky-600 dark:text-sky-300">
-                      <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
-                      {companyCode} operates here
-                    </div>
-                  ) : null}
-                </div>
-                {index < layers.length - 1 ? (
-                  <div className="hidden items-center justify-center px-0.5 text-muted-foreground/60 lg:flex">
-                    <ChevronRight className="h-4 w-4" />
-                  </div>
-                ) : null}
-              </React.Fragment>
-            );
-          })}
+        <div className={cn(nestedDetailClass, "grid gap-4 p-3.5 sm:grid-cols-2")}>
+          {renderThemeGroup("Tailwinds", entry.tailwinds, "tailwind")}
+          {renderThemeGroup("Headwinds", entry.headwinds, "headwind")}
         </div>
       ) : null}
-
-      {pinchPoints.length > 0 ? (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2.5 dark:border-amber-400/25 dark:bg-amber-400/5">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-          <p className="text-[11px] leading-snug text-foreground/85">
-            <span className="font-semibold text-amber-700 dark:text-amber-300">Pinch points</span>
-            {" — "}
-            {pinchPoints.map((pinch) => pinch.name).join(" · ")}
-          </p>
-        </div>
-      ) : null}
-
-      {renderDrawer(
-        <button
-          type="button"
-          className="flex w-full items-center justify-between gap-3 rounded-lg border border-border/70 bg-background/60 px-3.5 py-2.5 text-left text-[11.5px] font-semibold text-foreground transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-        >
-          <span>Open full value chain — revenue models, participants &amp; roles</span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </button>,
-        {
-          title: "Value chain",
-          description:
-            [structureLabel(valueChainMap.structureType), `${layers.length} ${layers.length === 1 ? "layer" : "layers"}`]
-              .filter(Boolean)
-              .join(" · ") || undefined,
-          children: renderValueChainDetail(valueChainMap, companyName, companyCode),
-        },
-      )}
+      {renderSubSectorDetail(entry)}
     </div>
   );
 }
@@ -789,18 +554,20 @@ function renderValueChainDetail(
 }
 
 // ---- Types of players (drawer body) ----------------------------------------
-function renderTypesOfPlayers(analysis: NormalizedCompanyIndustryAnalysis) {
-  if (!analysis.typesOfPlayers) return null;
+function renderTypesOfPlayers(dimensions: NormalizedIndustryPlayerTypeDimension[]) {
   const playerCategoryAccentClass =
     "bg-gradient-to-r from-transparent via-sky-500/70 to-transparent dark:via-sky-400/55";
 
   return (
     <div className="space-y-2.5">
-      {analysis.typesOfPlayers.dimensions.map((dimension) => (
+      {dimensions.map((dimension) => (
         <div key={dimension.dimensionName} className={cn(elevatedBlockClass, "space-y-3 p-3.5")}>
           <p className="text-[12px] font-semibold leading-snug text-foreground">
             {`By ${dimension.dimensionName.toLowerCase()}`}
           </p>
+          {dimension.dimensionExplanation ? (
+            <p className="text-[11px] leading-relaxed text-muted-foreground">{dimension.dimensionExplanation}</p>
+          ) : null}
           {dimension.categories.length > 0 ? (
             <div className="grid gap-2.5 sm:grid-cols-2">
               {dimension.categories.map((category) => (
@@ -820,16 +587,11 @@ function renderTypesOfPlayers(analysis: NormalizedCompanyIndustryAnalysis) {
                           Player examples
                         </p>
                         <div className="flex flex-wrap gap-1.5">
-                          {category.playerExamples.slice(0, 4).map((example) => (
+                          {category.playerExamples.map((example) => (
                             <span key={`${category.categoryName}-${example}`} className={miniChipClass}>
                               {example}
                             </span>
                           ))}
-                          {category.playerExamples.length > 4 ? (
-                            <span className={cn(miniChipClass, "bg-muted/55 text-muted-foreground")}>
-                              +{category.playerExamples.length - 4} more
-                            </span>
-                          ) : null}
                         </div>
                       </div>
                     ) : null}
@@ -893,8 +655,8 @@ function renderRegulatoryChanges(items: NormalizedIndustryRegulatoryChange[]) {
 function renderLegacyThemes(analysis: NormalizedCompanyIndustryAnalysis) {
   if (analysis.tailwinds.length === 0 && analysis.headwinds.length === 0) return null;
   return (
-    <div className={cn(elevatedBlockClass, "space-y-3 p-4")}>
-      <p className={eyebrowClass}>Tailwinds &amp; headwinds</p>
+    <div className={cn(cardClass, "space-y-3 p-5 sm:p-6")}>
+      <p className={kickerClass}>Tailwinds &amp; headwinds</p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {renderThemeGroup("Tailwinds", analysis.tailwinds, "tailwind")}
         {renderThemeGroup("Headwinds", analysis.headwinds, "headwind")}
@@ -903,108 +665,809 @@ function renderLegacyThemes(analysis: NormalizedCompanyIndustryAnalysis) {
   );
 }
 
-// ---- Hero -------------------------------------------------------------------
-function renderHero(analysis: NormalizedCompanyIndustryAnalysis, companyName: string | null, companyCode: string) {
+// ---- 1a. Industry at a glance ------------------------------------------------
+function renderGlance(analysis: NormalizedCompanyIndustryAnalysis, subSectorCount: number) {
   const structure = structureLabel(analysis.valueChainMap?.structureType ?? null);
-  const lead =
+  const layerCount = analysis.valueChainMap?.layers.length ?? 0;
+  const statement =
     analysis.industryPositioning?.customerNeed ??
     analysis.valueChainMap?.chainTypeRationale ??
     analysis.valueChainMap?.synthesis ??
     null;
-  const headline = analysis.subSector ?? structure ?? "Industry structure";
-
-  const shareTiles = analysis.subSectorCards
-    .map((card) => findCompanyShare(card.marketShareSnapshot, card.subSector, companyName, companyCode))
-    .filter((tile): tile is ShareTile => Boolean(tile))
-    .slice(0, 2);
-
-  const fallbackSubSectors =
-    shareTiles.length === 0
-      ? (analysis.companyFit?.qualifyingSubSectors ?? []).map((item) => item.subSector).slice(0, 4)
-      : [];
-  const hasRight = shareTiles.length > 0 || fallbackSubSectors.length > 0;
+  const long = (statement?.split(/\s+/).length ?? 0) > 40;
+  const name = analysis.subSector ?? analysis.sector;
+  const structureChip = [structure, layerCount > 0 ? `${layerCount} ${layerCount === 1 ? "layer" : "layers"}` : null]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <div className={cn("grid gap-3", hasRight && "md:grid-cols-[1.55fr_1fr]")}>
-      <div className="rounded-xl border border-sky-500/30 bg-sky-500/[0.06] p-4 sm:p-5">
-        <p className={cn(eyebrowClass, "text-sky-700 dark:text-sky-300")}>Industry at a glance</p>
-        <h3 className="mt-2 text-lg font-bold leading-tight tracking-[-0.01em] text-foreground sm:text-xl">
-          {headline}
-        </h3>
-        {lead ? <p className="mt-2 text-[13px] leading-relaxed text-foreground/85">{lead}</p> : null}
-        <div className="mt-3.5 flex flex-wrap gap-2">
-          {structure ? <span className={cn(chipClass("slate"), "text-[10px]")}>{structure}</span> : null}
-          {analysis.subSector && analysis.subSector !== headline ? (
-            <span className={cn(chipClass("sky"), "text-[10px]")}>{analysis.subSector}</span>
-          ) : null}
-          {analysis.subSectorCards.length > 1 ? (
-            <span className={cn(chipClass("slate"), "text-[10px]")}>
-              {analysis.subSectorCards.length} sub-sectors
-            </span>
-          ) : null}
-        </div>
+    <div className="flex flex-col rounded-[14px] border border-sky-500/25 bg-gradient-to-br from-sky-500/[0.10] via-sky-500/[0.04] to-transparent p-5 sm:p-6">
+      <p className={cn(kickerClass, accentTextClass)}>Industry at a glance</p>
+      <p
+        className={cn(
+          displayClass,
+          "mt-3 text-foreground",
+          long
+            ? "text-[16px] leading-[1.35] sm:text-[18px]"
+            : "text-[18px] leading-[1.28] sm:text-[21px] lg:text-[23px]",
+        )}
+      >
+        {statement ?? name ?? "Industry structure"}
+      </p>
+      <div className="mt-auto flex flex-wrap gap-2 pt-5">
+        {name ? (
+          <span className="inline-flex items-center rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[11.5px] font-medium text-foreground">
+            {name}
+          </span>
+        ) : null}
+        {structureChip ? (
+          <span className="inline-flex items-center rounded-full border border-border/60 px-3 py-1 text-[11.5px] text-muted-foreground">
+            {structureChip}
+          </span>
+        ) : null}
+        {subSectorCount > 0 ? (
+          <span className="inline-flex items-center rounded-full border border-border/60 px-3 py-1 text-[11.5px] text-muted-foreground">
+            {subSectorCount} {subSectorCount === 1 ? "sub-sector" : "sub-sectors"}
+          </span>
+        ) : null}
       </div>
+    </div>
+  );
+}
 
-      {hasRight ? (
-        <div className={cn(elevatedBlockClass, "flex flex-col gap-3 p-4")}>
-          <p className={eyebrowClass}>Where {companyCode} sits</p>
-          {shareTiles.length > 0 ? (
-            shareTiles.map((tile, index) => (
-              <div key={`${tile.subSector}-${index}`}>
-                {index > 0 ? <div className="mb-3 h-px bg-border/70" /> : null}
-                <div className="flex items-baseline gap-2">
-                  <span
-                    className="font-mono text-2xl font-semibold tabular-nums text-sky-700 dark:text-sky-300"
-                    title={tile.shareValue}
-                  >
-                    {shareHead(tile.shareValue)}
-                  </span>
-                  {tile.estimated ? (
-                    <span className={cn(chipBaseClass, "px-2 py-0.5 text-[9px] text-muted-foreground")}>est.</span>
-                  ) : null}
-                </div>
-                <p className="mt-1 text-[11px] leading-snug text-muted-foreground line-clamp-2">
-                  {tile.subSector}
-                  {tile.basis ? <span className="text-muted-foreground/70"> · {tile.basis}</span> : null}
-                </p>
-              </div>
-            ))
-          ) : (
-            <div className="space-y-2">
-              <p className="text-[11px] text-muted-foreground">Operates across</p>
-              <div className="flex flex-wrap gap-1.5">
-                {fallbackSubSectors.map((subSector) => (
-                  <span key={subSector} className={miniChipClass}>
-                    {subSector}
-                  </span>
-                ))}
-              </div>
-            </div>
+// ---- 1b. Where <CODE> sits ---------------------------------------------------
+type WhereItSits = {
+  layerRead: LayerMarginRead | null;
+  companyMargin: CompanyMargin | null;
+  leadEntry: SubSectorEntry | null;
+  tailwinds: number;
+  headwinds: number;
+};
+
+function sitsRow(label: string, visual: React.ReactNode, value: React.ReactNode) {
+  return (
+    <div className="grid grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-3 sm:grid-cols-[64px_minmax(0,1fr)_auto]">
+      <p className="text-[13px] font-semibold text-foreground">{label}</p>
+      <div className="min-w-0">{visual}</div>
+      <div className="min-w-[64px] text-right">{value}</div>
+    </div>
+  );
+}
+
+function railLabels(labels: readonly string[], activeIndex: number | null) {
+  return (
+    <div className="mt-1.5 grid gap-1" style={{ gridTemplateColumns: `repeat(${labels.length}, minmax(0, 1fr))` }}>
+      {labels.map((label, index) => (
+        <span
+          key={label}
+          className={cn(
+            monoClass,
+            "truncate text-[9.5px]",
+            index === activeIndex ? accentTextClass : "text-muted-foreground/80",
           )}
+        >
+          {label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function renderWhereItSits(data: WhereItSits, companyCode: string) {
+  const { layerRead, companyMargin, leadEntry, tailwinds, headwinds } = data;
+  const lead = cycleShort(leadEntry?.capitalCycle ?? null);
+  const forces = tailwinds + headwinds;
+  const line = whereItSitsLine({
+    layerRead,
+    companyMargin: companyMargin?.pct ?? null,
+    cycleStage: leadEntry?.capitalCycle?.stage ?? null,
+    tailwinds,
+    headwinds,
+  });
+
+  const marginPosition = companyMargin ? marginBandPosition(companyMargin.pct) : null;
+  const marginActive = marginPosition != null ? Math.min(2, Math.floor(marginPosition)) : layerRead?.tier ?? null;
+
+  const rows: React.ReactNode[] = [];
+
+  if (layerRead || companyMargin) {
+    rows.push(
+      <React.Fragment key="margin">
+        {sitsRow(
+          "Margin",
+          <div>
+            <div className="relative h-2">
+              <div className="absolute inset-0 grid grid-cols-3 gap-0.5" aria-hidden>
+                <span className="rounded-l-full bg-muted" />
+                <span className="bg-muted" />
+                <span className="rounded-r-full bg-muted" />
+              </div>
+              {layerRead ? (
+                <span
+                  className="absolute inset-y-0 rounded-full bg-sky-500/35"
+                  style={{ left: `${(layerRead.lo / 3) * 100}%`, width: `${((layerRead.hi - layerRead.lo) / 3) * 100}%` }}
+                  aria-hidden
+                />
+              ) : null}
+              {marginPosition != null ? (
+                <span
+                  className="absolute top-1/2 h-4 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-500 shadow-[0_0_0_2px_hsl(var(--card))]"
+                  style={{ left: `${Math.min(99, (marginPosition / 3) * 100)}%` }}
+                  aria-hidden
+                />
+              ) : null}
+            </div>
+            {railLabels(MARGIN_TIER_LABELS, marginActive)}
+          </div>,
+          <>
+            <p className={cn(monoClass, "text-[16px] font-semibold leading-none", accentTextClass)}>
+              {companyMargin ? `${Math.round(companyMargin.pct)}%` : marginReadShort(layerRead!)}
+            </p>
+            <p className={cn(monoClass, "mt-1 text-[10px] text-muted-foreground")}>
+              {!companyMargin ? "its layer" : layerRead ? `layer ${marginReadShort(layerRead)}` : `EBITDA · ${companyMargin.label}`}
+            </p>
+          </>,
+        )}
+      </React.Fragment>,
+    );
+  }
+
+  if (lead) {
+    rows.push(
+      <React.Fragment key="cycle">
+        {sitsRow(
+          "Cycle",
+          <div title={leadEntry?.subSector}>
+            <div className="grid grid-cols-4 gap-1" aria-hidden>
+              {CAPITAL_CYCLE_RAIL_LABELS.map((label, index) => (
+                <span
+                  key={label}
+                  className={cn(
+                    "h-1.5 rounded-full",
+                    index === lead.cycle.positionIndex ? "bg-sky-500" : "bg-muted",
+                  )}
+                />
+              ))}
+            </div>
+            {railLabels(CAPITAL_CYCLE_RAIL_LABELS, lead.cycle.positionIndex)}
+          </div>,
+          <>
+            <p className="text-[14px] font-semibold leading-none text-foreground">{lead.stageWord}</p>
+            {lead.direction ? (
+              <p className={cn(monoClass, "mt-1 text-[10px] text-muted-foreground")}>{lead.direction}</p>
+            ) : null}
+          </>,
+        )}
+      </React.Fragment>,
+    );
+  }
+
+  if (forces > 0) {
+    rows.push(
+      <React.Fragment key="forces">
+        {sitsRow(
+          "Forces",
+          <div className="flex h-2 gap-0.5" aria-hidden>
+            {tailwinds > 0 ? (
+              <span className="rounded-l-full bg-emerald-500" style={{ flexGrow: tailwinds }} />
+            ) : null}
+            {headwinds > 0 ? (
+              <span className="rounded-r-full bg-rose-500" style={{ flexGrow: headwinds }} />
+            ) : null}
+          </div>,
+          <p className={cn(monoClass, "text-[13px] font-semibold leading-none")}>
+            <span className="text-emerald-700 dark:text-emerald-400">{tailwinds}▲</span>{" "}
+            <span className="text-rose-700 dark:text-rose-400">{headwinds}▼</span>
+          </p>,
+        )}
+      </React.Fragment>,
+    );
+  }
+
+  if (rows.length === 0) return null;
+
+  return (
+    <div className={cn(cardClass, "flex flex-col p-5 sm:p-6")}>
+      <p className={kickerClass}>Where {companyCode} sits</p>
+      <div className="mt-5 space-y-5">{rows}</div>
+      {line ? (
+        <div className="mt-auto pt-5">
+          <p className="border-t border-border/50 pt-4 text-[13px] leading-relaxed text-foreground/85">{line}</p>
         </div>
       ) : null}
     </div>
   );
 }
 
-// ---- Drill-down trigger card ------------------------------------------------
-function drillTrigger(title: string, teaser: string) {
+// ---- 2. Where the money is made ----------------------------------------------
+type LadderLayer = {
+  name: string;
+  label: string | null;
+  read: LayerMarginRead | null;
+  isCompany: boolean;
+};
+
+// Band-scale (0..3) → percent along the plot (from the bottom, or from the left on the phone rows).
+const bandPct = (position: number) => `${(position / 3) * 100}%`;
+
+// A smooth dashed path through the rated boxes' centres (viewBox 0..100 both
+// axes, stretched to the plot): horizontal tangents at each point.
+function ladderPath(layers: LadderLayer[]): string | null {
+  const points = layers.flatMap((layer, index) =>
+    layer.read
+      ? [{ x: ((index + 0.5) / layers.length) * 100, y: 100 - (((layer.read.lo + layer.read.hi) / 2) / 3) * 100 }]
+      : [],
+  );
+  if (points.length < 2) return null;
+  return points
+    .map((point, index) => {
+      if (index === 0) return `M ${point.x} ${point.y}`;
+      const prev = points[index - 1];
+      const midX = (prev.x + point.x) / 2;
+      return `C ${midX} ${prev.y} ${midX} ${point.y} ${point.x} ${point.y}`;
+    })
+    .join(" ");
+}
+
+function renderMarginLadder(layers: LadderLayer[], companyCode: string, companyMargin: CompanyMargin | null) {
+  const columns = { gridTemplateColumns: `repeat(${layers.length}, minmax(0, 1fr))` };
+  const path = ladderPath(layers);
+  const markerPosition = companyMargin ? marginBandPosition(companyMargin.pct) : null;
+  // The company's one (consolidated) margin marks its first layer only.
+  const markerLayer = layers.findIndex((layer) => layer.isCompany);
+  const companyTag = (
+    <span className={cn("inline-flex items-center gap-1.5 text-[11px] font-semibold", accentTextClass)}>
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-500" />
+      {companyCode} operates here
+    </span>
+  );
+
   return (
+    <>
+      {/* sm+: columns on a Thin / Adequate / Rich ladder */}
+      <div className="mt-5 hidden gap-3 sm:flex">
+        <div className="relative h-[200px] w-[58px] shrink-0" aria-hidden>
+          {MARGIN_TIER_LABELS.map((label, index) => (
+            <span
+              key={label}
+              className={cn(monoClass, "absolute right-0 translate-y-1/2 text-[10px] text-muted-foreground")}
+              style={{ bottom: bandPct(index + 0.5) }}
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="relative h-[200px] border-b border-border/70">
+            <div className="absolute inset-0 grid grid-rows-3" aria-hidden>
+              <span className="border-t border-dashed border-border/50" />
+              <span className="border-t border-dashed border-border/50" />
+              <span className="border-t border-dashed border-border/50" />
+            </div>
+            <div className="absolute inset-0 grid gap-2" style={columns}>
+              {layers.map((layer, index) => (
+                <div
+                  key={`${layer.name}-plot-${index}`}
+                  className={cn("relative rounded-lg", layer.isCompany && "bg-sky-500/[0.07] ring-1 ring-inset ring-sky-500/20")}
+                >
+                  {layer.read ? (
+                    <span
+                      className={cn(
+                        "absolute inset-x-[14%] rounded-md",
+                        layer.isCompany
+                          ? "border border-sky-400/60 bg-sky-500/60 dark:bg-sky-600/55"
+                          : "bg-muted-foreground/20 dark:bg-muted-foreground/30",
+                      )}
+                      style={{ bottom: bandPct(layer.read.lo), height: `${((layer.read.hi - layer.read.lo) / 3) * 100}%` }}
+                      title={layer.label ?? undefined}
+                    />
+                  ) : (
+                    <span
+                      className={cn(monoClass, "absolute inset-x-0 bottom-1.5 text-center text-[9.5px] text-muted-foreground/70")}
+                    >
+                      not banded
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+            {path ? (
+              <svg
+                className="pointer-events-none absolute inset-0 h-full w-full text-muted-foreground/70"
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                aria-hidden
+              >
+                <path
+                  d={path}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.25}
+                  strokeDasharray="4 4"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+            ) : null}
+            <div className="pointer-events-none absolute inset-0 grid gap-2" style={columns} aria-hidden>
+              {layers.map((layer, index) => (
+                <div key={`${layer.name}-marker-${index}`} className="relative">
+                  {index === markerLayer && markerPosition != null ? (
+                    <>
+                      <span
+                        className={cn(monoClass, "absolute inset-x-0 text-center text-[10.5px] font-semibold", accentTextClass)}
+                        style={
+                          markerPosition < 2.55
+                            ? { bottom: `calc(${bandPct(markerPosition)} + 14px)` }
+                            : { top: `calc(${bandPct(3 - markerPosition)} + 14px)` }
+                        }
+                      >
+                        {companyCode} {Math.round(companyMargin!.pct)}%
+                      </span>
+                      <span
+                        className="absolute left-1/2 h-3.5 w-3.5 -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-sky-300 bg-sky-500 shadow-[0_0_0_4px_rgba(14,165,233,0.2)]"
+                        style={{ bottom: bandPct(markerPosition) }}
+                      />
+                    </>
+                  ) : layer.isCompany ? (
+                    <span
+                      className={cn(monoClass, "absolute inset-x-0 top-2 text-center text-[10.5px] font-semibold", accentTextClass)}
+                    >
+                      {companyCode}
+                    </span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2" style={columns}>
+            {layers.map((layer, index) => (
+              <div key={`${layer.name}-label-${index}`} className="min-w-0 px-1">
+                <p className="line-clamp-3 text-[12.5px] font-semibold leading-snug text-foreground" title={layer.name}>
+                  {shortName(layer.name)}
+                </p>
+                <p
+                  className={cn(monoClass, "mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground")}
+                  title={layer.label ?? undefined}
+                >
+                  {layer.read ? marginReadShort(layer.read) : layer.label ?? "No margin read"}
+                </p>
+                {layer.isCompany ? <div className="mt-1.5">{companyTag}</div> : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* phone: one row per layer on the same three bands */}
+      <div className="mt-4 sm:hidden">
+        <div className="grid grid-cols-3 px-2.5 pb-1.5" aria-hidden>
+          {MARGIN_TIER_LABELS.map((label) => (
+            <span key={label} className={cn(monoClass, "text-center text-[9.5px] text-muted-foreground")}>
+              {label}
+            </span>
+          ))}
+        </div>
+        <div className="space-y-1.5">
+          {layers.map((layer, index) => (
+            <div
+              key={`${layer.name}-row-${index}`}
+              className={cn("rounded-lg px-2.5 py-2", layer.isCompany && "bg-sky-500/[0.07] ring-1 ring-inset ring-sky-500/20")}
+            >
+              <div className="relative h-2.5">
+                <div className="absolute inset-0 grid grid-cols-3 gap-0.5" aria-hidden>
+                  <span className="rounded-l-sm bg-muted/70" />
+                  <span className="bg-muted/70" />
+                  <span className="rounded-r-sm bg-muted/70" />
+                </div>
+                {layer.read ? (
+                  <span
+                    className={cn(
+                      "absolute inset-y-0 rounded-sm",
+                      layer.isCompany ? "bg-sky-500/70" : "bg-muted-foreground/40",
+                    )}
+                    style={{ left: bandPct(layer.read.lo), width: `${((layer.read.hi - layer.read.lo) / 3) * 100}%` }}
+                    aria-hidden
+                  />
+                ) : null}
+                {index === markerLayer && markerPosition != null ? (
+                  <span
+                    className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-300 bg-sky-500"
+                    style={{ left: bandPct(Math.min(2.97, markerPosition)) }}
+                    aria-hidden
+                  />
+                ) : null}
+              </div>
+              <div className="mt-1.5 flex items-baseline justify-between gap-3">
+                <p className="min-w-0 text-[12.5px] font-semibold leading-snug text-foreground">{shortName(layer.name)}</p>
+                <p className={cn(monoClass, "shrink-0 text-[11px] text-muted-foreground")}>
+                  {layer.read ? marginReadShort(layer.read) : "not banded"}
+                </p>
+              </div>
+              {layer.isCompany ? (
+                <p className={cn(monoClass, "mt-0.5 text-[10.5px] font-semibold", accentTextClass)}>
+                  {companyCode} operates here
+                  {index === markerLayer && companyMargin ? ` · ${Math.round(companyMargin.pct)}% EBITDA` : ""}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function renderMoneyCard(
+  valueChainMap: NormalizedIndustryValueChainMap,
+  companyName: string | null,
+  companyCode: string,
+  companyMargin: CompanyMargin | null,
+) {
+  const companyLayers = companyLayerIndexes(valueChainMap.layers, companyName, companyCode);
+  const layers: LadderLayer[] = valueChainMap.layers.map((layer, index) => {
+    const label = layer.marginReturnProfile?.rangeOrLabel ?? null;
+    return { name: layer.layerName, label, read: readLayerMargin(label), isCompany: companyLayers.includes(index) };
+  });
+  const headline = moneyHeadline(layers, companyCode, companyLayers);
+  const anyBanded = layers.some((layer) => layer.read);
+  const anyNumeric = layers.some((layer) => layer.read?.pct) || (companyMargin != null && companyLayers.length > 0);
+  const rationale = valueChainMap.chainTypeRationale ?? valueChainMap.synthesis ?? null;
+
+  return (
+    <div className={cn(cardClass, "p-5 sm:p-6")}>
+      <p className={kickerClass}>
+        Where the money is made
+        {layers.length > 0 ? ` · ${layers.length} ${layers.length === 1 ? "layer" : "layers"}` : ""}
+      </p>
+      {headline ? (
+        <h3 className={cn(displayClass, "mt-2 max-w-3xl text-[17px] leading-snug text-foreground sm:text-[20px]")}>
+          {headline}
+        </h3>
+      ) : rationale ? (
+        <p className="mt-2 line-clamp-3 max-w-3xl text-[13px] leading-relaxed text-foreground/85" title={rationale}>
+          {rationale}
+        </p>
+      ) : null}
+
+      {layers.length > 0 && anyBanded ? renderMarginLadder(layers, companyCode, companyMargin) : null}
+
+      {anyBanded ? (
+        <p className={cn(monoClass, "mt-3 text-[10px] leading-relaxed text-muted-foreground/80")}>
+          Margin band per layer, from the analysis
+          {anyNumeric
+            ? ` · EBITDA figures banded at <${EBITDA_TIER_CUTS[0]}% / ${EBITDA_TIER_CUTS[0]}–${EBITDA_TIER_CUTS[1]}% / ${EBITDA_TIER_CUTS[1]}%+`
+            : ""}
+        </p>
+      ) : null}
+
+      {valueChainMap.pinchPoints.length > 0 ? (
+        <div className="mt-4 flex items-start gap-2.5 rounded-[10px] border border-amber-500/25 bg-amber-500/[0.06] px-3.5 py-2.5">
+          <span className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden />
+          <p className="text-[12px] leading-snug text-foreground/85">
+            <span className="font-semibold uppercase tracking-[0.12em] text-[10px] text-amber-700 dark:text-amber-300">
+              {valueChainMap.pinchPoints.length === 1 ? "Pinch point" : "Pinch points"}
+            </span>
+            <span className="text-muted-foreground"> — </span>
+            {valueChainMap.pinchPoints.map((pinch) => pinch.name).join(" · ")}
+          </p>
+        </div>
+      ) : null}
+
+      {renderDrawer(drawerRowTrigger("How each layer earns — revenue models & who plays"), {
+        title: "Value chain",
+        description:
+          [structureLabel(valueChainMap.structureType), `${layers.length} ${layers.length === 1 ? "layer" : "layers"}`]
+            .filter(Boolean)
+            .join(" · ") || undefined,
+        children: renderValueChainDetail(valueChainMap, companyName, companyCode),
+      })}
+    </div>
+  );
+}
+
+// ---- 3. The markets <CODE> sells into ---------------------------------------
+const MARKET_GRID =
+  "md:grid-cols-[minmax(0,1.6fr)_112px_minmax(0,1fr)_120px_16px] md:items-center md:gap-x-6";
+
+function forceSquares(tailwinds: number, headwinds: number) {
+  return (
+    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span className="flex gap-[3px]" aria-hidden>
+        {Array.from({ length: tailwinds }, (_, index) => (
+          <span key={`tw-${index}`} className="h-2.5 w-2.5 rounded-[3px] bg-emerald-500" />
+        ))}
+        {Array.from({ length: headwinds }, (_, index) => (
+          <span key={`hw-${index}`} className="h-2.5 w-2.5 rounded-[3px] bg-rose-500" />
+        ))}
+      </span>
+      <span className={cn(monoClass, "text-[10.5px] text-muted-foreground")}>
+        {tailwinds}▲ {headwinds}▼
+      </span>
+    </span>
+  );
+}
+
+function renderMarketRow(entry: SubSectorEntry, companyName: string | null, companyCode: string) {
+  const share = findCompanyShare(entry.marketShareSnapshot, entry.subSector, companyName, companyCode);
+  const lead = cycleShort(entry.capitalCycle);
+  const subtitle = entry.relevanceRationale ?? entry.description;
+  const cellLabel = cn(kickerClass, "mb-1.5 block text-[9px] md:hidden");
+
+  const trigger = (
     <button
       type="button"
-      className={cn(
-        elevatedBlockClass,
-        "flex w-full items-center justify-between gap-3 p-4 text-left transition-colors hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
-      )}
+      className="group block w-full px-4 py-4 text-left transition-colors hover:bg-accent/30 focus-visible:bg-accent/30 focus-visible:outline-none sm:px-5"
     >
-      <span className="min-w-0">
-        <span className="block text-[12.5px] font-semibold text-foreground">{title}</span>
-        <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">{teaser}</span>
-      </span>
-      <span className={cn(chipBaseClass, "shrink-0 border-border/60 bg-background/80 px-2.5 py-1 text-[10px] text-foreground")}>
-        Open
+      <span className={cn("grid grid-cols-3 gap-x-3 gap-y-3.5", MARKET_GRID)}>
+        <span className="col-span-3 flex min-w-0 items-start justify-between gap-3 md:col-span-1">
+          <span className="min-w-0">
+            <span className="block text-[14px] font-semibold leading-snug text-foreground">{entry.subSector}</span>
+            {subtitle ? (
+              <span className="mt-1 line-clamp-2 text-[12px] leading-snug text-muted-foreground" title={subtitle}>
+                {subtitle}
+              </span>
+            ) : null}
+          </span>
+          <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground md:hidden" />
+        </span>
+
+        <span className="min-w-0">
+          <span className={cellLabel}>{companyCode} share</span>
+          {share ? (
+            <span className="flex items-baseline gap-1.5" title={share.shareValue}>
+              <span className={cn(monoClass, "text-[17px] font-semibold leading-none", accentTextClass)}>
+                {shareHead(share.shareValue)}
+              </span>
+              {share.estimated ? <span className="text-[10.5px] text-muted-foreground">est.</span> : null}
+            </span>
+          ) : (
+            <span className={cn(monoClass, "text-[15px] leading-none text-muted-foreground/70")} title="Not disclosed">
+              —
+            </span>
+          )}
+        </span>
+
+        <span className="min-w-0">
+          <span className={cellLabel}>Cycle</span>
+          {lead ? (
+            <>
+              <span className="grid max-w-[180px] grid-cols-4 gap-1" aria-hidden>
+                {CAPITAL_CYCLE_RAIL_LABELS.map((label, index) => (
+                  <span
+                    key={label}
+                    className={cn(
+                      "h-1 rounded-full",
+                      index === lead.cycle.positionIndex
+                        ? CYCLE_BAR_CLASS[lead.cycle.stageTone]
+                        : lead.cycle.uncertain
+                          ? "border border-dashed border-muted-foreground/40"
+                          : "bg-muted",
+                    )}
+                  />
+                ))}
+              </span>
+              <span className={cn(monoClass, "mt-1.5 block text-[10.5px] leading-snug text-muted-foreground")}>
+                {lead.stageWord}
+                {lead.direction ? ` · ${lead.direction}` : ""}
+              </span>
+            </>
+          ) : (
+            <span className={cn(monoClass, "text-[10.5px] text-muted-foreground/70")}>—</span>
+          )}
+        </span>
+
+        <span className="min-w-0">
+          <span className={cellLabel}>Forces</span>
+          {entry.tailwinds.length + entry.headwinds.length > 0 ? (
+            forceSquares(entry.tailwinds.length, entry.headwinds.length)
+          ) : (
+            <span className={cn(monoClass, "text-[10.5px] text-muted-foreground/70")}>—</span>
+          )}
+        </span>
+
+        <ChevronRight className="hidden h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground md:block" />
       </span>
     </button>
+  );
+
+  return renderDrawer(trigger, {
+    title: entry.subSector,
+    description: "Cycle, forces and the market map for this sub-sector.",
+    children: renderMarketDrawer(entry),
+  });
+}
+
+function renderMarkets(entries: SubSectorEntry[], companyName: string | null, companyCode: string) {
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-baseline justify-between gap-3 px-0.5">
+        <p className={kickerClass}>The markets {companyCode} sells into</p>
+        <span className={cn(monoClass, "hidden text-[10.5px] text-muted-foreground sm:inline")}>
+          tap a row for the market map
+        </span>
+      </div>
+      <div className={cn(cardClass, "overflow-hidden")}>
+        <div className={cn("hidden border-b border-border/50 px-5 py-3 md:grid", MARKET_GRID)}>
+          <span className={kickerClass}>Sub-sector</span>
+          <span className={kickerClass}>{companyCode} share</span>
+          <span className={kickerClass}>Capital cycle</span>
+          <span className={kickerClass}>Forces</span>
+          <span />
+        </div>
+        <ul className="divide-y divide-border/50">
+          {entries.map((entry) => (
+            <li key={entry.subSector}>{renderMarketRow(entry, companyName, companyCode)}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ---- 4a. Policy shifts --------------------------------------------------------
+function renderPolicyCard(items: NormalizedIndustryRegulatoryChange[]) {
+  const sorted = items
+    .map((item, index) => ({ item, index, key: policySortKey(item.period), tone: policyTone(item.impactDirection) }))
+    .sort((left, right) => left.key - right.key || left.index - right.index);
+  const tally = policyTally(sorted.map((entry) => entry.tone));
+  const legend = (["helps", "mixed", "hurts", "unclear"] as const).filter((tone) =>
+    sorted.some((entry) => entry.tone === tone),
+  );
+  const columns = { gridTemplateColumns: `repeat(${sorted.length}, minmax(0, 1fr))` };
+
+  return (
+    <div className={cn(cardClass, "flex flex-col p-5 sm:p-6")}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p className={kickerClass}>Policy shifts · {sorted.length} tracked</p>
+        <p className={cn(monoClass, "text-[10.5px]")}>
+          {tally.map((entry, index) => (
+            <React.Fragment key={entry.tone}>
+              {index > 0 ? <span className="text-muted-foreground"> · </span> : null}
+              <span className={POLICY_TEXT[entry.tone]}>{entry.text}</span>
+            </React.Fragment>
+          ))}
+        </p>
+      </div>
+
+      {/* sm+: a left-to-right timeline */}
+      <ol className="relative mt-5 hidden gap-4 sm:grid" style={columns}>
+        <span className="absolute inset-x-0 top-[6px] h-px bg-border/70" aria-hidden />
+        {sorted.map(({ item, tone }, index) => (
+          <li key={`${item.change}-${index}`} className="relative min-w-0">
+            <span className={cn("relative block h-3.5 w-3.5 rounded-full ring-4 ring-card", POLICY_DOT[tone])} />
+            <p className={cn(monoClass, "mt-3 text-[10.5px] text-muted-foreground")}>{item.period ?? "—"}</p>
+            <p className="mt-1 line-clamp-4 text-[12.5px] font-semibold leading-snug text-foreground" title={item.change}>
+              {item.change}
+            </p>
+          </li>
+        ))}
+      </ol>
+
+      {/* phone: top-to-bottom */}
+      <ol className="mt-4 space-y-3.5 sm:hidden">
+        {sorted.map(({ item, tone }, index) => (
+          <li key={`${item.change}-m-${index}`} className="flex gap-3">
+            <span className={cn("mt-1 h-3 w-3 shrink-0 rounded-full", POLICY_DOT[tone])} aria-hidden />
+            <span className="min-w-0">
+              <span className={cn(monoClass, "block text-[10.5px] text-muted-foreground")}>{item.period ?? "—"}</span>
+              <span className="mt-0.5 block text-[13px] font-semibold leading-snug text-foreground">{item.change}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-5">
+        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1">
+          {legend.map((tone) => (
+            <span key={tone} className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span className={cn("h-2 w-2 rounded-full", POLICY_DOT[tone])} aria-hidden />
+              {POLICY_LEGEND[tone]}
+            </span>
+          ))}
+        </div>
+        {renderDrawer(drawerLinkTrigger("Why each matters"), {
+          title: "Policy shifts",
+          description: "Policy shifts touching this industry and why they matter.",
+          children: renderRegulatoryChanges(sorted.map((entry) => entry.item)),
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---- 4b. Types of players -------------------------------------------------------
+const PLAYER_GRID: Record<number, string> = {
+  1: "sm:grid-cols-1",
+  2: "sm:grid-cols-2",
+  3: "sm:grid-cols-3",
+  4: "sm:grid-cols-2",
+};
+
+function renderPlayersCard(
+  dimensions: NormalizedIndustryPlayerTypeDimension[],
+  companyName: string | null,
+  companyCode: string,
+) {
+  const lens = pickPlayerLens(dimensions, companyName, companyCode);
+  if (!lens) return null;
+  const dimension = dimensions[lens.index];
+  const others = dimensions.filter((_, index) => index !== lens.index);
+  const examplesFor = (examples: string[], matched: boolean) => {
+    const clean = examples.map(shortName);
+    if (!matched) return { own: false, rest: clean.slice(0, 3) };
+    const rest = examples
+      .filter((example) => !matchesCompany(example, companyName, companyCode))
+      .map(shortName)
+      .slice(0, 2);
+    return { own: true, rest };
+  };
+
+  return (
+    <div className={cn(cardClass, "flex flex-col p-5 sm:p-6")}>
+      <p className={kickerClass}>Types of players · by {dimension.dimensionName.toLowerCase()}</p>
+      {dimension.categories.length > 0 ? (
+        <div
+          className={cn(
+            "mt-4 grid gap-3",
+            PLAYER_GRID[dimension.categories.length] ?? "sm:grid-cols-2 xl:grid-cols-3",
+          )}
+        >
+          {dimension.categories.map((category, index) => {
+            const matched = lens.matched.includes(index);
+            const examples = examplesFor(category.playerExamples, matched);
+            return (
+              <div key={`${category.categoryName}-${index}`} className="flex min-w-0 flex-col">
+                <div
+                  className={cn(
+                    "rounded-[10px] border p-3.5",
+                    matched ? "border-sky-500/50 bg-sky-500/[0.08]" : "border-border/60 bg-background/40",
+                  )}
+                >
+                  <p className="text-[13px] font-semibold leading-snug text-foreground">{category.categoryName}</p>
+                  {examples.own || examples.rest.length > 0 ? (
+                    <p className="mt-1.5 text-[11.5px] leading-snug text-muted-foreground">
+                      {examples.own ? (
+                        <span className={cn("font-semibold", accentTextClass)}>{companyCode}</span>
+                      ) : null}
+                      {examples.own && examples.rest.length > 0 ? ", " : null}
+                      {examples.rest.join(", ")}
+                    </p>
+                  ) : null}
+                </div>
+                {category.categoryDescription ? (
+                  <p
+                    className="mt-2 line-clamp-3 px-0.5 text-[11px] leading-snug text-muted-foreground"
+                    title={category.categoryDescription}
+                  >
+                    {category.categoryDescription}
+                  </p>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : dimension.dimensionExplanation ? (
+        <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">{dimension.dimensionExplanation}</p>
+      ) : null}
+
+      <div className="mt-auto pt-5">
+        {renderDrawer(
+          drawerLinkTrigger(
+            others.length > 0
+              ? `Other lenses — ${others
+                  .slice(0, 2)
+                  .map((other) => `by ${other.dimensionName.toLowerCase()}`)
+                  .join(", ")}`
+              : "Player detail",
+          ),
+          {
+            title: "Types of players",
+            description: "How the market maps into player types.",
+            children: renderTypesOfPlayers([dimension, ...others]),
+          },
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1014,7 +1477,10 @@ type IndustryContextSectionProps = {
 };
 
 export async function IndustryContextSection({ companyCode, companyName }: IndustryContextSectionProps) {
-  const analysis = await getCompanyIndustryAnalysis(companyCode);
+  const [analysis, qualityRow] = await Promise.all([
+    getCompanyIndustryAnalysis(companyCode),
+    getCompanyQualityRow(companyCode),
+  ]);
   const generatedAtShort = formatShortDate(analysis?.generatedAtRaw);
 
   if (!analysis) {
@@ -1032,8 +1498,31 @@ export async function IndustryContextSection({ companyCode, companyName }: Indus
   }
 
   const subSectorEntries = buildSubSectorEntries(analysis);
-  const impactPreview = getImpactDirectionDisplay(analysis.regulatoryChanges[0]?.impactDirection ?? null);
   const playerDimensions = analysis.typesOfPlayers?.dimensions ?? [];
+  const companyMargin = latestCompanyMargin(parseCompanyQualityPayload(qualityRow?.payload));
+
+  // Where <CODE> sits: the company's layer (first match), the lead market's
+  // cycle (first entry carrying one — qualifying order leads with the biggest
+  // revenue line), and the forces summed across markets.
+  const valueChainLayers = analysis.valueChainMap?.layers ?? [];
+  const ownLayer = companyLayerIndexes(valueChainLayers, companyName, companyCode)[0];
+  const layerRead =
+    ownLayer != null ? readLayerMargin(valueChainLayers[ownLayer].marginReturnProfile?.rangeOrLabel ?? null) : null;
+  const forceSource: { tailwinds: unknown[]; headwinds: unknown[] }[] =
+    subSectorEntries.length > 0 ? subSectorEntries : [analysis];
+  const whereItSits = renderWhereItSits(
+    {
+      layerRead,
+      companyMargin,
+      leadEntry: subSectorEntries.find((entry) => cycleShort(entry.capitalCycle)) ?? null,
+      tailwinds: forceSource.reduce((sum, entry) => sum + entry.tailwinds.length, 0),
+      headwinds: forceSource.reduce((sum, entry) => sum + entry.headwinds.length, 0),
+    },
+    companyCode,
+  );
+
+  const policyCard = analysis.regulatoryChanges.length > 0 ? renderPolicyCard(analysis.regulatoryChanges) : null;
+  const playersCard = renderPlayersCard(playerDimensions, companyName, companyCode);
 
   return (
     <SectionCard
@@ -1044,64 +1533,24 @@ export async function IndustryContextSection({ companyCode, companyName }: Indus
       feedbackCompanyName={companyName}
       headerAction={<SectionUpdatedAt date={generatedAtShort} />}
     >
-      <div className="space-y-5">
-        {renderHero(analysis, companyName, companyCode)}
+      <div className="space-y-4 sm:space-y-5">
+        <div className={cn("grid gap-4", whereItSits && "lg:grid-cols-[1.45fr_1fr]")}>
+          {renderGlance(analysis, subSectorEntries.length)}
+          {whereItSits}
+        </div>
 
-        {analysis.valueChainMap ? renderValueChainRail(analysis.valueChainMap, companyName, companyCode) : null}
+        {analysis.valueChainMap
+          ? renderMoneyCard(analysis.valueChainMap, companyName, companyCode, companyMargin)
+          : null}
 
-        {subSectorEntries.length > 0 ? (
-          <div className="space-y-3">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className={eyebrowClass}>Sub-sectors</p>
-              <span className="shrink-0 text-[10px] text-muted-foreground">
-                {subSectorEntries.length} {subSectorEntries.length === 1 ? "sub-sector" : "sub-sectors"} this company plays in
-              </span>
-            </div>
-            <div className="grid gap-3 lg:grid-cols-2">
-              {subSectorEntries.map((entry) => (
-                <React.Fragment key={entry.subSector}>
-                  {renderSubSectorCard(entry, companyName, companyCode)}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-        ) : (
-          renderLegacyThemes(analysis)
-        )}
+        {subSectorEntries.length > 0
+          ? renderMarkets(subSectorEntries, companyName, companyCode)
+          : renderLegacyThemes(analysis)}
 
-        {playerDimensions.length > 0 || analysis.regulatoryChanges.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {playerDimensions.length > 0
-              ? renderDrawer(
-                  drillTrigger(
-                    "Types of players",
-                    `${playerDimensions.length} ${playerDimensions.length === 1 ? "lens" : "lenses"} · ${playerDimensions
-                      .map((dimension) => dimension.dimensionName.toLowerCase())
-                      .slice(0, 2)
-                      .join(" · ")}`,
-                  ),
-                  {
-                    title: "Types of players",
-                    description: "How the market maps into player types.",
-                    children: renderTypesOfPlayers(analysis),
-                  },
-                )
-              : null}
-            {analysis.regulatoryChanges.length > 0
-              ? renderDrawer(
-                  drillTrigger(
-                    "Regulatory changes",
-                    `${analysis.regulatoryChanges.length} tracked${
-                      impactPreview ? ` · latest ${impactPreview.label.toLowerCase()}` : ""
-                    }`,
-                  ),
-                  {
-                    title: "Regulatory changes",
-                    description: "Policy shifts touching this industry and why they matter.",
-                    children: renderRegulatoryChanges(analysis.regulatoryChanges),
-                  },
-                )
-              : null}
+        {policyCard || playersCard ? (
+          <div className={cn("grid gap-4", policyCard && playersCard && "lg:grid-cols-2")}>
+            {policyCard}
+            {playersCard}
           </div>
         ) : null}
 

@@ -111,6 +111,10 @@ const CAPITAL_CYCLE_STAGE: Record<
   early_upcycle: { label: "Early upcycle", tone: "emerald", positionIndex: 1 },
   mid_upcycle: { label: "Mid-upcycle", tone: "emerald", positionIndex: 2 },
   late_upcycle: { label: "Late upcycle", tone: "amber", positionIndex: 3 },
+  // Off-enum stages a few producer rows carry; each sits on the same rail.
+  recovery: { label: "Recovery", tone: "emerald", positionIndex: 1 },
+  mid_cycle: { label: "Mid-cycle", tone: "emerald", positionIndex: 2 },
+  boom: { label: "Boom", tone: "amber", positionIndex: 3 },
   defensive_stable: { label: "Defensive / stable", tone: "sky", positionIndex: null },
   unclear: { label: "Mixed signals", tone: "slate", positionIndex: null, uncertain: true },
 };
