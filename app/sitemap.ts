@@ -33,7 +33,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let posts: ReturnType<typeof getAllPostMeta> = [];
   try {
     posts = getAllPostMeta();
-  } catch {
+  } catch (error) {
+    console.error("sitemap: failed to read Journal posts", error);
     posts = [];
   }
 
