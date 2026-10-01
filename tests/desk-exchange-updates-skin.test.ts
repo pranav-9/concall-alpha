@@ -32,6 +32,7 @@ const update = (over: Partial<ExchangeUpdate> & Pick<ExchangeUpdate, "id">): Exc
   category: "order_win",
   categoryLabel: "Order Wins",
   impact: "positive",
+  orderSize: null,
   summary:
     "Won a ₹240 crore order for transformer bushings from a state utility, executable over eighteen months, with an option for a follow-on tranche.",
   headline: "Order win",
@@ -44,7 +45,13 @@ const update = (over: Partial<ExchangeUpdate> & Pick<ExchangeUpdate, "id">): Exc
 const updates = [
   update({ id: "a1" }),
   update({ id: "a2", impact: "negative", filedLabel: "3d ago", bucketKey: "week", attachmentUrl: null }),
-  update({ id: "a3", impact: "transformative", filedLabel: "24 Sept 2025", bucketKey: "earlier" }),
+  update({
+    id: "a3",
+    impact: "transformative",
+    filedLabel: "24 Sept 2025",
+    bucketKey: "earlier",
+    orderSize: { pctOfMcap: 27.4, softness: "framework" },
+  }),
 ];
 const base = { updates, impacts: buildImpactFacet(updates), total: updates.length, windowDays: 35 };
 // getCompanyExchangeDeskData always returns belowCut: [] — mirror it.
@@ -313,3 +320,16 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
+
+// ---------------------------------------------------------------------------
+// Order-size chip: rendered once per paint for the one sized order — the phone
+// tree, plus the desktop row's grid AND its own sm:hidden layout — never for
+// unsized rows.
+// ---------------------------------------------------------------------------
+{
+  const doc = render("company", companyData);
+  const chipText = "27% of mcap · framework";
+  const chipEls = descendants(doc).filter((e) => e.tag === "span" && textOf(e) === chipText);
+  assert.equal(chipEls.length, 3, "order-size chip renders in every paint of the sized order's row");
+  assert.equal(textOf(doc).split("% of mcap").length - 1, 3, "unsized rows carry no chip");
+}

@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   IMPACT_META,
+  formatOrderSize,
   type ExchangeImpact,
   type ExchangeDeskData,
   type ExchangeUpdate,
@@ -93,6 +94,27 @@ function ImpactBadge({ item }: { item: ExchangeUpdate }) {
   );
 }
 
+/**
+ * Order size against market cap ("27% of mcap · framework"). Facts, not a
+ * tier: the impact badge carries the judgment, this carries the scale, so a
+ * big-but-soft order (STLTECH's USD 1.2 bn LTSA, 2026-10-01) reads as big AND
+ * not yet booked. Absent when the pipeline couldn't size the order.
+ */
+function OrderSizeChip({ item, className }: { item: ExchangeUpdate; className?: string }) {
+  if (!item.orderSize) return null;
+  return (
+    <span
+      className={cn(
+        "house-data inline-flex shrink-0 items-center whitespace-nowrap tabular-nums text-[var(--ink)]",
+        className,
+      )}
+      title="Order value as a share of the company's market cap"
+    >
+      {formatOrderSize(item.orderSize)}
+    </span>
+  );
+}
+
 function UpdateRow({
   item,
   companyContext = false,
@@ -141,7 +163,10 @@ function UpdateRow({
         <span className="house-data house-micro truncate text-[var(--ink-soft)]">
           {item.categoryLabel}
         </span>
-        <span className="truncate text-sm text-[var(--ink-soft)]">{item.summary}</span>
+        <span className="flex min-w-0 items-baseline gap-2">
+          <OrderSizeChip item={item} className="house-micro" />
+          <span className="truncate text-sm text-[var(--ink-soft)]">{item.summary}</span>
+        </span>
         <span className="justify-self-end">
           {item.attachmentUrl ? (
             <a
@@ -185,6 +210,7 @@ function UpdateRow({
             be the container, with the category label inline inside it. */}
         <p className="mt-1 line-clamp-2 pl-[3.5rem] text-xs leading-snug text-[var(--ink-soft)]">
           <span className="house-data house-micro mr-2">{item.categoryLabel}</span>
+          <OrderSizeChip item={item} className="house-micro mr-2" />
           {item.summary}
         </p>
       </div>
@@ -320,6 +346,7 @@ function PhoneUpdateRow({
         <span className="house-data mr-[7px] text-[9px] uppercase tracking-[0.08em]">
           {item.categoryLabel}
         </span>
+        <OrderSizeChip item={item} className="mr-[7px] text-[10px]" />
         {item.summary}
       </span>
     </>
