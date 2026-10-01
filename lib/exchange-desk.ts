@@ -13,6 +13,7 @@ import {
   categoryLabel,
   coerceImpact,
   isKnownCategory,
+  parseOrderSize,
   type ExchangeCategory,
   type ExchangeDeskData,
   type ExchangeUpdate,
@@ -61,6 +62,7 @@ type AnnouncementRow = {
   category: string;
   impact: string | null;
   summary: string | null;
+  details: unknown;
 };
 
 /**
@@ -134,7 +136,7 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
       supabase
         .from("bse_announcements")
         .select(
-          "announcement_id, company_code, filed_at, headline, subject, attachment_url, category, impact, summary",
+          "announcement_id, company_code, filed_at, headline, subject, attachment_url, category, impact, summary, details",
         )
         .eq("is_material", true)
         .gte("filed_at", cutoff.toISOString())
@@ -164,6 +166,7 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
         category,
         categoryLabel: categoryLabel(category),
         impact: coerceImpact(row.impact),
+        orderSize: parseOrderSize(row.category, row.details),
         summary,
         headline: (row.headline ?? "").trim(),
         // https + exchange-host allowlist (filing-href.ts): a poisoned row keeps its
@@ -225,7 +228,7 @@ export async function getCompanyExchangeDeskData(
     const { data, error } = await supabase
       .from("bse_announcements")
       .select(
-        "announcement_id, company_code, filed_at, headline, subject, attachment_url, category, impact, summary",
+        "announcement_id, company_code, filed_at, headline, subject, attachment_url, category, impact, summary, details",
       )
       .eq("company_code", normalizedCode)
       .eq("is_material", true)
@@ -249,6 +252,7 @@ export async function getCompanyExchangeDeskData(
         category,
         categoryLabel: categoryLabel(category),
         impact: coerceImpact(row.impact),
+        orderSize: parseOrderSize(row.category, row.details),
         summary,
         headline: (row.headline ?? "").trim(),
         attachmentUrl: safeFilingHref(row.attachment_url),

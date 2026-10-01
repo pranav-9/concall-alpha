@@ -133,6 +133,42 @@ export function isKnownCategory(category: string): category is ExchangeCategory 
   return category in CATEGORY_LABELS;
 }
 
+/**
+ * An order's size against the company: the pipeline's order-size gate stores
+ * `details.classifier.order_size.pct_of_mcap` (order ₹ cr / market cap ₹ cr)
+ * and `details.order.status` on order_win rows. Rendered as a chip so a big
+ * order reads as big without a judgment label — "27% of mcap · framework".
+ */
+export type OrderSize = {
+  pctOfMcap: number;
+  /** null = a firm order (the default read); otherwise how soft the value is. */
+  softness: "framework" | "LOI" | "unclear" | null;
+};
+
+const SOFTNESS: Record<string, OrderSize["softness"]> = {
+  framework: "framework",
+  loi: "LOI",
+  unclear: "unclear",
+};
+
+export function parseOrderSize(category: string, details: unknown): OrderSize | null {
+  if (category !== "order_win" || !details || typeof details !== "object") return null;
+  const d = details as Record<string, unknown>;
+  const classifier = d.classifier as Record<string, unknown> | undefined;
+  const sizing = classifier?.order_size as Record<string, unknown> | undefined;
+  const pct = sizing?.pct_of_mcap;
+  if (typeof pct !== "number" || !Number.isFinite(pct) || pct <= 0) return null;
+  const status = (d.order as Record<string, unknown> | undefined)?.status;
+  return { pctOfMcap: pct, softness: SOFTNESS[String(status)] ?? null };
+}
+
+/** "27% of mcap", "7.7% of mcap", "<1% of mcap" — then "· framework" if soft. */
+export function formatOrderSize(size: OrderSize): string {
+  const p = size.pctOfMcap;
+  const pct = p < 1 ? "<1" : p < 10 ? String(Math.round(p * 10) / 10) : String(Math.round(p));
+  return `${pct}% of mcap${size.softness ? ` · ${size.softness}` : ""}`;
+}
+
 /** One classified, material announcement, ready to render on the Desk. */
 export type ExchangeUpdate = {
   id: string;
@@ -142,6 +178,8 @@ export type ExchangeUpdate = {
   categoryLabel: string;
   /** Signed impact tier — good/bad read at a glance. */
   impact: ExchangeImpact;
+  /** Order wins only: size vs market cap, when the pipeline could size it. */
+  orderSize: OrderSize | null;
   /** Plain-English one-liner from the classifier. */
   summary: string;
   headline: string;
