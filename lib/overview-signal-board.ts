@@ -2,78 +2,69 @@ import "server-only";
 
 import { cache } from "react";
 
-import { formatRelativeActivityTime } from "@/lib/activity-feed";
 import { classifyBoardRead } from "@/lib/board-read";
-import { safeFilingHref } from "@/lib/exchange-desk/filing-href";
-import { categoryLabel, coerceImpact, type ExchangeImpact } from "@/lib/exchange-desk/types";
+import { normalizeCompanyQuality } from "@/lib/company-quality/normalize";
+import { getCompanyQualityRow } from "@/lib/company-quality/get";
+import type { ForensicTally } from "@/lib/company-quality/types";
+import { getGuidanceSnapshotRow } from "@/lib/guidance-snapshot/get";
+import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
+import { parseForwardStrength, type AmbitionLabel } from "@/lib/guidance-snapshot/types";
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
+import { buildGrowthSummary } from "@/lib/growth-outlook/summary";
 import { computeBoardRanks, COVERAGE_BOARD_SIZE } from "@/lib/leaderboard-rank";
 import { logger } from "@/lib/logger";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
-import { edgePhrase } from "@/lib/moat-analysis/plain-language";
-import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
+import type { MoatAnalysisRow, MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
 import { getOverallBoardRows } from "@/lib/overall-board";
 import { percentileOf } from "@/lib/read-distribution";
 import type { ScorePoint } from "@/lib/score-path";
-import {
-  classifyTrajectory,
-  quarterIndex,
-  type TrajectoryResult,
-} from "@/lib/score-trajectory";
 import { createClient } from "@/lib/supabase/server";
-import { buildValuationHeadline, VERDICT_DISPLAY } from "@/lib/valuation-check/headline";
+import { VERDICT_DISPLAY } from "@/lib/valuation-check/headline";
+import {
+  buildValuationScoreHistory,
+  type ValuationScoreHistoryRow,
+} from "@/lib/valuation-check/history";
 import { toValuationScale } from "@/lib/valuation-band";
 import { assessStaleness, normalizeValuationCheck } from "@/lib/valuation-check/normalize";
-import type { ValuationCheckRow, ValuationPill } from "@/lib/valuation-check/types";
+import type { ValuationCheckRow } from "@/lib/valuation-check/types";
 import { getWalkTheTalk } from "@/lib/walk-the-talk/get";
 import type { NormalizedWalkTheTalk } from "@/lib/walk-the-talk/types";
 
-// Data for the recency-first company overview ("signal board", 2026-08-21).
+// Data for the company overview (redesigned 2026-10-01: a header score strip,
+// The business / The story, three score cards with their paths, and three
+// standing reads — moat, forensics, walk the talk).
 //
 // The overview cache row (lib/company-overview-cache.ts) already carries the
-// scores, ranks, deltas and series. What it does NOT carry is the one-line
-// "why" behind each read, the trajectory label, the valuation lenses, the
-// walk-the-talk grade, theme membership and the announcement tape — the parts
-// that make the board readable without opening a section. This module fetches
-// those per company, in parallel, and degrades each leg independently: a
-// missing table or a failed query blanks that card, never the page.
-
-const ACTIVITY_WINDOW_DAYS = 60;
-
-const ACTIVITY_LIMIT = 5;
+// scores, ranks, sector and story. What it does NOT carry is the business
+// one-liner, the score and valuation paths, the growth range, the moat and
+// forensic reads and the walk-the-talk grade. This module fetches those per
+// company, in parallel, and degrades each leg independently: a missing table
+// or a failed query blanks that card, never the page. Every read goes through
+// the same normalizer the section behind it uses, so a card can never say
+// something its section doesn't.
 
 const toNumber = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
 const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? v.trim() : null);
 
-const parseJsonObject = (value: unknown): Record<string, unknown> | null => {
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
-    } catch {
-      return null;
-    }
-  }
-  return value && typeof value === "object" ? (value as Record<string, unknown>) : null;
-};
-
 export type OverviewQuarterRead = {
   /**
-   * Latest / prior print read LIVE from concall_analysis, alongside their labels,
-   * so the card's score, delta, label and why-line always describe the same
-   * quarter. The overview cache row can lag a fresh score by a revalidate window;
-   * mixing its score with these labels would caption Q4's number "Q1".
+   * Latest print read LIVE from concall_analysis, alongside its label, so the
+   * card's score, label and path always describe the same quarter. The overview
+   * cache row can lag a fresh score by a revalidate window; mixing its score
+   * with these labels would caption Q4's number "Q1".
    */
   latestScore: number | null;
-  priorScore: number | null;
   latestLabel: string | null;
-  priorLabel: string | null;
-  /** The one-line "why" for the latest print, from the scored row's own fields. */
-  whyLine: string | null;
-  trajectory: TrajectoryResult | null;
-  /** Oldest → newest, ≤ 8 prints, for the sparkline. */
+  /** Oldest → newest, ≤ 8 prints, for the area chart. */
   scorePath: ScorePoint[];
+};
+
+export type OverviewGrowthRange = {
+  bear: string | null;
+  base: string;
+  bull: string | null;
+  horizonYears: number | null;
 };
 
 export type OverviewValuationRead = {
@@ -81,35 +72,27 @@ export type OverviewValuationRead = {
   verdictLabel: string | null;
   /** Valuation score on the 0-10 board scale, present ONLY when a verdict is shown. */
   score: number | null;
-  headline: string | null;
   /** null = a verdict is shown; string = why it is withheld. */
   withheldReason: string | null;
-  ageDays: number | null;
-  lenses: { label: string; pill: ValuationPill }[];
+  /** Published pricings, oldest → newest, on the 0-10 board scale. */
+  path: { period: string; value: number }[];
 };
-
-export type OverviewActivityItem = {
-  id: string;
-  kind: string;
-  impact: ExchangeImpact | null;
-  headline: string;
-  filedRaw: string;
-  whenLabel: string;
-  href: string | null;
-};
-
-export type OverviewThemeTag = { slug: string; title: string; rationale: string | null };
 
 export type OverviewSignalExtras = {
   quarter: OverviewQuarterRead;
-  /** Live growth score from the same row as the why-line (cache can lag a refresh). */
+  /** Live growth score (the cache can lag a refresh). */
   growthScore: number | null;
-  growthWhyLine: string | null;
+  /** The Growth tab summary's base case + bear/bull range (revenue growth). */
+  growthRange: OverviewGrowthRange | null;
   valuation: OverviewValuationRead | null;
-  moat: { phrase: string; headline: string | null } | null;
+  /** The business snapshot's one-line "what it is". */
+  businessLine: string | null;
+  moat: { rating: MoatRatingKey; tier: MoatTier | null; headline: string | null } | null;
+  /** The Quality tab's forensic tally + its templated headline. */
+  forensics: { tally: ForensicTally; headline: string } | null;
   walkTheTalk: NormalizedWalkTheTalk | null;
-  themes: OverviewThemeTag[];
-  activity: OverviewActivityItem[];
+  /** Deep-track forward-strength ambition, when the snapshot carries it. */
+  guidanceAmbition: AmbitionLabel | null;
 };
 
 type ConcallRow = {
@@ -117,68 +100,13 @@ type ConcallRow = {
   qtr: unknown;
   quarter_label: unknown;
   score: unknown;
-  details: unknown;
 };
-
-function quarterWhyLine(row: ConcallRow | undefined): string | null {
-  if (!row) return null;
-  const details = parseJsonObject(row.details);
-  const resultsSummary = Array.isArray(details?.results_summary)
-    ? (details!.results_summary as unknown[]).map(str).filter(Boolean)
-    : [];
-  if (resultsSummary[0]) return resultsSummary[0];
-  const rationale = Array.isArray(details?.rationale) ? (details!.rationale as unknown[]) : [];
-  for (const item of rationale) {
-    if (typeof item === "string" && item.trim()) return item.trim();
-    if (item && typeof item === "object") {
-      // `detail` is the full sentence; `heading` is a terse label — prefer the sentence.
-      const o = item as { heading?: unknown; detail?: unknown };
-      const line = str(o.detail) ?? str(o.heading);
-      if (line) return line;
-    }
-  }
-  return null;
-}
 
 function buildQuarterRead(rows: ConcallRow[]): OverviewQuarterRead {
   // rows are newest-first
   const scored = rows
-    .map((r) => ({
-      fy: toNumber(r.fy),
-      qtr: toNumber(r.qtr),
-      label: str(r.quarter_label),
-      score: toNumber(r.score),
-      row: r,
-    }))
+    .map((r) => ({ label: str(r.quarter_label), score: toNumber(r.score) }))
     .filter((r) => r.score != null);
-
-  // Gap detection mirrors app/company/get-concall-data.ts exactly (4-record
-  // window over the RAW rows: a null score or non-contiguous fy/qtr inside it
-  // withholds event labels), so the overview and the leaderboard never carry two
-  // different Trend labels for the same company.
-  const gapWindow = rows.slice(0, 4).map((r) => ({
-    fy: toNumber(r.fy),
-    qtr: toNumber(r.qtr),
-    score: toNumber(r.score),
-  }));
-  let hasGapInWindow = gapWindow.some((r) => r.score == null);
-  for (let i = 0; i < gapWindow.length - 1; i += 1) {
-    const a = gapWindow[i];
-    const b = gapWindow[i + 1];
-    if (a.fy == null || a.qtr == null || b.fy == null || b.qtr == null) {
-      hasGapInWindow = true;
-      continue;
-    }
-    if (quarterIndex(a.fy, a.qtr) - quarterIndex(b.fy, b.qtr) !== 1) hasGapInWindow = true;
-  }
-
-  const trajectory =
-    scored.length > 0
-      ? classifyTrajectory(
-          scored.map((r) => r.score as number),
-          { hasGapInWindow },
-        )
-      : null;
 
   const scorePath: ScorePoint[] = scored
     .slice(0, 8)
@@ -187,13 +115,7 @@ function buildQuarterRead(rows: ConcallRow[]): OverviewQuarterRead {
 
   return {
     latestScore: scored[0]?.score ?? null,
-    priorScore: scored[1]?.score ?? null,
     latestLabel: scored[0]?.label ?? null,
-    priorLabel: scored[1]?.label ?? null,
-    // Why-line from the same row as the displayed score — a partially written
-    // row (scoring_meta present, score null) must not caption the prior print.
-    whyLine: quarterWhyLine(scored[0]?.row),
-    trajectory,
     scorePath,
   };
 }
@@ -202,11 +124,6 @@ export const getOverviewSignalExtras = cache(
   async (code: string, companyName: string): Promise<OverviewSignalExtras> => {
     const supabase = await createClient();
     const normalizedCode = code.trim().toUpperCase();
-    const activityNowMs = Date.now();
-    const activityNow = new Date(activityNowMs).toISOString();
-    const activityCutoff = new Date(
-      activityNowMs - ACTIVITY_WINDOW_DAYS * 24 * 60 * 60 * 1000,
-    ).toISOString();
 
     // Each leg degrades independently: a missing table (pre-DDL) or a failed
     // query blanks that card, never the page. Supabase builders RESOLVE with
@@ -235,100 +152,127 @@ export const getOverviewSignalExtras = cache(
       }
     };
 
-    const [concallRes, growthRes, valuationRes, moatRes, walkTheTalk, membershipRes, annRes] =
-      await Promise.all([
-        safe(
-          "concall",
-          supabase
-            .from("concall_analysis")
-            .select("fy, qtr, quarter_label, score, details")
-            .eq("company_code", normalizedCode)
-            // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
-            .not("details->scoring_meta", "is", null)
-            .order("fy", { ascending: false })
-            .order("qtr", { ascending: false })
-            .limit(12),
-          { data: null },
-        ),
-        safe(
-          "growth",
-          supabase
-            .from("growth_outlook")
-            // Only the lead bullet is rendered (top-level column, with the legacy
-            // details.summary_bullets fallback the normalizer already handles).
-            .select("company, growth_score, run_timestamp, summary_bullets, details")
-            // .in() quotes values — a name with "," or "()" would break a string-built .or().
-            .in("company", [normalizedCode, companyName])
-            .order("run_timestamp", { ascending: false })
-            .limit(1),
-          { data: null },
-        ),
-        safe(
-          "valuation",
-          supabase
-            .from("valuation_check")
-            .select("*")
-            .eq("company_code", normalizedCode)
-            .eq("valuation_published", true)
-            // Deterministic: newest priced row wins if a company ever has two published rows.
-            .order("priced_as_of", { ascending: false })
-            .limit(1),
-          { data: null },
-        ),
-        safe(
-          "moat",
-          supabase
-            .from("moat_analysis")
-            .select(
-              "id, company_code, company_name, industry, rating, tier, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
-            )
-            .eq("company_code", normalizedCode)
-            .limit(1),
-          { data: null },
-        ),
-        safe("walk-the-talk", getWalkTheTalk(normalizedCode), null),
-        safe(
-          "themes",
-          supabase
-            .from("theme_membership")
-            .select("theme_slug, rationale")
-            .eq("company_code", normalizedCode),
-          { data: null },
-        ),
-        safe(
-          "announcements",
-          supabase
-            .from("bse_announcements")
-            .select("announcement_id, filed_at, headline, summary, category, impact, attachment_url")
-            .eq("company_code", normalizedCode)
-            .eq("is_material", true)
-            .gte("filed_at", activityCutoff)
-            // A future-dated (mis-parsed or poisoned) row must not pin the top slot.
-            .lte("filed_at", activityNow)
-            .order("filed_at", { ascending: false })
-            .limit(ACTIVITY_LIMIT),
-          { data: null },
-        ),
-      ]);
+    const [
+      concallRes,
+      growthRes,
+      valuationRes,
+      valuationHistoryRes,
+      businessRes,
+      moatRes,
+      qualityRow,
+      walkTheTalk,
+      guidanceRow,
+    ] = await Promise.all([
+      safe(
+        "concall",
+        supabase
+          .from("concall_analysis")
+          .select("fy, qtr, quarter_label, score")
+          .eq("company_code", normalizedCode)
+          // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+          .not("details->scoring_meta", "is", null)
+          .order("fy", { ascending: false })
+          .order("qtr", { ascending: false })
+          .limit(12),
+        { data: null },
+      ),
+      safe(
+        "growth",
+        supabase
+          .from("growth_outlook")
+          // What buildGrowthSummary reads: the score, the base case and its
+          // bear/bull range (columns + the scenarios block), and the horizon.
+          .select(
+            "company, growth_score, run_timestamp, horizon_years, base_growth_pct, upside_growth_pct, downside_growth_pct, scenarios, details",
+          )
+          // .in() quotes values — a name with "," or "()" would break a string-built .or().
+          .in("company", [normalizedCode, companyName])
+          .order("run_timestamp", { ascending: false })
+          .limit(1),
+        { data: null },
+      ),
+      safe(
+        "valuation",
+        supabase
+          .from("valuation_check")
+          .select("*")
+          .eq("company_code", normalizedCode)
+          .eq("valuation_published", true)
+          // Deterministic: newest priced row wins if a company ever has two published rows.
+          .order("priced_as_of", { ascending: false })
+          .limit(1),
+        { data: null },
+      ),
+      safe(
+        "valuation-history",
+        supabase
+          .from("valuation_check_history")
+          .select("priced_as_of, recorded_at, score")
+          .eq("company_code", normalizedCode)
+          // Same filter as the Valuation tab's sparkline: legacy rows predate the
+          // `published` column (NULL); only an explicit --unpublish is excluded.
+          .not("published", "is", false)
+          .order("priced_as_of", { ascending: true }),
+        { data: null },
+      ),
+      safe(
+        "business",
+        supabase
+          .from("business_snapshot")
+          // Only the two one-liner paths, never the full snapshot payload.
+          .select(
+            "generated_at, about_short:about_company->>about_short, summary_short:business_snapshot->>business_summary_short",
+          )
+          .eq("company", normalizedCode)
+          .order("generated_at", { ascending: false })
+          .limit(1),
+        { data: null },
+      ),
+      safe(
+        "moat",
+        supabase
+          .from("moat_analysis")
+          .select(
+            "id, company_code, company_name, industry, rating, tier, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
+          )
+          .eq("company_code", normalizedCode)
+          .limit(1),
+        { data: null },
+      ),
+      safe("quality", getCompanyQualityRow(normalizedCode), null),
+      safe("walk-the-talk", getWalkTheTalk(normalizedCode), null),
+      safe("guidance-snapshot", getGuidanceSnapshotRow(normalizedCode), null),
+    ]);
 
     // Quarter
     const concallRows = ((concallRes as { data: unknown }).data ?? []) as ConcallRow[];
     const quarter = buildQuarterRead(concallRows);
 
-    // Growth — first summary bullet is the pipeline's own lead line.
+    // Growth — the same summary the Growth tab's top card renders.
     const growthRow = ((growthRes as { data: Record<string, unknown>[] | null }).data ?? [])[0];
     const growth = growthRow
       ? normalizeGrowthOutlook({
           details: growthRow.details,
           growthScore: growthRow.growth_score,
           runTimestamp: growthRow.run_timestamp,
-          summaryBullets: growthRow.summary_bullets,
+          horizonYears: growthRow.horizon_years,
+          baseGrowthPct: growthRow.base_growth_pct,
+          upsideGrowthPct: growthRow.upside_growth_pct,
+          downsideGrowthPct: growthRow.downside_growth_pct,
+          scenarios: growthRow.scenarios,
         })
       : null;
-    const growthWhyLine = growth?.summaryBullets?.[0]?.trim() || null;
-    const growthScore = growth?.growthScore ?? null;
+    const growthSummary = buildGrowthSummary(growth);
+    const growthRange: OverviewGrowthRange | null = growthSummary?.revenueGrowth
+      ? {
+          bear: growthSummary.bearGrowth,
+          base: growthSummary.revenueGrowth,
+          bull: growthSummary.bullGrowth,
+          horizonYears: growthSummary.horizonYears,
+        }
+      : null;
 
-    // Valuation — same staleness gate as the section: no verdict past 4 days.
+    // Valuation — same staleness gate as the section: no verdict past the window.
     const valuationRow = ((valuationRes as { data: ValuationCheckRow[] | null }).data ?? [])[0];
     const valuationNorm = normalizeValuationCheck(valuationRow ?? null);
     let valuation: OverviewValuationRead | null = null;
@@ -340,91 +284,54 @@ export const getOverviewSignalExtras = cache(
         : staleness.stale
           ? (staleness.reason ?? "price read is stale")
           : (valuationNorm.unratedReasons[0] ?? "not rated");
+      const history = buildValuationScoreHistory(
+        ((valuationHistoryRes as { data: ValuationScoreHistoryRow[] | null }).data ?? null),
+      );
       valuation = {
         verdictLabel:
           showVerdict && valuationNorm.verdict ? VERDICT_DISPLAY[valuationNorm.verdict] : null,
         score: showVerdict ? toValuationScale(valuationNorm.score) : null,
-        headline: showVerdict ? buildValuationHeadline(valuationNorm) : null,
         withheldReason,
-        ageDays: staleness.ageDays,
-        lenses: valuationNorm.lenses
-          .filter((l): l is typeof l & { pill: ValuationPill } => Boolean(l.pill))
-          .map((l) => ({ label: l.label, pill: l.pill })),
+        path: history.map((p) => ({ period: p.period, value: p.value / 10 })),
       };
     }
 
-    // Moat — plain-language phrase, never the raw enum.
+    // Business — the snapshot's own one-liner (about_short, else the legacy summary).
+    const businessRow = ((businessRes as { data: Record<string, unknown>[] | null }).data ?? [])[0];
+    const businessLine = str(businessRow?.about_short) ?? str(businessRow?.summary_short);
+
+    // Moat — rating + tier + the payload's own headline.
     const moatRow = ((moatRes as { data: MoatAnalysisRow[] | null }).data ?? [])[0];
     const moatNorm = normalizeMoatAnalysis(moatRow ?? null);
     const moat = moatNorm
       ? {
-          phrase: edgePhrase(moatNorm.moatRating, moatNorm.moatTier),
+          rating: moatNorm.moatRating,
+          tier: moatNorm.moatTier,
           headline: moatNorm.payload?.headline?.trim() || null,
         }
       : null;
 
-    // Themes — membership rows joined to titles; any failure → no chips.
-    const memberships = ((membershipRes as { data: Array<{ theme_slug: unknown; rationale: unknown }> | null })
-      .data ?? []).filter((m) => typeof m.theme_slug === "string");
-    let themes: OverviewThemeTag[] = [];
-    if (memberships.length > 0) {
-      const slugs = memberships.map((m) => String(m.theme_slug));
-      // Only featured themes are ever rendered on /themes — an unfeatured
-      // membership must not become a chip that links to a page it's absent from.
-      const themeRes = await safe(
-        "theme-titles",
-        supabase
-          .from("theme")
-          .select("slug, title, is_featured, sort")
-          .in("slug", slugs)
-          .eq("is_featured", true)
-          .order("sort", { ascending: true }),
-        { data: null },
-      );
-      const titleBySlug = new Map<string, string>();
-      ((themeRes as { data: Array<{ slug: unknown; title: unknown }> | null }).data ?? []).forEach(
-        (t) => {
-          if (typeof t.slug === "string" && typeof t.title === "string") titleBySlug.set(t.slug, t.title);
-        },
-      );
-      themes = memberships
-        .map((m) => ({
-          slug: String(m.theme_slug),
-          title: titleBySlug.get(String(m.theme_slug)) ?? "",
-          rationale: str(m.rationale),
-        }))
-        .filter((t) => t.title);
-    }
+    // Forensics — the Quality tab's tally and headline, same normalizer.
+    const qualityForensics = normalizeCompanyQuality(qualityRow)?.forensics ?? null;
+    const forensics =
+      qualityForensics && qualityForensics.tally.assessed > 0
+        ? { tally: qualityForensics.tally, headline: qualityForensics.read.headline }
+        : null;
 
-    // Activity tape — material BSE filings, newest first.
-    const activity: OverviewActivityItem[] = (
-      ((annRes as { data: Array<Record<string, unknown>> | null }).data ?? [])
-    )
-      .map((row): OverviewActivityItem | null => {
-        const headline = str(row.summary) ?? str(row.headline);
-        const filedRaw = str(row.filed_at);
-        if (!headline || !filedRaw) return null;
-        return {
-          id: String(row.announcement_id ?? filedRaw),
-          kind: categoryLabel(str(row.category) ?? "") || "filing",
-          impact: coerceImpact(str(row.impact)),
-          headline,
-          filedRaw,
-          whenLabel: formatRelativeActivityTime(filedRaw),
-          href: safeFilingHref(str(row.attachment_url)),
-        };
-      })
-      .filter((x): x is OverviewActivityItem => x != null);
+    // Guidance ambition — deep-track forward strength only.
+    const guidanceDetails = normalizeGuidanceSnapshot(guidanceRow)?.details ?? null;
+    const guidanceAmbition = parseForwardStrength(guidanceDetails)?.ambition.label ?? null;
 
     return {
       quarter,
-      growthScore,
-      growthWhyLine,
+      growthScore: growth?.growthScore ?? null,
+      growthRange,
       valuation,
+      businessLine,
       moat,
+      forensics,
       walkTheTalk: walkTheTalk && walkTheTalk.schemaStatus === "present" ? walkTheTalk : null,
-      themes,
-      activity,
+      guidanceAmbition,
     };
   },
 );

@@ -20,20 +20,13 @@ const WatchlistButton = dynamic<WatchlistButtonProps>(() =>
 );
 
 function WatchlistSlotShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="shrink-0 self-start lg:ml-auto lg:rounded-2xl lg:border lg:border-border/60 lg:bg-background/70 lg:p-3 lg:pt-1 lg:shadow-sm lg:backdrop-blur-sm">
-      <p className="mb-2 hidden text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground lg:block">
-        Track this name
-      </p>
-      {children}
-    </div>
-  );
+  return <div className="shrink-0">{children}</div>;
 }
 
 export function WatchlistSlotFallback() {
   return (
     <WatchlistSlotShell>
-      <div className="h-9 w-28 animate-pulse rounded-full bg-muted lg:w-32 lg:rounded-md" />
+      <div className="h-9 w-9 animate-pulse rounded-full bg-muted" />
     </WatchlistSlotShell>
   );
 }

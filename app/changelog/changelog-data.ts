@@ -17,6 +17,7 @@ export type ChangelogEntry = {
 // work, cross-referenced with the activity log. "new" = brand new capability,
 // "updated" = significant enhancement to a capability that already existed.
 export const changelogEntries: ChangelogEntry[] = [
+  { date: "2026-10-01", dateLabel: "1 Oct 2026", title: "Company overview redesigned: SOAS score, the business and story, three score trends, moat, forensics and guidance at a glance", category: "Portal", status: "updated" },
   { date: "2026-09-29", dateLabel: "29 Sep 2026", title: "Watchlists redesigned: SOAS score, moat, forensic checks, guidance and management on one board", category: "Portal", status: "updated" },
   { date: "2026-07-17", dateLabel: "17 Jul 2026", title: "Overall leaderboard ranked 1–100", category: "Score framework", status: "updated" },
   { date: "2026-07-17", dateLabel: "17 Jul 2026", title: "Coverage is now a handpicked 100 mid & small caps", category: "Portal", status: "new" },
