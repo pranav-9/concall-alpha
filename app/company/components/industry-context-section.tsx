@@ -1,5 +1,8 @@
 import React from "react";
 import { ChevronRight, TrendingDown, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { slugifySector } from "@/app/sector/utils";
+import { ScoreBoardTable } from "@/components/score-board-table";
 import {
   Drawer,
   DrawerClose,
@@ -48,6 +51,7 @@ import {
   type SubSectorEntry,
 } from "@/lib/company-industry-analysis/view";
 import { getCompanyQualityRow } from "@/lib/company-quality/get";
+import { getIndustryPeersBoard, type IndustryPeersBoard } from "@/lib/industry-peers-board";
 import { parseCompanyQualityPayload } from "@/lib/company-quality/types";
 import {
   CAPITAL_CYCLE_RAIL_LABELS,
@@ -74,6 +78,8 @@ import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
 //      forces); each row opens its market map.
 //   4. Policy shifts on a timeline beside Types of players on the lens the
 //      company is named in.
+//   5. Covered peers — the company beside every covered company in its
+//      sub-sector, on the watchlist's board (lib/industry-peers-board.ts).
 // Everything is read off the stored row (plus the company's EBITDA margin from
 // company_quality); the only portal-written words are the templated one-liners
 // in lib/company-industry-analysis/view.ts.
@@ -1471,15 +1477,48 @@ function renderPlayersCard(
   );
 }
 
+// ---- 5. Covered peers -----------------------------------------------------------
+function renderPeers(peers: IndustryPeersBoard, companyCode: string) {
+  return (
+    <div className="space-y-2.5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-0.5">
+        <p className={kickerClass}>
+          Covered peers · {peers.subSector} · {peers.rows.length} companies
+        </p>
+        {peers.sector ? (
+          <Link
+            href={`/sector/${slugifySector(peers.sector)}`}
+            prefetch={false}
+            className={cn(monoClass, "text-[10.5px] text-muted-foreground hover:text-foreground hover:underline")}
+          >
+            all of {peers.sector} →
+          </Link>
+        ) : null}
+      </div>
+      {/* house-tokens: the board reads the house ink / rule vars, and this card
+          paints its own ground. */}
+      <div className={cn(cardClass, "house-tokens overflow-hidden")}>
+        <ScoreBoardTable
+          rows={peers.rows}
+          overallRankByCode={peers.overallRankByCode}
+          layout="signals"
+          peersOf={companyCode.toUpperCase()}
+        />
+      </div>
+    </div>
+  );
+}
+
 type IndustryContextSectionProps = {
   companyCode: string;
   companyName: string | null;
 };
 
 export async function IndustryContextSection({ companyCode, companyName }: IndustryContextSectionProps) {
-  const [analysis, qualityRow] = await Promise.all([
+  const [analysis, qualityRow, peers] = await Promise.all([
     getCompanyIndustryAnalysis(companyCode),
     getCompanyQualityRow(companyCode),
+    getIndustryPeersBoard(companyCode),
   ]);
   const generatedAtShort = formatShortDate(analysis?.generatedAtRaw);
 
@@ -1493,6 +1532,7 @@ export async function IndustryContextSection({ companyCode, companyName }: Indus
           sectionTitle="Industry Context"
           description="We have not generated company-specific industry context for this company yet."
         />
+        {peers ? <div className="mt-5">{renderPeers(peers, companyCode)}</div> : null}
       </SectionCard>
     );
   }
@@ -1553,6 +1593,8 @@ export async function IndustryContextSection({ companyCode, companyName }: Indus
             {playersCard}
           </div>
         ) : null}
+
+        {peers ? renderPeers(peers, companyCode) : null}
 
         {analysis.sourceUrls.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2 pt-1">
