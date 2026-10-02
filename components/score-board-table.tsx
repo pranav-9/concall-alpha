@@ -435,6 +435,7 @@ export function ScoreBoardTable({
   overallRankByCode,
   layout = "board",
   gateCutIndex,
+  peersOf,
 }: {
   rows: ScoreBoardRow[];
   /**
@@ -478,6 +479,12 @@ export function ScoreBoardTable({
    * logged-out reader's board; absent = no marker, no gate.
    */
   gateCutIndex?: number;
+  /**
+   * UPPERCASE code of the company whose page this board sits on — the Industry
+   * tab's "Covered peers" block. Tints that company's own row, prints its name
+   * unlinked (it is the page being read), and reports the board as "peers".
+   */
+  peersOf?: string;
 }) {
   const router = useRouter();
   const [sort, setSort] = useState<SortState>({ key: "coverageRank", direction: "asc" });
@@ -494,6 +501,14 @@ export function ScoreBoardTable({
   // week (or forever, pre-DDL) would render a column of empty dots.
   const showDelta = priorRankByCode != null && Object.keys(priorRankByCode).length > 0;
   const signals = layout === "signals";
+  const boardName = peersOf ? "peers" : showRemove ? "watchlist" : "overall";
+  const boardSurface = peersOf ? "company" : "leaderboards";
+  const boardLabel = peersOf
+    ? "The company and its covered peers by read, with ConcallScore, growth outlook and valuation"
+    : showRemove
+      ? "Watchlist companies by read, with ConcallScore, growth outlook and valuation"
+      : "Companies by overall rank, with ConcallScore, growth outlook, valuation and read";
+  const isSelf = (row: ScoreBoardRow) => peersOf != null && row.companyCode.toUpperCase() === peersOf;
   const columnCount = (signals ? 9 : 6) + (showRemove ? 1 : 0);
   // Index of the first greyed row, so a divider row can be dropped in just above
   // the pinned tail. -1 when nothing is greyed (e.g. a watchlist, or a board with
@@ -501,7 +516,7 @@ export function ScoreBoardTable({
   const firstBelowCutIndex = sortedRows.findIndex((row) => row.dim);
 
   const applySort = (key: SortKey, direction: SortDirection) => {
-    analytics.leaderboardSort(showRemove ? "watchlist" : "overall", key, direction);
+    analytics.leaderboardSort(boardName, key, direction);
     setSort({ key, direction });
   };
 
@@ -580,9 +595,10 @@ export function ScoreBoardTable({
         )}
         <li
           data-gate-cut={index === gateCutIndex ? "" : undefined}
+          aria-current={isSelf(row) ? "true" : undefined}
           className={`flex items-start gap-2.5 border-b border-border/45 px-3 py-3 last:border-0 ${
             dim ? "opacity-55" : ""
-          }`}
+          } ${isSelf(row) ? "bg-sky-500/[0.07]" : ""}`}
         >
           {/* Rank over Δ — the two positional facts, stacked in a narrow gutter. */}
           <div className="flex w-8 shrink-0 flex-col items-start gap-0.5 pt-0.5">
@@ -594,16 +610,21 @@ export function ScoreBoardTable({
           <div className="min-w-0 flex-1">
             {/* Name wraps to a second line rather than truncating: on a phone a
                 12-character name stub carries less than the row costs. */}
+            {isSelf(row) ? (
+              <span className="house-display block text-sm leading-snug" style={{ color: "var(--ink)" }}>
+                {row.companyName}
+              </span>
+            ) : (
             <Link
               href={`/company/${row.companyCode}`}
               prefetch={false}
               onClick={() =>
                 analytics.leaderboardRowClick({
                   companyCode: row.companyCode,
-                  board: showRemove ? "watchlist" : "overall",
+                  board: boardName,
                   belowCut: dim,
                   rank: Number.isFinite(row.effectiveRank) ? row.effectiveRank : undefined,
-                  surface: "leaderboards",
+                  surface: boardSurface,
                 })
               }
               title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}
@@ -612,6 +633,7 @@ export function ScoreBoardTable({
             >
               {row.companyName}
             </Link>
+            )}
             <span className="flex flex-wrap items-baseline gap-x-1.5">
               <span
                 className="font-mono text-[10px] uppercase tracking-wide"
@@ -807,11 +829,7 @@ export function ScoreBoardTable({
         {sortedRows.length ? (
           <ul
             role="list"
-            aria-label={
-              showRemove
-                ? "Watchlist companies by read, with ConcallScore, growth outlook and valuation"
-                : "Companies by overall rank, with ConcallScore, growth outlook, valuation and read"
-            }
+            aria-label={boardLabel}
           >
             {sortedRows.map(renderMobileRow)}
           </ul>
@@ -823,11 +841,7 @@ export function ScoreBoardTable({
       {isLg !== false && (
       <div className="hidden lg:block">
       <Table
-        aria-label={
-          showRemove
-            ? "Watchlist companies by read, with ConcallScore, growth outlook and valuation"
-            : "Companies by overall rank, with ConcallScore, growth outlook, valuation and read"
-        }
+        aria-label={boardLabel}
         className={`${signals ? "min-w-[1040px]" : "min-w-[900px]"} w-full text-sm`}
       >
         <TableHeader>
@@ -859,7 +873,7 @@ export function ScoreBoardTable({
                   onSort: handleSort,
                   // Same column, same derivation — the universe it ranks within
                   // is whatever rows the surface passed in.
-                  ariaLabel: showRemove ? "Rank in this watchlist" : "Overall rank",
+                  ariaLabel: peersOf ? "Rank among these peers" : showRemove ? "Rank in this watchlist" : "Overall rank",
                 })}
                 {renderSortHead({
                   label: "Company",
@@ -1060,9 +1074,10 @@ export function ScoreBoardTable({
                     // information" — and its name still links: the coverage policy
                     // de-emphasizes these pages, it doesn't block them. Never set
                     // on a watchlist: your own list is not subject to the cut.
+                    aria-current={isSelf(row) ? "true" : undefined}
                     className={`group border-b border-border/45 transition-colors last:border-0 hover:bg-accent/50 ${
                       dim ? "opacity-55" : ""
-                    }`}
+                    } ${isSelf(row) ? "bg-sky-500/[0.07]" : ""}`}
                   >
                     <TableCell className="px-3 py-3">
                       <div className="flex items-baseline gap-2">
@@ -1083,18 +1098,23 @@ export function ScoreBoardTable({
                         {/* Name on top, ticker beneath it (not inline) — the
                             house company-cell shape. */}
                         <div className={`flex min-w-0 flex-col leading-tight ${signals ? "max-w-[12.5rem]" : ""}`}>
+                          {isSelf(row) ? (
+                            <span className="house-display min-w-0 truncate text-sm" style={{ color: "var(--ink)" }}>
+                              {row.companyName}
+                            </span>
+                          ) : (
                           <Link
                             href={`/company/${row.companyCode}`}
                             prefetch={false}
                             onClick={() =>
                               analytics.leaderboardRowClick({
                                 companyCode: row.companyCode,
-                                board: showRemove ? "watchlist" : "overall",
+                                board: boardName,
                                 belowCut: dim,
                                 rank: Number.isFinite(row.effectiveRank)
                                   ? row.effectiveRank
                                   : undefined,
-                                surface: "leaderboards",
+                                surface: boardSurface,
                               })
                             }
                             title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}
@@ -1103,6 +1123,7 @@ export function ScoreBoardTable({
                           >
                             {row.companyName}
                           </Link>
+                          )}
                           <span className="flex items-baseline gap-1.5">
                             <span
                               className="font-mono text-[10px] uppercase tracking-wide"

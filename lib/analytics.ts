@@ -57,6 +57,8 @@ export type LeaderboardBoard =
   | "growth"
   | "moat"
   | "watchlist"
+  // The company page's Industry tab: the company beside its covered peers.
+  | "peers"
   // The /desk leaderboard surfaces these two board views in addition.
   | "latest"
   | "twist";
@@ -65,7 +67,7 @@ export type WatchlistSource = "company_page" | "leaderboard" | "watchlist" | "ot
 /** Which page a shared module/board event fired on. Lets /desk, the homepage,
  *  and /leaderboards reuse the same event names while staying separable in
  *  breakdowns — instead of forking near-identical events per surface. */
-export type AnalyticsSurface = "home" | "desk" | "leaderboards";
+export type AnalyticsSurface = "home" | "desk" | "leaderboards" | "company";
 
 /** Where a community join link lived when it was clicked. Every placement
  *  reports its own surface so the visibility push (2026-09-13: navbar, company
