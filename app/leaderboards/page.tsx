@@ -1,4 +1,5 @@
 import { getConcallData } from "@/app/company/get-concall-data";
+import { SectionDepthGate } from "@/app/company/components/section-depth-gate";
 import { BandSummaryLine } from "@/components/band-summary-line";
 import { TelegramJoinLink } from "@/components/telegram-join-link";
 import { getTelegramJoinUrl } from "@/lib/community";
@@ -15,7 +16,16 @@ import {
   computeQuarterBandCounts,
 } from "@/lib/leaderboard-distribution";
 import { classifyBoardRead } from "@/lib/board-read";
-import { resolveLeaderboardTab } from "@/lib/leaderboard-tab";
+import { resolveLeaderboardTab, type LeaderboardTab } from "@/lib/leaderboard-tab";
+import {
+  LEADERBOARD_FREE_ROWS,
+  buildLeaderboardGateNext,
+  isSignupGateEnabled,
+  leaderboardGateCopy,
+  leaderboardGateSectionId,
+  shouldGateLeaderboard,
+} from "@/lib/signup-gate";
+import { getIsAuthenticated } from "@/lib/supabase/auth-state";
 import { buildScoreBoardRows } from "@/lib/score-board-rows";
 import { computeBoardRanks, COVERAGE_BOARD_SIZE } from "@/lib/leaderboard-rank";
 import {
@@ -64,6 +74,38 @@ const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
 const TAB_TRIGGER_CLASS =
   `shrink-0 justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors sm:min-w-[6rem] data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm ${TOUCH_TARGET}`;
 
+/**
+ * Sign-up gate on a board (2026-10-02): the same card as the company tabs and
+ * the Journal, clipped under row LEADERBOARD_FREE_ROWS. The board itself stamps
+ * `data-gate-cut` on its 21st row (via `gateCutIndex`); this only decides, per
+ * reader, whether to wrap. No company code — `section_id` is
+ * `leaderboard:<board>`, so board events stay out of the per-company funnels.
+ */
+function BoardGate({
+  gated,
+  board,
+  below,
+  children,
+}: {
+  gated: boolean;
+  board: LeaderboardTab;
+  below: readonly string[];
+  children: React.ReactNode;
+}) {
+  if (!gated) return <>{children}</>;
+  return (
+    <SectionDepthGate
+      companyCode={undefined}
+      sectionId={leaderboardGateSectionId(board)}
+      scope="board"
+      below={below}
+      nextPath={buildLeaderboardGateNext(board)}
+    >
+      {children}
+    </SectionDepthGate>
+  );
+}
+
 export default async function LeaderboardsPage({
   searchParams,
 }: {
@@ -74,10 +116,12 @@ export default async function LeaderboardsPage({
   // "sentiment" back-compat alias and unknown values). Same resolver the client
   // tab strip reconciles with, so the two can't drift.
   const defaultTab = resolveLeaderboardTab(resolved?.tab);
+  const gateEnabled = isSignupGateEnabled();
   const [
     { rows, latestLabel, quarterLabels },
     { growthEntries, moatEntries, growthScoreByCode, nameByCode, sectorByCode },
     priorRankByCode,
+    isAuthenticated,
   ] = await Promise.all([
     // includeBelowCut: the Overall board renders the tail greyed out rather than
     // dropping it. Large caps are still excluded outright — two different gates.
@@ -85,7 +129,15 @@ export default async function LeaderboardsPage({
     fetchLeaderboardData(),
     // Ranks from the prior snapshot window for the Δ column. Empty until history accrues.
     readPriorRanks(),
+    // Who is reading — only asked while the gate flag is on. The `cache()`d
+    // check is the one the company page and the Journal use.
+    gateEnabled ? getIsAuthenticated() : Promise.resolve(false),
   ]);
+  // Flag on and nobody signed in: every board clips under its top 20 rows. The
+  // marker index goes to the row components only in that case, so a signed-in
+  // reader's DOM carries no gate attribute at all.
+  const gated = shouldGateLeaderboard({ enabled: gateEnabled, isAuthenticated });
+  const gateCutIndex = gated ? LEADERBOARD_FREE_ROWS : undefined;
 
   const overallRows = buildScoreBoardRows(
     rows,
@@ -160,6 +212,14 @@ export default async function LeaderboardsPage({
   const overallFreshCount = overallRows.filter((row) => row.concallScoredWithin24h).length;
   const telegramUrl = getTelegramJoinUrl();
 
+  // The gate card's "below" lines, from the rows each board really renders.
+  const gateCopy = {
+    overall: leaderboardGateCopy("overall", { total: overallRows.length, tail: belowCutCount }),
+    quarter: leaderboardGateCopy("quarter", { total: rankedRows.length }),
+    growth: leaderboardGateCopy("growth", { total: growthEntries.length }),
+    moat: leaderboardGateCopy("moat", { total: moatEntries.length }),
+  } satisfies Record<LeaderboardTab, readonly string[]>;
+
   // Phone-board props. Maps become plain Records here — they cross into client
   // components — projected to the codes the Quarter board actually paints, so
   // the below-cut tail's names/sectors don't ride in the RSC payload for nothing.
@@ -222,30 +282,40 @@ export default async function LeaderboardsPage({
 
           <TabsContent value="overall">
             <p className={phoneNote}>Ranked by Read — the quarter, the outlook and valuation, combined.</p>
-            <PhoneOverallBoard
-              rows={overallRows}
-              priorRankByCode={priorRankByCode}
-              coverageCutRank={COVERAGE_BOARD_SIZE}
-              newCodes={newCodes}
-            />
+            <BoardGate gated={gated} board="overall" below={gateCopy.overall}>
+              <PhoneOverallBoard
+                rows={overallRows}
+                priorRankByCode={priorRankByCode}
+                coverageCutRank={COVERAGE_BOARD_SIZE}
+                newCodes={newCodes}
+                gateCutIndex={gateCutIndex}
+              />
+            </BoardGate>
           </TabsContent>
           <TabsContent value="quarter">
             <p className={phoneNote}>The quarter just reported, scored 0–10 from the transcript and deck.</p>
-            <PhoneQuarterBoard
-              rows={rankedRows}
-              latestLabel={latestQuarterLabel}
-              previousLabel={previousQuarterLabel}
-              nameByCode={nameRecord}
-              sectorByCode={sectorRecord}
-            />
+            <BoardGate gated={gated} board="quarter" below={gateCopy.quarter}>
+              <PhoneQuarterBoard
+                rows={rankedRows}
+                latestLabel={latestQuarterLabel}
+                previousLabel={previousQuarterLabel}
+                nameByCode={nameRecord}
+                sectorByCode={sectorRecord}
+                gateCutIndex={gateCutIndex}
+              />
+            </BoardGate>
           </TabsContent>
           <TabsContent value="growth">
             <p className={phoneNote}>Forward outlook, with base / upside / downside revenue scenarios.</p>
-            <PhoneGrowthBoard rows={growthEntries} />
+            <BoardGate gated={gated} board="growth" below={gateCopy.growth}>
+              <PhoneGrowthBoard rows={growthEntries} gateCutIndex={gateCutIndex} />
+            </BoardGate>
           </TabsContent>
           <TabsContent value="moat">
             <p className={phoneNote}>Grouped by moat rating; strength, active sources and cycle-tested.</p>
-            <PhoneMoatBoard rows={moatEntries} />
+            <BoardGate gated={gated} board="moat" below={gateCopy.moat}>
+              <PhoneMoatBoard rows={moatEntries} gateCutIndex={gateCutIndex} />
+            </BoardGate>
           </TabsContent>
         </LeaderboardTabs>
       </BelowSm>
@@ -310,6 +380,7 @@ export default async function LeaderboardsPage({
                 title bar, the leaderboard's move toward the homepage house look.
                 Scoped to `.house` so the palette vars resolve. The in-table cell
                 theming is a follow-up design pass. */}
+            <BoardGate gated={gated} board="overall" below={gateCopy.overall}>
             <div
               className="house overflow-hidden rounded-[1.45rem] border shadow-[0_18px_38px_-32px_rgba(15,23,42,0.24)]"
               style={{ borderColor: "var(--rule)", background: "var(--paper)" }}
@@ -334,6 +405,7 @@ export default async function LeaderboardsPage({
                 rows={overallRows}
                 priorRankByCode={priorRankByCode}
                 coverageCutRank={COVERAGE_BOARD_SIZE}
+                gateCutIndex={gateCutIndex}
               />
               {overallFreshCount > 0 && (
                 <p className="border-t border-border/35 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
@@ -354,6 +426,7 @@ export default async function LeaderboardsPage({
                 </p>
               )}
             </div>
+            </BoardGate>
           </TabsContent>
 
           <TabsContent value="quarter" className="mt-4 space-y-3">
@@ -364,14 +437,22 @@ export default async function LeaderboardsPage({
               scopeNote="scored this quarter"
               bandCounts={quarterBandCounts}
             />
-            <LeaderboardTable quarterLabels={quarterLabels} data={rankedRows} />
-            {quarterFreshCount > 0 && (
-              <p className="px-1 text-[11px] leading-relaxed text-muted-foreground">
-                <span className="font-medium text-foreground">New · 24h</span> marks the{" "}
-                {quarterFreshCount} {quarterFreshCount === 1 ? "score" : "scores"} written in the
-                last twenty-four hours.
-              </p>
-            )}
+            <BoardGate gated={gated} board="quarter" below={gateCopy.quarter}>
+              <div className="space-y-3">
+                <LeaderboardTable
+                  quarterLabels={quarterLabels}
+                  data={rankedRows}
+                  gateCutIndex={gateCutIndex}
+                />
+                {quarterFreshCount > 0 && (
+                  <p className="px-1 text-[11px] leading-relaxed text-muted-foreground">
+                    <span className="font-medium text-foreground">New · 24h</span> marks the{" "}
+                    {quarterFreshCount} {quarterFreshCount === 1 ? "score" : "scores"} written in the
+                    last twenty-four hours.
+                  </p>
+                )}
+              </div>
+            </BoardGate>
           </TabsContent>
 
           <TabsContent value="growth" className="mt-4 space-y-3">
@@ -388,7 +469,9 @@ export default async function LeaderboardsPage({
                   scopeNote="with a growth score"
                   bandCounts={growthBandCounts}
                 />
-                <GrowthTable data={growthEntries} />
+                <BoardGate gated={gated} board="growth" below={gateCopy.growth}>
+                  <GrowthTable data={growthEntries} gateCutIndex={gateCutIndex} />
+                </BoardGate>
               </>
             )}
           </TabsContent>
@@ -400,7 +483,9 @@ export default async function LeaderboardsPage({
                 No moat assessments available yet.
               </div>
             ) : (
-              <MoatTable data={moatEntries} />
+              <BoardGate gated={gated} board="moat" below={gateCopy.moat}>
+                <MoatTable data={moatEntries} gateCutIndex={gateCutIndex} />
+              </BoardGate>
             )}
           </TabsContent>
         </LeaderboardTabs>

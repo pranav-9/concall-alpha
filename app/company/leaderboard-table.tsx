@@ -272,9 +272,12 @@ function buildColumns(quarterLabels: string[]): ColumnDef<CompanyRow>[] {
 export function LeaderboardTable({
   quarterLabels,
   data,
+  gateCutIndex,
 }: {
   quarterLabels: string[];
   data: CompanyRow[];
+  /** Sign-up gate marker row (see DataTable); only a logged-out board passes it. */
+  gateCutIndex?: number;
 }) {
   const columns = buildColumns(quarterLabels);
   const latestQuarterLabel = quarterLabels[0];
@@ -290,6 +293,7 @@ export function LeaderboardTable({
       data={rankedData}
       stickyColId="company"
       getRowId={(row) => row.company}
+      gateCutIndex={gateCutIndex}
     />
   );
 }

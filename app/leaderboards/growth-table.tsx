@@ -140,7 +140,14 @@ const growthColumns: ColumnDef<GrowthRowTable>[] = [
   },
 ];
 
-export function GrowthTable({ data }: { data: GrowthRowTable[] }) {
+export function GrowthTable({
+  data,
+  gateCutIndex,
+}: {
+  data: GrowthRowTable[];
+  /** Sign-up gate marker row (see DataTable); only a logged-out board passes it. */
+  gateCutIndex?: number;
+}) {
   return (
     <DataTable
       ariaLabel="Companies by growth outlook score"
@@ -148,6 +155,7 @@ export function GrowthTable({ data }: { data: GrowthRowTable[] }) {
       data={data}
       stickyColId="companyName"
       getRowId={(row) => row.companyCode}
+      gateCutIndex={gateCutIndex}
     />
   );
 }

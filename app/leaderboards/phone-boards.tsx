@@ -121,16 +121,19 @@ function OverallRow({
   delta,
   showDelta,
   isNew,
+  gateCut,
 }: {
   row: ReturnType<typeof deriveRows>[number];
   rank: number | null;
   delta: number | null;
   showDelta: boolean;
   isNew: boolean;
+  /** This row carries the sign-up gate's cut marker. */
+  gateCut: boolean;
 }) {
   const read = BOARD_READS[row.readKey];
   return (
-    <li className={MOBILE_LI}>
+    <li className={MOBILE_LI} data-gate-cut={gateCut ? "" : undefined}>
       <Link
         href={`/company/${row.companyCode}`}
         prefetch={false}
@@ -165,6 +168,7 @@ export function PhoneOverallBoard({
   priorRankByCode,
   coverageCutRank,
   newCodes,
+  gateCutIndex,
 }: {
   rows: ScoreBoardRow[];
   /** UPPERCASE code → rank in the prior snapshot window; empty until history accrues. */
@@ -172,6 +176,12 @@ export function PhoneOverallBoard({
   coverageCutRank: number;
   /** UPPERCASE codes of companies new to coverage (the `new` badge). */
   newCodes: string[];
+  /**
+   * 0-based row that carries the sign-up gate's `data-gate-cut` marker
+   * (lib/signup-gate.ts LEADERBOARD_FREE_ROWS), counted over the ranked list —
+   * the folded tail is already below it. Only a logged-out board passes it.
+   */
+  gateCutIndex?: number;
 }) {
   // The same derivation and default order as the desktop board
   // (components/score-board-table.tsx), so # and greying agree across paints.
@@ -188,7 +198,7 @@ export function PhoneOverallBoard({
   const ranked = firstDimIndex === -1 ? sorted : sorted.slice(0, firstDimIndex);
   const tail = firstDimIndex === -1 ? [] : sorted.slice(firstDimIndex);
 
-  const paint = (row: (typeof sorted)[number]) => {
+  const paint = (row: (typeof sorted)[number], index: number | null) => {
     const rank = Number.isFinite(row.effectiveRank) ? row.effectiveRank : null;
     const prior = priorRankByCode[row.companyCode.toUpperCase()];
     const delta = prior != null && rank != null ? prior - rank : null;
@@ -200,6 +210,7 @@ export function PhoneOverallBoard({
         delta={delta}
         showDelta={showDelta}
         isNew={isNew.has(row.companyCode.toUpperCase())}
+        gateCut={index !== null && index === gateCutIndex}
       />
     );
   };
@@ -208,7 +219,7 @@ export function PhoneOverallBoard({
     <section aria-label="Overall board, ranked by Read" className={cn(MOBILE_CARD, "mt-3")}>
       <BoardHead left="Overall board · ranked by Read" right={showDelta ? "Δ vs last" : undefined} />
       <ul role="list" aria-label="Companies by overall rank, with the Read">
-        {ranked.map(paint)}
+        {ranked.map((row, index) => paint(row, index))}
       </ul>
       {tail.length > 0 ? (
         <details className="group border-t border-[var(--rule)]">
@@ -219,7 +230,7 @@ export function PhoneOverallBoard({
             <span className="hidden group-open:inline">— below the top {coverageCutRank} by Read ↑ —</span>
           </summary>
           <ul role="list" aria-label={`Companies ranked below the top ${coverageCutRank}`} className="border-t border-[var(--rule)]">
-            {tail.map(paint)}
+            {tail.map((row) => paint(row, null))}
           </ul>
         </details>
       ) : null}
@@ -241,6 +252,7 @@ export function PhoneQuarterBoard({
   previousLabel,
   nameByCode,
   sectorByCode,
+  gateCutIndex,
 }: {
   /** Already sorted by the latest ConcallScore, descending (getConcallData). */
   rows: CompanyRow[];
@@ -249,6 +261,8 @@ export function PhoneQuarterBoard({
   previousLabel: string | null;
   nameByCode: Record<string, string>;
   sectorByCode: Record<string, string>;
+  /** Sign-up gate marker row (0-based); only a logged-out board passes it. */
+  gateCutIndex?: number;
 }) {
   if (rows.length === 0) return <EmptyBoard>No quarter scores yet.</EmptyBoard>;
   // Competition ranks on the latest print (ties share a rank), exactly as the
@@ -260,7 +274,7 @@ export function PhoneQuarterBoard({
     <section aria-label="Quarter board, ranked by ConcallScore" className={cn(MOBILE_CARD, "mt-3")}>
       <BoardHead left="Quarter board" right="Δ QoQ · Score" />
       <ul role="list" aria-label="Companies by the latest ConcallScore">
-        {ranked.map((row) => {
+        {ranked.map((row, index) => {
           const code = String(row.company);
           const key = code.toUpperCase();
           const name = nameByCode[key] ?? code;
@@ -272,7 +286,7 @@ export function PhoneQuarterBoard({
           const delta = score != null && previous != null ? score - previous : null;
           const rank = row.leaderboardRank;
           return (
-            <li key={code} className={MOBILE_LI}>
+            <li key={code} className={MOBILE_LI} data-gate-cut={index === gateCutIndex ? "" : undefined}>
               <Link
                 href={`/company/${code}`}
                 prefetch={false}
@@ -317,18 +331,29 @@ export function PhoneQuarterBoard({
 // Growth — forward outlook.
 // ---------------------------------------------------------------------------
 
-export function PhoneGrowthBoard({ rows }: { rows: GrowthRowTable[] }) {
+export function PhoneGrowthBoard({
+  rows,
+  gateCutIndex,
+}: {
+  rows: GrowthRowTable[];
+  /** Sign-up gate marker row (0-based); only a logged-out board passes it. */
+  gateCutIndex?: number;
+}) {
   if (rows.length === 0) return <EmptyBoard>No growth outlook data available yet.</EmptyBoard>;
   return (
     <section aria-label="Growth board, ranked by growth score" className={cn(MOBILE_CARD, "mt-3")}>
       <BoardHead left="Growth board" right="Base · up / down" />
       <ul role="list" aria-label="Companies by growth outlook score">
-        {rows.map((row) => {
+        {rows.map((row, index) => {
           const score = typeof row.growthScore === "number" ? row.growthScore : null;
           const band = score != null ? GROWTH_BANDS[bandForGrowthScore(score)] : null;
           const name = row.companyName || row.companyCode;
           return (
-            <li key={row.companyCode} className={MOBILE_LI}>
+            <li
+              key={row.companyCode}
+              className={MOBILE_LI}
+              data-gate-cut={index === gateCutIndex ? "" : undefined}
+            >
               <Link
                 href={`/company/${row.companyCode}`}
                 prefetch={false}
@@ -406,17 +431,26 @@ const STRENGTH: Record<MoatTier, { glyph: string; label: string; className: stri
   weak: { glyph: "▼", label: "Weak", className: "text-[var(--warn)]" },
 };
 
-export function PhoneMoatBoard({ rows }: { rows: MoatRowTable[] }) {
+export function PhoneMoatBoard({
+  rows,
+  gateCutIndex,
+}: {
+  rows: MoatRowTable[];
+  /** Sign-up gate marker row, counted across the tier groups in render order. */
+  gateCutIndex?: number;
+}) {
   if (rows.length === 0) return <EmptyBoard>No moat assessments available yet.</EmptyBoard>;
   const groups = TIER_SECTIONS.map((tier) => ({
     tier,
     rows: rows.filter((r) => r.moatRating === tier.key),
   })).filter((g) => g.rows.length > 0);
+  // Where each group's first row sits in the flat row order, for the gate marker.
+  const groupStart = groups.map((_, i) => groups.slice(0, i).reduce((n, g) => n + g.rows.length, 0));
 
   return (
     <section aria-label="Companies grouped by moat rating" className={cn(MOBILE_CARD, "mt-3")}>
       <BoardHead left="Moat board" right="Sources · cycle" />
-      {groups.map(({ tier, rows: tierRows }) => (
+      {groups.map(({ tier, rows: tierRows }, groupIndex) => (
         <section key={tier.key} aria-labelledby={`phone-moat-${tier.key}`}>
           <div className="flex items-center gap-[9px] border-b border-[var(--rule)] bg-[var(--paper)] px-3.5 py-2.5">
             <h3
@@ -435,11 +469,15 @@ export function PhoneMoatBoard({ rows }: { rows: MoatRowTable[] }) {
           {/* Each group ends on the next group's header rule, so keep the last
               row's hairline here (the card foot has none). */}
           <ul role="list" className="[&>li:last-child]:border-b">
-            {tierRows.map((row) => {
+            {tierRows.map((row, rowIndex) => {
               const strength = row.moatTier ? STRENGTH[row.moatTier] : null;
               const name = row.companyName || row.companyCode;
               return (
-                <li key={row.companyCode} className={MOBILE_LI}>
+                <li
+                  key={row.companyCode}
+                  className={MOBILE_LI}
+                  data-gate-cut={groupStart[groupIndex] + rowIndex === gateCutIndex ? "" : undefined}
+                >
                   <Link
                     href={`/company/${row.companyCode}`}
                     prefetch={false}

@@ -41,6 +41,12 @@ interface DataTableProps<TData, TValue> {
       begun on one company can then resolve to whatever row slid under it.
       Keying by identity makes React move the node, not rewrite it. */
   getRowId?: (row: TData, index: number) => string;
+  /**
+   * 0-based index of the row that carries the sign-up gate's `data-gate-cut`
+   * marker (lib/signup-gate.ts LEADERBOARD_FREE_ROWS). Passed only to a
+   * logged-out reader's board; absent = no marker, no gate.
+   */
+  gateCutIndex?: number;
 }
 
 export function DataTable<TData, TValue>({
@@ -49,6 +55,7 @@ export function DataTable<TData, TValue>({
   ariaLabel,
   stickyColId,
   getRowId,
+  gateCutIndex,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -94,9 +101,10 @@ export function DataTable<TData, TValue>({
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
+            table.getRowModel().rows.map((row, index) => (
               <TableRow
                 key={row.id}
+                data-gate-cut={index === gateCutIndex ? "" : undefined}
                 data-state={row.getIsSelected() && "selected"}
                 className="border-b border-border/45 transition-colors last:border-0 hover:bg-accent/50"
               >

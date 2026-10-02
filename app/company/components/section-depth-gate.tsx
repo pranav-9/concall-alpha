@@ -43,10 +43,23 @@ import { elevatedBlockClass } from "./surface-tokens";
  * renders inside lazily-loaded panels.
  *
  * Journal posts reuse it (`scope="post"`, `postSlug`, no company code — see
- * app/blog/[slug]/page.tsx), with the same server-side auth check.
+ * app/blog/[slug]/page.tsx), with the same server-side auth check. So do the
+ * /leaderboards boards (`scope="board"`, section id `leaderboard:<board>`, no
+ * company code — app/leaderboards/page.tsx): the marker is the 21st row.
+ *
+ * A panel may hold two paints of the same content with one marker each (the
+ * Overall board renders a phone list and a desktop table, CSS-toggled until
+ * matchMedia answers) — the first marker with a box wins, so the visible paint
+ * is the one that is measured and clipped.
  */
 type GateState = { kind: "gated"; height: number } | { kind: "open" };
-type GateScope = "section" | "post";
+type GateScope = "section" | "post" | "board";
+
+const SCOPE_EYEBROW: Record<GateScope, string> = {
+  section: "Below in this section",
+  post: "Below in this post",
+  board: "Below on this board",
+};
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
@@ -111,7 +124,8 @@ export function SectionDepthGate({
     };
 
     const measure = () => {
-      const marker = content.querySelector(`[${GATE_CUT_ATTRIBUTE}]`);
+      const markers = Array.from(content.querySelectorAll(`[${GATE_CUT_ATTRIBUTE}]`));
+      const marker = markers.find(hasBox) ?? markers[0] ?? null;
       // An empty wrapper has no box; measure from the next thing that does.
       let anchor: Element | null = marker;
       while (anchor && !hasBox(anchor)) anchor = anchor.nextElementSibling;
@@ -223,7 +237,7 @@ function GateCard({
   React.useEffect(() => {
     const card = cardRef.current;
     if (!card || typeof IntersectionObserver === "undefined") return;
-    const key = `signup-gate:viewed:${postSlug ?? companyCode}:${sectionId}`;
+    const key = `signup-gate:viewed:${postSlug ?? companyCode ?? "site"}:${sectionId}`;
     try {
       if (window.sessionStorage.getItem(key)) return;
     } catch {
@@ -266,7 +280,7 @@ function GateCard({
       className={cn(elevatedBlockClass, "relative mx-3 -mt-6 max-w-md bg-background p-4 sm:mx-5 sm:p-5")}
     >
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        Below in this {scope}
+        {SCOPE_EYEBROW[scope]}
       </p>
       <h3 className="mt-1 text-base font-bold leading-tight text-foreground">
         Sign up free to read the rest
