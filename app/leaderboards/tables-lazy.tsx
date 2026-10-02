@@ -41,6 +41,7 @@ function TableSkeleton() {
 export const LeaderboardTable = dynamic<{
   quarterLabels: string[];
   data: CompanyRow[];
+  gateCutIndex?: number;
 }>(
   () =>
     import("@/app/company/leaderboard-table").then((mod) => mod.LeaderboardTable),
@@ -49,14 +50,14 @@ export const LeaderboardTable = dynamic<{
   },
 );
 
-export const GrowthTable = dynamic<{ data: GrowthRowTable[] }>(
+export const GrowthTable = dynamic<{ data: GrowthRowTable[]; gateCutIndex?: number }>(
   () => import("./growth-table").then((mod) => mod.GrowthTable),
   {
     loading: () => <TableSkeleton />,
   },
 );
 
-export const MoatTable = dynamic<{ data: MoatRowTable[] }>(
+export const MoatTable = dynamic<{ data: MoatRowTable[]; gateCutIndex?: number }>(
   () => import("./moat-table").then((mod) => mod.MoatTable),
   {
     loading: () => <TableSkeleton />,
@@ -71,6 +72,7 @@ export const OverallTable = dynamic<{
   rows: ScoreBoardRow[];
   priorRankByCode?: Record<string, number>;
   coverageCutRank?: number;
+  gateCutIndex?: number;
 }>(
   () => import("@/components/score-board-table").then((mod) => mod.ScoreBoardTable),
   {

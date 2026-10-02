@@ -9,9 +9,15 @@ import {
   gatedSectionCopy,
   isGatedSection,
   isSignupGateEnabled,
+  LEADERBOARD_FREE_ROWS,
+  buildLeaderboardGateNext,
+  leaderboardGateCopy,
+  leaderboardGateSectionId,
   resolveClipHeight,
+  shouldGateLeaderboard,
   shouldGateSection,
 } from "../lib/signup-gate";
+import { LEADERBOARD_TABS } from "../lib/leaderboard-tab";
 import { isSafeNextPath } from "../lib/safe-next-path";
 import { nextAuthIntent } from "../lib/auth-intent";
 import { isInAppBrowser } from "../lib/in-app-browser";
@@ -69,6 +75,32 @@ assert.equal(companyCodeFromNext("/watchlists"), null);
 assert.equal(companyCodeFromNext("/company/"), null);
 assert.equal(companyCodeFromNext("/company/%E0%A4%A"), null); // malformed escape
 assert.equal(companyCodeFromNext(null), null);
+
+// ── Leaderboards: top 20 free, every board gates ────────────────────────────
+assert.equal(LEADERBOARD_FREE_ROWS, 20);
+assert.equal(shouldGateLeaderboard({ enabled: true, isAuthenticated: false }), true);
+assert.equal(shouldGateLeaderboard({ enabled: false, isAuthenticated: false }), false); // flag off
+assert.equal(shouldGateLeaderboard({ enabled: true, isAuthenticated: true }), false); // signed in
+for (const board of LEADERBOARD_TABS) {
+  assert.equal(leaderboardGateSectionId(board), `leaderboard:${board}`);
+  assert.equal(isGatedSection(leaderboardGateSectionId(board)), false, "board ids never collide with a company tab");
+  const next = buildLeaderboardGateNext(board);
+  assert.equal(next, `/leaderboards?tab=${board}`);
+  assert.equal(isSafeNextPath(next), true, next);
+  assert.equal(companyCodeFromNext(next), null, "board return → generic sign-up headline");
+  const lines = leaderboardGateCopy(board, { total: 100 });
+  assert.ok(lines.length >= 2 && lines.length <= 3, `${board}: 2–3 lines, got ${lines.length}`);
+  for (const line of lines) assert.doesNotMatch(line, /free forever/i);
+}
+// The counts come from the rows the page renders: ranks 21 to N, the tail named only when there is one.
+assert.deepEqual(
+  leaderboardGateCopy("overall", { total: 130, tail: 30 }).map((l) => l.slice(0, 15)),
+  ["Ranks 21 to 100", "How far each on", "The 30 still tr"],
+);
+assert.equal(leaderboardGateCopy("overall", { total: 100, tail: 0 }).length, 2);
+assert.match(leaderboardGateCopy("quarter", { total: 98 })[0], /^Ranks 21 to 98 /);
+assert.match(leaderboardGateCopy("growth", { total: 97 })[0], /^Ranks 21 to 97 /);
+assert.match(leaderboardGateCopy("moat", { total: 95 })[0], /^The other 75 companies/);
 
 // ── Where to clip ───────────────────────────────────────────────────────────
 // Marker found: clip a peek below it.

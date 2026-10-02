@@ -74,7 +74,17 @@ const formatDate = (value: string | null | undefined) => {
   }).format(d);
 };
 
-export function MoatTable({ data }: { data: MoatRowTable[] }) {
+export function MoatTable({
+  data,
+  gateCutIndex,
+}: {
+  data: MoatRowTable[];
+  /**
+   * Sign-up gate marker row, counted across the tier groups in render order
+   * (lib/signup-gate.ts LEADERBOARD_FREE_ROWS); only a logged-out board passes it.
+   */
+  gateCutIndex?: number;
+}) {
   const tierGroups = TIER_SECTIONS.map((tier) => {
     const rows = data.filter((r) => r.moatRating === tier.key);
     const tierKeys = new Set(rows.map((r) => r.moatTier ?? "__none__"));
@@ -82,6 +92,10 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
       tierKeys.size === 1 && rows[0].moatTier ? rows[0].moatTier : null;
     return { tier, rows, sharedTier };
   }).filter((g) => g.rows.length > 0);
+  // Where each group's first row sits in the flat row order, for the gate marker.
+  const groupStart = tierGroups.map((_, i) =>
+    tierGroups.slice(0, i).reduce((n, g) => n + g.rows.length, 0),
+  );
 
   return (
     <div className={cn(TABLE_CARD_SKY, "relative")}>
@@ -117,7 +131,7 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {tierGroups.map(({ tier, rows, sharedTier }) => (
+          {tierGroups.map(({ tier, rows, sharedTier }, groupIndex) => (
             <Fragment key={tier.key}>
               <TableRow className="border-b border-border/35 bg-background/40 hover:bg-background/40">
                 <TableCell colSpan={6} className="px-3 py-2">
@@ -140,9 +154,10 @@ export function MoatTable({ data }: { data: MoatRowTable[] }) {
                   </div>
                 </TableCell>
               </TableRow>
-              {rows.map((row) => (
+              {rows.map((row, rowIndex) => (
                 <TableRow
                   key={row.companyCode}
+                  data-gate-cut={groupStart[groupIndex] + rowIndex === gateCutIndex ? "" : undefined}
                   className="border-b border-border/45 transition-colors hover:bg-accent/50"
                 >
                   <TableCell className="px-3 py-3 align-middle">

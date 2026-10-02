@@ -434,6 +434,7 @@ export function ScoreBoardTable({
   coverageCutRank,
   overallRankByCode,
   layout = "board",
+  gateCutIndex,
 }: {
   rows: ScoreBoardRow[];
   /**
@@ -471,6 +472,12 @@ export function ScoreBoardTable({
    * `signals`. Same rows, same sort state, same remove action — one component.
    */
   layout?: "board" | "signals";
+  /**
+   * 0-based index of the row that carries the sign-up gate's `data-gate-cut`
+   * marker (lib/signup-gate.ts LEADERBOARD_FREE_ROWS). Passed only to a
+   * logged-out reader's board; absent = no marker, no gate.
+   */
+  gateCutIndex?: number;
 }) {
   const router = useRouter();
   const [sort, setSort] = useState<SortState>({ key: "coverageRank", direction: "asc" });
@@ -572,6 +579,7 @@ export function ScoreBoardTable({
           </li>
         )}
         <li
+          data-gate-cut={index === gateCutIndex ? "" : undefined}
           className={`flex items-start gap-2.5 border-b border-border/45 px-3 py-3 last:border-0 ${
             dim ? "opacity-55" : ""
           }`}
@@ -1046,6 +1054,7 @@ export function ScoreBoardTable({
                     </TableRow>
                   )}
                   <TableRow
+                    data-gate-cut={index === gateCutIndex ? "" : undefined}
                     // Below the cut: de-emphasized to ~55%. The row still carries
                     // its full data — this is "not in the ranked hundred", not "no
                     // information" — and its name still links: the coverage policy
