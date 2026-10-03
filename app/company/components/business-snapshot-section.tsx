@@ -568,6 +568,7 @@ export function BusinessSnapshotSection({
                     <BusinessMixShift
                       segments={segmentEntries}
                       history={historicalEconomics?.revenueMixHistoryBySegment ?? null}
+                      revenue={historicalEconomics?.revenueHistoryBySegment ?? null}
                       summary={snapshot.mixShiftSummary}
                     >
                       {historicalEconomics || hasHistoricalEconomicsSource ? (
