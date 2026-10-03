@@ -1,11 +1,13 @@
 import type { CSSProperties } from "react";
 import { ChevronDown, ExternalLink } from "lucide-react";
 import type { NormalizedAboutCompany } from "@/lib/business-snapshot/types";
-import type { BusinessFact, ChangeStat, FactMetric, ProfileSource } from "@/lib/business-snapshot/profile";
+import type { BusinessFact, ChangeStat, ProfileSource } from "@/lib/business-snapshot/profile";
 import { elevatedBlockClass } from "./surface-tokens";
 import { SCROLL_MARGIN_TOP } from "./section-card";
 import { FactMetricBar, formatMetric } from "./fact-metric-bar";
-import { colorPalette } from "./business-segment-mix-constants";
+import { FactVisualBlock } from "./fact-visuals";
+import { buildFactVisual } from "@/lib/business-snapshot/fact-visual";
+import { milestoneLabel } from "@/lib/business-snapshot/milestone-label";
 
 const labelBase = "text-[11px] font-semibold uppercase tracking-[0.14em]";
 // text-foreground/60, not text-muted-foreground: this small text now sits on the section wash and the
@@ -90,60 +92,17 @@ const pickLeadFacts = (facts: BusinessFact[]) =>
     return fact ? [{ fact, label }] : [];
   });
 
-// A donut only when the metrics are parts of one whole: all percentages, adding up to ~100.
-const isShareMix = (metrics: FactMetric[]) =>
-  metrics.length >= 2 && metrics.every((metric) => metric.unit.trim().startsWith("%")) &&
-  Math.abs(metrics.reduce((sum, metric) => sum + metric.value, 0) - 100) <= 1;
-
-const numberOnly = (metric: FactMetric) => new Intl.NumberFormat("en-IN", { maximumFractionDigits: 1 }).format(metric.value);
-
-function ShareDonut({ metrics }: { metrics: FactMetric[] }) {
-  let offset = 0;
-  return (
-    <div className="mt-3 flex min-w-0 items-center gap-5">
-      <div className="relative h-24 w-24 shrink-0">
-        <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90" role="img" aria-label={`${metrics.map((metric) => `${metric.label} ${formatMetric(metric)}`).join(", ")}.`}>
-          {metrics.map((metric, index) => {
-            const dash = <circle key={`${metric.label}-${index}`} cx="18" cy="18" r="15.915" fill="none" strokeWidth="5" stroke={colorPalette[index % colorPalette.length]} strokeDasharray={`${metric.value} ${100 - metric.value}`} strokeDashoffset={-offset} />;
-            offset += metric.value;
-            return dash;
-          })}
-        </svg>
-        <p className="absolute inset-0 flex items-center justify-center text-base font-bold tabular-nums text-foreground">{numberOnly(metrics[0])}%</p>
-      </div>
-      <ul className="min-w-0 flex-1 space-y-1.5 text-[13px]">
-        {metrics.map((metric, index) => (
-          <li key={`${metric.label}-${index}`} className="flex items-center gap-2">
-            <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colorPalette[index % colorPalette.length] }} />
-            <span className="min-w-0 flex-1 break-words text-foreground/85">{metric.label}</span>
-            <span className="tabular-nums text-foreground">{numberOnly(metric)}%</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 function LeadFact({ fact, label }: { fact: BusinessFact; label: string }) {
-  const metrics = fact.metrics ?? [];
+  const visual = buildFactVisual(fact.metrics ?? [], fact.category);
   return (
     <div className="min-w-0 border-t border-border/35 py-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <p className={labelClass}>{label}</p>
         <p className={`text-xs ${quietClass}`}>{fact.period}</p>
       </div>
-      <h4 className="mt-2 break-words text-sm font-semibold leading-snug text-foreground">{fact.title}</h4>
-      {isShareMix(metrics) ? <ShareDonut metrics={metrics} /> : metrics.length > 0 ? (
-        <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-          {metrics.map((metric, index) => (
-            <div key={`${metric.label}-${index}`} className="min-w-0">
-              <dd className="text-2xl font-bold leading-none tracking-tight tabular-nums text-foreground">{formatMetric(metric)}</dd>
-              <dt className={`mt-1 break-words text-xs ${quietClass}`}>{metric.label}</dt>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-      <p className={`${panelCopyClass} mt-3 break-words`}>{fact.text}</p>
+      {visual ? <div className="mt-4"><FactVisualBlock visual={visual} /></div> : null}
+      <h4 className="mt-4 break-words text-sm font-semibold leading-snug text-foreground">{fact.title}</h4>
+      <p className={`${panelCopyClass} mt-1.5 break-words`}>{fact.text}</p>
       <Sources sources={fact.sources} />
     </div>
   );
@@ -254,6 +213,7 @@ export function BusinessCompanyBackground({
               <li key={`${event.year}-${index}`} className="relative min-w-0 border-l border-border/60 pb-5 pl-5 last:pb-0 lg:border-l-0 lg:border-t lg:pb-0 lg:pl-0 lg:pr-4 lg:pt-5">
                 <span aria-hidden className={`absolute -left-[6.5px] top-[5px] h-3 w-3 rounded-full border-2 border-emerald-600 dark:border-emerald-400/80 lg:-top-[6.5px] lg:left-0 ${index === timeline.length - 1 ? "bg-emerald-600 dark:bg-emerald-400/80" : "bg-background"}`} />
                 <p className="text-[17px] font-bold leading-tight tracking-tight tabular-nums text-foreground">{event.year}</p>
+                {milestoneLabel(event.title) ? <p className="mt-2 text-sm font-semibold leading-snug text-foreground">{milestoneLabel(event.title)}</p> : null}
                 <p className="mt-1 break-words text-[13px] leading-snug text-foreground/70">{event.title}</p>
               </li>
             ))}
