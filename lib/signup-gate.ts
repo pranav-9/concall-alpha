@@ -48,7 +48,7 @@ const GATED_SECTIONS = {
     below: [
       "Each key variable, with its numbers quarter by quarter",
       "What each one tracks and why it matters right now",
-      "Variables we have stopped deep-tracking",
+      "Our read on where each one is heading",
     ],
   },
   "future-growth": {
