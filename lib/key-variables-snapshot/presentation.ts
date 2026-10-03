@@ -181,6 +181,28 @@ export const formatTrendChange = (
   return formatFirstToLatestChange(first, latest, kind, "long");
 };
 
+/**
+ * The window behind the hero change, as a phrase: "in 2 years" when the trend
+ * holds whole years of consecutive quarters (8 quarterly readings), "in 3 qtrs"
+ * otherwise, "in 2 years" for fiscal years, "since Q3 FY24" when the periods
+ * are not consecutive.
+ */
+export const trendSpanPhrase = (periods: string[]) => {
+  const span = spanLabel(periods);
+  if (!span) return null;
+  if (span.startsWith("since")) return span;
+  const quarterly = isConsecutive(periods.map(quarterOrdinal));
+  if (quarterly && periods.length % 4 === 0) {
+    const years = periods.length / 4;
+    return `in ${years} ${years === 1 ? "year" : "years"}`;
+  }
+  if (!quarterly) {
+    const steps = periods.length - 1;
+    return `in ${steps} ${steps === 1 ? "year" : "years"}`;
+  }
+  return `in ${span}`;
+};
+
 /** A point label on the trend: "₹860 cr" | "146 d" | "24.5%" | "1.7×". A long unit is dropped. */
 export const formatValueWithUnit = (value: number, prefix: string, suffix: string) => {
   const number = `${prefix}${numberFormatter.format(value)}`;
