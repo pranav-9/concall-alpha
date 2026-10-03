@@ -177,7 +177,12 @@ test("timeline: oldest first, one column per milestone, only the latest dot fill
   assert.ok(html.includes("--milestone-count:3"));
   assert.equal(tokenCount(html, "bg-emerald-600"), 1, "only the last milestone is a filled dot");
   assert.equal(tokenCount(html, "bg-background"), 2, "the earlier milestones are hollow");
-  assert.ok(html.includes("A share position, not a one-off order."));
+  const row = html.slice(html.indexOf("<ol"), html.indexOf("</ol>"));
+  assert.ok(row.includes("Defence reaches 46% of the mix") && !row.includes("A share position"), "the row is year and title only");
+  assert.ok(!row.includes("<details"), "no per-milestone source toggle");
+  const more = html.slice(html.indexOf("</ol>"));
+  assert.ok(more.includes("Milestone details and sources") && more.includes("A share position, not a one-off order."), "the note waits behind one disclosure");
+  assert.equal(more.split("FY26 investor presentation").length - 1, 3, "with each milestone's citation");
   assert.ok(html.includes("id=\"business-overview-timeline\""));
 });
 
