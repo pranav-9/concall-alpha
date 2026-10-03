@@ -5,20 +5,22 @@
 //
 // Layout (redesign 2026-09-06, live book prioritised 2026-09-08,
 // forward-strength layer added 2026-09-09, horizon cards 2026-09-18,
-// strength split by horizon 2026-09-30):
+// strength split by horizon 2026-09-30, top cards restyled 2026-10-03):
 //   When the snapshot carries the forward-strength block (details.
 //   forward_strength from the deep-track producer) the section leads with the
 //   LIVE book and closes with the delivery record:
-//     1. The strength verdict (ambition × evidence pills, headline, supporting
-//        line). With forward_strength.horizons (schema v2) it is TWO cards —
-//        "How strong is this year's guidance? · FY27" beside "How strong is the
-//        long-term guidance? · FY28–FY31" — one per horizon, each read on the
-//        live threads due in that window, so a cautious year-in-hand guide
-//        and a large unbuilt vision no longer average into one label. The
-//        long-term card also carries the company's own name for its vision
-//        when it set one ("'Advait 2030'"). One populated horizon takes the
-//        full row; a v1 snapshot (no horizons) keeps the single whole-book
-//        card, "How strong is the guidance right now?".
+//     1. The strength verdict. With forward_strength.horizons (schema v2) it
+//        is TWO cards (redesigned 2026-10-03): "How strong is the guidance
+//        right now?" — this year's headline, then "This year:" + the
+//        supporting line, on the warm accent surface — beside "The long-term
+//        vision · FY28–FY31" on a quiet ink surface, which leads with the
+//        company's own name or number for its vision in the accent colour
+//        (vision_label via splitVisionLabel) and then the long-term read.
+//        Each is read on the live threads due in that window, so a cautious
+//        year-in-hand guide and a large unbuilt vision never average into
+//        one label; the ambition × evidence pills sit at each card's foot.
+//        One populated horizon takes the full row; a v1 snapshot (no
+//        horizons) keeps the single whole-book card.
 //     2. This year / Long-term — the live book split by when each commitment
 //        comes due (lib/guidance-tracking/horizon-split.ts). Each card holds
 //        its own ranked, clickable commitments (top HORIZON_PREVIEW_COUNT,
@@ -88,6 +90,7 @@ import type {
   ForwardStrengthHorizon,
   ForwardStrengthHorizons,
 } from "@/lib/guidance-snapshot/types";
+import { splitVisionLabel } from "@/lib/guidance-snapshot/vision-label";
 
 // Kept only for tests/guidance-status-bucket.test.ts — nothing in the
 // Overview reads either of these (ship-workflow specialist review, 2026-09-06).
@@ -220,41 +223,96 @@ const EVIDENCE_META: Record<EvidenceBand, { label: string; tone: ChipTone }> = {
   thinly_evidenced: { label: "Thinly evidenced", tone: "rose" },
 };
 
-// One strength verdict — whole book or one horizon. The shell tracks the
-// ambition tone the same way the credibility card's shell tracks its tier
-// tone, so every verdict on the tab reads as a sibling. `visionLabel` (long
-// term only) is the company's own name or number for its multi-year frame,
-// shown as a neutral chip beside the two axes — it is a quote, not a rating.
+// The two top cards (redesign 2026-10-03). Both carry the same parts — eyebrow,
+// one large line, the prose under it, the ambition × evidence pills at the
+// foot — on two fixed shells: the this-year card on the warm accent surface,
+// the long-term card on a quiet ink one so the company's own name for its
+// vision is the only colour on it. The shells no longer follow the ambition
+// tone; the pills carry the rating.
+const STRENGTH_SHELL = "flex h-full flex-col rounded-xl border p-5 shadow-md shadow-black/20 sm:p-6";
+const strengthHeroClass =
+  "mt-3 max-w-xl text-balance text-[22px] font-bold leading-[1.15] tracking-tight text-foreground sm:text-[26px]";
+const strengthBodyClass = "max-w-2xl text-sm leading-relaxed text-foreground/80";
+
+function StrengthPills({ ambitionLabel, evidenceLabel }: { ambitionLabel: AmbitionLabel; evidenceLabel: EvidenceBand }) {
+  const amb = AMBITION_META[ambitionLabel];
+  const ev = EVIDENCE_META[evidenceLabel];
+  return (
+    <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-4">
+      <span className={chipClass(amb.tone)}>{amb.label}</span>
+      <span className={chipClass(ev.tone)}>{ev.label}</span>
+    </div>
+  );
+}
+
+// "How strong is the guidance right now?" — the whole book (v1 snapshot) or
+// this year's commitments (v2). `lead` names the window in front of the
+// supporting line when the card is one of a pair.
 function StrengthVerdictCard({
-  eyebrow,
   ambitionLabel,
   evidenceLabel,
   headline,
   supportingLine,
-  visionLabel,
+  lead,
 }: {
-  eyebrow: string;
   ambitionLabel: AmbitionLabel;
   evidenceLabel: EvidenceBand;
   headline: string;
   supportingLine: string;
-  visionLabel?: string | null;
+  lead?: string;
 }) {
-  const amb = AMBITION_META[ambitionLabel];
-  const ev = EVIDENCE_META[evidenceLabel];
-  const shell = TONE_CARD_SHELL[amb.tone] ?? TONE_CARD_SHELL.slate!;
   return (
-    <div className={cn("flex h-full flex-col rounded-xl border p-4 shadow-md shadow-black/20 sm:p-5", shell.shell)}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className={cn(eyebrowClass, shell.eyebrow)}>{eyebrow}</p>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {visionLabel ? <span className={neutralChipClass}>{visionLabel}</span> : null}
-          <span className={chipClass(amb.tone)}>{amb.label}</span>
-          <span className={chipClass(ev.tone)}>{ev.label}</span>
-        </div>
-      </div>
-      <p className="mt-2 text-xl font-bold leading-tight text-foreground sm:text-[22px]">{headline}</p>
-      <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-foreground/80">{supportingLine}</p>
+    <div className={cn(STRENGTH_SHELL, "border-amber-500/35 bg-amber-500/[0.07] dark:bg-amber-500/[0.09]")}>
+      <p className={cn(eyebrowClass, "text-amber-700 dark:text-amber-300")}>How strong is the guidance right now?</p>
+      <p className={strengthHeroClass}>{headline}</p>
+      <p className={cn(strengthBodyClass, "mt-3")}>
+        {lead ? <strong className="font-semibold text-foreground">{lead}: </strong> : null}
+        {supportingLine}
+      </p>
+      <StrengthPills ambitionLabel={ambitionLabel} evidenceLabel={evidenceLabel} />
+    </div>
+  );
+}
+
+// The vision name steps down in size as it gets longer, so a two-word title
+// ("Vision 2030") reads as a title and a full target still fits the card.
+function visionHeroSize(name: string): string {
+  if (name.length <= 18) return "text-[26px] sm:text-[30px]";
+  if (name.length <= 36) return "text-[22px] sm:text-[24px]";
+  return "text-lg sm:text-xl";
+}
+
+// "The long-term vision" — leads with the company's own name or number for
+// its multi-year frame (vision_label, a quote — quote marks only when it is
+// the company's coinage, see splitVisionLabel), then the long-term read. With
+// no vision label the read's headline takes the hero slot in plain ink.
+function LongTermVisionCard({ horizon }: { horizon: ForwardStrengthHorizon }) {
+  const vision = splitVisionLabel(horizon.visionLabel);
+  return (
+    <div className={cn(STRENGTH_SHELL, "border-border/40 bg-background/75 dark:border-white/[0.06] dark:bg-black/65")}>
+      <p className={eyebrowClass}>
+        {vision ? "The long-term vision" : "The long term"} · {horizon.horizonLabel}
+      </p>
+      {vision ? (
+        <>
+          <p
+            className={cn(
+              "mt-3 max-w-xl text-balance font-bold leading-[1.15] tracking-tight text-amber-600 dark:text-amber-500",
+              visionHeroSize(vision.name),
+            )}
+          >
+            {vision.quoted ? `“${vision.name}”` : vision.name}
+          </p>
+          <p className={cn(strengthBodyClass, "mt-3")}>
+            {vision.detail ? <strong className="font-semibold text-foreground">{vision.detail}: </strong> : null}
+            <span className={vision.detail ? undefined : "font-medium text-foreground"}>{horizon.headline}</span>
+          </p>
+        </>
+      ) : (
+        <p className={strengthHeroClass}>{horizon.headline}</p>
+      )}
+      <p className={cn(strengthBodyClass, vision ? "mt-2" : "mt-3")}>{horizon.supportingLine}</p>
+      <StrengthPills ambitionLabel={horizon.ambition.label} evidenceLabel={horizon.evidence.label} />
     </div>
   );
 }
@@ -263,7 +321,6 @@ function StrengthVerdictCard({
 function ForwardStrengthCard({ forwardStrength }: { forwardStrength: ForwardStrength }) {
   return (
     <StrengthVerdictCard
-      eyebrow="How strong is the guidance right now?"
       ambitionLabel={forwardStrength.ambition.label}
       evidenceLabel={forwardStrength.evidence.label}
       headline={forwardStrength.headline}
@@ -272,28 +329,26 @@ function ForwardStrengthCard({ forwardStrength }: { forwardStrength: ForwardStre
   );
 }
 
-// The v2 pair: the same question asked of this year's commitments and of the
-// long-term ones, each on its own live threads. Column order matches the
-// This year / Long-term commitment cards below so a reader's eye can drop
-// straight from a verdict to the commitments it was read on. A horizon the
-// scorer nulled (nothing due in that window) renders nothing, and the other
-// card takes the full row rather than sitting beside a blank.
+// The v2 pair: this year's read beside the long-term vision, each on its own
+// live threads. Column order matches the This year / Long-term commitment
+// cards below so a reader's eye can drop straight from a verdict to the
+// commitments it was read on. A horizon the scorer nulled (nothing due in
+// that window) renders nothing, and the other card takes the full row rather
+// than sitting beside a blank.
 function StrengthHorizonCards({ horizons }: { horizons: ForwardStrengthHorizons }) {
   const { thisYear, longTerm } = horizons;
-  const card = (horizon: ForwardStrengthHorizon, eyebrow: string) => (
-    <StrengthVerdictCard
-      eyebrow={`${eyebrow} · ${horizon.horizonLabel}`}
-      ambitionLabel={horizon.ambition.label}
-      evidenceLabel={horizon.evidence.label}
-      headline={horizon.headline}
-      supportingLine={horizon.supportingLine}
-      visionLabel={horizon.visionLabel}
-    />
-  );
   return (
     <div className={cn("grid gap-3 lg:items-stretch", thisYear && longTerm ? "lg:grid-cols-2" : null)}>
-      {thisYear ? card(thisYear, "How strong is this year's guidance?") : null}
-      {longTerm ? card(longTerm, "How strong is the long-term guidance?") : null}
+      {thisYear ? (
+        <StrengthVerdictCard
+          ambitionLabel={thisYear.ambition.label}
+          evidenceLabel={thisYear.evidence.label}
+          headline={thisYear.headline}
+          supportingLine={thisYear.supportingLine}
+          lead={longTerm ? "This year" : `This year · ${thisYear.horizonLabel}`}
+        />
+      ) : null}
+      {longTerm ? <LongTermVisionCard horizon={longTerm} /> : null}
     </div>
   );
 }
