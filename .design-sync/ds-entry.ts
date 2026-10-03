@@ -43,8 +43,6 @@ export * from "../components/theme-switcher";
 export { default as ConcallScore } from "../components/concall-score";
 
 // -- Company page sections --
-export * from "../app/company/components/business-segment-mix-bar";
-export * from "../app/company/components/business-segments-mosaic";
 export * from "../app/company/components/business-snapshot-section";
 export * from "../app/company/components/column-info";
 export * from "../app/company/components/competitive-strategy-display";

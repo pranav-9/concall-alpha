@@ -2,14 +2,12 @@ import assert from "node:assert/strict";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { BusinessSegmentMixBar } from "../app/company/components/business-segment-mix-bar";
-import { BusinessSegmentsMosaic } from "../app/company/components/business-segments-mosaic";
+import { BusinessMixShift } from "../app/company/components/business-mix-shift";
 import { normalizeBusinessSnapshot } from "../lib/business-snapshot/normalize";
 import {
   DERIVED_SHARE_TITLE,
   isDerivedShare,
   parseRevenueShareBasis,
-  revenueMixCaptionWord,
 } from "../lib/business-snapshot/revenue-share-basis";
 import type { NormalizedRevenueBreakdownItem } from "../lib/business-snapshot/types";
 
@@ -132,125 +130,35 @@ test("isDerivedShare: a derived basis on a shown share", () => {
   assert.equal(isDerivedShare({ revenueSharePercent: 25 }), false, "legacy item without the field");
 });
 
-test("revenueMixCaptionWord: derived once any bar-filling segment is derived, else disclosed", () => {
-  // legacy and reported keep today's caption
-  assert.equal(revenueMixCaptionWord([]), "disclosed");
-  assert.equal(revenueMixCaptionWord([{ revenueSharePercent: 60 }, { revenueSharePercent: 40 }]), "disclosed");
-  assert.equal(
-    revenueMixCaptionWord([
-      { revenueSharePercent: 60, revenueShareBasis: "reported" },
-      { revenueSharePercent: 40, revenueShareBasis: null },
-    ]),
-    "disclosed",
-  );
-  // any derived segment that carries a share flips it, wholly or mixed
-  assert.equal(
-    revenueMixCaptionWord([
-      { revenueSharePercent: 78, revenueShareBasis: "derived" },
-      { revenueSharePercent: 22, revenueShareBasis: "derived" },
-    ]),
-    "derived",
-  );
-  assert.equal(
-    revenueMixCaptionWord([
-      { revenueSharePercent: 60, revenueShareBasis: "reported" },
-      { revenueSharePercent: 25, revenueShareBasis: "derived" },
-    ]),
-    "derived",
-  );
-  // a derived segment that carries no share (null or 0) is not on the bar
-  assert.equal(
-    revenueMixCaptionWord([
-      { revenueSharePercent: 70, revenueShareBasis: "reported" },
-      { revenueSharePercent: 30, revenueShareBasis: "reported" },
-      { revenueSharePercent: null, revenueShareBasis: "derived" },
-      { revenueSharePercent: 0, revenueShareBasis: "derived" },
-    ]),
-    "disclosed",
-  );
-});
-
 // ---------------------------------------------------------------------------
-// Rendered markup (real components, static markup)
+// Rendered markup (the Mix shift card, static markup)
 // ---------------------------------------------------------------------------
-const bar = (rows: unknown[]) => renderToStaticMarkup(React.createElement(BusinessSegmentMixBar, { segments: segmentsOf(rows) }));
-const mosaic = (rows: unknown[]) => renderToStaticMarkup(React.createElement(BusinessSegmentsMosaic, { segments: segmentsOf(rows) }));
+const card = (rows: unknown[]) => renderToStaticMarkup(React.createElement(BusinessMixShift, { segments: segmentsOf(rows), history: null, summary: null }));
 
-test("mix bar: legacy, reported and unknown-basis rows keep the exact 'disclosed' caption, with no tooltip", () => {
-  for (const extra of [{}, { revenue_share_basis: "reported" }, { revenue_share_basis: "estimated" }]) {
-    const html = bar([row("Coffee", 60, extra), row("Tea", 40, extra)]);
-    assert.ok(html.includes(">100%</span> disclosed</span>"), JSON.stringify(extra));
-    assert.ok(!html.includes("derived"), JSON.stringify(extra));
-    assert.ok(!html.includes("title="), JSON.stringify(extra));
-  }
-});
-
-test("mix bar: a derived share reads '<total>% derived' with the explanatory tooltip", () => {
-  const all = bar([
+test("mix shift card: only derived shares carry the 'derived' cue with its tooltip; legacy renders none", () => {
+  const derivedHtml = card([
     row("Bulk", 78, { revenue_share_basis: "derived" }),
     row("Brands", 22, { revenue_share_basis: "derived" }),
   ]);
-  assert.ok(all.includes(">100%</span> derived</span>"));
-  assert.ok(!all.includes("disclosed"));
-  assert.ok(all.includes(`title="${attr(DERIVED_SHARE_TITLE)}"`));
+  assert.equal(count(derivedHtml, ">derived</span>"), 2);
+  assert.equal(count(derivedHtml, `title="${attr(DERIVED_SHARE_TITLE)}"`), 2);
 
-  // one derived share among reported ones is enough
-  const mixed = bar([
+  const mixedHtml = card([
     row("Coffee", 60, { revenue_share_basis: "reported" }),
     row("Brands", 25, { revenue_share_basis: "derived" }),
     row("Other", 15),
   ]);
-  assert.ok(mixed.includes(">100%</span> derived</span>"));
-});
-
-test("mix bar: the undisclosed-remainder logic is untouched next to the derived caption", () => {
-  const html = bar([
-    row("Bulk", 60, { revenue_share_basis: "derived" }),
-    row("Brands", 20, { revenue_share_basis: "derived" }),
-  ]);
-  assert.ok(html.includes(">80%</span> derived</span>"), "caption total is the summed shares");
-  assert.ok(html.includes("Revenue mix: Bulk 60%, Brands 20%, undisclosed 20%."), "the unfilled 20% is still called undisclosed");
-  // a full mix shows no remainder, derived or not
-  assert.ok(!bar([row("Bulk", 78, { revenue_share_basis: "derived" }), row("Brands", 22, { revenue_share_basis: "derived" })]).includes("undisclosed"));
-});
-
-test("mix bar: a derived segment with no share does not change the caption", () => {
-  const html = bar([
-    row("Coffee", 70, { revenue_share_basis: "reported" }),
-    row("Tea", 30, { revenue_share_basis: "reported" }),
-    row("Unsized", null, { revenue_share_basis: "derived" }),
-  ]);
-  assert.ok(html.includes(">100%</span> disclosed</span>"));
-});
-
-test("mosaic: only derived shares carry the 'derived' cue (phone + sm variants), legacy renders none", () => {
-  const derivedHtml = mosaic([
-    row("Bulk", 78, { revenue_share_basis: "derived" }),
-    row("Brands", 22, { revenue_share_basis: "derived" }),
-  ]);
-  // two share elements per segment (phone row + sm hero) x two segments
-  assert.equal(count(derivedHtml, ">derived</span>"), 4);
-  assert.equal(count(derivedHtml, `title="${attr(DERIVED_SHARE_TITLE)}"`), 4 + 1, "four cues + the bar caption");
-  // the phone variant stacks the cue under the number; the sm hero keeps it inline
-  assert.equal(count(derivedHtml, 'class="text-[10px] font-normal tracking-normal text-muted-foreground block text-right leading-tight"'), 2);
-  assert.equal(count(derivedHtml, 'class="text-[10px] font-normal tracking-normal text-muted-foreground ml-1"'), 2);
-
-  const mixedHtml = mosaic([
-    row("Coffee", 60, { revenue_share_basis: "reported" }),
-    row("Brands", 25, { revenue_share_basis: "derived" }),
-    row("Other", 15),
-  ]);
-  assert.equal(count(mixedHtml, ">derived</span>"), 2, "only the derived segment, in both variants");
+  assert.equal(count(mixedHtml, ">derived</span>"), 1, "only the derived segment");
 
   for (const extra of [{}, { revenue_share_basis: "reported" }, { revenue_share_basis: "estimated" }]) {
-    const html = mosaic([row("Coffee", 60, extra), row("Tea", 40, extra)]);
+    const html = card([row("Coffee", 60, extra), row("Tea", 40, extra)]);
     assert.equal(count(html, ">derived</span>"), 0, JSON.stringify(extra));
     assert.ok(!html.includes("title="), JSON.stringify(extra));
   }
 });
 
-test("mosaic: a derived segment with no share shows no share, so no cue", () => {
-  const html = mosaic([
+test("mix shift card: a derived segment with no share shows no share, so no cue", () => {
+  const html = card([
     row("Coffee", 70, { revenue_share_basis: "reported" }),
     row("Tea", 30, { revenue_share_basis: "reported" }),
     row("Unsized", null, { revenue_share_basis: "derived" }),

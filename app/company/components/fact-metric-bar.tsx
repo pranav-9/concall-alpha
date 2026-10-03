@@ -16,11 +16,8 @@ export const formatMetric = (metric: FactMetric) => {
 
 /**
  * Proportional segmented bar for a fact's structured `metrics` breakdown
- * (e.g. customer concentration bands, manufacturing line counts). Same visual
- * recipe as BusinessSegmentMixBar (role="img" pill + colored segments), but a
- * fresh component rather than reusing it directly — that one is hard-typed to
- * NormalizedRevenueBreakdownItem[] (revenue-share-specific fields), not the
- * general {label, value, unit} shape a fact metric carries.
+ * (e.g. customer concentration bands, manufacturing line counts): a role="img"
+ * pill of colored segments over the general {label, value, unit} metric shape.
  */
 export function FactMetricBar({ metrics }: { metrics: FactMetric[] }) {
   const total = metrics.reduce((sum, metric) => sum + metric.value, 0);

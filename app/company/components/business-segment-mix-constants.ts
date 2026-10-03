@@ -8,5 +8,3 @@ export const colorPalette = [
   "#f97316",
   "#ec4899",
 ];
-
-export const maxSlices = 5;
