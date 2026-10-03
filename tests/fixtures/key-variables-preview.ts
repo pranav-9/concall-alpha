@@ -61,16 +61,26 @@ export const keyVariablesPreview7a: KeyVariablesSnapshotRow = {
       {
         variable: "Defence order book & book-to-bill",
         thesis_role: "Sets the growth",
+        headline: "Orders are piling up faster than Vinyas can ship them.",
         lead_metric_index: 0,
         lead_unit: "₹ cr",
         what_it_tracks: "Confirmed, funded defence programmes converting into shipped revenue.",
         why_it_matters_now: "defence is ~46% of revenue and the whole re-rating case.",
         kpi_history: {
-          periods: ["Q2 FY26", "Q3 FY26", "Q4 FY26", "Q1 FY27"],
+          periods: ["Q2 FY25", "Q3 FY25", "Q4 FY25", "Q1 FY26", "Q2 FY26", "Q3 FY26", "Q4 FY26", "Q1 FY27"],
           rows: [
             {
               metric: "Order book (₹ cr)",
-              values_by_period: { "Q2 FY26": 590, "Q3 FY26": 640, "Q4 FY26": 720, "Q1 FY27": 860 },
+              values_by_period: {
+                "Q2 FY25": 410,
+                "Q3 FY25": 445,
+                "Q4 FY25": 465,
+                "Q1 FY26": 505,
+                "Q2 FY26": 590,
+                "Q3 FY26": 640,
+                "Q4 FY26": 720,
+                "Q1 FY27": 860,
+              },
             },
             {
               metric: "Book-to-bill (x)",
@@ -89,6 +99,7 @@ export const keyVariablesPreview7a: KeyVariablesSnapshotRow = {
       {
         variable: "Net working capital days",
         thesis_role: "Sets the cash",
+        headline: "More cash is getting stuck as Vinyas grows.",
         lead_metric_index: 0,
         lead_unit: "days",
         metric_directions: {
@@ -96,13 +107,25 @@ export const keyVariablesPreview7a: KeyVariablesSnapshotRow = {
           "Inventory (days)": "lower_is_better",
           "Receivables (days)": "lower_is_better",
         },
-        guide: { value: 120, label: "Guide 120 · FY27" },
+        guide: { value: 120, label: "FY27 guide 120" },
         what_it_tracks:
           "Cash tied up in inventory and receivables — the gap between booking revenue and collecting it.",
         kpi_history: {
-          periods: ["Q3 FY26", "Q4 FY26", "Q1 FY27"],
+          periods: ["Q2 FY25", "Q3 FY25", "Q4 FY25", "Q1 FY26", "Q2 FY26", "Q3 FY26", "Q4 FY26", "Q1 FY27"],
           rows: [
-            { metric: "NWC (days)", values_by_period: { "Q3 FY26": 118, "Q4 FY26": 131, "Q1 FY27": 146 } },
+            {
+              metric: "NWC (days)",
+              values_by_period: {
+                "Q2 FY25": 104,
+                "Q3 FY25": 110,
+                "Q4 FY25": 108,
+                "Q1 FY26": 112,
+                "Q2 FY26": 115,
+                "Q3 FY26": 118,
+                "Q4 FY26": 131,
+                "Q1 FY27": 146,
+              },
+            },
             { metric: "Inventory (days)", values_by_period: { "Q3 FY26": 84, "Q4 FY26": 92, "Q1 FY27": 103 } },
             { metric: "Receivables (days)", values_by_period: { "Q3 FY26": 71, "Q4 FY26": 74, "Q1 FY27": 79 } },
           ],

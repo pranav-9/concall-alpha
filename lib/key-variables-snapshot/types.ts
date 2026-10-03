@@ -69,6 +69,8 @@ export type NormalizedKeyVariableDeepTreatmentItem = {
   transitionReason: string | null;
   /** The eyebrow: "Sets the growth" | "Sets the cash". */
   thesisRole: string | null;
+  /** The card's one-line verdict: "Orders are piling up faster than Vinyas can ship them." Null → the variable name leads. */
+  headline: string | null;
   /** Which kpiHistory row is the hero + bars. Always clamped to the rows; 0 when unset. */
   leadMetricIndex: number;
   /** Suffix on the hero value: "₹ cr" | "days" | "%" | "x". */

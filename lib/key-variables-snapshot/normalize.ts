@@ -272,6 +272,7 @@ const normalizeDeepTreatmentItem = (
     transition: normalizeTransition(row?.transition),
     transitionReason: asString(row?.transition_reason),
     thesisRole: asString(row?.thesis_role),
+    headline: asString(row?.headline),
     leadMetricIndex: normalizeLeadMetricIndex(row?.lead_metric_index, kpiHistory),
     leadUnit: asString(row?.lead_unit),
     metricDirections: normalizeMetricDirections(row?.metric_directions, kpiHistory),

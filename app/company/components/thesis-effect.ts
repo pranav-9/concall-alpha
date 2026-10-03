@@ -38,12 +38,12 @@ export const thesisEffectTintClass: Record<ThesisEffect, string> = {
   neutral: "border-border/60 bg-muted/60 text-muted-foreground",
 };
 
-/** Fill for the latest bar in the hero band. */
-export const thesisEffectBarClass: Record<ThesisEffect, string> = {
-  helps: "bg-emerald-500",
-  hurts: "bg-rose-500",
-  caution: "bg-amber-500",
-  neutral: "bg-muted-foreground/60",
+/** Ink for the hero trend — the line, its fill and its dots all draw in currentColor. */
+export const thesisEffectLineClass: Record<ThesisEffect, string> = {
+  helps: "text-emerald-600 dark:text-emerald-400",
+  hurts: "text-rose-600 dark:text-rose-400",
+  caution: "text-amber-600 dark:text-amber-400",
+  neutral: "text-muted-foreground",
 };
 
 export const thesisEffectPillLabel: Record<ThesisEffect, string | null> = {

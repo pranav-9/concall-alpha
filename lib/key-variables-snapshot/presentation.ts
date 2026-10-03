@@ -151,3 +151,107 @@ export const firstSentence = (text: string): string => {
 };
 
 export const normalizeVariableName = (name: string) => name.trim().toLowerCase();
+
+/* ------------------------------------------------------------------------ */
+/* Hero trend (the deep card's area line)                                     */
+/* ------------------------------------------------------------------------ */
+
+/** "Q2 FY25" → "Q2'25"; "H1 FY26" → "H1'26"; "FY24" and anything else pass through. */
+export const compactPeriodLabel = (period: string) => {
+  const trimmed = period.trim();
+  const match = trimmed.match(/^(\S+)\s+(?:FY|CY)\s?(?:\d{2})?(\d{2})$/i);
+  return match ? `${match[1]}'${match[2]}` : trimmed;
+};
+
+/**
+ * The hero's first → latest change. Same wording as formatFirstToLatestChange
+ * ("long"), except an amount that has at least doubled reads as a multiple
+ * ("2.1×") — "+110%" undersells a doubling and "+999%+" says nothing.
+ */
+export const formatTrendChange = (
+  first: number | null,
+  latest: number | null,
+  kind: UnitKind,
+): { label: string; delta: number } | null => {
+  if (kind === "amount" && first != null && latest != null && first > 0 && latest / first >= 2) {
+    const ratio = latest / first;
+    const label = ratio >= 10 ? `${integerFormatter.format(ratio)}×` : `${ratio.toFixed(1)}×`;
+    return { label, delta: latest - first };
+  }
+  return formatFirstToLatestChange(first, latest, kind, "long");
+};
+
+/** A point label on the trend: "₹860 cr" | "146 d" | "24.5%" | "1.7×". A long unit is dropped. */
+export const formatValueWithUnit = (value: number, prefix: string, suffix: string) => {
+  const number = `${prefix}${numberFormatter.format(value)}`;
+  const unit = suffix.trim();
+  const lower = unit.toLowerCase();
+  if (!unit) return number;
+  if (unit === "%") return `${number}%`;
+  if (lower === "x" || lower === "times") return `${number}×`;
+  if (lower === "days" || lower === "day") return `${number} d`;
+  return unit.length > 6 ? number : `${number} ${unit}`;
+};
+
+export type TrendPoint = { index: number; period: string; value: number; x: number; y: number };
+
+export type TrendGeometry = {
+  /** Non-null points, x and y in 0–100 (y measured from the top). */
+  points: TrendPoint[];
+  /** x for every period, so the axis labels line up with the points. */
+  periodX: number[];
+  guideY: number | null;
+  /** Where the guide label sits clear of the line: the point furthest on the other side. */
+  guideLabel: { x: number; side: "above" | "below" } | null;
+};
+
+/**
+ * Geometry for the hero trend. The y-domain is padded below the lowest value
+ * (the line is a shape-of-change read, not a zero-based bar) and above the
+ * highest, so the end labels have room. Null when fewer than two values plot.
+ */
+export const buildTrendGeometry = (
+  periods: string[],
+  values: Array<number | null>,
+  guideValue: number | null = null,
+): TrendGeometry | null => {
+  const plotted = values
+    .map((value, index) => ({ value, index }))
+    .filter((entry): entry is { value: number; index: number } => entry.value != null);
+  if (plotted.length < 2 || periods.length < 2) return null;
+
+  const all = plotted.map((entry) => entry.value).concat(guideValue != null ? [guideValue] : []);
+  const lo = Math.min(...all);
+  const hi = Math.max(...all);
+  const range = hi - lo || Math.abs(hi) || 1;
+  const domainLo = lo - range * 0.3;
+  const domainHi = hi + range * 0.3;
+  const xFor = (index: number) => (index / (periods.length - 1)) * 100;
+  const yFor = (value: number) => (1 - (value - domainLo) / (domainHi - domainLo)) * 100;
+
+  const points = plotted.map(({ value, index }) => ({
+    index,
+    period: periods[index],
+    value,
+    x: xFor(index),
+    y: yFor(value),
+  }));
+
+  let guideLabel: TrendGeometry["guideLabel"] = null;
+  if (guideValue != null) {
+    const inner = points.length > 2 ? points.slice(1, -1) : points;
+    const below = inner.reduce((best, point) => (point.value < best.value ? point : best), inner[0]);
+    const above = inner.reduce((best, point) => (point.value > best.value ? point : best), inner[0]);
+    guideLabel =
+      below.value < guideValue || above.value <= guideValue
+        ? { x: below.x, side: "above" }
+        : { x: above.x, side: "below" };
+  }
+
+  return {
+    points,
+    periodX: periods.map((_, index) => xFor(index)),
+    guideY: guideValue != null ? yFor(guideValue) : null,
+    guideLabel,
+  };
+};

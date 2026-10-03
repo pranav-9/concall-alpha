@@ -31,20 +31,22 @@ import {
 import { getDeltaToneClass } from "./delta-tone";
 import {
   getThesisEffect,
-  thesisEffectBarClass,
-  thesisEffectPillLabel,
+  thesisEffectLineClass,
   thesisEffectTextClass,
-  thesisEffectTintClass,
 } from "./thesis-effect";
 import { chipToneClasses } from "./chip-tone";
 import { cn } from "@/lib/utils";
 import { formatPeriodDelta, getPeriodOverPeriodDelta } from "@/lib/period-delta";
 import {
   asNumericValue,
+  buildTrendGeometry,
   classifyUnit,
+  compactPeriodLabel,
   firstSentence,
   formatFirstToLatestChange,
   formatMetricNumber,
+  formatTrendChange,
+  formatValueWithUnit,
   normalizeVariableName,
   periodNounLong,
   shortPeriodLabel,
@@ -64,12 +66,10 @@ const violetText = "text-violet-700 dark:text-violet-300";
 const violetTint = chipToneClasses.violet;
 const hoverColor = "transition-colors duration-150";
 
-/** The hero bars and the "Also tracked" table show this many trailing periods. */
+/** The "Also tracked" table shows this many trailing periods. */
 const SHOWN_PERIODS = 3;
-/** Tallest bar, in px, inside the h-28 band. */
-const BAR_MAX_PX = 76;
-/** Height reserved under the bars for the period label row. */
-const PERIOD_LABEL_PX = 18;
+/** The hero trend plots up to this many trailing periods. */
+const TREND_PERIODS = 8;
 
 /**
  * "Also tracked" columns: metric | older periods | latest | change. Fixed widths
@@ -244,41 +244,16 @@ function DiscoveryDrawerBody({ snapshot }: { snapshot: NormalizedKeyVariablesSna
 }
 
 /* ------------------------------------------------------------------------ */
-/* Synthesis row: headline + paragraph on the left, 13 → 5 → 2 funnel right  */
+/* Synthesis row: the headline carries the section; the funnel is one quiet line */
 /* ------------------------------------------------------------------------ */
-
-function FunnelStep({
-  value,
-  label,
-  valueClass,
-}: {
-  value: number;
-  label: string;
-  valueClass: string;
-}) {
-  return (
-    <span className="flex flex-col items-center gap-1">
-      <span className={cn(displayFont, "text-[26px] leading-none", valueClass)}>{value}</span>
-      <span
-        className={cn(
-          dataFont,
-          hoverColor,
-          "text-[10px] text-muted-foreground group-hover:text-foreground",
-        )}
-      >
-        {label}
-      </span>
-    </span>
-  );
-}
 
 function SelectionFunnel({ snapshot }: { snapshot: NormalizedKeyVariablesSnapshot }) {
   const summary = snapshot.discoverySummary;
   const steps = [
-    { value: summary?.totalCandidatesConsidered ?? null, label: "considered", valueClass: "text-muted-foreground" },
-    { value: summary?.selectedFullListCount ?? null, label: "ranked", valueClass: "text-foreground/80" },
-    { value: summary?.selectedDeepTreatmentCount ?? null, label: "deep-tracked", valueClass: violetText },
-  ].filter((step): step is { value: number; label: string; valueClass: string } => step.value != null);
+    { value: summary?.totalCandidatesConsidered ?? null, label: "considered" },
+    { value: summary?.selectedFullListCount ?? null, label: "ranked" },
+    { value: summary?.selectedDeepTreatmentCount ?? null, label: "deep-tracked" },
+  ].filter((step): step is { value: number; label: string } => step.value != null);
 
   if (steps.length === 0) return null;
 
@@ -291,16 +266,26 @@ function SelectionFunnel({ snapshot }: { snapshot: NormalizedKeyVariablesSnapsho
           type="button"
           data-drawer-type="variable-selection-context"
           aria-label={ariaLabel}
-          className="group flex cursor-pointer items-start gap-3 self-end rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={cn(
+            dataFont,
+            hoverColor,
+            "group inline-flex cursor-pointer flex-wrap items-baseline gap-x-1.5 rounded-sm text-left text-[10.5px] text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          )}
         >
           {steps.map((step, index) => (
-            <span key={step.label} className="flex items-start gap-3">
-              {index > 0 ? (
-                <span className={cn(dataFont, "pt-2 text-[12px] leading-none text-border")} aria-hidden="true">
-                  →
-                </span>
-              ) : null}
-              <FunnelStep value={step.value} label={step.label} valueClass={step.valueClass} />
+            <span key={step.label} className="inline-flex items-baseline gap-x-1.5">
+              {index > 0 ? <span aria-hidden="true">→</span> : null}
+              <span>
+                <span
+                  className={cn(
+                    "font-semibold",
+                    index === steps.length - 1 ? violetText : "text-foreground/80",
+                  )}
+                >
+                  {step.value}
+                </span>{" "}
+                {step.label}
+              </span>
             </span>
           ))}
         </button>
@@ -323,37 +308,29 @@ function SynthesisRow({ snapshot }: { snapshot: NormalizedKeyVariablesSnapshot }
   if (!hasText && !hasFunnel) return null;
 
   return (
-    <div className="grid grid-cols-1 gap-6 border-b border-border/60 pb-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:gap-10">
-      {hasText ? (
-        <div className="min-w-0">
-          <p className={cn(eyebrowClass, violetText)}>The synthesis</p>
-          {snapshot.sectionHeadline ? (
-            <h3
-              className={cn(
-                displayFont,
-                "mt-2.5 text-balance text-[22px] leading-[1.12] tracking-[-0.03em] text-foreground sm:text-[28px]",
-              )}
-            >
-              {snapshot.sectionHeadline}
-            </h3>
-          ) : null}
-          {snapshot.sectionSynthesis ? (
-            <div className="mt-2.5 max-w-[68ch]">
-              <ExpandableText
-                text={snapshot.sectionSynthesis}
-                className="text-[13.5px] leading-[1.6] text-muted-foreground"
-                previewLines={4}
-                mobileOnly
-              />
-            </div>
-          ) : null}
-        </div>
-      ) : (
-        <div />
-      )}
-      {hasFunnel ? (
-        <div className="flex lg:justify-end">
-          <SelectionFunnel snapshot={snapshot} />
+    <div className="border-b border-border/60 pb-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+        <p className={cn(eyebrowClass, violetText)}>The synthesis</p>
+        {hasFunnel ? <SelectionFunnel snapshot={snapshot} /> : null}
+      </div>
+      {snapshot.sectionHeadline ? (
+        <h3
+          className={cn(
+            displayFont,
+            "mt-3 text-pretty text-[24px] leading-[1.1] tracking-[-0.03em] text-foreground sm:text-[32px] lg:text-[38px]",
+          )}
+        >
+          {snapshot.sectionHeadline}
+        </h3>
+      ) : null}
+      {snapshot.sectionSynthesis ? (
+        <div className="mt-3">
+          <ExpandableText
+            text={snapshot.sectionSynthesis}
+            className="text-pretty text-[14px] leading-[1.6] text-muted-foreground sm:text-[15px]"
+            previewLines={4}
+            mobileOnly
+          />
         </div>
       ) : null}
     </div>
@@ -505,11 +482,14 @@ type LeadMetric = {
   name: string;
   unitPrefix: string;
   unitSuffix: string;
-  /** The trailing periods the card shows. */
+  /** The trailing periods the "Also tracked" table shows. */
   shownPeriods: string[];
   latestPeriod: string;
-  values: Array<number | null>;
   latestValue: number | null;
+  /** The trend's periods: up to TREND_PERIODS, starting at the first one with a value. */
+  trendPeriods: string[];
+  trendValues: Array<number | null>;
+  /** First plotted → latest, over the trend. */
   change: { label: string; delta: number } | null;
   effect: ThesisEffect;
 };
@@ -526,13 +506,18 @@ const buildLeadMetric = (item: NormalizedKeyVariableDeepTreatmentItem): LeadMetr
   const { prefix, suffix } = splitUnitAffixes(unit);
 
   const shownPeriods = periods.slice(-SHOWN_PERIODS);
-  const values = shownPeriods.map((period) => asNumericValue(row.valuesByPeriod[period]));
-  const latestValue = values[values.length - 1] ?? null;
-  const firstValue = values.find((value): value is number => value != null) ?? null;
-  // One shown period has no "first → latest": a lone value must not print "0 pp".
+  const latestPeriod = periods[periods.length - 1];
+  const latestValue = asNumericValue(row.valuesByPeriod[latestPeriod]);
+
+  const recent = periods.slice(-TREND_PERIODS);
+  const recentValues = recent.map((period) => asNumericValue(row.valuesByPeriod[period]));
+  const firstIndex = recentValues.findIndex((value) => value != null);
+  const trendPeriods = firstIndex > 0 ? recent.slice(firstIndex) : recent;
+  const trendValues = firstIndex > 0 ? recentValues.slice(firstIndex) : recentValues;
+  // One plotted period has no "first → latest": a lone value must not print "0 pp".
   const change =
-    shownPeriods.length >= 2
-      ? formatFirstToLatestChange(firstValue, latestValue, classifyUnit(unit), "long")
+    trendPeriods.length >= 2
+      ? formatTrendChange(trendValues[0] ?? null, latestValue, classifyUnit(unit))
       : null;
   const direction = item.metricDirections?.[row.metric] ?? "higher_is_better";
 
@@ -542,87 +527,125 @@ const buildLeadMetric = (item: NormalizedKeyVariableDeepTreatmentItem): LeadMetr
     unitPrefix: prefix,
     unitSuffix: suffix,
     shownPeriods,
-    latestPeriod: shownPeriods[shownPeriods.length - 1],
-    values,
+    latestPeriod,
     latestValue,
+    trendPeriods,
+    trendValues,
     change,
     effect: getThesisEffect(change?.delta ?? null, direction),
   };
 };
 
-function HeroBars({
+/** Left-anchored at the first point, right-anchored at the last, centred between. */
+const anchorClass = (x: number) =>
+  x <= 0 ? "" : x >= 100 ? "-translate-x-full" : "-translate-x-1/2";
+
+function HeroTrend({
   lead,
   guide,
 }: {
   lead: LeadMetric;
   guide: NormalizedKeyVariableDeepTreatmentItem["guide"];
 }) {
-  const numeric = lead.values.filter((value): value is number => value != null);
-  const scaleMax = Math.max(...numeric, guide?.value ?? Number.NEGATIVE_INFINITY, 0);
-  const heightFor = (value: number | null) =>
-    value == null || scaleMax <= 0 ? 0 : Math.max(0, Math.round((value / scaleMax) * BAR_MAX_PX));
-  const lastIndex = lead.values.length - 1;
-  const ariaLabel = `${lead.name}: ${lead.shownPeriods
-    .map((period, index) => `${period} ${formatCellValue(lead.values[index])}`)
+  const geometry = buildTrendGeometry(lead.trendPeriods, lead.trendValues, guide?.value ?? null);
+  if (!geometry) return null;
+
+  const { points, periodX, guideY, guideLabel } = geometry;
+  const first = points[0];
+  const last = points[points.length - 1];
+  const line = points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x} ${point.y}`).join(" ");
+  const area = `${line} L${last.x} 100 L${first.x} 100 Z`;
+  const label = (value: number) => formatValueWithUnit(value, lead.unitPrefix, lead.unitSuffix);
+  const lastPeriodIndex = lead.trendPeriods.length - 1;
+  // On a phone a long axis keeps every other label, counted back from the latest.
+  const thinOnPhone = lead.trendPeriods.length > 5;
+  const ariaLabel = `${lead.name}: ${points
+    .map((point) => `${point.period} ${label(point.value)}`)
     .join(", ")}${guide ? `; ${guide.label}` : ""}`;
 
   return (
-    <div role="img" aria-label={ariaLabel} className="relative h-28 min-w-0">
-      {guide && scaleMax > 0 ? (
-        <div
-          className="pointer-events-none absolute inset-x-0 z-10"
-          style={{ bottom: PERIOD_LABEL_PX + heightFor(guide.value) }}
+    <div role="img" aria-label={ariaLabel} className={cn("mt-6", thesisEffectLineClass[lead.effect])}>
+      <div className="relative h-36 sm:h-40">
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className="absolute inset-0 h-full w-full overflow-visible"
+          aria-hidden="true"
         >
-          <div className="relative border-t border-dashed border-foreground/45">
+          <path d={area} fill="currentColor" fillOpacity={0.1} />
+          <path
+            d={line}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+        {guide && guideY != null && guideLabel ? (
+          <div className="pointer-events-none absolute inset-x-0" style={{ top: `${guideY}%` }}>
+            <div className="border-t border-dashed border-foreground/35" />
             <span
               className={cn(
                 dataFont,
-                "absolute bottom-0.5 right-0 bg-card pl-1 text-[9px] leading-none text-muted-foreground",
+                "absolute whitespace-nowrap text-[10px] leading-none text-muted-foreground",
+                guideLabel.side === "above" ? "bottom-1.5" : "top-1.5",
+                anchorClass(guideLabel.x),
               )}
+              style={{ left: `${guideLabel.x}%` }}
             >
               {guide.label}
             </span>
           </div>
-        </div>
-      ) : null}
-      <div
-        className="relative grid h-full items-end gap-2.5"
-        style={{ gridTemplateColumns: `repeat(${lead.values.length}, minmax(0, 1fr))` }}
-      >
-        {lead.values.map((value, index) => {
-          const isLatest = index === lastIndex;
-          const height = heightFor(value);
+        ) : null}
+        {points.map((point) => {
+          const isLast = point === last;
           return (
-            <div key={lead.shownPeriods[index]} className="flex min-w-0 flex-col items-center justify-end">
-              <span
-                className={cn(
-                  dataFont,
-                  "mb-1 text-[10px] leading-none",
-                  isLatest ? "font-semibold text-foreground" : "text-muted-foreground",
-                )}
-              >
-                {formatCellValue(value)}
-              </span>
-              {value != null ? (
-                <div
-                  className={cn(
-                    "w-full rounded-t-[3px]",
-                    isLatest ? thesisEffectBarClass[lead.effect] : "bg-muted-foreground/30",
-                  )}
-                  style={{ height }}
-                />
-              ) : null}
-              <span
-                className={cn(
-                  dataFont,
-                  "flex items-end truncate text-[9.5px] leading-none",
-                  isLatest ? "font-semibold text-foreground" : "text-muted-foreground",
-                )}
-                style={{ height: PERIOD_LABEL_PX }}
-              >
-                {lead.shownPeriods[index]}
-              </span>
-            </div>
+            <span
+              key={point.period}
+              className={cn(
+                "absolute -translate-x-1/2 -translate-y-1/2 rounded-full",
+                isLast ? "size-3 bg-current" : "size-[7px] border-[1.5px] border-current bg-background",
+              )}
+              style={{ left: `${point.x}%`, top: `${point.y}%` }}
+            />
+          );
+        })}
+        <span
+          className={cn(dataFont, "absolute left-0 -translate-y-full pb-2.5 text-[11px] leading-none text-muted-foreground")}
+          style={{ top: `${first.y}%` }}
+        >
+          {label(first.value)}
+        </span>
+        <span
+          className={cn(
+            dataFont,
+            "absolute right-0 -translate-y-full pb-3.5 text-[11.5px] font-semibold leading-none text-foreground",
+          )}
+          style={{ top: `${last.y}%` }}
+        >
+          {label(last.value)}
+        </span>
+      </div>
+      <div className="relative mt-3 h-3">
+        {lead.trendPeriods.map((period, index) => {
+          const isLatest = index === lastPeriodIndex;
+          const dropOnPhone = thinOnPhone && (lastPeriodIndex - index) % 2 === 1;
+          return (
+            <span
+              key={period}
+              className={cn(
+                dataFont,
+                "absolute top-0 whitespace-nowrap text-[10px] leading-none",
+                anchorClass(periodX[index]),
+                isLatest ? "font-semibold text-foreground" : "text-muted-foreground",
+                dropOnPhone ? "hidden sm:inline" : null,
+              )}
+              style={{ left: `${periodX[index]}%` }}
+            >
+              {compactPeriodLabel(period)}
+            </span>
           );
         })}
       </div>
@@ -630,52 +653,30 @@ function HeroBars({
   );
 }
 
-function HeroBand({
-  lead,
-  guide,
-}: {
-  lead: LeadMetric;
-  guide: NormalizedKeyVariableDeepTreatmentItem["guide"];
-}) {
-  const span = spanLabel(lead.shownPeriods);
+function HeroValue({ lead }: { lead: LeadMetric }) {
+  const span = spanLabel(lead.trendPeriods);
   const arrow = lead.change ? (lead.change.delta > 0 ? "▲" : lead.change.delta < 0 ? "▼" : "•") : null;
-  const pillLabel = thesisEffectPillLabel[lead.effect];
+  const tightSuffix = lead.unitSuffix === "%" || lead.unitSuffix.toLowerCase() === "x";
 
   return (
-    <div className="mt-5 grid grid-cols-1 gap-5 border-y border-border/60 py-[18px] sm:grid-cols-[auto_minmax(0,1fr)] sm:items-end sm:gap-7">
-      <div className="min-w-0">
-        <p className={cn(dataFont, "text-[10px] text-muted-foreground")}>
-          {lead.name} · {lead.latestPeriod}
-        </p>
-        <p className={cn(displayFont, "mt-1.5 text-[40px] leading-none tracking-[-0.02em] text-foreground")}>
-          {lead.unitPrefix ? <span>{lead.unitPrefix}</span> : null}
-          {lead.latestValue != null ? formatMetricNumber(lead.latestValue) : "—"}
-          {lead.unitSuffix ? (
-            <span className="ml-1 text-[18px] font-semibold tracking-normal text-foreground/80">
-              {lead.unitSuffix}
-            </span>
-          ) : null}
-        </p>
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          {lead.change ? (
-            <span className={cn(dataFont, "text-[11px] font-semibold", thesisEffectTextClass[lead.effect])}>
-              {arrow} {lead.change.label}
-              {span ? ` · ${span}` : ""}
-            </span>
-          ) : null}
-          {pillLabel ? (
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium leading-none",
-                thesisEffectTintClass[lead.effect],
-              )}
-            >
-              {pillLabel}
-            </span>
-          ) : null}
-        </div>
-      </div>
-      <HeroBars lead={lead} guide={guide} />
+    <div className="mt-5 flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
+      <p className={cn(displayFont, "text-[44px] leading-none tracking-[-0.03em] text-foreground sm:text-[54px]")}>
+        {lead.unitPrefix ? <span>{lead.unitPrefix}</span> : null}
+        {lead.latestValue != null ? formatMetricNumber(lead.latestValue) : "—"}
+        {lead.unitSuffix ? (
+          <span className={cn("text-[20px] tracking-[-0.01em] sm:text-[22px]", tightSuffix ? "ml-0.5" : "ml-1.5")}>
+            {lead.unitSuffix.toLowerCase() === "x" ? "×" : lead.unitSuffix}
+          </span>
+        ) : null}
+      </p>
+      {lead.change ? (
+        <span className={cn(dataFont, "text-[12.5px] font-semibold", thesisEffectTextClass[lead.effect])}>
+          {arrow} {lead.change.label}
+          {span ? (span.startsWith("since") ? ` ${span}` : ` in ${span}`) : ""}
+        </span>
+      ) : (
+        <span className={cn(dataFont, "text-[11px] text-muted-foreground")}>{lead.latestPeriod}</span>
+      )}
     </div>
   );
 }
@@ -766,51 +767,64 @@ function DeepCard({
   companyName?: string | null;
 }) {
   const lead = buildLeadMetric(item);
-  const eyebrowTone =
-    item.thesisRole && lead && lead.effect !== "neutral"
-      ? thesisEffectTextClass[lead.effect]
-      : "text-muted-foreground";
+  const roleTone =
+    lead && lead.effect !== "neutral" ? thesisEffectTextClass[lead.effect] : "text-foreground/80";
+  // With a verdict headline the variable's own name moves up into the eyebrow.
+  const eyebrowName = item.headline ? item.variable : (lead?.name ?? null);
+  const showEyebrowName =
+    eyebrowName != null && normalizeVariableName(eyebrowName) !== normalizeVariableName(item.headline ?? item.variable);
   const secondary =
     item.transition === "promoted" && item.transitionReason
       ? { lead: "Why promoted —", text: item.transitionReason }
       : item.whyItMattersNow
         ? { lead: "Why now —", text: item.whyItMattersNow }
         : null;
+  const otherRows = lead && item.kpiHistory ? item.kpiHistory.rows.length - 1 : 0;
+  const hasRead = Boolean(item.trendInterpretation || secondary || item.whatItTracks);
+  const hasMore = hasRead || otherRows > 0 || (lead != null && resolvePeriods(item.kpiHistory!).length > SHOWN_PERIODS);
 
   return (
-    <div className={cn(elevatedBlockClass, "flex flex-col rounded-[14px] px-5 py-5 sm:px-[22px]")}>
-      {/* Below sm the pills + feedback button take the row, so the eyebrow gets
-          its own line rather than being crushed to a word per line beside them. */}
-      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-        <div className="flex min-w-0 items-baseline gap-2.5">
-          <span className={cn(dataFont, "text-[11px] font-semibold text-muted-foreground")}>
-            {padIndex(index + 1)}
-          </span>
-          <span className={cn(eyebrowClass, "min-w-0", eyebrowTone)}>
-            {item.thesisRole ?? `Variable ${index + 1}`}
-          </span>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5 self-end sm:self-auto">
-          {item.transition === "promoted" ? (
-            <span
-              className={cn(
-                dataFont,
-                "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-none",
-                violetTint,
-              )}
-            >
-              ▲ Promoted this quarter
-            </span>
-          ) : item.transition === "retained" ? (
-            <span
-              className={cn(
-                dataFont,
-                "inline-flex items-center rounded-full border border-border/60 px-2 py-0.5 text-[10px] leading-none text-muted-foreground",
-              )}
-            >
-              Retained
-            </span>
+    <div className={cn(elevatedBlockClass, "flex flex-col rounded-[18px] px-5 py-6 sm:px-8 sm:py-7")}>
+      <div className="flex items-start justify-between gap-3">
+        <p className={cn(eyebrowClass, "min-w-0 pt-1 leading-[1.5] text-muted-foreground")}>
+          {item.thesisRole ? (
+            <span className={roleTone}>{item.thesisRole}</span>
+          ) : !showEyebrowName ? (
+            <span>Variable {index + 1}</span>
           ) : null}
+          {item.thesisRole && showEyebrowName ? <span aria-hidden="true"> · </span> : null}
+          {showEyebrowName ? <span>{eyebrowName}</span> : null}
+        </p>
+        {item.transition === "promoted" ? (
+          <span
+            className={cn(
+              dataFont,
+              "inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-none",
+              violetTint,
+            )}
+          >
+            ▲ New this quarter
+          </span>
+        ) : null}
+      </div>
+
+      <h4
+        className={cn(
+          displayFont,
+          "mt-3 text-balance text-[22px] leading-[1.15] tracking-[-0.025em] text-foreground sm:text-[27px]",
+        )}
+      >
+        {item.headline ?? item.variable}
+      </h4>
+
+      {lead ? <HeroValue lead={lead} /> : null}
+      {lead ? <HeroTrend lead={lead} guide={item.guide} /> : null}
+
+      {/* A card with a verdict headline keeps the read one tap away; a row
+          without one (every pipeline row today) has nothing else to say what the
+          line means, so its read stays open. */}
+      <div className="relative mt-6 min-h-11 border-t border-border/60 pt-2">
+        <div className="absolute right-0 top-2">
           <BlockFeedbackButton
             companyCode={companyCode}
             companyName={companyName}
@@ -820,33 +834,53 @@ function DeepCard({
             blockTitle={item.variable}
           />
         </div>
+        {hasMore ? (
+        <details className="group/read" open={!item.headline}>
+          <summary
+            className={cn(
+              eyebrowClass,
+              hoverColor,
+              "mr-28 flex h-7 cursor-pointer list-none items-center gap-2.5 rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden",
+            )}
+          >
+            <span>
+              The read
+              {otherRows > 0 ? (
+                <span className="font-medium normal-case tracking-normal">
+                  {" "}
+                  · {otherRows} more {otherRows === 1 ? "metric" : "metrics"}
+                </span>
+              ) : null}
+            </span>
+            <span aria-hidden="true" className="text-[12px] leading-none transition-transform duration-150 group-open/read:rotate-45">
+              +
+            </span>
+          </summary>
+          <div className="pt-3">
+            {item.trendInterpretation ? (
+              <p className="text-pretty text-[13.5px] leading-[1.55] text-foreground/90">
+                {item.trendInterpretation}
+              </p>
+            ) : null}
+            {item.whatItTracks ? (
+              <p className="mt-2.5 text-[12px] leading-relaxed text-muted-foreground">
+                <span className="font-semibold text-foreground/80">What it tracks —</span> {item.whatItTracks}
+              </p>
+            ) : null}
+            {secondary ? (
+              <p className="mt-2.5 text-[12px] leading-relaxed text-muted-foreground">
+                <span className="font-semibold text-foreground/80">{secondary.lead}</span> {secondary.text}
+              </p>
+            ) : null}
+            {lead ? (
+              <div className="mt-3.5">
+                <AlsoTrackedTable item={item} lead={lead} />
+              </div>
+            ) : null}
+          </div>
+        </details>
+        ) : null}
       </div>
-
-      <h4 className={cn(displayFont, "mt-3 text-[21px] leading-[1.2] tracking-[-0.02em] text-foreground")}>
-        {item.variable}
-      </h4>
-      {item.whatItTracks ? (
-        <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">{item.whatItTracks}</p>
-      ) : null}
-
-      {lead ? <HeroBand lead={lead} guide={item.guide} /> : null}
-      {lead ? <AlsoTrackedTable item={item} lead={lead} /> : null}
-
-      {item.trendInterpretation || secondary ? (
-        <div className="mt-3.5 border-t border-border/60 pt-4">
-          <p className={cn(eyebrowClass, "text-muted-foreground")}>The read</p>
-          {item.trendInterpretation ? (
-            <p className="mt-1.5 text-pretty text-[13.5px] leading-[1.55] text-foreground/90">
-              {item.trendInterpretation}
-            </p>
-          ) : null}
-          {secondary ? (
-            <p className="mt-2.5 text-[12px] leading-relaxed text-muted-foreground">
-              <span className="font-semibold text-foreground/80">{secondary.lead}</span> {secondary.text}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
     </div>
   );
 }
