@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import postcss, { type Rule } from "postcss";
-import ts from "typescript";
 
 // `.house-tokens` = the house palette + ink WITHOUT the paper ground, for a
 // house-skin component set inside a surface that paints its own background
@@ -12,9 +11,8 @@ import ts from "typescript";
 //      drift apart,
 //   2. `.house-tokens` never paints a background, while `.house` still does,
 //   3. every token the feed paints with resolves under that palette,
-//   4. the company page wraps the feed AND both summary cards in `.house-tokens`
-//      (and not in `.house`, which would drop an opaque paper block into the
-//      card).
+//   4. the company Announcements tab, which left the house skin on 2026-10-03,
+//      reads no house token or class (it has no scope to resolve them in).
 
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -116,7 +114,6 @@ const FEED_SOURCES = [
   "app/desk/desk-exchange-updates.tsx",
   "components/mobile-card.tsx",
   "lib/exchange-desk/types.ts", // IMPACT_META badge classes
-  "app/company/components/company-announcements-section.tsx",
 ];
 for (const path of FEED_SOURCES) {
   const used = new Set([...read(path).matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]));
@@ -127,90 +124,30 @@ for (const path of FEED_SOURCES) {
 }
 
 // ---------------------------------------------------------------------------
-// 5. Wiring: on the company page the feed sits inside `.house-tokens`, and no
-//    ancestor is a painting `.house`. Read from the TSX AST (the section is an
-//    async server component that fetches from Supabase, so it can't be
-//    rendered here).
+// 5. The company Announcements tab left the house skin on 2026-10-03: it now
+//    paints with the portal's own tokens (like Overview and Industry) and has
+//    no `.house-tokens` wrapper. So nothing on it may read a house custom
+//    property, a house class, or IMPACT_META's house-token badge classes —
+//    outside the scope they resolve to nothing and the pill paints blank.
 // ---------------------------------------------------------------------------
-{
-  const path = "app/company/components/company-announcements-section.tsx";
-  const source = ts.createSourceFile(path, read(path), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-
-  const attr = (el: ts.JsxOpeningLikeElement, name: string) =>
-    el.attributes.properties.find(
-      (p): p is ts.JsxAttribute => ts.isJsxAttribute(p) && p.name.getText(source) === name,
-    );
-  // Static className tokens: a plain string, or every string literal inside a
-  // {expression} (cn(...), a ternary) — enough to see whether a class is there.
-  const classTokens = (el: ts.JsxOpeningLikeElement): string[] => {
-    const init = attr(el, "className")?.initializer;
-    if (!init) return [];
-    const strings: string[] = [];
-    const visit = (n: ts.Node) => {
-      if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) strings.push(n.text);
-      n.forEachChild(visit);
-    };
-    visit(init);
-    return strings.flatMap((s) => s.split(/\s+/).filter(Boolean));
-  };
-
-  const usages = (name: string) => {
-    const out: ts.JsxSelfClosingElement[] = [];
-    const find = (n: ts.Node) => {
-      if (ts.isJsxSelfClosingElement(n) && n.tagName.getText(source) === name) out.push(n);
-      n.forEachChild(find);
-    };
-    find(source);
-    return out;
-  };
-  const ancestorClasses = (el: ts.Node) => {
-    const out: string[][] = [];
-    for (let n: ts.Node | undefined = el.parent; n; n = n.parent) {
-      if (ts.isJsxElement(n)) out.push(classTokens(n.openingElement));
-    }
-    return out;
-  };
-
-  const feeds = usages("DeskExchangeUpdates");
-  assert.equal(feeds.length, 1, "the company section renders the Exchange Desk feed once");
-  const variant = attr(feeds[0], "variant")?.initializer;
-  assert.ok(variant && ts.isStringLiteral(variant) && variant.text === "company", 'the feed uses variant="company"');
-
-  // The feed and the top-row composites (synthesis cards, or the plain cards
-  // they fall back to) paint with house tokens (IMPACT_META pills, --ink-soft
-  // labels, --signal hovers), so each one needs the scope. A card left outside
-  // it renders its impact pill black beside the coloured feed row.
-  for (const name of ["DeskExchangeUpdates", "AnnouncementPlainCards", "AnnouncementSynthesisCards"]) {
-    const [site, ...extra] = usages(name);
-    assert.ok(site && extra.length === 0, `the company section renders <${name}> once`);
-    const classes = ancestorClasses(site);
+const COMPANY_TAB_SOURCES = [
+  "app/company/components/company-announcements-section.tsx",
+  "app/company/components/announcement-tape.tsx",
+  "app/company/components/announcement-tokens.ts",
+];
+for (const path of COMPANY_TAB_SOURCES) {
+  const text = read(path);
+  for (const [, token] of text.matchAll(/var\((--[\w-]+)/g)) {
     assert.ok(
-      classes.some((c) => c.includes("house-tokens")),
-      `<${name}> must sit inside a .house-tokens wrapper, or its var(--ink-soft)/--rule/--signal are undefined`,
-    );
-    assert.ok(
-      classes.every((c) => !c.includes("house")),
-      `no .house ancestor on <${name}> — it paints an opaque paper block over the SectionCard`,
+      !lightTokens.has(token),
+      `${path} reads ${token}, a house token, but the tab has no .house-tokens scope`,
     );
   }
-
-  // Each composite renders its two cards exactly once, from its own body — so
-  // the wrapper check above covers every card that reads a house token.
-  const enclosingFunction = (n: ts.Node | undefined) => {
-    for (; n; n = n.parent) if (ts.isFunctionDeclaration(n)) return n.name?.getText(source);
-    return undefined;
-  };
-  const composites: [string, string[]][] = [
-    ["AnnouncementPlainCards", ["LatestSignal", "SignalMix"]],
-    ["AnnouncementSynthesisCards", ["QuarterInFilings", "TheOneThatMatters"]],
-  ];
-  for (const [composite, cards] of composites) {
-    for (const name of cards) {
-      const [site, ...extra] = usages(name);
-      assert.ok(site && extra.length === 0, `<${name}> is rendered once`);
-      assert.equal(enclosingFunction(site), composite, `<${name}> is rendered by ${composite}`);
-    }
-  }
+  assert.ok(!/["'`\s]house(-[a-z]+)?["'`\s]/.test(text), `${path} uses a house class outside a house scope`);
+  assert.ok(
+    !/IMPACT_META\[[^\]]+\]\.className/.test(text),
+    `${path} paints with IMPACT_META's house-token classes; use impactPillClass`,
+  );
 }
 
 console.log("house-tokens: all assertions passed");
