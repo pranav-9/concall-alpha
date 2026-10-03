@@ -13,9 +13,8 @@ import {
 import { formatCompactLabel } from "../[code]/display-tokens";
 import { SCROLL_MARGIN_TOP, SectionCard, SectionUpdatedAt } from "./section-card";
 import { MissingSectionState } from "./missing-section-state";
-import { BusinessSegmentsMosaic } from "./business-segments-mosaic";
 import { BusinessCompanyBackground } from "./business-company-background";
-import { BusinessMixHistory } from "./business-mix-history";
+import { BusinessMixShift } from "./business-mix-shift";
 import { HistoricalEconomicsDataPack } from "./deferred-company-sections";
 import { SegmentHistoryPanel } from "./segment-history-panel";
 import {
@@ -563,25 +562,28 @@ export function BusinessSnapshotSection({
                     supportingText={aboutSupportingText}
                   />
 
+                  {/* One card carries the segment story; the momentum data pack and the
+                      period tables wait behind its "Segment revenue history" disclosure. */}
                   <div id={SNAPSHOT_ANCHORS.segments} style={anchorStyle()} data-gate-cut>
-                    <BusinessSegmentsMosaic segments={segmentEntries} />
+                    <BusinessMixShift
+                      segments={segmentEntries}
+                      history={historicalEconomics?.revenueMixHistoryBySegment ?? null}
+                      summary={snapshot.mixShiftSummary}
+                    >
+                      {historicalEconomics || hasHistoricalEconomicsSource ? (
+                        <div id={SNAPSHOT_ANCHORS.momentum} style={anchorStyle()}>
+                          {historicalEconomics
+                            ? renderHistoricalEconomicsCard(historicalEconomics)
+                            : renderHistoricalEconomicsUnavailableCard()}
+                        </div>
+                      ) : null}
+                      <SegmentHistoryPanel
+                        quarterly={snapshot.segmentHistoryQuarterly}
+                        annual={snapshot.segmentHistoryAnnual}
+                        revenueMixHistoryBySegment={historicalEconomics?.revenueMixHistoryBySegment ?? null}
+                      />
+                    </BusinessMixShift>
                   </div>
-                  <BusinessMixHistory
-                    history={historicalEconomics?.revenueMixHistoryBySegment ?? null}
-                    segments={segmentEntries}
-                  />
-                  {historicalEconomics || hasHistoricalEconomicsSource ? (
-                    <div id={SNAPSHOT_ANCHORS.momentum} style={anchorStyle()}>
-                      {historicalEconomics
-                        ? renderHistoricalEconomicsCard(historicalEconomics)
-                        : renderHistoricalEconomicsUnavailableCard()}
-                    </div>
-                  ) : null}
-                  <SegmentHistoryPanel
-                    quarterly={snapshot.segmentHistoryQuarterly}
-                    annual={snapshot.segmentHistoryAnnual}
-                    revenueMixHistoryBySegment={historicalEconomics?.revenueMixHistoryBySegment ?? null}
-                  />
                 </div>
               ) : hasLegacyBusinessSnapshot ? (
                 <>
