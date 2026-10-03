@@ -20,6 +20,22 @@ const disclosureClass = "group inline-block max-w-full";
 const summaryClass = "inline-flex min-h-8 cursor-pointer list-none items-center gap-1 rounded-sm text-xs font-medium text-foreground/60 underline decoration-border underline-offset-4 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden";
 const anchorStyle = { scrollMarginTop: SCROLL_MARGIN_TOP };
 
+function SourceLinks({ sources }: { sources: ProfileSource[] }) {
+  return (
+    <ul className="space-y-2 pb-1 text-xs leading-relaxed">
+      {sources.map((source, index) => (
+        <li key={`${source.url}-${index}`}>
+          <a href={source.url} target="_blank" rel="noopener noreferrer" className="break-words text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            {source.label}{source.locator ? ` · ${source.locator}` : ""}
+            <ExternalLink className="ml-1 inline h-3 w-3" aria-hidden />
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Sources({ sources }: { sources: ProfileSource[] }) {
   return (
     <details className={disclosureClass}>
@@ -27,17 +43,7 @@ function Sources({ sources }: { sources: ProfileSource[] }) {
         {sources.length === 1 ? "Source" : `Sources (${sources.length})`}
         <ChevronDown className="h-3 w-3 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden />
       </summary>
-      <ul className="space-y-2 pb-1 text-xs leading-relaxed">
-        {sources.map((source, index) => (
-          <li key={`${source.url}-${index}`}>
-            <a href={source.url} target="_blank" rel="noopener noreferrer" className="break-words text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              {source.label}{source.locator ? ` · ${source.locator}` : ""}
-              <ExternalLink className="ml-1 inline h-3 w-3" aria-hidden />
-              <span className="sr-only"> (opens in a new tab)</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+      <SourceLinks sources={sources} />
     </details>
   );
 }
@@ -170,11 +176,30 @@ export function BusinessCompanyBackground({
                 <span aria-hidden className={`absolute -left-[6.5px] top-[5px] h-3 w-3 rounded-full border-2 border-emerald-600 dark:border-emerald-400/80 lg:-top-[6.5px] lg:left-0 ${index === timeline.length - 1 ? "bg-emerald-600 dark:bg-emerald-400/80" : "bg-background"}`} />
                 <p className="text-[17px] font-bold leading-tight tracking-tight tabular-nums text-foreground">{event.year}</p>
                 <p className="mt-1 break-words text-[13px] leading-snug text-foreground/70">{event.title}</p>
-                {event.detail ? <p className={`mt-2 break-words text-xs leading-relaxed ${quietClass}`}>{event.detail}</p> : null}
-                <Sources sources={event.sources} />
               </li>
             ))}
           </ol>
+          {/* The row stays year + title; each milestone's note and citations wait behind one disclosure. */}
+          <details className="group mt-4">
+            <summary className={summaryClass}>
+              {timeline.some((event) => event.detail) ? "Milestone details and sources" : "Milestone sources"}
+              <ChevronDown className="h-3 w-3 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden />
+            </summary>
+            <dl className="mt-1 grid gap-x-8 sm:grid-cols-2">
+              {timeline.map((event, index) => (
+                <div key={`${event.year}-${index}`} className="min-w-0 border-t border-border/35 py-3">
+                  <dt className="text-[13px] leading-snug text-foreground">
+                    <span className="mr-2 font-bold tabular-nums">{event.year}</span>
+                    {event.title}
+                  </dt>
+                  <dd className="mt-1.5 space-y-2">
+                    {event.detail ? <p className={`break-words text-xs leading-relaxed ${quietClass}`}>{event.detail}</p> : null}
+                    <SourceLinks sources={event.sources} />
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </details>
         </section>
       ) : null}
 
