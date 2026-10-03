@@ -192,4 +192,32 @@ test("timeline: absent when the profile has no milestones", () => {
   assert.ok(!html.includes("How it got here"));
 });
 
+// ---------------------------------------------------------------------------
+// The profile card
+// ---------------------------------------------------------------------------
+test("profile: leads with customer concentration and geography only; the rest wait under the disclosure", () => {
+  const fact = (category: string, title: string, extra: Record<string, unknown> = {}) => ({ category, title, text: `${title} text.`, period: "FY26", sources: [source], ...extra });
+  const mix = [{ label: "Top 5", value: 62, unit: "%" }, { label: "6-10", value: 12, unit: "%" }, { label: "Others", value: 26, unit: "%" }];
+  const html = render({ ...base, business_facts: [
+    fact("business_model", "How it earns"),
+    fact("customers", "Revenue by end-user industry"),
+    fact("customers", "Customer concentration", { metrics: mix }),
+    fact("geography", "Exports are 22% of revenue", { metrics: [{ label: "Export share", value: 22, unit: "% of revenue" }] }),
+    fact("footprint", "Two plants"),
+  ] });
+  const card = html.slice(html.indexOf("id=\"business-overview-profile\""));
+  const lead = card.slice(0, card.indexOf("More business facts"));
+  assert.ok(lead.includes("Customers &amp; concentration") && lead.includes("Geographic breakup"));
+  assert.ok(lead.includes(">Customer concentration<") && !lead.includes("Revenue by end-user industry"), "the concentration fact wins the customers slot");
+  assert.equal(lead.split("<circle").length - 1, 3, "a share mix adding to 100 draws as a donut");
+  assert.ok(lead.includes("22% of revenue"), "a lone metric is a headline number");
+  assert.ok(!lead.includes("How it earns") && !lead.includes("Two plants"));
+  assert.ok(card.includes("More business facts (3)") && card.includes("How it earns") && card.includes("Revenue by end-user industry"));
+});
+
+test("profile: with neither a customers nor a geography fact, the facts render as a plain grid", () => {
+  const html = render({ ...base, business_facts: [{ category: "footprint", title: "Two plants", text: "Two plants.", period: "FY26", sources: [source] }] });
+  assert.ok(html.includes("Two plants") && !html.includes("More business facts") && !html.includes("Geographic breakup"));
+});
+
 console.log("business company background: split card, change stat and timeline passed");
