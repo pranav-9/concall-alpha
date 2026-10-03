@@ -4,16 +4,13 @@ import path from "node:path";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import {
-  AnnouncementPlainCards,
-  AnnouncementSynthesisCards,
-} from "@/app/company/components/company-announcements-section";
+import { CompanyAnnouncementsBody } from "@/app/company/components/company-announcements-section";
 import { normalizeAnnouncementDigest } from "@/lib/announcement-digest/normalize";
 import type { AnnouncementDigestRow } from "@/lib/announcement-digest/types";
 import { getCompanyExchangeDeskData } from "@/lib/exchange-desk";
 import { createClient } from "@/lib/supabase/server";
 
-// Dev-only preview for the Announcements tab's synthesis cards. Reads the
+// Dev-only preview for the Announcements tab (cards, history chart and tape). Reads the
 // announcement_digest_v1 sandbox record that
 // concallyser/scripts/synthesize_announcements.py writes to
 // /tmp/sandbox_announcement_digest/<CODE>.json (so a digest can be checked
@@ -102,22 +99,16 @@ export default async function AnnouncementDigestPreview({
         {sandbox && sandbox.status !== "ok" ? (
           <p className="rounded-md border border-dashed border-border/60 p-3 text-xs text-muted-foreground">
             Sandbox status <span className="font-medium text-foreground">{sandbox.status}</span>
-            {sandbox.error ? ` — ${sandbox.error}` : ""}. The tab renders its plain cards.
+            {sandbox.error ? ` — ${sandbox.error}` : ""}. The tab renders its tape-fact cards.
           </p>
         ) : null}
         {result.error ? (
-          <p className="rounded-md border border-dashed border-[var(--alarm)] p-3 text-xs text-[var(--alarm)]">
+          <p className="rounded-md border border-dashed border-rose-500 p-3 text-xs text-rose-600 dark:text-rose-300">
             {result.error}
           </p>
         ) : null}
       </div>
-      <div className="house-tokens">
-        {result.digest ? (
-          <AnnouncementSynthesisCards digest={result.digest} data={tape} />
-        ) : (
-          <AnnouncementPlainCards data={tape} />
-        )}
-      </div>
+      <CompanyAnnouncementsBody data={tape} digest={result.digest} />
     </main>
   );
 }
