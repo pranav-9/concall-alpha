@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  buildTrendGeometry,
+  compactPeriodLabel,
+  formatTrendChange,
+  formatValueWithUnit,
   classifyUnit,
   firstSentence,
   formatFirstToLatestChange,
@@ -83,4 +87,48 @@ test("firstSentence stops at the first terminal punctuation", () => {
   assert.equal(firstSentence("Defence WIP rose three quarters running. Every 10 days is ₹25 cr."), "Defence WIP rose three quarters running.");
   assert.equal(firstSentence("No terminal punctuation here"), "No terminal punctuation here");
   assert.equal(firstSentence("Up ~1.5x vs FY25. Next?"), "Up ~1.5x vs FY25.");
+});
+
+test("compactPeriodLabel shortens quarter labels and leaves years alone", () => {
+  assert.equal(compactPeriodLabel("Q2 FY25"), "Q2'25");
+  assert.equal(compactPeriodLabel("H1 FY2026"), "H1'26");
+  assert.equal(compactPeriodLabel("FY24"), "FY24");
+  assert.equal(compactPeriodLabel("Sep 2025"), "Sep 2025");
+});
+
+test("formatTrendChange reads a doubling as a multiple, everything else as before", () => {
+  assert.deepEqual(formatTrendChange(410, 860, "amount"), { label: "2.1×", delta: 450 });
+  assert.deepEqual(formatTrendChange(590, 860, "amount"), { label: "+46%", delta: 270 });
+  assert.deepEqual(formatTrendChange(104, 146, "days"), { label: "+42 days", delta: 42 });
+  assert.equal(formatTrendChange(null, 146, "days"), null);
+  // a negative base never becomes a multiple
+  assert.equal(formatTrendChange(-10, 30, "amount")?.label, "+400%");
+});
+
+test("formatValueWithUnit words the point labels", () => {
+  assert.equal(formatValueWithUnit(860, "₹", "cr"), "₹860 cr");
+  assert.equal(formatValueWithUnit(146, "", "days"), "146 d");
+  assert.equal(formatValueWithUnit(24.5, "", "%"), "24.5%");
+  assert.equal(formatValueWithUnit(1.7, "", "x"), "1.7×");
+  assert.equal(formatValueWithUnit(40, "", "of revenue"), "40");
+});
+
+test("buildTrendGeometry places points, skips gaps and keeps the guide label off the line", () => {
+  const periods = ["Q3 FY26", "Q4 FY26", "Q1 FY27", "Q2 FY27"];
+  const geometry = buildTrendGeometry(periods, [104, null, 118, 146], 120);
+  assert.ok(geometry);
+  assert.deepEqual(geometry.points.map((p) => p.index), [0, 2, 3]);
+  assert.equal(geometry.points[0].x, 0);
+  assert.equal(geometry.points[2].x, 100);
+  // higher value sits higher (smaller y), everything inside the box
+  assert.ok(geometry.points[2].y < geometry.points[0].y);
+  assert.ok(geometry.points.every((p) => p.y > 0 && p.y < 100));
+  assert.ok(geometry.guideY != null && geometry.guideY > geometry.points[2].y);
+  // the inner point (118) is under the guide, so the label rides above the line there
+  assert.deepEqual(geometry.guideLabel, { x: geometry.points[1].x, side: "above" });
+  // every inner point over the guide → label goes below
+  assert.equal(buildTrendGeometry(periods, [130, 140, 150, 160], 120)?.guideLabel?.side, "below");
+  // flat series and single values
+  assert.ok(buildTrendGeometry(["FY24", "FY25"], [35, 35]));
+  assert.equal(buildTrendGeometry(["FY24", "FY25"], [35, null]), null);
 });
