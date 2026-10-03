@@ -75,7 +75,6 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow, hasJournal:
   // is label-only.
   return [
     SECTION_MAP.overview,
-    SECTION_MAP.companyAnnouncements,
     SECTION_MAP.businessSnapshot,
     SECTION_MAP.industryContext,
     SECTION_MAP.quality,
@@ -111,9 +110,11 @@ function buildSidebarSections(overview: CompanyPageOverviewCacheRow, hasJournal:
     // Community tab retired for now — no engagement (1 comment total as of 2026-07).
     // Component + API routes + Supabase tables kept intact; re-enable when ready.
     // { ...SECTION_MAP.community },
-    // Last, and only when the Journal has a post on this company — an empty tab
+    // Only when the Journal has a post on this company — an empty tab
     // on the ~75% of pages without one would be a dead click.
     ...(hasJournal ? [SECTION_MAP.companyJournal] : []),
+    // Announcements is the last tab (decision 2026-10-03; it was second).
+    SECTION_MAP.companyAnnouncements,
   ];
 }
 
@@ -181,12 +182,6 @@ export default async function Page({
               companyName={overview.company_name}
               className="mt-4"
             />
-          </div>
-
-          <div data-section-id="company-announcements">
-            <Suspense fallback={<SectionLoading id="company-announcements" title="Announcements" size="block" />}>
-              <CompanyAnnouncementsSection overview={overview} />
-            </Suspense>
           </div>
 
           <div data-section-id="business-overview">
@@ -267,6 +262,12 @@ export default async function Page({
               />
             </div>
           ) : null}
+
+          <div data-section-id="company-announcements">
+            <Suspense fallback={<SectionLoading id="company-announcements" title="Announcements" size="block" />}>
+              <CompanyAnnouncementsSection overview={overview} />
+            </Suspense>
+          </div>
 
           {/* Community panel retired for now — re-enable alongside the
               tab nav entry above when ready. */}
