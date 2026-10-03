@@ -26,10 +26,9 @@ import {
 import { KpiSparkline } from "./kpi-sparkline-lazy";
 import { getDeltaToneClass } from "./delta-tone";
 // Single source of segment color so a series keeps one hue across the whole
-// Business Snapshot section (the mix strip, the card dots, and these charts).
-// Colors align by sorted position; exact name-keyed identity across the mix
-// strip (which groups to maxSlices + Others) and these ungrouped charts only
-// holds for the top series, which is acceptable.
+// Business Snapshot section (the Mix shift card and these charts). Colors align
+// by sorted position, so name-keyed identity across the two only holds when
+// both sort the segments the same way, which is acceptable.
 import { colorPalette as unitPalette } from "./business-segment-mix-constants";
 import { formatPeriodDelta, getPeriodOverPeriodDelta } from "@/lib/period-delta";
 import {

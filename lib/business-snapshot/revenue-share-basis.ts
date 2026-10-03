@@ -11,7 +11,7 @@ type ShareItem = Pick<NormalizedRevenueBreakdownItem, "revenueSharePercent"> & {
   revenueShareBasis?: RevenueShareBasis | null;
 };
 
-// Tooltip shared by the mix-bar caption and the segment cards.
+// Tooltip on the "derived" cue beside a share.
 export const DERIVED_SHARE_TITLE = "Not a reported segment split — derived from management's own figures";
 
 // Only the two known values pass; anything else reads as no basis (disclosed).
@@ -21,18 +21,6 @@ export const parseRevenueShareBasis = (value: unknown): RevenueShareBasis | null
   return basis === "reported" || basis === "derived" ? basis : null;
 };
 
-// A share that is shown and was derived, not reported (the segment cards).
+// A share that is shown and was derived, not reported (the Mix shift card).
 export const isDerivedShare = (item: ShareItem): boolean =>
   item.revenueShareBasis === "derived" && item.revenueSharePercent != null;
-
-// The mix bar's caption word after its total: "derived" once any segment that
-// fills the bar (share > 0) is derived, otherwise today's "disclosed".
-export const revenueMixCaptionWord = (segments: ShareItem[]): "derived" | "disclosed" =>
-  segments.some(
-    (segment) =>
-      typeof segment.revenueSharePercent === "number" &&
-      segment.revenueSharePercent > 0 &&
-      segment.revenueShareBasis === "derived",
-  )
-    ? "derived"
-    : "disclosed";
