@@ -1,10 +1,11 @@
 import type { CSSProperties } from "react";
 import { ChevronDown, ExternalLink } from "lucide-react";
 import type { NormalizedAboutCompany } from "@/lib/business-snapshot/types";
-import type { BusinessFact, ChangeStat, ProfileSource } from "@/lib/business-snapshot/profile";
+import type { BusinessFact, ChangeStat, FactMetric, ProfileSource } from "@/lib/business-snapshot/profile";
 import { elevatedBlockClass } from "./surface-tokens";
 import { SCROLL_MARGIN_TOP } from "./section-card";
 import { FactMetricBar, formatMetric } from "./fact-metric-bar";
+import { colorPalette } from "./business-segment-mix-constants";
 
 const labelBase = "text-[11px] font-semibold uppercase tracking-[0.14em]";
 // text-foreground/60, not text-muted-foreground: this small text now sits on the section wash and the
@@ -75,6 +76,79 @@ function FactGrid({ facts }: { facts: BusinessFact[] }) {
   );
 }
 
+// The profile card leads with two facts only: who buys (customer concentration) and where it sells
+// (geographic breakup). A company can carry several facts per category, so customers prefers the one
+// whose title is about concentration; everything else waits under "More business facts".
+const LEAD_FACTS: { category: BusinessFact["category"]; label: string; prefer: RegExp }[] = [
+  { category: "customers", label: "Customers & concentration", prefer: /concentrat|top[ -]?\d|top customer|largest/i },
+  { category: "geography", label: "Geographic breakup", prefer: /export|domestic|geograph|region|countr/i },
+];
+const pickLeadFacts = (facts: BusinessFact[]) =>
+  LEAD_FACTS.flatMap(({ category, label, prefer }) => {
+    const candidates = facts.filter((fact) => fact.category === category);
+    const fact = candidates.find((candidate) => prefer.test(candidate.title)) ?? candidates[0];
+    return fact ? [{ fact, label }] : [];
+  });
+
+// A donut only when the metrics are parts of one whole: all percentages, adding up to ~100.
+const isShareMix = (metrics: FactMetric[]) =>
+  metrics.length >= 2 && metrics.every((metric) => metric.unit.trim().startsWith("%")) &&
+  Math.abs(metrics.reduce((sum, metric) => sum + metric.value, 0) - 100) <= 1;
+
+const numberOnly = (metric: FactMetric) => new Intl.NumberFormat("en-IN", { maximumFractionDigits: 1 }).format(metric.value);
+
+function ShareDonut({ metrics }: { metrics: FactMetric[] }) {
+  let offset = 0;
+  return (
+    <div className="mt-3 flex min-w-0 items-center gap-5">
+      <div className="relative h-24 w-24 shrink-0">
+        <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90" role="img" aria-label={`${metrics.map((metric) => `${metric.label} ${formatMetric(metric)}`).join(", ")}.`}>
+          {metrics.map((metric, index) => {
+            const dash = <circle key={`${metric.label}-${index}`} cx="18" cy="18" r="15.915" fill="none" strokeWidth="5" stroke={colorPalette[index % colorPalette.length]} strokeDasharray={`${metric.value} ${100 - metric.value}`} strokeDashoffset={-offset} />;
+            offset += metric.value;
+            return dash;
+          })}
+        </svg>
+        <p className="absolute inset-0 flex items-center justify-center text-base font-bold tabular-nums text-foreground">{numberOnly(metrics[0])}%</p>
+      </div>
+      <ul className="min-w-0 flex-1 space-y-1.5 text-[13px]">
+        {metrics.map((metric, index) => (
+          <li key={`${metric.label}-${index}`} className="flex items-center gap-2">
+            <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colorPalette[index % colorPalette.length] }} />
+            <span className="min-w-0 flex-1 break-words text-foreground/85">{metric.label}</span>
+            <span className="tabular-nums text-foreground">{numberOnly(metric)}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function LeadFact({ fact, label }: { fact: BusinessFact; label: string }) {
+  const metrics = fact.metrics ?? [];
+  return (
+    <div className="min-w-0 border-t border-border/35 py-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <p className={labelClass}>{label}</p>
+        <p className={`text-xs ${quietClass}`}>{fact.period}</p>
+      </div>
+      <h4 className="mt-2 break-words text-sm font-semibold leading-snug text-foreground">{fact.title}</h4>
+      {isShareMix(metrics) ? <ShareDonut metrics={metrics} /> : metrics.length > 0 ? (
+        <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+          {metrics.map((metric, index) => (
+            <div key={`${metric.label}-${index}`} className="min-w-0">
+              <dd className="text-2xl font-bold leading-none tracking-tight tabular-nums text-foreground">{formatMetric(metric)}</dd>
+              <dt className={`mt-1 break-words text-xs ${quietClass}`}>{metric.label}</dt>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      <p className={`${panelCopyClass} mt-3 break-words`}>{fact.text}</p>
+      <Sources sources={fact.sources} />
+    </div>
+  );
+}
+
 // One side of a "from to" period: FY24, H1 FY26, 9M FY26, March 2026, 30 June, 11 August 2026.
 const PERIOD_SIDE = /^(?:(?:[HQ][1-4]|[1-9]M)\s+)?FY\s?\d{2,4}$|^(?:\d{1,2}\s+)?[A-Za-z]+\s+\d{4}$|^\d{1,2}\s+[A-Za-z]+$/i;
 
@@ -127,6 +201,11 @@ export function BusinessCompanyBackground({
     ? supportingText : null;
   const timeline = about?.timeline ?? [];
   const facts = about?.facts ?? [];
+  const leadFacts = pickLeadFacts(facts);
+  // With neither lead fact, the first four show as a plain grid, as before.
+  const restFacts = facts.filter((fact) => !leadFacts.some((lead) => lead.fact === fact));
+  const gridFacts = leadFacts.length > 0 ? [] : restFacts.slice(0, 4);
+  const moreFacts = restFacts.slice(gridFacts.length);
 
   return (
     <>
@@ -207,11 +286,15 @@ export function BusinessCompanyBackground({
         <section id="business-overview-profile" style={anchorStyle} aria-labelledby="business-profile-heading" className={`${elevatedBlockClass} p-4 sm:p-5`}>
           <p className={labelClass}>Business profile</p>
           <h3 id="business-profile-heading" className="mb-3 mt-1 text-base font-semibold text-foreground">The facts behind the business</h3>
-          <FactGrid facts={facts.slice(0, 4)} />
-          {facts.length > 4 ? (
+          {leadFacts.length > 0 ? (
+            <div className={`grid gap-x-8 ${leadFacts.length > 1 ? "sm:grid-cols-2" : ""}`}>
+              {leadFacts.map(({ fact, label }) => <LeadFact key={fact.category} fact={fact} label={label} />)}
+            </div>
+          ) : <FactGrid facts={gridFacts} />}
+          {moreFacts.length > 0 ? (
             <details>
-              <summary className={summaryClass}>More business facts ({facts.length - 4})</summary>
-              <FactGrid facts={facts.slice(4)} />
+              <summary className={summaryClass}>More business facts ({moreFacts.length})</summary>
+              <FactGrid facts={moreFacts} />
             </details>
           ) : null}
         </section>
