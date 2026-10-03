@@ -118,3 +118,25 @@ test("card: no segments and no history renders only the history it was given", (
 });
 
 console.log("business mix shift: headline, chart years, fallback and card passed");
+
+// KRN 2026-10-03: the history is domestic vs export, the segments are product lines. The product
+// segments must survive as their own list instead of being dropped by the history branch.
+test("segments on a different axis from the history are kept as product lines", () => {
+  const geo = history(years, { "Domestic Sales": [90, 89, 85, 84, 83], "Export Sales": [10, 11, 15, 16, 17] });
+  const products = [segment("Bus AC Systems", null, { description: "Bus air-conditioners." }), segment("Fin & Tube Heat Exchangers", 95)];
+  const view = buildMixShiftView(products, geo);
+  assert.ok(view);
+  assert.deepEqual(view.rows.map((row) => row.name), ["Domestic Sales", "Export Sales"]);
+  assert.deepEqual(view.lines?.map((line) => [line.name, line.share]), [["Fin & Tube Heat Exchangers", 95], ["Bus AC Systems", null]]);
+  const html = renderToStaticMarkup(React.createElement(BusinessMixShift, { segments: products, history: geo, summary: null }));
+  assert.ok(html.includes("By product line") && html.includes("Fin &amp; Tube Heat Exchangers") && html.includes("Bus air-conditioners."));
+});
+
+test("segments that match the history rows are not repeated as product lines", () => {
+  const view = buildMixShiftView(segments, mix);
+  assert.deepEqual(view?.lines, []);
+  // same axis, named twice (AETHER live row): no duplicate list
+  const renamed = buildMixShiftView([segment("Contract/Exclusive Manufacturing (CEM)", 60), segment("Large-Scale Manufacturing (LSM)", 40)],
+    history(years, { CEM: [50, 52, 55, 58, 60], LSM: [50, 48, 45, 42, 40] }));
+  assert.deepEqual(renamed?.lines, []);
+});
