@@ -11,6 +11,7 @@ const percent = (value: number) => `${numberFormatter.format(value)}%`;
 const keyOf = (name: string) => name.trim().toLowerCase();
 const marginLabels: Record<string, string> = { high_margin: "High margin", improving: "Improving", pre_scale: "Pre-scale", drag: "Margin drag" };
 const quietClass = "text-foreground/60";
+const GEOGRAPHY_OR_TOTAL = /\b(domestic|export|exports|india|overseas|international|global|rest of (the )?world|asia|europe|america|africa|middle east|gulf|uae|usa|us|uk|china|japan|consolidated|total)\b/i;
 const labelClass = `text-[11px] font-semibold uppercase tracking-[0.14em] ${quietClass}`;
 
 export type MixShiftView = {
@@ -23,6 +24,9 @@ export type MixShiftView = {
   years: string[];
   /** Largest latest share first. `points` holds one share per chart year (null = not disclosed that year). */
   rows: { name: string; latest: number | null; first: number | null; points: (number | null)[]; margin: string | null; derived: boolean; description: string | null }[];
+  /** Business segments on a different axis from the history (KRN: the history is domestic vs export,
+   * the segments are product lines). Shown as their own list so the product cards are not dropped. */
+  lines?: { name: string; share: number | null; derived: boolean; description: string | null }[];
 };
 
 // Shares read as everyday fractions ("under a third", "nearly half"). A share too small or too
@@ -97,8 +101,18 @@ export function buildMixShiftView(
     const mover = gainer && moves[0] && gainer.delta >= 0.6 * Math.abs(moves[0].delta) ? gainer : moves[0];
     const years = periods.map((period) => period.year);
     const [from, to] = [years[0], years[years.length - 1]];
+    // A geographic (domestic / export / region) or total-only history describes a different axis from
+    // product segments, so the segments are kept as their own list. Name matching alone is not enough:
+    // most mismatches are the same axis named twice ("CEM" vs "Contract/Exclusive Manufacturing (CEM)").
+    const historyKeys = new Set(names.map(keyOf));
+    const lines = segments.length > 0 && names.every((name) => GEOGRAPHY_OR_TOTAL.test(name))
+      && segments.every((segment) => !historyKeys.has(keyOf(segment.name)))
+      ? [...segments]
+          .sort((a, b) => (b.revenueSharePercent ?? -1) - (a.revenueSharePercent ?? -1))
+          .map((segment) => ({ name: segment.name, share: segment.revenueSharePercent, derived: isDerivedShare(segment), description: segment.description ?? null }))
+      : [];
     if (!mover || Math.abs(Math.round(mover.delta)) < 2) {
-      return { headline: `The revenue mix has barely moved since ${from}.`, summary: null, stat: null, years, rows };
+      return { headline: `The revenue mix has barely moved since ${from}.`, summary: null, stat: null, years, rows, lines };
     }
     const rose = mover.delta > 0;
     const [before, after] = [shareInWords(mover.first), shareInWords(mover.latest, rose)];
@@ -125,6 +139,7 @@ export function buildMixShiftView(
       stat: { points: Math.round(mover.delta), label: `${mover.name} share`, from, to },
       years,
       rows,
+      lines,
     };
   }
 
@@ -187,7 +202,8 @@ export function BusinessMixShift({ segments, history, revenue = null, summary, c
   const latestYear = hasChart ? view.years[view.years.length - 1] : null;
   const subline = summary ?? view.summary;
   const hasMargin = view.rows.some((row) => row.margin);
-  const described = view.rows.filter((row) => row.description);
+  const lines = view.lines ?? [];
+  const described = [...view.rows, ...lines].filter((row) => row.description);
 
   return (
     <section className={`${elevatedBlockClass} p-4 sm:p-5`} aria-labelledby="business-mix-shift-heading">
@@ -238,6 +254,24 @@ export function BusinessMixShift({ segments, history, revenue = null, summary, c
           </tbody>
         </table>
       </div>
+
+      {lines.length > 0 ? (
+        <div className="mt-5">
+          <p className={labelClass}>By product line</p>
+          <ul className="mt-2 grid gap-x-8 sm:grid-cols-2">
+            {lines.map((line) => (
+              <li key={line.name} className="flex min-w-0 items-baseline gap-3 border-t border-border/35 py-2 text-[13px]">
+                <span className="w-10 shrink-0 font-bold tabular-nums text-foreground">{line.share != null ? percent(line.share) : "—"}</span>
+                <span className="min-w-0 break-words text-foreground/85">{line.name}</span>
+                {line.derived ? <span title={DERIVED_SHARE_TITLE} className={`text-[10px] ${quietClass}`}>derived</span> : null}
+              </li>
+            ))}
+          </ul>
+          {lines.some((line) => line.share == null) ? (
+            <p className={`mt-2 text-[11px] leading-snug ${quietClass}`}>— the company does not split revenue for this line.</p>
+          ) : null}
+        </div>
+      ) : null}
 
       {children || described.length > 0 ? (
         <details className="group mt-4">

@@ -51,6 +51,12 @@ test("milestone headings: first matching rule wins; an unrecognised title gets n
     ["Acquires Hyd-Air Engineering", "Acquisition"], ["Expands skid capacity to 9,000 units", "Capacity"], ["Received a Rs. 504 crore Kaiga 5 & 6 order", "Order win"],
     ["Earns AS9100 / defence qualification", "Approval"], ["R&D centre opened in Bangalore", "R&D"], ["Kurlon merger completed with the Registrar of Companies", "Merger"],
     ["Starts making fasteners", "New line"], ["Credit rating raised from A+ to AA-", "Rating"], ["Something nobody anticipated", null],
+    // "began" alone is not a founding (KRN 2026-10-03; live titles from the fleet)
+    ["Began exporting", "Overseas"], ["Plant II at subsidiary KRN HVAC Products began operating on 31 May 2025", "Capacity"],
+    ["Second plant at Kuthrel began operating in FY2025, adding GP coils", "Capacity"], ["Began making generators in Istanbul, Turkey", "New line"],
+    ["Begins supplying crankshafts for SUVs, entering passenger vehicles", "New line"], ["Begins manufacturing for Indian defence companies", "New line"],
+    ["Began operations in Chhattisgarh as Sambhv Sponge Power, making sponge iron", "Founded"], ["Exchange began operations", "Founded"],
+    ["Operations began with the first SMT line", "Founded"], ["Begins with telecom electronics", "Founded"], ["Began its precision-engineering journey", "Founded"],
   ];
   for (const [title, label] of cases) assert.equal(milestoneLabel(title), label, title);
 });

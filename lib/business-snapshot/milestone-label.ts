@@ -14,7 +14,10 @@ const RULES: [string, RegExp][] = [
   ["Order win", /\borders?\b|contract|\bwins\b|awarded|supply agreement|\bloi\b/],
   ["Approval", /approv|certif|accredit|qualif|licen[cs]e|clearance|usfda|inspection|consent|exempts/],
   ["R&D", /r&d|research cent|research and development|\blabs?\b/],
-  ["Founded", /\bfound|incorporat|\bestablish|set up as|\bbegins\b|\bbegan\b|inception|starts with|starts as|started as|started in|started by|starts its first|commences business/],
+  // "began"/"begins" alone is not a founding: a plant "began operating", a company "began exporting".
+  // Only an operations/business start is (KRN 2026-10-03: both read "Founded"); began making/supplying is a new line.
+  ["New line", /\b(?:began|begins) (?:making|producing|supplying|manufacturing)\b/],
+  ["Founded", /\bfound|incorporat|\bestablish|set up as|\b(?:began|begins) (?:operations|business|trading|its|with)\b|operations began|inception|starts with|starts as|started as|started in|started by|starts its first|commences business/],
   ["Capacity", /plant|facility|capacity|commission|inaugurat|expan|factory|\bunits?\b|\blines?\b|greenfield|brownfield|capex|campus|\bsite\b|\bmill\b|groundbreaking|\bkl\b|mtpa/],
   ["New line", /launch|introduc|\benter(s|ed)?\b|entry into|new product|new business|diversif|foray|starts making|started|\badded\b|\badds\b|localis/],
   ["First delivery", /\bfirst\b.*(deliver|shipment|system|cluster|sale)|deliver(s|ed)? its first|deployed/],
