@@ -186,6 +186,13 @@ test("timeline: oldest first, one column per milestone, only the latest dot fill
   assert.ok(html.includes("id=\"business-overview-timeline\""));
 });
 
+test("timeline: each milestone gets a short heading read off its title", () => {
+  const html = render({ ...base, company_timeline: timeline });
+  const row = html.slice(html.indexOf("<ol"), html.indexOf("</ol>"));
+  assert.ok(row.includes(">Founded</p>") && row.includes(">IPO</p>"));
+  assert.ok(row.indexOf(">IPO</p>") < row.indexOf("Lists on the NSE"), "the heading sits above the title");
+});
+
 test("timeline: absent when the profile has no milestones", () => {
   const html = render({ ...base, what_changed: change });
   assert.ok(!html.includes("Company timeline"));
@@ -210,7 +217,7 @@ test("profile: leads with customer concentration and geography only; the rest wa
   assert.ok(lead.includes("Customers &amp; concentration") && lead.includes("Geographic breakup"));
   assert.ok(lead.includes(">Customer concentration<") && !lead.includes("Revenue by end-user industry"), "the concentration fact wins the customers slot");
   assert.equal(lead.split("<circle").length - 1, 3, "a share mix adding to 100 draws as a donut");
-  assert.ok(lead.includes("22% of revenue"), "a lone metric is a headline number");
+  assert.ok(lead.includes(">22%</p>") && lead.includes("of revenue"), "a lone share is a hero number");
   assert.ok(!lead.includes("How it earns") && !lead.includes("Two plants"));
   assert.ok(card.includes("More business facts (3)") && card.includes("How it earns") && card.includes("Revenue by end-user industry"));
 });
