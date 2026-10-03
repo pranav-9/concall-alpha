@@ -6,6 +6,7 @@ import {
   compactPeriodLabel,
   formatTrendChange,
   formatValueWithUnit,
+  trendSpanPhrase,
   classifyUnit,
   firstSentence,
   formatFirstToLatestChange,
@@ -131,4 +132,14 @@ test("buildTrendGeometry places points, skips gaps and keeps the guide label off
   // flat series and single values
   assert.ok(buildTrendGeometry(["FY24", "FY25"], [35, 35]));
   assert.equal(buildTrendGeometry(["FY24", "FY25"], [35, null]), null);
+});
+
+test("trendSpanPhrase names the window behind the hero change", () => {
+  const q = ["Q2 FY25", "Q3 FY25", "Q4 FY25", "Q1 FY26", "Q2 FY26", "Q3 FY26", "Q4 FY26", "Q1 FY27"];
+  assert.equal(trendSpanPhrase(q), "in 2 years");
+  assert.equal(trendSpanPhrase(q.slice(-4)), "in 1 year");
+  assert.equal(trendSpanPhrase(q.slice(-3)), "in 2 qtrs");
+  assert.equal(trendSpanPhrase(["FY24", "FY25", "FY26"]), "in 2 years");
+  assert.equal(trendSpanPhrase(["Q3 FY24", "Q1 FY27"]), "since Q3 FY24");
+  assert.equal(trendSpanPhrase(["FY26"]), null);
 });

@@ -33,7 +33,6 @@ import {
   thesisEffectLineClass,
   thesisEffectTextClass,
 } from "./thesis-effect";
-import { chipToneClasses } from "./chip-tone";
 import { cn } from "@/lib/utils";
 import { formatPeriodDelta, getPeriodOverPeriodDelta } from "@/lib/period-delta";
 import {
@@ -41,14 +40,12 @@ import {
   buildTrendGeometry,
   classifyUnit,
   compactPeriodLabel,
-  formatFirstToLatestChange,
   formatMetricNumber,
   formatTrendChange,
   formatValueWithUnit,
   normalizeVariableName,
   periodNounLong,
-  shortPeriodLabel,
-  spanLabel,
+  trendSpanPhrase,
   splitMetricName,
   splitUnitAffixes,
 } from "@/lib/key-variables-snapshot/presentation";
@@ -61,25 +58,10 @@ const displayFont = "font-[family-name:var(--font-display)] font-bold";
 const dataFont = "font-[family-name:var(--font-data)] tabular-nums";
 const eyebrowClass = "text-[10px] font-semibold uppercase tracking-[0.16em]";
 const violetText = "text-violet-700 dark:text-violet-300";
-const violetTint = chipToneClasses.violet;
 const hoverColor = "transition-colors duration-150";
 
-/** The "Also tracked" table shows this many trailing periods. */
-const SHOWN_PERIODS = 3;
 /** The hero trend plots up to this many trailing periods. */
 const TREND_PERIODS = 8;
-
-/**
- * "Also tracked" columns: metric | older periods | latest | change. Fixed widths
- * from `sm` (the spec's 52/52/60/58), content-sized tracks on a phone so the
- * metric name keeps most of a 318px card. Keyed by how many periods are shown;
- * literal strings so Tailwind's scanner sees every variant.
- */
-const alsoTrackedGridClass: Record<number, string> = {
-  1: "grid-cols-[minmax(0,1fr)_auto_auto] sm:grid-cols-[minmax(0,1fr)_60px_58px]",
-  2: "grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:grid-cols-[minmax(0,1fr)_52px_60px_58px]",
-  3: "grid-cols-[minmax(0,1fr)_auto_auto_auto_auto] sm:grid-cols-[minmax(0,1fr)_52px_52px_60px_58px]",
-};
 
 const formatCellValue = (value: string | number | null | undefined) => {
   if (typeof value === "number") return formatMetricNumber(value);
@@ -426,46 +408,71 @@ function KpiHistoryTable({ history }: { history: NormalizedKeyVariableKpiHistory
   );
 }
 
-function AllPeriodsDrawer({
-  variable,
-  history,
-  periodCount,
+/** Everything the card leaves out: the read, why it matters, and every period we hold. */
+function VariableDrawerBody({
+  item,
+  index,
+  companyCode,
+  companyName,
 }: {
-  variable: string;
-  history: NormalizedKeyVariableKpiHistory;
-  periodCount: number;
+  item: NormalizedKeyVariableDeepTreatmentItem;
+  index: number;
+  companyCode: string;
+  companyName?: string | null;
 }) {
-  const noun = periodNounLong(resolvePeriods(history));
+  const secondary =
+    item.transition === "promoted" && item.transitionReason
+      ? { lead: "Why promoted —", text: item.transitionReason }
+      : item.whyItMattersNow
+        ? { lead: "Why now —", text: item.whyItMattersNow }
+        : null;
+  const history = item.kpiHistory && item.kpiHistory.rows.length > 0 ? item.kpiHistory : null;
+
   return (
-    <Drawer direction="right">
-      <DrawerTrigger asChild>
-        <button
-          type="button"
-          data-drawer-type="kpi-history-all-periods"
-          className={cn(
-            dataFont,
-            hoverColor,
-            "cursor-pointer text-[10px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline",
-          )}
-        >
-          All {periodCount} {noun}
-        </button>
-      </DrawerTrigger>
-      <DrawerContent className="w-full max-w-xl">
-        <DrawerHeader className="border-b border-border">
-          <DrawerTitle>{variable}</DrawerTitle>
-          <DrawerDescription>Every period we hold for this variable.</DrawerDescription>
-        </DrawerHeader>
-        <div className="overflow-y-auto p-4">
-          <KpiHistoryTable history={history} />
-        </div>
-        <DrawerFooter className="border-t border-border">
-          <DrawerClose asChild>
-            <Button variant="outline">Close</Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+    <DrawerContent className="w-full max-w-xl">
+      <DrawerHeader className="border-b border-border">
+        <DrawerTitle>{item.variable}</DrawerTitle>
+        {item.whatItTracks ? <DrawerDescription>{item.whatItTracks}</DrawerDescription> : null}
+      </DrawerHeader>
+      <div className="space-y-5 overflow-y-auto p-4">
+        {item.trendInterpretation || secondary ? (
+          <div>
+            <p className={cn(eyebrowClass, "text-muted-foreground")}>The read</p>
+            {item.trendInterpretation ? (
+              <p className="mt-1.5 text-pretty text-[14px] leading-[1.55] text-foreground/90">
+                {item.trendInterpretation}
+              </p>
+            ) : null}
+            {secondary ? (
+              <p className="mt-2.5 text-[12.5px] leading-relaxed text-muted-foreground">
+                <span className="font-semibold text-foreground/80">{secondary.lead}</span> {secondary.text}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+        {history ? (
+          <div>
+            <p className={cn(eyebrowClass, "mb-2 text-muted-foreground")}>
+              Every {periodNounLong(resolvePeriods(history)).replace(/s$/, "")} we hold
+            </p>
+            <KpiHistoryTable history={history} />
+          </div>
+        ) : null}
+      </div>
+      <DrawerFooter className="flex-row items-center justify-between border-t border-border">
+        <BlockFeedbackButton
+          companyCode={companyCode}
+          companyName={companyName}
+          sectionId="key-variables"
+          sectionTitle="Key Variables"
+          blockId={`key-variable-${index + 1}`}
+          blockTitle={item.variable}
+        />
+        <DrawerClose asChild>
+          <Button variant="outline">Close</Button>
+        </DrawerClose>
+      </DrawerFooter>
+    </DrawerContent>
   );
 }
 
@@ -478,8 +485,6 @@ type LeadMetric = {
   name: string;
   unitPrefix: string;
   unitSuffix: string;
-  /** The trailing periods the "Also tracked" table shows. */
-  shownPeriods: string[];
   latestPeriod: string;
   latestValue: number | null;
   /** The trend's periods: up to TREND_PERIODS, starting at the first one with a value. */
@@ -501,7 +506,6 @@ const buildLeadMetric = (item: NormalizedKeyVariableDeepTreatmentItem): LeadMetr
   const unit = item.leadUnit ?? parsedUnit;
   const { prefix, suffix } = splitUnitAffixes(unit);
 
-  const shownPeriods = periods.slice(-SHOWN_PERIODS);
   const latestPeriod = periods[periods.length - 1];
   const latestValue = asNumericValue(row.valuesByPeriod[latestPeriod]);
 
@@ -522,7 +526,6 @@ const buildLeadMetric = (item: NormalizedKeyVariableDeepTreatmentItem): LeadMetr
     name,
     unitPrefix: prefix,
     unitSuffix: suffix,
-    shownPeriods,
     latestPeriod,
     latestValue,
     trendPeriods,
@@ -573,7 +576,7 @@ function HeroTrend({
             d={line}
             fill="none"
             stroke="currentColor"
-            strokeWidth={2}
+            strokeWidth={2.5}
             strokeLinejoin="round"
             strokeLinecap="round"
             vectorEffect="non-scaling-stroke"
@@ -650,7 +653,7 @@ function HeroTrend({
 }
 
 function HeroValue({ lead }: { lead: LeadMetric }) {
-  const span = spanLabel(lead.trendPeriods);
+  const span = trendSpanPhrase(lead.trendPeriods);
   const arrow = lead.change ? (lead.change.delta > 0 ? "▲" : lead.change.delta < 0 ? "▼" : "•") : null;
   const tightSuffix = lead.unitSuffix === "%" || lead.unitSuffix.toLowerCase() === "x";
 
@@ -668,85 +671,11 @@ function HeroValue({ lead }: { lead: LeadMetric }) {
       {lead.change ? (
         <span className={cn(dataFont, "text-[12.5px] font-semibold", thesisEffectTextClass[lead.effect])}>
           {arrow} {lead.change.label}
-          {span ? (span.startsWith("since") ? ` ${span}` : ` in ${span}`) : ""}
+          {span ? ` ${span}` : ""}
         </span>
       ) : (
         <span className={cn(dataFont, "text-[11px] text-muted-foreground")}>{lead.latestPeriod}</span>
       )}
-    </div>
-  );
-}
-
-function AlsoTrackedTable({
-  item,
-  lead,
-}: {
-  item: NormalizedKeyVariableDeepTreatmentItem;
-  lead: LeadMetric;
-}) {
-  const history = item.kpiHistory;
-  if (!history) return null;
-  const rows = history.rows.filter((row) => row !== lead.row);
-  const allPeriods = resolvePeriods(history);
-  const shown = lead.shownPeriods;
-  const hasMore = allPeriods.length > SHOWN_PERIODS;
-  if (rows.length === 0 && !hasMore) return null;
-
-  const gridClass = alsoTrackedGridClass[Math.min(shown.length, SHOWN_PERIODS)] ?? alsoTrackedGridClass[SHOWN_PERIODS];
-  const headerCell = cn(dataFont, "text-right text-[9.5px] text-muted-foreground");
-
-  return (
-    <div className="mt-1.5 text-[12px]">
-      <div className={cn("grid items-end gap-x-2 pb-1.5", gridClass)}>
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <span className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Also tracked
-          </span>
-          {hasMore ? (
-            <AllPeriodsDrawer variable={item.variable} history={history} periodCount={allPeriods.length} />
-          ) : null}
-        </div>
-        {shown.slice(0, -1).map((period) => (
-          <span key={period} className={headerCell}>
-            {shortPeriodLabel(period)}
-          </span>
-        ))}
-        <span className={headerCell}>{shown[shown.length - 1]}</span>
-        <span className={headerCell}>Change</span>
-      </div>
-      {rows.map((row) => {
-        const values = shown.map((period) => asNumericValue(row.valuesByPeriod[period]));
-        const first = values.find((value): value is number => value != null) ?? null;
-        const latest = values[values.length - 1] ?? null;
-        const { unit } = splitMetricName(row.metric);
-        const change =
-          shown.length >= 2 ? formatFirstToLatestChange(first, latest, classifyUnit(unit), "short") : null;
-        const direction = item.metricDirections?.[row.metric] ?? "higher_is_better";
-        const effect = getThesisEffect(change?.delta ?? null, direction);
-        return (
-          <div key={row.metric} className={cn("grid items-center gap-x-2 border-t border-border/60 py-2", gridClass)}>
-            <span className="min-w-0 leading-snug text-foreground/85">{row.metric}</span>
-            {values.map((value, index) => {
-              const isLatest = index === values.length - 1;
-              return (
-                <span
-                  key={shown[index]}
-                  className={cn(
-                    dataFont,
-                    "text-right",
-                    isLatest ? "font-semibold text-foreground" : "text-muted-foreground",
-                  )}
-                >
-                  {formatCellValue(value ?? row.valuesByPeriod[shown[index]])}
-                </span>
-              );
-            })}
-            <span className={cn(dataFont, "text-right font-semibold", thesisEffectTextClass[effect])}>
-              {change ? change.label : "—"}
-            </span>
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -769,45 +698,35 @@ function DeepCard({
   const eyebrowName = item.headline ? item.variable : (lead?.name ?? null);
   const showEyebrowName =
     eyebrowName != null && normalizeVariableName(eyebrowName) !== normalizeVariableName(item.headline ?? item.variable);
-  const secondary =
-    item.transition === "promoted" && item.transitionReason
-      ? { lead: "Why promoted —", text: item.transitionReason }
-      : item.whyItMattersNow
-        ? { lead: "Why now —", text: item.whyItMattersNow }
-        : null;
-  const otherRows = lead && item.kpiHistory ? item.kpiHistory.rows.length - 1 : 0;
-  const hasRead = Boolean(item.trendInterpretation || secondary || item.whatItTracks);
-  const hasMore = hasRead || otherRows > 0 || (lead != null && resolvePeriods(item.kpiHistory!).length > SHOWN_PERIODS);
+  const hasMore = Boolean(
+    item.trendInterpretation || item.whyItMattersNow || item.transitionReason || item.whatItTracks || lead,
+  );
 
+  // The card is the claim and the number behind it, nothing else. The read, the
+  // other metrics and every period sit one click away, behind the whole card.
   return (
-    <div className={cn(elevatedBlockClass, "flex flex-col rounded-[18px] px-5 py-6 sm:px-8 sm:py-7")}>
-      <div className="flex items-start justify-between gap-3">
-        <p className={cn(eyebrowClass, "min-w-0 pt-1 leading-[1.5] text-muted-foreground")}>
-          {item.thesisRole ? (
-            <span className={roleTone}>{item.thesisRole}</span>
-          ) : !showEyebrowName ? (
-            <span>Variable {index + 1}</span>
-          ) : null}
-          {item.thesisRole && showEyebrowName ? <span aria-hidden="true"> · </span> : null}
-          {showEyebrowName ? <span>{eyebrowName}</span> : null}
-        </p>
-        {item.transition === "promoted" ? (
-          <span
-            className={cn(
-              dataFont,
-              "inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-none",
-              violetTint,
-            )}
-          >
-            ▲ New this quarter
-          </span>
+    <div
+      className={cn(
+        elevatedBlockClass,
+        hoverColor,
+        "relative flex flex-col rounded-[18px] px-5 py-6 sm:px-8 sm:py-7",
+        hasMore ? "hover:border-foreground/25" : null,
+      )}
+    >
+      <p className={cn(eyebrowClass, "leading-[1.5] text-muted-foreground")}>
+        {item.thesisRole ? (
+          <span className={roleTone}>{item.thesisRole}</span>
+        ) : !showEyebrowName ? (
+          <span>Variable {index + 1}</span>
         ) : null}
-      </div>
+        {item.thesisRole && showEyebrowName ? <span aria-hidden="true"> · </span> : null}
+        {showEyebrowName ? <span>{eyebrowName}</span> : null}
+      </p>
 
       <h4
         className={cn(
           displayFont,
-          "mt-3 text-balance text-[22px] leading-[1.15] tracking-[-0.025em] text-foreground sm:text-[27px]",
+          "mt-2.5 text-pretty text-[22px] leading-[1.15] tracking-[-0.025em] text-foreground sm:text-[27px]",
         )}
       >
         {item.headline ?? item.variable}
@@ -816,67 +735,19 @@ function DeepCard({
       {lead ? <HeroValue lead={lead} /> : null}
       {lead ? <HeroTrend lead={lead} guide={item.guide} /> : null}
 
-      {/* A card with a verdict headline keeps the read one tap away; a row
-          without one (every pipeline row today) has nothing else to say what the
-          line means, so its read stays open. */}
-      <div className="relative mt-6 min-h-11 border-t border-border/60 pt-2">
-        <div className="absolute right-0 top-2">
-          <BlockFeedbackButton
-            companyCode={companyCode}
-            companyName={companyName}
-            sectionId="key-variables"
-            sectionTitle="Key Variables"
-            blockId={`key-variable-${index + 1}`}
-            blockTitle={item.variable}
-          />
-        </div>
-        {hasMore ? (
-        <details className="group/read" open={!item.headline}>
-          <summary
-            className={cn(
-              eyebrowClass,
-              hoverColor,
-              "mr-28 flex h-7 cursor-pointer list-none items-center gap-2.5 rounded-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden",
-            )}
-          >
-            <span>
-              The read
-              {otherRows > 0 ? (
-                <span className="font-medium normal-case tracking-normal">
-                  {" "}
-                  · {otherRows} more {otherRows === 1 ? "metric" : "metrics"}
-                </span>
-              ) : null}
-            </span>
-            <span aria-hidden="true" className="text-[12px] leading-none transition-transform duration-150 group-open/read:rotate-45">
-              +
-            </span>
-          </summary>
-          <div className="pt-3">
-            {item.trendInterpretation ? (
-              <p className="text-pretty text-[13.5px] leading-[1.55] text-foreground/90">
-                {item.trendInterpretation}
-              </p>
-            ) : null}
-            {item.whatItTracks ? (
-              <p className="mt-2.5 text-[12px] leading-relaxed text-muted-foreground">
-                <span className="font-semibold text-foreground/80">What it tracks —</span> {item.whatItTracks}
-              </p>
-            ) : null}
-            {secondary ? (
-              <p className="mt-2.5 text-[12px] leading-relaxed text-muted-foreground">
-                <span className="font-semibold text-foreground/80">{secondary.lead}</span> {secondary.text}
-              </p>
-            ) : null}
-            {lead ? (
-              <div className="mt-3.5">
-                <AlsoTrackedTable item={item} lead={lead} />
-              </div>
-            ) : null}
-          </div>
-        </details>
-        ) : null}
-      </div>
+      {hasMore ? (
+        <Drawer direction="right">
+          <DrawerTrigger asChild>
+            <button
+              type="button"
+              data-drawer-type="key-variable-read"
+              aria-label={`${item.variable}: open the read and the full history`}
+              className="absolute inset-0 cursor-pointer rounded-[18px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </DrawerTrigger>
+          <VariableDrawerBody item={item} index={index} companyCode={companyCode} companyName={companyName} />
+        </Drawer>
+      ) : null}
     </div>
   );
 }
