@@ -3,7 +3,6 @@ import type {
   NormalizedKeyVariableDiscoverySummary,
   NormalizedKeyVariableKpiHistory,
   NormalizedKeyVariableKpiHistoryRow,
-  NormalizedKeyVariableListItem,
   NormalizedKeyVariableSourceBasis,
   NormalizedKeyVariablesSnapshot,
   ThesisEffect,
@@ -42,7 +41,6 @@ import {
   buildTrendGeometry,
   classifyUnit,
   compactPeriodLabel,
-  firstSentence,
   formatFirstToLatestChange,
   formatMetricNumber,
   formatTrendChange,
@@ -140,8 +138,6 @@ const sourceBasisDisplay: Record<
 
 const compactLabel = (value: string | null) =>
   value?.replace(/[_>]+/g, " ").replace(/\s+/g, " ").trim() ?? null;
-
-const padIndex = (index: number) => String(index).padStart(2, "0");
 
 /** History periods, falling back to the union of row keys when the list is empty. */
 const resolvePeriods = (history: NormalizedKeyVariableKpiHistory) => {
@@ -886,143 +882,6 @@ function DeepCard({
 }
 
 /* ------------------------------------------------------------------------ */
-/* Bottom row: On the radar | Changed this quarter                            */
-/* ------------------------------------------------------------------------ */
-
-const bottomBlockClass = cn(elevatedBlockClass, "rounded-[14px] px-5 pb-1.5 pt-4");
-
-function RadarList({
-  items,
-  startIndex,
-}: {
-  items: NormalizedKeyVariableListItem[];
-  startIndex: number;
-}) {
-  if (items.length === 0) return null;
-
-  return (
-    <div className={bottomBlockClass}>
-      <div className="flex items-baseline justify-between gap-4">
-        <p className={cn(eyebrowClass, "text-muted-foreground")}>
-          On the radar — what else could move the story
-        </p>
-        <span className={cn(dataFont, "shrink-0 text-[10px] text-muted-foreground")}>Latest · Watch for</span>
-      </div>
-      <div className="mt-2">
-        {items.map((item, offset) => {
-          const latest = item.latest;
-          return (
-            <div
-              key={item.variable}
-              className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-start gap-x-3 border-t border-border/60 py-3.5 sm:grid-cols-[24px_minmax(0,1fr)_128px] sm:gap-x-4"
-            >
-              <span className={cn(dataFont, "pt-0.5 text-[11px] text-muted-foreground")}>
-                {padIndex(startIndex + offset)}
-              </span>
-              <div className="min-w-0">
-                <p className="text-[14px] font-semibold leading-snug text-foreground">
-                  {item.variable}
-                  {item.nextToPromote ? (
-                    <span className={cn("ml-2 text-[10px] font-semibold", violetText)}>Next to promote</span>
-                  ) : null}
-                </p>
-                {item.watchFor ? (
-                  <p className="mt-1 text-pretty text-[12px] leading-[1.5] text-muted-foreground">
-                    <span className="font-semibold text-foreground/80">Watch for —</span> {item.watchFor}
-                  </p>
-                ) : item.whyFlagged ? (
-                  <p className="mt-1 text-pretty text-[12px] leading-[1.5] text-muted-foreground">
-                    {item.whyFlagged}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex min-w-0 flex-col items-end text-right">
-                {latest ? (
-                  <>
-                    <span className={cn(dataFont, "text-[15px] font-semibold leading-tight text-foreground")}>
-                      {latest.value}
-                    </span>
-                    {latest.deltaLabel ? (
-                      <span
-                        className={cn(
-                          dataFont,
-                          "mt-0.5 text-[10.5px] font-semibold leading-tight",
-                          thesisEffectTextClass[latest.effect],
-                        )}
-                      >
-                        {latest.deltaLabel}
-                      </span>
-                    ) : null}
-                    {latest.asOf ? (
-                      <span className={cn(dataFont, "mt-0.5 text-[9.5px] leading-tight text-muted-foreground")}>
-                        {latest.asOf}
-                      </span>
-                    ) : null}
-                  </>
-                ) : (
-                  <span className={cn(dataFont, "text-[9.5px] leading-tight text-muted-foreground")}>
-                    {sourceBasisDisplay[item.sourceBasis].label}
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function ChangedThisQuarter({
-  snapshot,
-  latestPeriod,
-}: {
-  snapshot: NormalizedKeyVariablesSnapshot;
-  latestPeriod: string | null;
-}) {
-  const promoted = snapshot.deepTreatment.filter((item) => item.transition === "promoted");
-  const dropped = snapshot.droppedVariables;
-  if (promoted.length === 0 && dropped.length === 0) return null;
-
-  return (
-    <div className={bottomBlockClass}>
-      <div className="flex items-baseline justify-between gap-4">
-        <p className={cn(eyebrowClass, "text-muted-foreground")}>Changed this quarter</p>
-        {latestPeriod ? (
-          <span className={cn(dataFont, "shrink-0 text-[10px] text-muted-foreground")}>{latestPeriod}</span>
-        ) : null}
-      </div>
-      <div className="mt-2">
-        {promoted.map((item) => (
-          <div key={`in-${item.variable}`} className="flex flex-col gap-1 border-t border-border/60 py-3.5">
-            <p className="flex items-baseline gap-2">
-              <span className={cn(dataFont, "text-[10px] font-semibold", violetText)}>▲ In</span>
-              <span className="text-[13px] font-semibold leading-snug text-foreground">{item.variable}</span>
-            </p>
-            {item.transitionReason ? (
-              <p className="text-[12px] leading-relaxed text-muted-foreground">
-                {firstSentence(item.transitionReason)}
-              </p>
-            ) : null}
-          </div>
-        ))}
-        {dropped.map((item) => (
-          <div key={`out-${item.variable}`} className="flex flex-col gap-1 border-t border-border/60 py-3.5">
-            <p className="flex items-baseline gap-2">
-              <span className={cn(dataFont, "text-[10px] font-semibold text-muted-foreground")}>▼ Out</span>
-              <span className="text-[13px] font-semibold leading-snug text-foreground/75">{item.variable}</span>
-            </p>
-            {item.reason ? (
-              <p className="text-[12px] leading-relaxed text-muted-foreground">{item.reason}</p>
-            ) : null}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------------ */
 /* Section                                                                    */
 /* ------------------------------------------------------------------------ */
 
@@ -1037,18 +896,6 @@ export function KeyVariablesSection({
 }) {
   const hasDeepTreatment = snapshot.deepTreatment.length > 0;
   const hasSynthesis = Boolean(snapshot.sectionSynthesis || snapshot.sectionHeadline);
-
-  const deepNames = new Set(snapshot.deepTreatment.map((item) => normalizeVariableName(item.variable)));
-  const radarItems = snapshot.fullVariableList.filter(
-    (item) => !deepNames.has(normalizeVariableName(item.variable)),
-  );
-  const firstHistory = snapshot.deepTreatment[0]?.kpiHistory ?? null;
-  const firstPeriods = firstHistory ? resolvePeriods(firstHistory) : [];
-  const latestPeriod = firstPeriods.length > 0 ? firstPeriods[firstPeriods.length - 1] : null;
-  const hasChanged =
-    snapshot.deepTreatment.some((item) => item.transition === "promoted") ||
-    snapshot.droppedVariables.length > 0;
-  const hasRadar = radarItems.length > 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -1074,17 +921,6 @@ export function KeyVariablesSection({
         </div>
       ) : null}
 
-      {hasRadar || hasChanged ? (
-        <div
-          className={cn(
-            "grid grid-cols-1 gap-4",
-            hasRadar && hasChanged ? "lg:grid-cols-[1.55fr_1fr]" : "lg:grid-cols-1",
-          )}
-        >
-          <RadarList items={radarItems} startIndex={snapshot.deepTreatment.length + 1} />
-          <ChangedThisQuarter snapshot={snapshot} latestPeriod={latestPeriod} />
-        </div>
-      ) : null}
     </div>
   );
 }
