@@ -317,7 +317,7 @@ function SynthesisRow({ snapshot }: { snapshot: NormalizedKeyVariablesSnapshot }
         <h3
           className={cn(
             displayFont,
-            "mt-3 text-pretty text-[24px] leading-[1.1] tracking-[-0.03em] text-foreground sm:text-[32px] lg:text-[38px]",
+            "mt-2.5 text-pretty text-[21px] leading-[1.15] tracking-[-0.025em] text-foreground sm:text-[25px] lg:text-[28px]",
           )}
         >
           {snapshot.sectionHeadline}
