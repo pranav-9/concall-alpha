@@ -5,7 +5,7 @@ import postcss, { type Rule } from "postcss";
 
 // `.house-tokens` = the house palette + ink WITHOUT the paper ground, for a
 // house-skin component set inside a surface that paints its own background
-// (the Exchange Desk feed inside the company page's Announcements SectionCard).
+// (the company page's Journal tab, the Industry tab's covered-peers board).
 // The house custom properties are defined nowhere else, so these checks pin:
 //   1. `.house` and `.house-tokens` share one palette (light AND dark) and can't
 //      drift apart,

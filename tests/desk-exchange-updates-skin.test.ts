@@ -11,11 +11,10 @@ import {
   type ExchangeUpdate,
 } from "../lib/exchange-desk/types";
 
-// Class contracts of the Exchange Desk feed per variant. "company" (the company
-// page's Announcements tab) sits inside an already-padded SectionCard, so it
-// drops the page furniture that "full" (/announcements) keeps; "compact" (the
-// /desk teaser) is untouched. Rendered to static markup: on the server
-// useMinWidth is null, so the phone tree and the desktop tree both render.
+// Class contracts of the Exchange Desk feed per variant: "full" (/announcements)
+// and "compact" (the /desk teaser). The company page's Announcements tab left
+// this component on 2026-10-03 for its own tape. Rendered to static markup: on
+// the server useMinWidth is null, so the phone tree and the desktop tree both render.
 
 // tsconfig has jsx: "preserve" (Next compiles JSX itself), so under tsx the
 // component's JSX uses the classic React.createElement transform and needs a
@@ -23,8 +22,7 @@ import {
 (globalThis as { React?: typeof React }).React = React;
 
 // ---------------------------------------------------------------------------
-// Fixture — one row per recency bucket, one of them an absolute date (the
-// company tab is full history, so most of its dates are absolute).
+// Fixture — one row per recency bucket, one of them an absolute date.
 // ---------------------------------------------------------------------------
 const update = (over: Partial<ExchangeUpdate> & Pick<ExchangeUpdate, "id">): ExchangeUpdate => ({
   companyCode: "ACME",
@@ -54,8 +52,6 @@ const updates = [
   }),
 ];
 const base = { updates, impacts: buildImpactFacet(updates), total: updates.length, windowDays: 35 };
-// getCompanyExchangeDeskData always returns belowCut: [] — mirror it.
-const companyData: ExchangeDeskData = { ...base, belowCut: [] };
 const fullData: ExchangeDeskData = {
   ...base,
   belowCut: [update({ id: "b1", impact: "neutral", companyCode: "BETA", companyName: "Beta Forge", bucketKey: "week" })],
@@ -93,7 +89,7 @@ function parse(html: string): El {
   return root;
 }
 
-const render = (variant: "company" | "full" | "compact", data: ExchangeDeskData) =>
+const render = (variant: "full" | "compact", data: ExchangeDeskData) =>
   parse(renderToStaticMarkup(React.createElement(DeskExchangeUpdates, { data, variant })));
 
 const cls = (el: El) => new Set((el.attrs.class ?? "").split(/\s+/).filter(Boolean));
@@ -109,7 +105,7 @@ const feedSection = (tree: El, where: string) =>
     `${where} feed section`,
   );
 
-/** The phone tree (sm:hidden) and desktop tree (hidden sm:block) of a full/company render. */
+/** The phone tree (sm:hidden) and desktop tree (hidden sm:block) of a full render. */
 function paints(doc: El) {
   const phone = only(doc.children.filter((c) => cls(c).has("sm:hidden")), "phone tree");
   const desktop = only(doc.children.filter((c) => cls(c).has("hidden") && cls(c).has("sm:block")), "desktop tree");
@@ -143,71 +139,13 @@ function tracks(el: El, prefix: "sm" | "md"): string[] | null {
   }
   return [...out, current];
 }
-const toPx = (track: string) => {
-  const m = track.match(/^([\d.]+)(rem|px)$/);
-  return m ? Number(m[1]) * (m[2] === "rem" ? 16 : 1) : NaN;
-};
 const gridRows = (section: El) => descendants(section).filter((e) => cls(e).has("sm:grid"));
 
-const company = render("company", companyData);
 const full = render("full", fullData);
 const compact = render("compact", fullData);
 
 // ---------------------------------------------------------------------------
-// Company tab, phone: no page furniture inside the (already padded) SectionCard.
-// ---------------------------------------------------------------------------
-{
-  const { chips, card } = paints(company);
-  const c = cls(chips);
-  assert.ok(c.has("pb-1") && c.has("flex") && c.has("overflow-x-auto"), "company chip strip keeps the scroller + bottom pad");
-  assert.ok(!c.has("px-4"), "company chip strip drops the 16px page gutter (px-4)");
-  assert.ok(!c.has("pt-3.5"), "company chip strip drops the page top pad (pt-3.5)");
-  assert.equal(
-    chips.children.filter((b) => b.tag === "button").length,
-    1 + companyData.impacts.length,
-    "every chip still renders: All + one per impact tier",
-  );
-
-  const k = cls(card);
-  assert.deepEqual(
-    [...k].filter((x) => /^-?m[xlr]-/.test(x)),
-    ["mx-0"],
-    "company card: mx-0 must replace MOBILE_CARD's mx-4 (not sit beside it — .mx-4 is emitted later and would win)",
-  );
-  for (const keep of ["mt-2.5", "overflow-hidden", "rounded-xl", "border", "bg-[var(--paper-2)]"]) {
-    assert.ok(k.has(keep), `company card keeps the card shell (${keep})`);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Company tab, desktop: no page-level section rule; date column fits an
-// absolute date from md; the grid template matches the cells it lays out.
-// ---------------------------------------------------------------------------
-{
-  const { desktopSection } = paints(company);
-  assert.ok(!cls(desktopSection).has("house-block"), "company desktop feed drops house-block (the card is the frame)");
-
-  const rows = gridRows(desktopSection);
-  assert.equal(rows.length, updates.length, "one desktop grid row per filing");
-  rows.forEach((row, i) => {
-    const sm = tracks(row, "sm");
-    const md = tracks(row, "md");
-    assert.ok(sm && md, "company rows carry both an sm and an md template");
-    assert.equal(row.children.length, 5, "company row = date, impact, category, summary, filing (no company column)");
-    assert.equal(sm.length, row.children.length, "sm template has one track per cell");
-    assert.equal(md.length, row.children.length, "md template has one track per cell");
-    assert.equal(textOf(row.children[0]).trim(), updates[i].filedLabel, "track 0 is the filed date");
-    assert.deepEqual(md.slice(1), sm.slice(1), "from md only the date track changes");
-    assert.ok(toPx(md[0]) > toPx(sm[0]), "from md the date track is wider than at sm");
-    // The longest label is en-IN's "24 Sept 2025" (formatRelativeActivityTime
-    // writes September as "Sept"): 88.8px in house-micro, so the track needs
-    // 89px (see the comment on UpdateRow).
-    assert.ok(toPx(md[0]) >= 89, `md date track ${md[0]} fits the longest absolute date (89px) on one line`);
-  });
-}
-
-// ---------------------------------------------------------------------------
-// /announcements ("full"): unchanged — page gutters, house-block, 6-column rows.
+// /announcements ("full"): page gutters, house-block, 6-column rows.
 // ---------------------------------------------------------------------------
 {
   const { chips, card, desktopSection } = paints(full);
@@ -235,7 +173,7 @@ const compact = render("compact", fullData);
 }
 
 // ---------------------------------------------------------------------------
-// /desk teaser ("compact"): unchanged.
+// /desk teaser ("compact").
 // ---------------------------------------------------------------------------
 {
   const section = only(compact.children, "compact section");
@@ -257,12 +195,12 @@ const compact = render("compact", fullData);
 const PRE_FIX = "mt-[5px] line-clamp-2 block pl-[39px] text-xs leading-[1.45] text-[var(--ink-soft)] [text-wrap:pretty]";
 
 async function main() {
-  const clamped = [company, full, compact].flatMap((doc) =>
+  const clamped = [full, compact].flatMap((doc) =>
     descendants(doc).filter((e) => [...cls(e)].some((c) => /^line-clamp-\d+$/.test(c))),
   );
-  // company: 3 phone rows + 3 desktop-row phone summaries; full adds the
-  // below-cut row to each; compact: 3 desktop-row phone summaries.
-  assert.equal(clamped.length, 6 + 8 + 3, "every rendered summary clamp is checked");
+  // full: 4 phone rows + 4 desktop-row phone summaries (the below-cut row
+  // included); compact: 3 desktop-row phone summaries.
+  assert.equal(clamped.length, 8 + 3, "every rendered summary clamp is checked");
 
   const classLists = [...new Set([...clamped.map((e) => e.attrs.class), PRE_FIX])];
   const html = classLists.map((c) => `<span class="${c}"></span>`).join("\n");
@@ -327,7 +265,7 @@ main().catch((error) => {
 // unsized rows.
 // ---------------------------------------------------------------------------
 {
-  const doc = render("company", companyData);
+  const doc = render("full", fullData);
   const chipText = "27% of mcap · framework";
   const chipEls = descendants(doc).filter((e) => e.tag === "span" && textOf(e) === chipText);
   assert.equal(chipEls.length, 3, "order-size chip renders in every paint of the sized order's row");

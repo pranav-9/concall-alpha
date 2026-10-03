@@ -115,14 +115,7 @@ function OrderSizeChip({ item, className }: { item: ExchangeUpdate; className?: 
   );
 }
 
-function UpdateRow({
-  item,
-  companyContext = false,
-}: {
-  item: ExchangeUpdate;
-  /** On a company page, repeating the company name on every row adds no signal. */
-  companyContext?: boolean;
-}) {
+function UpdateRow({ item }: { item: ExchangeUpdate }) {
   return (
     <div
       className={cn(
@@ -130,33 +123,18 @@ function UpdateRow({
         ROW_HOVER,
       )}
     >
-      {/* Desktop: the dedicated feed needs a company column; the company tab
-          uses that space for the actual filing summary. The company tab is
-          full history, so most dates are absolute, and the longest, en-IN's
-          "24 Sept 2025", is 89px: it wrapped in 3.25rem. Widen from md, where
-          the summary can spare it (at sm it has only ~80px left, so a wrapped
-          date is the lesser cost). */}
-      <div
-        className={cn(
-          "hidden items-center gap-4 sm:grid",
-          companyContext
-            ? "sm:grid-cols-[3.25rem_7.5rem_8rem_minmax(0,1.5fr)_4.5rem] md:grid-cols-[5.75rem_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]"
-            : "sm:grid-cols-[3.25rem_minmax(8rem,1fr)_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]",
-        )}
-      >
+      <div className="hidden items-center gap-4 sm:grid sm:grid-cols-[3.25rem_minmax(8rem,1fr)_7.5rem_8rem_minmax(0,1.5fr)_4.5rem]">
         <span className="house-data house-micro text-[var(--ink-soft)]">{item.filedLabel}</span>
-        {!companyContext ? (
-          <Link
-            href={`/company/${item.companyCode}`}
-            prefetch={false}
-            className={cn(
-              "house-display min-w-0 truncate text-sm text-[var(--ink)] hover:text-[var(--signal)]",
-              ROW_FOCUS,
-            )}
-          >
-            {item.companyName}
-          </Link>
-        ) : null}
+        <Link
+          href={`/company/${item.companyCode}`}
+          prefetch={false}
+          className={cn(
+            "house-display min-w-0 truncate text-sm text-[var(--ink)] hover:text-[var(--signal)]",
+            ROW_FOCUS,
+          )}
+        >
+          {item.companyName}
+        </Link>
         <span>
           <ImpactBadge item={item} />
         </span>
@@ -312,11 +290,9 @@ function PhoneImpactPill({ item }: { item: ExchangeUpdate }) {
 function PhoneUpdateRow({
   item,
   dim = false,
-  companyContext = false,
 }: {
   item: ExchangeUpdate;
   dim?: boolean;
-  companyContext?: boolean;
 }) {
   const rowBody = (
     <>
@@ -324,18 +300,14 @@ function PhoneUpdateRow({
         <span className="house-data min-w-[30px] shrink-0 whitespace-nowrap text-[10px] text-[var(--ink-soft)]">
           {shortAge(item.filedLabel)}
         </span>
-        {!companyContext ? (
-          <span
-            className={cn(
-              "house-display min-w-0 flex-1 truncate text-sm",
-              dim ? "text-[var(--ink-soft)]" : "text-[var(--ink)]",
-            )}
-          >
-            {item.companyName}
-          </span>
-        ) : (
-          <span className="min-w-0 flex-1" />
-        )}
+        <span
+          className={cn(
+            "house-display min-w-0 flex-1 truncate text-sm",
+            dim ? "text-[var(--ink-soft)]" : "text-[var(--ink)]",
+          )}
+        >
+          {item.companyName}
+        </span>
         <PhoneImpactPill item={item} />
       </span>
       {/* One clamped block: line-clamp is display:-webkit-box, so it has to be
@@ -354,17 +326,13 @@ function PhoneUpdateRow({
 
   return (
     <div className={cn(MOBILE_ROW, "flex items-stretch")}>
-      {companyContext ? (
-        <div className="min-w-0 flex-1 px-3.5 py-3">{rowBody}</div>
-      ) : (
-        <Link
-          href={`/company/${item.companyCode}`}
-          prefetch={false}
-          className={cn("min-w-0 flex-1 px-3.5 py-3", MOBILE_FOCUS)}
-        >
-          {rowBody}
-        </Link>
-      )}
+      <Link
+        href={`/company/${item.companyCode}`}
+        prefetch={false}
+        className={cn("min-w-0 flex-1 px-3.5 py-3", MOBILE_FOCUS)}
+      >
+        {rowBody}
+      </Link>
       {item.attachmentUrl ? (
         <a
           href={item.attachmentUrl}
@@ -441,7 +409,6 @@ function PhoneAnnouncements({
   hiddenCount,
   belowCutExpanded,
   onToggleBelowCut,
-  companyContext = false,
 }: {
   data: ExchangeDeskData;
   filter: Filter;
@@ -453,21 +420,15 @@ function PhoneAnnouncements({
   hiddenCount: number;
   belowCutExpanded: boolean;
   onToggleBelowCut: () => void;
-  companyContext?: boolean;
 }) {
   return (
     <div className="sm:hidden">
       {data.total > 0 ? (
         <section aria-label="Company announcements">
-          {/* Page gutters (px-4 / MOBILE_CARD's mx-4) line up with the phone
-              page edge on /announcements; inside the company SectionCard,
-              which is already padded, they double up and knock the feed out
-              of line with the cards above it. The page top pad (pt-3.5) goes
-              too: the "Filing tape" header above already spaces the chips. */}
           <div
             role="group"
             aria-label="Filter by impact"
-            className={cn(MOBILE_CHIP_STRIP, companyContext ? "pb-1" : "px-4 pb-1 pt-3.5")}
+            className={cn(MOBILE_CHIP_STRIP, "px-4 pb-1 pt-3.5")}
           >
             <button
               type="button"
@@ -492,7 +453,7 @@ function PhoneAnnouncements({
             ))}
           </div>
 
-          <div className={cn(MOBILE_CARD, "mt-2.5", companyContext && "mx-0")}>
+          <div className={cn(MOBILE_CARD, "mt-2.5")}>
             {buckets.length === 0 ? (
               <p className="house-data px-3.5 py-6 text-[10px] uppercase tracking-[0.14em] text-[var(--ink-soft)]">
                 No filings in this band in the last {data.windowDays} days.
@@ -509,7 +470,7 @@ function PhoneAnnouncements({
                     </span>
                   </div>
                   {bucket.items.map((item) => (
-                    <PhoneUpdateRow key={item.id} item={item} companyContext={companyContext} />
+                    <PhoneUpdateRow key={item.id} item={item} />
                   ))}
                 </div>
               ))
@@ -544,13 +505,7 @@ function PhoneAnnouncements({
  * impact filter tabs + show-all) followed by the below-cut watch list. Lives on
  * the dedicated /announcements page; the desk only shows the compact teaser.
  */
-function FullAnnouncements({
-  data,
-  companyContext = false,
-}: {
-  data: ExchangeDeskData;
-  companyContext?: boolean;
-}) {
+function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
   // All three live here, not in the paints, so a breakpoint crossing (tablet
   // rotation across sm) keeps the reader's filter and both show-all toggles.
   const [filter, setFilter] = useState<Filter>("all");
@@ -600,7 +555,6 @@ function FullAnnouncements({
           hiddenCount={hiddenCount}
           belowCutExpanded={belowCutExpanded}
           onToggleBelowCut={() => setBelowCutExpanded((v) => !v)}
-          companyContext={companyContext}
         />
       )}
       {isSm !== false && (
@@ -608,10 +562,7 @@ function FullAnnouncements({
       {data.total > 0 && (
     <section
       aria-label="Company announcements"
-      // house-block is a page-level section divider (top rule + 2.25rem).
-      // Inside the company SectionCard it drew a rule tight under the
-      // "Filing tape" header with a dead gap below it; the card is the frame.
-      className={companyContext ? undefined : "house-block"}
+      className="house-block"
     >
       {/* No eyebrow / heading / intro here: this variant renders under the
           /announcements page header, which already says all three. */}
@@ -649,7 +600,7 @@ function FullAnnouncements({
               </p>
               <div className="mt-1">
                 {bucket.items.map((item) => (
-                  <UpdateRow key={item.id} item={item} companyContext={companyContext} />
+                  <UpdateRow key={item.id} item={item} />
                 ))}
               </div>
             </div>
@@ -731,13 +682,13 @@ export default function DeskExchangeUpdates({
 }: {
   data: ExchangeDeskData;
   // "compact" = desk teaser (top slice + link out); "full" = the /announcements
-  // page (whole covered feed + below-cut watch list); "company" reuses the
-  // full feed controls but removes the redundant company-name column.
-  variant?: "full" | "compact" | "company";
+  // page (whole covered feed + below-cut watch list). The company page's
+  // Announcements tab has its own tape (app/company/components/announcement-tape.tsx).
+  variant?: "full" | "compact";
 }) {
   return variant === "compact" ? (
     <CompactAnnouncements data={data} />
   ) : (
-    <FullAnnouncements data={data} companyContext={variant === "company"} />
+    <FullAnnouncements data={data} />
   );
 }
