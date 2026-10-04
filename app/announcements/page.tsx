@@ -6,7 +6,7 @@ import { selectTopStoryReads } from "@/lib/announcement-story-read/select";
 import DeskExchangeUpdates from "@/app/desk/desk-exchange-updates";
 import { TopOfWeek } from "./top-of-week";
 import { BelowSm, FromSm } from "@/components/viewport-gate";
-import { LiveDot, MOBILE_DEK, MobileMasthead } from "@/components/mobile-card";
+import { MobileMasthead } from "@/components/mobile-card";
 
 export const metadata: Metadata = {
   title: "Company announcements — every material filing, read into plain English",
@@ -28,44 +28,17 @@ export default async function AnnouncementsPage() {
     <main className="house relative min-h-screen">
       {/* Phone (handoff 2026-09-13, "Filings — mobile"): compact masthead, then
           the feed paints its own phone card. From sm the page keeps its
-          editorial header + padded shell. */}
+          editorial header + padded shell. The header is the title alone
+          (2026-10-04): no eyebrow, no dek — the strip under it is the opening. */}
       <div className="mx-auto w-full max-w-6xl pb-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
         <BelowSm>
-          <MobileMasthead
-            eyebrow={
-              <>
-                <LiveDot />
-                <span className="whitespace-nowrap">Exchange desk · last {data.windowDays} days</span>
-              </>
-            }
-            title="Company announcements"
-            titleSize="md"
-          >
-            <p className={MOBILE_DEK}>
-              Every material BSE filing across the covered universe, read into plain English —
-              order wins, capex, deals, fundraises, approvals. The procedural noise is left out.
-            </p>
-          </MobileMasthead>
+          <MobileMasthead title="Company announcements" titleSize="md" />
         </BelowSm>
         <FromSm>
           <header className="border-b border-[var(--rule)] pb-6">
-            <p className="house-data house-micro flex flex-wrap items-center gap-x-2 text-[var(--ink-soft)]">
-              <span aria-hidden className="text-[var(--signal)]">
-                ●
-              </span>
-              <span>Exchange desk</span>
-              <span aria-hidden>·</span>
-              <span>last {data.windowDays} days</span>
-            </p>
-            <h1 className="house-display mt-3 max-w-2xl text-3xl leading-[1.05] sm:text-4xl">
+            <h1 className="house-display max-w-2xl text-3xl leading-[1.05] sm:text-4xl">
               Company announcements
             </h1>
-            <p className="mt-3 max-w-2xl text-sm text-[var(--ink-soft)]">
-              Every material BSE filing across the covered universe, read into plain English —
-              order wins, capex, deals, fundraises, approvals. The procedural noise is left out.
-              Below the covered feed sit material filings from names just outside the ranked
-              hundred.
-            </p>
           </header>
         </FromSm>
 
