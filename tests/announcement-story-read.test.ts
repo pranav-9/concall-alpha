@@ -85,6 +85,10 @@ function read(
   assert.equal(AnnouncementStoryReadSchema.safeParse({ ...good, changes: "Too short." }).success, false);
   assert.equal(AnnouncementStoryReadSchema.safeParse({ ...good, anchor: { kind: "scale", source: "Scale", text: "x".repeat(20) } }).success, false);
   assert.equal(AnnouncementStoryReadSchema.safeParse({ ...good, anchor: null, story_effect: "none" }).success, true);
+  // The card headline is optional (older reads have none) and bounded when present.
+  assert.equal(AnnouncementStoryReadSchema.safeParse({ ...good, headline: "₹574 cr domestic T&D EPC orders won" }).success, true);
+  assert.equal(AnnouncementStoryReadSchema.safeParse({ ...good, headline: "Too short" }).success, false);
+  assert.equal(AnnouncementStoryReadSchema.safeParse({ ...good, headline: "x".repeat(65) }).success, false);
 
   const { reads, invalid } = parseStoryReads([
     { announcement_id: "a", payload: good },
