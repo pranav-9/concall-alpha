@@ -4,7 +4,7 @@ import { getExchangeDeskData } from "@/lib/exchange-desk";
 import { getRecentStoryReads } from "@/lib/announcement-story-read";
 import { selectTopStoryReads } from "@/lib/announcement-story-read/select";
 import DeskExchangeUpdates from "@/app/desk/desk-exchange-updates";
-import { TopOfWeekDesktop, TopOfWeekPhone } from "./top-of-week";
+import { TopOfWeek } from "./top-of-week";
 import { BelowSm, FromSm } from "@/components/viewport-gate";
 import { LiveDot, MOBILE_DEK, MobileMasthead } from "@/components/mobile-card";
 
@@ -19,9 +19,9 @@ export default async function AnnouncementsPage() {
   const now = new Date();
   const [data, storyReads] = await Promise.all([getExchangeDeskData(), getRecentStoryReads(now)]);
   const isEmpty = data.total === 0 && data.belowCut.length === 0;
-  // "What moved a story this week": the last seven days of story reads, joined
-  // to the tape rows above and ranked here, at load time. Empty (block absent)
-  // until the reads table exists and at least three filings qualify.
+  // "Top 5 this week": the last seven days of story reads, joined to the tape
+  // rows above and ranked here, at load time. Empty (strip absent) until the
+  // reads table exists and at least three filings qualify.
   const picks = selectTopStoryReads(storyReads, data.updates, data.belowCut, now);
 
   return (
@@ -46,7 +46,6 @@ export default async function AnnouncementsPage() {
               order wins, capex, deals, fundraises, approvals. The procedural noise is left out.
             </p>
           </MobileMasthead>
-          <TopOfWeekPhone picks={picks} />
         </BelowSm>
         <FromSm>
           <header className="border-b border-[var(--rule)] pb-6">
@@ -68,14 +67,11 @@ export default async function AnnouncementsPage() {
               hundred.
             </p>
           </header>
-          {picks.length > 0 ? (
-            <div className="mt-10">
-              <TopOfWeekDesktop picks={picks} />
-            </div>
-          ) : null}
         </FromSm>
 
-        <div className={picks.length > 0 ? undefined : "sm:mt-10"}>
+        <TopOfWeek picks={picks} />
+
+        <div className="sm:mt-10">
           {isEmpty ? (
             <p className="house-data house-micro px-4 pt-4 text-[var(--ink-soft)] sm:px-0 sm:pt-0">
               No material filings in the last {data.windowDays} days.

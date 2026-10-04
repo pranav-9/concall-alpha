@@ -98,6 +98,8 @@ export const AnnouncementStoryReadSchema = z
     checks: ChecksSchema,
     score: z.number().int().min(0).max(11),
     story_effect: z.enum(STORY_EFFECTS),
+    /** The card's one line; absent on older reads — the card then shows the tape summary. */
+    headline: z.string().min(12).max(64).optional(),
     what: z.string().min(20).max(300),
     changes: z.string().min(20).max(340),
     anchor: AnchorSchema.nullable(),

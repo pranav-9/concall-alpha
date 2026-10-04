@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { notFound } from "next/navigation";
 
-import { TopOfWeekDesktop, TopOfWeekPhone } from "@/app/announcements/top-of-week";
+import { TopOfWeek } from "@/app/announcements/top-of-week";
 import { getRecentStoryReads } from "@/lib/announcement-story-read";
 import {
   parseStoryReads,
@@ -13,8 +13,7 @@ import {
 import type { AnnouncementStoryReadRow } from "@/lib/announcement-story-read/types";
 import { getExchangeDeskData } from "@/lib/exchange-desk";
 
-// Dev-only preview for "What moved a story this week" (the /announcements
-// opening block). Reads the sandbox records that
+// Dev-only preview for "Top 5 this week" (the /announcements opening strip). Reads the sandbox records that
 // concallyser/scripts/judge_announcements.py writes to
 // /tmp/sandbox_announcement_story_read/<id>.json — so the block can be checked
 // before the table exists or anything is promoted — or the promoted rows with
@@ -73,7 +72,7 @@ export default async function AnnouncementStoryReadPreview({
     <main className="house relative min-h-screen">
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-10">
         <p className="house-data house-micro text-[var(--ink-soft)]">
-          Dev preview · What moved a story this week · {source === "live" ? "promoted rows" : `sandbox (${SANDBOX_DIR})`} · as of{" "}
+          Dev preview · Top 5 this week · {source === "live" ? "promoted rows" : `sandbox (${SANDBOX_DIR})`} · as of{" "}
           {now.toISOString()} · {parsed.reads.length} reads · {picks.length} picks
           {picks.length === 0 ? " — block hidden (fewer than three qualify)" : ""}
         </p>
@@ -83,13 +82,8 @@ export default async function AnnouncementStoryReadPreview({
           </p>
         ) : null}
 
-        <h2 className="house-data house-micro mt-8 text-[var(--ink-soft)]">Desktop paint</h2>
-        <div className="mt-3 hidden sm:block">
-          <TopOfWeekDesktop picks={picks} />
-        </div>
-        <h2 className="house-data house-micro mt-8 text-[var(--ink-soft)]">Phone paint (always shown here; narrow the window to check wrapping)</h2>
-        <div className="mt-3 max-w-[390px] -mx-4 sm:mx-0">
-          <TopOfWeekPhone picks={picks} />
+        <div className="-mx-4 sm:mx-0">
+          <TopOfWeek picks={picks} />
         </div>
 
         <h2 className="house-data house-micro mt-10 text-[var(--ink-soft)]">Every read in the window</h2>
@@ -101,6 +95,7 @@ export default async function AnnouncementStoryReadPreview({
               <th className="py-1 pr-3">Effect</th>
               <th className="py-1 pr-3">Tape</th>
               <th className="py-1 pr-3">State</th>
+              <th className="py-1 pr-3">Headline</th>
               <th className="py-1">What it changes</th>
             </tr>
           </thead>
@@ -120,6 +115,7 @@ export default async function AnnouncementStoryReadPreview({
                         ? "qualifies"
                         : "below floor"}
                 </td>
+                <td className="py-1.5 pr-3 text-[var(--ink)]">{read.headline ?? "—"}</td>
                 <td className="py-1.5 text-[var(--ink-soft)]">{read.changes}</td>
               </tr>
             ))}
