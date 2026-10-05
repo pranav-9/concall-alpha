@@ -5,7 +5,6 @@
 // rest), then the Notebook as a divider + chip strip + list card. Server
 // component; the Notebook's filter state lives in notebook-phone.tsx.
 
-import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -17,9 +16,10 @@ import {
 import { TelegramJoinLink } from "@/components/telegram-join-link";
 
 import { shortDateLabel } from "./dates";
-import type { CompanyStory, JournalLanes } from "./lanes";
+import type { JournalLanes } from "./lanes";
 import { pad, priorLinkLabel, priorStory, storyLabel } from "./lanes";
 import { NotebookPhone } from "./notebook-phone";
+import { StoryCover } from "./story-cover";
 import { StoryRows } from "./story-rows";
 
 export function JournalPhone({
@@ -122,18 +122,17 @@ function CompanyStoriesPhone({ lanes }: { lanes: JournalLanes }) {
 
       {/* Featured — the newest company story */}
       <div className="px-3.5 pb-4 pt-3.5">
-        <Link
-          href={href}
-          aria-label={featured.title}
-          className={`block rounded-lg border border-[var(--rule)] bg-[var(--paper)] p-2 ${MOBILE_FOCUS}`}
-        >
-          <PosterPhone story={featured} />
+        {/* `eager`, NOT `priority`: both paints are in the server HTML and
+            next/image's `priority` preload is unconditional. Eager emits no
+            preload but still starts the phone's LCP image with the HTML. The
+            poster fallback's `sizes` is in px so the hidden desktop copy
+            resolves to the 16w candidate. */}
+        <Link href={href} aria-label={featured.title} className={`block rounded-[6px] ${MOBILE_FOCUS}`}>
+          <StoryCover post={featured} sizes="(min-width: 640px) 16px, 420px" eager />
         </Link>
 
         <p className="house-data mt-3.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] uppercase tracking-[0.08em]">
           <span className="font-semibold text-[var(--ink)]">Latest</span>
-          <span aria-hidden className="text-[var(--rule)]">/</span>
-          <span className="text-[var(--signal)]">{featured.company ?? "Company"}</span>
           <span aria-hidden className="text-[var(--rule)]">/</span>
           <span className="text-[var(--ink-soft)]">
             {storyLabel(featured)} · {shortDateLabel(featured.date, featured.dateLabel)}
@@ -144,9 +143,6 @@ function CompanyStoriesPhone({ lanes }: { lanes: JournalLanes }) {
             {featured.title}
           </h3>
         </Link>
-        <p className="mt-3 text-[14px] leading-6 text-[var(--ink-soft)] [text-wrap:pretty]">
-          {featured.summary}
-        </p>
         {prior ? (
           <p className="mt-3 text-[13px] leading-5 text-[var(--ink-soft)]">
             Story {featured.storyIndex} on {featured.company ?? "this company"} —{" "}
@@ -168,44 +164,5 @@ function CompanyStoriesPhone({ lanes }: { lanes: JournalLanes }) {
           first few (story-rows.tsx) */}
       {companyRest.length ? <StoryRows stories={companyRest} /> : null}
     </section>
-  );
-}
-
-// Landscape crop of the story's poster (its title band and first exhibit sit
-// at the top), inside the plate's own hairline; a text plate when a post
-// shipped without one. `loading="eager"`, NOT `priority`: both paints are in
-// the server HTML and next/image's `priority` preload is unconditional, so it
-// would make every desktop visit download a full-width copy of a poster that
-// unmounts on hydration. Eager emits no preload but still starts the phone's
-// LCP image with the HTML. `sizes` is in px (a `vw` would limit the srcset
-// to deviceSizes ≥640w), so the hidden desktop copy resolves to the 16w
-// candidate (<1 KB) while the phone gets a candidate matched to its DPR.
-function PosterPhone({ story }: { story: CompanyStory }) {
-  if (story.image) {
-    return (
-      <span className="relative block aspect-[16/10] w-full overflow-hidden rounded-[4px] border border-[var(--rule)]">
-        <Image
-          src={story.image}
-          alt={story.imageAlt ?? story.title}
-          fill
-          sizes="(min-width: 640px) 16px, 420px"
-          loading="eager"
-          className="object-cover object-top"
-        />
-      </span>
-    );
-  }
-  return (
-    <span className="flex aspect-[16/10] w-full flex-col justify-between rounded-[4px] border border-[var(--rule)] bg-[var(--paper-2)] p-4">
-      <span className="house-data text-[10px] uppercase tracking-[0.16em] text-[var(--signal)]">
-        Company story
-      </span>
-      <span>
-        <span className="house-display block text-[26px] leading-tight">
-          {story.company ?? "Company story"}
-        </span>
-        <span aria-hidden className="mt-2.5 block h-[3px] w-12 bg-[var(--mark)]" />
-      </span>
-    </span>
   );
 }

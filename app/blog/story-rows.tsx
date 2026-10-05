@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 
 import { MOBILE_FOCUS } from "@/components/mobile-card";
@@ -9,6 +8,7 @@ import { shortDateLabel } from "./dates";
 import { useStoriesExpanded } from "./journal-view-state";
 import type { CompanyStory } from "./lanes";
 import { storyLabel } from "./lanes";
+import { StoryThumb } from "./story-cover";
 
 /**
  * Rows shown before the fold. With the featured story above them this makes
@@ -57,7 +57,7 @@ function StoryRow({ story }: { story: CompanyStory }) {
       href={`/blog/${story.slug}`}
       className={`flex gap-3 rounded-lg border border-[var(--rule)] bg-[var(--paper)] p-2.5 transition-colors active:bg-[var(--paper-2)] ${MOBILE_FOCUS}`}
     >
-      <ThumbPhone story={story} />
+      <StoryThumb post={story} className="w-[88px] self-start" />
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="flex items-start justify-between gap-2">
           <span className="house-data truncate pt-0.5 text-[9px] uppercase tracking-[0.14em] text-[var(--signal)]">
@@ -81,38 +81,5 @@ function StoryRow({ story }: { story: CompanyStory }) {
         </span>
       </span>
     </Link>
-  );
-}
-
-// The row's 68px poster thumbnail — top crop of the real poster, or a miniature
-// text plate carrying the company name.
-function ThumbPhone({ story }: { story: CompanyStory }) {
-  return (
-    <span
-      aria-hidden
-      className="relative block aspect-[4/5] w-[68px] shrink-0 overflow-hidden rounded-[4px] border border-[var(--rule)] bg-[var(--paper-2)]"
-    >
-      {story.image ? (
-        <Image
-          src={story.image}
-          alt=""
-          fill
-          sizes="68px"
-          className="object-cover object-top"
-        />
-      ) : (
-        <span className="flex h-full flex-col justify-between p-1.5">
-          <span className="house-data text-[8px] uppercase tracking-[0.14em] text-[var(--signal)]">
-            Story
-          </span>
-          <span>
-            <span className="house-display block text-[10px] leading-tight">
-              {story.company ?? "Company"}
-            </span>
-            <span className="mt-1 block h-[2px] w-5 bg-[var(--mark)]" />
-          </span>
-        </span>
-      )}
-    </span>
   );
 }

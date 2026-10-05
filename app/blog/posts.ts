@@ -44,6 +44,13 @@ export type BlogPostMeta = {
   /** Alt text for the cover; omit when the image is purely decorative. */
   imageAlt?: string;
   /**
+   * Company stories only: the post's hand-drawn cover illustration, a file
+   * under public/blog/covers/ (drawn by scripts/journal-covers.mjs). The
+   * Journal index shows it in place of the poster crop. A `cover` that names
+   * a missing file fails the build.
+   */
+  cover?: string;
+  /**
    * Company write-ups only: the company's display name (e.g. "Neuland
    * Laboratories"). Drives the "Company Stories" lane — grouping a company's
    * stories together and numbering its stories (story N of M).
@@ -78,6 +85,21 @@ function listPostFiles(): string[] {
     .sort();
 }
 
+
+function parseCover(value: unknown, file: string): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  const ok =
+    typeof value === "string" &&
+    /^\/blog\/covers\/[a-z0-9-]+\.svg$/.test(value) &&
+    fs.existsSync(path.join(process.cwd(), "public", value));
+  if (!ok) {
+    throw new Error(
+      `${file}: \`cover\` must name an existing SVG under public/blog/covers/ (got ${JSON.stringify(value)})`,
+    );
+  }
+  return value as string;
+}
+
 function readMeta(file: string): BlogPostMeta {
   const raw = fs.readFileSync(path.join(POSTS_DIR, file), "utf8");
   const { data } = matter(raw);
@@ -100,6 +122,7 @@ function readMeta(file: string): BlogPostMeta {
         ? data.image
         : undefined,
     imageAlt: typeof data.imageAlt === "string" ? data.imageAlt : undefined,
+    cover: parseCover(data.cover, file),
     company: typeof data.company === "string" ? data.company : undefined,
     companyCode,
     comparison: parseComparison(data.comparison, file, { companyCode, category }),
