@@ -4,14 +4,8 @@ import { BandSummaryLine } from "@/components/band-summary-line";
 import { TelegramJoinLink } from "@/components/telegram-join-link";
 import { getTelegramJoinUrl } from "@/lib/community";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PAGE_SHELL, TOUCH_TARGET } from "@/lib/design/shell";
 import {
-  HERO_CARD,
-  PAGE_BACKGROUND_ATMOSPHERIC,
-  PAGE_SHELL,
-  TOUCH_TARGET,
-} from "@/lib/design/shell";
-import {
-  computeBoardReadCounts,
   computeGrowthBandCounts,
   computeQuarterBandCounts,
 } from "@/lib/leaderboard-distribution";
@@ -25,7 +19,8 @@ import {
   leaderboardGateSectionId,
   shouldGateLeaderboard,
 } from "@/lib/signup-gate";
-import { getIsAuthenticated } from "@/lib/supabase/auth-state";
+import { getAuthenticatedUserId } from "@/lib/supabase/auth-state";
+import { getWatchlistCompanyCodes } from "@/lib/watchlist-codes";
 import { buildScoreBoardRows } from "@/lib/score-board-rows";
 import { computeBoardRanks, COVERAGE_BOARD_SIZE } from "@/lib/leaderboard-rank";
 import {
@@ -36,6 +31,7 @@ import {
 import { after } from "next/server";
 import type { Metadata } from "next";
 import { BelowSm, FromSm } from "@/components/viewport-gate";
+import { cn } from "@/lib/utils";
 import {
   MOBILE_CHIP_STRIP,
   MOBILE_CHIP_TAB,
@@ -43,6 +39,7 @@ import {
   MobileMasthead,
 } from "@/components/mobile-card";
 import { fetchLeaderboardData } from "./data";
+import { BoardFilterChips, BoardFilterProvider, FilteredCount } from "./board-filter";
 import { LeaderboardTabs } from "./leaderboard-tabs";
 import {
   GrowthTable,
@@ -61,18 +58,12 @@ export const metadata: Metadata = {
   alternates: { canonical: "/leaderboards" },
 };
 
-const PAGE_BACKGROUND_CLASS = `h-[28rem] ${PAGE_BACKGROUND_ATMOSPHERIC}`;
-
-// Two constraints ride on this string:
-//   min-w only from sm up — four 6rem triggers plus the list's own padding
-//   measured 394px, which overflowed a 366px phone and cut the "Moat" tab off
-//   the screen. Below sm they size to their labels (~322px total).
-//   Active state is the design system's in-page tab pill (bg-foreground /
-//   text-background), matching the navbar 200px above. The previous sky tint
-//   put two active-state languages on one screen and reached for a raw palette
-//   utility outside the four sanctioned sources of colour.
+// The desktop tab strip (2026-10-05, the minimal pass): flat labels in the data
+// face, the active board a paper tile with a hairline — no pill, no fill. Every
+// colour is restated under dark: because the shadcn trigger ships dark variants
+// of its own that would otherwise win. min-w is gone: the labels size the tabs.
 const TAB_TRIGGER_CLASS =
-  `shrink-0 justify-center rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors sm:min-w-[6rem] data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm ${TOUCH_TARGET}`;
+  `house-data h-auto flex-none shrink-0 justify-center rounded-md border border-transparent px-4 py-2 text-[12px] font-normal uppercase tracking-[0.14em] text-[var(--ink-soft)] shadow-none transition-colors hover:text-[var(--ink)] dark:text-[var(--ink-soft)] data-[state=active]:border-[var(--rule)] data-[state=active]:bg-[var(--paper-2)] data-[state=active]:text-[var(--ink)] data-[state=active]:shadow-none dark:data-[state=active]:border-[var(--rule)] dark:data-[state=active]:bg-[var(--paper-2)] dark:data-[state=active]:text-[var(--ink)] ${TOUCH_TARGET}`;
 
 /**
  * Sign-up gate on a board (2026-10-02): the same card as the company tabs and
@@ -121,7 +112,7 @@ export default async function LeaderboardsPage({
     { rows, latestLabel, quarterLabels },
     { growthEntries, moatEntries, growthScoreByCode, nameByCode, sectorByCode },
     priorRankByCode,
-    isAuthenticated,
+    userId,
   ] = await Promise.all([
     // includeBelowCut: the Overall board renders the tail greyed out rather than
     // dropping it. Large caps are still excluded outright — two different gates.
@@ -129,10 +120,12 @@ export default async function LeaderboardsPage({
     fetchLeaderboardData(),
     // Ranks from the prior snapshot window for the Δ column. Empty until history accrues.
     readPriorRanks(),
-    // Who is reading — only asked while the gate flag is on. The `cache()`d
-    // check is the one the company page and the Journal use.
-    gateEnabled ? getIsAuthenticated() : Promise.resolve(false),
+    // Who is reading — the `cache()`d check the company page and the Journal
+    // use. Asked on every load now: the Watchlist filter needs it, gate or not.
+    getAuthenticatedUserId(),
   ]);
+  const isAuthenticated = userId !== null;
+  const watchlistCodesAll = userId ? await getWatchlistCompanyCodes(userId) : null;
   // Flag on and nobody signed in: every board clips under its top 20 rows. The
   // marker index goes to the row components only in that case, so a signed-in
   // reader's DOM carries no gate attribute at all.
@@ -166,10 +159,6 @@ export default async function LeaderboardsPage({
   const growthBandCounts = computeGrowthBandCounts(growthEntries.map((e) => e.growthScore));
   const growthScored = growthEntries.filter((e) => typeof e.growthScore === "number").length;
 
-  // The Overall summary describes the Read column, not the Quarter one — the
-  // board is ranked by the composite, so counting quarter bands under it
-  // described a column the reader isn't sorted by. Counted in the Read's own
-  // configuration vocabulary, which is what the cells actually show.
   const overallReads = overallRows.map((row) =>
     classifyBoardRead({
       concallScore: row.concallScore,
@@ -177,8 +166,6 @@ export default async function LeaderboardsPage({
       valuationScore: row.valuationScore,
     }),
   );
-  const overallBandCounts = computeBoardReadCounts(overallReads.map((r) => r.key));
-  const overallScored = overallReads.filter((r) => r.key !== "no_read").length;
 
   // Δ column: rank the whole board by its live Read (the SAME helper the board
   // renders with, so today's snapshot can't diverge from the live #), then record
@@ -206,10 +193,19 @@ export default async function LeaderboardsPage({
       : [];
   });
   after(() => writeTodaySnapshotIfMissing(snapshotRows));
-  // Counted over the whole board including the greyed tail, unlike the Quarter
-  // tab — this board renders that tail, so a count that excluded it would not
-  // match what the reader can see.
-  const overallFreshCount = overallRows.filter((row) => row.concallScoredWithin24h).length;
+
+  // The two board filters. Improvers = a better Overall rank than at the prior
+  // snapshot — the same subtraction the Δ column prints, so the chip's count is
+  // the number of ▲ rows. Watchlist = the reader's lists, narrowed to companies
+  // these boards can show (a watchlist is unfiltered; the boards are not).
+  const overallCodes = overallRows.map((row) => row.companyCode.toUpperCase());
+  const improverCodes = overallCodes.filter((code) => {
+    const rank = currentRankByCode.get(code);
+    const prior = priorRankByCode[code];
+    return rank != null && prior != null && prior - rank > 0;
+  });
+  const boardCodes = new Set(overallCodes);
+  const watchlistCodes = watchlistCodesAll?.filter((code) => boardCodes.has(code)) ?? null;
   const telegramUrl = getTelegramJoinUrl();
 
   // The gate card's "below" lines, from the rows each board really renders.
@@ -237,6 +233,7 @@ export default async function LeaderboardsPage({
   const phoneNote = "house-data px-4 pt-0.5 text-[11px] text-[var(--ink-soft)] [text-wrap:pretty]";
 
   return (
+    <BoardFilterProvider improverCodes={improverCodes} watchlistCodes={watchlistCodes}>
     <main className="relative isolate overflow-hidden">
       {/* Phone (handoff 2026-09-13, "Ranking — mobile"): house skin, masthead,
           the board tabs as a chip strip, one card per board. Its own
@@ -279,9 +276,10 @@ export default async function LeaderboardsPage({
               Moat
             </TabsTrigger>
           </TabsList>
+          <BoardFilterChips variant="phone" />
 
           <TabsContent value="overall">
-            <p className={phoneNote}>Ranked by Read — the quarter, the outlook and valuation, combined.</p>
+            <p className={cn(phoneNote, "pt-2")}>Ranked by Read — the quarter, the outlook and valuation, combined.</p>
             <BoardGate gated={gated} board="overall" below={gateCopy.overall}>
               <PhoneOverallBoard
                 rows={overallRows}
@@ -320,111 +318,69 @@ export default async function LeaderboardsPage({
         </LeaderboardTabs>
       </BelowSm>
 
-      <FromSm>
-      <div className={PAGE_BACKGROUND_CLASS} />
+      {/* Desktop (2026-10-05, the minimal pass): the house paper, a bare title
+          over one rule, the board tabs and the two filters on one line, then the
+          board. No hero card, no dek, no atmospheric wash. */}
+      <FromSm className="house min-h-screen">
       <div className={PAGE_SHELL}>
-        <section className={HERO_CARD}>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
-              Leaderboards
-            </h1>
-            <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Every company on the same three scores — the quarter just reported, the outlook
-              ahead, and what you pay for it.
-            </p>
-            {telegramUrl ? (
-              <p className="text-xs text-muted-foreground">
-                Section changes get posted in the{" "}
-                <TelegramJoinLink
-                  href={telegramUrl}
-                  surface="leaderboards"
-                  className="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground"
-                >
-                  Telegram group
-                </TelegramJoinLink>{" "}
-                first.
-              </p>
-            ) : null}
-          </div>
-        </section>
+        <header className="border-b border-[var(--rule)] pb-6 pt-3">
+          <h1 className="house-display text-4xl sm:text-5xl">Leaderboards</h1>
+        </header>
 
-        <LeaderboardTabs defaultTab={defaultTab} className="w-full space-y-4">
-          {/* Scrolls rather than clips if the strip ever outgrows the viewport
-              again (a fifth tab, a longer label). Negative margin lets the pill
-              run to the screen edge on mobile instead of stopping at the gutter. */}
-          <div className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex h-auto w-fit rounded-full border border-sky-200/35 bg-background/80 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] backdrop-blur-sm dark:border-sky-700/20">
-            <TabsTrigger value="overall" className={TAB_TRIGGER_CLASS}>
-              Overall
-            </TabsTrigger>
-            <TabsTrigger value="quarter" className={TAB_TRIGGER_CLASS}>
-              ConcallScore
-            </TabsTrigger>
-            <TabsTrigger value="growth" className={TAB_TRIGGER_CLASS}>
-              Growth
-            </TabsTrigger>
-            <TabsTrigger value="moat" className={TAB_TRIGGER_CLASS}>
-              Moat
-            </TabsTrigger>
+        <LeaderboardTabs defaultTab={defaultTab} className="w-full gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+            <TabsList aria-label="Boards" className="inline-flex h-auto w-fit gap-1 rounded-none bg-transparent p-0">
+              <TabsTrigger value="overall" className={TAB_TRIGGER_CLASS}>
+                Overall
+              </TabsTrigger>
+              <TabsTrigger value="quarter" className={TAB_TRIGGER_CLASS}>
+                Quarter
+              </TabsTrigger>
+              <TabsTrigger value="growth" className={TAB_TRIGGER_CLASS}>
+                Growth
+              </TabsTrigger>
+              <TabsTrigger value="moat" className={TAB_TRIGGER_CLASS}>
+                Moat
+              </TabsTrigger>
             </TabsList>
+            <BoardFilterChips variant="desktop" />
           </div>
 
-          <TabsContent value="overall" className="mt-4 space-y-3">
-            <BandSummaryLine
-              scored={overallScored}
-              total={overallRows.length}
-              scopeNote="with a read"
-              bandCounts={overallBandCounts}
-            />
-            {/* House-style board frame (2026-08-11): cream paper card + house
-                title bar, the leaderboard's move toward the homepage house look.
-                Scoped to `.house` so the palette vars resolve. The in-table cell
-                theming is a follow-up design pass. */}
+          <TabsContent value="overall" className="mt-0">
             <BoardGate gated={gated} board="overall" below={gateCopy.overall}>
-            <div
-              className="house overflow-hidden rounded-[1.45rem] border shadow-[0_18px_38px_-32px_rgba(15,23,42,0.24)]"
-              style={{ borderColor: "var(--rule)", background: "var(--paper)" }}
-            >
-              <div
-                className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3"
-                style={{ borderColor: "var(--rule)" }}
-              >
-                <h2 className="house-micro font-semibold" style={{ color: "var(--ink)" }}>
-                  Overall Board · {overallRows.length}
+            {/* The board plate: a hairline frame, a paper margin, then the board
+                on the lighter paper — title bar, table, one footnote. */}
+            <div className="rounded-2xl border border-[var(--rule)] p-2">
+            <div className="overflow-hidden rounded-md border border-[var(--rule)] bg-[var(--paper-2)]">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--rule)] px-4 py-3.5">
+                <h2 className="house-data text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--ink)]">
+                  Overall · <FilteredCount codes={overallCodes} /> companies
                 </h2>
                 {/* The board sorts on the live Read (score-board-table.tsx ranks
                     on readScore), the Read column shows that very number, AND the
                     grey tail is the same live rank past COVERAGE_BOARD_SIZE — one
                     number decides order and greying, so they can't contradict. The
                     stored coverage flag governs homepage/sectors, not this board. */}
-                <p className="text-[11px]" style={{ color: "var(--ink-soft)" }}>
-                  Ranked by Read
-                </p>
+                <p className="house-data text-[12px] text-[var(--ink-soft)]">Ranked by Read</p>
               </div>
               <OverallTable
                 rows={overallRows}
                 priorRankByCode={priorRankByCode}
                 coverageCutRank={COVERAGE_BOARD_SIZE}
                 gateCutIndex={gateCutIndex}
+                addedCodes={newCodes}
               />
-              {overallFreshCount > 0 && (
-                <p className="border-t border-border/35 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
-                  <span className="font-medium text-foreground">New · 24h</span> marks the{" "}
-                  {overallFreshCount} scored in the last twenty-four hours.
-                </p>
-              )}
               {belowCutCount > 0 && (
                 // The greyed tail is simply the rows ranked past the top 100 on the
                 // live Read — greyed because they're lowest-ranked, so a greyed row
                 // can never sit above a kept one. Named here so it doesn't read as a
                 // rendering fault.
-                <p className="border-t border-border/35 px-4 py-3 text-[11px] leading-relaxed text-muted-foreground">
-                  The <span className="font-medium text-foreground">{belowCutCount}</span> greyed{" "}
-                  {belowCutCount === 1 ? "company" : "companies"} at the bottom{" "}
-                  {belowCutCount === 1 ? "ranks" : "rank"} outside the top 100 by Read — still tracked
-                  and still open to read, just below the covered set.
+                <p className="house-data border-t border-[var(--rule)] px-4 py-3 text-[11px] leading-relaxed text-[var(--ink-soft)]">
+                  The {belowCutCount} greyed {belowCutCount === 1 ? "company ranks" : "companies rank"}{" "}
+                  outside the top 100 by Read — still tracked, still open to read.
                 </p>
               )}
+            </div>
             </div>
             </BoardGate>
           </TabsContent>
@@ -490,8 +446,18 @@ export default async function LeaderboardsPage({
           </TabsContent>
         </LeaderboardTabs>
 
+        {telegramUrl ? (
+          <p className="house-data text-[11px] text-[var(--ink-soft)]">
+            Section changes get posted in the{" "}
+            <TelegramJoinLink href={telegramUrl} surface="leaderboards" className="house-link">
+              Telegram group
+            </TelegramJoinLink>{" "}
+            first.
+          </p>
+        ) : null}
       </div>
       </FromSm>
     </main>
+    </BoardFilterProvider>
   );
 }

@@ -273,18 +273,27 @@ export function LeaderboardTable({
   quarterLabels,
   data,
   gateCutIndex,
+  filterCodes,
 }: {
   quarterLabels: string[];
   data: CompanyRow[];
   /** Sign-up gate marker row (see DataTable); only a logged-out board passes it. */
   gateCutIndex?: number;
+  /**
+   * UPPERCASE codes to keep (the /leaderboards board filters); absent = all.
+   * Applied after ranking, so a filtered row keeps its rank on the full board.
+   */
+  filterCodes?: ReadonlySet<string> | null;
 }) {
   const columns = buildColumns(quarterLabels);
   const latestQuarterLabel = quarterLabels[0];
-  const rankedData = assignCompetitionRanks(data, (item) => {
+  const allRanked = assignCompetitionRanks(data, (item) => {
     if (!latestQuarterLabel) return null;
     return asNumber(item[latestQuarterLabel]);
   });
+  const rankedData = filterCodes
+    ? allRanked.filter((row) => filterCodes.has(String(row.company).toUpperCase()))
+    : allRanked;
 
   return (
     <DataTable
