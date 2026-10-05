@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 
 import { rowDateLabel, weekRanges, type WeekGroup } from "./dates";
@@ -8,6 +7,7 @@ import { useStoriesExpanded } from "./journal-view-state";
 import type { CompanyStory } from "./lanes";
 import { MORE_STORIES_ROWS, moreStoriesView, storyLabel } from "./lanes";
 import { FOCUS_RING, ROW_FOCUS } from "./plate-header";
+import { StoryThumb } from "./story-cover";
 
 const GROUP_LABELS: Record<WeekGroup, string> = {
   this: "This week",
@@ -77,7 +77,7 @@ function StoryRow({ story, today }: { story: CompanyStory; today: string }) {
   return (
     <Link
       href={`/blog/${story.slug}`}
-      className={`-mx-2.5 grid grid-cols-[62px_64px_minmax(0,1fr)] gap-[18px] border-b border-[var(--rule)] px-2.5 py-4 transition-colors duration-150 hover:bg-[var(--paper-2)] ${ROW_FOCUS}`}
+      className={`-mx-2.5 grid grid-cols-[62px_96px_minmax(0,1fr)] gap-[18px] border-b border-[var(--rule)] px-2.5 py-4 transition-colors duration-150 hover:bg-[var(--paper-2)] ${ROW_FOCUS}`}
     >
       <time
         dateTime={story.date || undefined}
@@ -86,11 +86,7 @@ function StoryRow({ story, today }: { story: CompanyStory; today: string }) {
         {rowDateLabel(story.date, story.dateLabel, today)}
       </time>
 
-      <span className="relative block aspect-[4/5] w-16 overflow-hidden rounded-[3px] border border-[var(--rule)] bg-[var(--paper-2)]">
-        {story.image ? (
-          <Image src={story.image} alt="" fill sizes="64px" className="object-cover object-top" />
-        ) : null}
-      </span>
+      <StoryThumb post={story} />
 
       <span className="min-w-0">
         <span className="flex flex-wrap items-center gap-2">
