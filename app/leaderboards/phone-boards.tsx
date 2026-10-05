@@ -169,7 +169,10 @@ export function PhoneOverallBoard({
   coverageCutRank,
   newCodes,
   gateCutIndex,
+  filterCodes,
 }: {
+  /** UPPERCASE codes to keep (the board filters); applied after ranking. */
+  filterCodes?: ReadonlySet<string> | null;
   rows: ScoreBoardRow[];
   /** UPPERCASE code → rank in the prior snapshot window; empty until history accrues. */
   priorRankByCode: Record<string, number>;
@@ -185,10 +188,13 @@ export function PhoneOverallBoard({
 }) {
   // The same derivation and default order as the desktop board
   // (components/score-board-table.tsx), so # and greying agree across paints.
-  const sorted = sortRows(deriveRows(rows, coverageCutRank), {
+  const allSorted = sortRows(deriveRows(rows, coverageCutRank), {
     key: "coverageRank",
     direction: "asc",
   });
+  const sorted = filterCodes
+    ? allSorted.filter((row) => filterCodes.has(row.companyCode.toUpperCase()))
+    : allSorted;
   const showDelta = Object.keys(priorRankByCode).length > 0;
   const isNew = new Set(newCodes);
   // The greyed tail (ranked past the coverage line on the live Read) is still
@@ -218,6 +224,9 @@ export function PhoneOverallBoard({
   return (
     <section aria-label="Overall board, ranked by Read" className={cn(MOBILE_CARD, "mt-3")}>
       <BoardHead left="Overall board · ranked by Read" right={showDelta ? "Δ vs last" : undefined} />
+      {sorted.length === 0 ? (
+        <p className="px-3.5 py-8 text-center text-sm text-[var(--ink-soft)]">No companies match the filter.</p>
+      ) : null}
       <ul role="list" aria-label="Companies by overall rank, with the Read">
         {ranked.map((row, index) => paint(row, index))}
       </ul>
@@ -253,7 +262,10 @@ export function PhoneQuarterBoard({
   nameByCode,
   sectorByCode,
   gateCutIndex,
+  filterCodes,
 }: {
+  /** UPPERCASE codes to keep (the board filters); applied after ranking. */
+  filterCodes?: ReadonlySet<string> | null;
   /** Already sorted by the latest ConcallScore, descending (getConcallData). */
   rows: CompanyRow[];
   latestLabel: string | null;
@@ -267,12 +279,18 @@ export function PhoneQuarterBoard({
   if (rows.length === 0) return <EmptyBoard>No quarter scores yet.</EmptyBoard>;
   // Competition ranks on the latest print (ties share a rank), exactly as the
   // desktop quarter table numbers its rows — so a tie reads the same on both.
-  const ranked = assignCompetitionRanks(rows, (row) =>
+  const allRanked = assignCompetitionRanks(rows, (row) =>
     latestLabel ? asNumber(row[latestLabel]) : null,
   );
+  const ranked = filterCodes
+    ? allRanked.filter((row) => filterCodes.has(String(row.company).toUpperCase()))
+    : allRanked;
   return (
     <section aria-label="Quarter board, ranked by ConcallScore" className={cn(MOBILE_CARD, "mt-3")}>
       <BoardHead left="Quarter board" right="Δ QoQ · Score" />
+      {ranked.length === 0 ? (
+        <p className="px-3.5 py-8 text-center text-sm text-[var(--ink-soft)]">No companies match the filter.</p>
+      ) : null}
       <ul role="list" aria-label="Companies by the latest ConcallScore">
         {ranked.map((row, index) => {
           const code = String(row.company);

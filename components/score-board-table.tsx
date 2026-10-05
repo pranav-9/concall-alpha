@@ -226,6 +226,12 @@ const COLUMN_INFO = {
   ),
 } as const;
 
+// A score cell's two lines: the number in the data face, the band word under it.
+const SCORE_NUM = "house-data text-base font-semibold leading-tight text-foreground";
+const BAND_WORD = "text-[11px] font-medium";
+// The quiet rule between column groups (company | quarter | outlook | read).
+const GROUP_RULE = { borderColor: "var(--rule)" } as const;
+
 function SortButton({
   active,
   direction,
@@ -249,7 +255,7 @@ function SortButton({
       // bearing: the size variant carries has-[>svg]:px-3 and the sort chevron IS
       // a child svg, so plain px-0 loses to it and every label sits 12px right of
       // its own sub-label.
-      className="relative z-10 h-auto rounded-none border-0 bg-transparent px-0 py-0 text-[11px] font-bold uppercase tracking-[0.09em] text-current shadow-none has-[>svg]:px-0 hover:bg-transparent hover:text-current hover:opacity-80"
+      className="house-data relative z-10 h-auto rounded-none border-0 bg-transparent px-0 py-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-current shadow-none has-[>svg]:px-0 hover:bg-transparent hover:text-current hover:opacity-80"
       onClick={onClick}
     >
       {children}
@@ -260,7 +266,9 @@ function SortButton({
           <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
         )
       ) : (
-        <ArrowUpDown className="ml-1.5 h-3.5 w-3.5" />
+        // Idle columns carry no caret until the pointer is on them (or there is
+        // no pointer at all): five idle carets in a row was most of the header's ink.
+        <ArrowUpDown className="ml-1.5 h-3.5 w-3.5 opacity-0 transition-opacity group-hover/head:opacity-60 group-focus-within/head:opacity-60 [@media(hover:none)]:opacity-60" />
       )}
     </Button>
   );
@@ -292,15 +300,21 @@ function renderSortHead({
     // Colour is set on the wrapper so the SortButton label (text-current) and its
     // sort caret (currentColor) both inherit it — muted ink for a normal column,
     // the warm signal for the Read.
-    <div className="flex flex-col gap-0.5" style={{ color: emphasis ? "var(--warn)" : "var(--ink-soft)" }}>
+    <div className="group/head flex flex-col gap-1" style={{ color: emphasis ? "var(--warn)" : "var(--ink-soft)" }}>
       <div className="flex items-center gap-0.5">
         <SortButton active={active} direction={direction} ariaLabel={ariaLabel} onClick={() => onSort(columnKey)}>
           {label}
         </SortButton>
-        {info ? <ColumnInfo label={label}>{info}</ColumnInfo> : null}
+        {info ? (
+          // Same rule as the idle caret: the explainer shows on hover / focus,
+          // and always where there is no hover to reveal it.
+          <span className="opacity-0 transition-opacity group-hover/head:opacity-100 group-focus-within/head:opacity-100 [@media(hover:none)]:opacity-100">
+            <ColumnInfo label={label}>{info}</ColumnInfo>
+          </span>
+        ) : null}
       </div>
       {subtitle ? (
-        <span className="text-[10px] font-medium lowercase" style={{ color: "var(--ink-soft)", opacity: 0.7 }}>
+        <span className="house-data text-[10.5px] font-normal normal-case tracking-normal" style={{ color: "var(--ink-soft)", opacity: 0.8 }}>
           {subtitle}
         </span>
       ) : null}
@@ -335,12 +349,12 @@ function ScoreCell({
   }
   return (
     <div className="leading-tight">
-      <div className="tabular-nums font-semibold text-foreground">{score.toFixed(1)}</div>
-      <div className="flex items-baseline gap-1.5">
+      <div className={SCORE_NUM}>{score.toFixed(1)}</div>
+      <div className="mt-0.5 flex items-baseline gap-1.5">
         {/* Below the cut the whole row is de-emphasized, so the band word drops
             to muted rather than carrying its own colour — a greyed row with one
             bright teal label reads as an error, not as de-emphasis. */}
-        <span className={`text-[10px] font-medium ${dimmed ? "text-muted-foreground" : bandClass}`}>
+        <span className={`${BAND_WORD} ${dimmed ? "text-muted-foreground" : bandClass}`}>
           {bandLabel}
         </span>
         {note && (
@@ -436,7 +450,17 @@ export function ScoreBoardTable({
   layout = "board",
   gateCutIndex,
   peersOf,
+  filterCodes,
+  addedCodes,
 }: {
+  /**
+   * UPPERCASE codes to keep — the /leaderboards board filters (Improvers /
+   * Watchlist). Applied AFTER ranks are derived, so a filtered row keeps the
+   * rank it holds on the full board. Absent / null = every row.
+   */
+  filterCodes?: ReadonlySet<string> | null;
+  /** UPPERCASE codes of companies new to coverage; they carry an "Added" chip. */
+  addedCodes?: string[];
   rows: ScoreBoardRow[];
   /**
    * Present on a watchlist, which owns the remove action. Omitted on the
@@ -489,9 +513,16 @@ export function ScoreBoardTable({
   const router = useRouter();
   const [sort, setSort] = useState<SortState>({ key: "coverageRank", direction: "asc" });
   const [removingCompanyCode, setRemovingCompanyCode] = useState<string | null>(null);
-  const sortedRows = useMemo(
-    () => sortRows(deriveRows(rows, coverageCutRank), sort),
-    [rows, coverageCutRank, sort],
+  const sortedRows = useMemo(() => {
+    const all = sortRows(deriveRows(rows, coverageCutRank), sort);
+    return filterCodes ? all.filter((row) => filterCodes.has(row.companyCode.toUpperCase())) : all;
+  }, [rows, coverageCutRank, sort, filterCodes]);
+  const added = useMemo(() => new Set(addedCodes ?? []), [addedCodes]);
+  // The quarter the "Latest" column is showing: the label on any row that has
+  // reported the board's newest quarter.
+  const boardQuarterLabel = useMemo(
+    () => rows.find((row) => row.latestIsStale !== true && row.latestQuarterLabel)?.latestQuarterLabel ?? null,
+    [rows],
   );
   // null until hydration → render both layouts (matches the server HTML);
   // then only the one the viewport needs. See hooks/use-min-width.
@@ -854,12 +885,12 @@ export function ScoreBoardTable({
                   ? sortDirectionLabel(sort.key)
                   : "none"
               }
-              className="px-3 py-3 text-foreground"
+              className="px-4 py-3.5 text-foreground"
             >
               <div className="flex items-baseline gap-3">
                 {showDelta && (
                   <span
-                    className="w-8 shrink-0 text-[11px] font-bold uppercase tracking-[0.09em]"
+                    className="house-data w-8 shrink-0 text-[11px] font-semibold uppercase tracking-[0.12em]"
                     style={{ color: "var(--ink-soft)" }}
                     title="Rank change vs the previous snapshot"
                   >
@@ -973,49 +1004,49 @@ export function ScoreBoardTable({
               </>
             ) : (
               <>
-            <TableHead aria-sort={sortDirectionLabel("latestScore")} className="px-3 py-3 text-foreground">
+            <TableHead aria-sort={sortDirectionLabel("latestScore")} className="border-l px-4 py-3.5 text-foreground" style={GROUP_RULE}>
               {renderSortHead({
                 label: "ConcallScore",
                 columnKey: "latestScore",
                 sort,
                 onSort: handleSort,
-                subtitle: "Latest",
+                subtitle: boardQuarterLabel ? `Latest · ${boardQuarterLabel}` : "Latest",
                 info: COLUMN_INFO.latest,
               })}
             </TableHead>
-            <TableHead aria-sort={sortDirectionLabel("fourQScore")} className="px-3 py-3 text-foreground">
+            <TableHead aria-sort={sortDirectionLabel("fourQScore")} className="px-4 py-3.5 text-foreground">
               {renderSortHead({
-                label: "Trailing ConcallScore",
+                label: "4Q Avg",
                 columnKey: "fourQScore",
                 sort,
                 onSort: handleSort,
-                subtitle: "4Q Avg",
+                subtitle: "Trailing ConcallScore",
                 info: COLUMN_INFO.fourQ,
               })}
             </TableHead>
-            <TableHead aria-sort={sortDirectionLabel("growthScore")} className="px-3 py-3 text-foreground">
+            <TableHead aria-sort={sortDirectionLabel("growthScore")} className="border-l px-4 py-3.5 text-foreground" style={GROUP_RULE}>
               {renderSortHead({
                 label: "Growth",
                 columnKey: "growthScore",
                 sort,
                 onSort: handleSort,
-                subtitle: "forward",
+                subtitle: "Forward",
                 info: COLUMN_INFO.growth,
               })}
             </TableHead>
-            <TableHead aria-sort={sortDirectionLabel("valuationScore")} className="px-3 py-3 text-foreground">
+            <TableHead aria-sort={sortDirectionLabel("valuationScore")} className="px-4 py-3.5 text-foreground">
               {renderSortHead({
                 label: "Valuation",
                 columnKey: "valuationScore",
                 sort,
                 onSort: handleSort,
-                subtitle: "higher = cheaper",
+                subtitle: "Higher = cheaper",
                 info: COLUMN_INFO.valuation,
               })}
             </TableHead>
             <TableHead
               aria-sort={sortDirectionLabel("read")}
-              className="border-l px-3 py-3"
+              className="border-l px-4 py-3.5"
               style={{ borderColor: "var(--rule)", backgroundColor: "rgba(180,83,9,0.06)" }}
             >
               {renderSortHead({
@@ -1023,7 +1054,7 @@ export function ScoreBoardTable({
                 columnKey: "read",
                 sort,
                 onSort: handleSort,
-                subtitle: "the three, combined",
+                subtitle: "The three, combined",
                 info: COLUMN_INFO.read,
                 emphasis: true,
               })}
@@ -1079,14 +1110,14 @@ export function ScoreBoardTable({
                       dim ? "opacity-55" : ""
                     } ${isSelf(row) ? "bg-sky-500/[0.07]" : ""}`}
                   >
-                    <TableCell className="px-3 py-3">
+                    <TableCell className="px-4 py-3.5">
                       <div className="flex items-baseline gap-2">
                         {showDelta && (
                           <span className="w-8 shrink-0 text-right">
                             <DeltaCell delta={delta} dimmed={dim} />
                           </span>
                         )}
-                        <span className="w-7 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                        <span className="house-data w-7 shrink-0 text-[13px] text-muted-foreground">
                           {Number.isFinite(row.effectiveRank) ? row.effectiveRank : "—"}
                         </span>
                         {/* Below-cut rows link too: the coverage policy de-emphasizes
@@ -1118,7 +1149,7 @@ export function ScoreBoardTable({
                               })
                             }
                             title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}
-                            className="house-display min-w-0 truncate text-sm hover:underline"
+                            className={`house-display min-w-0 truncate hover:underline ${signals ? "text-sm" : "text-[15px]"}`}
                             style={dim ? { color: "var(--ink-soft)" } : { color: "var(--ink)" }}
                           >
                             {row.companyName}
@@ -1147,6 +1178,35 @@ export function ScoreBoardTable({
                                 title="Admitted as a large cap — outside the ranked mid/small-cap universe"
                               >
                                 · large cap · unranked
+                              </span>
+                            )}
+                            {/* Board layout: the two "what just changed" marks ride
+                                beside the ticker, so the score cells stay number +
+                                band and nothing else. */}
+                            {!signals && added.has(row.companyCode.toUpperCase()) && (
+                              <span
+                                className="house-data rounded-[3px] border px-1 text-[9px] uppercase leading-[1.5] tracking-[0.12em]"
+                                style={{ borderColor: "var(--rule)", color: "var(--ink-soft)" }}
+                                title="New to coverage"
+                              >
+                                Added
+                              </span>
+                            )}
+                            {!signals && row.concallScoredWithin24h && (
+                              <span
+                                className="house-data inline-flex items-center gap-1 whitespace-nowrap text-[9px] uppercase tracking-[0.12em]"
+                                style={{ color: "var(--ink-soft)" }}
+                                title={
+                                  "Scored in the last 24 hours." +
+                                  (row.concallScoredAt ? `\nScored ${formatScoredAt(row.concallScoredAt)}` : "")
+                                }
+                              >
+                                <span
+                                  aria-hidden
+                                  className="h-1.5 w-1.5 rounded-full"
+                                  style={{ background: dim ? "var(--ink-soft)" : "var(--signal)" }}
+                                />
+                                New · 24h
                               </span>
                             )}
                           </span>
@@ -1265,15 +1325,15 @@ export function ScoreBoardTable({
                   {/* Latest: the single newest print, its quarter label, and the
                       only place the freshness / unofficial chips live — a
                       one-quarter badge must name the one quarter it describes. */}
-                  <TableCell className="px-3 py-3">
+                  <TableCell className="border-l px-4 py-3.5" style={GROUP_RULE}>
                     {row.latestConcallScore != null ? (
                       <div className="leading-tight">
-                        <div className="tabular-nums font-semibold text-foreground">
+                        <div className={SCORE_NUM}>
                           {row.latestConcallScore.toFixed(1)}
                         </div>
-                        <div className="flex items-baseline gap-1.5">
+                        <div className="mt-0.5 flex items-baseline gap-1.5">
                           <span
-                            className={`text-[10px] font-medium ${
+                            className={`${BAND_WORD} ${
                               dim
                                 ? "text-muted-foreground"
                                 : BANDS[bandForScore(row.latestConcallScore)].textClass
@@ -1287,21 +1347,13 @@ export function ScoreBoardTable({
                             </span>
                           )}
                         </div>
-                        {row.concallScoredWithin24h && (
-                          <div className="mt-1 flex flex-wrap items-center gap-1">
-                            <FreshScoreChip
-                              scoredAt={formatScoredAt(row.concallScoredAt)}
-                              dimmed={dim}
-                            />
-                          </div>
-                        )}
                       </div>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
                   {/* 4Q: the stable trailing average beside the fresh print. */}
-                  <TableCell className="px-3 py-3">
+                  <TableCell className="px-4 py-3.5">
                     <ScoreCell
                       score={row.fourConcallScore}
                       bandLabel={
@@ -1317,7 +1369,7 @@ export function ScoreBoardTable({
                       dimmed={dim}
                     />
                   </TableCell>
-                  <TableCell className="px-3 py-3">
+                  <TableCell className="border-l px-4 py-3.5" style={GROUP_RULE}>
                     <ScoreCell
                       score={row.growthScore}
                       bandLabel={
@@ -1333,7 +1385,7 @@ export function ScoreBoardTable({
                       dimmed={dim}
                     />
                   </TableCell>
-                  <TableCell className="px-3 py-3">
+                  <TableCell className="px-4 py-3.5">
                     <ScoreCell
                       score={row.valuationScore}
                       bandLabel={
@@ -1350,19 +1402,19 @@ export function ScoreBoardTable({
                     />
                   </TableCell>
                   <TableCell
-                    className="border-l px-3 py-3"
+                    className="border-l px-4 py-3.5"
                     style={{ borderColor: "var(--rule)", backgroundColor: "rgba(180,83,9,0.05)" }}
                   >
                     <div className="leading-tight" title={row.readDescription}>
                       {row.readScore != null ? (
-                        <div className="tabular-nums font-semibold text-foreground">
+                        <div className={SCORE_NUM}>
                           {row.readScore.toFixed(1)}
                         </div>
                       ) : (
                         <div className="text-muted-foreground">—</div>
                       )}
                       <div
-                        className={`text-[10px] font-medium ${dim ? "text-muted-foreground" : read.textClass}`}
+                        className={`mt-0.5 ${BAND_WORD} ${dim ? "text-muted-foreground" : read.textClass}`}
                       >
                         {read.label}
                       </div>

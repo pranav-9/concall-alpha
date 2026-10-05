@@ -110,6 +110,10 @@ export const analytics = {
   leaderboardTabChange: (from: string, to: string, surface?: AnalyticsSurface) =>
     track("leaderboard_tab_change", { from, to, surface }),
 
+  /** A board filter chip (Improvers / Watchlist) was switched on or off. */
+  leaderboardFilterToggle: (filter: string, on: boolean, surface?: AnalyticsSurface) =>
+    track("leaderboard_filter_toggle", { filter, on, surface }),
+
   /** A leaderboard column was sorted — what ranking dimension people value. */
   leaderboardSort: (board: LeaderboardBoard, column: string, direction: "asc" | "desc") =>
     track("leaderboard_sort", { board, column, direction }),

@@ -5,6 +5,7 @@ import type { CompanyRow } from "@/app/company/leaderboard-table";
 import type { ScoreBoardRow } from "@/components/score-board-table";
 import type { GrowthRowTable } from "./growth-table";
 import type { MoatRowTable } from "./moat-table";
+import { FilterEmpty, filterByCodes, useBoardFilterCodes } from "./board-filter";
 import type {
   PhoneGrowthBoard as PhoneGrowthBoardImpl,
   PhoneMoatBoard as PhoneMoatBoardImpl,
@@ -38,10 +39,15 @@ function TableSkeleton() {
   );
 }
 
-export const LeaderboardTable = dynamic<{
+// Every export below is a thin wrapper that applies the page's board filters
+// (./board-filter) to the lazily loaded board. Growth and Moat rows carry their
+// own rank, so they are filtered here; the Quarter and Overall boards rank the
+// rows they are handed, so they take the codes and hide rows after ranking.
+const LeaderboardTableImpl = dynamic<{
   quarterLabels: string[];
   data: CompanyRow[];
   gateCutIndex?: number;
+  filterCodes?: ReadonlySet<string> | null;
 }>(
   () =>
     import("@/app/company/leaderboard-table").then((mod) => mod.LeaderboardTable),
@@ -50,35 +56,65 @@ export const LeaderboardTable = dynamic<{
   },
 );
 
-export const GrowthTable = dynamic<{ data: GrowthRowTable[]; gateCutIndex?: number }>(
+export function LeaderboardTable(props: {
+  quarterLabels: string[];
+  data: CompanyRow[];
+  gateCutIndex?: number;
+}) {
+  return <LeaderboardTableImpl {...props} filterCodes={useBoardFilterCodes()} />;
+}
+
+const GrowthTableImpl = dynamic<{ data: GrowthRowTable[]; gateCutIndex?: number }>(
   () => import("./growth-table").then((mod) => mod.GrowthTable),
   {
     loading: () => <TableSkeleton />,
   },
 );
 
-export const MoatTable = dynamic<{ data: MoatRowTable[]; gateCutIndex?: number }>(
+export function GrowthTable({ data, gateCutIndex }: { data: GrowthRowTable[]; gateCutIndex?: number }) {
+  const keep = useBoardFilterCodes();
+  const rows = filterByCodes(data, keep, (row) => row.companyCode);
+  if (keep != null && rows.length === 0) return <FilterEmpty />;
+  return <GrowthTableImpl data={rows} gateCutIndex={gateCutIndex} />;
+}
+
+const MoatTableImpl = dynamic<{ data: MoatRowTable[]; gateCutIndex?: number }>(
   () => import("./moat-table").then((mod) => mod.MoatTable),
   {
     loading: () => <TableSkeleton />,
   },
 );
 
+export function MoatTable({ data, gateCutIndex }: { data: MoatRowTable[]; gateCutIndex?: number }) {
+  const keep = useBoardFilterCodes();
+  const rows = filterByCodes(data, keep, (row) => row.companyCode);
+  if (keep != null && rows.length === 0) return <FilterEmpty />;
+  return <MoatTableImpl data={rows} gateCutIndex={gateCutIndex} />;
+}
+
 // The "Overall" tab: four score columns (Quarter / Growth / Valuation / Read)
 // over the whole mid/small universe, below-cut names included as a greyed tail.
 // The same board renders a watchlist (with a Remove column and nothing greyed) —
 // see components/score-board-table.tsx.
-export const OverallTable = dynamic<{
+type OverallTableProps = {
   rows: ScoreBoardRow[];
   priorRankByCode?: Record<string, number>;
   coverageCutRank?: number;
   gateCutIndex?: number;
-}>(
+  /** UPPERCASE codes of companies new to coverage — the "Added" chip. */
+  addedCodes?: string[];
+};
+
+const OverallTableImpl = dynamic<OverallTableProps & { filterCodes?: ReadonlySet<string> | null }>(
   () => import("@/components/score-board-table").then((mod) => mod.ScoreBoardTable),
   {
     loading: () => <TableSkeleton />,
   },
 );
+
+export function OverallTable(props: OverallTableProps) {
+  return <OverallTableImpl {...props} filterCodes={useBoardFilterCodes()} />;
+}
 
 // The phone paints (app/leaderboards/phone-boards.tsx), split the same way so a
 // desktop visitor — whose BelowSm tree unmounts right after hydration — never
@@ -94,19 +130,40 @@ function PhoneBoardSkeleton() {
   );
 }
 
-export const PhoneOverallBoard = dynamic<React.ComponentProps<typeof PhoneOverallBoardImpl>>(
+const PhoneOverallBoardLazy = dynamic<React.ComponentProps<typeof PhoneOverallBoardImpl>>(
   () => import("./phone-boards").then((mod) => mod.PhoneOverallBoard),
   { loading: () => <PhoneBoardSkeleton /> },
 );
-export const PhoneQuarterBoard = dynamic<React.ComponentProps<typeof PhoneQuarterBoardImpl>>(
+const PhoneQuarterBoardLazy = dynamic<React.ComponentProps<typeof PhoneQuarterBoardImpl>>(
   () => import("./phone-boards").then((mod) => mod.PhoneQuarterBoard),
   { loading: () => <PhoneBoardSkeleton /> },
 );
-export const PhoneGrowthBoard = dynamic<React.ComponentProps<typeof PhoneGrowthBoardImpl>>(
+const PhoneGrowthBoardLazy = dynamic<React.ComponentProps<typeof PhoneGrowthBoardImpl>>(
   () => import("./phone-boards").then((mod) => mod.PhoneGrowthBoard),
   { loading: () => <PhoneBoardSkeleton /> },
 );
-export const PhoneMoatBoard = dynamic<React.ComponentProps<typeof PhoneMoatBoardImpl>>(
+const PhoneMoatBoardLazy = dynamic<React.ComponentProps<typeof PhoneMoatBoardImpl>>(
   () => import("./phone-boards").then((mod) => mod.PhoneMoatBoard),
   { loading: () => <PhoneBoardSkeleton /> },
 );
+
+type PhoneProps<T extends (props: never) => unknown> = Omit<Parameters<T>[0], "filterCodes">;
+
+export function PhoneOverallBoard(props: PhoneProps<typeof PhoneOverallBoardImpl>) {
+  return <PhoneOverallBoardLazy {...props} filterCodes={useBoardFilterCodes()} />;
+}
+export function PhoneQuarterBoard(props: PhoneProps<typeof PhoneQuarterBoardImpl>) {
+  return <PhoneQuarterBoardLazy {...props} filterCodes={useBoardFilterCodes()} />;
+}
+export function PhoneGrowthBoard({ rows, gateCutIndex }: PhoneProps<typeof PhoneGrowthBoardImpl>) {
+  const keep = useBoardFilterCodes();
+  const kept = filterByCodes(rows, keep, (row) => row.companyCode);
+  if (keep != null && kept.length === 0) return <FilterEmpty />;
+  return <PhoneGrowthBoardLazy rows={kept} gateCutIndex={gateCutIndex} />;
+}
+export function PhoneMoatBoard({ rows, gateCutIndex }: PhoneProps<typeof PhoneMoatBoardImpl>) {
+  const keep = useBoardFilterCodes();
+  const kept = filterByCodes(rows, keep, (row) => row.companyCode);
+  if (keep != null && kept.length === 0) return <FilterEmpty />;
+  return <PhoneMoatBoardLazy rows={kept} gateCutIndex={gateCutIndex} />;
+}
