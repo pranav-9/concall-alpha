@@ -1,26 +1,34 @@
 // Red flags scan — the companies whose Quality-tab forensic checks land in the
-// Flag band, worst first, filterable to one check. Every word on a row (check
+// Flag band, worst first. Every word on a row (check
 // name, metric, note) is the company page's own (lib/company-quality/forensics);
 // this view only gathers them.
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 
-import { mobileChipClass, MOBILE_CHIP_STRIP } from "@/components/mobile-card";
-import { filterByCheck, type RedFlagHit, type RedFlagRow, type RedFlagScan } from "@/lib/scanners/red-flags";
+import type { RedFlagHit, RedFlagRow, RedFlagScan } from "@/lib/scanners/red-flags";
 import { cn } from "@/lib/utils";
 
 const ROW_LINK =
   "grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-5 gap-y-2.5 px-4 py-3.5 transition-colors hover:bg-[var(--paper)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--signal)] sm:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_5.5rem] sm:px-5 sm:py-4";
 
-export function RedFlagScanView({ scan, checkId }: { scan: RedFlagScan; checkId: string | null }) {
-  const activeCheck = scan.checkCounts.find((c) => c.id === checkId) ?? null;
-  const rows = filterByCheck(scan.flagged, activeCheck?.id);
+export function RedFlagScanView({
+  scan,
+  mine,
+  filter,
+}: {
+  scan: RedFlagScan;
+  /** Scanning the reader's watchlist companies instead of the covered universe. */
+  mine: boolean;
+  filter: ReactNode;
+}) {
+  const rows = scan.flagged;
 
   return (
     <section aria-labelledby="red-flags-heading">
       <h2 id="red-flags-heading" className="house-display max-w-3xl text-[22px] leading-[1.12] sm:text-[30px]">
-        <span className="text-[var(--alarm)]">{scan.flagged.length}</span> of {scan.scanned} companies trip
-        a forensic red flag
+        <span className="text-[var(--alarm)]">{scan.flagged.length}</span> of {mine ? "your " : ""}
+        {scan.scanned} {mine ? "watchlist companies" : "companies"} trip a forensic red flag
       </h2>
       <p className="mt-2.5 max-w-2xl text-[13px] leading-[1.55] text-[var(--ink-soft)] sm:text-[14px]">
         The nine checks on every company&rsquo;s Quality tab: does profit turn into cash, how long customers
@@ -28,42 +36,27 @@ export function RedFlagScanView({ scan, checkId }: { scan: RedFlagScan; checkId:
         other income and the auditor. A flag is a check&rsquo;s worst band; watch is the one below it.
       </p>
       <p className="house-data mt-2 max-w-2xl text-[10.5px] leading-[1.5] text-[var(--ink-soft)]">
-        Scanned: the {scan.scanned} covered companies with a Quality read so far. A company missing here may
-        not have been read yet &mdash; that is not a clean bill.
+        Scanned: the {scan.scanned} {mine ? "companies on your watchlists" : "covered companies"} with a Quality
+        read so far. A company missing here may not have been read yet &mdash; that is not a clean bill.
       </p>
 
-      {scan.checkCounts.length > 0 ? (
-        <nav aria-label="Filter by check" className={cn(MOBILE_CHIP_STRIP, "-mx-4 mt-5 px-4 sm:mx-0 sm:flex-wrap sm:px-0")}>
-          <Link href="/scanners" scroll={false} className={mobileChipClass(!activeCheck)} aria-current={!activeCheck ? "true" : undefined}>
-            Any flag <span className="ml-2 opacity-70">{scan.flagged.length}</span>
-          </Link>
-          {scan.checkCounts.map((c) => (
-            <Link
-              key={c.id}
-              href={`/scanners?check=${c.id}`}
-              scroll={false}
-              className={mobileChipClass(activeCheck?.id === c.id)}
-              aria-current={activeCheck?.id === c.id ? "true" : undefined}
-            >
-              {c.name} <span className="ml-2 opacity-70">{c.count}</span>
-            </Link>
-          ))}
-        </nav>
-      ) : null}
+      <div className="mt-5">{filter}</div>
 
       {rows.length > 0 ? (
         <ul className="mt-4 overflow-hidden rounded-xl border border-[var(--rule)] bg-[var(--paper-2)]">
           {rows.map((row) => (
             <li key={row.code} className="border-b border-[var(--rule)] last:border-b-0">
-              <ScanRow row={row} mode="flags" leadCheck={activeCheck?.id ?? null} />
+              <ScanRow row={row} mode="flags" />
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-4 text-[13px] text-[var(--ink-soft)]">No covered company trips a red flag right now.</p>
+        <p className="mt-4 text-[13px] text-[var(--ink-soft)]">
+          {mine ? "None of your watchlist companies trips a red flag right now." : "No covered company trips a red flag right now."}
+        </p>
       )}
 
-      {scan.watchOnly.length > 0 && !activeCheck ? (
+      {scan.watchOnly.length > 0 ? (
         <details className="group mt-6">
           <summary className="house-data inline-flex cursor-pointer list-none items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[var(--ink-soft)] hover:text-[var(--ink)] [&::-webkit-details-marker]:hidden">
             <span aria-hidden className="inline-block transition-transform group-open:rotate-90">›</span>
@@ -72,7 +65,7 @@ export function RedFlagScanView({ scan, checkId }: { scan: RedFlagScan; checkId:
           <ul className="mt-3 overflow-hidden rounded-xl border border-[var(--rule)] bg-[var(--paper-2)]">
             {scan.watchOnly.map((row) => (
               <li key={row.code} className="border-b border-[var(--rule)] last:border-b-0">
-                <ScanRow row={row} mode="watch" leadCheck={null} />
+                <ScanRow row={row} mode="watch" />
               </li>
             ))}
           </ul>
@@ -82,19 +75,8 @@ export function RedFlagScanView({ scan, checkId }: { scan: RedFlagScan; checkId:
   );
 }
 
-function ScanRow({
-  row,
-  mode,
-  leadCheck,
-}: {
-  row: RedFlagRow;
-  mode: "flags" | "watch";
-  leadCheck: string | null;
-}) {
-  // The filtered check leads the row, so the reason it is listed reads first.
-  const flags = leadCheck
-    ? [...row.flags].sort((a, b) => Number(b.id === leadCheck) - Number(a.id === leadCheck))
-    : row.flags;
+function ScanRow({ row, mode }: { row: RedFlagRow; mode: "flags" | "watch" }) {
+  const flags = row.flags;
   const count = mode === "flags" ? row.flags.length : row.watches.length;
   return (
     <Link href={`/company/${encodeURIComponent(row.code)}#quality`} prefetch={false} className={ROW_LINK}>

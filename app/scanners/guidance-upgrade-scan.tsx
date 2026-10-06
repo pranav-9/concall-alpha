@@ -1,23 +1,14 @@
 // Guidance upgrades scan — companies whose management raised a live
-// commitment, most recent raise first, beside the Guidance tab's own
+// commitment on the latest call, beside the Guidance tab's own
 // credibility verdict so a reader can weigh what a raise from this management
 // is worth. Labels, values and the tier are the Guidance tab's own
 // (lib/guidance-tracking/verdict); this view only gathers them.
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 
-import { mobileChipClass, MOBILE_CHIP_STRIP } from "@/components/mobile-card";
 import { managementTone, type SignalTone } from "@/lib/board-signals";
-import type { ReportingQuarter } from "@/lib/current-quarter";
-import {
-  GUIDANCE_WINDOWS,
-  selectGuidanceUpgradeRows,
-  windowFloor,
-  windowLabel,
-  type GuidanceUpgradeRow,
-  type GuidanceUpgradeScan,
-  type GuidanceWindow,
-} from "@/lib/scanners/guidance-upgrades";
+import type { GuidanceUpgradeRow, GuidanceUpgradeScan } from "@/lib/scanners/guidance-upgrades";
 import { cn } from "@/lib/utils";
 
 /** Raises shown per company; the rest are on its Guidance tab. */
@@ -30,40 +21,24 @@ const TONE_CLASS: Record<SignalTone, string> = {
   muted: "text-[var(--ink-soft)]",
 };
 
-const href = (window: GuidanceWindow) =>
-  window === "latest" ? "/scanners?scan=guidance" : `/scanners?scan=guidance&window=${window}`;
-
-function headline(window: GuidanceWindow, n: number, current: ReportingQuarter): string {
-  const label = windowLabel(window, current);
-  const companies = n === 1 ? "company" : "companies";
-  if (window === "latest") return ` ${companies} raised guidance on the ${label.replace("Raised on the ", "")}`;
-  if (window === "recent") return ` ${companies} have raised guidance since ${label.replace("Since ", "")}`;
-  return ` ${companies} have a raised commitment still live`;
-}
-
-const CHIP_LABEL: Record<GuidanceWindow, string> = {
-  latest: "Latest call",
-  recent: "Last two quarters",
-  all: "All live",
-};
-
 export function GuidanceUpgradeScanView({
   scan,
-  window,
-  current,
+  mine,
+  filter,
 }: {
   scan: GuidanceUpgradeScan;
-  window: GuidanceWindow;
-  current: ReportingQuarter;
+  /** Scanning the reader's watchlist companies instead of the covered universe. */
+  mine: boolean;
+  filter: ReactNode;
 }) {
-  const rows = selectGuidanceUpgradeRows(scan, window, current);
-  const floor = windowFloor(window, current);
+  const rows = scan.rows;
+  const n = rows.length;
 
   return (
     <section aria-labelledby="guidance-heading">
       <h2 id="guidance-heading" className="house-display max-w-3xl text-[22px] leading-[1.12] sm:text-[30px]">
-        <span className="text-[var(--signal)]">{scan.counts[window]}</span>
-        {headline(window, scan.counts[window], current)}
+        <span className="text-[var(--signal)]">{n}</span> of {mine ? "your " : ""}
+        {scan.scanned} {mine ? "watchlist companies" : "companies"} raised guidance on their latest call
       </h2>
       <p className="mt-2.5 max-w-2xl text-[13px] leading-[1.55] text-[var(--ink-soft)] sm:text-[14px]">
         A raise is a live commitment &mdash; its deadline still ahead &mdash; whose guided number went up the last
@@ -72,43 +47,35 @@ export function GuidanceUpgradeScanView({
         is worth.
       </p>
       <p className="house-data mt-2 max-w-2xl text-[10.5px] leading-[1.5] text-[var(--ink-soft)]">
-        Scanned: the {scan.scanned} covered companies with guidance on record.
+        Scanned: the {scan.scanned} {mine ? "companies on your watchlists" : "covered companies"} with guidance on
+        record, for raises made on the {scan.sinceLabel} call or later.
         {scan.skippedRaises > 0
           ? ` ${scan.skippedRaises} ${scan.skippedRaises === 1 ? "raise is" : "raises are"} left out where the recorded numbers don't read as a raise on their own.`
           : ""}
       </p>
 
-      <nav aria-label="Window" className={cn(MOBILE_CHIP_STRIP, "-mx-4 mt-5 px-4 sm:mx-0 sm:flex-wrap sm:px-0")}>
-        {GUIDANCE_WINDOWS.map((w) => (
-          <Link
-            key={w}
-            href={href(w)}
-            scroll={false}
-            className={mobileChipClass(window === w)}
-            aria-current={window === w ? "true" : undefined}
-            title={windowLabel(w, current)}
-          >
-            {CHIP_LABEL[w]} <span className="ml-2 opacity-70">{scan.counts[w]}</span>
-          </Link>
-        ))}
-      </nav>
+      <div className="mt-5">{filter}</div>
 
       {rows.length > 0 ? (
         <ul className="mt-4 overflow-hidden rounded-xl border border-[var(--rule)] bg-[var(--paper-2)]">
           {rows.map((row) => (
             <li key={row.code} className="border-b border-[var(--rule)] last:border-b-0">
-              <UpgradeRow row={row} floor={floor} />
+              <UpgradeRow row={row} floor={scan.floor} />
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-4 text-[13px] text-[var(--ink-soft)]">No covered company has raised guidance in this window.</p>
+        <p className="mt-4 text-[13px] text-[var(--ink-soft)]">
+          {mine
+            ? `None of your watchlist companies has raised guidance since the ${scan.sinceLabel} call.`
+            : `No covered company has raised guidance since the ${scan.sinceLabel} call.`}
+        </p>
       )}
     </section>
   );
 }
 
-function UpgradeRow({ row, floor }: { row: GuidanceUpgradeRow; floor: number | null }) {
+function UpgradeRow({ row, floor }: { row: GuidanceUpgradeRow; floor: number }) {
   const shown = row.raises.slice(0, RAISES_SHOWN);
   const more = row.raises.length - shown.length;
   const tone = TONE_CLASS[managementTone(row.tier)];
@@ -141,7 +108,7 @@ function UpgradeRow({ row, floor }: { row: GuidanceUpgradeRow; floor: number | n
       <div className="col-span-2 min-w-0 sm:col-span-1">
         <ul className="space-y-1.5">
           {shown.map((raise) => {
-            const inWindow = floor == null || (raise.raisedIndex != null && raise.raisedIndex >= floor);
+            const inWindow = raise.raisedIndex != null && raise.raisedIndex >= floor;
             return (
               <li key={raise.key} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[12.5px] leading-snug">
                 <span className="text-[var(--ink)]">{raise.label}</span>

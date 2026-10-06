@@ -42,8 +42,8 @@ export type GuidanceRaise = {
 export type GuidanceUpgradeRow = ScanCompany & {
   /** Raised live commitments, most recent first. */
   raises: GuidanceRaise[];
-  /** "Raised" rows left out because their printed values don't read as a raise. */
-  skippedRaises: number;
+  /** Quarter index of each "Raised" row left out because its printed values don't read as a raise. */
+  skippedRaisedIndexes: Array<number | null>;
   latestRaisedIndex: number | null;
   latestRaisedIn: string | null;
   /** Live commitments the company also LOWERED — the same tab's "Lowered" chip. */
@@ -120,7 +120,7 @@ export function buildGuidanceUpgradeRow(
   if (items.length === 0) return null;
   const verdict = buildGuidanceVerdict(items, current, scoredCredibility);
   const raises: GuidanceRaise[] = [];
-  let skippedRaises = 0;
+  const skippedRaisedIndexes: Array<number | null> = [];
   let loweredCount = 0;
   for (const row of verdict.live) {
     const key = liveStateKey(row);
@@ -128,14 +128,14 @@ export function buildGuidanceUpgradeRow(
     if (key !== "raised") continue;
     const raise = raiseOf(row);
     if (raise && isLegibleRaise(raise.from, raise.to)) raises.push(raise);
-    else skippedRaises += 1;
+    else skippedRaisedIndexes.push(raise?.raisedIndex ?? null);
   }
-  if (raises.length === 0 && skippedRaises === 0) return null;
+  if (raises.length === 0 && skippedRaisedIndexes.length === 0) return null;
   raises.sort(byRecency);
   return {
     ...company,
     raises,
-    skippedRaises,
+    skippedRaisedIndexes,
     latestRaisedIndex: raises[0]?.raisedIndex ?? null,
     latestRaisedIn: raises[0]?.raisedIn ?? null,
     loweredCount,
@@ -146,52 +146,39 @@ export function buildGuidanceUpgradeRow(
   };
 }
 
-export const GUIDANCE_WINDOWS = ["latest", "recent", "all"] as const;
-export type GuidanceWindow = (typeof GUIDANCE_WINDOWS)[number];
-
-export function parseGuidanceWindow(raw: string | null | undefined): GuidanceWindow {
-  return raw === "recent" || raw === "all" ? raw : "latest";
-}
+const quarterLabelOf = (i: number) => {
+  const fy = Math.floor((i - 1) / 4);
+  return `Q${i - fy * 4} FY${String(fy % 100).padStart(2, "0")}`;
+};
 
 /**
- * The quarters a window reaches back to, as a minimum quarter index.
- * `latest` = raised on the last reported quarter's call (the quarter before the
- * one in reporting season); `recent` = the last two reported quarters; `all` =
- * every live raise, however old.
+ * The scan's window: raises made on the last reported quarter's call (the
+ * quarter before the one in reporting season) or later, as a minimum quarter
+ * index. In October (Q2 FY27 season) that is the Q1 FY27 call onward, so a Q2
+ * call that has already happened counts too.
  */
-export function windowFloor(window: GuidanceWindow, current: ReportingQuarter): number | null {
-  const reportingIdx = current.fy * 4 + current.qtr;
-  if (window === "latest") return reportingIdx - 1;
-  if (window === "recent") return reportingIdx - 2;
-  return null;
+export function latestCallFloor(current: ReportingQuarter): number {
+  return current.fy * 4 + current.qtr - 1;
 }
 
-export function windowLabel(window: GuidanceWindow, current: ReportingQuarter): string {
-  const idx = current.fy * 4 + current.qtr;
-  const label = (i: number) => {
-    const fy = Math.floor((i - 1) / 4);
-    const qtr = i - fy * 4;
-    return `Q${qtr} FY${String(fy % 100).padStart(2, "0")}`;
-  };
-  if (window === "latest") return `Raised on the ${label(idx - 1)} call`;
-  if (window === "recent") return `Since ${label(idx - 2)}`;
-  return "All live raises";
+/** "Q1 FY27" — the call the window opens on. */
+export function latestCallLabel(current: ReportingQuarter): string {
+  return quarterLabelOf(latestCallFloor(current));
 }
 
 export type GuidanceUpgradeScan = {
+  /** Companies with a legible raise inside the window, ordered. */
   rows: GuidanceUpgradeRow[];
-  counts: Record<GuidanceWindow, number>;
   /** Companies whose guidance the scan could read at all. */
   scanned: number;
-  /** Raises left out across the scan because their values don't read as a raise. */
+  /** Raises inside the window left out because their values don't read as a raise. */
   skippedRaises: number;
+  /** The call the window opens on ("Q1 FY27") and its quarter index. */
+  sinceLabel: string;
+  floor: number;
 };
 
-/** Rows inside a window: a company qualifies on its most recent raise. */
-export function inWindow(row: GuidanceUpgradeRow, floor: number | null): boolean {
-  if (floor == null) return true;
-  return row.latestRaisedIndex != null && row.latestRaisedIndex >= floor;
-}
+const inWindow = (index: number | null, floor: number) => index != null && index >= floor;
 
 // The watchlist's own management order (tier first, hit rate second), so a
 // raise from a management that delivers outranks one from a management that doesn't.
@@ -219,19 +206,15 @@ export function buildGuidanceUpgradeScan(
   scanned: number,
   current: ReportingQuarter,
 ): GuidanceUpgradeScan {
-  const sorted = rows.filter((r) => r.raises.length > 0).sort(compareGuidanceUpgradeRows);
-  const counts = Object.fromEntries(
-    GUIDANCE_WINDOWS.map((w) => [w, sorted.filter((r) => inWindow(r, windowFloor(w, current))).length]),
-  ) as Record<GuidanceWindow, number>;
-  const skippedRaises = rows.reduce((n, r) => n + r.skippedRaises, 0);
-  return { rows: sorted, counts, scanned, skippedRaises };
-}
-
-export function selectGuidanceUpgradeRows(
-  scan: GuidanceUpgradeScan,
-  window: GuidanceWindow,
-  current: ReportingQuarter,
-): GuidanceUpgradeRow[] {
-  const floor = windowFloor(window, current);
-  return scan.rows.filter((r) => inWindow(r, floor));
+  const floor = latestCallFloor(current);
+  return {
+    rows: rows.filter((r) => inWindow(r.latestRaisedIndex, floor)).sort(compareGuidanceUpgradeRows),
+    scanned,
+    skippedRaises: rows.reduce(
+      (n, r) => n + r.skippedRaisedIndexes.filter((i) => inWindow(i, floor)).length,
+      0,
+    ),
+    sinceLabel: latestCallLabel(current),
+    floor,
+  };
 }

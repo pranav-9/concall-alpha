@@ -10,6 +10,8 @@ export type ScanCompany = {
   code: string;
   name: string | null;
   sector: string | null;
+  /** Discovery-listed (lib/coverage-policy). The default scan universe; the watchlist filter ignores it. */
+  listed: boolean;
 };
 
 export type RedFlagHit = {
@@ -51,21 +53,6 @@ export function compareRedFlagRows(a: RedFlagRow, b: RedFlagRow): number {
   );
 }
 
-export type RedFlagCheckCount = { id: ForensicCheck["id"]; name: string; count: number };
-
-/** How many companies each check flags — the filter chips, most common first. */
-export function redFlagCheckCounts(rows: readonly RedFlagRow[]): RedFlagCheckCount[] {
-  const counts = new Map<ForensicCheck["id"], RedFlagCheckCount>();
-  for (const row of rows) {
-    for (const f of row.flags) {
-      const entry = counts.get(f.id);
-      if (entry) entry.count += 1;
-      else counts.set(f.id, { id: f.id, name: f.name, count: 1 });
-    }
-  }
-  return [...counts.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-}
-
 export type RedFlagScan = {
   /** Companies with at least one flag, worst first. */
   flagged: RedFlagRow[];
@@ -73,22 +60,13 @@ export type RedFlagScan = {
   watchOnly: RedFlagRow[];
   /** Companies the scan could read at all (assessed > 0). */
   scanned: number;
-  checkCounts: RedFlagCheckCount[];
 };
 
 export function buildRedFlagScan(rows: readonly RedFlagRow[]): RedFlagScan {
   const sorted = [...rows].sort(compareRedFlagRows);
-  const flagged = sorted.filter((r) => r.flags.length > 0);
   return {
-    flagged,
+    flagged: sorted.filter((r) => r.flags.length > 0),
     watchOnly: sorted.filter((r) => r.flags.length === 0 && r.watches.length > 0),
     scanned: rows.length,
-    checkCounts: redFlagCheckCounts(flagged),
   };
-}
-
-/** Narrow the flagged list to one check; an unknown id leaves it whole. */
-export function filterByCheck(rows: readonly RedFlagRow[], checkId: string | null | undefined): RedFlagRow[] {
-  if (!checkId) return [...rows];
-  return rows.filter((r) => r.flags.some((f) => f.id === checkId));
 }
