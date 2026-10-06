@@ -1,0 +1,301 @@
+{
+ "company": "RRKABEL",
+ "company_name": "R R Kabel",
+ "prepared_on": "2026-10-06",
+ "review_status": "user_approved",
+ "source_period": "Q1 FY27",
+ "latest_source_date": "2026-08-03",
+ "about_company": {
+  "about_short": "Wires & cables maker (90% of FY26 revenue) with a smaller fans-and-lights arm; ₹9,722 cr FY26 revenue, 26% exports.",
+  "business_intro": "R R Kabel makes electrical wires and cables for homes, buildings and industry, and a smaller range of fans, lights, switches and home appliances. Wires and cables, 90% of FY26 revenue, are sold entirely through distributors and dealers in India and abroad, with exports at 26% of revenue; the fans-and-lights business uses the same channel plus a small e-commerce share.",
+  "about_long": "R R Kabel, founded in 1995, makes wires and cables and fast-moving electrical goods (FMEG) under the RR Kabel and RR Signature brands, reported as two segments on a consolidated basis. Wires & Cables (house and industrial wires, power and special cables) was 90% of FY26 revenue at ₹8,764 cr; FMEG (fans, lighting, switches and appliances) was 10% at ₹959 cr, lost ₹33 cr at segment level in FY26 and reached its first breakeven quarter in Q1 FY27. Wires and cables are sold entirely through distributors and dealers: 7,200+ distributors and dealers and 2,15,000+ retail touchpoints at FY26 year-end per the annual report (the Q1 FY27 call cited more than 1.5 lakh retail touchpoints). It ran five plants at 31 March 2024 (Waghodia and Silvassa for wires and cables; Roorkee, Bengaluru and Gagret for FMEG); wire utilisation was 65-70% and cables about 90% on the Q1 FY27 call, and a ₹1,200 cr three-year capex plan, about 80% for cables, is sized for a targeted 18% yearly volume growth. Exports were 26% of FY26 revenue (29% of Wires & Cables sales); about 40% of exports go to the EU and about 40% to the Middle East, it held about 10% of India's wire-and-cable export market in FY24, and management expects the EU-India trade deal's cut of the 3.7% EU tariff to zero to take effect only after about 12 months, date still unclear (Q3 FY26 call). The promoter group held 61.65% at 31 March 2026; Mahendrakumar Kabra has been Managing Director since 1 June 2025. FY26 consolidated revenue was ₹9,722 cr (+27.6%), EBITDA ₹770 cr (7.9% margin, +58%, as restated in the Q1 FY27 deck), PAT ₹492 cr (+58%); RoCE 25.8%, RoE 20.8%, a debt-to-equity ratio of 0.1, and working capital fell from 75 days (Mar-23) to 49 days (Mar-26).",
+  "company_timeline": [
+   {
+    "year": 1995,
+    "title": "Founded to make wires for Indian homes",
+    "detail": "The company was incorporated in 1995 with a focus on safe, reliable house wires; it later grew into cables and consumer electricals.",
+    "sources": [
+     {
+      "label": "Annual Report FY2025-26",
+      "url": "https://www.rrkabel.com/wp-content/uploads/2026/05/RRKL-Annual-Report-2025-26.pdf",
+      "locator": "Business Review, Company Overview"
+     }
+    ]
+   },
+   {
+    "year": 1999,
+    "title": "Commissions its first manufacturing plant, at Silvassa",
+    "detail": "Moved from trading to manufacturing; Silvassa is still one of its two wires-and-cables plants. Year as shown on the company's growth-journey slide (calendar years).",
+    "sources": [
+     {
+      "label": "Investor Presentation Q1 FY25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/10114c42-25a8-424e-ad28-b99439d954af.pdf",
+      "locator": "Our Growth Journey slide"
+     }
+    ]
+   },
+   {
+    "year": 2020,
+    "title": "Acquires Arraystorm lighting business",
+    "detail": "Entered professional and LED lighting by buying Arraystorm and its Bengaluru facility (fiscal 2019-20).",
+    "sources": [
+     {
+      "label": "Investor Presentation Q1 FY25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/10114c42-25a8-424e-ad28-b99439d954af.pdf",
+      "locator": "Our Growth Journey slide"
+     },
+     {
+      "label": "Annual Report FY2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/fca0f0ef-172a-4d57-bba5-1b94ff7029f9.pdf"
+     }
+    ]
+   },
+   {
+    "year": 2022,
+    "title": "Acquires Luminous's fans and lights business",
+    "detail": "Bought the branded fans and lights business of Luminous Power Technologies as a going concern, with the Gagret facility; completed on 1 May 2022. FY23 is the first full year with it.",
+    "sources": [
+     {
+      "label": "Annual Report FY2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/fca0f0ef-172a-4d57-bba5-1b94ff7029f9.pdf",
+      "locator": "Note 50, Business acquisition"
+     },
+     {
+      "label": "Investor Presentation Q1 FY25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/10114c42-25a8-424e-ad28-b99439d954af.pdf",
+      "locator": "Our Growth Journey slide"
+     }
+    ]
+   },
+   {
+    "year": 2023,
+    "title": "Lists on NSE and BSE",
+    "detail": "Equity shares listed on the National Stock Exchange and BSE on 20 September 2023.",
+    "sources": [
+     {
+      "label": "Annual Report FY2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/fca0f0ef-172a-4d57-bba5-1b94ff7029f9.pdf"
+     }
+    ]
+   },
+   {
+    "year": 2025,
+    "title": "Names Mahendrakumar Kabra Managing Director",
+    "detail": "Joint Managing Director since 2014, he became Managing Director from 1 June 2025, when independent director Ramesh D. Chandak became non-executive chairman.",
+    "sources": [
+     {
+      "label": "Annual Report FY2025-26",
+      "url": "https://www.rrkabel.com/wp-content/uploads/2026/05/RRKL-Annual-Report-2025-26.pdf",
+      "locator": "Board of Directors profiles"
+     }
+    ]
+   }
+  ],
+  "business_facts": [
+   {
+    "category": "geography",
+    "title": "Exports are about a quarter of revenue, mostly to Europe and the Middle East",
+    "text": "Exports were 26% of consolidated revenue in FY24, FY25 and FY26 (26.2% in FY26, equal to 29% of Wires & Cables sales), and 29% in Q1 FY27. About 40% of exports go to the European Union (Q3 FY26 call) and about 40% to the Middle East, which the FY26 annual report puts at roughly 12% of consolidated revenue.",
+    "period": "FY24 to Q1 FY27",
+    "sources": [
+     {
+      "label": "Investor Presentation Q4 FY25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/abd4d32d-057b-43ed-bd6d-88c2ae258307.pdf",
+      "locator": "Operational Highlights"
+     },
+     {
+      "label": "Annual Report FY2025-26",
+      "url": "https://www.rrkabel.com/wp-content/uploads/2026/05/RRKL-Annual-Report-2025-26.pdf",
+      "locator": "Directors' Report, segment review"
+     },
+     {
+      "label": "Investor Presentation Q1 FY27",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/84d956bf-a301-4ec7-8a72-07bb8f88881f.pdf",
+      "locator": "Operational Highlights"
+     },
+     {
+      "label": "Earnings call transcript Q3 FY26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c9453477-9a90-4757-8f91-60ac3acf9e81.pdf"
+     }
+    ],
+    "metrics": [
+     {
+      "label": "Exports, FY24",
+      "value": 26,
+      "unit": "% of revenue"
+     },
+     {
+      "label": "Exports, FY25",
+      "value": 26,
+      "unit": "% of revenue"
+     },
+     {
+      "label": "Exports, FY26",
+      "value": 26.2,
+      "unit": "% of revenue"
+     },
+     {
+      "label": "Exports, Q1 FY27",
+      "value": 29,
+      "unit": "% of revenue"
+     }
+    ]
+   },
+   {
+    "category": "customers",
+    "title": "Sold through 7,200+ distributors and dealers; no buyer concentration disclosed",
+    "text": "Wires and cables go 100% through distributors and dealers (Q3 FY26 call); fans and lights use the same channel, with e-commerce about 5.4% of FY26 FMEG sales. The network reached 7,200+ distributors and dealers and 2,15,000+ retail touchpoints at FY26 year-end, up from 144k+ retailers at 31 March 2024; the Q1 FY27 call cited more than 1.5 lakh retail touchpoints. The company discloses no customer-concentration figure.",
+    "period": "31 Mar 2024 to FY26 year-end",
+    "sources": [
+     {
+      "label": "Annual Report FY2025-26",
+      "url": "https://www.rrkabel.com/wp-content/uploads/2026/05/RRKL-Annual-Report-2025-26.pdf",
+      "locator": "Business Review, Distribution Strength"
+     },
+     {
+      "label": "Investor Presentation Q1 FY25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/10114c42-25a8-424e-ad28-b99439d954af.pdf",
+      "locator": "Company overview slide"
+     },
+     {
+      "label": "Earnings call transcript Q3 FY26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c9453477-9a90-4757-8f91-60ac3acf9e81.pdf"
+     },
+     {
+      "label": "Earnings call transcript Q1 FY27",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/ae406d55-ef5c-4a29-8087-6759bcca9256.pdf"
+     }
+    ],
+    "metrics": [
+     {
+      "label": "Retailers, Mar 2024 (144k+)",
+      "value": 144000,
+      "unit": "retailers"
+     },
+     {
+      "label": "Retailers, FY26 (2,15,000+)",
+      "value": 215000,
+      "unit": "retailers"
+     }
+    ]
+   },
+   {
+    "category": "footprint",
+    "title": "Five plants: two for wires and cables, three for FMEG",
+    "text": "At 31 March 2024: Waghodia (wires and cables 2.3 mn ckm, switches 9.9 mn units) and Silvassa (wires and cables 1.9 mn ckm), together 4.2 mn ckm; Roorkee, Bengaluru and Gagret make fans (3.3 mn units) and lights (1.9 mn units). On the Q1 FY27 call wire plants ran at about 65-70% and cable plants near 90%.",
+    "period": "Capacity at 31 Mar 2024; utilisation Q1 FY27",
+    "sources": [
+     {
+      "label": "Investor Presentation Q1 FY25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/10114c42-25a8-424e-ad28-b99439d954af.pdf",
+      "locator": "Manufacturing facilities slide"
+     },
+     {
+      "label": "Earnings call transcript Q1 FY27",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/ae406d55-ef5c-4a29-8087-6759bcca9256.pdf"
+     }
+    ]
+   },
+   {
+    "category": "expansion",
+    "title": "₹1,200 cr three-year capex plan, about 80% for cables",
+    "text": "A plan, not yet capacity: management set about ₹1,200 cr of capex over three years, almost 80% for cables, phased to serve a targeted 18% yearly volume growth (Q3 FY26 call). About ₹300 cr was spent in FY26 and ₹600-650 cr is planned for FY27 (Q1 FY27 call).",
+    "period": "FY26 to FY28",
+    "sources": [
+     {
+      "label": "Earnings call transcript Q3 FY26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c9453477-9a90-4757-8f91-60ac3acf9e81.pdf"
+     },
+     {
+      "label": "Earnings call transcript Q1 FY27",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/ae406d55-ef5c-4a29-8087-6759bcca9256.pdf"
+     }
+    ]
+   },
+   {
+    "category": "business_model",
+    "title": "Fans are about half of FMEG revenue",
+    "text": "Fans were almost 50% of FMEG revenue, lighting 32% and appliances and switchgear the remaining 18% (Q3 FY26 call). FMEG was 10% of FY26 revenue (₹959 cr) and has lost money at segment level every year since FY24.",
+    "period": "Q3 FY26 (mix); FY26 (revenue)",
+    "sources": [
+     {
+      "label": "Earnings call transcript Q3 FY26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c9453477-9a90-4757-8f91-60ac3acf9e81.pdf"
+     },
+     {
+      "label": "Investor Presentation Q4 FY26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/494d8024-ee83-456c-80c8-bd61e7672725.pdf",
+      "locator": "FMEG - Performance"
+     }
+    ]
+   }
+  ],
+  "what_changed": {
+   "headline": "Wires & cables margin widened while the FMEG loss shrank to a first breakeven quarter",
+   "text": "Wires & Cables segment profit rose 56.2% in FY26 to ₹776 cr and its margin went from 7.4% to 8.9%; it was 9.9% in Q1 FY27 against 7.6% a year earlier. FMEG's segment loss narrowed from ₹46 cr in FY25 to ₹33 cr in FY26, and Q1 FY27 was its first breakeven quarter, after breakeven targets of FY25, early FY26 and March 2026 had been missed.",
+   "period": "FY25 to Q1 FY27",
+   "sources": [
+    {
+     "label": "Investor Presentation Q4 FY26",
+     "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/494d8024-ee83-456c-80c8-bd61e7672725.pdf",
+     "locator": "Segment performance slides"
+    },
+    {
+     "label": "Investor Presentation Q1 FY27",
+     "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/84d956bf-a301-4ec7-8a72-07bb8f88881f.pdf",
+     "locator": "Segment performance slides"
+    },
+    {
+     "label": "Earnings call transcript Q4 FY26",
+     "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9b4ff57e-8166-4dca-a340-7694ef5266dd.pdf"
+    },
+    {
+     "label": "Earnings call transcript Q2 FY24",
+     "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8aae705a-5337-409a-82d5-52027169930a.pdf"
+    }
+   ]
+  }
+ },
+ "about_sources": [
+  {
+   "label": "Annual Report FY2025-26",
+   "url": "https://www.rrkabel.com/wp-content/uploads/2026/05/RRKL-Annual-Report-2025-26.pdf"
+  },
+  {
+   "label": "Investor Presentation Q1 FY25",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/10114c42-25a8-424e-ad28-b99439d954af.pdf"
+  },
+  {
+   "label": "Annual Report FY2023-24",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/fca0f0ef-172a-4d57-bba5-1b94ff7029f9.pdf"
+  },
+  {
+   "label": "Investor Presentation Q4 FY25",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/abd4d32d-057b-43ed-bd6d-88c2ae258307.pdf"
+  },
+  {
+   "label": "Investor Presentation Q1 FY27",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/84d956bf-a301-4ec7-8a72-07bb8f88881f.pdf"
+  },
+  {
+   "label": "Earnings call transcript Q3 FY26",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c9453477-9a90-4757-8f91-60ac3acf9e81.pdf"
+  },
+  {
+   "label": "Earnings call transcript Q1 FY27",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/ae406d55-ef5c-4a29-8087-6759bcca9256.pdf"
+  },
+  {
+   "label": "Investor Presentation Q4 FY26",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/494d8024-ee83-456c-80c8-bd61e7672725.pdf"
+  },
+  {
+   "label": "Earnings call transcript Q4 FY26",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9b4ff57e-8166-4dca-a340-7694ef5266dd.pdf"
+  },
+  {
+   "label": "Earnings call transcript Q2 FY24",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8aae705a-5337-409a-82d5-52027169930a.pdf"
+  }
+ ]
+}

@@ -97,3 +97,13 @@ The three outgoing rows were backed up together before promotion. As with the
 first pilot batch, only `about_company`, its existing JSON mirror and the review
 audit metadata were updated; financial blocks and generation dates were kept.
 Rollback backup: `concallyser/data/analysis/business_profile_backups/batch_20260916_aeroflex_vinyas_astramic.json`.
+
+## R R Kabel — 6 October 2026
+
+Built in the RRKABEL deep-track (Step 6) from the Q2 FY24–Q1 FY27 calls and
+decks and the FY24–FY26 annual reports; the FY26 report is cited by its
+rrkabel.com URL (it is missing from the spider's annual-report list). Promoted
+with `promote_business_profile.py` after the business snapshot re-import, which
+restored the review record. Customer concentration is not disclosed, so the
+customer fact describes the dealer and retail channel instead.
+Rollback backup: `concallyser/data/analysis/section_fix_backups/RRKABEL_2026-10-06/business_profile_backup.json`.
