@@ -71,17 +71,15 @@ export const formatPercentValue = (v: ValueFields): string | null => {
 
 // An absolute read of the value ("₹850 cr", "$100M"). Null when the value is a
 // percent or qualitative-only.
-export const formatAbsoluteValue = (v: ValueFields): string | null => {
-  if (v.valueKind === "percent" || v.valueKind === "percent_level") return null;
-  if (v.valueKind === "absolute" && typeof v.numericValue === "number" && Number.isFinite(v.numericValue)) {
-    const fromText = formatAbsoluteAmount(v.valueText);
-    if (fromText) return fromText;
-    const { symbol, suffix } = formatUnitParts(v.unit);
-    return `${symbol}${fmtNum(v.numericValue)}${suffix}`;
-  }
-  if (!v.valueText || isReasoningProse(v.valueText)) return null;
-  return formatAbsoluteAmount(v.valueText);
-};
+//
+// The label and readNumericValue must describe the SAME figure — both come from
+// resolveAbsolute below. The value trail prints the label and compares the
+// number, so a label from one amount in the text over a number from another
+// prints a fake move: RATNAVEER's "Rs 200 cr value-added within 1,500 cr"
+// (stored 200) printed "₹1500cr", and SHREEREF's text-only "Turnover 1000Cr.,
+// PAT 120 Cr." read as ₹120cr on a revenue thread — two fake "Raised" chips on
+// 2026-10-06.
+export const formatAbsoluteValue = (v: ValueFields): string | null => resolveAbsolute(v)?.label ?? null;
 
 // The one-line "what they guided" label. Prefers the structured number; falls
 // back to the verbatim qualitative phrasing ("mid-teens", "double-digit").
@@ -112,13 +110,132 @@ const unitKeyFromToken = (token: string) => {
   return "M";
 };
 
+// Producers spell the same unit several ways ("INRcr", "INR_cr", "INR crore",
+// "Rs cr"); all of them have to land on the text tokens' keys or no amount in
+// the text can ever be matched to the stored number.
+// Millions and billions carry their currency in the key ("₹M" vs "$M"), so a
+// rupee figure is never compared with a dollar one (AIMTRON "₹25-30M → $30M"
+// read as a raise). Crore is always rupees: plain "cr".
 const unitKeyFromSchemaUnit = (unit: string | null): string | null => {
-  const u = unit?.toLowerCase();
+  const u = unit?.toLowerCase().replace(/[\s_.]/g, "");
   if (!u) return null;
-  if (u === "inrcr") return "cr";
-  if (u === "usdmn" || u === "usdm") return "M";
-  if (u === "usdbn" || u === "usdb") return "B";
+  const currency = /^(?:inr|rs|₹)/.test(u) ? "₹" : "$";
+  const body = u.replace(/^(?:inr|rs|usd|\$|₹)/, "");
+  if (/^(?:cr|crores?)$/.test(body)) return "cr";
+  if (/^(?:mn|m|million)$/.test(body)) return `${currency}M`;
+  if (/^(?:bn|b|billion)$/.test(body)) return `${currency}B`;
   return u;
+};
+
+// Converting a text amount into the stored unit: ₹19 billion = ₹1,900 cr.
+const UNIT_FACTOR: Record<string, number> = {
+  "₹B>cr": 100,
+  "₹M>cr": 0.1,
+  "cr>₹B": 0.01,
+  "cr>₹M": 10,
+  "₹B>₹M": 1000,
+  "₹M>₹B": 0.001,
+  "$B>$M": 1000,
+  "$M>$B": 0.001,
+};
+const unitFactor = (from: string, to: string): number | null => (from === to ? 1 : (UNIT_FACTOR[`${from}>${to}`] ?? null));
+
+// `index` = position among ABS_PATTERN's matches (formatAbsoluteAmount uses the same pattern).
+type AmountMatch = { lo: number; hi: number; unitKey: string; index: number };
+
+// The currency a text's amounts are in — formatAbsoluteAmount's own symbol rule,
+// so the key always agrees with the symbol the label prints.
+const textCurrency = (text: string, token: string): "₹" | "$" =>
+  /(INR|Rs\.?|₹)/i.test(text) ? "₹" : /\$|USD|dollar/i.test(text) ? "$" : token.toLowerCase().startsWith("cr") ? "₹" : "$";
+
+const amountMatches = (text: string | null): AmountMatch[] =>
+  text
+    ? [...text.matchAll(ABS_PATTERN)]
+        .map((m, index) => {
+          const lo = parseFloat(m[1].replace(/,/g, ""));
+          const hi = m[2] ? parseFloat(m[2].replace(/,/g, "")) : lo;
+          const scale = unitKeyFromToken(m[3]);
+          const unitKey = scale === "cr" ? "cr" : `${textCurrency(text, m[3])}${scale}`;
+          return { lo: Math.min(lo, hi), hi: Math.max(lo, hi), unitKey, index };
+        })
+        .filter((m) => Number.isFinite(m.lo) && Number.isFinite(m.hi))
+    : [];
+
+/** `m` re-expressed in `unitKey` (lo/hi converted), or null when the units can't be converted. */
+const inUnit = (m: AmountMatch, unitKey: string): AmountMatch | null => {
+  const f = unitFactor(m.unitKey, unitKey);
+  return f == null ? null : { ...m, lo: m.lo * f, hi: m.hi * f, unitKey };
+};
+
+/** The amount in the text that IS the stored number (in the stored unit; equal, or a band containing it). */
+const amountMatchingNumber = (text: string | null, n: number, unitKey: string): AmountMatch | null => {
+  const tol = (x: number) => Math.max(0.011, Math.abs(x) * 0.005);
+  const hits = amountMatches(text)
+    .map((m) => inUnit(m, unitKey))
+    .filter((m): m is AmountMatch => m != null && n >= m.lo - tol(m.lo) && n <= m.hi + tol(m.hi));
+  return hits[hits.length - 1] ?? null;
+};
+
+// Two different lines of the P&L (or a P&L line and capacity) named in one
+// text: "Turnover 1000Cr., PAT 120 Cr.". With no stored number to say which
+// amount the value is, guessing the last one reads the wrong line.
+const LINE_WORDS: [string, RegExp][] = [
+  ["revenue", /\b(?:turnover|revenues?|sales|top[- ]?line)\b/i],
+  ["profit", /\b(?:pat|pbt|net profit|profit after tax)\b/i],
+  ["ebitda", /\b(?:ebitda|operating profit)\b/i],
+  ["capacity", /\b(?:capacity|capex|investment|order ?book)\b/i],
+];
+const namesSeveralLines = (text: string): boolean => {
+  const distinct = new Set(amountMatches(text).map((m) => `${m.lo}-${m.hi}-${m.unitKey}`));
+  return distinct.size >= 2 && LINE_WORDS.filter(([, re]) => re.test(text)).length >= 2;
+};
+
+/**
+ * The absolute-axis reading of a value — its label AND its number, decided
+ * together so the value trail never prints one figure over another. Null when
+ * the value is not on the absolute axis (a percent kind, or a legacy number in
+ * valuePercent). `value_text` is the schema's source of truth, so:
+ *   1. an amount in the text that IS the stored number (after cr/B/M
+ *      conversion) is the reading — its own phrasing, its band;
+ *   2. otherwise, if the text states amounts, the text wins over the stored
+ *      number (a stored figure no sentence supports is a producer slip) — the
+ *      last amount, as revision sequences end on the current target — unless
+ *      the text names two different lines, where any pick is a guess: nothing;
+ *   3. only a text with no amounts at all falls back to the stored number.
+ */
+const resolveAbsolute = (v: ValueFields): { label: string | null; numeric: NumericValue | null } | null => {
+  if (v.valueKind === "percent" || v.valueKind === "percent_level") return null;
+  if (v.valueKind == null && v.valuePercent != null) return null;
+  const text = v.valueText && !isReasoningProse(v.valueText) ? v.valueText : null;
+  const typed = v.valueKind === "absolute" && typeof v.numericValue === "number" && Number.isFinite(v.numericValue);
+  const unitKey = typed ? unitKeyFromSchemaUnit(v.unit) : null;
+
+  if (typed && unitKey) {
+    const match = amountMatchingNumber(text, v.numericValue as number, unitKey);
+    if (match) {
+      return {
+        label: formatAbsoluteAmount(text, match.index),
+        numeric: { kind: "absolute", lo: match.lo, hi: match.hi, unitKey },
+      };
+    }
+  }
+  const amounts = amountMatches(text);
+  if (text && amounts.length > 0) {
+    if (namesSeveralLines(text)) return { label: null, numeric: null };
+    const last = amounts[amounts.length - 1];
+    const asStored = unitKey ? inUnit(last, unitKey) : null;
+    const m = asStored ?? last;
+    return { label: formatAbsoluteAmount(text), numeric: { kind: "absolute", lo: m.lo, hi: m.hi, unitKey: m.unitKey } };
+  }
+  if (typed) {
+    const { symbol, suffix } = formatUnitParts(v.unit);
+    const n = v.numericValue as number;
+    return {
+      label: `${symbol}${fmtNum(n)}${suffix}`,
+      numeric: unitKey ? { kind: "absolute", lo: n, hi: n, unitKey } : null,
+    };
+  }
+  return { label: null, numeric: null };
 };
 
 export const readNumericValue = (v: ValueFields): NumericValue | null => {
@@ -140,33 +257,8 @@ export const readNumericValue = (v: ValueFields): NumericValue | null => {
     if (typeof n === "number" && Number.isFinite(n)) return { kind: "percent", lo: n, hi: n, unitKey: "pct" };
     return null;
   }
-  // Absolute axis — structured number + unit first, then the verbatim text.
-  if (v.valueKind === "absolute" && typeof v.numericValue === "number" && Number.isFinite(v.numericValue)) {
-    const unitKey = unitKeyFromSchemaUnit(v.unit);
-    if (!unitKey) return null;
-    const matches = v.valueText ? [...v.valueText.matchAll(ABS_PATTERN)] : [];
-    const m = matches[matches.length - 1];
-    if (m && m[2]) {
-      const lo = parseFloat(m[1].replace(/,/g, ""));
-      const hi = parseFloat(m[2].replace(/,/g, ""));
-      if (Number.isFinite(lo) && Number.isFinite(hi) && hi > lo && unitKeyFromToken(m[3]) === unitKey) {
-        return { kind: "absolute", lo, hi, unitKey };
-      }
-    }
-    return { kind: "absolute", lo: v.numericValue, hi: v.numericValue, unitKey };
-  }
-  if (v.valueText && !isReasoningProse(v.valueText)) {
-    const matches = [...v.valueText.matchAll(ABS_PATTERN)];
-    const m = matches[matches.length - 1];
-    if (m) {
-      const lo = parseFloat(m[1].replace(/,/g, ""));
-      const hi = m[2] ? parseFloat(m[2].replace(/,/g, "")) : lo;
-      if (Number.isFinite(lo) && Number.isFinite(hi)) {
-        return { kind: "absolute", lo: Math.min(lo, hi), hi: Math.max(lo, hi), unitKey: unitKeyFromToken(m[3]) };
-      }
-    }
-  }
-  return null;
+  // Absolute axis — the same reading formatAbsoluteValue labels.
+  return resolveAbsolute(v)?.numeric ?? null;
 };
 
 // Delivered-vs-guided, only when both sit on the same axis. Percent axes

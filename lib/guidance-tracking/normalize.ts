@@ -180,16 +180,19 @@ export const isReasoningProse = (text: string | null | undefined): boolean => {
 //   "$1 billion kitchen business"                           →  "$1B"
 //
 // Strategy: find all "<number>[ to <number>] <unit>" occurrences and pick
-// the LAST one (revision sequences end with the current target). Append
-// "+" when "over"/"above"/"plus"/"surpass"/"cross" is in the immediate
-// vicinity AND the match isn't a range.
-export const formatAbsoluteAmount = (text: string | null | undefined): string | null => {
+// the LAST one (revision sequences end with the current target) — or the one
+// at `at` (the match a caller knows is the value: lib/guidance-tracking/format
+// picks the amount that equals the stored number). Append "+" when
+// "over"/"above"/"plus"/"surpass"/"cross" is in the immediate vicinity AND the
+// match isn't a range.
+export const formatAbsoluteAmount = (text: string | null | undefined, at?: number): string | null => {
   if (!text) return null;
   const pattern =
     /(\d+(?:,\d+)*(?:\.\d+)?)(?:\s*(?:to|-|–)\s*(\d+(?:,\d+)*(?:\.\d+)?))?(?:[^\d\n]{0,15}?)(crore|cr\b|bn\b|billion|mn\b|million)/gi;
   const matches = [...text.matchAll(pattern)];
   if (matches.length === 0) return null;
-  const m = matches[matches.length - 1];
+  const m = matches[at ?? matches.length - 1];
+  if (!m) return null;
   const num1 = m[1].replace(/,/g, "");
   const num2 = m[2]?.replace(/,/g, "");
   const unitToken = m[3].toLowerCase();
