@@ -504,6 +504,29 @@ const COVERS = {
       C(320, 194, 6, "s a") +
       P("M220 252 q100 -26 200 0", "s t sm dash"),
   ],
+  // Unimech — what it makes: a jet engine held in an engine-handling stand, clamped by a ring.
+  "unimech-hangar-twice-its-fleet": [
+    "amber",
+    P("M230 78 L430 100 Q458 104 458 130 L458 150 Q458 176 430 180 L230 202 Z", "s l") +
+      P("M458 124 L500 140 L458 156", "s w") +
+      E(230, 140, 30, 62, "s w") +
+      E(230, 140, 20, 44, "s m") +
+      range(6)
+        .map((i) => {
+          const a = (i * Math.PI) / 3;
+          return L(230, 140, f(230 + 18 * Math.cos(a)), f(140 + 40 * Math.sin(a)), "s t");
+        })
+        .join("") +
+      C(230, 140, 8, "s d") +
+      P("M340 89 Q354 140 340 191", "s sa") +
+      L(300, 196, 300, 236) +
+      L(404, 184, 404, 236) +
+      R(282, 190, 36, 10, 3, "s d") +
+      R(386, 178, 36, 10, 3, "s d") +
+      R(180, 236, 300, 14, 4, "s w") +
+      C(206, 260, 9, "s d") +
+      C(454, 260, 9, "s d"),
+  ],
 };
 
 // --- frame --------------------------------------------------------------------

@@ -1,0 +1,288 @@
+{
+  "company": "UNIMECH",
+  "company_name": "Unimech Aerospace and Manufacturing",
+  "prepared_on": "2026-10-06",
+  "review_status": "user_approved",
+  "source_period": "Q1 FY27",
+  "latest_source_date": "2026-08-08",
+  "about_company": {
+    "about_short": "Makes aerospace tooling, precision parts and, since May 2026, metal bellows for global OEMs.",
+    "business_intro": "Unimech machines the specialised tools that aircraft engine and airframe makers and maintenance shops use to build, assemble and service engines and aircraft, and makes precision parts and assemblies; since May 2026 it also makes metal bellows and exhaust systems through Hobel Bellows. It sells to a small set of global OEMs and Tier-1 suppliers, mostly in the United States: three customers were 72% of FY26 revenue, and 89% of FY26 revenue was exported.",
+    "about_long": "Unimech Aerospace and Manufacturing makes engine, airframe and MRO tooling and ground support equipment that aircraft engine and airframe makers, their Tier-1 suppliers and maintenance shops use, working both to customer drawings (build to print) and to its own designs (build to spec) in high-mix, medium-to-low volumes. Tooling is the main business, at 76% of Q1 FY27 consolidated revenue. A smaller precision components and assemblies business serves aerospace, nuclear, semiconductor and energy customers and is still largely in qualification. Since 1 May 2026 the group also consolidates Hobel Bellows, a Visakhapatnam SEZ maker of metallic bellows and exhaust systems for engine makers, which was 21% of Q1 FY27 revenue on two months. Production runs from three Bengaluru facilities and Hobel's plant; a Saudi joint-venture unit with the Kanoo Group is being set up and is not yet operating. Exports were 89% of FY26 revenue, and Unimech holds about 30% of Dheya Engineering, whose micro gas turbine engines it has exclusive rights to manufacture.",
+    "company_timeline": [
+      {
+        "year": 2016,
+        "title": "Incorporated as Unimech Aerospace and Manufacturing",
+        "detail": "Incorporated as a private limited company on 12 August 2016; it later converted to a public company.",
+        "sources": [
+          {
+            "label": "Unimech annual report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6ab1ffbc-7b59-4248-a93a-7ee2748ab8fc.pdf",
+            "locator": "Consolidated notes, corporate information"
+          },
+          {
+            "label": "Unimech Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=41f565e2-0ce1-4316-84f4-ad90dfd4ffd9.pdf",
+            "locator": "Company overview"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Lists on NSE and BSE",
+        "detail": "Trading began on 31 December 2024 after an IPO at ₹785 a share: a ₹250 crore fresh issue and an offer for sale of the same number of promoter shares.",
+        "sources": [
+          {
+            "label": "Unimech annual report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/0dab81c1-8419-474a-8b3d-ff63f8f725e0.pdf",
+            "locator": "Board's report"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Signs a 51:49 Saudi joint venture with the Kanoo Group",
+        "detail": "Signed in January 2026 to set up a precision machining and remanufacturing unit in Dammam. No money had been invested by 31 March 2026, and in May 2026 management said the unit was still at a foundational stage.",
+        "sources": [
+          {
+            "label": "Unimech annual report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6ab1ffbc-7b59-4248-a93a-7ee2748ab8fc.pdf",
+            "locator": "Strategic investments; note 50"
+          },
+          {
+            "label": "Unimech Q4 FY26 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=0564b7a5-8337-4b51-abf5-cc441a3eb5e8.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Acquires Hobel Bellows",
+        "detail": "Completed on 27 April 2026 for a 100% stake and a total investment of up to ₹450 crore. Management said the sellers were paid in cash with 10% held back for a year; the equity, debt and CCDs in the annual report fund Unimech's acquiring subsidiary. Consolidated from 1 May 2026.",
+        "sources": [
+          {
+            "label": "Unimech annual report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6ab1ffbc-7b59-4248-a93a-7ee2748ab8fc.pdf",
+            "locator": "Note 51, subsequent events"
+          },
+          {
+            "label": "Unimech Hobel Bellows acquisition call transcript (28 April 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d7385a06-bf7b-4738-8e99-60bf4d973d77.pdf",
+            "locator": null
+          },
+          {
+            "label": "Unimech Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=41f565e2-0ce1-4316-84f4-ad90dfd4ffd9.pdf",
+            "locator": "Quarter scoreboard"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Signs a long-term supply agreement with FACC",
+        "detail": "Signed in Q1 FY27 with FACC Austria, an aerospace Tier-1, for aerostructure components: an initial USD 7.5 million over five years. Management calls it its first recurring aerospace component supply under a long-term programme.",
+        "sources": [
+          {
+            "label": "Unimech Q1 FY27 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=a614ad06-109e-4e7e-92e6-ba9616925fe9.pdf",
+            "locator": null
+          },
+          {
+            "label": "Unimech Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=41f565e2-0ce1-4316-84f4-ad90dfd4ffd9.pdf",
+            "locator": "Order book highlights"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Three customers were 72% of FY26 revenue",
+        "text": "Three customers made up 72.37% of FY26 consolidated revenue from operations, down from 87.60% in FY25. The largest alone was 44.50% (FY25: 66.46%) and the next two 14.12% and 13.75%. These figures predate Hobel Bellows, where two OEM groups account for about 93% of revenue (management, April 2026).",
+        "period": "FY26 (before Hobel)",
+        "sources": [
+          {
+            "label": "Unimech annual report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6ab1ffbc-7b59-4248-a93a-7ee2748ab8fc.pdf",
+            "locator": "Note 49(c), segment reporting"
+          },
+          {
+            "label": "Unimech Hobel Bellows acquisition call transcript (28 April 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d7385a06-bf7b-4738-8e99-60bf4d973d77.pdf",
+            "locator": null
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Largest customer, FY25",
+            "value": 66.46,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Largest customer, FY26",
+            "value": 44.5,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Next 2, FY26",
+            "value": 27.87,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "US was 76% of FY26 revenue; exports 89%",
+        "text": "In FY26, 89.4% of consolidated revenue from operations came from outside India: the United States 75.6%, Germany 9.7%, Canada 2.8% and the UK 0.8%. India rose to 10.6% from 5.2% in FY25, and the US share fell from 83.0%. The Q1 FY27 presentation puts exports at about 96% as on 30 June 2026, with Hobel included.",
+        "period": "FY26 (before Hobel)",
+        "sources": [
+          {
+            "label": "Unimech annual report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6ab1ffbc-7b59-4248-a93a-7ee2748ab8fc.pdf",
+            "locator": "Note 24.1, disaggregate revenue"
+          },
+          {
+            "label": "Unimech Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=41f565e2-0ce1-4316-84f4-ad90dfd4ffd9.pdf",
+            "locator": "Company overview"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "United States, FY26",
+            "value": 75.6,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "India, FY26",
+            "value": 10.6,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Germany, FY26",
+            "value": 9.7,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Canada, FY26",
+            "value": 2.8,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "Three Bengaluru plants plus Hobel's Visakhapatnam plant",
+        "text": "Unimech's Bengaluru footprint is a 150,000 sq ft aerospace tooling facility in the KIADB Aerospace SEZ at Devanahalli, a 93,000 sq ft precision components and assembly unit and a 30,000 sq ft fabrication facility. Hobel adds a 2,00,000 sq ft plant in the Visakhapatnam SEZ. The Q1 FY27 presentation counts five manufacturing facilities and a free-trade warehouse, about 5.6 lakh sq ft, including the Saudi joint-venture unit that is not yet operating. Management put utilisation at about 58% in Q1 FY27, with nearly 10% more committed to qualification work.",
+        "period": "As on 30 June 2026",
+        "sources": [
+          {
+            "label": "Unimech annual report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6ab1ffbc-7b59-4248-a93a-7ee2748ab8fc.pdf",
+            "locator": "Management discussion and analysis"
+          },
+          {
+            "label": "Unimech Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=41f565e2-0ce1-4316-84f4-ad90dfd4ffd9.pdf",
+            "locator": "Manufacturing facilities"
+          },
+          {
+            "label": "Unimech Q1 FY27 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=a614ad06-109e-4e7e-92e6-ba9616925fe9.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Order book of ₹2,803 million at 30 June 2026",
+        "text": "The order book stood at ₹2,803 million on 30 June 2026: ₹1,802 million at Unimech, including an ₹873 million nuclear order, and ₹1,001 million at Hobel Bellows.",
+        "period": "As on 30 June 2026",
+        "sources": [
+          {
+            "label": "Unimech Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=41f565e2-0ce1-4316-84f4-ad90dfd4ffd9.pdf",
+            "locator": "Order book highlights"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "6,300+ qualified SKUs across 41 customers",
+        "text": "As on 30 June 2026 the company reported 6,300+ qualified SKUs (4,990 in tooling and 1,312 in precision components and assemblies), 41 customers in 8 countries and 1,232 employees including Hobel's. It executed 200+ first-article inspections in FY26 across aerospace and semiconductor customers.",
+        "period": "As on 30 June 2026",
+        "sources": [
+          {
+            "label": "Unimech Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=41f565e2-0ce1-4316-84f4-ad90dfd4ffd9.pdf",
+            "locator": "Company overview and business overview"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Hobel Bellows earned about ₹129 crore in FY26",
+        "text": "Hobel, established in 2007, makes metallic bellows, expansion joints, flexible metal hoses and exhaust assemblies for engine makers in power generation, locomotives and other industries. Management said it earned about ₹129 crore of revenue in FY26, before the acquisition, with an EBITDA margin above 50%, and has historically grown 10-15% a year. Exports are about 85% of its sales (Q1 FY27 presentation), against nearly 90% cited at the April 2026 acquisition call.",
+        "period": "FY26 (before acquisition)",
+        "sources": [
+          {
+            "label": "Unimech Hobel Bellows acquisition call transcript (28 April 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d7385a06-bf7b-4738-8e99-60bf4d973d77.pdf",
+            "locator": null
+          },
+          {
+            "label": "Unimech Q1 FY27 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=41f565e2-0ce1-4316-84f4-ad90dfd4ffd9.pdf",
+            "locator": "Hobel Bellows"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Dependence on the largest customer fell in FY26",
+      "text": "The largest customer's share of consolidated revenue from operations fell to 44.50% in FY26 from 66.46% in FY25, and the top three's to 72.37% from 87.60%. With total revenue roughly flat at ₹240.5 crore against ₹242.9 crore, sales to the largest customer fell by about a third while revenue from all other customers rose by about 64%. Revenue within India doubled to ₹25.4 crore. All of this is before Hobel Bellows was acquired.",
+      "period": "FY26 vs FY25",
+      "sources": [
+        {
+          "label": "Unimech annual report 2025-26",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6ab1ffbc-7b59-4248-a93a-7ee2748ab8fc.pdf",
+          "locator": "Note 49(c) and note 24.1"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Unimech annual report 2025-26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6ab1ffbc-7b59-4248-a93a-7ee2748ab8fc.pdf",
+      "locator": "Notes 24.1, 49, 50, 51; corporate overview; MD&A"
+    },
+    {
+      "label": "Unimech annual report 2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/0dab81c1-8419-474a-8b3d-ff63f8f725e0.pdf",
+      "locator": "Board's report"
+    },
+    {
+      "label": "Unimech Q1 FY27 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=41f565e2-0ce1-4316-84f4-ad90dfd4ffd9.pdf",
+      "locator": "Company and business overview, order book"
+    },
+    {
+      "label": "Unimech Q1 FY27 earnings-call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=a614ad06-109e-4e7e-92e6-ba9616925fe9.pdf",
+      "locator": null
+    },
+    {
+      "label": "Unimech Hobel Bellows acquisition call transcript (28 April 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d7385a06-bf7b-4738-8e99-60bf4d973d77.pdf",
+      "locator": null
+    },
+    {
+      "label": "Unimech Q4 FY26 earnings-call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=0564b7a5-8337-4b51-abf5-cc441a3eb5e8.pdf",
+      "locator": null
+    }
+  ]
+}
