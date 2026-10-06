@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { logger } from "@/lib/logger";
 import { createPublicReadClient } from "@/lib/supabase/public-read";
 import {
   isScoredWithin24h,
@@ -37,7 +38,15 @@ export type TrackerEntry = {
   bucket: BucketKey;
   priorScore: number | null;
   priorLabel: string | null;
-  expectedDate: string | null;
+  /** Board meeting that approves this quarter's results (YYYY-MM-DD), from quarter_calendar. */
+  resultsDate: string | null;
+  /** Earnings call date (YYYY-MM-DD) read off the company's call-invite filing. */
+  callDate: string | null;
+  /** IST wall clock, "HH:MM". */
+  callTime: string | null;
+  /** The invite is filed but its date couldn't be read (image-only scan) — link only. */
+  callUnreadable: boolean;
+  callUrl: string | null;
   /**
    * When this score was computed (scoring_meta.scored_at), NOT when the row was
    * inserted. During results season a company is scored off a third-party
@@ -77,10 +86,16 @@ type AnalysisRow = {
   scored_at: string | null;
 };
 
+// One row per (company, fy, qtr), written by concallyser's
+// scripts/sync_quarter_calendar.py (exchange board-meeting calendars for the
+// results date, the Reg-30 call-invite filing for the call).
 type CalendarRow = {
-  company_code: string | null;
-  nse_symbol: string;
-  event_date: string;
+  company_code: string;
+  results_date: string | null;
+  call_date: string | null;
+  call_time: string | null;
+  call_status: string | null;
+  call_source_url: string | null;
 };
 
 // PostgREST silently caps an unpaginated select at 1000 rows, so page through
@@ -184,10 +199,10 @@ async function fetchTrackerData(target: ReportingQuarter): Promise<CachedTracker
       // details blob stays off the wire. Paged to dodge the 1000-row cap.
       fetchAnalysisRows(supabase),
       supabase
-        .from("earnings_calendar")
-        .select("company_code, nse_symbol, event_date")
-        .eq("inferred_fy", target.fy)
-        .eq("inferred_qtr", target.qtr),
+        .from("quarter_calendar")
+        .select("company_code, results_date, call_date, call_time, call_status, call_source_url")
+        .eq("fy", target.fy)
+        .eq("qtr", target.qtr),
     ]);
 
   // The tracker is a discovery surface (linked from the homepage banner):
@@ -195,30 +210,18 @@ async function fetchTrackerData(target: ReportingQuarter): Promise<CachedTracker
   // same as leaderboards and the homepage feed.
   const companies = ((companyData ?? []) as CompanyRow[]).filter(isDiscoveryListed);
   const analysis = analysisRows;
-  // earnings_calendar may not yet exist in the DB — treat errors as empty.
+  // A calendar outage must not take the score board down with it: the dates
+  // degrade to "not announced", the scores still render.
+  if (calendarResult.error) {
+    logger.warn("quarter-tracker: quarter_calendar read failed", { error: calendarResult.error });
+  }
   const calendarRows: CalendarRow[] =
     !calendarResult.error && Array.isArray(calendarResult.data)
       ? (calendarResult.data as CalendarRow[])
       : [];
-
-  const calendarByCompany = new Map<string, string>();
-  const calendarBySymbol = new Map<string, string>();
+  const calendarByCompany = new Map<string, CalendarRow>();
   for (const row of calendarRows) {
-    if (!row.event_date) continue;
-    if (row.company_code) {
-      const key = row.company_code.toUpperCase();
-      const existing = calendarByCompany.get(key);
-      if (!existing || row.event_date < existing) {
-        calendarByCompany.set(key, row.event_date);
-      }
-    }
-    if (row.nse_symbol) {
-      const sym = row.nse_symbol.toUpperCase();
-      const existing = calendarBySymbol.get(sym);
-      if (!existing || row.event_date < existing) {
-        calendarBySymbol.set(sym, row.event_date);
-      }
-    }
+    if (row.company_code) calendarByCompany.set(row.company_code.toUpperCase(), row);
   }
 
   const targetByCompany = new Map<string, AnalysisRow>();
@@ -267,8 +270,7 @@ async function fetchTrackerData(target: ReportingQuarter): Promise<CachedTracker
         bucket = "upcoming";
       }
 
-      const expectedDate =
-        calendarByCompany.get(key) ?? calendarBySymbol.get(key) ?? null;
+      const cal = calendarByCompany.get(key);
       const scoredAt = target ? scoreWrittenAt(target) : null;
 
       return {
@@ -280,7 +282,11 @@ async function fetchTrackerData(target: ReportingQuarter): Promise<CachedTracker
         bucket,
         priorScore,
         priorLabel: prior ? quarterLabelFor(prior.fy, prior.qtr) : null,
-        expectedDate,
+        resultsDate: cal?.results_date ?? null,
+        callDate: cal?.call_date ?? null,
+        callTime: cal?.call_time ? cal.call_time.slice(0, 5) : null,
+        callUnreadable: cal?.call_status === "unreadable",
+        callUrl: cal?.call_source_url ?? null,
         scoredAt,
         sourceStatus: normalizeSourceStatus(target?.source_status),
         scorePath: buildTrackerScorePath(historyByCompany.get(key)),
@@ -330,7 +336,7 @@ const getCachedTrackerData = unstable_cache(
   fetchTrackerData,
   // Bump the version whenever TrackerEntry's shape changes — the cached payload
   // is JSON on disk, and a stale entry would arrive missing the new fields.
-  ["quarter-tracker-v1"],
+  ["quarter-tracker-v2"],
   { revalidate: 300 },
 );
 
