@@ -1,20 +1,28 @@
 import "server-only";
 
-// Server fetch for /scanners: one cached read per scan, each over the
-// discovery-listed companies only — a scanner is a discovery surface
-// (lib/coverage-policy). A failed read THROWS, so unstable_cache never stores
-// an empty scan from a Supabase blip; the page catches each scan on its own and
-// shows that one as unavailable. Valuation freshness is judged at render time
+// Server fetch for /scanners: one cached read per scan, over EVERY company,
+// each row stamped `listed` (lib/coverage-policy). The page scans the
+// discovery-listed ones by default — a scanner is a discovery surface — and,
+// with the watchlist filter on, the reader's watchlist companies whether
+// listed or not (watchlists are user-owned and unfiltered). A failed read
+// THROWS, so unstable_cache never stores an empty scan from a Supabase blip;
+// the page catches each scan on its own and shows that one as unavailable. Valuation freshness is judged at render time
 // in buildPegScan, because it is the price underneath a row that ages, not the row.
 
 import { unstable_cache } from "next/cache";
 
 import { parseCompanyQualityPayload } from "@/lib/company-quality/types";
+import { currentReportingQuarter } from "@/lib/current-quarter";
+import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
+import type { GuidanceSnapshotRow } from "@/lib/guidance-snapshot/types";
+import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
+import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 import { COVERAGE_SELECT, isDiscoveryListed, type CoverageFields } from "@/lib/coverage-policy";
 import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { derivePeg } from "@/lib/valuation-check/normalize";
 import type { ValuationCheckRow } from "@/lib/valuation-check/types";
 
+import { buildGuidanceUpgradeRow, type GuidanceUpgradeRow } from "./guidance-upgrades";
 import type { PegRow } from "./peg";
 import { buildRedFlagRow, type RedFlagRow, type ScanCompany } from "./red-flags";
 
@@ -44,21 +52,26 @@ type ValuationPegRow = {
 
 const upper = (code: string | null | undefined) => (code ?? "").trim().toUpperCase();
 
-async function readListedCompanies(): Promise<Map<string, ScanCompany>> {
+async function readCompanies(): Promise<Map<string, ScanCompany>> {
   const out = new Map<string, ScanCompany>();
   const supabase = createPublicReadClient();
   const { data, error } = await supabase.from("company").select(`code, name, sector, ${COVERAGE_SELECT}`);
   if (error) throw error;
   for (const row of (data ?? []) as CompanyRow[]) {
     const code = upper(row.code);
-    if (!code || !isDiscoveryListed(row)) continue;
-    out.set(code, { code, name: row.name?.trim() || null, sector: row.sector ?? null });
+    if (!code) continue;
+    out.set(code, {
+      code,
+      name: row.name?.trim() || null,
+      sector: row.sector ?? null,
+      listed: isDiscoveryListed(row),
+    });
   }
   return out;
 }
 
 async function fetchRedFlagRows(): Promise<RedFlagRow[]> {
-  const companies = await readListedCompanies();
+  const companies = await readCompanies();
   const supabase = createPublicReadClient();
   const { data, error } = await supabase.from("company_quality").select("company_code, payload");
   if (error) throw error;
@@ -74,7 +87,7 @@ async function fetchRedFlagRows(): Promise<RedFlagRow[]> {
 }
 
 async function fetchPegRows(): Promise<PegRow[]> {
-  const companies = await readListedCompanies();
+  const companies = await readCompanies();
   const supabase = createPublicReadClient();
   const { data, error } = await supabase
     .from("valuation_check")
@@ -107,8 +120,80 @@ async function fetchPegRows(): Promise<PegRow[]> {
   return rows;
 }
 
-/** Every discovery-listed company with a forensic read (assessed > 0). Throws on a failed read. */
-export const getRedFlagRows = unstable_cache(fetchRedFlagRows, ["scanners-red-flags-v1"], { revalidate: 600 });
+/** Every company with a forensic read (assessed > 0). Throws on a failed read. */
+export const getRedFlagRows = unstable_cache(fetchRedFlagRows, ["scanners-red-flags-v2"], { revalidate: 600 });
 
-/** Every discovery-listed company with at least one PEG leg, fresh or stale. Throws on a failed read. */
-export const getPegRows = unstable_cache(fetchPegRows, ["scanners-peg-v1"], { revalidate: 600 });
+/** Every company with at least one PEG leg, fresh or stale. Throws on a failed read. */
+export const getPegRows = unstable_cache(fetchPegRows, ["scanners-peg-v2"], { revalidate: 600 });
+
+// Same item source, quarter anchor and stored verdict as the company page's
+// Guidance section and the watchlist signals (lib/watchlist-signals.ts): the
+// latest snapshot's items when one exists, else the legacy guidance_tracking rows.
+const SNAPSHOT_COLUMNS = "company_code, generated_at, credibility_verdict, guidance_items, details, updated_at";
+const TRACKING_COLUMNS =
+  "id, company_code, guidance_key, guidance_text, guidance_type, first_mentioned_in, target_period, source_mentions, trail, status, status_reason, latest_view, confidence, generated_at, details";
+
+type SnapshotRow = GuidanceSnapshotRow & { credibility_verdict?: unknown };
+
+export type GuidanceUpgradeData = {
+  rows: GuidanceUpgradeRow[];
+  /** Companies with any guidance on record — what the scan could read. */
+  readable: ScanCompany[];
+};
+
+async function fetchGuidanceUpgradeRows(): Promise<GuidanceUpgradeData> {
+  const companies = await readCompanies();
+  const codes = [...companies.keys()];
+  const supabase = createPublicReadClient();
+  const { data: snapshotData, error: snapshotError } = await supabase
+    .from("guidance_snapshot")
+    .select(SNAPSHOT_COLUMNS)
+    .in("company_code", codes)
+    .order("generated_at", { ascending: false });
+  if (snapshotError) throw snapshotError;
+
+  const latestSnapshot = new Map<string, SnapshotRow>();
+  for (const row of (snapshotData ?? []) as SnapshotRow[]) {
+    const code = upper(row.company_code);
+    if (code && !latestSnapshot.has(code)) latestSnapshot.set(code, row);
+  }
+
+  const legacyCodes = codes.filter((code) => !latestSnapshot.has(code));
+  const legacyRows = new Map<string, GuidanceTrackingRow[]>();
+  if (legacyCodes.length > 0) {
+    const { data: trackingData, error: trackingError } = await supabase
+      .from("guidance_tracking")
+      .select(TRACKING_COLUMNS)
+      .in("company_code", legacyCodes)
+      .order("generated_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (trackingError) throw trackingError;
+    for (const row of (trackingData ?? []) as GuidanceTrackingRow[]) {
+      const code = upper(row.company_code);
+      if (!code) continue;
+      const bucket = legacyRows.get(code);
+      if (bucket) bucket.push(row);
+      else legacyRows.set(code, [row]);
+    }
+  }
+
+  const current = currentReportingQuarter();
+  const rows: GuidanceUpgradeRow[] = [];
+  const readable: ScanCompany[] = [];
+  for (const [code, company] of companies) {
+    const snapshot = latestSnapshot.get(code);
+    const items = snapshot
+      ? (normalizeGuidanceSnapshot(snapshot)?.guidanceItems ?? [])
+      : normalizeGuidanceTrackingRows(legacyRows.get(code) ?? []);
+    if (items.length === 0) continue;
+    readable.push(company);
+    const row = buildGuidanceUpgradeRow(company, items, current, snapshot?.credibility_verdict);
+    if (row) rows.push(row);
+  }
+  return { rows, readable };
+}
+
+/** Every company with a raised live commitment, plus every company with guidance on record. Throws on a failed read. */
+export const getGuidanceUpgradeRows = unstable_cache(fetchGuidanceUpgradeRows, ["scanners-guidance-upgrades-v2"], {
+  revalidate: 600,
+});

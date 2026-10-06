@@ -22,21 +22,8 @@ export type PegRow = ScanCompany & {
   priceAtRun: number | null;
 };
 
-export const PEG_VIEWS = ["both", "forward", "trailing", "all"] as const;
-export type PegView = (typeof PEG_VIEWS)[number];
 export const PEG_SORTS = ["forward", "trailing"] as const;
 export type PegSort = (typeof PEG_SORTS)[number];
-
-export const PEG_VIEW_LABEL: Record<PegView, string> = {
-  both: "Both under 1",
-  forward: "Forward under 1",
-  trailing: "Trailing under 1",
-  all: "All",
-};
-
-export function parsePegView(raw: string | null | undefined): PegView {
-  return (PEG_VIEWS as readonly string[]).includes(raw ?? "") ? (raw as PegView) : "both";
-}
 
 export function parsePegSort(raw: string | null | undefined): PegSort {
   return raw === "trailing" ? "trailing" : "forward";
@@ -44,17 +31,9 @@ export function parsePegSort(raw: string | null | undefined): PegSort {
 
 const cheap = (leg: { ratio: number } | null) => leg != null && leg.ratio < PEG_CHEAP_BELOW;
 
-export function inPegView(row: PegRow, view: PegView): boolean {
-  switch (view) {
-    case "both":
-      return cheap(row.forward) && cheap(row.trailing);
-    case "forward":
-      return cheap(row.forward);
-    case "trailing":
-      return cheap(row.trailing);
-    case "all":
-      return row.forward != null || row.trailing != null;
-  }
+/** The scan's rule: cheap on BOTH legs — priced under 1× on the growth we model and the growth delivered. */
+export function isPegHit(row: PegRow): boolean {
+  return cheap(row.forward) && cheap(row.trailing);
 }
 
 /** Ascending on the chosen leg (cheapest first), rows without it last, then the other leg. */
@@ -69,9 +48,10 @@ export function comparePegRows(a: PegRow, b: PegRow, sort: PegSort): number {
 }
 
 export type PegScan = {
-  /** Fresh rows with at least one PEG leg. */
-  rows: PegRow[];
-  counts: Record<PegView, number>;
+  /** Fresh rows under 1× on both legs, unsorted. */
+  hits: PegRow[];
+  /** Fresh rows with at least one PEG leg — what the scan could read. */
+  scanned: number;
   /** Rows dropped because the price under them is past the Valuation Check's freshness bound. */
   staleCount: number;
   /** Newest pricing date among the fresh rows. */
@@ -91,16 +71,13 @@ export function buildPegScan(allRows: readonly PegRow[], now: Date = new Date())
     }
     fresh.push(row);
   }
-  const counts = Object.fromEntries(
-    PEG_VIEWS.map((view) => [view, fresh.filter((r) => inPegView(r, view)).length]),
-  ) as Record<PegView, number>;
   const latestPricedAsOf = fresh.reduce<string | null>(
     (max, r) => (r.pricedAsOf && (!max || r.pricedAsOf > max) ? r.pricedAsOf : max),
     null,
   );
-  return { rows: fresh, counts, staleCount, latestPricedAsOf };
+  return { hits: fresh.filter(isPegHit), scanned: fresh.length, staleCount, latestPricedAsOf };
 }
 
-export function selectPegRows(scan: PegScan, view: PegView, sort: PegSort): PegRow[] {
-  return scan.rows.filter((r) => inPegView(r, view)).sort((a, b) => comparePegRows(a, b, sort));
+export function sortPegHits(scan: PegScan, sort: PegSort): PegRow[] {
+  return [...scan.hits].sort((a, b) => comparePegRows(a, b, sort));
 }

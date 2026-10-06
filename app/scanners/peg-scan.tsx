@@ -1,22 +1,14 @@
-// PEG scan — forward and trailing PEG for every covered company with a fresh
-// price, filtered to the cheap band by default. The ratios and the four bands
+// PEG scan — the covered companies with a fresh price that sit under 1× PEG on
+// BOTH forward and trailing growth. The ratios and the four bands
 // are the Valuation Check's own (derivePeg + pegBandFor), so a row here always
 // matches the PEG cards on that company's Valuation tab.
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 
-import { mobileChipClass, MOBILE_CHIP_STRIP } from "@/components/mobile-card";
 import { formatShortDate } from "@/app/company/[code]/page-helpers";
 import { pegBandFor, type PegBandKey } from "@/app/company/components/valuation-peg-meter";
-import {
-  PEG_VIEW_LABEL,
-  PEG_VIEWS,
-  selectPegRows,
-  type PegRow,
-  type PegScan,
-  type PegSort,
-  type PegView,
-} from "@/lib/scanners/peg";
+import { sortPegHits, type PegRow, type PegScan, type PegSort } from "@/lib/scanners/peg";
 import { VALUATION_STALE_AFTER_DAYS } from "@/lib/valuation-check/normalize";
 import { cn } from "@/lib/utils";
 
@@ -30,30 +22,22 @@ const BAND_TONE: Record<PegBandKey, string> = {
 const GRID =
   "grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-[minmax(0,1fr)_3.75rem_9rem_9rem_4.5rem] sm:items-center sm:gap-y-0";
 
-const href = (view: PegView, sort: PegSort) => {
-  const qs = new URLSearchParams({ scan: "peg" });
-  if (view !== "both") qs.set("view", view);
-  if (sort !== "forward") qs.set("sort", sort);
-  return `/scanners?${qs.toString()}`;
-};
-
-function headline(view: PegView, n: number) {
-  const companies = n === 1 ? "company is" : "companies are";
-  switch (view) {
-    case "both":
-      return { lead: `${n}`, rest: ` ${companies} priced under 1× PEG on both forward and trailing growth` };
-    case "forward":
-      return { lead: `${n}`, rest: ` ${companies} priced under 1× forward PEG` };
-    case "trailing":
-      return { lead: `${n}`, rest: ` ${companies} priced under 1× trailing PEG` };
-    case "all":
-      return { lead: "PEG", rest: ` for all ${n} covered companies with a fresh price` };
-  }
-}
-
-export function PegScanView({ scan, view, sort }: { scan: PegScan; view: PegView; sort: PegSort }) {
-  const rows = selectPegRows(scan, view, sort);
-  const { lead, rest } = headline(view, scan.counts[view]);
+export function PegScanView({
+  scan,
+  sort,
+  mine,
+  filter,
+  sortHref,
+}: {
+  scan: PegScan;
+  sort: PegSort;
+  /** Scanning the reader's watchlist companies instead of the covered universe. */
+  mine: boolean;
+  filter: ReactNode;
+  sortHref: (sort: PegSort) => string;
+}) {
+  const rows = sortPegHits(scan, sort);
+  const n = scan.hits.length;
   const anyRevenueBasis = rows.some((r) => r.forward?.basis === "revenue");
   const anyLossYear = rows.some((r) => r.trailing?.hasLossYear);
   const latest = formatShortDate(scan.latestPricedAsOf, true);
@@ -61,8 +45,9 @@ export function PegScanView({ scan, view, sort }: { scan: PegScan; view: PegView
   return (
     <section aria-labelledby="peg-heading">
       <h2 id="peg-heading" className="house-display max-w-3xl text-[22px] leading-[1.12] sm:text-[30px]">
-        <span className={view === "all" ? undefined : "text-[var(--signal)]"}>{lead}</span>
-        {rest}
+        <span className="text-[var(--signal)]">{n}</span> of {mine ? "your " : ""}
+        {scan.scanned} {mine ? "watchlist companies" : "companies"} {n === 1 ? "is" : "are"} priced under 1× PEG on
+        both forward and trailing growth
       </h2>
       <p className="mt-2.5 max-w-2xl text-[13px] leading-[1.55] text-[var(--ink-soft)] sm:text-[14px]">
         PEG is the P/E divided by growth &mdash; what you pay for each point of it. Forward divides by our
@@ -71,26 +56,14 @@ export function PegScanView({ scan, view, sort }: { scan: PegScan; view: PegView
         Context, not a buy list: a low PEG can also mean the market doubts the growth.
       </p>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <nav aria-label="Filter" className={cn(MOBILE_CHIP_STRIP, "-mx-4 px-4 sm:mx-0 sm:flex-wrap sm:px-0")}>
-          {PEG_VIEWS.map((v) => (
-            <Link
-              key={v}
-              href={href(v, sort)}
-              scroll={false}
-              className={mobileChipClass(view === v)}
-              aria-current={view === v ? "true" : undefined}
-            >
-              {PEG_VIEW_LABEL[v]} <span className="ml-2 opacity-70">{scan.counts[v]}</span>
-            </Link>
-          ))}
-        </nav>
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+        {filter}
         <p className="house-data flex items-center gap-2 text-[10.5px] uppercase tracking-[0.1em] text-[var(--ink-soft)]">
           Sort
           {(["forward", "trailing"] as const).map((s) => (
             <Link
               key={s}
-              href={href(view, s)}
+              href={sortHref(s)}
               scroll={false}
               aria-current={sort === s ? "true" : undefined}
               className={cn(
@@ -130,7 +103,11 @@ export function PegScanView({ scan, view, sort }: { scan: PegScan; view: PegView
           </ul>
         </div>
       ) : (
-        <p className="mt-4 text-[13px] text-[var(--ink-soft)]">No covered company is in this band right now.</p>
+        <p className="mt-4 text-[13px] text-[var(--ink-soft)]">
+          {mine
+            ? "None of your watchlist companies is under 1× PEG on both legs right now."
+            : "No covered company is under 1× PEG on both legs right now."}
+        </p>
       )}
 
       <ul className="house-data mt-4 max-w-2xl space-y-1.5 text-[10.5px] leading-[1.5] text-[var(--ink-soft)]">

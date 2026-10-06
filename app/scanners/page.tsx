@@ -1,38 +1,49 @@
-// /scanners — one rule run across every company we cover. Two scans for now:
-// Red flags (the Quality tab's forensic checks that trip) and PEG (forward and
-// trailing, off the Valuation Check). One route with `?scan=` rather than
-// sub-routes so the phone tab bar (lib/phone-chrome, exact-route match) stays
-// on every scan. Server-rendered, house skin, one tree at every width; the
-// filters are links, so a scan view is shareable and needs no client JS.
+// /scanners — one rule run across every company we cover. Three scans: Red
+// flags (the Quality tab's forensic checks that trip), PEG (under 1× on both
+// forward and trailing, off the Valuation Check) and Guidance upgrades (live
+// commitments management raised on the latest call, off the Guidance tab).
+//
+// One filter: "In your watchlist" (`?mine=1`), which swaps the scan universe
+// from the discovery-listed companies to the reader's watchlist companies —
+// listed or not, since watchlists are user-owned and unfiltered. One route
+// with `?scan=` rather than sub-routes so the phone tab bar (lib/phone-chrome,
+// exact-route match) stays on every scan. Server-rendered, house skin, one
+// tree at every width; scan tabs and the filter are links, so a view is
+// shareable and needs no client JS.
 
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { mobileChipClass, MOBILE_CHIP_STRIP } from "@/components/mobile-card";
+import { currentReportingQuarter } from "@/lib/current-quarter";
 import { logger } from "@/lib/logger";
-import { getPegRows, getRedFlagRows } from "@/lib/scanners/data";
-import { buildPegScan, parsePegSort, parsePegView, type PegScan } from "@/lib/scanners/peg";
-import { buildRedFlagScan, type RedFlagScan } from "@/lib/scanners/red-flags";
+import { authHrefWithNext } from "@/lib/safe-next-path";
+import { getGuidanceUpgradeRows, getPegRows, getRedFlagRows } from "@/lib/scanners/data";
+import { parsePegSort } from "@/lib/scanners/peg";
+import { buildScans, listedScope, scanCounts, watchlistScope } from "@/lib/scanners/scope";
+import { getAuthenticatedUserId } from "@/lib/supabase/auth-state";
+import { getWatchlistCompanyCodes } from "@/lib/watchlist-codes";
 
+import { GuidanceUpgradeScanView } from "./guidance-upgrade-scan";
+import { parseScan, scannersHref, SCANS, type ScanId } from "./href";
 import { PegScanView } from "./peg-scan";
 import { RedFlagScanView } from "./red-flag-scan";
+import { WatchlistFilterChip, type WatchlistFilterState } from "./watchlist-filter";
 
 export const metadata: Metadata = {
   title: "Scanners – Story of a Stock",
   description:
-    "Every company we cover, run through one rule at a time: forensic red flags from the annual numbers, and forward and trailing PEG.",
+    "Every company we cover, run through one rule at a time: forensic red flags from the annual numbers, forward and trailing PEG, and who just raised guidance.",
   alternates: { canonical: "/scanners" },
 };
-
-const SCANS = ["red-flags", "peg"] as const;
-type ScanId = (typeof SCANS)[number];
 
 const SCAN_LABEL: Record<ScanId, string> = {
   "red-flags": "Red flags",
   peg: "PEG ratio",
+  guidance: "Guidance upgrades",
 };
 
-type SearchParams = { scan?: string; check?: string; view?: string; sort?: string };
+type SearchParams = { scan?: string; sort?: string; mine?: string };
 
 async function settle<T>(label: string, read: () => Promise<T>): Promise<T | null> {
   try {
@@ -49,20 +60,40 @@ export default async function ScannersPage({
   searchParams?: Promise<SearchParams>;
 }) {
   const params = (await searchParams) ?? {};
-  const scan: ScanId = params.scan === "peg" ? "peg" : "red-flags";
+  const scan = parseScan(params.scan);
+  const current = currentReportingQuarter();
 
-  // Both scans are read on every visit — the tab chips carry each one's count.
-  const [redFlagRows, pegRows] = await Promise.all([
+  const userId = await getAuthenticatedUserId();
+  const [redFlagRows, pegRows, guidanceData, watchCodesList] = await Promise.all([
     settle("red flags", getRedFlagRows),
     settle("peg", getPegRows),
+    settle("guidance upgrades", getGuidanceUpgradeRows),
+    userId ? getWatchlistCompanyCodes(userId) : Promise.resolve(null),
   ]);
-  const redFlags: RedFlagScan | null = redFlagRows ? buildRedFlagScan(redFlagRows) : null;
-  const peg: PegScan | null = pegRows ? buildPegScan(pegRows) : null;
+  const watchCodes = watchCodesList ? new Set(watchCodesList) : null;
+  const inputs = { redFlagRows, pegRows, guidance: guidanceData };
 
-  const counts: Record<ScanId, number | null> = {
-    "red-flags": redFlags?.flagged.length ?? null,
-    peg: peg?.counts.both ?? null,
-  };
+  // A shared `mine=1` link opened signed out falls back to the listed universe.
+  const mine = params.mine === "1" && watchCodes != null;
+  const scans = buildScans(inputs, mine && watchCodes ? watchlistScope(watchCodes) : listedScope, current);
+  const counts = scanCounts(scans);
+
+  // The chip's count is always the watchlist's hits on THIS scan, so a reader
+  // sees what the filter would leave before turning it on.
+  const watchCounts = watchCodes
+    ? scanCounts(mine ? scans : buildScans(inputs, watchlistScope(watchCodes), current))
+    : null;
+  const filter: WatchlistFilterState = !userId
+    ? { kind: "signed-out", signInHref: authHrefWithNext("/auth/login", scannersHref(scan, true)) }
+    : watchCodes && watchCodes.size === 0
+      ? { kind: "empty" }
+      : {
+          kind: "ready",
+          on: mine,
+          count: watchCounts?.[scan] ?? null,
+          href: scannersHref(scan, !mine, scan === "peg" && params.sort === "trailing" ? { sort: "trailing" } : undefined),
+        };
+  const filterChip = <WatchlistFilterChip state={filter} />;
 
   return (
     <main className="house min-h-screen">
@@ -82,7 +113,7 @@ export default async function ScannersPage({
           {SCANS.map((id) => (
             <Link
               key={id}
-              href={id === "red-flags" ? "/scanners" : `/scanners?scan=${id}`}
+              href={scannersHref(id, mine)}
               scroll={false}
               aria-current={scan === id ? "page" : undefined}
               className={mobileChipClass(scan === id)}
@@ -95,13 +126,25 @@ export default async function ScannersPage({
 
         <div className="mt-6 sm:mt-8">
           {scan === "red-flags" ? (
-            redFlags ? (
-              <RedFlagScanView scan={redFlags} checkId={params.check ?? null} />
+            scans.redFlags ? (
+              <RedFlagScanView scan={scans.redFlags} mine={mine} filter={filterChip} />
             ) : (
               <Unavailable />
             )
-          ) : peg ? (
-            <PegScanView scan={peg} view={parsePegView(params.view)} sort={parsePegSort(params.sort)} />
+          ) : scan === "peg" ? (
+            scans.peg ? (
+              <PegScanView
+                scan={scans.peg}
+                sort={parsePegSort(params.sort)}
+                mine={mine}
+                filter={filterChip}
+                sortHref={(sort) => scannersHref("peg", mine, sort === "trailing" ? { sort } : undefined)}
+              />
+            ) : (
+              <Unavailable />
+            )
+          ) : scans.guidance ? (
+            <GuidanceUpgradeScanView scan={scans.guidance} mine={mine} filter={filterChip} />
           ) : (
             <Unavailable />
           )}
