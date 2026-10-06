@@ -10,11 +10,17 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 
 import { parseCompanyQualityPayload } from "@/lib/company-quality/types";
+import { currentReportingQuarter } from "@/lib/current-quarter";
+import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
+import type { GuidanceSnapshotRow } from "@/lib/guidance-snapshot/types";
+import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
+import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 import { COVERAGE_SELECT, isDiscoveryListed, type CoverageFields } from "@/lib/coverage-policy";
 import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { derivePeg } from "@/lib/valuation-check/normalize";
 import type { ValuationCheckRow } from "@/lib/valuation-check/types";
 
+import { buildGuidanceUpgradeRow, type GuidanceUpgradeRow } from "./guidance-upgrades";
 import type { PegRow } from "./peg";
 import { buildRedFlagRow, type RedFlagRow, type ScanCompany } from "./red-flags";
 
@@ -112,3 +118,75 @@ export const getRedFlagRows = unstable_cache(fetchRedFlagRows, ["scanners-red-fl
 
 /** Every discovery-listed company with at least one PEG leg, fresh or stale. Throws on a failed read. */
 export const getPegRows = unstable_cache(fetchPegRows, ["scanners-peg-v1"], { revalidate: 600 });
+
+// Same item source, quarter anchor and stored verdict as the company page's
+// Guidance section and the watchlist signals (lib/watchlist-signals.ts): the
+// latest snapshot's items when one exists, else the legacy guidance_tracking rows.
+const SNAPSHOT_COLUMNS = "company_code, generated_at, credibility_verdict, guidance_items, details, updated_at";
+const TRACKING_COLUMNS =
+  "id, company_code, guidance_key, guidance_text, guidance_type, first_mentioned_in, target_period, source_mentions, trail, status, status_reason, latest_view, confidence, generated_at, details";
+
+type SnapshotRow = GuidanceSnapshotRow & { credibility_verdict?: unknown };
+
+export type GuidanceUpgradeData = {
+  rows: GuidanceUpgradeRow[];
+  /** Listed companies with any guidance on record — what the scan could read. */
+  scanned: number;
+};
+
+async function fetchGuidanceUpgradeRows(): Promise<GuidanceUpgradeData> {
+  const companies = await readListedCompanies();
+  const codes = [...companies.keys()];
+  const supabase = createPublicReadClient();
+  const { data: snapshotData, error: snapshotError } = await supabase
+    .from("guidance_snapshot")
+    .select(SNAPSHOT_COLUMNS)
+    .in("company_code", codes)
+    .order("generated_at", { ascending: false });
+  if (snapshotError) throw snapshotError;
+
+  const latestSnapshot = new Map<string, SnapshotRow>();
+  for (const row of (snapshotData ?? []) as SnapshotRow[]) {
+    const code = upper(row.company_code);
+    if (code && !latestSnapshot.has(code)) latestSnapshot.set(code, row);
+  }
+
+  const legacyCodes = codes.filter((code) => !latestSnapshot.has(code));
+  const legacyRows = new Map<string, GuidanceTrackingRow[]>();
+  if (legacyCodes.length > 0) {
+    const { data: trackingData, error: trackingError } = await supabase
+      .from("guidance_tracking")
+      .select(TRACKING_COLUMNS)
+      .in("company_code", legacyCodes)
+      .order("generated_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (trackingError) throw trackingError;
+    for (const row of (trackingData ?? []) as GuidanceTrackingRow[]) {
+      const code = upper(row.company_code);
+      if (!code) continue;
+      const bucket = legacyRows.get(code);
+      if (bucket) bucket.push(row);
+      else legacyRows.set(code, [row]);
+    }
+  }
+
+  const current = currentReportingQuarter();
+  const rows: GuidanceUpgradeRow[] = [];
+  let scanned = 0;
+  for (const [code, company] of companies) {
+    const snapshot = latestSnapshot.get(code);
+    const items = snapshot
+      ? (normalizeGuidanceSnapshot(snapshot)?.guidanceItems ?? [])
+      : normalizeGuidanceTrackingRows(legacyRows.get(code) ?? []);
+    if (items.length === 0) continue;
+    scanned += 1;
+    const row = buildGuidanceUpgradeRow(company, items, current, snapshot?.credibility_verdict);
+    if (row) rows.push(row);
+  }
+  return { rows, scanned };
+}
+
+/** Every discovery-listed company with a raised live commitment. Throws on a failed read. */
+export const getGuidanceUpgradeRows = unstable_cache(fetchGuidanceUpgradeRows, ["scanners-guidance-upgrades-v1"], {
+  revalidate: 600,
+});

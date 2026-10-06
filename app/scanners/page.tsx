@@ -1,6 +1,7 @@
-// /scanners — one rule run across every company we cover. Two scans for now:
-// Red flags (the Quality tab's forensic checks that trip) and PEG (forward and
-// trailing, off the Valuation Check). One route with `?scan=` rather than
+// /scanners — one rule run across every company we cover. Three scans: Red
+// flags (the Quality tab's forensic checks that trip), PEG (forward and
+// trailing, off the Valuation Check) and Guidance upgrades (live commitments
+// management raised, off the Guidance tab). One route with `?scan=` rather than
 // sub-routes so the phone tab bar (lib/phone-chrome, exact-route match) stays
 // on every scan. Server-rendered, house skin, one tree at every width; the
 // filters are links, so a scan view is shareable and needs no client JS.
@@ -9,30 +10,41 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { mobileChipClass, MOBILE_CHIP_STRIP } from "@/components/mobile-card";
+import { currentReportingQuarter } from "@/lib/current-quarter";
 import { logger } from "@/lib/logger";
-import { getPegRows, getRedFlagRows } from "@/lib/scanners/data";
+import { getGuidanceUpgradeRows, getPegRows, getRedFlagRows } from "@/lib/scanners/data";
+import {
+  buildGuidanceUpgradeScan,
+  parseGuidanceWindow,
+  type GuidanceUpgradeScan,
+} from "@/lib/scanners/guidance-upgrades";
 import { buildPegScan, parsePegSort, parsePegView, type PegScan } from "@/lib/scanners/peg";
 import { buildRedFlagScan, type RedFlagScan } from "@/lib/scanners/red-flags";
 
+import { GuidanceUpgradeScanView } from "./guidance-upgrade-scan";
 import { PegScanView } from "./peg-scan";
 import { RedFlagScanView } from "./red-flag-scan";
 
 export const metadata: Metadata = {
   title: "Scanners – Story of a Stock",
   description:
-    "Every company we cover, run through one rule at a time: forensic red flags from the annual numbers, and forward and trailing PEG.",
+    "Every company we cover, run through one rule at a time: forensic red flags from the annual numbers, forward and trailing PEG, and who just raised guidance.",
   alternates: { canonical: "/scanners" },
 };
 
-const SCANS = ["red-flags", "peg"] as const;
+const SCANS = ["red-flags", "peg", "guidance"] as const;
 type ScanId = (typeof SCANS)[number];
 
 const SCAN_LABEL: Record<ScanId, string> = {
   "red-flags": "Red flags",
   peg: "PEG ratio",
+  guidance: "Guidance upgrades",
 };
 
-type SearchParams = { scan?: string; check?: string; view?: string; sort?: string };
+const parseScan = (raw: string | undefined): ScanId =>
+  raw === "peg" || raw === "guidance" ? raw : "red-flags";
+
+type SearchParams = { scan?: string; check?: string; view?: string; sort?: string; window?: string };
 
 async function settle<T>(label: string, read: () => Promise<T>): Promise<T | null> {
   try {
@@ -49,19 +61,25 @@ export default async function ScannersPage({
   searchParams?: Promise<SearchParams>;
 }) {
   const params = (await searchParams) ?? {};
-  const scan: ScanId = params.scan === "peg" ? "peg" : "red-flags";
+  const scan = parseScan(params.scan);
+  const current = currentReportingQuarter();
 
-  // Both scans are read on every visit — the tab chips carry each one's count.
-  const [redFlagRows, pegRows] = await Promise.all([
+  // Every scan is read on every visit — the tab chips carry each one's count.
+  const [redFlagRows, pegRows, guidanceData] = await Promise.all([
     settle("red flags", getRedFlagRows),
     settle("peg", getPegRows),
+    settle("guidance upgrades", getGuidanceUpgradeRows),
   ]);
   const redFlags: RedFlagScan | null = redFlagRows ? buildRedFlagScan(redFlagRows) : null;
   const peg: PegScan | null = pegRows ? buildPegScan(pegRows) : null;
+  const guidance: GuidanceUpgradeScan | null = guidanceData
+    ? buildGuidanceUpgradeScan(guidanceData.rows, guidanceData.scanned, current)
+    : null;
 
   const counts: Record<ScanId, number | null> = {
     "red-flags": redFlags?.flagged.length ?? null,
     peg: peg?.counts.both ?? null,
+    guidance: guidance?.counts.latest ?? null,
   };
 
   return (
@@ -100,8 +118,14 @@ export default async function ScannersPage({
             ) : (
               <Unavailable />
             )
-          ) : peg ? (
-            <PegScanView scan={peg} view={parsePegView(params.view)} sort={parsePegSort(params.sort)} />
+          ) : scan === "peg" ? (
+            peg ? (
+              <PegScanView scan={peg} view={parsePegView(params.view)} sort={parsePegSort(params.sort)} />
+            ) : (
+              <Unavailable />
+            )
+          ) : guidance ? (
+            <GuidanceUpgradeScanView scan={guidance} window={parseGuidanceWindow(params.window)} current={current} />
           ) : (
             <Unavailable />
           )}

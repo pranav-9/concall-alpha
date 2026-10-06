@@ -16,6 +16,16 @@ import {
   type RedFlagRow,
 } from "../lib/scanners/red-flags";
 import { derivePeg } from "../lib/valuation-check/normalize";
+import {
+  buildGuidanceUpgradeScan,
+  isLegibleRaise,
+  parseGuidanceWindow,
+  parseValueLabel,
+  selectGuidanceUpgradeRows,
+  windowFloor,
+  windowLabel,
+  type GuidanceUpgradeRow,
+} from "../lib/scanners/guidance-upgrades";
 
 // ── Red flags ────────────────────────────────────────────────────────────────
 
@@ -135,5 +145,86 @@ assert.equal(parsePegView("bogus"), "both", "unknown view → default");
 assert.equal(parsePegView("all"), "all");
 assert.equal(parsePegSort("trailing"), "trailing");
 assert.equal(parsePegSort(undefined), "forward");
+
+// ── Guidance upgrades ───────────────────────────────────────────────────────
+
+// The printed values must read as a raise on their own — the cases that
+// leaked through on live data 2026-10-06.
+assert.deepEqual(parseValueLabel("20-24%"), { mid: 22, unit: "%" });
+assert.deepEqual(parseValueLabel("₹1,500cr+"), { mid: 1500, unit: "cr" });
+assert.deepEqual(parseValueLabel("₹4000 cr"), { mid: 4000, unit: "cr" });
+assert.equal(parseValueLabel("mid-teens"), null, "prose is not a value");
+assert.equal(isLegibleRaise("15.5%", "20-30%"), true, "a real raise");
+assert.equal(isLegibleRaise("₹400cr", "₹700cr"), true, "1.75x is a raise");
+assert.equal(isLegibleRaise("₹1500cr", "₹400cr"), false, "RATNAVEER: printed values go DOWN");
+assert.equal(isLegibleRaise("45%", "₹45cr"), false, "RISHABH: % vs ₹ is not one quantity");
+assert.equal(isLegibleRaise("1.3%", "20%"), false, "RADICO: 15x is a different quantity (bps vs level)");
+assert.equal(isLegibleRaise("₹120cr", "₹1000cr"), false, "SHREEREF: PAT vs turnover");
+assert.equal(isLegibleRaise(null, "20%"), false, "no 'from' = nothing to call a raise");
+assert.equal(isLegibleRaise("20%", "20%"), false, "flat is not a raise");
+
+const Q2FY27 = { fy: 2027, qtr: 2, label: "Q2 FY27" };
+const idx = (fy: number, qtr: number) => fy * 4 + qtr;
+assert.equal(windowFloor("latest", Q2FY27), idx(2027, 1), "latest = the Q1 FY27 call onward");
+assert.equal(windowFloor("recent", Q2FY27), idx(2026, 4), "recent = since Q4 FY26");
+assert.equal(windowFloor("all", Q2FY27), null);
+assert.equal(windowLabel("latest", Q2FY27), "Raised on the Q1 FY27 call");
+assert.equal(windowLabel("recent", Q2FY27), "Since Q4 FY26");
+assert.equal(windowLabel("latest", { fy: 2027, qtr: 1, label: "Q1 FY27" }), "Raised on the Q4 FY26 call", "wraps the FY");
+assert.equal(parseGuidanceWindow("bogus"), "latest");
+
+const gu = (code: string, quarters: Array<[number, number] | null>, skipped = 0): GuidanceUpgradeRow => {
+  const raises = quarters.map((q, i) => ({
+    key: `${code}-${i}`,
+    label: "Revenue growth (FY27)",
+    from: "20%",
+    to: "25%",
+    raisedIn: q ? `Q${q[1]} FY${q[0] - 2000}` : null,
+    raisedIndex: q ? idx(q[0], q[1]) : null,
+  }));
+  return {
+    code,
+    name: code,
+    sector: null,
+    raises,
+    skippedRaises: skipped,
+    latestRaisedIndex: raises[0]?.raisedIndex ?? null,
+    latestRaisedIn: raises[0]?.raisedIn ?? null,
+    loweredCount: 0,
+    tier: "credible",
+    tierLabel: "Credible",
+    metCount: 3,
+    countedCount: 4,
+  };
+};
+
+const gScan = buildGuidanceUpgradeScan(
+  [
+    gu("OLD", [[2026, 2]]),
+    gu("NEWTWO", [[2027, 1], [2026, 4]]),
+    gu("NEWONE", [[2027, 1]]),
+    gu("LASTQ", [[2026, 4]]),
+    gu("UNDATED", [null]),
+    gu("ALLSKIPPED", [], 2),
+  ],
+  20,
+  Q2FY27,
+);
+assert.deepEqual(
+  gScan.rows.map((r) => r.code),
+  ["NEWTWO", "NEWONE", "LASTQ", "OLD", "UNDATED"],
+  "most recent raise first, then more raises; a company whose every raise was skipped is not listed",
+);
+assert.deepEqual(gScan.counts, { latest: 2, recent: 3, all: 5 });
+assert.equal(gScan.skippedRaises, 2, "skipped raises are counted for the page to state");
+assert.deepEqual(selectGuidanceUpgradeRows(gScan, "recent", Q2FY27).map((r) => r.code), ["NEWTWO", "NEWONE", "LASTQ"]);
+
+const trusted = { ...gu("TRUSTED", [[2027, 1]]), tier: "high_trust" as const, tierLabel: "High trust", metCount: 5, countedCount: 5 };
+const shaky = { ...gu("SHAKY", [[2027, 1], [2027, 1], [2027, 1]]), tier: "low_trust" as const, tierLabel: "Low trust", metCount: 1, countedCount: 7 };
+assert.deepEqual(
+  buildGuidanceUpgradeScan([shaky, trusted], 2, Q2FY27).rows.map((r) => r.code),
+  ["TRUSTED", "SHAKY"],
+  "same quarter: the management that delivers outranks the one that raised more items",
+);
 
 console.log("All scanners tests passed.");
