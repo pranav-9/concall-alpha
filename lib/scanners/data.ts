@@ -120,16 +120,46 @@ async function fetchPegRows(): Promise<PegRow[]> {
   return rows;
 }
 
+// A failed read is never cached (see the header), so without this every
+// request would re-run it while the database is struggling — the 2026-10-06
+// timeout did exactly that. After a failure, this server instance serves
+// "unavailable" for BACKOFF_MS before it asks again.
+const BACKOFF_MS = 60_000;
+
+function withBackoff<T>(label: string, read: () => Promise<T>): () => Promise<T> {
+  let failedAt = 0;
+  return async () => {
+    if (Date.now() - failedAt < BACKOFF_MS) {
+      throw new Error(`scanners: ${label} backing off after a failed read`);
+    }
+    try {
+      return await read();
+    } catch (error) {
+      failedAt = Date.now();
+      throw error;
+    }
+  };
+}
+
 /** Every company with a forensic read (assessed > 0). Throws on a failed read. */
-export const getRedFlagRows = unstable_cache(fetchRedFlagRows, ["scanners-red-flags-v2"], { revalidate: 600 });
+export const getRedFlagRows = withBackoff(
+  "red flags",
+  unstable_cache(fetchRedFlagRows, ["scanners-red-flags-v2"], { revalidate: 600 }),
+);
 
 /** Every company with at least one PEG leg, fresh or stale. Throws on a failed read. */
-export const getPegRows = unstable_cache(fetchPegRows, ["scanners-peg-v2"], { revalidate: 600 });
+export const getPegRows = withBackoff("peg", unstable_cache(fetchPegRows, ["scanners-peg-v2"], { revalidate: 600 }));
 
 // Same item source, quarter anchor and stored verdict as the company page's
 // Guidance section and the watchlist signals (lib/watchlist-signals.ts): the
 // latest snapshot's items when one exists, else the legacy guidance_tracking rows.
-const SNAPSHOT_COLUMNS = "company_code, generated_at, credibility_verdict, guidance_items, details, updated_at";
+//
+// Sized for the whole fleet (2026-10-06 prod incident): one read of every
+// snapshot WITH `details` was 17.8MB / ~13s and hit Postgres' statement
+// timeout on every request. `details` (forward strength, strategy narrative —
+// ~13MB of it) is never read here, so it is not selected, and both tables are
+// read in batches of BATCH companies so each statement stays short.
+const SNAPSHOT_COLUMNS = "company_code, generated_at, credibility_verdict, guidance_items";
 const TRACKING_COLUMNS =
   "id, company_code, guidance_key, guidance_text, guidance_type, first_mentioned_in, target_period, source_mentions, trail, status, status_reason, latest_view, confidence, generated_at, details";
 
@@ -141,40 +171,56 @@ export type GuidanceUpgradeData = {
   readable: ScanCompany[];
 };
 
+const BATCH = 12;
+
+const chunk = <T>(xs: T[], size: number): T[][] =>
+  Array.from({ length: Math.ceil(xs.length / size) }, (_, i) => xs.slice(i * size, (i + 1) * size));
+
 async function fetchGuidanceUpgradeRows(): Promise<GuidanceUpgradeData> {
   const companies = await readCompanies();
   const codes = [...companies.keys()];
   const supabase = createPublicReadClient();
-  const { data: snapshotData, error: snapshotError } = await supabase
-    .from("guidance_snapshot")
-    .select(SNAPSHOT_COLUMNS)
-    .in("company_code", codes)
-    .order("generated_at", { ascending: false });
-  if (snapshotError) throw snapshotError;
+  const snapshotBatches = await Promise.all(
+    chunk(codes, BATCH).map(async (batch) => {
+      const { data, error } = await supabase
+        .from("guidance_snapshot")
+        .select(SNAPSHOT_COLUMNS)
+        .in("company_code", batch)
+        .order("generated_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as SnapshotRow[];
+    }),
+  );
 
   const latestSnapshot = new Map<string, SnapshotRow>();
-  for (const row of (snapshotData ?? []) as SnapshotRow[]) {
+  for (const row of snapshotBatches.flat()) {
     const code = upper(row.company_code);
-    if (code && !latestSnapshot.has(code)) latestSnapshot.set(code, row);
+    const seen = latestSnapshot.get(code);
+    if (code && (!seen || String(row.generated_at ?? "") > String(seen.generated_at ?? ""))) {
+      latestSnapshot.set(code, row);
+    }
   }
 
   const legacyCodes = codes.filter((code) => !latestSnapshot.has(code));
   const legacyRows = new Map<string, GuidanceTrackingRow[]>();
-  if (legacyCodes.length > 0) {
-    const { data: trackingData, error: trackingError } = await supabase
-      .from("guidance_tracking")
-      .select(TRACKING_COLUMNS)
-      .in("company_code", legacyCodes)
-      .order("generated_at", { ascending: false })
-      .order("id", { ascending: false });
-    if (trackingError) throw trackingError;
-    for (const row of (trackingData ?? []) as GuidanceTrackingRow[]) {
-      const code = upper(row.company_code);
-      if (!code) continue;
-      const bucket = legacyRows.get(code);
-      if (bucket) bucket.push(row);
-      else legacyRows.set(code, [row]);
-    }
+  const trackingBatches = await Promise.all(
+    chunk(legacyCodes, BATCH).map(async (batch) => {
+      const { data, error } = await supabase
+        .from("guidance_tracking")
+        .select(TRACKING_COLUMNS)
+        .in("company_code", batch)
+        .order("generated_at", { ascending: false })
+        .order("id", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as GuidanceTrackingRow[];
+    }),
+  );
+  for (const row of trackingBatches.flat()) {
+    const code = upper(row.company_code);
+    if (!code) continue;
+    const bucket = legacyRows.get(code);
+    if (bucket) bucket.push(row);
+    else legacyRows.set(code, [row]);
   }
 
   const current = currentReportingQuarter();
@@ -194,6 +240,7 @@ async function fetchGuidanceUpgradeRows(): Promise<GuidanceUpgradeData> {
 }
 
 /** Every company with a raised live commitment, plus every company with guidance on record. Throws on a failed read. */
-export const getGuidanceUpgradeRows = unstable_cache(fetchGuidanceUpgradeRows, ["scanners-guidance-upgrades-v2"], {
-  revalidate: 600,
-});
+export const getGuidanceUpgradeRows = withBackoff(
+  "guidance upgrades",
+  unstable_cache(fetchGuidanceUpgradeRows, ["scanners-guidance-upgrades-v3"], { revalidate: 600 }),
+);
