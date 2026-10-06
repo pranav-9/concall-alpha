@@ -9,6 +9,7 @@ import {
   getTargetQuarter,
   getTrackerData,
 } from "./data";
+import { ResultsCalendar } from "./results-calendar";
 import { SectorFilter } from "./sector-filter";
 import { TrackerTable } from "./tracker-table";
 
@@ -172,6 +173,8 @@ export default async function QuarterTrackerPage({
           </div>
         </section>
 
+        <ResultsCalendar entries={entries} quarterLabel={target.label} />
+
         <section className="flex flex-col gap-3 rounded-lg border border-border/35 bg-background/45 px-3 py-3 shadow-sm shadow-black/5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
             <span className="mr-1 font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -202,7 +205,9 @@ export default async function QuarterTrackerPage({
 
         {resultEntries.length === 0 ? (
           <div className="rounded-xl border border-border/40 bg-background/40 px-4 py-8 text-center text-sm text-muted-foreground">
-            No companies match the current filters.
+            {reportedCompanies === 0 && activeMovement == null
+              ? `No ${target.label} scores yet — each company lands here once its call is scored.`
+              : "No companies match the current filters."}
           </div>
         ) : (
           <TrackerTable entries={resultEntries} scoreLabel={target.label} />
