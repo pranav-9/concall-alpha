@@ -14,12 +14,12 @@ import {
 // match: a company page, a sector page, or a sub-route keeps the pill navbar
 // and hamburger.
 
-// The bar is four direct tabs + "Other" = five slots.
-assert.equal(PHONE_TABS.length, 4, "four direct tabs; the fifth slot is Other");
+// The bar is five direct tabs + "Other" = six slots.
+assert.equal(PHONE_TABS.length, 5, "five direct tabs; the sixth slot is Other");
 assert.deepEqual(
   PHONE_TABS.map((t) => t.label),
-  ["Desk", "Filings", "Ranking", "Journal"],
-  "tab order is Desk / Filings / Ranking / Journal",
+  ["Desk", "Filings", "Ranking", "Journal", "Scanners"],
+  "tab order is Desk / Filings / Ranking / Journal / Scanners",
 );
 
 // Every tab destination is itself a chrome route — the bar must show where it lands.
@@ -47,6 +47,7 @@ assert.equal(isPhoneAppRoute("/leaderboards/x"), false, "sub-routes are not gate
 assert.equal(isPhoneAppRoute("/"), false, "the hero homepage keeps the pill navbar");
 assert.equal(isPhoneAppRoute("/blog"), true, "the Journal index is the Journal tab");
 assert.equal(isPhoneAppRoute("/blog/some-post"), false, "a Journal post keeps the pill navbar");
+assert.equal(isPhoneAppRoute("/scanners"), true, "every scan is one route (?scan=), so the bar stays on");
 assert.equal(isPhoneAppRoute("/watchlists"), false, "Watchlists (reached via Other) keeps the hamburger");
 
 // Null-safe: usePathname can be null during some transitions.

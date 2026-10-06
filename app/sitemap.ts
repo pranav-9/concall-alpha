@@ -11,6 +11,7 @@ const STATIC_ROUTES = [
   "/company",
   "/announcements",
   "/leaderboards",
+  "/scanners",
   "/sectors",
   "/activity",
   "/coverage",

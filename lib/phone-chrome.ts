@@ -4,12 +4,16 @@
 // the navbar (app/(hero)/navbar.tsx), the tab bar (components/mobile-tab-bar.tsx)
 // and the community nudge agree on where the chrome is.
 
-/** The four direct tabs, in bar order. The fifth slot is "Other" (a sheet). */
+/**
+ * The five direct tabs, in bar order. The sixth slot is "Other" (a sheet).
+ * Scanners sits beside Journal as a direct tab for visibility (2026-10-06).
+ */
 export const PHONE_TABS = [
   { href: "/desk", label: "Desk" },
   { href: "/announcements", label: "Filings" },
   { href: "/leaderboards", label: "Ranking" },
   { href: "/blog", label: "Journal" },
+  { href: "/scanners", label: "Scanners" },
 ] as const;
 
 /**

@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   ListChecks,
   Newspaper,
+  ScanSearch,
   Send,
   type LucideIcon,
 } from "lucide-react";
@@ -25,6 +26,7 @@ export const TAB_ICONS: Record<PhoneTabHref, LucideIcon> = {
   "/announcements": Activity,
   "/leaderboards": BarChart2,
   "/blog": BookOpen,
+  "/scanners": ScanSearch,
 };
 
 export const MORE_ICONS: Record<PhoneMoreHref, LucideIcon> = {
