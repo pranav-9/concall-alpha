@@ -3,23 +3,28 @@ import "server-only";
 import { cache } from "react";
 
 import { classifyBoardRead } from "@/lib/board-read";
+import { getCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/get";
+import { buildSubSectorEntries } from "@/lib/company-industry-analysis/view";
 import { normalizeCompanyQuality } from "@/lib/company-quality/normalize";
 import { getCompanyQualityRow } from "@/lib/company-quality/get";
 import type { ForensicTally } from "@/lib/company-quality/types";
+import { currentReportingQuarter } from "@/lib/current-quarter";
 import { getGuidanceSnapshotRow } from "@/lib/guidance-snapshot/get";
 import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
 import { parseForwardStrength, type AmbitionLabel } from "@/lib/guidance-snapshot/types";
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
 import { buildGrowthSummary } from "@/lib/growth-outlook/summary";
+import { buildGuidanceVerdict } from "@/lib/guidance-tracking/verdict";
 import { computeBoardRanks, COVERAGE_BOARD_SIZE } from "@/lib/leaderboard-rank";
 import { logger } from "@/lib/logger";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import type { MoatAnalysisRow, MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
 import { getOverallBoardRows } from "@/lib/overall-board";
+import { buildProsCons, type ProsCons, type ProsConsInputs } from "@/lib/overview-pros-cons";
 import { percentileOf } from "@/lib/read-distribution";
 import type { ScorePoint } from "@/lib/score-path";
 import { createClient } from "@/lib/supabase/server";
-import { VERDICT_DISPLAY } from "@/lib/valuation-check/headline";
+import { buildValuationHeadline, VERDICT_DISPLAY } from "@/lib/valuation-check/headline";
 import {
   buildValuationScoreHistory,
   type ValuationScoreHistoryRow,
@@ -31,8 +36,9 @@ import { getWalkTheTalk } from "@/lib/walk-the-talk/get";
 import type { NormalizedWalkTheTalk } from "@/lib/walk-the-talk/types";
 
 // Data for the company overview (redesigned 2026-10-01: a header score strip,
-// The business / The story, three score cards with their paths, and three
-// standing reads — moat, forensics, walk the talk).
+// The business / The story, three score cards with their paths, three
+// standing reads — moat, forensics, walk the talk — and, since 2026-10-06, the
+// good and the bad, ranked across every section by lib/overview-pros-cons).
 //
 // The overview cache row (lib/company-overview-cache.ts) already carries the
 // scores, ranks, sector and story. What it does NOT carry is the business
@@ -93,6 +99,8 @@ export type OverviewSignalExtras = {
   walkTheTalk: NormalizedWalkTheTalk | null;
   /** Deep-track forward-strength ambition, when the snapshot carries it. */
   guidanceAmbition: AmbitionLabel | null;
+  /** The clearly good and clearly bad readings across the sections, top five a side. */
+  prosCons: ProsCons;
 };
 
 type ConcallRow = {
@@ -162,6 +170,7 @@ export const getOverviewSignalExtras = cache(
       qualityRow,
       walkTheTalk,
       guidanceRow,
+      industryAnalysis,
     ] = await Promise.all([
       safe(
         "concall",
@@ -242,6 +251,8 @@ export const getOverviewSignalExtras = cache(
       safe("quality", getCompanyQualityRow(normalizedCode), null),
       safe("walk-the-talk", getWalkTheTalk(normalizedCode), null),
       safe("guidance-snapshot", getGuidanceSnapshotRow(normalizedCode), null),
+      // Pros and cons read only the lead market's capital cycle off this row.
+      safe("industry", getCompanyIndustryAnalysis(normalizedCode), null),
     ]);
 
     // Quarter
@@ -276,9 +287,13 @@ export const getOverviewSignalExtras = cache(
     const valuationRow = ((valuationRes as { data: ValuationCheckRow[] | null }).data ?? [])[0];
     const valuationNorm = normalizeValuationCheck(valuationRow ?? null);
     let valuation: OverviewValuationRead | null = null;
+    let shownVerdict: ProsConsInputs["valuation"] = null;
     if (valuationNorm) {
       const staleness = assessStaleness(valuationNorm);
       const showVerdict = valuationNorm.rateable && Boolean(valuationNorm.verdict) && !staleness.stale;
+      if (showVerdict && valuationNorm.verdict) {
+        shownVerdict = { verdict: valuationNorm.verdict, headline: buildValuationHeadline(valuationNorm) };
+      }
       const withheldReason = showVerdict
         ? null
         : staleness.stale
@@ -312,26 +327,91 @@ export const getOverviewSignalExtras = cache(
       : null;
 
     // Forensics — the Quality tab's tally and headline, same normalizer.
-    const qualityForensics = normalizeCompanyQuality(qualityRow)?.forensics ?? null;
+    const quality = normalizeCompanyQuality(qualityRow);
+    const qualityForensics = quality?.forensics ?? null;
     const forensics =
       qualityForensics && qualityForensics.tally.assessed > 0
         ? { tally: qualityForensics.tally, headline: qualityForensics.read.headline }
         : null;
 
     // Guidance ambition — deep-track forward strength only.
-    const guidanceDetails = normalizeGuidanceSnapshot(guidanceRow)?.details ?? null;
-    const guidanceAmbition = parseForwardStrength(guidanceDetails)?.ambition.label ?? null;
+    const guidanceSnapshot = normalizeGuidanceSnapshot(guidanceRow);
+    const forwardStrength = parseForwardStrength(guidanceSnapshot?.details ?? null);
+    const guidanceAmbition = forwardStrength?.ambition.label ?? null;
+    // The Guidance tab's verdict and "met / graded" count, off the same items.
+    const guidanceItems = guidanceSnapshot?.guidanceItems ?? [];
+    const guidanceVerdict =
+      guidanceItems.length > 0
+        ? buildGuidanceVerdict(
+            guidanceItems,
+            currentReportingQuarter(),
+            (guidanceRow as { credibility_verdict?: unknown } | null)?.credibility_verdict,
+          )
+        : null;
+
+    const presentWalkTheTalk = walkTheTalk && walkTheTalk.schemaStatus === "present" ? walkTheTalk : null;
+
+    // Lead market's cycle — the same entry the Industry tab's "Where it sits"
+    // reads: the first market, in qualifying order, that carries a cycle.
+    const leadMarket = industryAnalysis
+      ? (buildSubSectorEntries(industryAnalysis).find(
+          (entry) => str(entry.capitalCycle?.stage) || str(entry.capitalCycle?.direction),
+        ) ?? null)
+      : null;
+    const leadStage = str(leadMarket?.capitalCycle?.stage);
+
+    const growthScore = growth?.growthScore ?? null;
+    const prosCons = buildProsCons({
+      quality,
+      moat,
+      concallPath: quarter.scorePath.filter(
+        (p): p is { period: string; value: number } => p.value != null,
+      ),
+      growth:
+        typeof growthScore === "number"
+          ? {
+              score: growthScore,
+              base: growthRange?.base ?? null,
+              horizonYears: growthRange?.horizonYears ?? null,
+            }
+          : null,
+      valuation: shownVerdict,
+      trackRecord: guidanceVerdict
+        ? {
+            tier: guidanceVerdict.tier,
+            metCount: guidanceVerdict.metCount,
+            countedCount: guidanceVerdict.countedCount,
+          }
+        : null,
+      liveBook: presentWalkTheTalk
+        ? {
+            liveCount: presentWalkTheTalk.liveCount,
+            revisedDownCount: presentWalkTheTalk.liveRevisedDownCount,
+          }
+        : null,
+      guidance: forwardStrength
+        ? {
+            ambition: forwardStrength.ambition.label,
+            evidence: forwardStrength.evidence.label,
+            liveTotal: forwardStrength.evidence.liveTotal,
+            orderBacked: forwardStrength.evidence.orderBacked,
+            aspiration: forwardStrength.evidence.aspiration,
+          }
+        : null,
+      industry: leadStage ? { stage: leadStage, market: str(leadMarket?.subSector) } : null,
+    });
 
     return {
       quarter,
-      growthScore: growth?.growthScore ?? null,
+      growthScore,
       growthRange,
       valuation,
       businessLine,
       moat,
       forensics,
-      walkTheTalk: walkTheTalk && walkTheTalk.schemaStatus === "present" ? walkTheTalk : null,
+      walkTheTalk: presentWalkTheTalk,
       guidanceAmbition,
+      prosCons,
     };
   },
 );

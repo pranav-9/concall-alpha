@@ -9,6 +9,11 @@ import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
 import type { AmbitionLabel } from "@/lib/guidance-snapshot/types";
 import type { MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
 import {
+  PROS_CONS_SOURCES,
+  type ProsConsItem,
+  type ProsConsSide,
+} from "@/lib/overview-pros-cons";
+import {
   getOverviewBoardPosition,
   getOverviewSignalExtras,
   type OverviewSignalExtras,
@@ -22,13 +27,15 @@ import { topShareLabel } from "../[code]/display-tokens";
 import { MissingSectionRequestButton } from "./missing-section-request-button";
 import { SectionLink } from "./section-link";
 
-// The company overview (redesign 2026-10-01). Four rows, each one glance:
+// The company overview (redesign 2026-10-01). Five rows, each one glance:
 //   1. Header — name, the SoaS score with its read word, and where it sits on
 //      the Overall board.
 //   2. The business (sector chips + the snapshot's one-liner) beside The story.
 //   3. The three scores — Concall, Growth, Valuation — each with its path or
 //      range.
 //   4. The standing reads — Moat, Forensics, Guidance · walk the talk.
+//   5. The good and the bad (2026-10-06) — the clearly strong and clearly weak
+//      readings across every section, ranked, five a side at most.
 // Every card opens its full section; nothing here is a dead end.
 //
 // Everything is derived from data the portal already computes: the cache row
@@ -850,6 +857,78 @@ function GuidanceCard({
   );
 }
 
+// --- The good · The bad ------------------------------------------------------
+
+// Each side lists what lib/overview-pros-cons ranked: strongest first, never
+// padded. A side with nothing clear says so; with nothing on either side the
+// row is left out.
+const PROS_CONS_SIDE: Record<ProsConsSide, { kicker: string; tone: Tone; empty: string }> = {
+  good: {
+    kicker: "The good",
+    tone: "good",
+    empty: "No clear strengths in the sections published so far.",
+  },
+  bad: {
+    kicker: "The bad",
+    tone: "bad",
+    empty: "No clear red flags in the sections published so far.",
+  },
+};
+
+function ProsConsCard({ side, items }: { side: ProsConsSide; items: ProsConsItem[] }) {
+  const meta = PROS_CONS_SIDE[side];
+  return (
+    <div className={cn(cardClass, "p-4 sm:p-5 lg:p-6")}>
+      <p className={cn(kickerClass, "flex items-center gap-2")}>
+        <span className={cn("h-1.5 w-1.5 rounded-full", TONE_FILL[meta.tone])} aria-hidden />
+        {meta.kicker}
+      </p>
+      {items.length > 0 ? (
+        <ol className="mt-2 divide-y divide-border/50">
+          {items.map((item, index) => {
+            const source = PROS_CONS_SOURCES[item.source];
+            return (
+              <li key={item.id}>
+                <SectionLink
+                  sectionId={source.sectionId}
+                  className="group -mx-2 flex w-[calc(100%+1rem)] items-start gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-muted/30"
+                >
+                  <span
+                    className={cn(
+                      monoClass,
+                      "w-3 shrink-0 pt-px text-[12px] font-semibold",
+                      TONE_TEXT[meta.tone],
+                    )}
+                  >
+                    {index + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[13.5px] font-semibold leading-snug text-foreground">
+                      {item.claim}
+                    </span>
+                    <span className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-muted-foreground sm:line-clamp-2">
+                      <span className="mr-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/60">
+                        {source.label}
+                      </span>
+                      {item.evidence}
+                    </span>
+                  </span>
+                  <ArrowRight
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-hidden
+                  />
+                </SectionLink>
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+        <p className="mt-3.5 text-[12.5px] text-muted-foreground">{meta.empty}</p>
+      )}
+    </div>
+  );
+}
+
 // --- Board -------------------------------------------------------------------
 
 const shellClass =
@@ -892,6 +971,13 @@ export async function OverviewSignalBoard({
         <ForensicsCard extras={extras} />
         <GuidanceCard overview={overview} extras={extras} />
       </div>
+
+      {extras.prosCons.good.length + extras.prosCons.bad.length > 0 && (
+        <div className="mt-3 grid gap-3 lg:mt-4 lg:grid-cols-2 lg:gap-4">
+          <ProsConsCard side="good" items={extras.prosCons.good} />
+          <ProsConsCard side="bad" items={extras.prosCons.bad} />
+        </div>
+      )}
     </div>
   );
 }
@@ -929,6 +1015,13 @@ export function OverviewSignalBoardFallback({
       <div className={cn(rowGridClass, "mt-3 lg:mt-4")}>
         {[0, 1, 2].map((i) => (
           <div key={i} className="h-[136px] animate-pulse rounded-[14px] bg-muted/40 lg:h-[150px]" />
+        ))}
+      </div>
+
+      {/* The good · the bad — a typical side: two items on a phone, three on desktop. */}
+      <div className="mt-3 grid gap-3 lg:mt-4 lg:grid-cols-2 lg:gap-4">
+        {[0, 1].map((i) => (
+          <div key={i} className="h-[220px] animate-pulse rounded-[14px] bg-muted/30 lg:h-[300px]" />
         ))}
       </div>
     </div>
