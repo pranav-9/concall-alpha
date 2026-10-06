@@ -28,8 +28,8 @@ import { cn } from "@/lib/utils";
 // The phone tab bar (handoffs 2026-09-13: "The Desk — mobile" and its sibling
 // screens; re-cut 2026-09-22): the primary destinations the compact top bar no
 // longer carries. Fixed to the bottom edge below `sm` on the phone-app routes
-// (lib/phone-chrome) — the rest of the site keeps the hamburger. Four direct
-// tabs — Desk / Filings / Ranking / Journal — and a fifth, "Other", that opens
+// (lib/phone-chrome) — the rest of the site keeps the hamburger. Five direct
+// tabs — Desk / Filings / Ranking / Journal / Scanners — and a sixth, "Other", that opens
 // a bottom sheet with the remaining destinations (Themes, Sectors, Watchlists
 // when signed in, the Telegram group). Mounted in the root layout after the
 // footer so the spacer it renders keeps the footer's last line above the bar.
