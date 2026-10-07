@@ -663,7 +663,7 @@ export const compareLiveMateriality = (a: LiveRow, b: LiveRow): number =>
 // horizon label so a "Q3 FY27" target and a plain "FY27" one still group
 // (both decide FY27), while an "FY26–FY28" frame does not (it decides FY28).
 // Mixed years get the plain heading.
-const horizonDeadlineFy = (item: NormalizedGuidanceItem): number | null => {
+export const horizonDeadlineFy = (item: NormalizedGuidanceItem): number | null => {
   // Same standing-horizon guard as the proximity key — a commitment with no
   // deadline decides no particular year, so it can't contribute one to the
   // heading.

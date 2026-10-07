@@ -12,9 +12,11 @@ import {
   type TrajectoryResult,
 } from "@/lib/score-trajectory";
 import { buildNextQuarterWatch } from "@/lib/next-quarter-watch/select";
-import type { WatchSwingVar } from "@/lib/next-quarter-watch/types";
+import { buildQuarterExpectationView, type QuarterExpectationData } from "@/lib/quarter-expectation/build";
+import { scoreVsBaseline } from "@/lib/quarter-expectation/baseline";
+import { normalizeSourceStatus } from "@/lib/score-freshness";
 import { ChartLineLabel } from "../[code]/chart";
-import { NextQuarterWatch } from "./next-quarter-watch";
+import { QuarterExpectationCard } from "./quarter-expectation-card";
 import { TrendBadge } from "./trend-badge";
 import { chipClass } from "./chip-tone";
 import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
@@ -29,11 +31,13 @@ import type { ChartDataPoint, QuarterData } from "../types";
 type ConcallScoreSectionProps = {
   chartData: ChartDataPoint[];
   detailQuarters: QuarterData[];
-  // Forward inputs for the "What to watch next quarter" block (threaded from the
-  // page so the block synthesizes without its own fetch). Both optional — the
-  // block stays silent when there's nothing to flag.
+  // Forward inputs, threaded from the page so the section synthesizes without
+  // its own fetch: the growth score feeds the score-vs-outlook setup chip; the
+  // expectation data (calendar, issuer guide, what to listen for) is built
+  // server-side in ConcallScorePanel. Both optional — the card and the chip
+  // stay quiet when there's nothing to say.
   growthScore?: number | null;
-  swingVars?: WatchSwingVar[];
+  expectation?: QuarterExpectationData | null;
 };
 
 // rationale on the row: new rows are structured {direction, heading, detail};
@@ -312,7 +316,7 @@ export function ConcallScoreSection({
   chartData,
   detailQuarters,
   growthScore,
-  swingVars,
+  expectation,
 }: ConcallScoreSectionProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [range, setRange] = React.useState<ChartRange>(12);
@@ -360,10 +364,10 @@ export function ConcallScoreSection({
     return classifyTrajectory(scores, { hasGapInWindow });
   }, [detailQuarters]);
 
-  // "What to watch next quarter": synthesise the latest score, the series
-  // trajectory, the forward outlook, and the swing variables. Silent when clean.
-  const watchTrajectoryLabel = TRAJECTORIES[trajectory.key].label;
-  const watchView = React.useMemo(
+  // The setup read heading into the next call: score-vs-outlook divergence
+  // and a falling trajectory, rendered as chips on the expectation card.
+  // Silent when clean (same gate as the old "What to watch" block).
+  const setup = React.useMemo(
     () =>
       buildNextQuarterWatch({
         latestScore:
@@ -375,9 +379,37 @@ export function ConcallScoreSection({
           label: TRAJECTORIES[trajectory.key].label,
           description: trajectory.description,
         },
-        swingVars: swingVars ?? [],
+        swingVars: [],
       }),
-    [detailQuarters, growthScore, trajectory, swingVars],
+    [detailQuarters, growthScore, trajectory],
+  );
+
+  // "Before the Qn FYxx call": the server-built expectation data plus the
+  // client-side state (upcoming / pending / landed) and the trail baseline,
+  // both read off the rows already in hand. Client-only (this chunk is
+  // ssr:false), so "today" is the browser's IST date.
+  const expectationView = React.useMemo(
+    () => (expectation ? buildQuarterExpectationView(expectation, detailQuarters) : null),
+    [expectation, detailQuarters],
+  );
+  const lastQuarterForCard = React.useMemo(() => {
+    const latest = detailQuarters[0];
+    if (!latest) return null;
+    const ctx = buildDetailQuarterContext(latest);
+    return { label: ctx.detailQuarterLabel, rationale: ctx.rationale };
+  }, [detailQuarters]);
+
+  // How the selected quarter landed against the four scored quarters before
+  // it — the same 4Q average the chart's dashed line draws, read one step
+  // ahead. Within the band (the company's usual swing, floored at the ±0.5
+  // re-score drift) it is "in line", not a surprise.
+  const vsBaseline = React.useMemo(
+    () => (selectedQuarter ? scoreVsBaseline(detailQuarters, selectedQuarter) : null),
+    [detailQuarters, selectedQuarter],
+  );
+  const selectedSourceStatus = normalizeSourceStatus(
+    (selectedQuarter?.details as { scoring_meta?: { source_status?: unknown } } | null | undefined)
+      ?.scoring_meta?.source_status,
   );
 
   // chartData is oldest→newest; the range window keeps the most recent N points.
@@ -450,6 +482,9 @@ export function ConcallScoreSection({
 
   return (
     <div className="flex flex-col gap-3">
+    {expectationView && (
+      <QuarterExpectationCard view={expectationView} setup={setup} lastQuarter={lastQuarterForCard} />
+    )}
     <div className={`${elevatedBlockClass} p-2.5`}>
       <div className="flex flex-col gap-3">
         {quarterContext ? (
@@ -496,6 +531,28 @@ export function ConcallScoreSection({
                     </div>
                     <div className="mt-0.5 text-[11px] text-muted-foreground">
                       Band {BANDS[bandForScore(quarterContext.detailScore)].description} · fixed cuts
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[11px] tabular-nums text-muted-foreground">
+                      {vsBaseline ? (
+                        Math.abs(vsBaseline.delta) <= vsBaseline.band ? (
+                          <span>In line with its 4Q avg ({vsBaseline.baseline.toFixed(1)})</span>
+                        ) : (
+                          <span>
+                            <span className={vsBaseline.delta > 0 ? "text-emerald-500" : "text-rose-500"}>
+                              {vsBaseline.delta > 0 ? "+" : "−"}
+                              {Math.abs(vsBaseline.delta).toFixed(1)}
+                            </span>{" "}
+                            vs its 4Q avg ({vsBaseline.baseline.toFixed(1)})
+                          </span>
+                        )
+                      ) : (
+                        <span>Trail too short to compare</span>
+                      )}
+                      {selectedSourceStatus === "unofficial" && (
+                        <span className={cn(chipClass("amber"), "px-1.5 py-0 text-[9px] uppercase tracking-[0.1em]")}>
+                          unofficial · re-score pending
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -650,7 +707,6 @@ export function ConcallScoreSection({
           )}
         </div>
       )}
-      <NextQuarterWatch view={watchView} trajectoryLabel={watchTrajectoryLabel} />
     </div>
   );
 }
