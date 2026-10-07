@@ -24,6 +24,20 @@ export const quarterCalendarRowSchema = z.object({
 });
 export type QuarterCalendarRow = z.infer<typeof quarterCalendarRowSchema>;
 
+// One row of concallyser's `quarterly_financials` (sql/create_quarterly_financials_table.sql):
+// Screener's quarterly P&L, consolidated where it exists, standalone otherwise.
+export const quarterlyFinancialsRowSchema = z.object({
+  company_code: z.string(),
+  fy: z.number().int(),
+  qtr: z.number().int().min(1).max(4),
+  period_end: z.string(),
+  basis: z.enum(["consolidated", "standalone"]),
+  revenue_cr: z.coerce.number().nullable(),
+  opm_pct: z.coerce.number().nullable(),
+  net_profit_cr: z.coerce.number().nullable(),
+});
+export type QuarterlyFinancialsRow = z.infer<typeof quarterlyFinancialsRowSchema>;
+
 export type ExpectationCalendar = {
   /** YYYY-MM-DD, the board meeting that approves the results. */
   resultsDate: string | null;
@@ -86,8 +100,36 @@ export type ExpectedEarningsLine = {
   sectionId: string;
 };
 
+// The issuer's growth guide applied to the year-ago quarter: what the quarter
+// prints if the FY guide holds evenly. A range when the guide is a range.
+export type ImpliedQuarter = {
+  yearAgoLabel: string;
+  yearAgoRevenueCr: number;
+  guidePctLo: number;
+  guidePctHi: number;
+  revenueLoCr: number;
+  revenueHiCr: number;
+  /** From a margin guide (percent level), when one exists. */
+  opmLo: number | null;
+  opmHi: number | null;
+};
+
+// How the business has actually been running: the last four reported
+// quarters' average YoY revenue growth and average OPM.
+export type RunRate = {
+  revenueYoyPct: number;
+  /** Quarter pairs the YoY average was taken over. */
+  yoyPairs: number;
+  opmPct: number | null;
+  latestLabel: string;
+};
+
 export type ExpectedEarnings = {
   lines: ExpectedEarningsLine[];
+  /** Screener basis of the figures below; null when no financials exist. */
+  basis: "consolidated" | "standalone" | null;
+  implied: ImpliedQuarter | null;
+  runRate: RunRate | null;
 };
 
 export type QuarterExpectationState = "upcoming" | "landed";

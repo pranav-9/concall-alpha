@@ -21,7 +21,12 @@ import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 import type { KeyVariablesSnapshotRow } from "@/lib/key-variables-snapshot/types";
 import type { QuarterExpectationData } from "@/lib/quarter-expectation/build";
 import { buildExpectedEarnings } from "@/lib/quarter-expectation/earnings";
-import { quarterCalendarRowSchema, type ExpectationCalendar } from "@/lib/quarter-expectation/types";
+import {
+  quarterCalendarRowSchema,
+  quarterlyFinancialsRowSchema,
+  type ExpectationCalendar,
+  type QuarterlyFinancialsRow,
+} from "@/lib/quarter-expectation/types";
 import { buildExpectedUpdates, parseRationaleLines } from "@/lib/quarter-expectation/updates";
 import { logger } from "@/lib/logger";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
@@ -154,7 +159,7 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
   const supabase = await createClient();
   // The quarter in reporting season — the one the expectation card is about.
   const target = currentReportingQuarter();
-  const [{ data, error }, { data: keyVarData }, growthResult, calendarResult, guidanceSnapshotRow] =
+  const [{ data, error }, { data: keyVarData }, growthResult, calendarResult, guidanceSnapshotRow, financialsResult] =
     await Promise.all([
       supabase
         .from("concall_analysis")
@@ -196,9 +201,22 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
       // The same cached guidance_snapshot row the Guidance and Growth panels
       // read — one query per request across the three.
       getGuidanceSnapshotRow(overview.company_code).catch(() => null),
+      // Screener's quarterly P&L (scrape_screener_quarters.py): the year-ago
+      // quarter the guide is applied to, and the trailing run-rate. Twelve
+      // rows cover four YoY pairs plus the year-ago target.
+      supabase
+        .from("quarterly_financials")
+        .select("company_code, fy, qtr, period_end, basis, revenue_cr, opm_pct, net_profit_cr")
+        .eq("company_code", overview.company_code)
+        .order("fy", { ascending: false })
+        .order("qtr", { ascending: false })
+        .limit(12),
     ]);
 
   if (error) throw error;
+  if (financialsResult.error) {
+    logger.warn("concall-score: quarterly_financials read failed", { error: financialsResult.error });
+  }
   // The forward inputs are non-fatal: a calendar or growth outage degrades the
   // card ("date not announced", no catalyst), never the score trail.
   if (growthResult.error) {
@@ -259,10 +277,14 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
       }
     : null;
   const guidanceItems = normalizeGuidanceSnapshot(guidanceSnapshotRow)?.guidanceItems ?? [];
+  const financials: QuarterlyFinancialsRow[] = (financialsResult.data ?? []).flatMap((row) => {
+    const parsed = quarterlyFinancialsRowSchema.safeParse(row);
+    return parsed.success ? [parsed.data] : [];
+  });
   const expectation: QuarterExpectationData = {
     target,
     calendar,
-    earnings: buildExpectedEarnings({ target, guidanceItems }),
+    earnings: buildExpectedEarnings({ target, guidanceItems, financials }),
     updates: buildExpectedUpdates({
       target,
       guidanceItems,

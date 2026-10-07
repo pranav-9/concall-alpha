@@ -261,7 +261,7 @@ function GuideBlock({ view }: { view: QuarterExpectationView }) {
   if (!earnings) return null;
   return (
     <div className={`${nestedDetailClass} flex flex-col gap-1.5 p-3`}>
-      <p className={eyebrowClass}>What they&apos;ve guided</p>
+      <p className={eyebrowClass}>{earnings.lines.length > 0 ? "What they've guided" : "How it's been running"}</p>
       <ul className="flex flex-col gap-1.5">
         {earnings.lines.map((line, i) => (
           <li key={i} className="min-w-0 text-[11px] leading-snug">
@@ -276,12 +276,56 @@ function GuideBlock({ view }: { view: QuarterExpectationView }) {
           </li>
         ))}
       </ul>
+      {earnings.implied ? (
+        <p className="border-t border-border/30 pt-1.5 text-[11px] leading-snug text-muted-foreground">
+          If the guide holds for {view.target.label}:{" "}
+          <span className="font-semibold tabular-nums text-foreground">
+            ₹{fmtCr(earnings.implied.revenueLoCr)}
+            {earnings.implied.revenueHiCr !== earnings.implied.revenueLoCr ? `–${fmtCr(earnings.implied.revenueHiCr)}` : ""} cr
+          </span>{" "}
+          revenue
+          {earnings.implied.opmLo != null ? (
+            <>
+              {" "}
+              at{" "}
+              <span className="font-semibold tabular-nums text-foreground">
+                {earnings.implied.opmLo}
+                {earnings.implied.opmHi != null && earnings.implied.opmHi !== earnings.implied.opmLo ? `–${earnings.implied.opmHi}` : ""}% OPM
+              </span>
+            </>
+          ) : null}{" "}
+          <span className="text-muted-foreground/80">
+            ({earnings.implied.yearAgoLabel} ₹{fmtCr(earnings.implied.yearAgoRevenueCr)} cr × {fmtPct(earnings.implied.guidePctLo)}
+            {earnings.implied.guidePctHi !== earnings.implied.guidePctLo ? `–${fmtPct(earnings.implied.guidePctHi)}` : ""})
+          </span>
+        </p>
+      ) : null}
+      {earnings.runRate ? (
+        <p className={cn("text-[11px] leading-snug text-muted-foreground", !earnings.implied && "border-t border-border/30 pt-1.5")}>
+          Run-rate to {earnings.runRate.latestLabel}:{" "}
+          <span className="font-semibold tabular-nums text-foreground">{fmtPct(earnings.runRate.revenueYoyPct)} YoY</span> revenue
+          {earnings.runRate.opmPct != null ? (
+            <>
+              {" "}
+              at <span className="font-semibold tabular-nums text-foreground">{earnings.runRate.opmPct}% OPM</span>
+            </>
+          ) : null}
+          <span className="text-muted-foreground/80">
+            {" "}
+            (last {earnings.runRate.yoyPairs} quarters)
+          </span>
+        </p>
+      ) : null}
       <p className="text-[10px] leading-snug text-muted-foreground/80">
-        Issuer guide. Guides are for the year; how the quarter phases is yours to judge.
+        {earnings.lines.length > 0 ? "Issuer guide. Guides are for the year; how the quarter phases is yours to judge." : null}
+        {earnings.basis ? `${earnings.lines.length > 0 ? " " : ""}Figures from Screener, ${earnings.basis}.` : null}
       </p>
     </div>
   );
 }
+
+const fmtCr = (n: number) => n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+const fmtPct = (n: number) => `${n > 0 ? "+" : ""}${Number.isInteger(n) ? n : n.toFixed(1)}%`;
 
 export function QuarterExpectationCard({
   view,
