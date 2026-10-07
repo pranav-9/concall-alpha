@@ -2,9 +2,15 @@ import { ChevronDown } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { getConcallData } from "@/app/company/get-concall-data";
 import { buildWatchlistBoard, type CompanyNameRow, type GrowthRankRow } from "./build-board";
+import {
+  parseWatchlistView,
+  WatchlistAnalyticsFallback,
+  WatchlistAnalyticsView,
+  WatchlistViewSwitch,
+} from "./watchlist-analytics";
 import { WatchlistManageMenu } from "./watchlist-manage-menu";
 import { WatchlistTabs } from "./watchlist-tabs";
 import {
@@ -24,13 +30,19 @@ type WatchlistItemRow = {
 
 type WatchlistDetailPageProps = {
   params: Promise<{ id: string }>;
+  /** `?view=analytics` renders the list read as a list (2026-10-07); anything else is the board. */
+  searchParams?: Promise<{ view?: string | string[] }>;
 };
 
-export async function generateMetadata({ params }: WatchlistDetailPageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: WatchlistDetailPageProps): Promise<Metadata> {
   const { id } = await params;
+  const view = parseWatchlistView((await searchParams)?.view);
   return {
-    title: `Watchlist ${id} – Story of a Stock`,
-    description: "Track the companies in this watchlist.",
+    title: `Watchlist ${id}${view === "analytics" ? " · Analytics" : ""} – Story of a Stock`,
+    description:
+      view === "analytics"
+        ? "Where this watchlist sits, the good and the bad across it, its big filings and latest changes."
+        : "Track the companies in this watchlist.",
   };
 }
 
@@ -94,8 +106,9 @@ function WatchlistShell({
   );
 }
 
-export default async function WatchlistDetailPage({ params }: WatchlistDetailPageProps) {
+export default async function WatchlistDetailPage({ params, searchParams }: WatchlistDetailPageProps) {
   const { id: rawId } = await params;
+  const view = parseWatchlistView((await searchParams)?.view);
   const watchlistId = Number.parseInt(rawId, 10);
   if (!Number.isFinite(watchlistId) || watchlistId <= 0) notFound();
 
@@ -108,6 +121,26 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
     redirect(`/auth/login?next=/watchlists/${watchlistId}`);
   }
 
+  // The board's universe substrate — skipped on the Analytics view, which
+  // fetches its own (lib/watchlist-analytics) for just the list's codes.
+  const boardSubstrate =
+    view === "board"
+      ? Promise.all([
+          // getConcallData() with no options on purpose: the coverage gates are a
+          // discovery-surface policy, and a watchlist is user-owned. A holding that's a
+          // large cap or below the composite cut still renders in full, ungreyed.
+          getConcallData(),
+          // Coverage columns ride along on a select this page already makes: the
+          // board itself is unfiltered (user-owned), but the distribution behind it
+          // needs to know which companies form the covered reference population.
+          supabase.from("company").select(`code, name, ${COVERAGE_SELECT}`),
+          supabase
+            .from("growth_outlook")
+            .select("company, growth_score, run_timestamp")
+            .order("run_timestamp", { ascending: false }),
+        ])
+      : Promise.resolve(null);
+
   // One parallel batch instead of a query waterfall: this page previously ran
   // watchlists -> items -> (universe fetches) as three sequential Supabase
   // round trips, which is what made the nav click feel dead. The items query
@@ -117,9 +150,7 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
   const [
     { data: allWatchlistRows, error: watchlistError },
     { data: watchlistItemsData, error: watchlistItemsError },
-    { rows, latestLabel },
-    { data: companyNameRows },
-    { data: growthRows },
+    boardData,
   ] = await Promise.all([
     supabase
       .from("watchlists")
@@ -131,18 +162,7 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
       .select("company_code")
       .eq("watchlist_id", watchlistId)
       .order("created_at", { ascending: true }),
-    // getConcallData() with no options on purpose: the coverage gates are a
-    // discovery-surface policy, and a watchlist is user-owned. A holding that's a
-    // large cap or below the composite cut still renders in full, ungreyed.
-    getConcallData(),
-    // Coverage columns ride along on a select this page already makes: the
-    // board itself is unfiltered (user-owned), but the distribution behind it
-    // needs to know which companies form the covered reference population.
-    supabase.from("company").select(`code, name, ${COVERAGE_SELECT}`),
-    supabase
-      .from("growth_outlook")
-      .select("company, growth_score, run_timestamp")
-      .order("run_timestamp", { ascending: false }),
+    boardSubstrate,
   ]);
 
   if (watchlistError) {
@@ -214,6 +234,32 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
     );
   }
 
+  const companyCount = `${watchlistCodes.length} ${watchlistCodes.length === 1 ? "company" : "companies"}`;
+  const viewSwitch = <WatchlistViewSwitch watchlistId={watchlist.id} view={view} />;
+
+  // The Analytics view (2026-10-07): the list read as a list — where it sits,
+  // the good and the bad across it, its big filings, its latest changes. The
+  // header paints first; the four blocks stream in under one Suspense.
+  if (view === "analytics" || !boardData) {
+    return (
+      <WatchlistShell
+        tabs={tabsNode}
+        title={watchlist.name}
+        eyebrow={companyCount}
+        aside="Read off each company's own page · filings and changes over the last 30 days"
+        actions={<WatchlistManageMenu watchlistId={watchlist.id} currentName={watchlist.name} />}
+      >
+        <div className="space-y-4">
+          {viewSwitch}
+          <Suspense fallback={<WatchlistAnalyticsFallback />}>
+            <WatchlistAnalyticsView codes={watchlistCodes} />
+          </Suspense>
+        </div>
+      </WatchlistShell>
+    );
+  }
+
+  const [{ rows, latestLabel }, { data: companyNameRows }, { data: growthRows }] = boardData;
   const { tableRows, overallRankByCode, readDistribution } = await buildWatchlistBoard({
     watchlistCodes,
     rows,
@@ -222,8 +268,6 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
     growthRows: (growthRows ?? []) as GrowthRankRow[],
   });
   const latestQuarterLabel = latestLabel ?? null;
-
-  const companyCount = `${tableRows.length} ${tableRows.length === 1 ? "company" : "companies"}`;
 
   return (
     <WatchlistShell
@@ -240,6 +284,7 @@ export default async function WatchlistDetailPage({ params }: WatchlistDetailPag
     >
       <div className="space-y-3">
         <AnalyticsBeacon event="watchlist_view" count={tableRows.length} />
+        {viewSwitch}
         {/* The board in the house frame the leaderboard's Overall board uses. The
             "signals" layout leads with the SOAS score and adds the four
             categorical columns — see components/score-board-table.tsx. */}
