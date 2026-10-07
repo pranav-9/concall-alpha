@@ -1,64 +1,43 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import Link from "next/link";
 
-export type TopSavedCompanyRow = {
-  companyCode: string;
-  companyName: string | null;
-  savedCount: number;
-};
+import type { TopSavedCompanyRow } from "@/lib/admin/metrics";
 
-export function TopSavedCompaniesTable({
-  rows,
-}: {
-  rows: TopSavedCompanyRow[];
-}) {
+import { AdminEmpty, AdminPanel } from "./shell";
+import { ROW_HOVER, TABLE, TD, TD_CODE, TD_NUM, TH, TH_NUM } from "./tokens";
+
+export type { TopSavedCompanyRow };
+
+export function TopSavedCompaniesTable({ rows }: { rows: TopSavedCompanyRow[] }) {
   return (
-    <div className="rounded-xl border border-border bg-card">
-      <div className="border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold text-foreground">Top Saved Companies</h2>
-      </div>
-      <div className="p-2">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-14">#</TableHead>
-              <TableHead>Company</TableHead>
-              <TableHead>Code</TableHead>
-              <TableHead className="text-right">Saves</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-muted-foreground">
-                  No saved companies found for this range.
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row, index) => (
-                <TableRow key={row.companyCode}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell className="font-medium text-foreground">
+    <AdminPanel eyebrow="Most saved companies" flush>
+      <table className={TABLE}>
+        <thead>
+          <tr>
+            <th className={`${TH} w-10`}>#</th>
+            <th className={TH}>Company</th>
+            <th className={TH}>Code</th>
+            <th className={TH_NUM}>Saves</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <AdminEmpty colSpan={4}>No companies saved in this range.</AdminEmpty>
+          ) : (
+            rows.map((row, index) => (
+              <tr key={row.companyCode} className={ROW_HOVER}>
+                <td className={TD_CODE}>{index + 1}</td>
+                <td className={TD}>
+                  <Link href={`/company/${row.companyCode}`} prefetch={false} className="hover:text-[var(--signal)]">
                     {row.companyName ?? row.companyCode}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {row.companyCode}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {row.savedCount.toLocaleString()}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+                  </Link>
+                </td>
+                <td className={TD_CODE}>{row.companyCode}</td>
+                <td className={TD_NUM}>{row.savedCount.toLocaleString("en-IN")}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </AdminPanel>
   );
 }

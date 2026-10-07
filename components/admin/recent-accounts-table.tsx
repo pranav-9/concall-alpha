@@ -1,70 +1,40 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { formatIst } from "@/lib/admin/metrics";
+import type { AccountRow } from "@/lib/admin/queries";
 
-export type RecentAccountRow = {
-  id: string;
-  email: string | null;
-  created_at: string;
-};
+import { AdminEmpty, AdminPanel } from "./shell";
+import { TABLE, TD, TD_CODE, TD_TIME, TH } from "./tokens";
 
-function formatDateTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+export type RecentAccountRow = AccountRow;
 
-export function RecentAccountsTable({ rows }: { rows: RecentAccountRow[] }) {
+export function RecentAccountsTable({ rows, total }: { rows: AccountRow[]; total?: number }) {
   return (
-    <div className="rounded-xl border border-border bg-card">
-      <div className="border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold text-foreground">Recent Accounts</h2>
-      </div>
-      <div className="p-2">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Created</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>User ID</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={3} className="text-muted-foreground">
-                  No accounts created for this range.
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="text-muted-foreground">
-                    {formatDateTime(row.created_at)}
-                  </TableCell>
-                  <TableCell className="font-medium text-foreground">
-                    {row.email ?? "No email"}
-                  </TableCell>
-                  <TableCell className="max-w-[280px] truncate font-mono text-xs text-muted-foreground">
-                    {row.id}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+    <AdminPanel
+      eyebrow="Sign-ups in range"
+      flush
+      right={total != null ? <span className="house-data">{total.toLocaleString("en-IN")} accounts all time</span> : null}
+    >
+      <table className={TABLE}>
+        <thead>
+          <tr>
+            <th className={TH}>Created (IST)</th>
+            <th className={TH}>Email</th>
+            <th className={TH}>User id</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <AdminEmpty colSpan={3}>No accounts created in this range.</AdminEmpty>
+          ) : (
+            rows.map((row) => (
+              <tr key={row.id}>
+                <td className={TD_TIME}>{formatIst(row.created_at)}</td>
+                <td className={TD}>{row.email ?? <span className="text-[var(--ink-soft)]">no email</span>}</td>
+                <td className={`${TD_CODE} max-w-[280px] truncate`}>{row.id}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </AdminPanel>
   );
 }

@@ -2,9 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
+import { EYEBROW, HOUSE_BTN_PRIMARY, HOUSE_INPUT } from "./tokens";
 
 export function AdminLoginForm() {
   const router = useRouter();
@@ -16,7 +15,6 @@ export function AdminLoginForm() {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
-
     try {
       const res = await fetch("/api/admin/login", {
         method: "POST",
@@ -25,7 +23,7 @@ export function AdminLoginForm() {
       });
       const payload = await res.json();
       if (!res.ok || !payload?.ok) {
-        setError(payload?.error ?? "Unable to unlock admin panel.");
+        setError(payload?.error ?? "Unable to unlock the admin panel.");
         return;
       }
       router.refresh();
@@ -37,32 +35,34 @@ export function AdminLoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md rounded-xl border border-border bg-card p-5">
-      <h1 className="text-xl font-bold text-foreground">Admin Access</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Enter passcode to view analytics.
-      </p>
+    <main className="mx-auto flex min-h-[70vh] w-full max-w-[1280px] items-start justify-center px-4 py-16">
+      <div className="w-full max-w-sm rounded-xl border border-[var(--rule)] bg-[var(--paper-2)] p-5">
+        <p className={EYEBROW}>Admin · Story of a Stock</p>
+        <h1 className="house-display mt-1.5 text-[26px]">Unlock the panel</h1>
+        <p className="mt-1.5 text-[13px] text-[var(--ink-soft)]">
+          Visitors, accounts, companies, requests and pipeline health. Passcode only.
+        </p>
 
-      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="admin-passcode">Passcode</Label>
-          <Input
+        <form onSubmit={handleSubmit} className="mt-5 space-y-3">
+          <label htmlFor="admin-passcode" className={EYEBROW}>
+            Passcode
+          </label>
+          <input
             id="admin-passcode"
             type="password"
             value={passcode}
             onChange={(e) => setPasscode(e.target.value)}
-            placeholder="Enter admin passcode"
+            placeholder="••••••••"
             autoComplete="current-password"
             required
+            className={HOUSE_INPUT}
           />
-        </div>
-
-        {error ? <p className="text-sm text-red-500">{error}</p> : null}
-
-        <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? "Unlocking..." : "Unlock Admin"}
-        </Button>
-      </form>
-    </div>
+          {error ? <p className="text-[13px] text-[var(--alarm)]">{error}</p> : null}
+          <button type="submit" className={`${HOUSE_BTN_PRIMARY} w-full`} disabled={submitting}>
+            {submitting ? "Unlocking…" : "Unlock"}
+          </button>
+        </form>
+      </div>
+    </main>
   );
 }

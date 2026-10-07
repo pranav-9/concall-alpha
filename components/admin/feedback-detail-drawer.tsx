@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   Drawer,
   DrawerClose,
@@ -10,18 +9,19 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import type { FeedbackRequestRow } from "./feedback-requests-table";
+import { formatIst, REQUEST_TYPE_LABELS, type FeedbackRequestRow } from "@/lib/admin/metrics";
 
-function formatDateTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+import { EYEBROW, HOUSE_BTN } from "./tokens";
+
+function Field({ label, children, mono = false }: { label: string; children: React.ReactNode; mono?: boolean }) {
+  return (
+    <div className="rounded-[6px] border border-[var(--rule)] bg-[var(--paper)] px-3 py-2">
+      <p className={EYEBROW}>{label}</p>
+      <p className={`mt-1 text-[13px] text-[var(--ink)] ${mono ? "house-data break-all text-[12px]" : "whitespace-pre-wrap"}`}>
+        {children}
+      </p>
+    </div>
+  );
 }
 
 export function FeedbackDetailDrawer({
@@ -35,57 +35,39 @@ export function FeedbackDetailDrawer({
 }) {
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent className="w-full max-w-2xl">
-        <DrawerHeader className="border-b border-border">
-          <DrawerTitle>Request Details</DrawerTitle>
-          <DrawerDescription>Read-only request payload from `user_requests`.</DrawerDescription>
+      <DrawerContent className="house-tokens w-full max-w-2xl bg-[var(--paper-2)]">
+        <DrawerHeader className="border-b border-[var(--rule)]">
+          <DrawerTitle className="house-display text-[20px]">Request</DrawerTitle>
+          <DrawerDescription className="text-[var(--ink-soft)]">
+            Read-only row from user_requests.
+          </DrawerDescription>
         </DrawerHeader>
 
         {feedback ? (
-          <div className="p-4 space-y-4 overflow-y-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-              <div className="rounded-md border border-border bg-muted/40 p-2">
-                <p className="text-xs text-muted-foreground">ID</p>
-                <p className="font-mono text-[12px] break-all">{feedback.id}</p>
-              </div>
-              <div className="rounded-md border border-border bg-muted/40 p-2">
-                <p className="text-xs text-muted-foreground">Created</p>
-                <p>{formatDateTime(feedback.created_at)}</p>
-              </div>
-              <div className="rounded-md border border-border bg-muted/40 p-2">
-                <p className="text-xs text-muted-foreground">Type</p>
-                <p className="uppercase">{feedback.request_type.replaceAll("_", " ")}</p>
-              </div>
-              <div className="rounded-md border border-border bg-muted/40 p-2">
-                <p className="text-xs text-muted-foreground">Source Path</p>
-                <p>{feedback.source_path ?? "—"}</p>
-              </div>
+          <div className="space-y-3 overflow-y-auto p-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Field label="Submitted (IST)">{formatIst(feedback.created_at)}</Field>
+              <Field label="Type">{REQUEST_TYPE_LABELS[feedback.request_type] ?? feedback.request_type}</Field>
+              <Field label="From page" mono>
+                {feedback.source_path ?? "–"}
+              </Field>
+              <Field label="Id" mono>
+                {feedback.id}
+              </Field>
             </div>
-
-            <div className="rounded-md border border-border bg-muted/30 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Subject / Target</p>
-              <p className="mt-1 text-sm">{feedback.subject_target}</p>
-            </div>
-
-            <div className="rounded-md border border-border bg-muted/30 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Message</p>
-              <p className="mt-1 text-sm whitespace-pre-wrap">
-                {feedback.message?.trim() ? feedback.message : "No message provided."}
-              </p>
-            </div>
-
-            <div className="rounded-md border border-border bg-muted/30 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">User Agent</p>
-              <p className="mt-1 text-xs text-muted-foreground break-words">
-                {feedback.user_agent ?? "—"}
-              </p>
-            </div>
+            <Field label="Subject / target">{feedback.subject_target}</Field>
+            <Field label="Message">{feedback.message?.trim() ? feedback.message : "No message."}</Field>
+            <Field label="User agent" mono>
+              {feedback.user_agent ?? "–"}
+            </Field>
           </div>
         ) : null}
 
-        <DrawerFooter className="border-t border-border">
+        <DrawerFooter className="border-t border-[var(--rule)]">
           <DrawerClose asChild>
-            <Button variant="outline">Close</Button>
+            <button type="button" className={HOUSE_BTN}>
+              Close
+            </button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
