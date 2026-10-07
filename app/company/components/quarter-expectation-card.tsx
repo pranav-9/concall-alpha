@@ -2,7 +2,7 @@
 
 import { ArrowDown, ArrowUp } from "lucide-react";
 
-import { daysBetween, formatDay, formatTime, istToday, relativeDay } from "@/lib/calendar-format";
+import { formatDay, formatTime, istToday, relativeDay } from "@/app/quarter-tracker/season";
 import type { QuarterExpectationView } from "@/lib/quarter-expectation/build";
 import type { RationaleLine } from "@/lib/quarter-expectation/updates";
 import type { ExpectationSetup, ExpectedUpdate, ExpectedUpdateKind } from "@/lib/quarter-expectation/types";
@@ -57,12 +57,11 @@ function DateLine({ view, today }: { view: QuarterExpectationView; today: string
   const { calendar, state } = view;
   const parts: React.ReactNode[] = [];
   if (calendar?.resultsDate) {
-    const days = daysBetween(today, calendar.resultsDate);
     parts.push(
       <span key="results">
         {state === "pending" ? "Reported " : "Results "}
         <span className="text-foreground">{formatDay(calendar.resultsDate)}</span>
-        {` · ${relativeDay(days).toLowerCase()}`}
+        {` · ${relativeDay(today, calendar.resultsDate).toLowerCase()}`}
         {state === "pending" ? " · score pending" : null}
       </span>,
     );

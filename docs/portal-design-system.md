@@ -93,7 +93,7 @@ Tokens live at [`app/company/components/surface-tokens.ts`](../app/company/compo
 
 ### Atmospheric surfaces
 
-Used on landing, index, and marketing pages: the homepage hero, leaderboards, sectors, sector detail, watchlists, requests, how-scores-work, q4fy26. These pages are scannable rather than reading-dense, and they carry the brand feel of the portal.
+Used on landing, index, and marketing pages: the homepage hero, leaderboards, sectors, sector detail, watchlists, requests, how-scores-work. These pages are scannable rather than reading-dense, and they carry the brand feel of the portal.
 
 Feel: glassy, layered, slightly tinted. Cards have a milky gradient wash, an inset highlight along the top edge, and a soft drop shadow. The reader's eye should glide across surfaces and stop on counters, leaderboards, and CTAs.
 
@@ -104,7 +104,8 @@ Tokens live at [`lib/design/shell.ts`](../lib/design/shell.ts).
 | Page / area | Family |
 |---|---|
 | Homepage hero, framework grid, marketing CTAs | Atmospheric |
-| `/leaderboards`, `/sectors`, `/sector/[slug]`, `/watchlists`, `/requests`, `/how-scores-work`, `/q4fy26` | Atmospheric |
+| `/leaderboards`, `/sectors`, `/sector/[slug]`, `/watchlists`, `/requests`, `/how-scores-work` | Atmospheric |
+| `/desk`, `/scanners`, `/quarter-tracker` (desktop and phone, one tree) | House skin (`.house`, see below) |
 | `/company/[code]` and all `app/company/components/*` sections | Research |
 | Tables embedded inside index pages (`leaderboards/moat-table`, `company/data-table` chrome on index views) | Atmospheric outer shell, plain rows inside |
 | Chrome (navbar, footer, banner, fade-out overlays) | Neither — chrome has its own rules below |
@@ -114,7 +115,7 @@ Tokens live at [`lib/design/shell.ts`](../lib/design/shell.ts).
 - **Never mix tokens across families in the same surface.** A research `SectionCard` does not contain an atmospheric panel as an inner card, and an atmospheric page does not host a research `SectionCard` as a top-level shell.
 - **Family is a property of the page, not of the component.** A `Tabs` primitive can render in either family; the page's family decides which token the trigger background uses.
 - **Chrome is shared.** The navbar, footer, banner, and fade-out gradients use the same chrome tokens regardless of which family the page belongs to.
-- **One sanctioned crossing: `.house-tokens`.** The house skin (`.house` in `app/globals.css`: the landing page, `/desk` and the phone reading routes) is the style the portal is migrating to. A house component may sit inside a research `SectionCard` only through `.house-tokens`, which carries the house palette and ink with no paper ground, so it adds no second background. Today that is the company Journal tab and the Industry tab's covered-peers board. (The company Announcements tab used it until 2026-10-03, when it moved to the portal's own tokens.)
+- **One sanctioned crossing: `.house-tokens`.** The house skin (`.house` in `app/globals.css`: the landing page, `/desk`, `/scanners`, `/quarter-tracker` and the phone reading routes) is the style the portal is migrating to. A house component may sit inside a research `SectionCard` only through `.house-tokens`, which carries the house palette and ink with no paper ground, so it adds no second background. Today that is the company Journal tab and the Industry tab's covered-peers board. (The company Announcements tab used it until 2026-10-03, when it moved to the portal's own tokens.)
 
 ---
 

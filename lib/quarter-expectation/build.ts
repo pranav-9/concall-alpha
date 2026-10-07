@@ -1,4 +1,4 @@
-import { daysBetween, istToday } from "@/lib/calendar-format";
+import { daysBetween, istToday } from "@/app/quarter-tracker/season";
 import { quarterLabelFor, type ReportingQuarter } from "@/lib/current-quarter";
 import { quarterIndex } from "@/lib/score-trajectory";
 
