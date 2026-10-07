@@ -210,6 +210,10 @@ export const analytics = {
   watchlistView: (count?: number) =>
     track("watchlist_view", { count: Number.isFinite(count) ? count : undefined }),
 
+  /** A watchlist's Analytics view was opened (the list read as a list, 2026-10-07). */
+  watchlistAnalyticsView: (count?: number) =>
+    track("watchlist_analytics_view", { count: Number.isFinite(count) ? count : undefined }),
+
   /** The Telegram community link was clicked — a reader opting into a contact
    *  path (the hypothesis doc's missing sourcing pool). Fires on the outbound
    *  click; actual joins are read off Telegram's member count by hand. */

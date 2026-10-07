@@ -13,6 +13,7 @@ type BeaconProps =
   | { event: "empty_section"; sectionId: string; companyCode: string; reason?: string }
   | { event: "stale_valuation"; companyCode: string; daysStale: number }
   | { event: "watchlist_view"; count: number }
+  | { event: "watchlist_analytics_view"; count: number }
   | { event: "how_scores_work_view"; tab?: string }
   | { event: "journal_post_view"; slug: string }
   | { event: "sector_view"; sector: string };
@@ -31,6 +32,9 @@ export function AnalyticsBeacon(props: BeaconProps) {
         break;
       case "watchlist_view":
         analytics.watchlistView(props.count);
+        break;
+      case "watchlist_analytics_view":
+        analytics.watchlistAnalyticsView(props.count);
         break;
       case "how_scores_work_view":
         analytics.howScoresWorkView(props.tab);

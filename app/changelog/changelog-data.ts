@@ -17,6 +17,7 @@ export type ChangelogEntry = {
 // work, cross-referenced with the activity log. "new" = brand new capability,
 // "updated" = significant enhancement to a capability that already existed.
 export const changelogEntries: ChangelogEntry[] = [
+  { date: "2026-10-07", dateLabel: "7 Oct 2026", title: "Watchlists get an Analytics view: where the list sits by sector and theme, the good and the bad across it, its big filings and latest changes", category: "Portal", status: "new" },
   { date: "2026-10-06", dateLabel: "6 Oct 2026", title: "Company overview adds the good and the bad: the clearest strengths and weaknesses across every section, ranked, up to five each", category: "Company analysis", status: "new" },
   { date: "2026-10-04", dateLabel: "4 Oct 2026", title: "Announcements page opens with what moved a story this week: up to five filings from the last seven days, each read against the company's own guidance", category: "Portal", status: "new" },
   { date: "2026-10-03", dateLabel: "3 Oct 2026", title: "Announcements tab redesigned: the quarter in filings, the one filing that matters, filing history by quarter, and a tape grouped by quarter", category: "Company analysis", status: "updated" },
