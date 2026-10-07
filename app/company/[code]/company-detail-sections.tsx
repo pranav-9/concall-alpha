@@ -19,7 +19,11 @@ import {
 } from "@/lib/guidance-snapshot/types";
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 import type { KeyVariablesSnapshotRow } from "@/lib/key-variables-snapshot/types";
-import type { WatchSwingVar } from "@/lib/next-quarter-watch/types";
+import type { QuarterExpectationData } from "@/lib/quarter-expectation/build";
+import { buildExpectedEarnings } from "@/lib/quarter-expectation/earnings";
+import { quarterCalendarRowSchema, type ExpectationCalendar } from "@/lib/quarter-expectation/types";
+import { buildExpectedUpdates, parseRationaleLines } from "@/lib/quarter-expectation/updates";
+import { logger } from "@/lib/logger";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import type { ValuationCheckRow } from "@/lib/valuation-check/types";
 import {
@@ -148,47 +152,82 @@ export async function QualityPanel({ overview }: CompanyDetailSectionProps) {
 
 export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps) {
   const supabase = await createClient();
-  const [{ data, error }, { data: keyVarData }, { data: growthData }] = await Promise.all([
-    supabase
-      .from("concall_analysis")
-      .select()
-      .eq("company_code", overview.company_code)
-      // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
-      .not("details->scoring_meta", "is", null)
-      .order("fy", { ascending: false })
-      .order("qtr", { ascending: false })
-      .limit(24),
-    // Forward inputs for the "What to watch next quarter" block.
-    supabase
-      .from("key_variables_snapshot")
-      .select(
-        "company_code, generated_at, discovery_summary, full_variable_list, deep_treatment, section_synthesis, details, updated_at",
-      )
-      .eq("company_code", overview.company_code)
-      .order("generated_at", { ascending: false })
-      .limit(1),
-    supabase
-      .from("growth_outlook")
-      .select("growth_score")
-      .or(`company.eq.${overview.company_code},company.eq.${overview.company_name}`)
-      .order("run_timestamp", { ascending: false })
-      .limit(1),
-  ]);
+  // The quarter in reporting season — the one the expectation card is about.
+  const target = currentReportingQuarter();
+  const [{ data, error }, { data: keyVarData }, growthResult, calendarResult, guidanceSnapshotRow] =
+    await Promise.all([
+      supabase
+        .from("concall_analysis")
+        .select()
+        .eq("company_code", overview.company_code)
+        // legacy-logic scores (no details.scoring_meta) are hidden portal-wide
+        .not("details->scoring_meta", "is", null)
+        .order("fy", { ascending: false })
+        .order("qtr", { ascending: false })
+        .limit(24),
+      // Key variables feed the "What to listen for" list (watch-for triggers).
+      supabase
+        .from("key_variables_snapshot")
+        .select(
+          "company_code, generated_at, discovery_summary, full_variable_list, deep_treatment, section_synthesis, details, updated_at",
+        )
+        .eq("company_code", overview.company_code)
+        .order("generated_at", { ascending: false })
+        .limit(1),
+      // Score for the setup chip; catalysts for the list. The catalyst list is
+      // read from its column and, for the double-nested rows (details.details),
+      // from the JSON path — never the whole details blob (fact base + earnings
+      // ladder are heavy and the Growth tab already pays for them).
+      supabase
+        .from("growth_outlook")
+        .select("growth_score, run_timestamp, catalysts, nested_catalysts:details->details->catalysts")
+        .or(`company.eq.${overview.company_code},company.eq.${overview.company_name}`)
+        .order("run_timestamp", { ascending: false })
+        .limit(1),
+      // When the quarter reports and when its call is (concallyser's
+      // sync_quarter_calendar.py). One row per (company, fy, qtr).
+      supabase
+        .from("quarter_calendar")
+        .select("company_code, fy, qtr, results_date, call_date, call_time, call_status, call_source_url")
+        .eq("company_code", overview.company_code)
+        .eq("fy", target.fy)
+        .eq("qtr", target.qtr)
+        .limit(1),
+      // The same cached guidance_snapshot row the Guidance and Growth panels
+      // read — one query per request across the three.
+      getGuidanceSnapshotRow(overview.company_code).catch(() => null),
+    ]);
 
   if (error) throw error;
+  // The forward inputs are non-fatal: a calendar or growth outage degrades the
+  // card ("date not announced", no catalyst), never the score trail.
+  if (growthResult.error) {
+    logger.warn("concall-score: growth_outlook read failed", { error: growthResult.error });
+  }
+  if (calendarResult.error) {
+    logger.warn("concall-score: quarter_calendar read failed", { error: calendarResult.error });
+  }
 
   const keyVarSnapshot = normalizeKeyVariablesSnapshot(
     (keyVarData?.[0] as KeyVariablesSnapshotRow | undefined) ?? null,
   );
-  const swingVars: WatchSwingVar[] = (keyVarSnapshot?.deepTreatment ?? [])
-    .slice(0, 4)
-    .map((item) => ({
-      variable: item.variable,
-      note: item.whyItMattersNow ?? item.trendInterpretation ?? item.currentRead,
-    }));
-  const growthScoreRaw = growthData?.[0]?.growth_score;
+  const growthRow = (growthResult.data?.[0] ?? null) as {
+    growth_score?: unknown;
+    run_timestamp?: unknown;
+    catalysts?: unknown;
+    nested_catalysts?: unknown;
+  } | null;
+  const growthScoreRaw = growthRow?.growth_score;
   const growthScore =
     growthScoreRaw != null && Number.isFinite(Number(growthScoreRaw)) ? Number(growthScoreRaw) : null;
+  const growthOutlook = growthRow
+    ? normalizeGrowthOutlook({
+        details: null,
+        growthScore: growthRow.growth_score,
+        runTimestamp: growthRow.run_timestamp,
+        catalysts: growthRow.catalysts ?? growthRow.nested_catalysts,
+      })
+    : null;
   const quarters = ((data ?? []) as QuarterData[]).map((row) => ({
     ...row,
     summary: parseSummary(row.summary),
@@ -206,6 +245,34 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
     return written && (!latest || written > latest) ? written : latest;
   }, null);
 
+  // The expectation card's server-built half (lib/quarter-expectation): the
+  // calendar, the issuer's guide for the period, and what the call is due to
+  // update on. Only this small shape crosses to the client chunk.
+  const calendarParsed = quarterCalendarRowSchema.safeParse(calendarResult.data?.[0] ?? null);
+  const calendar: ExpectationCalendar | null = calendarParsed.success
+    ? {
+        resultsDate: calendarParsed.data.results_date,
+        callDate: calendarParsed.data.call_date,
+        callTime: calendarParsed.data.call_time,
+        callUrl: calendarParsed.data.call_source_url,
+        callUnreadable: calendarParsed.data.call_status === "unreadable",
+      }
+    : null;
+  const guidanceItems = normalizeGuidanceSnapshot(guidanceSnapshotRow)?.guidanceItems ?? [];
+  const expectation: QuarterExpectationData = {
+    target,
+    calendar,
+    earnings: buildExpectedEarnings({ target, guidanceItems }),
+    updates: buildExpectedUpdates({
+      target,
+      guidanceItems,
+      catalysts: growthOutlook?.catalysts ?? [],
+      variables: keyVarSnapshot?.fullVariableList ?? [],
+      deepVariables: keyVarSnapshot?.deepTreatment ?? [],
+      lastRationale: parseRationaleLines(detailQuarters[0]?.details ?? null),
+    }),
+  };
+
   return (
     <SectionCard
       id="sentiment-score"
@@ -219,7 +286,7 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
         chartData={chartData}
         detailQuarters={detailQuarters}
         growthScore={growthScore}
-        swingVars={swingVars}
+        expectation={expectation}
       />
     </SectionCard>
   );

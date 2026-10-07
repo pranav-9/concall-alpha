@@ -1,37 +1,12 @@
 import Link from "next/link";
 import { PANEL_CARD_SKY } from "@/lib/design/shell";
+import { daysBetween, formatDay, formatTime, istToday, relativeDay } from "@/lib/calendar-format";
 import type { TrackerEntry } from "./data";
 
 // When each not-yet-scored company reports, and when its earnings call is.
 // Dates come from quarter_calendar (exchange board-meeting calendars + the
 // company's call-invite filing). Server-rendered; "today" is the IST date, the
 // day Indian results and calls are scheduled in.
-
-const DAY_MS = 86_400_000;
-
-const istToday = (): string =>
-  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
-
-// YYYY-MM-DD is a calendar date, not an instant — format it in UTC so no
-// timezone can shift it a day.
-const formatDay = (iso: string): string =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  });
-
-const formatTime = (hhmm: string): string => {
-  const [h, m] = hhmm.split(":").map(Number);
-  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
-};
-
-const daysBetween = (from: string, to: string): number =>
-  Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
-
-const relativeDay = (days: number): string =>
-  days === 0 ? "Today" : days === 1 ? "Tomorrow" : `In ${days} days`;
 
 function CallCell({ entry }: { entry: TrackerEntry }) {
   if (entry.callDate) {

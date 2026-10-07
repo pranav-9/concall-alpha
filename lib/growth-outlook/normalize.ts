@@ -442,7 +442,16 @@ export function normalizeGrowthOutlook(input: {
     .map((entry) => normalizeSourceFile(entry))
     .filter((entry): entry is NormalizedGrowthSourceFile => Boolean(entry));
 
-  const catalystSource = input.catalysts ?? details?.catalysts ?? details?.catalysts_next_12_24m;
+  // Some stored rows are double-nested — the whole payload sits under
+  // details.details (HFCL / COFORGE / PAYTM, pipeline_growth_details_double_nested)
+  // — so the catalyst list is looked for one level down as well.
+  const nestedDetails = details ? asRecord(details.details) : null;
+  const catalystSource =
+    input.catalysts ??
+    details?.catalysts ??
+    details?.catalysts_next_12_24m ??
+    nestedDetails?.catalysts ??
+    nestedDetails?.catalysts_next_12_24m;
   const catalysts = asArray(catalystSource)
     .map((entry) => normalizeCatalyst(entry))
     .filter((entry): entry is NormalizedGrowthCatalyst => Boolean(entry));
