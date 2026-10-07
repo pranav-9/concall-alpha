@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+
+import { HOUSE_BTN } from "./tokens";
 
 export function AdminLogoutButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
+    <button
+      type="button"
+      className={HOUSE_BTN}
       disabled={loading}
       onClick={async () => {
         setLoading(true);
@@ -23,7 +24,7 @@ export function AdminLogoutButton() {
         }
       }}
     >
-      {loading ? "Signing out..." : "Sign out"}
-    </Button>
+      {loading ? "Signing out…" : "Sign out"}
+    </button>
   );
 }

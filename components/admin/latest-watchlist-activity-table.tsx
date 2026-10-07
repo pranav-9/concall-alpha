@@ -1,119 +1,52 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { formatIst, type LatestWatchlistActivityRow } from "@/lib/admin/metrics";
 
-export type LatestWatchlistActivityRow = {
-  id: string;
-  action: "watchlist_created" | "company_added";
-  occurredAt: string;
-  watchlistName: string | null;
-  companyCode: string | null;
-  companyName: string | null;
-  userId: string | null;
-  userDisplayName: string | null;
-  userEmail: string | null;
-};
+import { AdminEmpty, AdminPanel, AdminTag } from "./shell";
+import { TABLE, TD, TD_MUTED, TD_TIME, TH } from "./tokens";
 
-function formatDateTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+export type { LatestWatchlistActivityRow };
 
-function formatAction(action: LatestWatchlistActivityRow["action"]) {
-  return action === "watchlist_created" ? "Watchlist created" : "Company added";
-}
-
-export function LatestWatchlistActivityTable({
-  rows,
-}: {
-  rows: LatestWatchlistActivityRow[];
-}) {
+export function LatestWatchlistActivityTable({ rows }: { rows: LatestWatchlistActivityRow[] }) {
   return (
-    <div className="rounded-xl border border-border bg-card">
-      <div className="border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold text-foreground">Latest Watchlist Activity</h2>
-      </div>
-      <div className="p-2">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Time</TableHead>
-              <TableHead>Action</TableHead>
-              <TableHead>Watchlist</TableHead>
-              <TableHead>Company</TableHead>
-              <TableHead>User</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-muted-foreground">
-                  No watchlist activity found for this range.
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="text-muted-foreground">
-                    {formatDateTime(row.occurredAt)}
-                  </TableCell>
-                  <TableCell className="font-medium text-foreground">
-                    {formatAction(row.action)}
-                  </TableCell>
-                  <TableCell>{row.watchlistName ?? "Unknown"}</TableCell>
-                  <TableCell>
-                    {row.companyCode ? (
-                      <span className="flex flex-col">
-                        <span className="font-medium text-foreground">
-                          {row.companyName ?? row.companyCode}
-                        </span>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {row.companyCode}
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="max-w-[280px]">
-                    {row.userId || row.userDisplayName || row.userEmail ? (
-                      <span className="flex flex-col">
-                        <span className="truncate text-sm text-foreground">
-                          {row.userDisplayName ?? row.userEmail ?? row.userId}
-                        </span>
-                        {row.userDisplayName && row.userEmail ? (
-                          <span className="truncate text-xs text-muted-foreground">
-                            {row.userEmail}
-                          </span>
-                        ) : null}
-                        {!row.userEmail && row.userId ? (
-                          <span className="truncate font-mono text-xs text-muted-foreground">
-                            {row.userId}
-                          </span>
-                        ) : null}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+    <AdminPanel eyebrow="Latest watchlist activity" flush>
+      <table className={TABLE}>
+        <thead>
+          <tr>
+            <th className={TH}>When (IST)</th>
+            <th className={TH}>Action</th>
+            <th className={TH}>Company</th>
+            <th className={TH}>Watchlist</th>
+            <th className={TH}>User</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <AdminEmpty colSpan={5}>No watchlist activity in this range.</AdminEmpty>
+          ) : (
+            rows.map((row) => (
+              <tr key={row.id}>
+                <td className={TD_TIME}>{formatIst(row.occurredAt)}</td>
+                <td className={TD}>
+                  <AdminTag tone={row.action === "company_added" ? "signal" : "muted"}>
+                    {row.action === "company_added" ? "added" : "created"}
+                  </AdminTag>
+                </td>
+                <td className={TD}>
+                  {row.companyCode ? (
+                    <>
+                      {row.companyName ?? row.companyCode}
+                      <span className="house-data ml-2 text-[11px] text-[var(--ink-soft)]">{row.companyCode}</span>
+                    </>
+                  ) : (
+                    <span className="text-[var(--ink-soft)]">–</span>
+                  )}
+                </td>
+                <td className={TD_MUTED}>{row.watchlistName ?? "–"}</td>
+                <td className={TD_MUTED}>{row.userDisplayName ?? row.userEmail ?? row.userId ?? "–"}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </AdminPanel>
   );
 }

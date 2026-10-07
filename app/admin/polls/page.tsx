@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { ADMIN_ACCESS_COOKIE, hasAdminAccess } from "@/lib/admin-auth";
+
+import { AdminAlert, AdminEmpty, AdminPanel, AdminShell, AdminTag } from "@/components/admin/shell";
+import { formatIst } from "@/lib/admin/metrics";
+import { parseRange } from "@/lib/admin/range";
 import { aggregateAllResponses, listAllPolls } from "@/lib/feedback-polls/queries";
 import type { AdminPollRow } from "@/lib/feedback-polls/queries";
 import type { PollAggregate, QuestionType } from "@/lib/feedback-polls/types";
+
 import { PollCreateForm } from "./_components/poll-create-form";
 
 export const metadata: Metadata = {
@@ -14,68 +15,51 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const STATUS_ORDER = ["live", "draft", "closed"] as const;
+export const dynamic = "force-dynamic";
 
-function formatTimestamp(value: string | null | undefined): string {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return value;
-  }
-}
+const STATUS_ORDER = ["live", "draft", "closed"] as const;
+const STATUS_TONE: Record<(typeof STATUS_ORDER)[number], "signal" | "warn" | "muted"> = {
+  live: "signal",
+  draft: "warn",
+  closed: "muted",
+};
 
 function renderAggregate(agg: PollAggregate, questionType: QuestionType): string {
   if (!agg.total_responses) return "No responses yet.";
   const entries = Object.entries(agg.counts ?? {});
   if (questionType === "rating_1_5") {
-    const mean = agg.mean != null ? Number(agg.mean).toFixed(2) : "—";
-    const distribution = [1, 2, 3, 4, 5]
-      .map((n) => `${n}:${agg.counts?.[String(n)] ?? 0}`)
-      .join("  ");
-    return `mean ${mean} • ${distribution} • n=${agg.total_responses}`;
+    const mean = agg.mean != null ? Number(agg.mean).toFixed(2) : "–";
+    const distribution = [1, 2, 3, 4, 5].map((n) => `${n}:${agg.counts?.[String(n)] ?? 0}`).join("  ");
+    return `mean ${mean} · ${distribution} · n=${agg.total_responses}`;
   }
   const sorted = entries.sort((a, b) => b[1] - a[1]);
-  return `${sorted.map(([k, v]) => `${k}:${v}`).join("  ")} • n=${agg.total_responses}`;
+  return `${sorted.map(([k, v]) => `${k}:${v}`).join("  ")} · n=${agg.total_responses}`;
 }
 
-async function loadData(): Promise<
-  Array<{ poll: AdminPollRow; aggregate: PollAggregate }>
-> {
+async function loadData(): Promise<Array<{ poll: AdminPollRow; aggregate: PollAggregate }>> {
   const [polls, aggregates] = await Promise.all([
     listAllPolls(),
     aggregateAllResponses().catch(() => ({}) as Record<string, PollAggregate>),
   ]);
   return polls.map((poll) => ({
     poll,
-    aggregate:
-      aggregates[poll.id] ?? {
-        total_responses: 0,
-        question_type: poll.question_type,
-        counts: {},
-      },
+    aggregate: aggregates[poll.id] ?? { total_responses: 0, question_type: poll.question_type, counts: {} },
   }));
 }
 
-export default async function AdminPollsPage() {
-  const cookieStore = await cookies();
-  if (!hasAdminAccess(cookieStore.get(ADMIN_ACCESS_COOKIE)?.value)) {
-    redirect("/admin");
-  }
+export default async function AdminPollsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ range?: string }>;
+}) {
+  const range = parseRange((await searchParams)?.range);
 
   let rows: Array<{ poll: AdminPollRow; aggregate: PollAggregate }> = [];
-  let loadError: string | null = null;
+  let error: string | null = null;
   try {
     rows = await loadData();
   } catch {
-    loadError = "Unable to load polls. Check Supabase tables and service role key.";
+    error = "Unable to load polls. Check the feedback_polls tables and the service role key.";
   }
 
   const grouped = STATUS_ORDER.map((status) => ({
@@ -84,72 +68,53 @@ export default async function AdminPollsPage() {
   }));
 
   return (
-    <main className="container mx-auto px-4 py-6 sm:py-10 space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Feedback Polls</h1>
-          <p className="text-sm text-muted-foreground">
-            Author polls and watch live aggregates. Banner surfaces only one live poll at a time.
-          </p>
-        </div>
-        <Link
-          href="/admin"
-          prefetch={false}
-          className="text-sm underline text-muted-foreground hover:text-foreground"
-        >
-          ← Admin
-        </Link>
-      </div>
+    <AdminShell
+      section="polls"
+      range={range}
+      title="Polls"
+      lede="Author feedback polls and watch the live aggregates. The banner surfaces one live poll at a time."
+      timeless
+    >
+      {error ? <AdminAlert>{error}</AdminAlert> : null}
 
-      {loadError ? (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/30 dark:border-red-900/50 dark:text-red-200">
-          {loadError}
-        </div>
-      ) : null}
-
-      <section className="rounded-xl border border-border/35 bg-background/75 p-4 shadow-md shadow-black/20 space-y-3">
-        <h2 className="text-base font-semibold text-foreground">Create new poll</h2>
+      <AdminPanel eyebrow="New poll">
         <PollCreateForm />
-      </section>
+      </AdminPanel>
 
       {grouped.map(({ status, items }) => (
-        <section
+        <AdminPanel
           key={status}
-          className="rounded-xl border border-border/35 bg-background/75 p-4 shadow-md shadow-black/20 space-y-3"
+          eyebrow={status}
+          flush
+          right={<span className="house-data">{items.length}</span>}
         >
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="text-base font-semibold text-foreground capitalize">{status}</h2>
-            <span className="text-[11px] text-muted-foreground">{items.length}</span>
-          </div>
           {items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No {status} polls.</p>
+            <div className="px-4 py-4">
+              <AdminEmpty>No {status} polls.</AdminEmpty>
+            </div>
           ) : (
-            <ul className="space-y-3">
+            <ul>
               {items.map(({ poll, aggregate }) => (
-                <li
-                  key={poll.id}
-                  className="rounded-md border border-border/25 bg-background/45 p-3 space-y-1.5"
-                >
+                <li key={poll.id} className="border-b border-[var(--rule)] px-4 py-3 last:border-b-0">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="font-medium text-foreground">{poll.question_text}</p>
-                    <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-                      {poll.question_type}
+                    <p className="text-[14px] text-[var(--ink)]">{poll.question_text}</p>
+                    <span className="flex items-center gap-1.5">
+                      <AdminTag tone={STATUS_TONE[status]}>{status}</AdminTag>
+                      <AdminTag>{poll.question_type}</AdminTag>
                     </span>
                   </div>
-                  <p className="text-[12px] text-muted-foreground">
-                    <span className="font-mono">{poll.slug}</span> •{" "}
-                    starts {formatTimestamp(poll.starts_at)} •{" "}
-                    ends {formatTimestamp(poll.ends_at)}
+                  <p className="house-data mt-1 text-[11px] text-[var(--ink-soft)]">
+                    {poll.slug} · starts {formatIst(poll.starts_at)} · ends {formatIst(poll.ends_at)}
                   </p>
-                  <p className="text-[12px] font-mono text-foreground/85">
+                  <p className="house-data mt-1.5 text-[12px] text-[var(--ink)]">
                     {renderAggregate(aggregate, poll.question_type)}
                   </p>
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </AdminPanel>
       ))}
-    </main>
+    </AdminShell>
   );
 }

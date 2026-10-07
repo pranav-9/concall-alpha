@@ -1,125 +1,91 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import type {
-  CompanyViewRow,
-  RecentCompanyOpenRow,
-} from "@/lib/admin-company-views";
+import Link from "next/link";
 
-function formatDateTime(value: string | null) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { formatIst } from "@/lib/admin/metrics";
+import type { CompanyViewRow, RecentCompanyOpenRow } from "@/lib/admin-company-views";
+
+import { AdminEmpty, AdminPanel, AdminTag } from "./shell";
+import { ROW_HOVER, TABLE, TD, TD_CODE, TD_NUM, TD_TIME, TH, TH_NUM } from "./tokens";
 
 export function CompanyViewsTable({ rows }: { rows: CompanyViewRow[] }) {
+  const max = rows[0]?.opens ?? 0;
   return (
-    <div className="rounded-xl border border-border bg-card">
-      <div className="border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold text-foreground">Top Companies Opened</h2>
-      </div>
-      <div className="p-2">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-14">#</TableHead>
-              <TableHead>Company</TableHead>
-              <TableHead>Code</TableHead>
-              <TableHead className="text-right">Opens</TableHead>
-              <TableHead className="text-right">Last Opened</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-muted-foreground">
-                  No company pages opened in this range.
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row, index) => (
-                <TableRow key={row.companyCode}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell className="font-medium text-foreground">
+    <AdminPanel eyebrow="Most opened companies" flush right={<span>page opens, not unique visitors</span>}>
+      <table className={TABLE}>
+        <thead>
+          <tr>
+            <th className={`${TH} w-10`}>#</th>
+            <th className={TH}>Company</th>
+            <th className={TH}>Code</th>
+            <th className={TH_NUM}>Opens</th>
+            <th className={`${TH} hidden w-40 sm:table-cell`} aria-label="Share of the top company" />
+            <th className={TH_NUM}>Last opened (IST)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <AdminEmpty colSpan={6}>No company pages opened in this range.</AdminEmpty>
+          ) : (
+            rows.map((row, index) => (
+              <tr key={row.companyCode} className={ROW_HOVER}>
+                <td className={TD_CODE}>{index + 1}</td>
+                <td className={TD}>
+                  <Link href={`/company/${row.companyCode}`} prefetch={false} className="hover:text-[var(--signal)]">
                     {row.companyName ?? row.companyCode}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {row.companyCode}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {row.opens.toLocaleString()}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {formatDateTime(row.lastViewed)}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+                  </Link>
+                </td>
+                <td className={TD_CODE}>{row.companyCode}</td>
+                <td className={TD_NUM}>{row.opens.toLocaleString("en-IN")}</td>
+                <td className={`${TD} hidden sm:table-cell`}>
+                  <div className="h-1.5 w-full rounded-full bg-[var(--paper)]">
+                    <div
+                      className="h-1.5 rounded-full bg-[var(--signal)]"
+                      style={{ width: `${max > 0 ? Math.max(2, (row.opens / max) * 100) : 0}%` }}
+                    />
+                  </div>
+                </td>
+                <td className={`${TD_TIME} text-right`}>{formatIst(row.lastViewed)}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </AdminPanel>
   );
 }
 
-export function RecentCompanyOpensTable({
-  rows,
-}: {
-  rows: RecentCompanyOpenRow[];
-}) {
+export function RecentCompanyOpensTable({ rows }: { rows: RecentCompanyOpenRow[] }) {
   return (
-    <div className="rounded-xl border border-border bg-card">
-      <div className="border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold text-foreground">Recent Company Opens</h2>
-      </div>
-      <div className="p-2">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Opened</TableHead>
-              <TableHead>Company</TableHead>
-              <TableHead>Code</TableHead>
-              <TableHead>Source</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-muted-foreground">
-                  No recent company opens in this range.
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="text-muted-foreground">
-                    {formatDateTime(row.occurredAt)}
-                  </TableCell>
-                  <TableCell className="font-medium text-foreground">
-                    {row.companyName ?? row.companyCode}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {row.companyCode}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{row.source}</TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+    <AdminPanel eyebrow="Recent company opens" flush right={<span>Source = external referrer, else Direct</span>}>
+      <table className={TABLE}>
+        <thead>
+          <tr>
+            <th className={TH}>Opened (IST)</th>
+            <th className={TH}>Company</th>
+            <th className={TH}>Code</th>
+            <th className={TH}>Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <AdminEmpty colSpan={4}>No recent company opens in this range.</AdminEmpty>
+          ) : (
+            rows.map((row) => (
+              <tr key={row.id}>
+                <td className={TD_TIME}>{formatIst(row.occurredAt)}</td>
+                <td className={TD}>{row.companyName ?? row.companyCode}</td>
+                <td className={TD_CODE}>{row.companyCode}</td>
+                <td className={TD}>
+                  {row.source === "Direct" ? (
+                    <span className="text-[var(--ink-soft)]">Direct</span>
+                  ) : (
+                    <AdminTag tone="signal">{row.source}</AdminTag>
+                  )}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </AdminPanel>
   );
 }
