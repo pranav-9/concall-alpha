@@ -1,3 +1,4 @@
+import { adminPage } from "@/components/admin/admin-page";
 import Link from "next/link";
 
 import { AdminDailyVisitorsChart } from "@/components/admin/admin-daily-visitors-chart";
@@ -30,7 +31,7 @@ const SECTION_BLURBS: Record<string, string> = {
   ops: "refresh feeds, sync the calendar, export",
 };
 
-export default async function AdminOverviewPage({
+async function AdminOverviewPage({
   searchParams,
 }: {
   searchParams?: Promise<{ range?: string }>;
@@ -98,3 +99,6 @@ export default async function AdminOverviewPage({
     </AdminShell>
   );
 }
+
+// Gated inside the page, before any query — see components/admin/admin-page.tsx.
+export default adminPage(AdminOverviewPage);

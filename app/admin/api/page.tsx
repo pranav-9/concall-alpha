@@ -1,3 +1,4 @@
+import { adminPage } from "@/components/admin/admin-page";
 import { ApiPerformanceTable, ApiRouteBreakdownTable } from "@/components/admin/api-performance-table";
 import {
   AdminAlert,
@@ -13,7 +14,7 @@ import { parseRange, resolveWindow } from "@/lib/admin/range";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminApiPage({
+async function AdminApiPage({
   searchParams,
 }: {
   searchParams?: Promise<{ range?: string }>;
@@ -65,3 +66,6 @@ export default async function AdminApiPage({
     </AdminShell>
   );
 }
+
+// Gated inside the page, before any query — see components/admin/admin-page.tsx.
+export default adminPage(AdminApiPage);

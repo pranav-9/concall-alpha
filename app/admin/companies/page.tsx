@@ -1,3 +1,4 @@
+import { adminPage } from "@/components/admin/admin-page";
 import { CompanyViewsTable, RecentCompanyOpensTable } from "@/components/admin/company-views-table";
 import { AdminAlert, AdminShell, AdminStat, AdminStatRow, DATA_LOAD_ERROR } from "@/components/admin/shell";
 import { getCompaniesData, type CompaniesData } from "@/lib/admin/queries";
@@ -5,7 +6,7 @@ import { parseRange, resolveWindow } from "@/lib/admin/range";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminCompaniesPage({
+async function AdminCompaniesPage({
   searchParams,
 }: {
   searchParams?: Promise<{ range?: string }>;
@@ -47,3 +48,6 @@ export default async function AdminCompaniesPage({
     </AdminShell>
   );
 }
+
+// Gated inside the page, before any query — see components/admin/admin-page.tsx.
+export default adminPage(AdminCompaniesPage);

@@ -1,3 +1,4 @@
+import { adminPage } from "@/components/admin/admin-page";
 import type { Metadata } from "next";
 
 import { AdminAlert, AdminEmpty, AdminPanel, AdminShell, AdminTag } from "@/components/admin/shell";
@@ -47,7 +48,7 @@ async function loadData(): Promise<Array<{ poll: AdminPollRow; aggregate: PollAg
   }));
 }
 
-export default async function AdminPollsPage({
+async function AdminPollsPage({
   searchParams,
 }: {
   searchParams?: Promise<{ range?: string }>;
@@ -118,3 +119,6 @@ export default async function AdminPollsPage({
     </AdminShell>
   );
 }
+
+// Gated inside the page, before any query — see components/admin/admin-page.tsx.
+export default adminPage(AdminPollsPage);

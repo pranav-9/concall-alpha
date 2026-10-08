@@ -1,3 +1,4 @@
+import { adminPage } from "@/components/admin/admin-page";
 import { FreshnessBoard } from "@/components/admin/freshness-board";
 import { OpsActions } from "@/components/admin/ops-actions";
 import { AdminAlert, AdminShell, DATA_LOAD_ERROR } from "@/components/admin/shell";
@@ -7,7 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminOpsPage({
+async function AdminOpsPage({
   searchParams,
 }: {
   searchParams?: Promise<{ range?: string }>;
@@ -37,3 +38,6 @@ export default async function AdminOpsPage({
     </AdminShell>
   );
 }
+
+// Gated inside the page, before any query — see components/admin/admin-page.tsx.
+export default adminPage(AdminOpsPage);
