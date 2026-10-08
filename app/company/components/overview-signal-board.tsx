@@ -10,7 +10,10 @@ import type { AmbitionLabel } from "@/lib/guidance-snapshot/types";
 import type { MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
 import {
   PROS_CONS_SOURCES,
+  leanProsCons,
+  type ProsCons,
   type ProsConsItem,
+  type ProsConsLeanTone,
   type ProsConsSide,
 } from "@/lib/overview-pros-cons";
 import {
@@ -34,8 +37,11 @@ import { SectionLink } from "./section-link";
 //   3. The three scores — Concall, Growth, Valuation — each with its path or
 //      range.
 //   4. The standing reads — Moat, Forensics, Guidance · walk the talk.
-//   5. The good and the bad (2026-10-06) — the clearly strong and clearly weak
-//      readings across every section, ranked, five a side at most.
+//   5. The good and the bad (2026-10-06, butterfly board 2026-10-08) — the
+//      clearly strong and clearly weak readings across every section, ranked,
+//      five a side at most, each drawn as a bar sized by its rank weight on
+//      either side of a spine, under a lean meter (the good side's share of
+//      the weight on the board).
 // Every card opens its full section; nothing here is a dead end.
 //
 // Everything is derived from data the portal already computes: the cache row
@@ -859,9 +865,15 @@ function GuidanceCard({
 
 // --- The good · The bad ------------------------------------------------------
 
-// Each side lists what lib/overview-pros-cons ranked: strongest first, never
-// padded. A side with nothing clear says so; with nothing on either side the
-// row is left out.
+// A butterfly board. Each side lists what lib/overview-pros-cons ranked,
+// strongest first, never padded; every row is a bar whose length is the item's
+// rank weight (0–100, the same number that orders the list), growing out from
+// a centre spine — good to the left, bad to the right — so the eye reads the
+// balance before the words. Above it, the lean meter: the good side's share of
+// all the weight on the board, with a tick at the midpoint. A side with
+// nothing clear says so; with nothing on either side the row is left out.
+// Under lg the two sides stack (good, then bad), bars anchored left.
+
 const PROS_CONS_SIDE: Record<ProsConsSide, { kicker: string; tone: Tone; empty: string }> = {
   good: {
     kicker: "The good",
@@ -875,56 +887,178 @@ const PROS_CONS_SIDE: Record<ProsConsSide, { kicker: string; tone: Tone; empty: 
   },
 };
 
-function ProsConsCard({ side, items }: { side: ProsConsSide; items: ProsConsItem[] }) {
+const LEAN_TONE_TEXT: Record<ProsConsLeanTone, string> = {
+  good: TONE_TEXT.good,
+  even: "text-foreground",
+  bad: TONE_TEXT.bad,
+};
+
+// The bar's tint and the spine-side edge, per side.
+const BAR_CLASS: Record<ProsConsSide, { fill: string; edge: string; hover: string }> = {
+  good: { fill: "bg-teal-500/[0.11] dark:bg-teal-400/[0.13]", edge: "bg-teal-500", hover: "group-hover:bg-teal-500/[0.18] dark:group-hover:bg-teal-400/[0.2]" },
+  bad: { fill: "bg-rose-500/[0.11] dark:bg-rose-400/[0.13]", edge: "bg-rose-500", hover: "group-hover:bg-rose-500/[0.18] dark:group-hover:bg-rose-400/[0.2]" },
+};
+
+const prosConsKickerClass =
+  "shrink-0 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground";
+const prosConsClaimClass = "min-w-0 text-[13.5px] font-semibold leading-snug text-foreground";
+
+/**
+ * One ranked reading as a bar. `anchor` is the spine side the bar grows from:
+ * on the desktop board the good side grows leftward from the centre (anchor
+ * right) and the bad side rightward (anchor left); stacked, both anchor left.
+ * The bar is a layer behind the words, so a light item still reads in full.
+ */
+function ProsConsBar({
+  item,
+  side,
+  anchor,
+}: {
+  item: ProsConsItem;
+  side: ProsConsSide;
+  anchor: "left" | "right";
+}) {
+  const source = PROS_CONS_SOURCES[item.source];
+  const bar = BAR_CLASS[side];
+  const width = `${Math.max(0, Math.min(100, item.weight))}%`;
+  const right = anchor === "right";
+  return (
+    <SectionLink
+      sectionId={source.sectionId}
+      className={cn("group relative block w-full py-[3px]", right && "text-right")}
+    >
+      {item.evidence && <span className="sr-only">{item.evidence}. </span>}
+      <span
+        aria-hidden
+        className={cn(
+          "absolute inset-y-[3px] rounded-[3px] transition-colors",
+          right ? "right-0" : "left-0",
+          bar.fill,
+          bar.hover,
+        )}
+        style={{ width }}
+      >
+        <span
+          className={cn("absolute inset-y-0 w-[3px]", right ? "right-0" : "left-0", bar.edge)}
+        />
+      </span>
+      <span
+        className={cn(
+          "relative flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 px-3.5 py-2.5",
+          right ? "flex-row-reverse" : "flex-row",
+        )}
+      >
+        <span className={prosConsClaimClass}>{item.claim}</span>
+        <span className={prosConsKickerClass}>{source.label}</span>
+      </span>
+    </SectionLink>
+  );
+}
+
+function ProsConsEmpty({ side }: { side: ProsConsSide }) {
+  return (
+    <p className="px-3.5 py-3 text-[12.5px] leading-snug text-muted-foreground">
+      {PROS_CONS_SIDE[side].empty}
+    </p>
+  );
+}
+
+function ProsConsSideKicker({ side, flip = false }: { side: ProsConsSide; flip?: boolean }) {
   const meta = PROS_CONS_SIDE[side];
   return (
+    <span className={cn(kickerClass, "inline-flex items-center gap-2", flip && "flex-row-reverse")}>
+      {meta.kicker}
+      <span className={cn("h-1.5 w-1.5 rounded-full", TONE_FILL[meta.tone])} aria-hidden />
+    </span>
+  );
+}
+
+function LeanMeter({ prosCons }: { prosCons: ProsCons }) {
+  const lean = leanProsCons(prosCons);
+  if (!lean) return null;
+  return (
+    <div className="flex items-center gap-3 sm:gap-4">
+      <span
+        className={cn(displayClass, "shrink-0 text-[17px] leading-none sm:text-[20px]", LEAN_TONE_TEXT[lean.tone])}
+      >
+        {lean.word}
+      </span>
+      <div
+        className="relative h-1.5 min-w-0 flex-1 rounded-full bg-rose-500"
+        role="meter"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={lean.score}
+        aria-label="Share of the board's weight on the good side"
+      >
+        <span
+          className="absolute inset-y-0 left-0 rounded-full bg-teal-500"
+          style={{ width: `${lean.score}%` }}
+          aria-hidden
+        />
+        <span className="absolute -inset-y-1 left-1/2 w-0.5 -translate-x-1/2 bg-foreground" aria-hidden />
+      </div>
+      <span className={cn(monoClass, "shrink-0 text-[11.5px] text-muted-foreground")}>
+        {lean.score} / 100
+      </span>
+    </div>
+  );
+}
+
+function ProsConsBoard({ prosCons }: { prosCons: ProsCons }) {
+  const { good, bad } = prosCons;
+  const rows = Math.max(good.length, bad.length, 1);
+  return (
     <div className={cn(cardClass, "p-4 sm:p-5 lg:p-6")}>
-      <p className={cn(kickerClass, "flex items-center gap-2")}>
-        <span className={cn("h-1.5 w-1.5 rounded-full", TONE_FILL[meta.tone])} aria-hidden />
-        {meta.kicker}
-      </p>
-      {items.length > 0 ? (
-        <ol className="mt-2 divide-y divide-border/50">
-          {items.map((item, index) => {
-            const source = PROS_CONS_SOURCES[item.source];
+      <LeanMeter prosCons={prosCons} />
+
+      {/* Desktop: the butterfly. */}
+      <div className="mt-4 hidden border-t border-border/60 pt-4 lg:block">
+        <div className="flex items-center justify-center">
+          <span className="pr-3">
+            <ProsConsSideKicker side="good" />
+          </span>
+          <span className="h-3 w-px bg-border" aria-hidden />
+          <span className="pl-3">
+            <ProsConsSideKicker side="bad" flip />
+          </span>
+        </div>
+        <div className="mt-3 grid grid-cols-2">
+          {Array.from({ length: rows }).map((_, i) => {
+            const g = good[i];
+            const b = bad[i];
             return (
-              <li key={item.id}>
-                <SectionLink
-                  sectionId={source.sectionId}
-                  className="group -mx-2 flex w-[calc(100%+1rem)] items-start gap-3 rounded-lg px-2 py-3 transition-colors hover:bg-muted/30"
-                >
-                  <span
-                    className={cn(
-                      monoClass,
-                      "w-3 shrink-0 pt-px text-[12px] font-semibold",
-                      TONE_TEXT[meta.tone],
-                    )}
-                  >
-                    {index + 1}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[13.5px] font-semibold leading-snug text-foreground">
-                      {item.claim}
-                    </span>
-                    <span className="mt-1 line-clamp-3 text-[12px] leading-relaxed text-muted-foreground sm:line-clamp-2">
-                      <span className="mr-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/60">
-                        {source.label}
-                      </span>
-                      {item.evidence}
-                    </span>
-                  </span>
-                  <ArrowRight
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                    aria-hidden
-                  />
-                </SectionLink>
-              </li>
+              <div key={i} className="contents">
+                <div className="min-w-0 pr-[2px]">
+                  {g ? <ProsConsBar item={g} side="good" anchor="right" /> : i === 0 ? <ProsConsEmpty side="good" /> : null}
+                </div>
+                <div className="min-w-0 pl-[2px]">
+                  {b ? <ProsConsBar item={b} side="bad" anchor="left" /> : i === 0 ? <ProsConsEmpty side="bad" /> : null}
+                </div>
+              </div>
             );
           })}
-        </ol>
-      ) : (
-        <p className="mt-3.5 text-[12.5px] text-muted-foreground">{meta.empty}</p>
-      )}
+        </div>
+      </div>
+
+      {/* Phone and tablet: the two sides stacked. */}
+      <div className="mt-4 border-t border-border/60 pt-4 lg:hidden">
+        {(["good", "bad"] as const).map((side) => {
+          const items = prosCons[side];
+          return (
+            <div key={side} className={side === "bad" ? "mt-4" : undefined}>
+              <ProsConsSideKicker side={side} flip />
+              <div className="mt-1.5">
+                {items.length > 0 ? (
+                  items.map((item) => <ProsConsBar key={item.id} item={item} side={side} anchor="left" />)
+                ) : (
+                  <ProsConsEmpty side={side} />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -973,9 +1107,8 @@ export async function OverviewSignalBoard({
       </div>
 
       {extras.prosCons.good.length + extras.prosCons.bad.length > 0 && (
-        <div className="mt-3 grid gap-3 lg:mt-4 lg:grid-cols-2 lg:gap-4">
-          <ProsConsCard side="good" items={extras.prosCons.good} />
-          <ProsConsCard side="bad" items={extras.prosCons.bad} />
+        <div className="mt-3 lg:mt-4">
+          <ProsConsBoard prosCons={extras.prosCons} />
         </div>
       )}
     </div>
@@ -1018,12 +1151,8 @@ export function OverviewSignalBoardFallback({
         ))}
       </div>
 
-      {/* The good · the bad — a typical side: two items on a phone, three on desktop. */}
-      <div className="mt-3 grid gap-3 lg:mt-4 lg:grid-cols-2 lg:gap-4">
-        {[0, 1].map((i) => (
-          <div key={i} className="h-[220px] animate-pulse rounded-[14px] bg-muted/30 lg:h-[300px]" />
-        ))}
-      </div>
+      {/* The good · the bad board — the meter plus a typical three rows a side. */}
+      <div className="mt-3 h-[360px] animate-pulse rounded-[14px] bg-muted/30 lg:mt-4 lg:h-[250px]" />
     </div>
   );
 }
