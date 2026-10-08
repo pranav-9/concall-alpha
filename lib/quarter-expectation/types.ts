@@ -75,7 +75,13 @@ export type ScoreBaselineResult =
 
 // What the call is due to update on. `kind` fixes the order of precedence
 // (updates.ts); `sectionId` points at the tab the item came from.
-export type ExpectedUpdateKind = "due" | "progress" | "catalyst" | "variable" | "fix";
+export type ExpectedUpdateKind = "due" | "progress" | "catalyst" | "variable" | "fix" | "filing";
+
+// Which way the item leans going in: a raised guide, a catalyst or a good
+// filing is upside; an overdue commitment, a lowered guide, a bad filing or
+// last call's negative read is downside; a watch trigger or a guide due now
+// is open — it could print either way.
+export type ExpectedUpdateLean = "upside" | "downside" | "open";
 
 export type ExpectedUpdate = {
   kind: ExpectedUpdateKind;
@@ -83,12 +89,29 @@ export type ExpectedUpdate = {
   detail: string | null;
   sectionId: string;
   tone: "caution" | "neutral";
+  lean: ExpectedUpdateLean;
+  /** YYYY-MM-DD the item carries a date of its own (a filing's date); null otherwise. */
+  dated: string | null;
+};
+
+// A material exchange filing inside the target quarter's window, the shape
+// the server threads in from bse_announcements (lib/exchange-desk/types.ts).
+export type ExpectationFiling = {
+  id: string;
+  /** ISO timestamp the filing was made. */
+  filedAt: string;
+  /** The classifier's one-liner. */
+  summary: string;
+  category: string;
+  impact: "transformative" | "positive" | "neutral" | "negative" | "severe";
 };
 
 // One attributed line of the earnings column. `source` names where the number
 // came from so the card never shows an unattributed figure.
 export type ExpectedEarningsLine = {
   source: "guide";
+  /** The guide's family, so the card can drop a line the table already sized. */
+  family: "growth" | "margin" | "yield";
   /** "Revenue" | "EBITDA margin" … (the guide's metric label). */
   metricLabel: string;
   /** The guided value as the producer wrote it, e.g. "+20%" | "24–25%". */
@@ -121,7 +144,29 @@ export type RunRate = {
   /** Quarter pairs the YoY average was taken over. */
   yoyPairs: number;
   opmPct: number | null;
+  /** Average YoY net-profit growth over the same window; null under two positive pairs. */
+  netProfitYoyPct: number | null;
   latestLabel: string;
+};
+
+// One row of the expectations table: a range for the target quarter against
+// the year-ago quarter, with the source the range came from. Rupee rows
+// change in percent; the margin row changes in basis points.
+export type ExpectationRowKey = "revenue" | "ebitda_margin" | "ebitda" | "net_profit";
+export type ExpectationRowSource = "guide" | "run_rate" | "guide_run_rate" | "implied";
+
+export type ExpectationRow = {
+  key: ExpectationRowKey;
+  label: string;
+  unit: "cr" | "pct";
+  lo: number;
+  hi: number;
+  /** The year-ago quarter's print, same unit. */
+  yearAgo: number;
+  change: { unit: "pct" | "bps"; lo: number; hi: number };
+  source: ExpectationRowSource;
+  /** The tab the figure traces to; null for a computed row. */
+  sectionId: string | null;
 };
 
 export type ExpectedEarnings = {
@@ -130,6 +175,10 @@ export type ExpectedEarnings = {
   basis: "consolidated" | "standalone" | null;
   implied: ImpliedQuarter | null;
   runRate: RunRate | null;
+  /** The expectations table; empty when the year-ago quarter is not on file. */
+  rows: ExpectationRow[];
+  /** "Q2 FY26" — the quarter every row compares against; null without financials. */
+  yearAgoLabel: string | null;
 };
 
 export type QuarterExpectationState = "upcoming" | "landed";

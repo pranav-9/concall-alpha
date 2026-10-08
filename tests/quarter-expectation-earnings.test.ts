@@ -172,3 +172,115 @@ const ROWS: QuarterlyFinancialsRow[] = [
 }
 
 console.log("quarter-expectation-earnings (financials): ok");
+
+// ---------------------------------------------------------------------------
+// The expectations table (buildExpectationRows)
+// ---------------------------------------------------------------------------
+import { buildExpectationRows, NO_GUIDES } from "../lib/quarter-expectation/earnings";
+
+const finP = (fy: number, qtr: number, revenue: number, opm: number, pat: number | null): QuarterlyFinancialsRow => ({
+  ...fin(fy, qtr, revenue, opm),
+  net_profit_cr: pat,
+});
+
+// FY26 = 100/110/120/130 at 20% OPM, PAT 10% of revenue; FY27 Q1 = 125 at 24%, PAT 15.
+const ROWS_P: QuarterlyFinancialsRow[] = [
+  finP(2025, 1, 80, 20, 8), finP(2025, 2, 88, 20, 8.8), finP(2025, 3, 96, 20, 9.6), finP(2025, 4, 104, 20, 10.4),
+  finP(2026, 1, 100, 20, 10), finP(2026, 2, 110, 20, 11), finP(2026, 3, 120, 20, 12), finP(2026, 4, 130, 22, 13),
+  finP(2027, 1, 125, 24, 15),
+];
+
+const growthGuide = item({ valueText: "18-22%", numericValue: null, valuePercent: null });
+const marginGuide = item({ guidanceFamily: "margin", metricSubtype: "ebitda_margin", metricLabel: "EBITDA margin", valueKind: "percent_level", valuePercent: 24, numericValue: 24, valueText: "24-25%" });
+const patGuide = item({ metricSubtype: "pat", metricLabel: "PAT growth", valuePercent: 30, numericValue: 30, valueText: "30%" });
+
+// Run-rate alone (no guides): every row reads "run_rate" (EBITDA is implied),
+// and the table compares against Q2 FY26 (110 cr, 20% OPM, 11 cr PAT).
+{
+  const rr = buildRunRate(ROWS_P, TARGET)!;
+  assert.equal(rr.netProfitYoyPct, 31.3); // (25+25+25+50)/4
+  const rows = buildExpectationRows(ROWS_P, TARGET, NO_GUIDES, rr);
+  assert.deepEqual(rows.map((r) => r.key), ["revenue", "ebitda_margin", "ebitda", "net_profit"]);
+  const [rev, opm, ebitda, pat] = rows;
+  assert.equal(rev.source, "run_rate");
+  assert.equal(rev.sectionId, null);
+  assert.equal(rev.lo, 138);
+  assert.equal(rev.hi, 138);
+  assert.equal(rev.yearAgo, 110);
+  assert.deepEqual(rev.change, { unit: "pct", lo: 25, hi: 25 });
+  assert.equal(opm.source, "run_rate");
+  assert.equal(opm.lo, 21.5);
+  assert.equal(opm.yearAgo, 20);
+  assert.deepEqual(opm.change, { unit: "bps", lo: 150, hi: 150 });
+  assert.equal(ebitda.source, "implied");
+  assert.equal(ebitda.lo, 30); // 138 × 21.5%
+  assert.equal(ebitda.yearAgo, 22); // 110 × 20%
+  assert.equal(ebitda.change.lo, 36.4);
+  assert.equal(pat.source, "run_rate");
+  assert.equal(pat.lo, 14); // 11 × 1.313
+  assert.equal(pat.change.lo, 31.3);
+}
+
+// Guides: revenue spans the guide and the run-rate ("guide + run-rate"), the
+// margin is the guide's own level, EBITDA is revenue × margin corner to
+// corner, net profit follows the PAT guide. Guide rows trace to the Guidance tab.
+{
+  const rr = buildRunRate(ROWS_P, TARGET)!;
+  const rows = buildExpectationRows(ROWS_P, TARGET, { revenue: growthGuide, ebitda: null, pat: patGuide, ebitdaMargin: marginGuide }, rr);
+  const [rev, opm, ebitda, pat] = rows;
+  assert.equal(rev.source, "guide_run_rate");
+  assert.equal(rev.sectionId, "guidance-history");
+  assert.equal(rev.lo, 130); // 110 × 1.18
+  assert.equal(rev.hi, 138); // 110 × 1.25 — the run-rate, above the guide's top
+  assert.deepEqual(rev.change, { unit: "pct", lo: 18, hi: 25 });
+  assert.equal(opm.source, "guide");
+  assert.deepEqual(opm.change, { unit: "bps", lo: 400, hi: 500 });
+  assert.equal(ebitda.lo, 31); // 130 × 24%
+  assert.equal(ebitda.hi, 35); // 138 × 25%
+  assert.equal(ebitda.change.lo, 40.9);
+  assert.equal(ebitda.change.hi, 59.1);
+  assert.equal(pat.source, "guide");
+  assert.equal(pat.lo, 14); // 11 × 1.3
+  assert.deepEqual(pat.change, { unit: "pct", lo: 30, hi: 30 });
+  // A guide alone, no run-rate: the revenue range is the guide's.
+  const guideOnly = buildExpectationRows(ROWS_P, TARGET, { ...NO_GUIDES, revenue: growthGuide }, null);
+  assert.equal(guideOnly[0].source, "guide");
+  assert.equal(guideOnly[0].hi, 134); // 110 × 1.22
+  // Only a margin guide and no run-rate → no revenue row, so EBITDA falls back to an EBITDA growth guide.
+  const ebitdaGuide = item({ metricSubtype: "ebitda", metricLabel: "EBITDA growth", valuePercent: 40, numericValue: 40, valueText: "40%" });
+  const viaGuide = buildExpectationRows(ROWS_P, TARGET, { ...NO_GUIDES, ebitda: ebitdaGuide }, null);
+  assert.deepEqual(viaGuide.map((r) => r.key), ["ebitda"]);
+  assert.equal(viaGuide[0].source, "guide");
+  assert.equal(viaGuide[0].lo, 31); // 22 × 1.4 = 30.8
+}
+
+// No year-ago print → no table; a year-ago loss → no net-profit row; a
+// segment guide never sizes a whole-company row.
+{
+  const noYearAgo = ROWS_P.filter((r) => !(r.fy === 2026 && r.qtr === 2));
+  assert.deepEqual(buildExpectationRows(noYearAgo, TARGET, NO_GUIDES, buildRunRate(noYearAgo, TARGET)), []);
+  const lossYearAgo = ROWS_P.map((r) => (r.fy === 2026 && r.qtr === 2 ? { ...r, net_profit_cr: -3 } : r));
+  const rows = buildExpectationRows(lossYearAgo, TARGET, { ...NO_GUIDES, pat: patGuide }, buildRunRate(lossYearAgo, TARGET));
+  assert.ok(!rows.some((r) => r.key === "net_profit"));
+  const seg = buildExpectationRows(ROWS_P, TARGET, { ...NO_GUIDES, revenue: item({ segment: "Defence", valueText: "50%", valuePercent: 50, numericValue: 50 }) }, null);
+  assert.deepEqual(seg.map((r) => r.key), []);
+}
+
+// buildExpectedEarnings reads guides by subtype — a PAT guide does not stand
+// in for revenue — and stamps every text line with its family.
+{
+  const out = buildExpectedEarnings({ target: TARGET, guidanceItems: [patGuide, marginGuide], financials: ROWS_P })!;
+  assert.equal(out.yearAgoLabel, "Q2 FY26");
+  const rev = out.rows.find((r) => r.key === "revenue")!;
+  assert.equal(rev.source, "run_rate");
+  const pat = out.rows.find((r) => r.key === "net_profit")!;
+  assert.equal(pat.source, "guide");
+  assert.equal(out.lines[0].family, "growth");
+  assert.equal(out.lines[1].family, "margin");
+  // No guidance at all still yields the table from the run-rate.
+  const bare = buildExpectedEarnings({ target: TARGET, guidanceItems: [], financials: ROWS_P })!;
+  assert.equal(bare.rows.length, 4);
+  assert.equal(bare.yearAgoLabel, "Q2 FY26");
+}
+
+console.log("quarter-expectation-earnings (table): ok");

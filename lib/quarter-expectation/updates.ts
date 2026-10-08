@@ -14,7 +14,7 @@ import type {
   NormalizedKeyVariableListItem,
 } from "@/lib/key-variables-snapshot/types";
 
-import type { ExpectedUpdate } from "./types";
+import type { ExpectationFiling, ExpectedUpdate, ExpectedUpdateLean } from "./types";
 
 // What the call is due to update on — templated from the sections the page
 // already holds, in a fixed order of precedence, never curated per company:
@@ -23,16 +23,21 @@ import type { ExpectedUpdate } from "./types";
 //                quarter before) the target and that nobody has graded yet —
 //                classifyGuidanceItem's resolved/unclear set. The Guidance tab
 //                counts these in one line; this is where they are named.
-//   2. progress  live commitments that come due inside the target's FY, in the
+//   2. filing    the strongest material exchange filing made inside the
+//                target quarter's window (quarter start → today) — an order
+//                win, a capex approval, a rating cut. The call has to speak
+//                to it. One at most; neutral filings never qualify.
+//   3. progress  live commitments that come due inside the target's FY, in the
 //                Guidance tab's own materiality order (buildGuidanceVerdict.live).
-//   3. catalyst  the growth catalyst whose timing names the target's FY,
+//   4. catalyst  the growth catalyst whose timing names the target's FY,
 //                preferring one that names the target's quarter or half.
-//   4. variable  the key variable with a "watch for" trigger, else the
+//   5. variable  the key variable with a "watch for" trigger, else the
 //                deep-treatment headline.
-//   5. fix       the last call's negative rationale item — did they fix it?
+//   6. fix       the last call's negative rationale item — did they fix it?
 //
-// Caps keep the list readable and leave room for the later kinds: two due,
-// two progress, five in all.
+// Each item carries a lean (upside / downside / open) so the card can say
+// which way it points without a second read. Caps keep the list readable and
+// leave room for the later kinds: two due, two progress, five in all.
 
 export const MAX_EXPECTED_UPDATES = 5;
 export const MAX_DUE_UPDATES = 2;
@@ -43,7 +48,42 @@ export const UPDATE_SECTION = {
   growth: "future-growth",
   variables: "key-variables",
   quarterly: "sentiment-score",
+  filings: "company-announcements",
 } as const;
+
+export const FILING_HEADING_MAX = 90;
+
+// Strongest first; neutral is 0 and never shown.
+const FILING_WEIGHT: Record<ExpectationFiling["impact"], number> = {
+  transformative: 3,
+  severe: 3,
+  positive: 2,
+  negative: 2,
+  neutral: 0,
+};
+
+const filingLean = (impact: ExpectationFiling["impact"]): ExpectedUpdateLean =>
+  impact === "transformative" || impact === "positive" ? "upside" : "downside";
+
+const istDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" });
+
+const clip = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text);
+
+// The one filing the call must speak to: strongest impact, newest on a tie.
+export const pickFiling = (filings: ExpectationFiling[]): ExpectationFiling | null => {
+  let best: ExpectationFiling | null = null;
+  for (const f of filings) {
+    if (FILING_WEIGHT[f.impact] === 0 || !f.summary?.trim()) continue;
+    if (
+      !best ||
+      FILING_WEIGHT[f.impact] > FILING_WEIGHT[best.impact] ||
+      (FILING_WEIGHT[f.impact] === FILING_WEIGHT[best.impact] && f.filedAt > best.filedAt)
+    ) {
+      best = f;
+    }
+  }
+  return best;
+};
 
 export type RationaleLine = {
   direction: "positive" | "negative" | "neutral" | null;
@@ -94,6 +134,10 @@ export type BuildExpectedUpdatesInput = {
   variables: NormalizedKeyVariableListItem[];
   deepVariables: NormalizedKeyVariableDeepTreatmentItem[];
   lastRationale: RationaleLine[];
+  /** Material filings inside the target quarter's window; optional for callers without the feed. */
+  filings?: ExpectationFiling[];
+  /** Human label for a filing category ("Order win"); defaults to the raw key. */
+  filingCategoryLabel?: (category: string) => string;
 };
 
 const joinParts = (parts: (string | null | undefined)[]): string | null => {
@@ -186,11 +230,28 @@ export function buildExpectedUpdates(input: BuildExpectedUpdatesInput): Expected
       ]),
       sectionId: UPDATE_SECTION.guidance,
       tone: "caution",
+      lean: dueNow ? "open" : "downside",
+      dated: null,
     });
     due += 1;
   }
 
-  // 2. progress — live, decided inside the target's FY, materiality order.
+  // 2. filing — the strongest material filing of the quarter so far.
+  const filing = pickFiling(input.filings ?? []);
+  if (filing) {
+    const at = new Date(filing.filedAt);
+    push({
+      kind: "filing",
+      heading: clip(filing.summary.trim(), FILING_HEADING_MAX),
+      detail: (input.filingCategoryLabel ?? ((c: string) => c))(filing.category),
+      sectionId: UPDATE_SECTION.filings,
+      tone: filingLean(filing.impact) === "downside" ? "caution" : "neutral",
+      lean: filingLean(filing.impact),
+      dated: Number.isNaN(at.getTime()) ? null : istDay.format(at),
+    });
+  }
+
+  // 3. progress — live, decided inside the target's FY, materiality order.
   let progress = 0;
   for (const row of verdict.live) {
     if (progress >= MAX_PROGRESS_UPDATES) break;
@@ -206,11 +267,13 @@ export function buildExpectedUpdates(input: BuildExpectedUpdatesInput): Expected
       ]),
       sectionId: UPDATE_SECTION.guidance,
       tone: "neutral",
+      lean: row.direction === "up" ? "upside" : row.direction === "down" ? "downside" : "open",
+      dated: null,
     });
     if (out.length > before) progress += 1;
   }
 
-  // 3. catalyst — best timing fit, then the Growth tab's priority order.
+  // 4. catalyst — best timing fit, then the Growth tab's priority order.
   let best: { catalyst: NormalizedGrowthCatalyst; fit: 1 | 2 } | null = null;
   for (const catalyst of rankCatalysts(input.catalysts)) {
     if (!catalyst.catalyst) continue;
@@ -229,10 +292,12 @@ export function buildExpectedUpdates(input: BuildExpectedUpdatesInput): Expected
       ]),
       sectionId: UPDATE_SECTION.growth,
       tone: "neutral",
+      lean: "upside",
+      dated: null,
     });
   }
 
-  // 4. variable — the one with a trigger sentence, else the deep headline.
+  // 5. variable — the one with a trigger sentence, else the deep headline.
   const withWatch = input.variables.find((v) => v.variable && v.watchFor);
   if (withWatch) {
     push({
@@ -241,6 +306,8 @@ export function buildExpectedUpdates(input: BuildExpectedUpdatesInput): Expected
       detail: withWatch.watchFor,
       sectionId: UPDATE_SECTION.variables,
       tone: "neutral",
+      lean: "open",
+      dated: null,
     });
   } else {
     const deep = input.deepVariables.find((d) => d.variable && (d.headline || d.whyItMattersNow));
@@ -251,11 +318,13 @@ export function buildExpectedUpdates(input: BuildExpectedUpdatesInput): Expected
         detail: deep.headline ?? deep.whyItMattersNow,
         sectionId: UPDATE_SECTION.variables,
         tone: "neutral",
+        lean: "open",
+        dated: null,
       });
     }
   }
 
-  // 5. fix — the last call's negative read. Legacy flat-string rationale has
+  // 6. fix — the last call's negative read. Legacy flat-string rationale has
   // no direction and is skipped rather than shown without a sign.
   const negative = input.lastRationale.find((r) => r.direction === "negative" && (r.heading || r.detail));
   if (negative) {
@@ -265,6 +334,8 @@ export function buildExpectedUpdates(input: BuildExpectedUpdatesInput): Expected
       detail: negative.heading ? negative.detail || null : null,
       sectionId: UPDATE_SECTION.quarterly,
       tone: "caution",
+      lean: "downside",
+      dated: null,
     });
   }
 

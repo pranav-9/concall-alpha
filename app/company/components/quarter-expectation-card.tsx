@@ -1,23 +1,39 @@
 "use client";
 
-import { ArrowDown, ArrowUp } from "lucide-react";
-
 import { formatDay, formatTime, istToday, relativeDay } from "@/app/quarter-tracker/season";
 import type { QuarterExpectationView } from "@/lib/quarter-expectation/build";
 import type { RationaleLine } from "@/lib/quarter-expectation/updates";
-import type { ExpectationSetup, ExpectedUpdate, ExpectedUpdateKind } from "@/lib/quarter-expectation/types";
+import type {
+  ExpectationRow,
+  ExpectationRowSource,
+  ExpectationSetup,
+  ExpectedEarningsLine,
+  ExpectedUpdate,
+  ExpectedUpdateKind,
+  ExpectedUpdateLean,
+} from "@/lib/quarter-expectation/types";
 import { BANDS, bandForScore } from "@/lib/score-band";
 import { cn } from "@/lib/utils";
 
 import { chipClass } from "./chip-tone";
-import { elevatedBlockClassFromSm, nestedDetailClass } from "./surface-tokens";
+import { elevatedBlockClassFromSm } from "./surface-tokens";
 
 // "Before the Q2 FY27 call" — the top of the ConcallScore section while the
-// quarter in season is unscored. What to listen for leads; the trail's 4Q
-// average and the issuer's own guide sit in a rail beside it. Everything is
-// derived (lib/quarter-expectation) and attributed to the tab it came from.
-// Once the quarter is scored the card steps aside: the "vs 4Q avg" line in
-// "Where it sits" carries the comparison from then on.
+// quarter in season is unscored. Two blocks, in reading order:
+//
+//   What could be major   up to three items the call has to speak to, each
+//                         with the way it leans (upside / downside / open),
+//                         the tab it came from and, for a filing, its date.
+//   Expectations          a table of ranges for the quarter against the
+//                         year-ago print — revenue, EBITDA margin, EBITDA,
+//                         net profit — each row naming its source (the
+//                         issuer's guide, the run-rate, or arithmetic on the
+//                         two). The ConcallScore's own 4Q average closes the
+//                         table as a reference, never a forecast.
+//
+// Everything is derived (lib/quarter-expectation) and attributed. Once the
+// quarter is scored the card steps aside: the "vs 4Q avg" line in "Where it
+// sits" carries the comparison from then on.
 
 const SOURCE_LABEL: Record<ExpectedUpdateKind, string> = {
   due: "Guidance",
@@ -25,11 +41,88 @@ const SOURCE_LABEL: Record<ExpectedUpdateKind, string> = {
   catalyst: "Growth",
   variable: "Key variables",
   fix: "Last call",
+  filing: "Filing",
 };
 
-const PHONE_VISIBLE = 3;
+const LEAN_META: Record<ExpectedUpdateLean, { label: string; glyph: string; className: string }> = {
+  upside: { label: "Upside", glyph: "▲", className: "text-emerald-500 dark:text-emerald-400" },
+  downside: { label: "Downside", glyph: "▼", className: "text-rose-500 dark:text-rose-400" },
+  open: { label: "Open", glyph: "◆", className: "text-amber-500 dark:text-amber-400" },
+};
+
+const ROW_SOURCE_LABEL: Record<ExpectationRowSource, string> = {
+  guide: "Guide",
+  run_rate: "Run-rate",
+  guide_run_rate: "Guide + run-rate",
+  implied: "Implied",
+};
+
+const ROW_FAMILY: Record<ExpectationRow["key"], ExpectedEarningsLine["family"]> = {
+  revenue: "growth",
+  ebitda: "growth",
+  net_profit: "growth",
+  ebitda_margin: "margin",
+};
+
+const MAJOR_VISIBLE = 3;
 
 const eyebrowClass = "text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground";
+const metaClass = "font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground";
+
+// ---------------------------------------------------------------------------
+// Formatting
+// ---------------------------------------------------------------------------
+
+const fmtCr = (n: number) => n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+const fmtNum = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+// A change reads as a band, not a measurement: whole points from ten up, one
+// decimal below ("+14–25%", "+2.7%").
+const fmtDelta = (n: number) => (Math.abs(n) >= 10 ? String(Math.round(Math.abs(n))) : fmtNum(Math.abs(n)));
+const signed = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${fmtDelta(n)}`;
+/** "18 Sep" — the day without its weekday, for a meta line. */
+const shortDay = (iso: string) => formatDay(iso).replace(/^[A-Za-z]{3}\s/, "");
+const EN_DASH = "–";
+
+/** "₹238–253 cr" | "18.5–19.5%" — a point when lo === hi. */
+const fmtRange = (row: ExpectationRow): string => {
+  const same = row.lo === row.hi;
+  if (row.unit === "cr") return `₹${fmtCr(row.lo)}${same ? "" : `${EN_DASH}${fmtCr(row.hi)}`} cr`;
+  return `${fmtNum(row.lo)}${same ? "" : `${EN_DASH}${fmtNum(row.hi)}`}%`;
+};
+
+const fmtYearAgo = (row: ExpectationRow): string =>
+  row.unit === "cr" ? `₹${fmtCr(row.yearAgo)} cr` : `${fmtNum(row.yearAgo)}%`;
+
+/** "+30–38%" | "+60 to +160 bps" | "−4%" — a point when lo === hi. */
+const fmtChange = (row: ExpectationRow): string => {
+  const { lo, hi, unit } = row.change;
+  if (unit === "bps") {
+    return lo === hi ? `${signed(lo)} bps` : `${signed(lo)} to ${signed(hi)} bps`;
+  }
+  if (lo === hi) return `${signed(lo)}%`;
+  // Same sign: one sign, one dash. Straddling zero: both signed.
+  return lo >= 0 === hi >= 0 ? `${signed(lo)}${EN_DASH}${fmtDelta(hi)}%` : `${signed(lo)} to ${signed(hi)}%`;
+};
+
+type ChangeTone = "up" | "down" | "mixed" | "flat";
+const changeTone = (row: ExpectationRow): ChangeTone => {
+  const { lo, hi } = row.change;
+  if (lo === 0 && hi === 0) return "flat";
+  if (lo >= 0) return "up";
+  if (hi <= 0) return "down";
+  return "mixed";
+};
+
+const TONE_META: Record<ChangeTone, { glyph: string; word: string; className: string }> = {
+  up: { glyph: "▲", word: "YoY up", className: "text-emerald-600 dark:text-emerald-400" },
+  down: { glyph: "▼", word: "YoY down", className: "text-rose-600 dark:text-rose-400" },
+  mixed: { glyph: "◆", word: "YoY either way", className: "text-amber-600 dark:text-amber-400" },
+  flat: { glyph: "•", word: "YoY flat", className: "text-muted-foreground" },
+};
+
+// ---------------------------------------------------------------------------
+// Header
+// ---------------------------------------------------------------------------
 
 function SetupChips({ setup }: { setup: ExpectationSetup }) {
   const chips = setup.items
@@ -106,76 +199,77 @@ function DateLine({ view, today }: { view: QuarterExpectationView; today: string
   );
 }
 
-function UpdateRow({ update, rank }: { update: ExpectedUpdate; rank: number }) {
+// ---------------------------------------------------------------------------
+// What could be major
+// ---------------------------------------------------------------------------
+
+function MajorItem({ update }: { update: ExpectedUpdate }) {
+  const lean = LEAN_META[update.lean];
   const linked = update.sectionId !== "sentiment-score";
+  const meta = [lean.label, SOURCE_LABEL[update.kind], update.dated ? shortDay(update.dated) : null].filter(Boolean);
   const body = (
     <>
-      <span className="w-4 shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">{rank}</span>
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <span className="text-[12px] font-semibold leading-snug text-foreground">{update.heading}</span>
-          <span className={cn(chipClass("slate"), "px-1.5 py-0 text-[9px] uppercase tracking-[0.1em]")}>
-            {SOURCE_LABEL[update.kind]}
-          </span>
+      <span aria-hidden className={cn("mt-[3px] w-3 shrink-0 text-[10px] leading-none", lean.className)}>
+        {lean.glyph}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="line-clamp-2 text-[13px] font-semibold leading-snug text-foreground" title={update.detail ?? undefined}>
+          {update.heading}
         </span>
-        {update.detail ? (
-          <span className="mt-0.5 block text-[11px] leading-snug text-muted-foreground">{update.detail}</span>
+        <span className={metaClass}>{meta.join(" · ")}</span>
+        {update.detail && update.kind !== "filing" ? (
+          <span className="line-clamp-2 text-[11px] leading-snug text-muted-foreground">{update.detail}</span>
         ) : null}
       </span>
     </>
   );
-  const rowClass = cn(
-    "flex min-h-11 items-start gap-2 py-2 sm:min-h-0 sm:py-1.5",
-    update.tone === "caution" ? "border-l-2 border-amber-400/70 pl-2" : "border-l-2 border-transparent pl-2",
-  );
+  const cellClass = "flex min-h-11 items-start gap-2.5 px-3 py-3";
   return linked ? (
-    <li>
-      <a href={`#${update.sectionId}`} className={cn(rowClass, "rounded-sm hover:bg-accent/60")}>
-        {body}
-      </a>
-    </li>
+    <a href={`#${update.sectionId}`} className={cn(cellClass, "rounded-md hover:bg-accent/60")} aria-label={`${update.heading} — ${meta.join(", ")}`}>
+      {body}
+    </a>
   ) : (
-    <li className={rowClass}>{body}</li>
+    <div className={cellClass}>{body}</div>
   );
 }
 
-function ListenFor({ updates }: { updates: ExpectedUpdate[] }) {
-  const head = updates.slice(0, PHONE_VISIBLE);
-  const tail = updates.slice(PHONE_VISIBLE);
+function WhatCouldBeMajor({ updates }: { updates: ExpectedUpdate[] }) {
+  const head = updates.slice(0, MAJOR_VISIBLE);
+  const tail = updates.slice(MAJOR_VISIBLE);
   return (
-    <div className={`${nestedDetailClass} flex min-w-0 flex-col gap-2 p-3`}>
-      <div className="flex items-center gap-1.5">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-400/80" />
-        <p className={eyebrowClass}>What to listen for</p>
-      </div>
+    <div className="flex flex-col gap-2">
+      <p className={eyebrowClass}>What could be major</p>
       {updates.length === 0 ? (
         <p className="text-[11px] italic text-muted-foreground">
-          Nothing flagged going in — no guidance due, no dated catalyst.
+          Nothing flagged going in — no guidance due, no dated catalyst, no material filing this quarter.
         </p>
       ) : (
         <>
-          <ul className="flex flex-col divide-y divide-border/30">
+          <ul
+            className={cn(
+              "grid grid-cols-1 divide-y divide-border/30 rounded-md border border-border/25 bg-background/45",
+              head.length > 1 && "lg:divide-x lg:divide-y-0",
+              head.length === 2 && "lg:grid-cols-2",
+              head.length >= 3 && "lg:grid-cols-3",
+            )}
+          >
             {head.map((u, i) => (
-              <UpdateRow key={`${u.kind}-${i}`} update={u} rank={i + 1} />
-            ))}
-            {tail.length > 0 ? (
-              <li className="hidden lg:block">
-                <ul className="flex flex-col divide-y divide-border/30">
-                  {tail.map((u, i) => (
-                    <UpdateRow key={`${u.kind}-${i}`} update={u} rank={PHONE_VISIBLE + i + 1} />
-                  ))}
-                </ul>
+              <li key={`${u.kind}-${i}`} className="min-w-0">
+                <MajorItem update={u} />
               </li>
-            ) : null}
+            ))}
           </ul>
           {tail.length > 0 ? (
-            <details className="lg:hidden">
-              <summary className="cursor-pointer py-1 text-[11px] font-medium text-foreground/80">
-                {tail.length} more
+            <details className="group">
+              <summary className="cursor-pointer list-none py-0.5 text-[11px] font-medium text-foreground/80 hover:underline">
+                <span className="group-open:hidden">{tail.length} more to listen for</span>
+                <span className="hidden group-open:inline">Fewer</span>
               </summary>
-              <ul className="flex flex-col divide-y divide-border/30">
+              <ul className="mt-1 grid grid-cols-1 divide-y divide-border/30 rounded-md border border-border/25 bg-background/45">
                 {tail.map((u, i) => (
-                  <UpdateRow key={`${u.kind}-${i}`} update={u} rank={PHONE_VISIBLE + i + 1} />
+                  <li key={`${u.kind}-${i}`} className="min-w-0">
+                    <MajorItem update={u} />
+                  </li>
                 ))}
               </ul>
             </details>
@@ -186,154 +280,159 @@ function ListenFor({ updates }: { updates: ExpectedUpdate[] }) {
   );
 }
 
-function TrailBlock({
-  view,
-  lastQuarter,
-}: {
-  view: QuarterExpectationView;
-  lastQuarter: { label: string; rationale: RationaleLine[] } | null;
-}) {
-  const { baseline, state } = view;
-  const signed = lastQuarter?.rationale.filter((r) => r.direction != null && (r.heading || r.detail)) ?? [];
+// ---------------------------------------------------------------------------
+// Expectations table
+// ---------------------------------------------------------------------------
+
+const rowGridClass =
+  "grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 py-2.5 sm:grid-cols-[8.5rem_minmax(7.5rem,auto)_minmax(0,1fr)_auto] sm:items-baseline sm:py-3";
+
+function ExpectationRowView({ row }: { row: ExpectationRow }) {
+  const tone = TONE_META[changeTone(row)];
+  const source = ROW_SOURCE_LABEL[row.source];
+  const sourceEl = row.sectionId ? (
+    <a href={`#${row.sectionId}`} className={cn(metaClass, "hover:text-foreground hover:underline")}>
+      {source}
+    </a>
+  ) : (
+    <span className={metaClass}>{source}</span>
+  );
   return (
-    <div className={`${nestedDetailClass} flex flex-col gap-1.5 p-3`}>
-      <p className={eyebrowClass}>Where the trail sits</p>
-      {baseline.ok ? (
-        <>
-          <p className="flex flex-wrap items-baseline gap-x-1.5 text-[11px] text-muted-foreground">
-            {state === "pending" ? <span>Score pending · trail at</span> : null}
-            <span className="font-mono text-[16px] font-semibold tabular-nums text-foreground">
-              {baseline.value.baseline.toFixed(1)}
-            </span>
-            <span>· 4Q avg</span>
-          </p>
-          <p className="text-[11px] text-muted-foreground">
-            {BANDS[bandForScore(baseline.value.baseline)].label} territory · usual swing ±{baseline.value.band.toFixed(1)}
-          </p>
-          <p className="text-[10px] leading-snug text-muted-foreground/80">
-            Where the last four scored quarters landed ({baseline.value.quarters[0]?.label}–
-            {baseline.value.quarters[baseline.value.quarters.length - 1]?.label}). The score reads the call after it
-            happens.
-          </p>
-        </>
-      ) : baseline.miss.reason === "too_few" ? (
-        <p className="text-[11px] text-muted-foreground">
-          Trail too short to read — {baseline.miss.scoredQuarters === 0 ? "no" : baseline.miss.scoredQuarters}{" "}
-          scored {baseline.miss.scoredQuarters === 1 ? "quarter" : "quarters"}, four needed.
-        </p>
-      ) : (
-        <p className="text-[11px] text-muted-foreground">
-          Trail too old to read — last scored {baseline.miss.latestLabel}.
-        </p>
-      )}
-      {lastQuarter && signed.length > 0 ? (
-        <details className="mt-1">
-          <summary className="cursor-pointer text-[11px] font-medium text-foreground/80">
-            What moved the last score · {lastQuarter.label}
-          </summary>
-          <ul className="mt-1.5 flex flex-col gap-1.5">
-            {signed.map((r, i) => (
-              <li key={i} className="flex gap-1.5 text-[11px] leading-snug text-foreground/85">
-                {r.direction === "positive" ? (
-                  <ArrowUp className="mt-0.5 h-3 w-3 shrink-0 text-emerald-400" />
-                ) : r.direction === "negative" ? (
-                  <ArrowDown className="mt-0.5 h-3 w-3 shrink-0 text-rose-400" />
-                ) : (
-                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400/80" />
-                )}
-                <span>
-                  {r.heading ? <span className="font-semibold text-foreground">{r.heading}</span> : null}
-                  {r.heading && r.detail ? " — " : ""}
-                  {r.detail}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
-    </div>
+    <li className={rowGridClass}>
+      <span className="text-[13px] font-medium text-foreground">{row.label}</span>
+      <span className="justify-self-end sm:order-last">{sourceEl}</span>
+      <span className="col-span-2 text-[18px] font-semibold tabular-nums leading-tight text-foreground sm:col-span-1">
+        {fmtRange(row)}
+      </span>
+      <span className="col-span-2 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:col-span-1">
+        <span className={cn("text-[15px] font-semibold tabular-nums leading-tight", tone.className)}>
+          <span aria-hidden className="mr-1 text-[10px]">
+            {tone.glyph}
+          </span>
+          {fmtChange(row)}
+        </span>
+        <span className="font-mono text-[11px] text-muted-foreground">
+          {tone.word} · from {fmtYearAgo(row)}
+        </span>
+      </span>
+    </li>
   );
 }
 
-function GuideBlock({ view }: { view: QuarterExpectationView }) {
-  const { earnings } = view;
-  if (!earnings) return null;
+// The text fallback: a guide on file but no year-ago print to size it against.
+function GuideLineView({ line }: { line: ExpectedEarningsLine }) {
+  const label = `${line.segment ? `${line.segment} ` : ""}${line.metricLabel}`;
   return (
-    <div className={`${nestedDetailClass} flex flex-col gap-1.5 p-3`}>
-      <p className={eyebrowClass}>{earnings.lines.length > 0 ? "What they've guided" : "How it's been running"}</p>
-      <ul className="flex flex-col gap-1.5">
-        {earnings.lines.map((line, i) => (
-          <li key={i} className="min-w-0 text-[11px] leading-snug">
-            <a href={`#${line.sectionId}`} className="block min-w-0 break-words hover:underline">
-              <span className="text-muted-foreground">
-                {line.segment ? `${line.segment} ` : ""}
-                {line.metricLabel}
-                {line.horizonLabel ? ` · ${line.horizonLabel}` : ""}
-              </span>
-              <span className="line-clamp-2 font-semibold text-foreground">{line.valueLabel}</span>
-            </a>
-          </li>
+    <li className={rowGridClass}>
+      <span className="text-[13px] font-medium text-foreground">{label}</span>
+      <span className="justify-self-end sm:order-last">
+        <a href={`#${line.sectionId}`} className={cn(metaClass, "hover:text-foreground hover:underline")}>
+          Guide
+        </a>
+      </span>
+      <span className="col-span-2 line-clamp-2 text-[18px] font-semibold tabular-nums leading-tight text-foreground sm:col-span-1">
+        {line.valueLabel}
+      </span>
+      <span className="col-span-2 font-mono text-[11px] text-muted-foreground sm:col-span-1">
+        {line.horizonLabel ? `for ${line.horizonLabel}` : "horizon not stated"}
+      </span>
+    </li>
+  );
+}
+
+function TrailRow({ view }: { view: QuarterExpectationView }) {
+  const { baseline } = view;
+  if (!baseline.ok) {
+    const miss = baseline.miss;
+    return (
+      <li className={rowGridClass}>
+        <span className="text-[13px] font-medium text-foreground">ConcallScore</span>
+        <span className="justify-self-end sm:order-last">
+          <span className={metaClass}>4Q avg</span>
+        </span>
+        <span className="col-span-2 font-mono text-[11px] text-muted-foreground sm:col-span-2">
+          {miss.reason === "too_few"
+            ? `Trail too short to read — ${miss.scoredQuarters === 0 ? "no" : miss.scoredQuarters} scored ${miss.scoredQuarters === 1 ? "quarter" : "quarters"}, four needed.`
+            : `Trail too old to read — last scored ${miss.latestLabel}.`}
+        </span>
+      </li>
+    );
+  }
+  const { value } = baseline;
+  const first = value.quarters[0]?.label;
+  const last = value.quarters[value.quarters.length - 1]?.label;
+  return (
+    <li className={rowGridClass}>
+      <span className="text-[13px] font-medium text-foreground">ConcallScore</span>
+      <span className="justify-self-end sm:order-last">
+        <span className={metaClass}>4Q avg</span>
+      </span>
+      <span className="col-span-2 text-[18px] font-semibold tabular-nums leading-tight text-foreground sm:col-span-1">
+        {value.low.toFixed(1)}
+        {EN_DASH}
+        {value.high.toFixed(1)}
+      </span>
+      <span className="col-span-2 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:col-span-1">
+        <span className="text-[15px] font-semibold tabular-nums leading-tight text-foreground/85">
+          {value.baseline.toFixed(1)} ± {value.band.toFixed(1)}
+        </span>
+        <span className="font-mono text-[11px] text-muted-foreground">
+          {BANDS[bandForScore(value.baseline)].label} · {first}
+          {EN_DASH}
+          {last}
+        </span>
+      </span>
+    </li>
+  );
+}
+
+function Expectations({ view }: { view: QuarterExpectationView }) {
+  const { earnings, target } = view;
+  const rows = earnings?.rows ?? [];
+  // A text line stands in only for a family the table could not size from a
+  // guide (no year-ago print, or a yield guide — which has no row).
+  const guidedFamilies = new Set(rows.filter((r) => r.sectionId).map((r) => ROW_FAMILY[r.key]));
+  const lines = (earnings?.lines ?? []).filter((l) => !guidedFamilies.has(l.family));
+  const heading = earnings?.yearAgoLabel ? `Expectations · ${target.label} vs ${earnings.yearAgoLabel}` : `Expectations · ${target.label}`;
+  const notes: string[] = [];
+  if (rows.some((r) => r.source === "guide" || r.source === "guide_run_rate") || lines.length > 0) {
+    notes.push("Guides are for the year; how the quarter phases is yours to judge.");
+  }
+  if (rows.some((r) => r.source === "run_rate" || r.source === "guide_run_rate") && earnings?.runRate) {
+    notes.push(`Run-rate is the average of the last ${earnings.runRate.yoyPairs} quarters' YoY, to ${earnings.runRate.latestLabel}.`);
+  }
+  if (rows.some((r) => r.source === "implied")) notes.push("Implied rows are revenue × margin.");
+  if (earnings?.basis) notes.push(`Figures from Screener, ${earnings.basis}.`);
+  notes.push("The score reads the call after it happens.");
+  return (
+    <div className="flex flex-col gap-1">
+      <p className={eyebrowClass}>{heading}</p>
+      <ul className="flex flex-col divide-y divide-border/30 border-y border-border/30">
+        {rows.map((row) => (
+          <ExpectationRowView key={row.key} row={row} />
         ))}
+        {lines.map((line, i) => (
+          <GuideLineView key={`line-${i}`} line={line} />
+        ))}
+        <TrailRow view={view} />
       </ul>
-      {earnings.implied ? (
-        <p className="border-t border-border/30 pt-1.5 text-[11px] leading-snug text-muted-foreground">
-          If the guide holds for {view.target.label}:{" "}
-          <span className="font-semibold tabular-nums text-foreground">
-            ₹{fmtCr(earnings.implied.revenueLoCr)}
-            {earnings.implied.revenueHiCr !== earnings.implied.revenueLoCr ? `–${fmtCr(earnings.implied.revenueHiCr)}` : ""} cr
-          </span>{" "}
-          revenue
-          {earnings.implied.opmLo != null ? (
-            <>
-              {" "}
-              at{" "}
-              <span className="font-semibold tabular-nums text-foreground">
-                {earnings.implied.opmLo}
-                {earnings.implied.opmHi != null && earnings.implied.opmHi !== earnings.implied.opmLo ? `–${earnings.implied.opmHi}` : ""}% OPM
-              </span>
-            </>
-          ) : null}{" "}
-          <span className="text-muted-foreground/80">
-            ({earnings.implied.yearAgoLabel} ₹{fmtCr(earnings.implied.yearAgoRevenueCr)} cr × {fmtPct(earnings.implied.guidePctLo)}
-            {earnings.implied.guidePctHi !== earnings.implied.guidePctLo ? `–${fmtPct(earnings.implied.guidePctHi)}` : ""})
-          </span>
-        </p>
-      ) : null}
-      {earnings.runRate ? (
-        <p className={cn("text-[11px] leading-snug text-muted-foreground", !earnings.implied && "border-t border-border/30 pt-1.5")}>
-          Run-rate to {earnings.runRate.latestLabel}:{" "}
-          <span className="font-semibold tabular-nums text-foreground">{fmtPct(earnings.runRate.revenueYoyPct)} YoY</span> revenue
-          {earnings.runRate.opmPct != null ? (
-            <>
-              {" "}
-              at <span className="font-semibold tabular-nums text-foreground">{earnings.runRate.opmPct}% OPM</span>
-            </>
-          ) : null}
-          <span className="text-muted-foreground/80">
-            {" "}
-            (last {earnings.runRate.yoyPairs} quarters)
-          </span>
-        </p>
-      ) : null}
-      <p className="text-[10px] leading-snug text-muted-foreground/80">
-        {earnings.lines.length > 0 ? "Issuer guide. Guides are for the year; how the quarter phases is yours to judge." : null}
-        {earnings.basis ? `${earnings.lines.length > 0 ? " " : ""}Figures from Screener, ${earnings.basis}.` : null}
-      </p>
+      <p className="pt-1 text-[10px] leading-snug text-muted-foreground/80">{notes.join(" ")}</p>
     </div>
   );
 }
 
-const fmtCr = (n: number) => n.toLocaleString("en-IN", { maximumFractionDigits: 0 });
-const fmtPct = (n: number) => `${n > 0 ? "+" : ""}${Number.isInteger(n) ? n : n.toFixed(1)}%`;
+// ---------------------------------------------------------------------------
+// Card
+// ---------------------------------------------------------------------------
 
 export function QuarterExpectationCard({
   view,
   setup,
-  lastQuarter,
 }: {
   view: QuarterExpectationView;
   setup: ExpectationSetup;
-  lastQuarter: { label: string; rationale: RationaleLine[] } | null;
+  /** Kept for the caller; the last call's negative read now arrives as the "fix" item. */
+  lastQuarter?: { label: string; rationale: RationaleLine[] } | null;
 }) {
   if (view.state === "landed") return null;
   const today = istToday();
@@ -342,7 +441,7 @@ export function QuarterExpectationCard({
 
   if (view.empty) {
     return (
-      <div className={`${nestedDetailClass} flex flex-wrap items-center gap-2 px-4 py-3`}>
+      <div className="flex flex-wrap items-center gap-2 rounded-md border border-border/25 bg-background/45 px-4 py-3">
         <p className="text-[11px] text-muted-foreground">
           <span className={eyebrowClass}>{title}</span>
           {" — results date not announced; nothing flagged going in."}
@@ -352,24 +451,18 @@ export function QuarterExpectationCard({
     );
   }
 
-  const hasRail = true; // the trail block always renders (a miss is still a read)
   return (
-    <section aria-label={title} className={`${elevatedBlockClassFromSm} flex flex-col gap-3 sm:p-2.5`}>
-      <div className="flex flex-col gap-1 px-0.5">
+    <section aria-label={title} className={`${elevatedBlockClassFromSm} flex flex-col gap-4 sm:p-4`}>
+      <div className="flex flex-col gap-1.5 border-b border-border/30 pb-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-400/80" />
-          <p className={cn(eyebrowClass, "text-foreground")}>{title}</p>
+          <span className="h-2 w-2 rounded-full bg-amber-400" />
+          <h3 className="text-[15px] font-semibold leading-tight text-foreground">{title}</h3>
           <SetupChips setup={setup} />
         </div>
         <DateLine view={view} today={today} />
       </div>
-      <div className={cn("grid grid-cols-1 gap-3", hasRail && "lg:grid-cols-[7fr_5fr] lg:items-start")}>
-        <ListenFor updates={view.updates} />
-        <div className="flex min-w-0 flex-col gap-3">
-          <TrailBlock view={view} lastQuarter={lastQuarter} />
-          <GuideBlock view={view} />
-        </div>
-      </div>
+      <WhatCouldBeMajor updates={view.updates} />
+      <Expectations view={view} />
     </section>
   );
 }
