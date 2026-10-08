@@ -22,7 +22,9 @@ import { getOwnHosts } from "@/lib/attribution";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 import {
+  activeSince,
   aggregateApiMetrics,
+  buildAccountActivity,
   buildActiveVisitors,
   buildLatestWatchlistActivity,
   buildTopSavedCompanies,
@@ -31,6 +33,8 @@ import {
   countUniqueVisitorsBetween,
   emptyApiPerformance,
   formatAverageSavesPerWatchlist,
+  type AccountActivityUser,
+  type ActiveAccountRow,
   type ActiveVisitorPoint,
   type AdminUserSummary,
   type ApiMetricRawRow,
@@ -39,6 +43,7 @@ import {
   type FeedbackRequestRow,
   type LatestWatchlistActivityRow,
   type RequestType,
+  type SessionActivityRow,
   type TopSavedCompanyRow,
   type VisitorEventRow,
   type WatchlistItemRow,
@@ -142,10 +147,13 @@ async function listAccounts(
   total: number;
   rows: AccountRow[];
   usersById: Map<string, AdminUserSummary>;
+  /** Every account, for the activity read. */
+  users: AccountActivityUser[];
 }> {
   const perPage = 100;
   let page = 1;
   const all: AccountRow[] = [];
+  const users: AccountActivityUser[] = [];
   const usersById = new Map<string, AdminUserSummary>();
 
   while (true) {
@@ -158,6 +166,13 @@ async function listAccounts(
         displayName: getUserDisplayName(user.user_metadata),
       });
       all.push({ id: user.id, email: user.email ?? null, created_at: user.created_at });
+      users.push({
+        id: user.id,
+        email: user.email ?? null,
+        displayName: getUserDisplayName(user.user_metadata),
+        createdAt: user.created_at,
+        lastSignInAt: user.last_sign_in_at ?? null,
+      });
     }
     if (!result.data.nextPage || result.data.users.length === 0) break;
     page = result.data.nextPage;
@@ -176,7 +191,7 @@ async function listAccounts(
           return t >= priorMs && t < startMs;
         }).length;
 
-  return { count: inWindow.length, prior, total: all.length, rows: inWindow, usersById };
+  return { count: inWindow.length, prior, total: all.length, rows: inWindow, usersById, users };
 }
 
 async function fetchCompanyNames(supabase: Client): Promise<CompanyNameRow[]> {
@@ -241,15 +256,58 @@ export type AccountsData = {
   created: Delta;
   total: number;
   rows: AccountRow[];
+  /** Accounts whose last activity falls in the range, newest first. */
+  active: ActiveAccountRow[];
+  /** Accounts with any recorded activity at all. */
+  everActive: number;
+  /**
+   * Whether the session signal was read. `missing` = the
+   * admin_account_activity function is not applied; `error` carries any
+   * other failure. Either way "last active" falls back to sign-ins and
+   * watchlist writes.
+   */
+  sessionSignal: { state: "ok" } | { state: "missing" } | { state: "error"; message: string };
 };
+
+/**
+ * Latest session activity per account, via the service-role-only RPC in
+ * lib/supabase/admin_account_activity.sql. Never throws: a missing function
+ * degrades the page to the weaker signals instead of blanking it.
+ */
+async function fetchSessionActivity(
+  supabase: Client,
+): Promise<{ rows: SessionActivityRow[] | null; signal: AccountsData["sessionSignal"] }> {
+  const { data, error } = await supabase.rpc("admin_account_activity");
+  if (!error) return { rows: (data ?? []) as SessionActivityRow[], signal: { state: "ok" } };
+  // PGRST202 = function not found in the schema cache (not applied, or no reload).
+  if (error.code === "PGRST202") return { rows: null, signal: { state: "missing" } };
+  return { rows: null, signal: { state: "error", message: error.message } };
+}
 
 export async function getAccountsData(window: RangeWindow): Promise<AccountsData> {
   const supabase = createAdminClient();
-  const accounts = await listAccounts(supabase, window);
+  const [accounts, sessions, watchlists, items] = await Promise.all([
+    listAccounts(supabase, window),
+    fetchSessionActivity(supabase),
+    supabase.from("watchlists").select("id, user_id, created_at"),
+    fetchWatchlistItems(supabase, null),
+  ]);
+  if (watchlists.error) throw watchlists.error;
+
+  const activity = buildAccountActivity({
+    users: accounts.users,
+    sessions: sessions.rows,
+    watchlists: (watchlists.data ?? []) as { id: number; user_id: string | null; created_at: string | null }[],
+    items,
+  });
+
   return {
     created: computeDelta(accounts.count, accounts.prior),
     total: accounts.total,
     rows: accounts.rows.slice(0, 100),
+    active: activeSince(activity, window.startIso).slice(0, 200),
+    everActive: activity.length,
+    sessionSignal: sessions.signal,
   };
 }
 

@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 
 import { ageHours, describeAge, freshnessTone, type FreshnessFeed } from "../lib/admin/freshness";
 import {
+  activeSince,
   aggregateApiMetrics,
+  buildAccountActivity,
   buildActiveVisitors,
   computeDelta,
   countRequestsByType,
@@ -187,5 +189,65 @@ assert.equal(
   "fresh",
   "no cadence → never flagged",
 );
+
+// ── account activity ─────────────────────────────────────────────────────────
+
+{
+  const user = (id: string, lastSignInAt: string | null) => ({
+    id,
+    email: `${id}@x.in`,
+    displayName: null,
+    createdAt: "2026-09-01T00:00:00.000Z",
+    lastSignInAt,
+  });
+  const users = [
+    user("visitor", "2026-09-10T00:00:00.000Z"), // signed in long ago, visited this morning
+    user("signer", "2026-10-06T00:00:00.000Z"), // fresh sign-in, no session row
+    user("saver", "2026-09-01T00:00:00.000Z"), // old sign-in, saved a company yesterday
+    user("tie", "2026-10-05T00:00:00.000Z"), // session and sign-in at the same instant
+    user("ghost", null), // never signed in, nothing else
+  ];
+  const sessions = [
+    { user_id: "visitor", last_active_at: "2026-10-07T03:00:00.000Z", session_count: 2 },
+    { user_id: "tie", last_active_at: "2026-10-05T00:00:00.000Z", session_count: 1 },
+    { user_id: "stranger", last_active_at: "2026-10-07T05:00:00.000Z", session_count: 1 }, // not an account
+    { user_id: null, last_active_at: "2026-10-07T05:00:00.000Z", session_count: 1 },
+  ];
+  const watchlists = [
+    { id: 1, user_id: "saver", created_at: "2026-09-02T00:00:00.000Z" },
+    { id: 2, user_id: "visitor", created_at: "2026-09-12T00:00:00.000Z" },
+  ];
+  const items = [
+    { watchlist_id: 1, created_at: "2026-10-06T12:00:00.000Z" },
+    { watchlist_id: 1, created_at: "2026-09-03T00:00:00.000Z" },
+    { watchlist_id: 2, created_at: "2026-09-13T00:00:00.000Z" },
+    { watchlist_id: 99, created_at: "2026-10-07T05:59:00.000Z" }, // orphan list: ignored
+  ];
+
+  const rows = buildAccountActivity({ users, sessions, watchlists, items });
+  assert.deepEqual(
+    rows.map((r) => [r.id, r.source, r.lastActiveAt, r.saves]),
+    [
+      ["visitor", "session", "2026-10-07T03:00:00.000Z", 1],
+      ["saver", "watchlist", "2026-10-06T12:00:00.000Z", 2],
+      ["signer", "sign_in", "2026-10-06T00:00:00.000Z", 0],
+      ["tie", "session", "2026-10-05T00:00:00.000Z", 0],
+    ],
+    "newest signal wins, ties go to the session, sorted newest first, never-active accounts dropped",
+  );
+
+  // Without the session RPC the visitor falls back to their watchlist write.
+  const fallback = buildAccountActivity({ users, sessions: null, watchlists, items });
+  assert.equal(fallback.find((r) => r.id === "visitor")?.source, "watchlist");
+  assert.equal(fallback.find((r) => r.id === "visitor")?.lastActiveAt, "2026-09-13T00:00:00.000Z");
+  assert.equal(fallback.find((r) => r.id === "tie")?.source, "sign_in");
+
+  assert.deepEqual(
+    activeSince(rows, "2026-10-06T00:00:00.000Z").map((r) => r.id),
+    ["visitor", "saver", "signer"],
+    "the window start is inclusive",
+  );
+  assert.equal(activeSince(rows, null).length, 4, "All time keeps every active account");
+}
 
 console.log("admin-metrics: ok");
