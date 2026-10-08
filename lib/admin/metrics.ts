@@ -500,3 +500,124 @@ export function formatIst(value: string | null | undefined, now: Date = new Date
 export function formatCount(value: number): string {
   return value.toLocaleString("en-IN");
 }
+
+// ── Account activity ─────────────────────────────────────────────────────────
+//
+// "Last active" for an account is the newest of three signals, because page
+// views are anonymous (visitor_id only) and carry no account:
+//   session   — the newest auth session refresh (admin_account_activity RPC).
+//               The middleware rotates the access token on any page load once
+//               it has expired, so this is the last visit to within ~1 hour.
+//   sign_in   — auth.users.last_sign_in_at. Only moves on a fresh sign-in;
+//               most readers stay signed in, so on its own it reads stale.
+//   watchlist — the account's newest watchlist created or company saved.
+// Ties go to the stronger signal, in that order.
+
+export type ActivitySource = "session" | "sign_in" | "watchlist";
+
+export const ACTIVITY_SOURCE_LABELS: Record<ActivitySource, string> = {
+  session: "visit",
+  sign_in: "sign-in",
+  watchlist: "watchlist",
+};
+
+export type AccountActivityUser = {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+  createdAt: string;
+  lastSignInAt: string | null;
+};
+
+export type SessionActivityRow = {
+  user_id: string | null;
+  last_active_at: string | null;
+  session_count: number | null;
+};
+
+export type ActiveAccountRow = {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+  createdAt: string;
+  lastActiveAt: string;
+  source: ActivitySource;
+  /** Companies across the account's watchlists. */
+  saves: number;
+};
+
+function laterOf(a: string | null, b: string | null | undefined): string | null {
+  if (!b) return a;
+  const bMs = Date.parse(b);
+  if (!Number.isFinite(bMs)) return a;
+  if (!a) return b;
+  return bMs > Date.parse(a) ? b : a;
+}
+
+export function buildAccountActivity({
+  users,
+  sessions,
+  watchlists,
+  items,
+}: {
+  users: AccountActivityUser[];
+  /** null = the session signal is unavailable (RPC not applied). */
+  sessions: SessionActivityRow[] | null;
+  watchlists: { id: number; user_id: string | null; created_at: string | null }[];
+  items: { watchlist_id: number | null; created_at: string | null }[];
+}): ActiveAccountRow[] {
+  const sessionAt = new Map<string, string | null>();
+  for (const row of sessions ?? []) {
+    if (!row.user_id) continue;
+    sessionAt.set(row.user_id, laterOf(sessionAt.get(row.user_id) ?? null, row.last_active_at));
+  }
+
+  const ownerOf = new Map<number, string>();
+  const watchlistAt = new Map<string, string | null>();
+  const saves = new Map<string, number>();
+  for (const w of watchlists) {
+    if (!w.user_id) continue;
+    ownerOf.set(w.id, w.user_id);
+    watchlistAt.set(w.user_id, laterOf(watchlistAt.get(w.user_id) ?? null, w.created_at));
+  }
+  for (const item of items) {
+    const owner = item.watchlist_id != null ? ownerOf.get(item.watchlist_id) : undefined;
+    if (!owner) continue;
+    saves.set(owner, (saves.get(owner) ?? 0) + 1);
+    watchlistAt.set(owner, laterOf(watchlistAt.get(owner) ?? null, item.created_at));
+  }
+
+  const rows: ActiveAccountRow[] = [];
+  for (const user of users) {
+    const candidates: [ActivitySource, string | null | undefined][] = [
+      ["session", sessionAt.get(user.id)],
+      ["sign_in", user.lastSignInAt],
+      ["watchlist", watchlistAt.get(user.id)],
+    ];
+    let best: { source: ActivitySource; at: string } | null = null;
+    for (const [source, at] of candidates) {
+      if (!at || !Number.isFinite(Date.parse(at))) continue;
+      // Strictly later only, so a tie keeps the stronger signal listed first.
+      if (!best || Date.parse(at) > Date.parse(best.at)) best = { source, at };
+    }
+    if (!best) continue; // never signed in, no session, no watchlist
+    rows.push({
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      createdAt: user.createdAt,
+      lastActiveAt: best.at,
+      source: best.source,
+      saves: saves.get(user.id) ?? 0,
+    });
+  }
+
+  return rows.sort((a, b) => Date.parse(b.lastActiveAt) - Date.parse(a.lastActiveAt));
+}
+
+/** Accounts whose last activity falls on or after `startIso` (all of them on All time). */
+export function activeSince(rows: ActiveAccountRow[], startIso: string | null): ActiveAccountRow[] {
+  if (!startIso) return rows;
+  const start = Date.parse(startIso);
+  return rows.filter((row) => Date.parse(row.lastActiveAt) >= start);
+}
