@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import {
   ADMIN_ACCESS_COOKIE,
-  ADMIN_ACCESS_COOKIE_VALUE,
+  ADMIN_SESSION_SECONDS,
+  createAdminAccessToken,
   isValidAdminPasscode,
 } from "@/lib/admin-auth";
 import { withRouteMetric } from "@/lib/api-metrics";
@@ -28,12 +29,23 @@ async function handlePOST(request: Request) {
       );
     }
 
+    // Signed with the passcode + service-role key (lib/admin-auth.ts); null
+    // only when the service-role key is missing, which /admin can't run without.
+    const token = createAdminAccessToken();
+    if (!token) {
+      logger.error("admin/login: cannot sign the access cookie — SUPABASE_SERVICE_ROLE_KEY missing");
+      return NextResponse.json(
+        { ok: false, error: "Server is missing SUPABASE_SERVICE_ROLE_KEY." },
+        { status: 500 }
+      );
+    }
+
     const response = NextResponse.json({ ok: true });
-    response.cookies.set(ADMIN_ACCESS_COOKIE, ADMIN_ACCESS_COOKIE_VALUE, {
+    response.cookies.set(ADMIN_ACCESS_COOKIE, token, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 12,
+      maxAge: ADMIN_SESSION_SECONDS,
       path: "/",
     });
     return response;
