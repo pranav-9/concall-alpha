@@ -19,12 +19,15 @@ import {
 } from "@/lib/guidance-snapshot/types";
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 import type { KeyVariablesSnapshotRow } from "@/lib/key-variables-snapshot/types";
+import { fiscalQuarterFromIndex } from "@/lib/announcement-tape";
+import { categoryLabel, coerceImpact } from "@/lib/exchange-desk/types";
 import type { QuarterExpectationData } from "@/lib/quarter-expectation/build";
 import { buildExpectedEarnings } from "@/lib/quarter-expectation/earnings";
 import {
   quarterCalendarRowSchema,
   quarterlyFinancialsRowSchema,
   type ExpectationCalendar,
+  type ExpectationFiling,
   type QuarterlyFinancialsRow,
 } from "@/lib/quarter-expectation/types";
 import { buildExpectedUpdates, parseRationaleLines } from "@/lib/quarter-expectation/updates";
@@ -159,7 +162,11 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
   const supabase = await createClient();
   // The quarter in reporting season — the one the expectation card is about.
   const target = currentReportingQuarter();
-  const [{ data, error }, { data: keyVarData }, growthResult, calendarResult, guidanceSnapshotRow, financialsResult] =
+  // Material filings inside the target quarter's window feed the "What could
+  // be major" list: the one strongest filing (order win, capex, rating cut)
+  // since the quarter began. announcement-tape's fiscal index is fy*4+(q-1).
+  const filingsFrom = `${fiscalQuarterFromIndex(target.fy * 4 + (target.qtr - 1)).startDate}T00:00:00+05:30`;
+  const [{ data, error }, { data: keyVarData }, growthResult, calendarResult, guidanceSnapshotRow, financialsResult, filingsResult] =
     await Promise.all([
       supabase
         .from("concall_analysis")
@@ -211,9 +218,22 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
         .order("fy", { ascending: false })
         .order("qtr", { ascending: false })
         .limit(12),
+      supabase
+        .from("bse_announcements")
+        .select("announcement_id, filed_at, summary, category, impact")
+        .eq("company_code", overview.company_code)
+        .eq("is_material", true)
+        .in("impact", ["transformative", "positive", "negative", "severe"])
+        .gte("filed_at", filingsFrom)
+        .lte("filed_at", new Date().toISOString())
+        .order("filed_at", { ascending: false })
+        .limit(10),
     ]);
 
   if (error) throw error;
+  if (filingsResult.error) {
+    logger.warn("concall-score: bse_announcements read failed", { error: filingsResult.error });
+  }
   if (financialsResult.error) {
     logger.warn("concall-score: quarterly_financials read failed", { error: financialsResult.error });
   }
@@ -281,6 +301,19 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
     const parsed = quarterlyFinancialsRowSchema.safeParse(row);
     return parsed.success ? [parsed.data] : [];
   });
+  const filings: ExpectationFiling[] = (filingsResult.data ?? []).flatMap((row) => {
+    const r = row as { announcement_id?: unknown; filed_at?: unknown; summary?: unknown; category?: unknown; impact?: unknown };
+    if (typeof r.announcement_id !== "string" || typeof r.filed_at !== "string" || typeof r.summary !== "string") return [];
+    return [
+      {
+        id: r.announcement_id,
+        filedAt: r.filed_at,
+        summary: r.summary,
+        category: typeof r.category === "string" ? r.category : "business_update",
+        impact: coerceImpact(typeof r.impact === "string" ? r.impact : null),
+      },
+    ];
+  });
   const expectation: QuarterExpectationData = {
     target,
     calendar,
@@ -292,6 +325,8 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
       variables: keyVarSnapshot?.fullVariableList ?? [],
       deepVariables: keyVarSnapshot?.deepTreatment ?? [],
       lastRationale: parseRationaleLines(detailQuarters[0]?.details ?? null),
+      filings,
+      filingCategoryLabel: categoryLabel,
     }),
   };
 

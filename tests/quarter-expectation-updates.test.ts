@@ -279,3 +279,79 @@ assert.equal(catalystFit("next 12–18 months", TARGET), 0);
 }
 
 console.log("quarter-expectation-updates: ok");
+
+// ---------------------------------------------------------------------------
+// Lean, dates and the filing kind
+// ---------------------------------------------------------------------------
+import { pickFiling } from "../lib/quarter-expectation/updates";
+import type { ExpectationFiling } from "../lib/quarter-expectation/types";
+
+const filing = (overrides: Partial<ExpectationFiling> = {}): ExpectationFiling => ({
+  id: `a${nextId++}`,
+  filedAt: "2026-09-18T10:30:00+05:30",
+  summary: "Order book crosses ₹900 cr on a ₹120 cr transmission order",
+  category: "order_win",
+  impact: "positive",
+  ...overrides,
+});
+
+// Every kind carries a lean: due-now is open, overdue is downside, a raised
+// live guide is upside, a catalyst is upside, a watch trigger is open, last
+// call's negative is downside. Nothing but a filing is dated.
+{
+  const out = build({
+    guidanceItems: [quarterItem("Q2 FY27", { metricLabel: "Due now" }), quarterItem("Q1 FY27", { metricLabel: "Overdue" })],
+    catalysts: [catalyst({ timing: "FY27" })],
+    variables: [variable({ watchFor: "x" })],
+    lastRationale: [{ direction: "negative", heading: "Fix me", detail: "" }],
+  });
+  assert.deepEqual(
+    out.map((u) => [u.kind, u.lean]),
+    [["due", "open"], ["due", "downside"], ["catalyst", "upside"], ["variable", "open"], ["fix", "downside"]],
+  );
+  assert.ok(out.every((u) => u.dated === null));
+}
+
+// A filing lands second, after due items, with its IST date, its lean from
+// the impact tier and the category label the caller supplies.
+{
+  const out = build({
+    guidanceItems: [quarterItem("Q2 FY27", { metricLabel: "Due now" })],
+    filings: [filing()],
+    filingCategoryLabel: (c) => (c === "order_win" ? "Order win" : c),
+    catalysts: [catalyst({ timing: "FY27" })],
+  });
+  assert.deepEqual(out.map((u) => u.kind), ["due", "filing", "catalyst"]);
+  const f = out[1];
+  assert.equal(f.lean, "upside");
+  assert.equal(f.dated, "2026-09-18");
+  assert.equal(f.detail, "Order win");
+  assert.equal(f.sectionId, "company-announcements");
+  assert.equal(f.heading, "Order book crosses ₹900 cr on a ₹120 cr transmission order");
+  // A filing stamped 23:30 UTC is the next day in IST.
+  const late = build({ filings: [filing({ filedAt: "2026-09-18T23:30:00Z" })] });
+  assert.equal(late[0].dated, "2026-09-19");
+  // Adverse filings lean downside and take the caution tone.
+  const bad = build({ filings: [filing({ impact: "severe" })] });
+  assert.equal(bad[0].lean, "downside");
+  assert.equal(bad[0].tone, "caution");
+  // A long summary is clipped to a heading.
+  const long = build({ filings: [filing({ summary: "y".repeat(200) })] });
+  assert.equal(long[0].heading.length, 90);
+  assert.ok(long[0].heading.endsWith("…"));
+}
+
+// One filing at most: strongest impact wins, newest on a tie; neutral and
+// empty summaries never qualify.
+{
+  assert.equal(pickFiling([]), null);
+  assert.equal(pickFiling([filing({ impact: "neutral" }), filing({ summary: "  " })]), null);
+  const older = filing({ id: "old", filedAt: "2026-08-01T09:00:00+05:30" });
+  const newer = filing({ id: "new", filedAt: "2026-09-01T09:00:00+05:30" });
+  const big = filing({ id: "big", filedAt: "2026-07-01T09:00:00+05:30", impact: "transformative" });
+  assert.equal(pickFiling([older, newer])!.id, "new");
+  assert.equal(pickFiling([newer, big, older])!.id, "big");
+  assert.equal(build({ filings: [older, newer, big] }).filter((u) => u.kind === "filing").length, 1);
+}
+
+console.log("quarter-expectation-updates (lean + filing): ok");

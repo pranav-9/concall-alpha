@@ -90,7 +90,7 @@ const calendar = (resultsDate: string | null) => ({
   // So is a single listen-for item.
   assert.equal(
     buildQuarterExpectationView(
-      data({ updates: [{ kind: "variable", heading: "x", detail: null, sectionId: "key-variables", tone: "neutral" }] }),
+      data({ updates: [{ kind: "variable", heading: "x", detail: null, sectionId: "key-variables", tone: "neutral", lean: "open", dated: null }] }),
       [],
       TODAY,
     ).empty,
