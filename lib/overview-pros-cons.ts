@@ -691,3 +691,40 @@ export function rankProsCons(candidates: ProsConsItem[], limit = PROS_CONS_LIMIT
 export function buildProsCons(inputs: ProsConsInputs): ProsCons {
   return rankProsCons(collectProsConsCandidates(inputs));
 }
+
+// ---- The lean -------------------------------------------------------------------
+
+export type ProsConsLeanTone = "good" | "even" | "bad";
+
+export type ProsConsLean = {
+  /** The good side's share of the ranked weight, 0–100. */
+  score: number;
+  word: string;
+  tone: ProsConsLeanTone;
+};
+
+// Read top-down: the first band the score reaches.
+export const PROS_CONS_LEAN_BANDS: { min: number; word: string; tone: ProsConsLeanTone }[] = [
+  { min: 80, word: "Clearly good", tone: "good" },
+  { min: 60, word: "Leans good", tone: "good" },
+  { min: 41, word: "Evenly split", tone: "even" },
+  { min: 21, word: "Leans bad", tone: "bad" },
+  { min: 0, word: "Clearly bad", tone: "bad" },
+];
+
+/**
+ * Which way the ranked list leans: the good items' weight as a share of all
+ * the weight on the board, 0–100. It reads the SAME weights that order the
+ * rows, so a company with one heavy red flag against three light strengths
+ * leans bad even though the good column is longer. Null when neither side
+ * has anything (the row is left out then anyway).
+ */
+export function leanProsCons(prosCons: ProsCons): ProsConsLean | null {
+  const sum = (items: ProsConsItem[]) => items.reduce((total, item) => total + item.weight, 0);
+  const good = sum(prosCons.good);
+  const bad = sum(prosCons.bad);
+  if (good + bad <= 0) return null;
+  const score = Math.round((good / (good + bad)) * 100);
+  const band = PROS_CONS_LEAN_BANDS.find((b) => score >= b.min) ?? PROS_CONS_LEAN_BANDS[PROS_CONS_LEAN_BANDS.length - 1];
+  return { score, word: band.word, tone: band.tone };
+}

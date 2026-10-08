@@ -5,6 +5,8 @@ import type { CompanyQualityV1, QualityFiscalYear } from "../lib/company-quality
 import {
   buildProsCons,
   collectProsConsCandidates,
+  leanProsCons,
+  PROS_CONS_LEAN_BANDS,
   PROS_CONS_LIMIT,
   PROS_CONS_SOURCES,
   rankProsCons,
@@ -373,6 +375,34 @@ assert.deepEqual(stage("unclear"), []);
   assert.deepEqual(ids(ranked.bad), ["forensics:a", "forensics:b", "moat:x", "valuation:z"]);
   assert.deepEqual(ranked.good, []);
   assert.equal(rankProsCons([item("moat:x", "moat", 70)], 0).bad.length, 0);
+}
+
+// ── The lean: the good side's share of the ranked weight ────────────────────
+
+{
+  const lean = (goods: number[], bads: number[]) =>
+    leanProsCons({
+      good: goods.map((weight, i) => ({ id: `g${i}`, side: "good", source: "moat", weight, claim: "", evidence: null })),
+      bad: bads.map((weight, i) => ({ id: `b${i}`, side: "bad", source: "moat", weight, claim: "", evidence: null })),
+    });
+  assert.equal(lean([], []), null, "nothing on either side: no lean");
+  // The screenshot case: 82 + 70 + 60 + 56 + 53 good against 52 + 46 + 38 + 37 bad.
+  assert.deepEqual(lean([82, 70, 60, 56, 53], [52, 46, 38, 37]), { score: 65, word: "Leans good", tone: "good" });
+  // One heavy flag outweighs three light strengths even though the good column is longer.
+  assert.deepEqual(lean([46, 42, 40], [96, 90]), { score: 41, word: "Evenly split", tone: "even" });
+  assert.deepEqual(lean([46, 42], [96, 90]), { score: 32, word: "Leans bad", tone: "bad" });
+  assert.deepEqual(lean([70], []), { score: 100, word: "Clearly good", tone: "good" });
+  assert.deepEqual(lean([], [34]), { score: 0, word: "Clearly bad", tone: "bad" });
+  assert.deepEqual(lean([50], [50]), { score: 50, word: "Evenly split", tone: "even" });
+  assert.equal(lean([80], [20])?.word, "Clearly good");
+  assert.equal(lean([79], [21])?.word, "Leans good");
+  assert.equal(lean([20], [80])?.word, "Clearly bad");
+  assert.equal(lean([21], [79])?.word, "Leans bad");
+  // Bands are contiguous from 0 and read top-down.
+  assert.equal(PROS_CONS_LEAN_BANDS[PROS_CONS_LEAN_BANDS.length - 1].min, 0);
+  for (let i = 1; i < PROS_CONS_LEAN_BANDS.length; i += 1) {
+    assert.ok(PROS_CONS_LEAN_BANDS[i - 1].min > PROS_CONS_LEAN_BANDS[i].min);
+  }
 }
 
 // Every source names a label and a tab.
