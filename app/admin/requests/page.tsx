@@ -1,3 +1,4 @@
+import { adminPage } from "@/components/admin/admin-page";
 import { FeedbackRequestsTable } from "@/components/admin/feedback-requests-table";
 import { AdminAlert, AdminShell, AdminStat, AdminStatRow, DATA_LOAD_ERROR } from "@/components/admin/shell";
 import { REQUEST_TYPE_LABELS } from "@/lib/admin/metrics";
@@ -6,7 +7,7 @@ import { parseRange, resolveWindow } from "@/lib/admin/range";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminRequestsPage({
+async function AdminRequestsPage({
   searchParams,
 }: {
   searchParams?: Promise<{ range?: string }>;
@@ -46,3 +47,6 @@ export default async function AdminRequestsPage({
     </AdminShell>
   );
 }
+
+// Gated inside the page, before any query — see components/admin/admin-page.tsx.
+export default adminPage(AdminRequestsPage);

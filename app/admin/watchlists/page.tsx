@@ -1,3 +1,4 @@
+import { adminPage } from "@/components/admin/admin-page";
 import { LatestWatchlistActivityTable } from "@/components/admin/latest-watchlist-activity-table";
 import { RecentWatchlistsTable } from "@/components/admin/recent-watchlists-table";
 import { AdminAlert, AdminShell, AdminStat, AdminStatRow, DATA_LOAD_ERROR } from "@/components/admin/shell";
@@ -7,7 +8,7 @@ import { parseRange, resolveWindow } from "@/lib/admin/range";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminWatchlistsPage({
+async function AdminWatchlistsPage({
   searchParams,
 }: {
   searchParams?: Promise<{ range?: string }>;
@@ -48,3 +49,6 @@ export default async function AdminWatchlistsPage({
     </AdminShell>
   );
 }
+
+// Gated inside the page, before any query — see components/admin/admin-page.tsx.
+export default adminPage(AdminWatchlistsPage);

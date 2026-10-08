@@ -1,3 +1,4 @@
+import { adminPage } from "@/components/admin/admin-page";
 import { ActiveAccountsTable } from "@/components/admin/active-accounts-table";
 import { RecentAccountsTable } from "@/components/admin/recent-accounts-table";
 import { AdminAlert, AdminShell, AdminStat, AdminStatRow, DATA_LOAD_ERROR } from "@/components/admin/shell";
@@ -6,7 +7,7 @@ import { parseRange, rangeLabel, resolveWindow } from "@/lib/admin/range";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminAccountsPage({
+async function AdminAccountsPage({
   searchParams,
 }: {
   searchParams?: Promise<{ range?: string }>;
@@ -67,3 +68,6 @@ export default async function AdminAccountsPage({
     </AdminShell>
   );
 }
+
+// Gated inside the page, before any query — see components/admin/admin-page.tsx.
+export default adminPage(AdminAccountsPage);
