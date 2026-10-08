@@ -7,22 +7,22 @@ import { getCompanyIndustryAnalysis } from "@/lib/company-industry-analysis/get"
 import { buildSubSectorEntries } from "@/lib/company-industry-analysis/view";
 import { normalizeCompanyQuality } from "@/lib/company-quality/normalize";
 import { getCompanyQualityRow } from "@/lib/company-quality/get";
-import type { ForensicTally } from "@/lib/company-quality/types";
 import { currentReportingQuarter } from "@/lib/current-quarter";
 import { getGuidanceSnapshotRow } from "@/lib/guidance-snapshot/get";
 import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
-import { parseForwardStrength, type AmbitionLabel } from "@/lib/guidance-snapshot/types";
+import { parseForwardStrength } from "@/lib/guidance-snapshot/types";
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
 import { buildGrowthSummary } from "@/lib/growth-outlook/summary";
 import { buildGuidanceVerdict } from "@/lib/guidance-tracking/verdict";
 import { computeBoardRanks, COVERAGE_BOARD_SIZE } from "@/lib/leaderboard-rank";
 import { logger } from "@/lib/logger";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
-import type { MoatAnalysisRow, MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
+import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import { getOverallBoardRows } from "@/lib/overall-board";
 import { buildProsCons, type ProsCons, type ProsConsInputs } from "@/lib/overview-pros-cons";
 import { percentileOf } from "@/lib/read-distribution";
 import type { ScorePoint } from "@/lib/score-path";
+import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { createClient } from "@/lib/supabase/server";
 import { buildValuationHeadline, VERDICT_DISPLAY } from "@/lib/valuation-check/headline";
 import {
@@ -33,21 +33,21 @@ import { toValuationScale } from "@/lib/valuation-band";
 import { assessStaleness, normalizeValuationCheck } from "@/lib/valuation-check/normalize";
 import type { ValuationCheckRow } from "@/lib/valuation-check/types";
 import { getWalkTheTalk } from "@/lib/walk-the-talk/get";
-import type { NormalizedWalkTheTalk } from "@/lib/walk-the-talk/types";
 
-// Data for the company overview (redesigned 2026-10-01: a header score strip,
-// The business / The story, three score cards with their paths, three
-// standing reads — moat, forensics, walk the talk — and, since 2026-10-06, the
-// good and the bad, ranked across every section by lib/overview-pros-cons).
+// Data for the company overview (redesigned 2026-10-01, simplified 2026-10-08:
+// a header score strip, one story card, a compact strip of the three scores,
+// and the good and the bad, ranked across every section by
+// lib/overview-pros-cons).
 //
 // The overview cache row (lib/company-overview-cache.ts) already carries the
 // scores, ranks, sector and story. What it does NOT carry is the business
-// one-liner, the score and valuation paths, the growth range, the moat and
-// forensic reads and the walk-the-talk grade. This module fetches those per
-// company, in parallel, and degrades each leg independently: a missing table
-// or a failed query blanks that card, never the page. Every read goes through
-// the same normalizer the section behind it uses, so a card can never say
-// something its section doesn't.
+// one-liner (getOverviewBusinessLine, read beside the cache row so the story
+// card paints whole), the score and valuation paths, the growth base case and
+// the moat / quality / guidance reads the good-and-bad board ranks. This module
+// fetches those per company, in parallel, and degrades each leg independently:
+// a missing table or a failed query blanks that piece, never the page. Every
+// read goes through the same normalizer the section behind it uses, so the
+// overview can never say something its section doesn't.
 
 const toNumber = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
@@ -67,9 +67,7 @@ export type OverviewQuarterRead = {
 };
 
 export type OverviewGrowthRange = {
-  bear: string | null;
   base: string;
-  bull: string | null;
   horizonYears: number | null;
 };
 
@@ -88,17 +86,9 @@ export type OverviewSignalExtras = {
   quarter: OverviewQuarterRead;
   /** Live growth score (the cache can lag a refresh). */
   growthScore: number | null;
-  /** The Growth tab summary's base case + bear/bull range (revenue growth). */
+  /** The Growth tab summary's base case (revenue growth). */
   growthRange: OverviewGrowthRange | null;
   valuation: OverviewValuationRead | null;
-  /** The business snapshot's one-line "what it is". */
-  businessLine: string | null;
-  moat: { rating: MoatRatingKey; tier: MoatTier | null; headline: string | null } | null;
-  /** The Quality tab's forensic tally + its templated headline. */
-  forensics: { tally: ForensicTally; headline: string } | null;
-  walkTheTalk: NormalizedWalkTheTalk | null;
-  /** Deep-track forward-strength ambition, when the snapshot carries it. */
-  guidanceAmbition: AmbitionLabel | null;
   /** The clearly good and clearly bad readings across the sections, top five a side. */
   prosCons: ProsCons;
 };
@@ -165,7 +155,6 @@ export const getOverviewSignalExtras = cache(
       growthRes,
       valuationRes,
       valuationHistoryRes,
-      businessRes,
       moatRes,
       qualityRow,
       walkTheTalk,
@@ -225,19 +214,6 @@ export const getOverviewSignalExtras = cache(
         { data: null },
       ),
       safe(
-        "business",
-        supabase
-          .from("business_snapshot")
-          // Only the two one-liner paths, never the full snapshot payload.
-          .select(
-            "generated_at, about_short:about_company->>about_short, summary_short:business_snapshot->>business_summary_short",
-          )
-          .eq("company", normalizedCode)
-          .order("generated_at", { ascending: false })
-          .limit(1),
-        { data: null },
-      ),
-      safe(
         "moat",
         supabase
           .from("moat_analysis")
@@ -275,12 +251,7 @@ export const getOverviewSignalExtras = cache(
       : null;
     const growthSummary = buildGrowthSummary(growth);
     const growthRange: OverviewGrowthRange | null = growthSummary?.revenueGrowth
-      ? {
-          bear: growthSummary.bearGrowth,
-          base: growthSummary.revenueGrowth,
-          bull: growthSummary.bullGrowth,
-          horizonYears: growthSummary.horizonYears,
-        }
+      ? { base: growthSummary.revenueGrowth, horizonYears: growthSummary.horizonYears }
       : null;
 
     // Valuation — same staleness gate as the section: no verdict past the window.
@@ -311,10 +282,6 @@ export const getOverviewSignalExtras = cache(
       };
     }
 
-    // Business — the snapshot's own one-liner (about_short, else the legacy summary).
-    const businessRow = ((businessRes as { data: Record<string, unknown>[] | null }).data ?? [])[0];
-    const businessLine = str(businessRow?.about_short) ?? str(businessRow?.summary_short);
-
     // Moat — rating + tier + the payload's own headline.
     const moatRow = ((moatRes as { data: MoatAnalysisRow[] | null }).data ?? [])[0];
     const moatNorm = normalizeMoatAnalysis(moatRow ?? null);
@@ -326,18 +293,12 @@ export const getOverviewSignalExtras = cache(
         }
       : null;
 
-    // Forensics — the Quality tab's tally and headline, same normalizer.
+    // Quality — financials, returns and forensic checks, same normalizer as the tab.
     const quality = normalizeCompanyQuality(qualityRow);
-    const qualityForensics = quality?.forensics ?? null;
-    const forensics =
-      qualityForensics && qualityForensics.tally.assessed > 0
-        ? { tally: qualityForensics.tally, headline: qualityForensics.read.headline }
-        : null;
 
-    // Guidance ambition — deep-track forward strength only.
+    // Guidance forward strength — deep-track snapshots only.
     const guidanceSnapshot = normalizeGuidanceSnapshot(guidanceRow);
     const forwardStrength = parseForwardStrength(guidanceSnapshot?.details ?? null);
-    const guidanceAmbition = forwardStrength?.ambition.label ?? null;
     // The Guidance tab's verdict and "met / graded" count, off the same items.
     const guidanceItems = guidanceSnapshot?.guidanceItems ?? [];
     const guidanceVerdict =
@@ -406,15 +367,43 @@ export const getOverviewSignalExtras = cache(
       growthScore,
       growthRange,
       valuation,
-      businessLine,
-      moat,
-      forensics,
-      walkTheTalk: presentWalkTheTalk,
-      guidanceAmbition,
       prosCons,
     };
   },
 );
+
+/**
+ * The business snapshot's own one-liner (about_short, else the legacy summary).
+ * Read on the page's first await, beside the overview cache row, so the story
+ * card — the overview's LCP element on phones — paints business line and story
+ * together instead of growing when the extras land. Two JSON paths only, never
+ * the snapshot payload; best-effort, a failure just drops the line.
+ */
+export const getOverviewBusinessLine = cache(async (code: string): Promise<string | null> => {
+  const normalizedCode = code.trim().toUpperCase();
+  if (!normalizedCode) return null;
+  try {
+    const { data, error } = await createPublicReadClient()
+      .from("business_snapshot")
+      .select(
+        "generated_at, about_short:about_company->>about_short, summary_short:business_snapshot->>business_summary_short",
+      )
+      .eq("company", normalizedCode)
+      .order("generated_at", { ascending: false })
+      .limit(1);
+    if (error) {
+      logger.warn("overview-signal-board: business line failed", {
+        code: normalizedCode,
+        error: error.message,
+      });
+      return null;
+    }
+    const row = (data ?? [])[0] as Record<string, unknown> | undefined;
+    return str(row?.about_short) ?? str(row?.summary_short);
+  } catch {
+    return null;
+  }
+});
 
 export type OverviewBoardPosition = {
   rank: number;
