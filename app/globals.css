@@ -157,6 +157,16 @@
   --warn: #b45309;
   --alarm: #b3261e;
   --mark: #d99b1c;
+  /* Categorical series for house charts (watchlist analytics donut). Fixed
+   * order, never cycled — a 7th slot folds into "Other" (--cat-other). Both
+   * modes validated with the dataviz palette checker against --paper-2. */
+  --cat-1: #13917f;
+  --cat-2: #dd5f3b;
+  --cat-3: #2f6fb0;
+  --cat-4: #c99a1e;
+  --cat-5: #6f55b5;
+  --cat-6: #c4457b;
+  --cat-other: #a7b5b0;
 
   color: var(--ink);
 }
@@ -176,6 +186,13 @@
   --warn: #fbbf24;
   --alarm: #f87171;
   --mark: #eec158;
+  --cat-1: #2aa893;
+  --cat-2: #dc6540;
+  --cat-3: #4f8fd8;
+  --cat-4: #b8891c;
+  --cat-5: #8f7bd4;
+  --cat-6: #d0588f;
+  --cat-other: #4a5d57;
 }
 
 .house-display {
