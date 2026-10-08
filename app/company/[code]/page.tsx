@@ -16,6 +16,7 @@ import {
   OverviewSignalBoard,
   OverviewSignalBoardFallback,
 } from "../components/overview-signal-board";
+import { getOverviewBusinessLine } from "@/lib/overview-signal-board";
 import CompanyWatchlistSlot, {
   WatchlistSlotFallback,
 } from "../components/company-watchlist-slot";
@@ -124,7 +125,12 @@ export default async function Page({
   params: Promise<{ code: string }>;
 }) {
   const { code } = await params;
-  const overview = await getCachedCompanyPageOverview(code);
+  // The business one-liner rides beside the cache row (one narrow read, in
+  // parallel) so the Overview's story card paints whole in the first flush.
+  const [overview, businessLine] = await Promise.all([
+    getCachedCompanyPageOverview(code),
+    getOverviewBusinessLine(code),
+  ]);
 
   if (!overview) {
     return (
@@ -153,19 +159,22 @@ export default async function Page({
           companyCode={overview.company_code}
         >
           <div data-section-id="overview">
-            {/* Recency-first signal board (2026-08-21). The shell (header from the
-                cache row) renders immediately; the per-company extras stream in
-                behind Suspense, and the fleet-wide board rank streams inside that. */}
+            {/* The overview (simplified 2026-10-08). The shell (header + story
+                card from the cache row and business line) renders immediately;
+                the per-company extras stream in behind Suspense, and the
+                fleet-wide board rank streams inside that. */}
             <Suspense
               fallback={
                 <OverviewSignalBoardFallback
                   overview={overview}
+                  businessLine={businessLine}
                   watchlistSlot={<WatchlistSlotFallback />}
                 />
               }
             >
               <OverviewSignalBoard
                 overview={overview}
+                businessLine={businessLine}
                 watchlistSlot={
                   <Suspense fallback={<WatchlistSlotFallback />}>
                     <CompanyWatchlistSlot companyCode={overview.company_code} />

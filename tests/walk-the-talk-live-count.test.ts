@@ -10,8 +10,8 @@ import type {
 // Coverage-audit follow-up (2026-09-06 ship-workflow audit of the Guidance
 // tab verdict redesign). lib/walk-the-talk/normalize.ts's `liveCount` /
 // `liveRevisedUpCount` / `liveRevisedDownCount` fields are brand-new in this
-// diff (feed the Overview card's "N more commitments live ... revised down"
-// note at app/company/components/overview-signal-board.tsx:1096-1103) but
+// diff (they fed the Overview's walk-the-talk card, retired 2026-10-08, and
+// still feed the good-and-bad board's live-book rule) but
 // tests/walk-the-talk-normalize.test.ts — otherwise an exhaustive spec for
 // this file — never asserts on any of the three. This closes that gap.
 

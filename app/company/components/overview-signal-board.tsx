@@ -1,13 +1,11 @@
 import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 
 import ConcallScore from "@/components/concall-score";
+import { slugifySector } from "@/app/sector/utils";
 import { BOARD_READS } from "@/lib/board-read";
 import type { CompanyPageOverviewCacheRow } from "@/lib/company-overview-cache";
 import { GROWTH_BANDS, bandForGrowthScore } from "@/lib/growth-band";
-import type { AmbitionLabel } from "@/lib/guidance-snapshot/types";
-import type { MoatRatingKey, MoatTier } from "@/lib/moat-analysis/types";
 import {
   PROS_CONS_SOURCES,
   leanProsCons,
@@ -24,31 +22,35 @@ import {
 import { BANDS, bandForScore } from "@/lib/score-band";
 import { cn } from "@/lib/utils";
 import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
-import { VERDICT_LABELS, type CredibilityVerdictKey } from "@/lib/walk-the-talk/types";
 
 import { topShareLabel } from "../[code]/display-tokens";
 import { MissingSectionRequestButton } from "./missing-section-request-button";
 import { SectionLink } from "./section-link";
 
-// The company overview (redesign 2026-10-01). Five rows, each one glance:
+// The company overview (redesign 2026-10-01, simplified 2026-10-08 to the
+// user's mockup). Four rows, each one glance:
 //   1. Header — name, the SoaS score with its read word, and where it sits on
 //      the Overall board.
-//   2. The business (sector chips + the snapshot's one-liner) beside The story.
-//   3. The three scores — Concall, Growth, Valuation — each with its path or
-//      range.
-//   4. The standing reads — Moat, Forensics, Guidance · walk the talk.
-//   5. The good and the bad (2026-10-06, butterfly board 2026-10-08) — the
+//   2. The story — sector / sub-sector and the sector rank, then one paragraph:
+//      the snapshot's business one-liner (muted) running into the story line
+//      (bold).
+//   3. The three scores — Concall, Growth, Valuation — as one compact strip,
+//      each cell a score circle, its band word and one small mark: the score
+//      path, the base case, the price path.
+//   4. The good and the bad (2026-10-06, butterfly board 2026-10-08) — the
 //      clearly strong and clearly weak readings across every section, ranked,
 //      five a side at most, each drawn as a bar sized by its rank weight on
 //      either side of a spine, under a lean meter (the good side's share of
 //      the weight on the board).
-// Every card opens its full section; nothing here is a dead end.
+// The 2026-10-01 standing-reads row (Moat · Forensics · Guidance) is gone: its
+// clear signals already reach the good-and-bad board, and each section is one
+// tab away. Every score cell opens its full section.
 //
 // Everything is derived from data the portal already computes: the cache row
-// (scores, ranks, sector, story) plus lib/overview-signal-board (paths, growth
-// range, business one-liner, moat, forensics, walk-the-talk). Score colours
-// always come from the band modules (score-band / growth-band / valuation-band)
-// — never hardcoded.
+// (scores, ranks, sector, story), the business one-liner read beside it, plus
+// lib/overview-signal-board (paths, growth base case, the good and the bad).
+// Score colours always come from the band modules (score-band / growth-band /
+// valuation-band) — never hardcoded.
 
 const displayClass =
   "[font-family:var(--font-display)] font-bold tracking-[-0.03em]";
@@ -56,61 +58,17 @@ const monoClass = "[font-family:var(--font-data)] tabular-nums";
 const kickerClass =
   "text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground";
 const cardClass = "rounded-[14px] border border-border/60 bg-card";
-const linkCardClass = cn(
-  cardClass,
-  "group flex w-full flex-col p-4 transition-colors hover:border-border hover:bg-muted/20 sm:p-5",
-);
-const circleClass = "h-[52px] w-[52px] text-[16px] sm:h-[56px] sm:w-[56px]";
 
-type Tone = "good" | "info" | "warn" | "bad" | "muted";
+type Tone = "good" | "bad";
 
 const TONE_TEXT: Record<Tone, string> = {
   good: "text-teal-700 dark:text-teal-300",
-  info: "text-sky-700 dark:text-sky-300",
-  warn: "text-amber-700 dark:text-amber-300",
   bad: "text-rose-700 dark:text-rose-300",
-  muted: "text-muted-foreground",
 };
 
 const TONE_FILL: Record<Tone, string> = {
   good: "bg-teal-500",
-  info: "bg-sky-500",
-  warn: "bg-amber-500",
   bad: "bg-rose-500",
-  muted: "bg-muted-foreground",
-};
-
-const TIER_TONE: Record<CredibilityVerdictKey, Tone> = {
-  reliable: "good",
-  high_trust: "good",
-  mixed: "info",
-  credible: "info",
-  erratic: "warn",
-  weak: "bad",
-  low_trust: "bad",
-  not_enough_data: "muted",
-  not_assessable: "muted",
-};
-
-// Moat words: the rating as one word, the tier as how high the barriers are.
-// No trajectory — no moat history is stored (lib/moat-analysis/plain-language).
-const MOAT_WORD: Record<MoatRatingKey, string> = {
-  wide_moat: "Wide",
-  narrow_moat: "Narrow",
-  moat_at_risk: "At risk",
-  no_moat: "No moat",
-  unknown: "Unclear",
-};
-const MOAT_TIER_PHRASE: Record<MoatTier, string> = {
-  strong: "Strong barriers",
-  mid: "Moderate barriers",
-  weak: "Weak barriers",
-};
-
-const AMBITION_WORD: Record<AmbitionLabel, string> = {
-  ambitious: "Ambitious",
-  measured: "Measured",
-  conservative: "Conservative",
 };
 
 // "2026-08-18" -> "Aug '26" (same compaction as the Valuation tab's history).
@@ -121,169 +79,11 @@ function compactDate(period: string): string {
   return m && month ? `${month} '${m[1].slice(2)}` : period;
 }
 
-// --- Shared bits -------------------------------------------------------------
-
-function CardArrow() {
-  return (
-    <ArrowRight
-      className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
-      aria-hidden
-    />
-  );
-}
-
-/**
- * Server-rendered area chart of a 0–10 path (oldest → newest). Stretches to its
- * container; the stroke stays 2px through `non-scaling-stroke`.
- */
-function AreaTrend({
-  id,
-  values,
-  color,
-  label,
-}: {
-  id: string;
-  values: number[];
-  color: string;
-  label: string;
-}) {
-  const w = 300;
-  const h = 56;
-  const lo = Math.min(...values);
-  const hi = Math.max(...values);
-  const pad = Math.max(0.6, (hi - lo) * 0.3);
-  const domainLo = Math.max(0, lo - pad);
-  const domainHi = Math.min(10, hi + pad);
-  const span = domainHi - domainLo || 1;
-  const pts = values.map((v, i) => {
-    const x = (i / (values.length - 1)) * w;
-    const y = 3 + (1 - (v - domainLo) / span) * (h - 6);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const gradientId = `overview-trend-${id}`;
-  return (
-    <svg
-      viewBox={`0 0 ${w} ${h}`}
-      preserveAspectRatio="none"
-      className="block h-14 w-full"
-      role="img"
-      aria-label={label}
-    >
-      <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={0.28} />
-          <stop offset="100%" stopColor={color} stopOpacity={0.02} />
-        </linearGradient>
-      </defs>
-      <polygon
-        points={`0,${h} ${pts.join(" ")} ${w},${h}`}
-        fill={`url(#${gradientId})`}
-      />
-      <polyline
-        points={pts.join(" ")}
-        fill="none"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
-  );
-}
-
-/** "Q4 FY25 · 6.2" on the left, the latest point on the right in its band colour. */
-function PathEnds({
-  first,
-  last,
-  lastClass,
-}: {
-  first: string;
-  last: string;
-  lastClass: string;
-}) {
-  return (
-    <div
-      className={cn(
-        monoClass,
-        "mt-2 flex items-center justify-between gap-3 text-[10.5px] uppercase tracking-[0.04em]",
-      )}
-    >
-      <span className="text-muted-foreground">{first}</span>
-      <span className={lastClass}>{last}</span>
-    </div>
-  );
-}
-
-function ScoreCardHead({
-  circle,
-  title,
-  bandLabel,
-  bandClass,
-}: {
-  circle: ReactNode;
-  title: string;
-  bandLabel: string;
-  bandClass: string;
-}) {
-  return (
-    <div className="flex items-start gap-3.5">
-      {circle}
-      <div className="min-w-0 flex-1 pt-1">
-        <p className="text-[15px] font-semibold leading-tight text-foreground">
-          {title}
-        </p>
-        <p className={cn("mt-1 text-[12px] font-medium", bandClass)}>
-          {bandLabel}
-        </p>
-      </div>
-      <CardArrow />
-    </div>
-  );
-}
-
-function NotScoredCard({
-  title,
-  overview,
-  sectionId,
-}: {
-  title: string;
-  overview: CompanyPageOverviewCacheRow;
-  sectionId: string;
-}) {
-  return (
-    <div className={cn(cardClass, "flex flex-col p-4 sm:p-5")}>
-      <div className="flex items-start gap-3.5">
-        <div
-          className={cn(
-            "grid shrink-0 place-items-center rounded-full border-2 border-dashed border-border text-muted-foreground",
-            circleClass,
-          )}
-          aria-hidden
-        >
-          <span className={cn(displayClass, "text-lg")}>—</span>
-        </div>
-        <div className="min-w-0 flex-1 pt-1">
-          <p className="text-[15px] font-semibold leading-tight text-foreground">
-            {title}
-          </p>
-          <p className="mt-1 text-[12px] text-muted-foreground">
-            Not scored yet.
-          </p>
-        </div>
-      </div>
-      <div className="mt-4">
-        <MissingSectionRequestButton
-          companyCode={overview.company_code}
-          companyName={overview.company_name}
-          sectionId={sectionId}
-          sectionTitle={title}
-          label="Request"
-          className="h-7 rounded-full border-border/60 bg-background/95 px-3 text-[10px] font-medium text-foreground shadow-sm hover:bg-background"
-        />
-      </div>
-    </div>
-  );
+// 1 -> "1st", 12 -> "12th", 23 -> "23rd".
+function ordinal(n: number): string {
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+  return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
 }
 
 // --- Header ------------------------------------------------------------------
@@ -410,69 +210,64 @@ function Header({
   );
 }
 
-// --- The business · The story ------------------------------------------------
+// --- The story ---------------------------------------------------------------
 
-function TheBusiness({
+/**
+ * Sector path + sector rank, then one paragraph: what the business is (muted)
+ * running into the story line (bold). Rendered from the cache row and the
+ * business line the page reads beside it, so it paints whole in the streaming
+ * fallback — this paragraph is the page's LCP element on phones.
+ */
+function TheStory({
   overview,
   businessLine,
 }: {
   overview: CompanyPageOverviewCacheRow;
-  // undefined = still streaming (fallback); null = no one-liner published.
-  businessLine: string | null | undefined;
+  businessLine: string | null;
 }) {
-  const showSub = overview.sub_sector && overview.sub_sector !== overview.sector;
-  const hasSnapshot = overview.section_availability.businessSnapshot;
-  return (
-    <div className={cn(cardClass, "p-4 sm:p-5 lg:p-6")}>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className={cn(kickerClass, "mr-1")}>The business</span>
-        {overview.sector && (
-          <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-[11px] font-medium leading-none text-foreground">
-            {overview.sector}
-          </span>
-        )}
-        {showSub && (
-          <span className="inline-flex items-center rounded-md border border-border/70 px-2 py-1 text-[11px] font-medium leading-none text-foreground/85">
-            {overview.sub_sector}
-          </span>
-        )}
-      </div>
-      {businessLine === undefined ? (
-        <div className="mt-3.5 space-y-2" aria-hidden>
-          <div className="h-3.5 w-full animate-pulse rounded bg-muted/60" />
-          <div className="h-3.5 w-2/3 animate-pulse rounded bg-muted/60" />
-        </div>
-      ) : (
-        <p className="mt-3.5 text-[13.5px] leading-relaxed text-foreground/80">
-          {businessLine ? `${businessLine} ` : null}
-          {hasSnapshot && (
-            <SectionLink
-              sectionId="business-overview"
-              className="inline whitespace-nowrap text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground"
-            >
-              Business snapshot →
-            </SectionLink>
-          )}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function TheStory({ overview }: { overview: CompanyPageOverviewCacheRow }) {
   const { read } = overview;
   // Prefers the synthesized story line (company_story) over the bucket gloss.
-  const line = read.storyLine ?? BOARD_READS[read.key].gloss;
+  const story = read.storyLine ?? BOARD_READS[read.key].gloss;
+  const sector = overview.sector;
+  const showSub = overview.sub_sector && overview.sub_sector !== sector;
+  // Ranks are computed within the covered universe only; an excluded company
+  // has none, and its page shows the path alone.
+  const sectorRank =
+    sector && overview.sector_rank != null && overview.sector_total
+      ? { rank: overview.sector_rank, total: overview.sector_total }
+      : null;
   return (
     <div className={cn(cardClass, "p-4 sm:p-5 lg:p-6")}>
-      <p className={kickerClass}>The story</p>
+      {(sector || showSub) && (
+        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2 text-[12px] font-medium leading-none">
+          <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1.5">
+            {sector && <span className="text-foreground">{sector}</span>}
+            {sector && showSub && (
+              <span className="text-muted-foreground/60" aria-hidden>
+                /
+              </span>
+            )}
+            {showSub && <span className="text-muted-foreground">{overview.sub_sector}</span>}
+          </span>
+          {sector && sectorRank && (
+            <Link
+              href={`/sector/${slugifySector(sector)}`}
+              title={`Rank among covered ${sector} companies — opens the sector`}
+              className="rounded-full bg-teal-500/15 px-2.5 py-1 text-[10.5px] font-semibold text-teal-700 transition-colors hover:bg-teal-500/25 dark:text-teal-300"
+            >
+              {ordinal(sectorRank.rank)} of {sectorRank.total} in sector
+            </Link>
+          )}
+        </div>
+      )}
       <p
         className={cn(
-          displayClass,
-          "mt-3 text-balance text-[19px] leading-[1.28] text-foreground sm:text-[21px]",
+          "text-pretty text-[15px] leading-[1.6] sm:text-[17px]",
+          (sector || showSub) && "mt-3.5 sm:mt-4",
         )}
       >
-        {line}
+        {businessLine && <span className="text-muted-foreground">{businessLine} </span>}
+        <span className="font-semibold text-foreground">{story}</span>
       </p>
     </div>
   );
@@ -480,7 +275,174 @@ function TheStory({ overview }: { overview: CompanyPageOverviewCacheRow }) {
 
 // --- The three scores --------------------------------------------------------
 
-function ConcallScoreCard({
+// One strip, three cells. Below lg the cells stack, divided by rules.
+const stripClass = cn(
+  cardClass,
+  "grid divide-y divide-border/60 overflow-hidden lg:grid-cols-3 lg:divide-x lg:divide-y-0",
+);
+const cellClass = "flex w-full min-w-0 items-center gap-3.5 px-4 py-3.5 sm:px-5 sm:py-4";
+const circleClass = "h-10 w-10 text-[14px]";
+
+/**
+ * A small area spark of a 0–10 path (oldest → newest) ending in a dot. Fixed
+ * pixel box, so the dot stays round.
+ */
+function Spark({
+  id,
+  values,
+  color,
+  label,
+}: {
+  id: string;
+  values: number[];
+  color: string;
+  label: string;
+}) {
+  const w = 64;
+  const h = 28;
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const pad = Math.max(0.6, (hi - lo) * 0.3);
+  const domainLo = Math.max(0, lo - pad);
+  const domainHi = Math.min(10, hi + pad);
+  const span = domainHi - domainLo || 1;
+  const xy = values.map((v, i) => ({
+    x: 2 + (i / (values.length - 1)) * (w - 5),
+    y: 4 + (1 - (v - domainLo) / span) * (h - 8),
+  }));
+  const pts = xy.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const end = xy[xy.length - 1];
+  const gradientId = `overview-spark-${id}`;
+  return (
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      width={w}
+      height={h}
+      className="block h-7 w-16"
+      role="img"
+      aria-label={label}
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+          <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+        </linearGradient>
+      </defs>
+      <polygon
+        points={`${xy[0].x.toFixed(1)},${h} ${pts} ${end.x.toFixed(1)},${h}`}
+        fill={`url(#${gradientId})`}
+      />
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx={end.x} cy={end.y} r={2.5} fill={color} />
+    </svg>
+  );
+}
+
+function EmptyCircle() {
+  return (
+    <span
+      className={cn(
+        "grid shrink-0 place-items-center rounded-full border-2 border-dashed border-border text-muted-foreground",
+        circleClass,
+      )}
+      aria-hidden
+    >
+      <span className={cn(displayClass, "text-base")}>—</span>
+    </span>
+  );
+}
+
+function CellText({
+  title,
+  bandLabel,
+  bandClass,
+  bandTitle,
+}: {
+  title: string;
+  bandLabel: string;
+  bandClass: string;
+  // Hover text for the band word, when there is more to say than fits.
+  bandTitle?: string;
+}) {
+  return (
+    <span className="block min-w-0 flex-1">
+      <span className="block truncate text-[14.5px] font-semibold leading-tight text-foreground">
+        {title}
+      </span>
+      <span
+        className={cn("mt-1 block truncate text-[12px] font-medium", bandClass)}
+        title={bandTitle ?? bandLabel}
+      >
+        {bandLabel}
+      </span>
+    </span>
+  );
+}
+
+/** A scored cell — the whole cell opens its section. */
+function ScoreCell({
+  sectionId,
+  circle,
+  title,
+  bandLabel,
+  bandClass,
+  bandTitle,
+  aside,
+}: {
+  sectionId: string;
+  circle: ReactNode;
+  title: string;
+  bandLabel: string;
+  bandClass: string;
+  bandTitle?: string;
+  aside?: ReactNode;
+}) {
+  return (
+    <SectionLink
+      sectionId={sectionId}
+      className={cn(cellClass, "transition-colors hover:bg-muted/25")}
+    >
+      {circle}
+      <CellText title={title} bandLabel={bandLabel} bandClass={bandClass} bandTitle={bandTitle} />
+      {aside ? <span className="block shrink-0">{aside}</span> : null}
+    </SectionLink>
+  );
+}
+
+/** Not scored yet — no section to open, so a request button instead. */
+function NotScoredCell({
+  title,
+  overview,
+  sectionId,
+}: {
+  title: string;
+  overview: CompanyPageOverviewCacheRow;
+  sectionId: string;
+}) {
+  return (
+    <div className={cellClass}>
+      <EmptyCircle />
+      <CellText title={title} bandLabel="Not scored yet" bandClass="text-muted-foreground" />
+      <MissingSectionRequestButton
+        companyCode={overview.company_code}
+        companyName={overview.company_name}
+        sectionId={sectionId}
+        sectionTitle={title}
+        label="Request"
+        className="h-7 shrink-0 rounded-full border-border/60 bg-background/95 px-3 text-[10px] font-medium text-foreground shadow-sm hover:bg-background"
+      />
+    </div>
+  );
+}
+
+function ConcallCell({
   overview,
   extras,
 }: {
@@ -492,9 +454,7 @@ function ConcallScoreCard({
   // never be captioned with the cache's older quarter label.
   const latestScore = quarter.latestScore ?? overview.latest_score;
   if (latestScore == null) {
-    return (
-      <NotScoredCard title="Concall Score" overview={overview} sectionId="sentiment-score" />
-    );
+    return <NotScoredCell title="Concall Score" overview={overview} sectionId="sentiment-score" />;
   }
   const band = BANDS[bandForScore(latestScore)];
   const path = quarter.scorePath.filter(
@@ -502,43 +462,33 @@ function ConcallScoreCard({
   );
   const first = path[0];
   const last = path[path.length - 1];
+  const latestLabel = quarter.latestLabel ?? overview.quarter_label;
   return (
-    <SectionLink sectionId="sentiment-score" className={linkCardClass}>
-      <ScoreCardHead
-        circle={<ConcallScore score={latestScore} size="lg" className={circleClass} />}
-        title="Concall Score"
-        bandLabel={band.label}
-        bandClass={band.textClass}
-      />
-      <div className="mt-auto pt-4">
-        {path.length >= 2 ? (
-          <>
-            <AreaTrend
-              id="concall"
-              values={path.map((p) => p.value)}
-              color={band.chartHex}
-              label={`Concall score across ${path.length} quarters, ${first.period} ${first.value.toFixed(1)} to ${last.period} ${last.value.toFixed(1)}`}
-            />
-            <PathEnds
-              first={`${first.period} · ${first.value.toFixed(1)}`}
-              last={`${last.period} · ${last.value.toFixed(1)}`}
-              lastClass={band.textClass}
-            />
-          </>
-        ) : (
-          <p className={cn(monoClass, "text-[11px] text-muted-foreground")}>
-            First scored print
-            {quarter.latestLabel ?? overview.quarter_label
-              ? ` · ${quarter.latestLabel ?? overview.quarter_label}`
-              : ""}
-          </p>
-        )}
-      </div>
-    </SectionLink>
+    <ScoreCell
+      sectionId="sentiment-score"
+      circle={<ConcallScore score={latestScore} size="md" className={circleClass} />}
+      title="Concall Score"
+      bandLabel={band.label}
+      bandClass={band.textClass}
+      aside={
+        path.length >= 2 ? (
+          <Spark
+            id="concall"
+            values={path.map((p) => p.value)}
+            color={band.chartHex}
+            label={`Concall score across ${path.length} quarters, ${first.period} ${first.value.toFixed(1)} to ${last.period} ${last.value.toFixed(1)}`}
+          />
+        ) : latestLabel ? (
+          <span className={cn(monoClass, "text-[11px] uppercase text-muted-foreground")}>
+            {latestLabel}
+          </span>
+        ) : null
+      }
+    />
   );
 }
 
-function GrowthScoreCard({
+function GrowthCell({
   overview,
   extras,
 }: {
@@ -548,67 +498,44 @@ function GrowthScoreCard({
   // Live row first; cache only as a fallback.
   const growthScore = extras.growthScore ?? overview.growth_score;
   if (growthScore == null) {
-    return (
-      <NotScoredCard title="Growth Score" overview={overview} sectionId="future-growth" />
-    );
+    return <NotScoredCell title="Growth Score" overview={overview} sectionId="future-growth" />;
   }
   // Growth has its own band vocabulary (lib/growth-band) — never the quarterly
   // Bullish/Bearish scale.
   const band = GROWTH_BANDS[bandForGrowthScore(growthScore)];
   const range = extras.growthRange;
+  // The base case is revenue growth, not EPS — said in the title and to readers.
+  const what = `Base-case revenue growth${range?.horizonYears ? `, ${range.horizonYears}-year view` : ""}`;
   return (
-    <SectionLink sectionId="future-growth" className={linkCardClass}>
-      <ScoreCardHead
-        circle={
-          <ConcallScore score={growthScore} kind="growth" size="lg" className={circleClass} />
-        }
-        title="Growth Score"
-        bandLabel={band.label}
-        bandClass={band.textClass}
-      />
-      <div className="mt-auto pt-4">
-        {range ? (
-          <>
-            <p className={kickerClass}>
-              Revenue growth{range.horizonYears ? ` · ${range.horizonYears}Y view` : ""}
-            </p>
-            <div className="mt-2.5 grid grid-cols-[2fr_3fr_2fr] gap-0.5">
-              <span className="h-1.5 rounded-l-full bg-muted" aria-hidden />
-              <span className="h-1.5 bg-teal-500/50" aria-hidden />
-              <span className="h-1.5 rounded-r-full bg-teal-500" aria-hidden />
-              {(
-                [
-                  ["Bear", range.bear, "text-left", "text-foreground"],
-                  ["Base", range.base, "text-center", "text-foreground"],
-                  ["Bull", range.bull, "text-right", "text-teal-700 dark:text-teal-300"],
-                ] as const
-              ).map(([label, value, align, valueClass]) => (
-                <div key={label} className={cn("mt-1.5 min-w-0", align)}>
-                  <p className="text-[10px] text-muted-foreground">{label}</p>
-                  <p
-                    className={cn(
-                      monoClass,
-                      "mt-1 truncate text-[12.5px] font-semibold",
-                      value ? valueClass : "text-muted-foreground",
-                    )}
-                  >
-                    {value ?? "—"}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <p className="text-[12px] text-muted-foreground">
-            No base case published yet.
-          </p>
-        )}
-      </div>
-    </SectionLink>
+    <ScoreCell
+      sectionId="future-growth"
+      circle={<ConcallScore score={growthScore} kind="growth" size="md" className={circleClass} />}
+      title="Growth Score"
+      bandLabel={band.label}
+      bandClass={band.textClass}
+      aside={
+        range ? (
+          <span className="block text-right" title={what}>
+            <span className="sr-only">{what}: </span>
+            <span
+              className={cn(monoClass, "block text-[14px] font-semibold leading-none text-foreground")}
+            >
+              {range.base}
+            </span>
+            <span
+              className="mt-1.5 block text-[9.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+              aria-hidden
+            >
+              Base case
+            </span>
+          </span>
+        ) : null
+      }
+    />
   );
 }
 
-function ValuationScoreCard({
+function ValuationCell({
   overview,
   extras,
 }: {
@@ -617,9 +544,7 @@ function ValuationScoreCard({
 }) {
   const v = extras.valuation;
   if (!overview.section_availability.valuationCheck || !v) {
-    return (
-      <NotScoredCard title="Valuation Score" overview={overview} sectionId="valuation-check" />
-    );
+    return <NotScoredCell title="Valuation Score" overview={overview} sectionId="valuation-check" />;
   }
   // The extras already applied the staleness gate on the LIVE valuation row;
   // the cache row's valuation_stale can lag a /valuation-refresh, so it must
@@ -630,236 +555,48 @@ function ValuationScoreCard({
   const first = path[0];
   const last = path[path.length - 1];
   return (
-    <SectionLink sectionId="valuation-check" className={linkCardClass}>
-      <ScoreCardHead
-        circle={
-          shown ? (
-            <ConcallScore score={v.score as number} kind="valuation" size="lg" className={circleClass} />
-          ) : (
-            <div
-              className={cn(
-                "grid shrink-0 place-items-center rounded-full border-2 border-dashed border-border text-muted-foreground",
-                circleClass,
-              )}
-              aria-hidden
-            >
-              <span className={cn(displayClass, "text-lg")}>—</span>
-            </div>
-          )
-        }
-        title="Valuation Score"
-        bandLabel={shown ? (v.verdictLabel as string) : "No price read"}
-        bandClass={band ? band.textClass : "text-muted-foreground"}
-      />
-      <div className="mt-auto pt-4">
-        {shown && band && path.length >= 2 ? (
-          <>
-            <AreaTrend
-              id="valuation"
-              values={path.map((p) => p.value)}
-              color={band.chartHex}
-              label={`Valuation score across ${path.length} pricings, ${compactDate(first.period)} ${first.value.toFixed(1)} to ${compactDate(last.period)} ${last.value.toFixed(1)}. Higher is cheaper.`}
-            />
-            <PathEnds
-              first={`${compactDate(first.period)} · ${first.value.toFixed(1)}`}
-              last={`${compactDate(last.period)} · ${last.value.toFixed(1)}`}
-              lastClass={band.textClass}
-            />
-          </>
+    <ScoreCell
+      sectionId="valuation-check"
+      circle={
+        shown ? (
+          <ConcallScore score={v.score as number} kind="valuation" size="md" className={circleClass} />
         ) : (
-          <p className="line-clamp-3 text-[12px] leading-relaxed text-muted-foreground">
-            {shown
-              ? "Higher is cheaper. The price path appears after the next re-pricing."
-              : v.withheldReason
-                ? `Verdict withheld — ${v.withheldReason}.`
-                : "No verdict yet."}
-          </p>
-        )}
-      </div>
-    </SectionLink>
-  );
-}
-
-// --- The standing reads ------------------------------------------------------
-
-function StandingCard({
-  sectionId,
-  kicker,
-  children,
-}: {
-  sectionId: string;
-  kicker: string;
-  children: ReactNode;
-}) {
-  return (
-    <SectionLink sectionId={sectionId} className={linkCardClass}>
-      <div className="flex items-center justify-between gap-3">
-        <p className={kickerClass}>{kicker}</p>
-        <CardArrow />
-      </div>
-      <div className="mt-3.5">{children}</div>
-    </SectionLink>
-  );
-}
-
-function Verdict({
-  word,
-  qualifier,
-  wordClass = "text-foreground",
-  qualifierClass = "text-muted-foreground",
-}: {
-  word: string;
-  qualifier?: string | null;
-  wordClass?: string;
-  qualifierClass?: string;
-}) {
-  return (
-    <p className="flex flex-wrap items-baseline gap-x-1.5">
-      <span className={cn(displayClass, "text-[20px] leading-tight", wordClass)}>
-        {word}
-      </span>
-      {qualifier && (
-        <span className={cn("text-[12.5px] font-medium", qualifierClass)}>
-          · {qualifier}
-        </span>
-      )}
-    </p>
-  );
-}
-
-const standingBodyClass = "mt-2.5 line-clamp-2 text-[12.5px] leading-relaxed text-foreground/75";
-const standingEmptyClass = "text-[12.5px] text-muted-foreground";
-
-function MoatCard({ extras }: { extras: OverviewSignalExtras }) {
-  const moat = extras.moat;
-  const showTier =
-    moat && moat.tier && moat.rating !== "no_moat" && moat.rating !== "unknown";
-  return (
-    <StandingCard sectionId="quality" kicker="Moat">
-      {moat ? (
-        <>
-          <Verdict
-            word={MOAT_WORD[moat.rating]}
-            qualifier={showTier ? MOAT_TIER_PHRASE[moat.tier as MoatTier] : null}
+          <EmptyCircle />
+        )
+      }
+      title="Valuation Score"
+      // Same words as the header's read when no verdict is shown; the
+      // producer's reason is pipeline-speak, so it stays on hover.
+      bandLabel={shown ? (v.verdictLabel as string) : "No price read"}
+      bandTitle={!shown && v.withheldReason ? `Verdict withheld — ${v.withheldReason}` : undefined}
+      bandClass={band ? band.textClass : "text-muted-foreground"}
+      aside={
+        shown && band && path.length >= 2 ? (
+          <Spark
+            id="valuation"
+            values={path.map((p) => p.value)}
+            color={band.chartHex}
+            label={`Valuation score across ${path.length} pricings, ${compactDate(first.period)} ${first.value.toFixed(1)} to ${compactDate(last.period)} ${last.value.toFixed(1)}. Higher is cheaper.`}
           />
-          {moat.headline && <p className={standingBodyClass}>{moat.headline}</p>}
-        </>
-      ) : (
-        <p className={standingEmptyClass}>No moat read published yet.</p>
-      )}
-    </StandingCard>
+        ) : null
+      }
+    />
   );
 }
 
-function ForensicsCard({ extras }: { extras: OverviewSignalExtras }) {
-  const f = extras.forensics;
-  const counts: { label: string; n: number; tone: Tone }[] = f
-    ? [
-        { label: "clean", n: f.tally.clean, tone: "good" },
-        { label: "watch", n: f.tally.watch, tone: "warn" },
-        { label: "flag", n: f.tally.flag, tone: "bad" },
-      ]
-    : [];
-  return (
-    <StandingCard sectionId="quality" kicker="Forensics">
-      {f ? (
-        <>
-          <p className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-            {counts.map((c) => (
-              <span key={c.label} className="inline-flex items-baseline gap-1.5">
-                <span
-                  className={cn(
-                    displayClass,
-                    "text-[20px] leading-tight",
-                    c.n > 0 ? TONE_TEXT[c.tone] : "text-muted-foreground",
-                  )}
-                >
-                  {c.n}
-                </span>
-                <span className="text-[12px] text-muted-foreground">{c.label}</span>
-              </span>
-            ))}
-          </p>
-          <p className={standingBodyClass}>{f.headline}</p>
-        </>
-      ) : (
-        <p className={standingEmptyClass}>No forensic read published yet.</p>
-      )}
-    </StandingCard>
-  );
-}
-
-function GuidanceCard({
+function ScoreStrip({
   overview,
   extras,
 }: {
   overview: CompanyPageOverviewCacheRow;
   extras: OverviewSignalExtras;
 }) {
-  const wtt = extras.walkTheTalk;
-  const tier = wtt?.overall.tier ?? null;
-  const tone: Tone = tier ? TIER_TONE[tier] : "muted";
-  const segments = wtt
-    ? (() => {
-        const total = wtt.overall.totalCount;
-        const on = wtt.overall.onTimeCount;
-        if (total <= 0) return null;
-        const n = total <= 12 ? total : 10;
-        const filled = total <= 12 ? on : Math.round((on / total) * 10);
-        return { n, filled };
-      })()
-    : null;
-  const ambition = extras.guidanceAmbition;
   return (
-    <StandingCard sectionId="guidance-history" kicker="Guidance · Walk the talk">
-      {wtt && tier ? (
-        <>
-          <Verdict
-            word={VERDICT_LABELS[tier]}
-            wordClass={tone === "muted" ? "text-foreground" : TONE_TEXT[tone]}
-            qualifier={ambition ? `${AMBITION_WORD[ambition]} guide` : null}
-          />
-          {segments && (
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex flex-1 gap-[3px]" aria-hidden>
-                {Array.from({ length: segments.n }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={cn(
-                      "h-1.5 flex-1 rounded-sm",
-                      i < segments.filled ? TONE_FILL[tone] : "bg-muted",
-                    )}
-                  />
-                ))}
-              </div>
-              <span className={cn(monoClass, "shrink-0 text-[11px] text-muted-foreground")}>
-                {wtt.overall.onTimeCount}/{wtt.overall.totalCount} on time
-              </span>
-            </div>
-          )}
-          {/* A downward revision shouldn't just silently leave the ratio once
-              its horizon pushes the commitment into the live book
-              (/plan-eng-review Step 0 scope decision, 2026-09-06). */}
-          {wtt.liveCount > 0 && (
-            <p className="mt-2 text-[11.5px] text-muted-foreground">
-              {wtt.liveCount} more live
-              {wtt.liveRevisedDownCount > 0 && (
-                <span className="text-amber-700 dark:text-amber-400">
-                  {" "}
-                  · {wtt.liveRevisedDownCount} revised down
-                </span>
-              )}
-            </p>
-          )}
-        </>
-      ) : (
-        <p className={standingEmptyClass}>
-          {overview.guidance_count
-            ? `${overview.guidance_count} guidance items tracked · grade pending`
-            : "Not enough tracked guidance to grade yet."}
-        </p>
-      )}
-    </StandingCard>
+    <div className={stripClass}>
+      <ConcallCell overview={overview} extras={extras} />
+      <GrowthCell overview={overview} extras={extras} />
+      <ValuationCell overview={overview} extras={extras} />
+    </div>
   );
 }
 
@@ -1071,13 +808,16 @@ const shellStyle = {
   scrollMarginTop:
     "calc(var(--global-navbar-height, 84px) + var(--company-tabs-height, 56px) + 1rem)",
 };
-const rowGridClass = "grid gap-3 lg:grid-cols-3 lg:gap-4";
+const storyRowClass = "mt-6 border-t border-border/60 pt-6";
+const rowClass = "mt-3 lg:mt-4";
 
 export async function OverviewSignalBoard({
   overview,
+  businessLine,
   watchlistSlot = null,
 }: {
   overview: CompanyPageOverviewCacheRow;
+  businessLine: string | null;
   watchlistSlot?: ReactNode;
 }) {
   const extras = await getOverviewSignalExtras(
@@ -1089,25 +829,16 @@ export async function OverviewSignalBoard({
     <div id="overview" className={shellClass} style={shellStyle}>
       <Header overview={overview} watchlistSlot={watchlistSlot} streamPosition />
 
-      <div className="mt-6 grid gap-3 border-t border-border/60 pt-6 lg:grid-cols-2 lg:gap-4">
-        <TheBusiness overview={overview} businessLine={extras.businessLine} />
-        <TheStory overview={overview} />
+      <div className={storyRowClass}>
+        <TheStory overview={overview} businessLine={businessLine} />
       </div>
 
-      <div className={cn(rowGridClass, "mt-3 lg:mt-4")}>
-        <ConcallScoreCard overview={overview} extras={extras} />
-        <GrowthScoreCard overview={overview} extras={extras} />
-        <ValuationScoreCard overview={overview} extras={extras} />
-      </div>
-
-      <div className={cn(rowGridClass, "mt-3 lg:mt-4")}>
-        <MoatCard extras={extras} />
-        <ForensicsCard extras={extras} />
-        <GuidanceCard overview={overview} extras={extras} />
+      <div className={rowClass}>
+        <ScoreStrip overview={overview} extras={extras} />
       </div>
 
       {extras.prosCons.good.length + extras.prosCons.bad.length > 0 && (
-        <div className="mt-3 lg:mt-4">
+        <div className={rowClass}>
           <ProsConsBoard prosCons={extras.prosCons} />
         </div>
       )}
@@ -1116,43 +847,35 @@ export async function OverviewSignalBoard({
 }
 
 /**
- * Streaming fallback. Everything the cache row can render, it renders for real:
- * the header (name, SoaS score, read word), the business chips and the story
- * line. The story sentence is the page's LCP element on mobile — leaving it
- * behind the Suspense boundary put LCP at ~5s while the extras fetch ran. Only
- * the extras-dependent blocks are skeletons, sized to the real cards so the
- * swap doesn't move the page below the board.
+ * Streaming fallback. Everything the cache row and the business line can
+ * render, it renders for real: the header (name, SoaS score, read word) and the
+ * whole story card. The story paragraph is the page's LCP element on mobile —
+ * leaving it behind the Suspense boundary put LCP at ~5s while the extras fetch
+ * ran. Only the extras-dependent blocks are skeletons, sized to the real ones
+ * so the swap doesn't move the page below the board.
  */
 export function OverviewSignalBoardFallback({
   overview,
+  businessLine,
   watchlistSlot = null,
 }: {
   overview: CompanyPageOverviewCacheRow;
+  businessLine: string | null;
   watchlistSlot?: ReactNode;
 }) {
   return (
     <div id="overview" className={shellClass}>
       <Header overview={overview} watchlistSlot={watchlistSlot} streamPosition={false} />
 
-      <div className="mt-6 grid gap-3 border-t border-border/60 pt-6 lg:grid-cols-2 lg:gap-4">
-        <TheBusiness overview={overview} businessLine={undefined} />
-        <TheStory overview={overview} />
+      <div className={storyRowClass}>
+        <TheStory overview={overview} businessLine={businessLine} />
       </div>
 
-      <div className={cn(rowGridClass, "mt-3 lg:mt-4")}>
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-[176px] animate-pulse rounded-[14px] bg-muted/50 lg:h-[194px]" />
-        ))}
-      </div>
-
-      <div className={cn(rowGridClass, "mt-3 lg:mt-4")}>
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-[136px] animate-pulse rounded-[14px] bg-muted/40 lg:h-[150px]" />
-        ))}
-      </div>
+      {/* The score strip — three stacked cells, one row from lg. */}
+      <div className={cn(rowClass, "h-[208px] animate-pulse rounded-[14px] bg-muted/50 sm:h-[218px] lg:h-[74px]")} />
 
       {/* The good · the bad board — the meter plus a typical three rows a side. */}
-      <div className="mt-3 h-[360px] animate-pulse rounded-[14px] bg-muted/30 lg:mt-4 lg:h-[250px]" />
+      <div className={cn(rowClass, "h-[360px] animate-pulse rounded-[14px] bg-muted/30 lg:h-[250px]")} />
     </div>
   );
 }
