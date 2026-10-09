@@ -1,8 +1,8 @@
-export const SCANS = ["red-flags", "peg", "guidance"] as const;
+export const SCANS = ["red-flags", "peg", "guidance", "trend"] as const;
 export type ScanId = (typeof SCANS)[number];
 
 export const parseScan = (raw: string | undefined): ScanId =>
-  raw === "peg" || raw === "guidance" ? raw : "red-flags";
+  raw === "peg" || raw === "guidance" || raw === "trend" ? raw : "red-flags";
 
 /** `/scanners?scan=…&mine=1` — the default scan carries no `scan`, the default filter no `mine`. */
 export function scannersHref(scan: ScanId, mine: boolean, extra?: Record<string, string>): string {
