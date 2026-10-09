@@ -34,7 +34,7 @@ const changeSchema = z
   })
   .strict();
 
-const phaseSchema = z
+export const phaseSchema = z
   .object({
     start: isoDate,
     end: isoDate,
@@ -58,7 +58,7 @@ const phaseSchema = z
   })
   .strict();
 
-const pivotSchema = z
+export const pivotSchema = z
   .object({
     date: isoDate,
     price: z.number().positive(),

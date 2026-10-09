@@ -252,7 +252,8 @@ export default async function Page({
             <Suspense fallback={<SectionLoading id="valuation-check" title="Valuation Check" size={fallbackSize(overview.section_availability.valuationCheck && !overview.valuation_stale)} />}>
               <GatedPanel sectionId="valuation-check" companyCode={overview.company_code}>
                 <ValuationCheckPanel overview={overview} />
-                <div className="mt-6">
+                {/* Anchor for the Price trend scan's rows: the hash resolves to the Valuation tab, then lands here. */}
+                <div id="valuation-check-price-journey" className="mt-6 scroll-mt-40">
                   <PriceJourneyPanel overview={overview} />
                 </div>
               </GatedPanel>

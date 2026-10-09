@@ -18,12 +18,14 @@ import type { GuidanceSnapshotRow } from "@/lib/guidance-snapshot/types";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 import { COVERAGE_SELECT, isDiscoveryListed, type CoverageFields } from "@/lib/coverage-policy";
+import { phaseSchema, pivotSchema } from "@/lib/price-phases/types";
 import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { derivePeg } from "@/lib/valuation-check/normalize";
 import type { ValuationCheckRow } from "@/lib/valuation-check/types";
 
 import { buildGuidanceUpgradeRow, type GuidanceUpgradeRow } from "./guidance-upgrades";
 import type { PegRow } from "./peg";
+import { buildTrendRow, type TrendRow } from "./price-trend";
 import { buildRedFlagRow, type RedFlagRow, type ScanCompany } from "./red-flags";
 
 type CompanyRow = CoverageFields & { code: string | null; name: string | null; sector: string | null };
@@ -120,6 +122,29 @@ async function fetchPegRows(): Promise<PegRow[]> {
   return rows;
 }
 
+// Only the phases and their turning points — the payload's 10-year price series
+// (~500 points a company) is the chart's, never the scan's.
+async function fetchTrendRows(): Promise<TrendRow[]> {
+  const companies = await readCompanies();
+  const supabase = createPublicReadClient();
+  const { data, error } = await supabase
+    .from("price_phases")
+    .select("company_code, as_of, phases:payload->phases, pivots:payload->pivots");
+  if (error) throw error;
+  const phasesOk = phaseSchema.array().min(1);
+  const pivotsOk = pivotSchema.array().min(2);
+  const rows: TrendRow[] = [];
+  for (const raw of (data ?? []) as Array<{ company_code: string | null; as_of: string | null; phases: unknown; pivots: unknown }>) {
+    const company = companies.get(upper(raw.company_code));
+    const phases = phasesOk.safeParse(raw.phases);
+    const pivots = pivotsOk.safeParse(raw.pivots);
+    if (!company || !raw.as_of || !phases.success || !pivots.success) continue;
+    const row = buildTrendRow(company, raw.as_of, phases.data, pivots.data);
+    if (row) rows.push(row);
+  }
+  return rows;
+}
+
 // A failed read is never cached (see the header), so without this every
 // request would re-run it while the database is struggling — the 2026-10-06
 // timeout did exactly that. After a failure, this server instance serves
@@ -145,6 +170,12 @@ function withBackoff<T>(label: string, read: () => Promise<T>): () => Promise<T>
 export const getRedFlagRows = withBackoff(
   "red flags",
   unstable_cache(fetchRedFlagRows, ["scanners-red-flags-v2"], { revalidate: 600 }),
+);
+
+/** Every company with a price_phases row, fresh or stale. Throws on a failed read. */
+export const getTrendRows = withBackoff(
+  "price trend",
+  unstable_cache(fetchTrendRows, ["scanners-price-trend-v1"], { revalidate: 600 }),
 );
 
 /** Every company with at least one PEG leg, fresh or stale. Throws on a failed read. */

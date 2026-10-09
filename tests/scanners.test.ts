@@ -10,6 +10,15 @@ import {
   type GuidanceUpgradeRow,
 } from "../lib/scanners/guidance-upgrades";
 import { buildPegScan, comparePegRows, isPegHit, parsePegSort, sortPegHits, type PegRow } from "../lib/scanners/peg";
+import {
+  buildTrendRow,
+  buildTrendScan,
+  trendEps,
+  trendMove,
+  trendPe,
+  trendReason,
+  type TrendRow,
+} from "../lib/scanners/price-trend";
 import { buildRedFlagScan, type RedFlagHit, type RedFlagRow } from "../lib/scanners/red-flags";
 import { buildScans, listedScope, scanCounts, watchlistScope } from "../lib/scanners/scope";
 import { derivePeg } from "../lib/valuation-check/normalize";
@@ -199,6 +208,79 @@ assert.deepEqual(
   "same quarter: the management that delivers outranks the one that raised more items",
 );
 
+// ── Price trend ─────────────────────────────────────────────────────────────
+
+const tr = (code: string, kind: TrendRow["kind"], priceRatio: number, years: number, o: Partial<TrendRow> = {}): TrendRow => ({
+  code,
+  name: `${code} Ltd`,
+  sector: null,
+  listed: true,
+  asOf: "2026-10-09",
+  kind,
+  since: "2026-01-01",
+  years,
+  priceRatio,
+  driver: "MULTIPLE",
+  epsRatio: 1.1,
+  peFrom: 20,
+  peTo: 20 * (priceRatio / 1.1),
+  splitMissing: null,
+  ...o,
+});
+
+{
+  const NOW_T = new Date("2026-10-11T00:00:00Z");
+  const scan = buildTrendScan(
+    [
+      tr("SMALLUP", "up", 1.3, 0.5),
+      tr("BIGUP", "up", 3.8, 1.5, { driver: "EARNINGS" }),
+      tr("DEEP", "down", 0.4, 1),
+      tr("MILD", "down", 0.8, 0.3),
+      tr("LONGFLAT", "side", 0.95, 2.1),
+      tr("SHORTFLAT", "side", 1.05, 0.4, { driver: null, epsRatio: null, peFrom: null, peTo: null, splitMissing: "no_pe" }),
+      tr("OLD", "up", 2, 1, { asOf: "2026-09-20" }),
+    ],
+    NOW_T,
+  );
+  assert.deepEqual(scan.groups.up.map((r) => r.code), ["BIGUP", "SMALLUP"], "up: biggest run first");
+  assert.deepEqual(scan.groups.down.map((r) => r.code), ["DEEP", "MILD"], "down: deepest fall first");
+  assert.deepEqual(scan.groups.side.map((r) => r.code), ["LONGFLAT", "SHORTFLAT"], "sideways: longest first");
+  assert.equal(scan.scanned, 6);
+  assert.equal(scan.staleCount, 1, "prices past the valuation staleness bound are held back, not grouped");
+  assert.deepEqual(scan.multipleLed, { up: 1, side: 1, down: 2 });
+  assert.equal(scan.latestAsOf, "2026-10-09");
+
+  const flat = scan.groups.side[1];
+  assert.equal(trendReason(flat), "No split");
+  assert.equal(trendEps(flat), null);
+  assert.equal(trendPe(flat), null);
+  assert.equal(trendReason(scan.groups.up[0]), "Mostly earnings");
+  assert.equal(trendMove(scan.groups.up[0]), "3.8x");
+  assert.equal(trendMove(scan.groups.down[1]), "−20%");
+
+  // the row is the card's current phase: P/E from → to read off the pivots at its ends
+  const row = buildTrendRow(
+    { code: "SJS", name: "SJS Enterprises", sector: null, listed: true },
+    "2026-10-09",
+    [
+      { start: "2025-03-13", end: "2026-08-14", kind: "up", price_ratio: 3.09, years: 1.42, rate: "+121% CAGR",
+        eps_ratio: 1.69, pe_ratio: 1.83, driver: "MULTIPLE", split_missing: null, what_changed: null },
+      { start: "2026-08-14", end: "2026-10-09", kind: "down", price_ratio: 0.777, years: 0.15, rate: "−22% in 2 months",
+        eps_ratio: 0.99, pe_ratio: 0.786, driver: "MULTIPLE", split_missing: null, what_changed: null },
+    ],
+    [
+      { date: "2025-03-13", price: 819, pe: 23, eps: 35.6, pe_source: "screener" },
+      { date: "2026-08-14", price: 2532, pe: 42, eps: 60.3, pe_source: "screener" },
+      { date: "2026-10-09", price: 1967, pe: 33, eps: 59.6, pe_source: "screener" },
+    ],
+  );
+  assert.ok(row);
+  assert.equal(row.kind, "down");
+  assert.equal(row.since, "2026-08-14");
+  assert.equal(trendPe(row), "42x → 33x");
+  assert.equal(trendEps(row), "flat");
+}
+
 // ── Scope: listed by default, the reader's watchlist (listed or not) with the filter ──
 
 const unlisted = { ...rf("BIGCAP", [cash]), listed: false };
@@ -209,9 +291,10 @@ const inputs = {
     rows: [{ ...gu("BBB", [[2027, 1]]) }],
     readable: [rf("AAA", []), rf("BBB", []), { ...rf("BIGCAP", []), listed: false }],
   },
+  trendRows: [tr("AAA", "up", 2, 1, { asOf: "2026-10-05" }), { ...tr("BIGCAP", "down", 0.5, 1, { asOf: "2026-10-05" }), listed: false }],
 };
 const listed = buildScans(inputs, listedScope, Q2FY27, NOW);
-assert.deepEqual(scanCounts(listed), { "red-flags": 2, peg: 1, guidance: 1 }, "default = listed companies only");
+assert.deepEqual(scanCounts(listed), { "red-flags": 2, peg: 1, guidance: 1, trend: 1 }, "default = listed companies only");
 assert.equal(listed.redFlags?.scanned, 3, "an unlisted company is not in the default universe");
 assert.equal(listed.guidance?.scanned, 2);
 
@@ -221,11 +304,11 @@ assert.deepEqual(
   ["AAA", "BIGCAP"],
   "watchlist = the reader's companies, including one outside the discovery list",
 );
-assert.deepEqual(scanCounts(mineScans), { "red-flags": 2, peg: 2, guidance: 0 });
+assert.deepEqual(scanCounts(mineScans), { "red-flags": 2, peg: 2, guidance: 0, trend: 2 });
 assert.equal(mineScans.guidance?.scanned, 2, "BBB isn't watched, so its raise drops; AAA + BIGCAP were read");
 assert.deepEqual(
-  scanCounts(buildScans({ redFlagRows: null, pegRows: null, guidance: null }, listedScope, Q2FY27, NOW)),
-  { "red-flags": null, peg: null, guidance: null },
+  scanCounts(buildScans({ redFlagRows: null, pegRows: null, guidance: null, trendRows: null }, listedScope, Q2FY27, NOW)),
+  { "red-flags": null, peg: null, guidance: null, trend: null },
   "a failed read stays unavailable, never an empty scan",
 );
 
@@ -235,5 +318,6 @@ assert.equal(scannersHref("red-flags", false), "/scanners", "the default scan is
 assert.equal(scannersHref("peg", true), "/scanners?scan=peg&mine=1");
 assert.equal(scannersHref("peg", false, { sort: "trailing" }), "/scanners?scan=peg&sort=trailing");
 assert.equal(scannersHref("red-flags", true), "/scanners?mine=1");
+assert.equal(scannersHref("trend", false), "/scanners?scan=trend");
 
 console.log("All scanners tests passed.");
