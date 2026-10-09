@@ -9,6 +9,8 @@ import { currentReportingQuarter } from "@/lib/current-quarter";
 import { normalizeKeyVariablesSnapshot } from "@/lib/key-variables-snapshot/normalize";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import { getCompanyQualityRow } from "@/lib/company-quality/get";
+import { getPricePhasesRow } from "@/lib/price-phases/get";
+import { normalizePricePhases } from "@/lib/price-phases/normalize";
 import { normalizeCompanyQuality } from "@/lib/company-quality/normalize";
 import { assessStaleness, normalizeValuationCheck } from "@/lib/valuation-check/normalize";
 import { getWalkTheTalk } from "@/lib/walk-the-talk/get";
@@ -48,6 +50,7 @@ import { FutureGrowthSection } from "../components/future-growth-section";
 import { IndustryContextSection } from "../components/industry-context-section";
 import { KeyVariablesSection } from "../components/key-variables-section";
 import { MissingSectionState } from "../components/missing-section-state";
+import { PriceJourneySection } from "../components/price-journey-section";
 import { QualitySection } from "../components/quality-section";
 import { ValuationCheckSection } from "../components/valuation-check-section";
 import { WalkTheTalkSection } from "../components/walk-the-talk-section";
@@ -580,6 +583,38 @@ export function CommunityPanel({ overview }: CompanyDetailSectionProps) {
   );
 }
 
+
+/**
+ * The Price journey block, under Valuation Check on the Valuation tab. Independent of
+ * the valuation's publish gate: it is arithmetic on the price, not a judgement. No row
+ * (not promoted yet) or an invalid payload renders nothing; a row whose prices are past
+ * the valuation staleness window says it is being refreshed rather than showing an old
+ * "now". Sits inside the Valuation tab's GatedPanel, below its data-gate-cut, so it
+ * carries no cut marker of its own.
+ */
+export async function PriceJourneyPanel({ overview }: CompanyDetailSectionProps) {
+  const result = normalizePricePhases(await getPricePhasesRow(overview.company_code));
+  if (!result || !result.ok) return null;
+  const { data } = result;
+  return (
+    <SectionCard
+      id="price-journey"
+      title="Price journey"
+      feedbackEnabled
+      feedbackCompanyCode={overview.company_code}
+      feedbackCompanyName={overview.company_name}
+      headerAction={<SectionUpdatedAt date={formatShortDate(data.asOf)} />}
+    >
+      {data.stale ? (
+        <p className="text-sm text-muted-foreground">
+          Being refreshed: the last prices here are from {formatShortDate(data.asOf)}.
+        </p>
+      ) : (
+        <PriceJourneySection data={data} companyLabel={overview.company_name || overview.company_code} />
+      )}
+    </SectionCard>
+  );
+}
 
 export async function ValuationCheckPanel({ overview }: CompanyDetailSectionProps) {
   const supabase = await createClient();

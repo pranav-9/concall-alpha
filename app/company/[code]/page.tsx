@@ -32,6 +32,7 @@ import {
   KeyVariablesPanel,
   QualityPanel,
   ValuationCheckPanel,
+  PriceJourneyPanel,
   ConcallScorePanel,
   // WalkTheTalkPanel hidden for now — re-import when re-enabling the tab.
   // WalkTheTalkPanel,
@@ -251,6 +252,9 @@ export default async function Page({
             <Suspense fallback={<SectionLoading id="valuation-check" title="Valuation Check" size={fallbackSize(overview.section_availability.valuationCheck && !overview.valuation_stale)} />}>
               <GatedPanel sectionId="valuation-check" companyCode={overview.company_code}>
                 <ValuationCheckPanel overview={overview} />
+                <div className="mt-6">
+                  <PriceJourneyPanel overview={overview} />
+                </div>
               </GatedPanel>
             </Suspense>
           </div>
