@@ -39,17 +39,24 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Do not run code between createServerClient and
-  // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+  // supabase.auth.getSession(). A simple mistake could make it very hard to
+  // debug issues with users being randomly logged out.
 
-  // IMPORTANT: If you remove getClaims() and you use server-side rendering
+  // IMPORTANT: If you remove this refresh and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
   // Refresh only — the portal is public, so there is no redirect-to-login
-  // here. getClaims() rotates an expired access token and setAll() above writes
-  // the new cookies onto the response. A Supabase blip must never take a page
-  // down: fall through and let the request render with whatever session it had.
+  // here and nothing in this file decides who may see what. getSession() reads
+  // the session from the cookies and, only when the access token has expired,
+  // rotates it; setAll() above writes the new cookies onto the response. It
+  // does not verify the token, which is fine precisely because this is
+  // refresh-only: every access decision (sign-up gates, watchlists) reads
+  // verified claims through lib/supabase/auth-state.ts instead. This used to
+  // call getClaims(), which also verifies — a network call to Supabase Auth on
+  // every signed-in request while the project signed tokens with the legacy
+  // HS256 secret. A Supabase blip must never take a page down: fall through and
+  // let the request render with whatever session it had.
   try {
-    await supabase.auth.getClaims();
+    await supabase.auth.getSession();
   } catch {
     return NextResponse.next({ request });
   }

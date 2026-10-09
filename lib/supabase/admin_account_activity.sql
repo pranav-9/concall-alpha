@@ -5,8 +5,9 @@
 -- theirs last moved, and how many live sessions they hold. No tokens, IPs or
 -- user agents leave the auth schema.
 --
--- Why sessions: middleware.ts calls supabase.auth.getClaims() on every request,
--- which rotates an expired access token (1h by default) and bumps the
+-- Why sessions: middleware.ts refreshes the session (supabase.auth.getSession())
+-- on every signed-in request, which rotates an expired access token (1h by
+-- default) and bumps the
 -- session's refreshed_at / updated_at. So the newest session timestamp is the
 -- account's last page load, to within about an hour. auth.users.last_sign_in_at
 -- is not: it only moves on a fresh sign-in, and most readers stay signed in.

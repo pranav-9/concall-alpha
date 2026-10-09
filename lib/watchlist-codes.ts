@@ -1,5 +1,9 @@
+import { cache } from "react";
+
 import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/supabase/auth-state";
 import { logger } from "@/lib/logger";
+import { resolveReaderWatchlist, type ReaderWatchlist } from "@/lib/reader-identity";
 
 /**
  * Every company code on any of the reader's watchlists, UPPERCASE and deduped —
@@ -25,3 +29,18 @@ export async function getWatchlistCompanyCodes(userId: string): Promise<string[]
     return [];
   }
 }
+
+/**
+ * The reader and their watchlist codes, asked once per request. The Watchlist
+ * filter pages (/leaderboards, /scanners, /quarter-tracker) start it inside the
+ * same Promise.all as their data reads, so neither the auth check nor the
+ * watchlist query sits in front of the page's own data. Failure semantics are
+ * resolveReaderWatchlist's: a watchlist failure never signs the reader out.
+ */
+export const getReaderWatchlist = cache(
+  (): Promise<ReaderWatchlist> =>
+    resolveReaderWatchlist({
+      getUserId: getAuthenticatedUserId,
+      getCodes: getWatchlistCompanyCodes,
+    }),
+);

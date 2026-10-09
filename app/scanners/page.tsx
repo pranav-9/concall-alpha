@@ -23,8 +23,7 @@ import { authHrefWithNext } from "@/lib/safe-next-path";
 import { getGuidanceUpgradeRows, getPegRows, getRedFlagRows, getTrendRows } from "@/lib/scanners/data";
 import { parsePegSort } from "@/lib/scanners/peg";
 import { buildScans, listedScope, scanCounts, watchlistScope } from "@/lib/scanners/scope";
-import { getAuthenticatedUserId } from "@/lib/supabase/auth-state";
-import { getWatchlistCompanyCodes } from "@/lib/watchlist-codes";
+import { getReaderWatchlist } from "@/lib/watchlist-codes";
 
 import { GuidanceUpgradeScanView } from "./guidance-upgrade-scan";
 import { parseScan, scannersHref, SCANS, type ScanId } from "./href";
@@ -67,15 +66,15 @@ export default async function ScannersPage({
   const scan = parseScan(params.scan);
   const current = currentReportingQuarter();
 
-  const userId = await getAuthenticatedUserId();
-  const [redFlagRows, pegRows, guidanceData, trendRows, watchCodesList] = await Promise.all([
+  const [redFlagRows, pegRows, guidanceData, trendRows, reader] = await Promise.all([
     settle("red flags", getRedFlagRows),
     settle("peg", getPegRows),
     settle("guidance upgrades", getGuidanceUpgradeRows),
     settle("price trend", getTrendRows),
-    userId ? getWatchlistCompanyCodes(userId) : Promise.resolve(null),
+    getReaderWatchlist(),
   ]);
-  const watchCodes = watchCodesList ? new Set(watchCodesList) : null;
+  const userId = reader.userId;
+  const watchCodes = reader.codes ? new Set(reader.codes) : null;
   const inputs = { redFlagRows, pegRows, guidance: guidanceData, trendRows };
 
   // A shared `mine=1` link opened signed out falls back to the listed universe.

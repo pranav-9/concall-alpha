@@ -8,7 +8,13 @@ import { updateSession } from "@/lib/supabase/middleware";
  * signed-in reader signed in: server components can't write cookies
  * (lib/supabase/server.ts swallows setAll), so without this an expired access
  * token is never rotated and the reader intermittently renders as logged out.
- * Anonymous requests carry no Supabase cookie and pass straight through.
+ * Anonymous requests carry no Supabase cookie and pass straight through. The
+ * refresh makes no network call unless the token has actually expired; it runs
+ * before every page, so keep it that way (see lib/supabase/middleware.ts).
+ *
+ * Prefetch requests are deliberately NOT excluded from the matcher: a prefetch
+ * rendered with an expired token would rotate the refresh token server-side
+ * without saving it, and the reader's next request could be signed out.
  */
 export async function middleware(request: NextRequest) {
   const cookieNames = request.cookies.getAll().map((cookie) => cookie.name);
