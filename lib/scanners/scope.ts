@@ -9,21 +9,29 @@ import type { ReportingQuarter } from "@/lib/current-quarter";
 
 import { buildGuidanceUpgradeScan, type GuidanceUpgradeRow, type GuidanceUpgradeScan } from "./guidance-upgrades";
 import { buildPegScan, type PegRow, type PegScan } from "./peg";
+import { buildTrendScan, type TrendRow, type TrendScan } from "./price-trend";
 import { buildRedFlagScan, type RedFlagRow, type RedFlagScan, type ScanCompany } from "./red-flags";
 
 export type ScanInputs = {
   redFlagRows: RedFlagRow[] | null;
   pegRows: PegRow[] | null;
   guidance: { rows: GuidanceUpgradeRow[]; readable: ScanCompany[] } | null;
+  trendRows: TrendRow[] | null;
 };
 
 export type Scans = {
   redFlags: RedFlagScan | null;
   peg: PegScan | null;
   guidance: GuidanceUpgradeScan | null;
+  trend: TrendScan | null;
 };
 
-export type ScanCounts = { "red-flags": number | null; peg: number | null; guidance: number | null };
+export type ScanCounts = {
+  "red-flags": number | null;
+  peg: number | null;
+  guidance: number | null;
+  trend: number | null;
+};
 
 export const listedScope = (c: ScanCompany) => c.listed;
 export const watchlistScope = (codes: ReadonlySet<string>) => (c: ScanCompany) => codes.has(c.code);
@@ -45,6 +53,7 @@ export function buildScans(
           current,
         )
       : null,
+    trend: inputs.trendRows ? buildTrendScan(inputs.trendRows.filter(scope), now) : null,
   };
 }
 
@@ -54,5 +63,7 @@ export function scanCounts(scans: Scans): ScanCounts {
     "red-flags": scans.redFlags?.flagged.length ?? null,
     peg: scans.peg?.hits.length ?? null,
     guidance: scans.guidance?.rows.length ?? null,
+    // Every fresh company lands in a group, so the tab counts what it scanned.
+    trend: scans.trend?.scanned ?? null,
   };
 }

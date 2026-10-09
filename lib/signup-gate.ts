@@ -63,8 +63,8 @@ const GATED_SECTIONS = {
     label: "Valuation",
     below: [
       "What growth the current price is already assuming",
-      "Its multiples against their own five-year range and the industry",
-      "PEG on expected and delivered growth, and how the score was built",
+      "Its multiples and PEG against their own range and the industry",
+      "The price journey: every rise and fall split into earnings and P/E",
     ],
   },
   "guidance-history": {

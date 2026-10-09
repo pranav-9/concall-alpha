@@ -1,7 +1,9 @@
-// /scanners — one rule run across every company we cover. Three scans: Red
+// /scanners — one rule run across every company we cover. Four scans: Red
 // flags (the Quality tab's forensic checks that trip), PEG (under 1× on both
-// forward and trailing, off the Valuation Check) and Guidance upgrades (live
-// commitments management raised on the latest call, off the Guidance tab).
+// forward and trailing, off the Valuation Check), Guidance upgrades (live
+// commitments management raised on the latest call, off the Guidance tab) and
+// Price trend (every company's current price phase — rising / sideways /
+// falling — with what drove it, off the Price journey card).
 //
 // One filter: "In your watchlist" (`?mine=1`), which swaps the scan universe
 // from the discovery-listed companies to the reader's watchlist companies —
@@ -18,7 +20,7 @@ import { mobileChipClass, MOBILE_CHIP_STRIP } from "@/components/mobile-card";
 import { currentReportingQuarter } from "@/lib/current-quarter";
 import { logger } from "@/lib/logger";
 import { authHrefWithNext } from "@/lib/safe-next-path";
-import { getGuidanceUpgradeRows, getPegRows, getRedFlagRows } from "@/lib/scanners/data";
+import { getGuidanceUpgradeRows, getPegRows, getRedFlagRows, getTrendRows } from "@/lib/scanners/data";
 import { parsePegSort } from "@/lib/scanners/peg";
 import { buildScans, listedScope, scanCounts, watchlistScope } from "@/lib/scanners/scope";
 import { getReaderWatchlist } from "@/lib/watchlist-codes";
@@ -26,13 +28,14 @@ import { getReaderWatchlist } from "@/lib/watchlist-codes";
 import { GuidanceUpgradeScanView } from "./guidance-upgrade-scan";
 import { parseScan, scannersHref, SCANS, type ScanId } from "./href";
 import { PegScanView } from "./peg-scan";
+import { PriceTrendScanView } from "./price-trend-scan";
 import { RedFlagScanView } from "./red-flag-scan";
 import { WatchlistFilterChip, type WatchlistFilterState } from "./watchlist-filter";
 
 export const metadata: Metadata = {
   title: "Scanners – Story of a Stock",
   description:
-    "Every company we cover, run through one rule at a time: forensic red flags from the annual numbers, forward and trailing PEG, and who just raised guidance.",
+    "Every company we cover, run through one rule at a time: forensic red flags from the annual numbers, forward and trailing PEG, who just raised guidance, and which prices are rising, sideways or falling — and why.",
   alternates: { canonical: "/scanners" },
 };
 
@@ -40,6 +43,7 @@ const SCAN_LABEL: Record<ScanId, string> = {
   "red-flags": "Red flags",
   peg: "PEG ratio",
   guidance: "Guidance upgrades",
+  trend: "Price trend",
 };
 
 type SearchParams = { scan?: string; sort?: string; mine?: string };
@@ -62,15 +66,16 @@ export default async function ScannersPage({
   const scan = parseScan(params.scan);
   const current = currentReportingQuarter();
 
-  const [redFlagRows, pegRows, guidanceData, reader] = await Promise.all([
+  const [redFlagRows, pegRows, guidanceData, trendRows, reader] = await Promise.all([
     settle("red flags", getRedFlagRows),
     settle("peg", getPegRows),
     settle("guidance upgrades", getGuidanceUpgradeRows),
+    settle("price trend", getTrendRows),
     getReaderWatchlist(),
   ]);
   const userId = reader.userId;
   const watchCodes = reader.codes ? new Set(reader.codes) : null;
-  const inputs = { redFlagRows, pegRows, guidance: guidanceData };
+  const inputs = { redFlagRows, pegRows, guidance: guidanceData, trendRows };
 
   // A shared `mine=1` link opened signed out falls back to the listed universe.
   const mine = params.mine === "1" && watchCodes != null;
@@ -139,6 +144,12 @@ export default async function ScannersPage({
                 filter={filterChip}
                 sortHref={(sort) => scannersHref("peg", mine, sort === "trailing" ? { sort } : undefined)}
               />
+            ) : (
+              <Unavailable />
+            )
+          ) : scan === "trend" ? (
+            scans.trend ? (
+              <PriceTrendScanView scan={scans.trend} mine={mine} filter={filterChip} />
             ) : (
               <Unavailable />
             )
