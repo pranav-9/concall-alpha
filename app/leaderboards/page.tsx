@@ -19,8 +19,7 @@ import {
   leaderboardGateSectionId,
   shouldGateLeaderboard,
 } from "@/lib/signup-gate";
-import { getAuthenticatedUserId } from "@/lib/supabase/auth-state";
-import { getWatchlistCompanyCodes } from "@/lib/watchlist-codes";
+import { getReaderWatchlist } from "@/lib/watchlist-codes";
 import { buildScoreBoardRows } from "@/lib/score-board-rows";
 import { computeBoardRanks, COVERAGE_BOARD_SIZE } from "@/lib/leaderboard-rank";
 import {
@@ -112,7 +111,7 @@ export default async function LeaderboardsPage({
     { rows, latestLabel, quarterLabels },
     { growthEntries, moatEntries, growthScoreByCode, nameByCode, sectorByCode },
     priorRankByCode,
-    userId,
+    reader,
   ] = await Promise.all([
     // includeBelowCut: the Overall board renders the tail greyed out rather than
     // dropping it. Large caps are still excluded outright — two different gates.
@@ -120,12 +119,13 @@ export default async function LeaderboardsPage({
     fetchLeaderboardData(),
     // Ranks from the prior snapshot window for the Δ column. Empty until history accrues.
     readPriorRanks(),
-    // Who is reading — the `cache()`d check the company page and the Journal
-    // use. Asked on every load now: the Watchlist filter needs it, gate or not.
-    getAuthenticatedUserId(),
+    // Who is reading, and their watchlist codes for the Watchlist filter —
+    // asked on every load (the filter needs it, gate or not), alongside the
+    // board reads rather than after them.
+    getReaderWatchlist(),
   ]);
-  const isAuthenticated = userId !== null;
-  const watchlistCodesAll = userId ? await getWatchlistCompanyCodes(userId) : null;
+  const isAuthenticated = reader.userId !== null;
+  const watchlistCodesAll = reader.codes;
   // Flag on and nobody signed in: every board clips under its top 20 rows. The
   // marker index goes to the row components only in that case, so a signed-in
   // reader's DOM carries no gate attribute at all.

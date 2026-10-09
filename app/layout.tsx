@@ -3,7 +3,6 @@ import { Bricolage_Grotesque, Geist, IBM_Plex_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Navbar from "./(hero)/navbar";
 import { createClient } from "@/lib/supabase/server";
@@ -14,7 +13,13 @@ import { SiteFooter } from "@/components/site-footer";
 import { CommunityNudge } from "@/components/community-nudge";
 import { getTelegramJoinUrl } from "@/lib/community";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
-import { getIsAuthenticated } from "@/lib/supabase/auth-state";
+import { ReaderSpeedInsights } from "@/components/reader-speed-insights";
+import { navbarUserFromClaims } from "@/lib/reader-identity";
+import {
+  getAuthenticatedUserId,
+  getIsAuthenticated,
+  getReaderClaims,
+} from "@/lib/supabase/auth-state";
 import { Toaster } from "@/components/ui/sonner";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { getSiteUrl } from "@/lib/site-url";
@@ -74,39 +79,54 @@ const houseData = IBM_Plex_Mono({
   fallback: ["ui-monospace", "Menlo", "Cascadia Mono", "Consolas", "Liberation Mono", "monospace"],
 });
 
+/**
+ * The navbar reads the signed-in reader off the verified token claims (the
+ * `cache()`d getReaderClaims — local, no network call; email, name and avatar
+ * all ride in the token), so it never waits on Supabase Auth.
+ */
 async function NavbarWithUser() {
-  const supabase = await createClient();
-  const [userResult, initialCompanies] = await Promise.all([
-    supabase.auth.getUser(),
+  const [claims, initialCompanies] = await Promise.all([
+    getReaderClaims(),
     getCachedCompanySearchRows().catch(() => []),
   ]);
-  const user = userResult.data.user;
   const latestJournalDate = getAllPostMeta()[0]?.date ?? null;
 
   return (
-    <>
-      <IdentityBridge
-        userId={user?.id ?? null}
-        email={user?.email ?? null}
-        createdAt={user?.created_at ?? null}
-      />
-      <Navbar
-        initialCompanies={initialCompanies}
-        latestJournalDate={latestJournalDate}
-        telegramUrl={getTelegramJoinUrl()}
-        quarterLabel={currentReportingQuarter().label}
-        initialUser={
-          user
-            ? {
-                email: user.email ?? null,
-                name: user.user_metadata?.full_name ?? null,
-                avatar: user.user_metadata?.avatar_url ?? null,
-              }
-            : null
-        }
-      />
-    </>
+    <Navbar
+      initialCompanies={initialCompanies}
+      latestJournalDate={latestJournalDate}
+      telegramUrl={getTelegramJoinUrl()}
+      quarterLabel={currentReportingQuarter().label}
+      initialUser={navbarUserFromClaims(claims)}
+    />
   );
+}
+
+/**
+ * Ties the PostHog session to the signed-in reader (see IdentityBridge). It
+ * needs the account's created_at to tell a fresh sign-up from a returning
+ * log-in, and that is not in the token, so this is the one place a page load
+ * still asks Supabase Auth over the network (getUser) — in its own Suspense
+ * boundary and rendering nothing, so neither the navbar nor the page waits on
+ * it. Signed-out readers skip the call.
+ */
+async function IdentityBridgeSlot() {
+  if (!(await getAuthenticatedUserId())) return null;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+    if (!user) return null;
+    return (
+      <IdentityBridge
+        userId={user.id}
+        email={user.email ?? null}
+        createdAt={user.created_at ?? null}
+      />
+    );
+  } catch {
+    return null;
+  }
 }
 
 async function ActivePollSlot() {
@@ -173,6 +193,9 @@ export default function RootLayout({
               <NavbarWithUser />
             </Suspense>
             <Suspense fallback={null}>
+              <IdentityBridgeSlot />
+            </Suspense>
+            <Suspense fallback={null}>
               <ActivePollSlot />
             </Suspense>
             <Suspense fallback={null}>
@@ -190,7 +213,7 @@ export default function RootLayout({
           </div>
         </ThemeProvider>
         <Analytics />
-        <SpeedInsights />
+        <ReaderSpeedInsights />
       </body>
     </html>
   );

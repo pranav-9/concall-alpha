@@ -8,9 +8,8 @@
 
 import type { Metadata } from "next";
 
-import { getAuthenticatedUserId } from "@/lib/supabase/auth-state";
 import { authHrefWithNext } from "@/lib/safe-next-path";
-import { getWatchlistCompanyCodes } from "@/lib/watchlist-codes";
+import { getReaderWatchlist } from "@/lib/watchlist-codes";
 
 import { getTargetQuarter, getTrackerData, type TrackerEntry } from "./data";
 import { trackerHref, type TrackerQuery } from "./href";
@@ -52,12 +51,9 @@ export default async function QuarterTrackerPage({
   const dir = parseDir(params.dir);
   const improvers = params.filter === "improvers";
 
-  const userId = await getAuthenticatedUserId();
-  const [data, watchCodesList] = await Promise.all([
-    getTrackerData(),
-    userId ? getWatchlistCompanyCodes(userId) : Promise.resolve(null),
-  ]);
-  const watchCodes = watchCodesList ? new Set(watchCodesList) : null;
+  const [data, reader] = await Promise.all([getTrackerData(), getReaderWatchlist()]);
+  const userId = reader.userId;
+  const watchCodes = reader.codes ? new Set(reader.codes) : null;
   // A shared `mine=1` link opened signed out (or with an empty watchlist)
   // falls back to the whole of coverage.
   const mine = params.mine === "1" && watchCodes != null && watchCodes.size > 0;
