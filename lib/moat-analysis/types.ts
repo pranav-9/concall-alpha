@@ -77,6 +77,9 @@ const SUBCATEGORIES = [
   "Location-based",
   "Scale-based",
   "Unique asset",
+  // Added 2026-10-09 (framework v14 §4.4 calibration): a niche only big enough for a
+  // few suppliers. Must ship before any moat row using it is promoted, or Zod hides the card.
+  "Efficient scale",
 ] as const;
 
 export const v15Step0Schema = z.object({

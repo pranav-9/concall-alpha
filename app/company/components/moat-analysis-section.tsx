@@ -103,6 +103,7 @@ const advantageLabel = (
     case "Switching Costs":
       return "Hard to switch away";
     case "Cost Advantages":
+      if (sub === "Efficient scale") return "Few rivals in a small market";
       return "Lower cost to produce";
     case "Network Effects":
       return "Network effects";
@@ -126,6 +127,8 @@ const advantageMeaning = (
     case "Switching Costs":
       return "Customers face real cost or disruption to move to a rival.";
     case "Cost Advantages":
+      if (sub === "Efficient scale")
+        return "The market only supports a few makers, so a newcomer would struggle to earn a return.";
       return "It can make the same product for less than competitors.";
     case "Network Effects":
       return "The product gets more useful as more people use it.";
