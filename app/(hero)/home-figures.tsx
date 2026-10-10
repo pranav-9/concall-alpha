@@ -246,6 +246,28 @@ function GuidanceGlyph({ className }: FigureProps) {
   );
 }
 
+// Statement lines under a lens; the one it is resting on is picked out.
+function ForensicsGlyph({ className }: FigureProps) {
+  return (
+    <TileSvg className={className}>
+      <rect x={0} y={9} width={200} height={8} rx={4} fill="var(--tint)" />
+      <rect x={0} y={24} width={236} height={8} rx={4} fill="var(--tint)" />
+      <rect x={0} y={39} width={160} height={8} rx={4} fill="var(--tint)" />
+      <circle cx={196} cy={28} r={19} fill="var(--paper)" stroke="var(--signal)" strokeWidth={3} />
+      <rect x={185} y={24} width={22} height={8} rx={4} fill="var(--signal)" />
+      <line
+        x1={209.5}
+        y1={41.5}
+        x2={223}
+        y2={55}
+        stroke="var(--signal)"
+        strokeWidth={4.5}
+        strokeLinecap="round"
+      />
+    </TileSvg>
+  );
+}
+
 export const COVER_TILES = [
   { label: "Segments", Glyph: SegmentsGlyph },
   { label: "Industry", Glyph: IndustryGlyph },
@@ -256,6 +278,7 @@ export const COVER_TILES = [
   { label: "Valuation", Glyph: ValuationGlyph },
   { label: "Announcements", Glyph: AnnouncementsGlyph },
   { label: "Guidance", Glyph: GuidanceGlyph },
+  { label: "Forensics", Glyph: ForensicsGlyph },
 ] as const;
 
 /* --- Signal, not noise ----------------------------------------------------- */
