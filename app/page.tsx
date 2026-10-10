@@ -101,8 +101,8 @@ export default function Home() {
         </ol>
       </section>
 
-      {/* What every company page carries. The blank cell completes the grid
-          at two and five columns; at three, nine tiles already fill it. */}
+      {/* What every company page carries. Ten tiles fill the grid at two and
+          five columns; at three, two blank cells complete the last row. */}
       <section aria-labelledby="cover-heading" className={WRAP}>
         <div className="flex items-baseline justify-between gap-4">
           <h2 id="cover-heading" className="house-data house-micro text-[var(--ink-soft)]">
@@ -120,7 +120,8 @@ export default function Home() {
               <p className="home-label text-base sm:text-lg lg:text-[1.3rem]">{label}</p>
             </li>
           ))}
-          <li aria-hidden className="bg-[var(--paper)] sm:hidden lg:block" />
+          <li aria-hidden className="hidden bg-[var(--paper)] sm:block lg:hidden" />
+          <li aria-hidden className="hidden bg-[var(--paper)] sm:block lg:hidden" />
         </ul>
       </section>
 
