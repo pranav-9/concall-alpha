@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import Link from "next/link";
-import HeroExhibit, { HeroExhibitFallback } from "./(hero)/hero-exhibit";
-import { DeskStickyCta } from "./(hero)/desk-sticky-cta";
+import { BRAND_MARK_VIEWBOX, BrandGlyph } from "@/components/brand/logo";
+import { TelegramJoinLink } from "@/components/telegram-join-link";
+import { getTelegramJoinUrl } from "@/lib/community";
+import {
+  COVER_TILES,
+  CommunityFigure,
+  ResearchFigure,
+  ScanFigure,
+  TrackFigure,
+} from "./(hero)/home-figures";
 
 // Title/description are inherited from the root layout; this exists only to
 // pin the canonical so query-string variants don't get indexed separately.
@@ -10,111 +17,150 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-// The six reads we publish per company. Not a sequence — six lenses on the same
-// documents — so they carry no step numbers; the question each one answers is
-// the structure that matters.
-const READS = [
-  {
-    layer: "Business Snapshot",
-    question: "What does this company actually sell, and to whom?",
-    body:
-      "Segments, revenue drivers, business mix, and the historical economics that explain how the money has been made.",
-    example: "25% 4-yr revenue CAGR",
-  },
-  {
-    layer: "Moat Analysis",
-    question: "Can it keep earning this?",
-    body:
-      "The competitive position, the structural advantages holding it up, and what would erode them.",
-    example: "Narrow moat",
-  },
-  {
-    layer: "ConcallScore",
-    question: "Was this call better or worse than the last one?",
-    body:
-      "One score per concall with the reasoning printed beside it — the trail on this page is made of these.",
-    example: "8.2 this quarter",
-  },
-  {
-    layer: "Key Variables",
-    question: "Which few numbers actually move the story?",
-    body:
-      "The non-financial operating variables management keeps returning to, tracked call over call.",
-    example: "Volume +18%",
-  },
-  {
-    layer: "Future Growth",
-    question: "What has to happen next?",
-    body:
-      "Catalysts, scenarios, and the forward setup management has laid out — separated from what already happened.",
-    example: "Growth read 8.7",
-  },
-  {
-    layer: "Guidance Tracker",
-    question: "Do they do what they said they would?",
-    body:
-      "What management guided, what landed, and whether their credibility is building or leaking.",
-    example: "Guided 15%, hit 14%",
-  },
-];
+const WRAP = "mx-auto w-full max-w-[1180px] px-5 sm:px-8 lg:px-10";
 
-export default async function Home() {
+// The poster headings ("Find it.", "Signal, not noise.") and the two-column
+// rows they sit in; the right column starts just past the middle, as drawn.
+const POSTER = "home-display text-[clamp(2.75rem,5.8vw,5.5rem)]";
+const ROW = "grid gap-6 lg:grid-cols-[1.15fr_1fr] lg:gap-10";
+const FIGURE = "h-auto w-full max-w-[21rem]";
+
+const STEPS = [
+  { heading: "Find it.", step: "01", label: "Scan", Figure: ScanFigure },
+  { heading: "Understand it.", step: "02", label: "Research", Figure: ResearchFigure },
+  { heading: "Follow it.", step: "03", label: "Track", Figure: TrackFigure },
+] as const;
+
+function DeskButton() {
   return (
-    <main className="house relative min-h-screen">
-      {/* Quarter tracker strip hidden 2026-08-25 — results season over. Re-enable next season. */}
-      {/* <QuarterTrackerBanner /> */}
+    <Link href="/desk" className="home-cta">
+      Open the Desk <span aria-hidden>→</span>
+    </Link>
+  );
+}
 
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-12 px-4 pb-16 sm:px-6 lg:gap-16 lg:px-10">
-        {/* The hero — one centered composition on the soft canvas: the read
-            equation, why it's different, a cross-sector compare, and the CTA. */}
-        <section className="py-6">
-          <Suspense fallback={<HeroExhibitFallback />}>
-            <HeroExhibit />
-          </Suspense>
-        </section>
+export default function Home() {
+  const telegramUrl = getTelegramJoinUrl();
 
-        <section aria-labelledby="reads-heading" className="house-block">
-          <div className="max-w-2xl">
-            <p className="house-data house-micro text-[var(--ink-soft)]">Plate 02 — What we publish</p>
-            <h2 id="reads-heading" className="house-display mt-2 text-2xl sm:text-3xl">
-              Six reads on the same documents
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
-              Every company page is built from concall transcripts, investor presentations,
-              and annual reports — read six different ways.
-            </p>
-          </div>
+  return (
+    <main className="house home flex min-h-screen flex-col gap-24 pb-20 lg:gap-32 lg:pb-28">
+      {/* Hero — one viewport: the line, who it's for, the way in. The brand
+          mark sits behind it as a watermark, not a picture. */}
+      <section className="relative overflow-hidden">
+        <div
+          className={`${WRAP} relative flex min-h-[calc(100svh-var(--global-navbar-height))] flex-col`}
+        >
+          <svg
+            viewBox={BRAND_MARK_VIEWBOX}
+            aria-hidden
+            className="home-watermark pointer-events-none absolute right-[-34%] top-1/2 aspect-square h-[52%] -translate-y-1/2 sm:right-[-10%] lg:left-[77.5%] lg:right-auto lg:h-[56%] lg:-translate-x-1/2"
+          >
+            <BrandGlyph />
+          </svg>
 
-          <div className="house-ledger">
-            <div className="house-ledger-row house-ledger-head house-data house-micro text-[var(--ink-soft)]">
-              <span>Read</span>
-              <span>What it answers</span>
-              <span className="md:text-right">Example output</span>
-            </div>
-            {READS.map((read) => (
-              <div key={read.layer} className="house-ledger-row">
-                <p className="house-display text-base">{read.layer}</p>
-                <div>
-                  <p className="text-sm font-medium text-[var(--ink)]">{read.question}</p>
-                  <p className="mt-1 text-sm leading-6 text-[var(--ink-soft)]">{read.body}</p>
-                </div>
-                <p className="house-data house-micro text-[var(--ink-soft)] md:text-right">
-                  {read.example}
-                </p>
+          <div className="relative flex flex-1 items-center py-14">
+            <div>
+              <h1 className="home-display text-[clamp(3.5rem,7.8vw,7.25rem)]">
+                <span className="block">Every stock</span>
+                <span className="block text-[var(--ink-soft)]">has a story.</span>
+              </h1>
+              <p className="mt-6 text-lg text-[var(--ink-soft)] sm:mt-8 sm:text-xl lg:text-[1.375rem]">
+                For the long-term fundamental investor.
+              </p>
+              <div className="mt-8 sm:mt-10">
+                <DeskButton />
               </div>
-            ))}
+            </div>
+          </div>
+
+          <p className="house-data house-micro relative flex items-center gap-2.5 pb-8 text-[var(--ink-soft)] sm:pb-12">
+            <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-[var(--signal)]" />
+            A fundamental scanner and stock research platform
+          </p>
+        </div>
+      </section>
+
+      {/* How it's used — three verbs, each with its drawing. */}
+      <section aria-label="How it works" className={WRAP}>
+        <ol className="border-y border-[var(--rule-strong)]">
+          {STEPS.map(({ heading, step, label, Figure }, i) => (
+            <li
+              key={label}
+              className={`${ROW} py-10 lg:py-11 ${i > 0 ? "border-t border-[var(--rule)]" : ""}`}
+            >
+              <h2 className={POSTER}>{heading}</h2>
+              <div className="lg:pt-12">
+                <p className="flex items-baseline gap-3">
+                  <span className="house-data text-[0.7rem] text-[var(--ink-soft)]">{step}</span>
+                  <span className="home-label text-2xl">{label}</span>
+                </p>
+                <Figure className={`mt-5 ${FIGURE}`} />
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* What every company page carries. The blank cell completes the grid
+          at two and five columns; at three, nine tiles already fill it. */}
+      <section aria-labelledby="cover-heading" className={WRAP}>
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 id="cover-heading" className="house-data house-micro text-[var(--ink-soft)]">
+            What we cover
+          </h2>
+          <p className="house-data house-micro text-[var(--ink-soft)]">Every company page</p>
+        </div>
+        <ul className="mt-5 grid grid-cols-2 gap-px border border-[var(--rule)] bg-[var(--rule)] sm:grid-cols-3 lg:grid-cols-5">
+          {COVER_TILES.map(({ label, Glyph }) => (
+            <li
+              key={label}
+              className="flex aspect-[1.31] flex-col justify-between gap-3 bg-[var(--paper)] p-4 sm:p-5"
+            >
+              <Glyph className="h-auto w-full" />
+              <p className="home-label text-base sm:text-lg lg:text-[1.3rem]">{label}</p>
+            </li>
+          ))}
+          <li aria-hidden className="bg-[var(--paper)] sm:hidden lg:block" />
+        </ul>
+      </section>
+
+      {/* The community. Env-gated like every join affordance: no invite URL,
+          no section, never a dead link. */}
+      {telegramUrl ? (
+        <section aria-labelledby="community-heading" className={`${WRAP} ${ROW}`}>
+          <h2 className={POSTER}>
+            <span className="block">Signal,</span>
+            <span className="block">not noise.</span>
+          </h2>
+          <div className="lg:pt-10">
+            <h3 id="community-heading" className="home-label text-2xl">
+              The community
+            </h3>
+            <CommunityFigure className={`mt-4 ${FIGURE}`} />
+            <p className="mt-4 text-[0.95rem] text-[var(--ink-soft)]">
+              Deep-research people who obsess over quality.
+            </p>
+            <TelegramJoinLink
+              href={telegramUrl}
+              surface="home"
+              className="house-data house-link mt-4 inline-block text-[0.8rem]"
+            >
+              Join on Telegram →
+            </TelegramJoinLink>
           </div>
         </section>
+      ) : null}
 
-        <p className="house-data house-micro border-t border-[var(--rule)] pt-5 text-[var(--ink-soft)]">
-          Scores read documents, not prices.{" "}
-          <Link href="/how-scores-work" prefetch={false} className="house-link">
-            How scores work
-          </Link>
-        </p>
-      </div>
-
-      <DeskStickyCta />
+      <section className={WRAP}>
+        <div className="flex flex-col gap-6 border-y border-[var(--rule)] py-9 sm:flex-row sm:items-center sm:justify-between sm:gap-10">
+          <h2 className="home-display text-[clamp(2rem,3vw,2.75rem)]">
+            Your own research starts here.
+          </h2>
+          <div className="shrink-0">
+            <DeskButton />
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
