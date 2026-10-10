@@ -208,45 +208,61 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The hero canvas — the soft mint→blue panel from the mockup, theme-aware so the
- * site's dark mode doesn't ship a glaring light box. */
-.hero-canvas {
-  border: 1px solid var(--rule);
-  border-radius: 28px;
-  background: linear-gradient(158deg, #e7f4ef 0%, #e9f1fb 52%, #f4f7fb 100%);
-  padding: clamp(1.75rem, 4vw, 3.5rem);
+/* --- the homepage (app/page.tsx) ------------------------------------------
+ * Inks for the drawings in app/(hero)/home-figures.tsx, mixed from the house
+ * palette on the same element so dark mode follows on its own. */
+.home {
+  --tint: color-mix(in srgb, var(--ink-soft) 26%, var(--paper));
+  --signal-soft: color-mix(in srgb, var(--signal) 50%, var(--paper));
+  --signal-faint: color-mix(in srgb, var(--signal) 22%, var(--paper));
+  --rule-strong: color-mix(in srgb, var(--ink) 62%, transparent);
 }
 
-.dark .hero-canvas {
-  background: linear-gradient(158deg, #0c1614 0%, #0b1017 58%, #0a0f14 100%);
+/* The poster headings: heavier and tighter than .house-display. */
+.home-display {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 0.9;
 }
 
-/* The green eyebrow pill. */
-.hero-eyebrow {
+/* Small display labels ("Scan", the coverage tiles). */
+.home-label {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+/* The brand mark behind the hero, at watermark strength. Opaque on purpose:
+ * a translucent ink darkens wherever the strokes cross. */
+.home-watermark {
+  color: color-mix(in srgb, var(--ink) 7%, var(--paper));
+}
+
+.home-cta {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  border: 1px solid color-mix(in srgb, var(--signal) 45%, transparent);
-  border-radius: 999px;
-  padding: 0.35rem 0.9rem;
-  color: var(--signal);
-  background: color-mix(in srgb, var(--signal) 8%, transparent);
-}
-
-/* The blue "quality at a fair price" badge under THE READ. */
-.hero-verdict-badge {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 0.25rem 0.7rem;
+  gap: 0.6rem;
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--paper-2);
+  padding: 0.95rem 1.45rem;
+  font-family: var(--font-data), ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: #1d4ed8;
-  background: color-mix(in srgb, #3b82f6 14%, transparent);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: background-color 150ms ease;
 }
 
-.dark .hero-verdict-badge {
-  color: #93c5fd;
-  background: color-mix(in srgb, #60a5fa 18%, transparent);
+.home-cta:hover {
+  background: color-mix(in srgb, var(--ink) 84%, var(--signal));
+}
+
+.home-cta:focus-visible {
+  outline: 2px solid var(--mark);
+  outline-offset: 3px;
 }
 
 .house-micro {
@@ -603,45 +619,6 @@
 @media (prefers-reduced-motion: reduce) {
   .venn-lens,
   .venn-verdict {
-    opacity: 1;
-    transform: none;
-    animation: none;
-  }
-}
-
-/* Read equation entrance: the three legs fade in left→right, then the READ cell
- * settles — the same "three lenses resolving into a read" moment as the Venn.
- * --eq-delay is set per leg in read-equation.tsx; the read cell follows the last
- * leg. Reduced-motion falls straight to the finished figure. */
-@keyframes eq-leg-in {
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes eq-read-in {
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.eq-leg {
-  opacity: 0;
-  transform: translateY(6px);
-  animation: eq-leg-in 400ms ease-out var(--eq-delay, 60ms) forwards;
-}
-
-.eq-read {
-  opacity: 0;
-  transform: scale(0.94);
-  animation: eq-read-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) 380ms forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .eq-leg,
-  .eq-read {
     opacity: 1;
     transform: none;
     animation: none;
