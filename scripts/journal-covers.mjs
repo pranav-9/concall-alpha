@@ -578,6 +578,33 @@ const COVERS = {
       C(334, 230, 10, "s a") +
       C(323, 213, 10, "s a"),
   ],
+  // EMS sector map — the product every name in the piece makes: one board, one chip, the traces
+  // between. Kept to the centre column so the Desk hero's centre crop still shows the chip.
+  "ems-chain-two-cohorts": [
+    "teal",
+    R(220, 60, 200, 200, 10, "s l") +
+      [[232, 72], [408, 72], [232, 248], [408, 248]].map(([x, y]) => C(x, y, 5, "s w")).join("") +
+      // traces first so the chip and pads sit on top of them
+      P("M300 120 V96 H252", "s t") +
+      P("M336 120 V84 H388", "s t") +
+      P("M360 152 H394 V112", "s t") +
+      P("M280 176 H248 V218", "s t") +
+      P("M324 200 V234 H374", "s t") +
+      C(252, 96, 5, "s w") +
+      C(388, 84, 5, "s w") +
+      C(394, 112, 5, "s w") +
+      C(248, 218, 5, "s w") +
+      C(374, 234, 5, "s a") +
+      // small parts: two capacitors, one resistor
+      R(240, 130, 12, 22, 3, "s w") +
+      R(256, 130, 12, 22, 3, "s w") +
+      R(378, 170, 28, 12, 3, "s m") +
+      // the chip: legs, body, the lid mark
+      range(4).map((i) => L(300 + i * 12, 120, 300 + i * 12, 132) + L(300 + i * 12, 188, 300 + i * 12, 200)).join("") +
+      range(4).map((i) => L(280, 140 + i * 12, 292, 140 + i * 12) + L(348, 140 + i * 12, 360, 140 + i * 12)).join("") +
+      R(292, 132, 56, 56, 4, "s d") +
+      C(302, 142, 4, "s a"),
+  ],
 };
 
 // --- frame --------------------------------------------------------------------
