@@ -4,6 +4,7 @@ import type { MDXComponents } from "mdx/types";
 
 import { JOURNAL_CONTINUE_ANCHOR } from "@/lib/signup-gate";
 
+import { EmsPlate01, EmsPlate02, EmsPlate03, EmsPlate04 } from "./plates/ems-chain";
 import { PostPoster } from "./post-image";
 
 // Hand-styled component map so build-log prose matches the portal's tokens
@@ -34,6 +35,11 @@ export const mdxComponents: MDXComponents = {
   ),
   // The poster figure, lifted out of the source by `liftPoster` (app/blog/related.ts).
   PostPoster,
+  // A sector map's visual story blocks (app/blog/plates/), placed by the post itself.
+  EmsPlate01,
+  EmsPlate02,
+  EmsPlate03,
+  EmsPlate04,
   // Where the sign-up gate clips a post, placed by `gatePost` (app/blog/related.ts).
   // Also the anchor a new sign-up lands on (`buildJournalGateNext`).
   GateCut: () => <div id={JOURNAL_CONTINUE_ANCHOR} data-gate-cut aria-hidden="true" />,
