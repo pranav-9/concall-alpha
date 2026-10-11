@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-import { parseFeaturedRead, type DeskFeaturedReadRow } from "../lib/desk-featured/types";
+import { isPinned, parseFeaturedRead, type DeskFeaturedReadRow } from "../lib/desk-featured/types";
 
 // A schema-valid row; each case overrides one field.
 const mkRow = (over: Partial<DeskFeaturedReadRow> = {}): DeskFeaturedReadRow => ({
@@ -77,3 +77,39 @@ assert.equal(parseFeaturedRead(mkRow({ image_url: "/blog/poster.jpg", image_alt:
 console.log("  ok  a remote, non-image or alt-less image makes the row invalid");
 
 console.log("\nAll desk-featured parse tests passed.");
+
+// --- section "journal" (2026-10-11): a Journal post featured as a read in its own right ---
+const journal = parseFeaturedRead(
+  mkRow({
+    id: "journal-EMS-2026-10-11",
+    company_code: "EMS",
+    company_name: "India's EMS makers",
+    sector: "Electronics manufacturing",
+    section: "journal",
+    tag_label: "Deep dive of the week",
+    section_href: "/blog/ems-chain-two-cohorts",
+    pinned_until: "2026-10-18T12:00:00+00:00",
+  }),
+);
+assert.ok(journal, "a journal row parses");
+assert.equal(journal?.section, "journal");
+assert.equal(journal?.pinnedUntilRaw, "2026-10-18T12:00:00+00:00");
+assert.equal(journal?.href, "/blog/ems-chain-two-cohorts");
+console.log("  ok  section journal is accepted and pinned_until is carried");
+
+// pinned_until is optional: absent, null or non-string reads as no pin.
+assert.equal(parseFeaturedRead(mkRow())?.pinnedUntilRaw, null);
+assert.equal(parseFeaturedRead(mkRow({ pinned_until: null }))?.pinnedUntilRaw, null);
+console.log("  ok  a row without pinned_until parses with no pin");
+
+const at = Date.parse("2026-10-11T12:00:00Z");
+assert.equal(isPinned({ pinnedUntilRaw: "2026-10-18T12:00:00Z" }, at), true);
+assert.equal(isPinned({ pinnedUntilRaw: "2026-10-11T12:00:00Z" }, at), false, "exactly now is expired");
+assert.equal(isPinned({ pinnedUntilRaw: "2026-10-01T00:00:00Z" }, at), false);
+assert.equal(isPinned({ pinnedUntilRaw: null }, at), false);
+assert.equal(isPinned({ pinnedUntilRaw: "soon" }, at), false, "unreadable is no pin");
+console.log("  ok  isPinned compares against the given instant");
+
+// The enum still rejects what the schema rejects.
+assert.equal(parseFeaturedRead(mkRow({ section: "blog" })), null, "unknown section is dropped");
+console.log("  ok  an unknown section is still rejected");

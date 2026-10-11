@@ -26,13 +26,18 @@ const BASE_COLUMNS =
 // column), so the read falls back to BASE_COLUMNS — shipping the portal before
 // the DDL must not hide the whole strip.
 const IMAGE_COLUMNS = "image_url,image_alt";
+// Added by a manual DDL step too (2026-10-11): the editorial pin. Same 42703
+// fallback, tried first because it is the newest column.
+const PIN_COLUMNS = "pinned_until";
 const UNDEFINED_COLUMN = "42703";
 
 const readFeaturedReads = async (): Promise<FeaturedRead[]> => {
   try {
     const supabase = createPublicReadClient();
-    const runQuery = (columns: string) => {
-      let query = supabase
+    // Captured once at cache fill, so a card surfaces within one revalidate window.
+    const now = new Date().toISOString();
+    const pool = (columns: string) =>
+      supabase
         .from("desk_featured_read")
         .select(columns)
         .eq("status", "eligible")
@@ -40,8 +45,9 @@ const readFeaturedReads = async (): Promise<FeaturedRead[]> => {
         // Recency now decides every slot, so a future-dated row (a typo'd year, an
         // IST time stored without its offset) would pin the strip until that date
         // arrives. published_at is producer-written; hide rows until it's real.
-        // Captured at cache fill, so a card surfaces within one revalidate window.
-        .lte("published_at", new Date().toISOString());
+        .lte("published_at", now);
+    const runQuery = (columns: string) => {
+      let query = pool(columns);
 
       // Driven from SELECTION_ORDER rather than hand-written keys, so the fetch
       // and selectFeaturedReads cannot drift apart. The leading key
@@ -55,14 +61,37 @@ const readFeaturedReads = async (): Promise<FeaturedRead[]> => {
       return query.limit(READ_LIMIT);
     };
 
-    let { data, error } = await runQuery(`${BASE_COLUMNS},${IMAGE_COLUMNS}`);
+    // Column fallbacks, newest DDL first: pin (2026-10-11), then image
+    // (2026-09-14), then the original list.
+    let { data, error } = await runQuery(`${BASE_COLUMNS},${IMAGE_COLUMNS},${PIN_COLUMNS}`);
+    const hasPinColumn = error?.code !== UNDEFINED_COLUMN;
+    if (!hasPinColumn) {
+      ({ data, error } = await runQuery(`${BASE_COLUMNS},${IMAGE_COLUMNS}`));
+    }
     if (error?.code === UNDEFINED_COLUMN) {
       ({ data, error } = await runQuery(BASE_COLUMNS));
     }
 
     if (error) throw error;
 
-    return ((data ?? []) as unknown as DeskFeaturedReadRow[])
+    const rows = (data ?? []) as unknown as DeskFeaturedReadRow[];
+
+    // A live pin can be older than the recency window (a week-old deep dive
+    // behind a dozen fresher reads), so fetch live pins on their own and union
+    // them in; selectFeaturedReads puts them first.
+    if (hasPinColumn) {
+      const pinned = await pool(`${BASE_COLUMNS},${IMAGE_COLUMNS},${PIN_COLUMNS}`)
+        .gt("pinned_until", now)
+        .order("published_at", { ascending: false })
+        .limit(FEATURED_SLOTS);
+      if (pinned.error) throw pinned.error;
+      const seen = new Set(rows.map((r) => r.id));
+      for (const r of (pinned.data ?? []) as unknown as DeskFeaturedReadRow[]) {
+        if (!seen.has(r.id)) rows.push(r);
+      }
+    }
+
+    return rows
       .map(parseFeaturedRead)
       .filter((r): r is FeaturedRead => r !== null);
   } catch (error) {

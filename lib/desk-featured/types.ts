@@ -11,6 +11,10 @@ export const FEATURED_SECTIONS = [
   "business_snapshot",
   "key_variables",
   "moat",
+  // A Journal post featured as a read in its own right (2026-10-11): the
+  // heading is company_name, company_code is a short footer label, the href
+  // is the post.
+  "journal",
 ] as const;
 export type FeaturedSection = (typeof FEATURED_SECTIONS)[number];
 
@@ -35,6 +39,8 @@ export type DeskFeaturedReadRow = {
   // Optional, and absent entirely until the 2026-09-14 DDL is applied.
   image_url?: string | null;
   image_alt?: string | null;
+  // Optional, and absent entirely until the 2026-10-11 DDL is applied.
+  pinned_until?: string | null;
 };
 
 // The validated display shape the UI renders.
@@ -52,6 +58,8 @@ export type FeaturedRead = {
   weight: number;
   publishedAtRaw: string | null;
   image: { src: string; alt: string } | null;
+  /** Editorial pin: while this instant is ahead of now the card holds the hero slot. */
+  pinnedUntilRaw: string | null;
 };
 
 const isSection = (v: unknown): v is FeaturedSection =>
@@ -124,7 +132,15 @@ export function parseFeaturedRead(row: DeskFeaturedReadRow): FeaturedRead | null
     weight: clampWeight(row.feature_weight),
     publishedAtRaw: row.published_at ?? null,
     image,
+    pinnedUntilRaw: typeof row.pinned_until === "string" ? row.pinned_until : null,
   };
+}
+
+/** Whether a read's editorial pin is still live at `nowMs`. An unreadable date is no pin. */
+export function isPinned(read: Pick<FeaturedRead, "pinnedUntilRaw">, nowMs: number): boolean {
+  if (!read.pinnedUntilRaw) return false;
+  const until = Date.parse(read.pinnedUntilRaw);
+  return Number.isFinite(until) && until > nowMs;
 }
 
 // The eyebrow's optional trailing segment. Only new_coverage earns a suffix, to
