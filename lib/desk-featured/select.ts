@@ -11,12 +11,19 @@
 // strip, so nothing is hidden by not featuring it; shelf life for older reads
 // belongs in an archive, not in a carousel on a "what's new" surface.
 //
-// Stateless and clock-free by design — the portal is a read-only consumer and
-// writes nothing (no last_featured_at column, no cron). The pick is a pure
-// function of the eligible pool, so every viewer sees the same front page and
-// it turns over exactly when a producer promotes a new card, not on a timer.
+// Stateless by design — the portal is a read-only consumer and writes nothing
+// (no last_featured_at column, no cron). The pick is a pure function of the
+// eligible pool, so every viewer sees the same front page and it turns over
+// exactly when a producer promotes a new card, not on a timer.
+//
+// The one exception (2026-10-11, the user's call): an editorial PIN. A card
+// whose `pinned_until` is still ahead holds the hero slot for that long — the
+// week's deep-dive report stays in the big box while fresher company reads
+// fill the two secondaries. The producer sets the instant; the portal only
+// reads the clock to compare against it, so the pick stays the same for every
+// viewer and expires on its own.
 
-import type { FeaturedRead } from "./types";
+import { isPinned, type FeaturedRead } from "./types";
 
 // How many cards the strip shows: 1 hero + 2 secondaries.
 export const FEATURED_SLOTS = 3;
@@ -37,17 +44,18 @@ const publishedMs = (r: FeaturedRead): number => {
   return Number.isFinite(ms) ? ms : 0;
 };
 
+const byRecency = (a: FeaturedRead, b: FeaturedRead): number =>
+  publishedMs(b) - publishedMs(a) ||
+  b.weight - a.weight ||
+  (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+
 // The FEATURED_SLOTS freshest eligible reads, hero first. Feature weight only
 // breaks an exact recency tie — it gates eligibility upstream (data.ts) but
 // never promotes an older read over a newer one. Key precedence here must match
-// SELECTION_ORDER.
-export function selectFeaturedReads(reads: FeaturedRead[]): FeaturedRead[] {
-  return [...reads]
-    .sort(
-      (a, b) =>
-        publishedMs(b) - publishedMs(a) ||
-        b.weight - a.weight ||
-        (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
-    )
-    .slice(0, FEATURED_SLOTS);
+// SELECTION_ORDER. A live pin (pinned_until ahead of `nowMs`) comes first
+// regardless of age; several live pins order among themselves by recency.
+export function selectFeaturedReads(reads: FeaturedRead[], nowMs: number = Date.now()): FeaturedRead[] {
+  const pinned = reads.filter((r) => isPinned(r, nowMs)).sort(byRecency);
+  const rest = reads.filter((r) => !isPinned(r, nowMs)).sort(byRecency);
+  return [...pinned, ...rest].slice(0, FEATURED_SLOTS);
 }

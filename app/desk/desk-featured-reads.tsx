@@ -115,7 +115,9 @@ function HeroCard({ read, record }: { read: FeaturedRead; record: GuidanceRecord
         )}
       >
         <Meta read={read} />
-        <span className="house-data house-micro text-[var(--signal)]">Read the analysis →</span>
+        <span className="house-data house-micro text-[var(--signal)]">
+          {read.section === "journal" ? "Read the post →" : "Read the analysis →"}
+        </span>
       </div>
     </>
   );

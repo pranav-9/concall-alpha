@@ -26,6 +26,7 @@ const mk = (
   weight,
   publishedAtRaw,
   image: null,
+  pinnedUntilRaw: null,
 });
 
 const codes = (reads: FeaturedRead[]) => selectFeaturedReads(reads).map((r) => r.companyCode);
@@ -181,3 +182,44 @@ assert.deepEqual(
 console.log("  ok  fetch order matches the selection comparator");
 
 console.log("All desk featured selection tests passed.");
+
+// --- the editorial pin (2026-10-11): a live pin holds the hero regardless of age ---
+const NOW = Date.parse("2026-10-11T12:00:00Z");
+const pin = (companyCode: string, publishedAtRaw: string, pinnedUntilRaw: string | null): FeaturedRead => ({
+  ...mk(companyCode, publishedAtRaw, 80),
+  id: `journal-${companyCode}-2026-10-11`,
+  section: "journal",
+  href: "/blog/ems-chain-two-cohorts",
+  pinnedUntilRaw,
+});
+const withPin = [...pool, pin("EMS", "2026-09-01T00:00:00Z", "2026-10-18T12:00:00Z")];
+assert.deepEqual(
+  selectFeaturedReads(withPin, NOW).map((r) => r.companyCode),
+  ["EMS", "AVANTIFEED", "PAYTM"],
+  "a live pin is the hero; the two freshest reads fill the secondaries",
+);
+console.log("  ok  a live pin holds the hero slot ahead of fresher reads");
+
+assert.deepEqual(
+  selectFeaturedReads(withPin, Date.parse("2026-10-18T12:00:01Z")).map((r) => r.companyCode),
+  ["AVANTIFEED", "PAYTM", "PWL"],
+  "an expired pin is ordinary recency again (and here too old to show)",
+);
+console.log("  ok  an expired pin falls back to recency");
+
+const unreadable = [...pool, pin("EMS", "2026-09-01T00:00:00Z", "not a date")];
+assert.deepEqual(selectFeaturedReads(unreadable, NOW).map((r) => r.companyCode), ["AVANTIFEED", "PAYTM", "PWL"]);
+console.log("  ok  an unreadable pinned_until is no pin");
+
+const twoPins = [
+  ...pool,
+  pin("OLDPIN", "2026-09-01T00:00:00Z", "2026-10-18T12:00:00Z"),
+  pin("NEWPIN", "2026-09-05T00:00:00Z", "2026-10-18T12:00:00Z"),
+];
+assert.deepEqual(selectFeaturedReads(twoPins, NOW).map((r) => r.companyCode), ["NEWPIN", "OLDPIN", "AVANTIFEED"]);
+console.log("  ok  several live pins order by recency among themselves");
+
+const pinnedVirgin = [pin("B", "2026-09-01T00:00:00Z", "2026-10-18T12:00:00Z"), mk("A", "2026-09-12T00:00:00Z")];
+selectFeaturedReads(pinnedVirgin, NOW);
+assert.deepEqual(pinnedVirgin.map((r) => r.companyCode), ["B", "A"], "pin path does not mutate the pool either");
+console.log("  ok  the pin path leaves the cached pool untouched");

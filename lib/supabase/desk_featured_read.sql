@@ -23,7 +23,8 @@ create table if not exists public.desk_featured_read (
       'valuation',
       'business_snapshot',
       'key_variables',
-      'moat'
+      'moat',
+      'journal'
     )
   ),
   tag_label text not null,
@@ -47,6 +48,26 @@ create table if not exists public.desk_featured_read (
 alter table public.desk_featured_read
   add column if not exists image_url text null,
   add column if not exists image_alt text null;
+
+-- A Journal post featured as a read in its own right (2026-10-11: the EMS
+-- sector map as the week's deep dive) takes section = 'journal'. Existing
+-- tables carry the older check; replace it in place.
+alter table public.desk_featured_read
+  drop constraint if exists desk_featured_read_section_check;
+alter table public.desk_featured_read
+  add constraint desk_featured_read_section_check check (
+    section in (
+      'guidance', 'growth', 'quarter', 'valuation',
+      'business_snapshot', 'key_variables', 'moat', 'journal'
+    )
+  );
+
+-- Editorial pin (2026-10-11): while pinned_until is in the future the card holds
+-- the strip's hero slot ahead of fresher reads (the week's deep dive). Null or
+-- past = ordinary recency. Additive and nullable; the portal falls back to the
+-- old column list until it exists.
+alter table public.desk_featured_read
+  add column if not exists pinned_until timestamptz null;
 
 -- The portal reads only eligible rows and takes the freshest few. Column order
 -- mirrors the query exactly (lib/desk-featured/data.ts, driven by
