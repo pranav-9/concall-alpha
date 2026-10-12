@@ -605,6 +605,32 @@ const COVERS = {
       R(292, 132, 56, 56, 4, "s d") +
       C(302, 142, 4, "s a"),
   ],
+  // Avalon vs Centum — each one's product, anchor on the left: Avalon's box build (an enclosure with the board,
+  // its connectors and a cable out); Centum's design-led work, a satellite with its panels and antenna.
+  "avalon-vs-centum": [
+    "slate",
+    L(120, 236, 340, 236) +
+      R(140, 104, 190, 132, 10, "s w") +
+      R(158, 122, 104, 76, 4, "s l") +
+      range(4).map((i) => L(172 + i * 22, 122, 172 + i * 22, 198, "s t")).join("") +
+      R(190, 140, 40, 40, 4, "s d") +
+      C(198, 148, 3.5, "s a") +
+      [138, 164, 190].map((y) => R(280, y - 8, 30, 16, 3, "s m")).join("") +
+      R(158, 210, 104, 12, 3, "s w") +
+      P("M310 190 C356 190 346 236 372 236", "s") +
+      L(392, 66, 392, 220, "s t dash") +
+      R(456, 128, 56, 56, 6, "s m") +
+      C(484, 156, 9, "s w") +
+      R(400, 140, 52, 32, 3, "s l") +
+      L(426, 140, 426, 172, "s t") +
+      L(400, 156, 452, 156, "s t") +
+      R(516, 140, 52, 32, 3, "s l") +
+      L(542, 140, 542, 172, "s t") +
+      L(516, 156, 568, 156, "s t") +
+      L(484, 128, 484, 100) +
+      P("M466 92 a18 10 0 0 0 36 0", "s w") +
+      C(484, 86, 5, "s a"),
+  ],
 };
 
 // --- frame --------------------------------------------------------------------
