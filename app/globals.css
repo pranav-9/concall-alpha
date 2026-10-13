@@ -8,7 +8,6 @@
   :root {
     --global-navbar-height: 84px; /* phones: 68px, see the media query below */
     --company-tabs-height: 56px;
-    --quarter-tracker-banner-height: 36px;
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;

@@ -7,7 +7,6 @@ import {
   scoreWrittenAt,
   type ScoreSourceStatus,
 } from "@/lib/score-freshness";
-import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import type { ScorePoint } from "@/lib/score-path";
 import { BANDS, SCORE_BAND_ORDER, bandForScore, type BandKey } from "@/lib/score-band";
 import {
@@ -71,8 +70,6 @@ type CompanyRow = {
   name: string | null;
   sector: string | null;
   sub_sector: string | null;
-  market_cap_band_at_admission: string | null;
-  excluded_from_discovery: boolean | null;
 };
 
 type AnalysisRow = {
@@ -194,7 +191,7 @@ async function fetchTrackerData(target: ReportingQuarter): Promise<CachedTracker
     await Promise.all([
       supabase
         .from("company")
-        .select(`code, name, sector, sub_sector, ${COVERAGE_SELECT}`),
+        .select("code, name, sector, sub_sector"),
       // source_status and scored_at come back as scalar JSON paths so the whole
       // details blob stays off the wire. Paged to dodge the 1000-row cap.
       fetchAnalysisRows(supabase),
@@ -205,10 +202,9 @@ async function fetchTrackerData(target: ReportingQuarter): Promise<CachedTracker
         .eq("qtr", target.qtr),
     ]);
 
-  // The tracker is a discovery surface (linked from the homepage banner):
-  // de-emphasized companies (large-cap band / coverage cut) stay off it,
-  // same as leaderboards and the homepage feed.
-  const companies = ((companyData ?? []) as CompanyRow[]).filter(isDiscoveryListed);
+  // The tracker covers every company, de-emphasized ones included (large-cap
+  // band / coverage cut): it answers "who has reported", not "who ranks".
+  const companies = (companyData ?? []) as CompanyRow[];
   const analysis = analysisRows;
   // A calendar outage must not take the score board down with it: the dates
   // degrade to "not announced", the scores still render.
@@ -336,7 +332,7 @@ const getCachedTrackerData = unstable_cache(
   fetchTrackerData,
   // Bump the version whenever TrackerEntry's shape changes — the cached payload
   // is JSON on disk, and a stale entry would arrive missing the new fields.
-  ["quarter-tracker-v2"],
+  ["quarter-tracker-v3"],
   { revalidate: 300 },
 );
 
