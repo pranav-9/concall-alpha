@@ -4,7 +4,7 @@ import { unstable_cache } from "next/cache";
 
 import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { selectMostViewed } from "@/lib/desk-most-viewed";
-import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isAdmittedLargeCap, isDiscoveryListed } from "@/lib/coverage-policy";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { currentReportingQuarter } from "@/lib/current-quarter";
 import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
@@ -63,6 +63,13 @@ export type DeskLeaderboard = {
   coveredCount: number;
   /** Distinct sectors with more than one covered company (matches /sectors). */
   sectorCount: number;
+  /**
+   * Every mid/small-cap company on file (all but large-cap admissions), the
+   * coverage cut included — the masthead's Coverage figure.
+   */
+  universeCount: number;
+  /** Distinct sectors with more than one company in that universe. */
+  universeSectorCount: number;
   /** Covered companies with a current-quarter read. */
   reportedCount: number;
   latestReads: DeskRow[];
@@ -138,9 +145,17 @@ function buildCoverage(companyRows: CoverageRow[]) {
   const byCode = new Map<string, CoverageInfo>();
   const excludedKeys = new Set<string>();
   const sectorCounts = new Map<string, number>();
+  const universeSectorCounts = new Map<string, number>();
   let coveredCount = 0;
+  let universeCount = 0;
 
   companyRows.forEach((row) => {
+    if (!isAdmittedLargeCap(row)) {
+      universeCount += 1;
+      if (row.sector) {
+        universeSectorCounts.set(row.sector, (universeSectorCounts.get(row.sector) ?? 0) + 1);
+      }
+    }
     if (!isDiscoveryListed(row)) {
       if (row.code) excludedKeys.add(upper(row.code));
       if (row.name) excludedKeys.add(upper(row.name));
@@ -162,8 +177,9 @@ function buildCoverage(companyRows: CoverageRow[]) {
   // Sectors with a single company are noise on a sector view (matches
   // app/sectors/page.tsx, which drops companyCount <= 1).
   const sectorCount = Array.from(sectorCounts.values()).filter((n) => n > 1).length;
+  const universeSectorCount = Array.from(universeSectorCounts.values()).filter((n) => n > 1).length;
 
-  return { byCode, excludedKeys, coveredCount, sectorCount };
+  return { byCode, excludedKeys, coveredCount, sectorCount, universeCount, universeSectorCount };
 }
 
 async function fetchConcallRows(supabase: DeskReadClient) {
@@ -567,6 +583,8 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
     quarterLabel: quarter.label,
     coveredCount: coverage.coveredCount,
     sectorCount: coverage.sectorCount,
+    universeCount: coverage.universeCount,
+    universeSectorCount: coverage.universeSectorCount,
     reportedCount,
     latestReads,
     quarterLeaders,
