@@ -94,23 +94,7 @@ export default async function DeskPage() {
               <FromSm>
               <header className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4 border-b border-[var(--rule)] pb-6">
                 <div className="min-w-0">
-                  <p className="house-data house-micro flex flex-wrap items-center gap-x-2 text-[var(--ink-soft)]">
-                    <span aria-hidden className="text-[var(--signal)]">
-                      ●
-                    </span>
-                    <span>A fundamental screener</span>
-                    <span aria-hidden>·</span>
-                    <span>{board.quarterLabel}</span>
-                    <span aria-hidden>·</span>
-                    <Link
-                      href="/quarter-tracker"
-                      prefetch={false}
-                      className="underline decoration-[var(--rule)] underline-offset-[3px] hover:text-[var(--ink)]"
-                    >
-                      {board.reportedCount} of {board.coveredCount} calls read · season tracker →
-                    </Link>
-                  </p>
-                  <h1 className="house-display mt-3 max-w-xl text-3xl leading-[1.05] sm:text-4xl lg:text-[2.75rem]">
+                  <h1 className="house-display max-w-xl text-3xl leading-[1.05] sm:text-4xl lg:text-[2.75rem]">
                     Ranking India&apos;s top 100 companies.
                   </h1>
                 </div>
@@ -118,10 +102,10 @@ export default async function DeskPage() {
                 <dl className="shrink-0 text-right">
                   <dt className="house-data house-micro text-[var(--ink-soft)]">Coverage</dt>
                   <dd className="house-display text-4xl leading-none text-[var(--ink)]">
-                    {board.coveredCount}
+                    {board.universeCount}
                   </dd>
                   <dd className="house-data house-micro mt-1 text-[var(--ink-soft)]">
-                    {board.sectorCount} sectors
+                    Mid &amp; small caps · {board.universeSectorCount} sectors
                   </dd>
                 </dl>
               </header>
