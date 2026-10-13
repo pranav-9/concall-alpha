@@ -11,6 +11,8 @@ import { authHrefWithNext } from "@/lib/safe-next-path";
 import { BrandLogo, BrandMark } from "@/components/brand/logo";
 import { JournalNewIndicator } from "@/components/journal-new-indicator";
 import { TelegramJoinLink } from "@/components/telegram-join-link";
+import { ResultsPill } from "@/components/results-pill";
+import type { ResultsPulse } from "@/lib/results-pulse/count";
 import {
   ActiveMark,
   MORE_ICONS,
@@ -93,6 +95,7 @@ const Navbar = ({
   initialCompanies = [],
   latestJournalDate = null,
   telegramUrl = null,
+  resultsPulse = null,
 }: {
   initialUser?: UserInfo;
   initialCompanies?: { code: string; name: string | null }[];
@@ -100,9 +103,9 @@ const Navbar = ({
   /** Validated invite URL from `getTelegramJoinUrl()`; null renders no link.
    *  The one join affordance on every page (2026-09-13 visibility push). */
   telegramUrl?: string | null;
-  // Accepted for backwards-compat with the layout wiring; the quarter tracker is
-  // now reached from the LIVE banner, not a nav tab.
-  quarterLabel?: string | null;
+  /** Results-season counts from `getResultsPulse()`; null (off season, or a
+   *  failed read) renders no pill. Takes the first slot in every shell. */
+  resultsPulse?: ResultsPulse | null;
 }) => {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -154,6 +157,7 @@ const Navbar = ({
   const signUpHref = authHrefWithNext("/auth/sign-up", pathname);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const isTrackerActive = isActive("/quarter-tracker");
   // Desktop strip: "Other" lights when the page is one of its destinations
   // (prefix match, so /sectors/<slug> counts — unlike the phone bar, which only
   // renders on exact routes).
@@ -319,11 +323,20 @@ const Navbar = ({
           <div className="house flex items-center justify-between gap-2.5 border-b border-[var(--rule)] !bg-[color-mix(in_srgb,var(--paper)_86%,transparent)] px-3.5 py-[7px] backdrop-blur-[14px] sm:hidden">
             <Link href={brandHref} className="flex min-w-0 items-center gap-[9px]">
               <BrandMark bare size={26} className="shrink-0 text-[var(--ink)]" />
-              <span className="house-data whitespace-nowrap text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">
+              {/* The results pill needs the room on a phone; the mark stays. */}
+              <span
+                className={cn(
+                  "house-data whitespace-nowrap text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]",
+                  resultsPulse && "max-[429px]:hidden",
+                )}
+              >
                 Story of a Stock
               </span>
             </Link>
             <div className="flex shrink-0 items-center gap-1.5">
+              {resultsPulse ? (
+                <ResultsPill pulse={resultsPulse} size="phone" active={isTrackerActive} />
+              ) : null}
               <button
                 ref={phoneMenuButtonRef}
                 type="button"
@@ -365,11 +378,22 @@ const Navbar = ({
         >
           <div className="min-w-0 shrink-0">
             <Link href={brandHref} className="group inline-flex items-center gap-3">
-              <BrandLogo size={40} showEyebrow />
+              {/* Under 480px the results pill takes the wordmark's room; the mark stays. */}
+              <BrandLogo
+                size={40}
+                showEyebrow
+                className={cn(resultsPulse && "max-[479px]:hidden")}
+              />
+              {resultsPulse ? <BrandMark size={40} className="min-[480px]:hidden" /> : null}
             </Link>
           </div>
 
           <div className="flex items-center gap-2">
+            {resultsPulse ? (
+              <span className="house-tokens contents">
+                <ResultsPill pulse={resultsPulse} size="phone" active={isTrackerActive} />
+              </span>
+            ) : null}
             <button
               ref={menuButtonRef}
               type="button"
@@ -506,6 +530,11 @@ const Navbar = ({
           </div>
 
           <div className="ml-auto flex items-stretch">
+            {resultsPulse ? (
+              <div className="flex items-center pr-2">
+                <ResultsPill pulse={resultsPulse} active={isTrackerActive} />
+              </div>
+            ) : null}
             {PHONE_TABS.map(({ href, label }) => {
               const Icon = TAB_ICONS[href];
               const active = isActive(href);
