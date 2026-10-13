@@ -25,7 +25,7 @@ import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { getSiteUrl } from "@/lib/site-url";
 import { getActivePoll } from "@/lib/feedback-polls/queries";
 import { getAllPostMeta } from "@/app/blog/posts";
-import { currentReportingQuarter } from "@/lib/current-quarter";
+import { getResultsPulse } from "@/lib/results-pulse/get";
 
 // Search Console verifies a URL-prefix property off this meta tag. The token is
 // public by design (it ships in the HTML); it's an env var only so a new property
@@ -85,9 +85,10 @@ const houseData = IBM_Plex_Mono({
  * all ride in the token), so it never waits on Supabase Auth.
  */
 async function NavbarWithUser() {
-  const [claims, initialCompanies] = await Promise.all([
+  const [claims, initialCompanies, resultsPulse] = await Promise.all([
     getReaderClaims(),
     getCachedCompanySearchRows().catch(() => []),
+    getResultsPulse(),
   ]);
   const latestJournalDate = getAllPostMeta()[0]?.date ?? null;
 
@@ -96,7 +97,7 @@ async function NavbarWithUser() {
       initialCompanies={initialCompanies}
       latestJournalDate={latestJournalDate}
       telegramUrl={getTelegramJoinUrl()}
-      quarterLabel={currentReportingQuarter().label}
+      resultsPulse={resultsPulse}
       initialUser={navbarUserFromClaims(claims)}
     />
   );
