@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { formatRelativeActivityTime } from "@/lib/activity-feed";
@@ -59,9 +60,6 @@ export default async function DeskPage() {
 
   return (
     <main className="house relative min-h-screen">
-      {/* Quarter tracker strip hidden 2026-08-25 — results season over. Re-enable next season. */}
-      {/* <QuarterTrackerBanner /> */}
-
       {/*
         One tree, two presentations. Below `sm` the page is a flex column and
         each block carries an `order-*` so the phone reads change-first —
@@ -83,9 +81,13 @@ export default async function DeskPage() {
                     <span aria-hidden className="text-[9px] text-[var(--signal)]">
                       ●
                     </span>
-                    <span>
-                      {board.quarterLabel} · {board.reportedCount} of {board.coveredCount} calls read
-                    </span>
+                    <Link
+                      href="/quarter-tracker"
+                      prefetch={false}
+                      className="underline decoration-[var(--rule)] underline-offset-[3px] hover:text-[var(--ink)]"
+                    >
+                      {board.quarterLabel} · {board.reportedCount} of {board.coveredCount} calls read →
+                    </Link>
                   </p>
                 </header>
               </BelowSm>
@@ -100,9 +102,13 @@ export default async function DeskPage() {
                     <span aria-hidden>·</span>
                     <span>{board.quarterLabel}</span>
                     <span aria-hidden>·</span>
-                    <span>
-                      {board.reportedCount} of {board.coveredCount} calls read
-                    </span>
+                    <Link
+                      href="/quarter-tracker"
+                      prefetch={false}
+                      className="underline decoration-[var(--rule)] underline-offset-[3px] hover:text-[var(--ink)]"
+                    >
+                      {board.reportedCount} of {board.coveredCount} calls read · season tracker →
+                    </Link>
                   </p>
                   <h1 className="house-display mt-3 max-w-xl text-3xl leading-[1.05] sm:text-4xl lg:text-[2.75rem]">
                     Ranking India&apos;s top 100 companies.
