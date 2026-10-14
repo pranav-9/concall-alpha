@@ -7,6 +7,7 @@
 
 import type { ReportingQuarter } from "@/lib/current-quarter";
 
+import { buildGarpScan, type GarpRow, type GarpScan } from "./garp";
 import { buildGuidanceUpgradeScan, type GuidanceUpgradeRow, type GuidanceUpgradeScan } from "./guidance-upgrades";
 import { buildPegScan, type PegRow, type PegScan } from "./peg";
 import { buildTrendScan, type TrendRow, type TrendScan } from "./price-trend";
@@ -17,6 +18,7 @@ export type ScanInputs = {
   pegRows: PegRow[] | null;
   guidance: { rows: GuidanceUpgradeRow[]; readable: ScanCompany[] } | null;
   trendRows: TrendRow[] | null;
+  garpRows: GarpRow[] | null;
 };
 
 export type Scans = {
@@ -24,6 +26,7 @@ export type Scans = {
   peg: PegScan | null;
   guidance: GuidanceUpgradeScan | null;
   trend: TrendScan | null;
+  garp: GarpScan | null;
 };
 
 export type ScanCounts = {
@@ -31,6 +34,7 @@ export type ScanCounts = {
   peg: number | null;
   guidance: number | null;
   trend: number | null;
+  garp: number | null;
 };
 
 export const listedScope = (c: ScanCompany) => c.listed;
@@ -54,6 +58,7 @@ export function buildScans(
         )
       : null,
     trend: inputs.trendRows ? buildTrendScan(inputs.trendRows.filter(scope), now) : null,
+    garp: inputs.garpRows ? buildGarpScan(inputs.garpRows.filter(scope), now) : null,
   };
 }
 
@@ -65,5 +70,6 @@ export function scanCounts(scans: Scans): ScanCounts {
     guidance: scans.guidance?.rows.length ?? null,
     // Every fresh company lands in a group, so the tab counts what it scanned.
     trend: scans.trend?.scanned ?? null,
+    garp: scans.garp?.hits.length ?? null,
   };
 }
