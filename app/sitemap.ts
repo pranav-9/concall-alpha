@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+import { SCANS } from "@/app/scanners/href";
+
 import { getAllPostMeta } from "@/app/blog/posts";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { getCachedSectorSlugs } from "@/lib/sector-slug-cache";
@@ -45,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 1,
     },
-    ...STATIC_ROUTES.map((route) => ({
+    ...[...STATIC_ROUTES, ...SCANS.map((scan) => `/scanners/${scan}`)].map((route) => ({
       url: `${base}${route}`,
       changeFrequency: "weekly" as const,
       priority: 0.5,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-import { scannersHref } from "../app/scanners/href";
+import { legacyScannersHref, scannersHref, toScanId } from "../app/scanners/href";
 import {
   buildGuidanceUpgradeScan,
   isLegibleRaise,
@@ -351,11 +351,18 @@ assert.deepEqual(
 
 // ── Links ───────────────────────────────────────────────────────────────────
 
-assert.equal(scannersHref("red-flags", false), "/scanners", "the default scan is the bare route");
-assert.equal(scannersHref("peg", true), "/scanners?scan=peg&mine=1");
-assert.equal(scannersHref("peg", false, { sort: "trailing" }), "/scanners?scan=peg&sort=trailing");
-assert.equal(scannersHref("red-flags", true), "/scanners?mine=1");
-assert.equal(scannersHref("trend", false), "/scanners?scan=trend");
-assert.equal(scannersHref("garp", true), "/scanners?scan=garp&mine=1");
+assert.equal(scannersHref("red-flags", false), "/scanners/red-flags", "every scan is its own page");
+assert.equal(scannersHref("peg", true), "/scanners/peg?mine=1");
+assert.equal(scannersHref("peg", false, { sort: "trailing" }), "/scanners/peg?sort=trailing");
+assert.equal(scannersHref("garp", true), "/scanners/garp?mine=1");
+assert.equal(toScanId("garp"), "garp");
+assert.equal(toScanId("nope"), null, "an unknown scan 404s");
+assert.equal(toScanId(undefined), null);
+// Old tab links (`/scanners?scan=…`) land on the scan's own page, filter + sort kept.
+assert.equal(legacyScannersHref({}), null, "the bare index stays the index");
+assert.equal(legacyScannersHref({ scan: "trend" }), "/scanners/trend");
+assert.equal(legacyScannersHref({ mine: "1" }), "/scanners/red-flags?mine=1", "a bare ?mine=1 was the old default tab");
+assert.equal(legacyScannersHref({ scan: "peg", sort: "trailing", mine: "1" }), "/scanners/peg?mine=1&sort=trailing");
+assert.equal(legacyScannersHref({ scan: "garp", sort: "trailing" }), "/scanners/garp", "sort only belongs to PEG");
 
 console.log("All scanners tests passed.");
