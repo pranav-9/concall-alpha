@@ -18,11 +18,14 @@ import type { GuidanceSnapshotRow } from "@/lib/guidance-snapshot/types";
 import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
 import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
 import { COVERAGE_SELECT, isDiscoveryListed, type CoverageFields } from "@/lib/coverage-policy";
+import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
 import { phaseSchema, pivotSchema } from "@/lib/price-phases/types";
 import { createPublicReadClient } from "@/lib/supabase/public-read";
+import { toValuationScale } from "@/lib/valuation-band";
 import { derivePeg } from "@/lib/valuation-check/normalize";
 import type { ValuationCheckRow } from "@/lib/valuation-check/types";
 
+import type { GarpRow } from "./garp";
 import { buildGuidanceUpgradeRow, type GuidanceUpgradeRow } from "./guidance-upgrades";
 import type { PegRow } from "./peg";
 import { buildTrendRow, type TrendRow } from "./price-trend";
@@ -122,6 +125,64 @@ async function fetchPegRows(): Promise<PegRow[]> {
   return rows;
 }
 
+// GARP: the latest growth_outlook run per company beside its published,
+// rateable valuation — the same two legs (and the same rateable + verdict gate)
+// the leaderboard's Growth and Valuation columns read. Narrow selects: no
+// growth `details`, no Screener dump.
+async function fetchGarpRows(): Promise<GarpRow[]> {
+  const companies = await readCompanies();
+  const supabase = createPublicReadClient();
+  const [growthRes, valuationRes] = await Promise.all([
+    supabase
+      .from("growth_outlook")
+      .select("company, growth_score, base_growth_pct, run_timestamp")
+      .order("run_timestamp", { ascending: false }),
+    supabase
+      .from("valuation_check")
+      .select("company_code, score, rateable, verdict, priced_as_of, price_at_run")
+      .eq("valuation_published", true),
+  ]);
+  if (growthRes.error) throw growthRes.error;
+  if (valuationRes.error) throw valuationRes.error;
+
+  const growth = new Map<string, { score: number; base: string | null }>();
+  for (const row of (growthRes.data ?? []) as Array<{
+    company: string | null;
+    growth_score: number | string | null;
+    base_growth_pct: string | number | null;
+  }>) {
+    const code = upper(row.company);
+    if (!code || growth.has(code)) continue; // newest-first: the first row is the latest run
+    const score = row.growth_score == null ? NaN : Number(row.growth_score);
+    if (Number.isFinite(score)) growth.set(code, { score, base: normalizeGrowthPct(row.base_growth_pct).rawText });
+  }
+
+  const rows: GarpRow[] = [];
+  for (const raw of (valuationRes.data ?? []) as Array<{
+    company_code: string | null;
+    score: number | null;
+    rateable: boolean | null;
+    verdict: string | null;
+    priced_as_of: string | null;
+    price_at_run: number | null;
+  }>) {
+    const code = upper(raw.company_code);
+    const company = companies.get(code);
+    const g = growth.get(code);
+    const valuation = toValuationScale(raw.score);
+    if (!company || !g || valuation == null || !raw.rateable || raw.verdict == null) continue;
+    rows.push({
+      ...company,
+      growth: g.score,
+      baseGrowth: g.base,
+      valuation,
+      pricedAsOf: raw.priced_as_of,
+      priceAtRun: typeof raw.price_at_run === "number" ? raw.price_at_run : null,
+    });
+  }
+  return rows;
+}
+
 // Only the phases and their turning points — the payload's 10-year price series
 // (~500 points a company) is the chart's, never the scan's.
 async function fetchTrendRows(): Promise<TrendRow[]> {
@@ -177,6 +238,9 @@ export const getTrendRows = withBackoff(
   "price trend",
   unstable_cache(fetchTrendRows, ["scanners-price-trend-v1"], { revalidate: 600 }),
 );
+
+/** Every company with both a growth score and a rateable valuation, fresh or stale. Throws on a failed read. */
+export const getGarpRows = withBackoff("garp", unstable_cache(fetchGarpRows, ["scanners-garp-v1"], { revalidate: 600 }));
 
 /** Every company with at least one PEG leg, fresh or stale. Throws on a failed read. */
 export const getPegRows = withBackoff("peg", unstable_cache(fetchPegRows, ["scanners-peg-v2"], { revalidate: 600 }));

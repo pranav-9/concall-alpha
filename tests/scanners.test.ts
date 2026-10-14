@@ -9,6 +9,7 @@ import {
   parseValueLabel,
   type GuidanceUpgradeRow,
 } from "../lib/scanners/guidance-upgrades";
+import { buildGarpScan, compareGarpRows, isGarpHit, type GarpRow } from "../lib/scanners/garp";
 import { buildPegScan, comparePegRows, isPegHit, parsePegSort, sortPegHits, type PegRow } from "../lib/scanners/peg";
 import {
   buildTrendRow,
@@ -281,6 +282,41 @@ const tr = (code: string, kind: TrendRow["kind"], priceRatio: number, years: num
   assert.equal(trendEps(row), "flat");
 }
 
+// ── GARP: growth Solid+ (≥6.5) AND valuation Fair+ (≥4.0), fresh prices only ──
+
+const gp = (code: string, growth: number, valuation: number, o: Partial<GarpRow> = {}): GarpRow => ({
+  code,
+  name: code,
+  sector: null,
+  listed: true,
+  growth,
+  baseGrowth: "25-30%",
+  valuation,
+  pricedAsOf: "2026-10-05",
+  priceAtRun: 100,
+  ...o,
+});
+assert.ok(isGarpHit(gp("EDGE", 6.5, 4.0)), "both cuts are inclusive");
+assert.ok(!isGarpHit(gp("RICH", 8.5, 3.9)), "a great grower priced above Fair misses");
+assert.ok(!isGarpHit(gp("SLOW", 6.4, 7.9)), "cheap but Moderate growth misses");
+const garpScan = buildGarpScan(
+  [
+    gp("MID", 7.0, 5.0),
+    gp("TOP", 7.5, 7.5),
+    gp("RICH", 8.5, 3.0),
+    gp("SLOW", 5.0, 8.0),
+    gp("OLD", 9.0, 9.0, { pricedAsOf: "2026-09-01" }),
+    gp("TIE", 8.0, 4.0),
+  ],
+  NOW,
+);
+assert.deepEqual(garpScan.hits.map((r) => r.code), ["TOP", "MID", "TIE"], "best equal-weight blend first; tie → cheaper first");
+assert.equal(garpScan.scanned, 5, "a stale price is not scanned");
+assert.equal(garpScan.staleCount, 1);
+assert.equal(garpScan.richGrowers, 1, "RICH grows but is priced above Fair");
+assert.equal(garpScan.latestPricedAsOf, "2026-10-05");
+assert.ok(compareGarpRows(gp("A", 7, 5), gp("B", 6, 6)) > 0, "same blend → the cheaper row leads");
+
 // ── Scope: listed by default, the reader's watchlist (listed or not) with the filter ──
 
 const unlisted = { ...rf("BIGCAP", [cash]), listed: false };
@@ -292,9 +328,10 @@ const inputs = {
     readable: [rf("AAA", []), rf("BBB", []), { ...rf("BIGCAP", []), listed: false }],
   },
   trendRows: [tr("AAA", "up", 2, 1, { asOf: "2026-10-05" }), { ...tr("BIGCAP", "down", 0.5, 1, { asOf: "2026-10-05" }), listed: false }],
+  garpRows: [gp("AAA", 7, 6), gp("BBB", 5, 6), gp("BIGCAP", 8, 7, { listed: false })],
 };
 const listed = buildScans(inputs, listedScope, Q2FY27, NOW);
-assert.deepEqual(scanCounts(listed), { "red-flags": 2, peg: 1, guidance: 1, trend: 1 }, "default = listed companies only");
+assert.deepEqual(scanCounts(listed), { "red-flags": 2, peg: 1, guidance: 1, trend: 1, garp: 1 }, "default = listed companies only");
 assert.equal(listed.redFlags?.scanned, 3, "an unlisted company is not in the default universe");
 assert.equal(listed.guidance?.scanned, 2);
 
@@ -304,11 +341,11 @@ assert.deepEqual(
   ["AAA", "BIGCAP"],
   "watchlist = the reader's companies, including one outside the discovery list",
 );
-assert.deepEqual(scanCounts(mineScans), { "red-flags": 2, peg: 2, guidance: 0, trend: 2 });
+assert.deepEqual(scanCounts(mineScans), { "red-flags": 2, peg: 2, guidance: 0, trend: 2, garp: 2 });
 assert.equal(mineScans.guidance?.scanned, 2, "BBB isn't watched, so its raise drops; AAA + BIGCAP were read");
 assert.deepEqual(
-  scanCounts(buildScans({ redFlagRows: null, pegRows: null, guidance: null, trendRows: null }, listedScope, Q2FY27, NOW)),
-  { "red-flags": null, peg: null, guidance: null, trend: null },
+  scanCounts(buildScans({ redFlagRows: null, pegRows: null, guidance: null, trendRows: null, garpRows: null }, listedScope, Q2FY27, NOW)),
+  { "red-flags": null, peg: null, guidance: null, trend: null, garp: null },
   "a failed read stays unavailable, never an empty scan",
 );
 
@@ -319,5 +356,6 @@ assert.equal(scannersHref("peg", true), "/scanners?scan=peg&mine=1");
 assert.equal(scannersHref("peg", false, { sort: "trailing" }), "/scanners?scan=peg&sort=trailing");
 assert.equal(scannersHref("red-flags", true), "/scanners?mine=1");
 assert.equal(scannersHref("trend", false), "/scanners?scan=trend");
+assert.equal(scannersHref("garp", true), "/scanners?scan=garp&mine=1");
 
 console.log("All scanners tests passed.");
