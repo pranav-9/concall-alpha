@@ -4,6 +4,7 @@ import {
   isPhoneAppRoute,
   isPhoneMoreRoute,
   normalizePhonePathname,
+  phoneChromeRoute,
   PHONE_MORE_LINKS,
   PHONE_TABS,
 } from "../lib/phone-chrome";
@@ -12,7 +13,8 @@ import {
 // exactly the reading routes the tab bar navigates between — the four direct
 // tabs plus the destinations behind "Other". The gate is an EXACT pathname
 // match: a company page, a sector page, or a sub-route keeps the pill navbar
-// and hamburger.
+// and hamburger — except a scan page (`/scanners/<scan>`), which is the
+// Scanners tab.
 
 // The bar is five direct tabs + "Other" = six slots.
 assert.equal(PHONE_TABS.length, 5, "five direct tabs; the sixth slot is Other");
@@ -47,7 +49,12 @@ assert.equal(isPhoneAppRoute("/leaderboards/x"), false, "sub-routes are not gate
 assert.equal(isPhoneAppRoute("/"), false, "the hero homepage keeps the pill navbar");
 assert.equal(isPhoneAppRoute("/blog"), true, "the Journal index is the Journal tab");
 assert.equal(isPhoneAppRoute("/blog/some-post"), false, "a Journal post keeps the pill navbar");
-assert.equal(isPhoneAppRoute("/scanners"), true, "every scan is one route (?scan=), so the bar stays on");
+assert.equal(isPhoneAppRoute("/scanners"), true, "the scanners index is the Scanners tab");
+assert.equal(phoneChromeRoute("/scanners/garp"), "/scanners", "a scan page keeps the bar and lights Scanners");
+assert.equal(phoneChromeRoute("/scanners/garp/"), "/scanners", "trailing slash on a scan page too");
+assert.equal(phoneChromeRoute("/scanners/garp/x"), null, "only one level below Scanners");
+assert.equal(phoneChromeRoute("/desk"), "/desk", "an exact route is its own tab");
+assert.equal(isPhoneMoreRoute("/scanners/garp"), false, "a scan page is a direct tab, not Other");
 assert.equal(isPhoneAppRoute("/watchlists"), false, "Watchlists (reached via Other) keeps the hamburger");
 
 // Null-safe: usePathname can be null during some transitions.

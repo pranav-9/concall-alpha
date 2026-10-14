@@ -19,7 +19,7 @@ import { TelegramJoinLink } from "@/components/telegram-join-link";
 import {
   isPhoneAppRoute,
   isPhoneMoreRoute,
-  normalizePhonePathname,
+  phoneChromeRoute,
   PHONE_MORE_LINKS,
   PHONE_TABS,
 } from "@/lib/phone-chrome";
@@ -67,9 +67,9 @@ export function MobileTabBar({
   }, [pathname]);
 
   if (!isPhoneAppRoute(pathname)) return null;
-  // The bar only renders on an exact chrome route, so "active" is equality on
-  // the normalised pathname — there are no sub-routes to prefix-match.
-  const current = normalizePhonePathname(pathname);
+  // The tab this route belongs to: the route itself, or its parent tab on a
+  // scan page (`/scanners/peg` lights Scanners).
+  const current = phoneChromeRoute(pathname);
   const moreActive = isPhoneMoreRoute(pathname);
 
   return (

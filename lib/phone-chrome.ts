@@ -37,6 +37,12 @@ const PHONE_APP_ROUTES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * Tabs whose one-level children are the same tab: every scan is its own page
+ * (`/scanners/peg`, 2026-10-14), and the bar must stay on and lit Scanners there.
+ */
+const PHONE_SUBROUTE_TABS: ReadonlySet<string> = new Set(["/scanners"]);
+
+/**
  * `/leaderboards/` → `/leaderboards`. next.config sets skipTrailingSlashRedirect
  * (for the PostHog /ingest rewrite), so a shared link with a slash renders the
  * route with the slash still in usePathname(); the chrome must not vanish on it.
@@ -47,10 +53,21 @@ export function normalizePhonePathname(pathname: string | null | undefined): str
   return trimmed === "" ? "/" : trimmed;
 }
 
-/** Exact-route match after normalisation: `/sectors` and `/sectors/` yes, `/sector/it` no. */
-export function isPhoneAppRoute(pathname: string | null | undefined): boolean {
+/**
+ * The chrome route a pathname belongs to — itself on an exact match, its parent
+ * tab on a one-level child of a PHONE_SUBROUTE_TABS route — or null (no chrome).
+ * `/sectors` and `/sectors/` yes, `/sector/it` no, `/scanners/garp` → `/scanners`.
+ */
+export function phoneChromeRoute(pathname: string | null | undefined): string | null {
   const key = normalizePhonePathname(pathname);
-  return key != null && PHONE_APP_ROUTES.has(key);
+  if (key == null) return null;
+  if (PHONE_APP_ROUTES.has(key)) return key;
+  const parent = key.match(/^(\/[^/]+)\/[^/]+$/)?.[1];
+  return parent && PHONE_SUBROUTE_TABS.has(parent) ? parent : null;
+}
+
+export function isPhoneAppRoute(pathname: string | null | undefined): boolean {
+  return phoneChromeRoute(pathname) != null;
 }
 
 /** True on a route reached through the "Other" sheet — lights that tab. */
