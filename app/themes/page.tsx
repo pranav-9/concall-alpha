@@ -11,8 +11,8 @@ import { HERO_CARD, PAGE_BACKGROUND_ATMOSPHERIC, PAGE_SHELL } from "@/lib/design
 import { getFeaturedThemeBlocks } from "@/lib/themes/data";
 import { BelowSm, FromSm } from "@/components/viewport-gate";
 import { MOBILE_DEK, MobileMasthead } from "@/components/mobile-card";
-import { ThemeBlockView } from "./theme-block";
 import { ThemeBlockPhone } from "./theme-block-phone";
+import { ThemeCard } from "./theme-card";
 
 export const metadata: Metadata = {
   title: "Hot Themes – Story of a Stock",
@@ -64,13 +64,16 @@ export default async function ThemesPage() {
       <div className={PAGE_SHELL}>
         <section className={HERO_CARD}>
           <div className="space-y-2">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              What&apos;s working now
+            </p>
             <h1 className="text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
               Hot Themes
             </h1>
             <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              What&apos;s working this quarter, and which of the companies we cover are riding it.
-              Each name carries the same four scores as the leaderboard — Quarter, Growth, Valuation,
-              and our overall Read. Rank 1 is the strongest overall pick in the theme.
+              What&apos;s working this quarter, the one factor driving it, the numbers behind it, and
+              which of the companies we cover are riding it. Open a theme for every name on the
+              leaderboard&apos;s four scores — Quarter, Growth, Valuation, and our overall Read.
             </p>
             {showInFocusLegend && (
               <p className="text-xs leading-relaxed text-muted-foreground/80">
@@ -83,9 +86,9 @@ export default async function ThemesPage() {
         </section>
 
         {blocks.length > 0 ? (
-          <div className="mt-8 flex flex-col gap-10">
+          <div className="mt-8 flex flex-col gap-8">
             {blocks.map((block) => (
-              <ThemeBlockView key={block.slug} block={block} quarterLabel={quarterLabel} />
+              <ThemeCard key={block.slug} block={block} quarterLabel={quarterLabel} />
             ))}
           </div>
         ) : (

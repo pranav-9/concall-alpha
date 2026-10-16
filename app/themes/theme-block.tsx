@@ -205,27 +205,41 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
 export function ThemeBlockView({
   block,
   quarterLabel,
+  headless = false,
 }: {
   block: ThemeBlock;
   quarterLabel?: string | null;
+  /** On /themes/[slug] the story card above already carries title, blurb and In Focus — render the board alone under a one-line eyebrow. */
+  headless?: boolean;
 }) {
   const provisionalCount = block.members.filter(
     (member) => member.quarterSourceStatus === "unofficial",
   ).length;
   return (
     <section className="border-t-2 border-foreground pt-5">
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-1">
-        <h2 className="text-xl font-semibold tracking-[-0.01em] text-foreground sm:text-2xl">
-          {block.title}
-        </h2>
-        <div className="flex flex-col items-end gap-0.5 text-foreground">
-          <InFocusPips value={block.hotness} updatedAt={block.updatedAt} />
+      {headless ? (
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+          <h2 className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            The board · every name on the leaderboard&apos;s four scores
+          </h2>
           <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
             {block.memberCount} covered
           </span>
         </div>
-      </div>
-      {block.blurb && (
+      ) : (
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-1">
+          <h2 className="text-xl font-semibold tracking-[-0.01em] text-foreground sm:text-2xl">
+            {block.title}
+          </h2>
+          <div className="flex flex-col items-end gap-0.5 text-foreground">
+            <InFocusPips value={block.hotness} updatedAt={block.updatedAt} />
+            <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
+              {block.memberCount} covered
+            </span>
+          </div>
+        </div>
+      )}
+      {!headless && block.blurb && (
         <p className="mt-2 max-w-[66ch] text-sm leading-relaxed text-muted-foreground">
           {block.blurb}
         </p>

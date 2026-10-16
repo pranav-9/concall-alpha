@@ -1,0 +1,272 @@
+{
+  "$comment": "Hot Themes stories — schema /schemas/theme_story_v1.json, mirrored by lib/themes/story.ts. One entry per theme slug (featured or benched). Every KPI cites the call or note its number came from; a tile without a reliable series carries none. Maintained by /themes-refresh (written 2026-10-16 from the discover evidence cards).",
+  "stories": [
+    {
+      "schema_version": "theme_story_v1",
+      "theme_slug": "ai-datacentre-fibre",
+      "driver": {
+        "kind": "capex",
+        "title": "End-industry capex",
+        "line": "Hyperscaler build-out pulls fibre, power gear and cooling behind it."
+      },
+      "kpis": [
+        {
+          "label": "Hyperscaler capex",
+          "value": "$805bn",
+          "sub": "CY26 estimate, raised from ~$700bn",
+          "source": {"company_code": "STLTECH", "quarter": "Q1 FY27", "document": "concall", "note": "Sterlite Technologies Q1 FY27 call citing CRU: hyperscaler capex upgraded to $805 billion."}
+        },
+        {
+          "label": "India DC capacity",
+          "value": "1.6 GW",
+          "sub": "→ 10 GW by 2031 (7×)",
+          "series": [
+            {"period": "CY25", "value": 1.6},
+            {"period": "CY31", "value": 10, "est": true}
+          ],
+          "source": {"company_code": "STLTECH", "quarter": "Q1 FY27", "document": "concall", "note": "Schneider Electric Infra Q1 FY27 (1.6 GW today, ~8 GW) and Sterlite Q1 FY27 (7× to 10 GW by 2031); E2E Q1 FY27 puts the pipeline at 8.33 GW."}
+        },
+        {
+          "label": "DC fibre demand",
+          "value": "+63%",
+          "sub": "CY26 growth (CRU)",
+          "source": {"company_code": "STLTECH", "quarter": "Q1 FY27", "document": "concall", "note": "Sterlite Q1 FY27 call: data-centre fibre demand +63% in 2026 per CRU; HFCL Q1 FY27 puts DC fibre pricing at $18-28 per fibre km, up sharply in six months."}
+        }
+      ]
+    },
+    {
+      "schema_version": "theme_story_v1",
+      "theme_slug": "ems",
+      "driver": {
+        "kind": "supply",
+        "title": "Supply-chain shift",
+        "line": "China+1 and PLI move boards and box-builds to India; AI data-centre demand tightens the components."
+      },
+      "kpis": [
+        {
+          "label": "India ESDM market",
+          "value": "$44bn",
+          "sub": "→ $141bn by 2030",
+          "series": [
+            {"period": "CY24", "value": 44},
+            {"period": "CY30", "value": 141, "est": true}
+          ],
+          "source": {"company_code": "AVALON", "quarter": "Q1 FY27", "document": "concall", "note": "Avalon Q1 FY27 presentation: India ESDM market $44bn (2024) to $141bn by 2030; EMS industry CAGR 27%."}
+        },
+        {
+          "label": "Syrma FY27 growth guide",
+          "value": "35%+",
+          "sub": "now expects to beat it",
+          "source": {"company_code": "SYRMA", "quarter": "Q1 FY27", "document": "concall", "note": "Syrma SGS Q1 FY27 call: FY27 revenue growth 35%+ and 10.5-11% EBITDA margin maintained, now expected to be exceeded."}
+        },
+        {
+          "label": "Component lead times",
+          "value": "26-52 wks",
+          "sub": "DRAM/NAND +40-105%",
+          "source": {"company_code": "KAYNES", "quarter": "Q1 FY27", "document": "concall", "note": "Kaynes Q1 FY27 call: MCUs +15-85%, DRAM/NAND +40-105%, PCB prices 3×, lead times 26-52 weeks after the West Asia disruption and the AI build-out."}
+        }
+      ]
+    },
+    {
+      "schema_version": "theme_story_v1",
+      "theme_slug": "defence-order-inflows",
+      "driver": {
+        "kind": "policy",
+        "title": "Government policy",
+        "line": "Indigenisation mandates and a rising capital outlay set the order flow; conversion is the watch item."
+      },
+      "kpis": [
+        {
+          "label": "Naval orders in sight",
+          "value": "₹1.5 lakh cr",
+          "sub": "₹80k cr live RFPs + ₹70k cr upcoming",
+          "source": {"company_code": "GRSE", "quarter": "Q1 FY27", "document": "concall", "note": "Garden Reach Q1 FY27 call: ~₹1,50,000 crore of defence orders expected, live RFPs ₹80,000 crore, upcoming ₹70,000 crore."}
+        },
+        {
+          "label": "Navy fleet",
+          "value": "150 ships",
+          "sub": "→ 230 over 5-7 years",
+          "series": [
+            {"period": "FY26", "value": 150},
+            {"period": "FY32", "value": 230, "est": true}
+          ],
+          "source": {"company_code": "SHREEREF", "quarter": "Q4 FY26", "document": "concall", "note": "Shree Refrigerations Q4 FY26 call: Navy fleet to expand from 150 to 230 ships over 5-7 years; AONs worth ₹2.3-2.4 lakh crore."}
+        },
+        {
+          "label": "Indigenisation",
+          "value": "80-85%",
+          "sub": "of recent GRSE projects",
+          "source": {"company_code": "GRSE", "quarter": "Q1 FY27", "document": "concall", "note": "Garden Reach Q1 FY27 call: overall indigenisation at 80-85% on recent projects, propulsion engines the remaining import dependence."}
+        }
+      ]
+    },
+    {
+      "schema_version": "theme_story_v1",
+      "theme_slug": "jewellery-gold-retail",
+      "driver": {
+        "kind": "demand",
+        "title": "Consumer formalisation",
+        "line": "Gold near records has not broken wedding demand; organised chains and lab-grown keep taking share."
+      },
+      "kpis": [
+        {
+          "label": "Gold price",
+          "value": "+61% yoy",
+          "sub": "Q1 FY27, −3% qoq",
+          "source": {"company_code": "SENCO", "quarter": "Q1 FY27", "document": "concall", "note": "Senco Gold Q1 FY27 call: gold prices up 61% YoY, down 3% QoQ; customs duty 6% → 15%."}
+        },
+        {
+          "label": "Organised share (B2B)",
+          "value": "~20%",
+          "sub": "long runway from unorganised",
+          "source": {"company_code": "SKYGOLD", "quarter": "Q1 FY27", "document": "concall", "note": "Sky Gold Q1 FY27 call: only ~20% of the B2B jewellery trade is organised."}
+        },
+        {
+          "label": "US lab-grown share",
+          "value": "40-60%",
+          "sub": "of major retailers, double-digit growth",
+          "source": {"company_code": "GOLDIAM", "quarter": "Q1 FY27", "document": "concall", "note": "Goldiam Q1 FY27 call: lab-grown diamond share at major US retailers 40-60%, finished-jewellery growth in double digits; wholesale LGD prices at a base."}
+        }
+      ]
+    },
+    {
+      "schema_version": "theme_story_v1",
+      "theme_slug": "transmission-grid-capex",
+      "driver": {
+        "kind": "capex",
+        "title": "Grid capex",
+        "line": "A decade-long transmission plan plus data-centre load keep transformers and bushings sold out."
+      },
+      "kpis": [
+        {
+          "label": "NEP transmission outlay",
+          "value": "₹9.15 lakh cr",
+          "sub": "to 2032; RDSS ₹3.03 lakh cr",
+          "source": {"company_code": "YASHHVOLT", "quarter": "Q4 FY26", "document": "concall", "note": "Yash Highvoltage Q4 FY26 call: National Electricity Plan transmission outlay ₹9.15 lakh crore to 2032, RDSS ₹3.03 lakh crore."}
+        },
+        {
+          "label": "Peak power demand",
+          "value": "270 GW",
+          "sub": "→ 400+ GW by 2030",
+          "series": [
+            {"period": "FY24", "value": 240},
+            {"period": "FY27", "value": 270},
+            {"period": "FY30", "value": 400, "est": true}
+          ],
+          "source": {"company_code": "SUZLON", "quarter": "Q1 FY27", "document": "concall", "note": "Suzlon Q1 FY27 (peak demand crossed 270 GW), Bondada Q4 FY26 (240 GW in FY24), Yash Highvoltage Q4 FY26 (400+ GW by 2030)."}
+        },
+        {
+          "label": "Transformer order books",
+          "value": "3-5 yrs",
+          "sub": "OEM capacity sold out",
+          "source": {"company_code": "KSHINTL", "quarter": "Q1 FY27", "document": "concall", "note": "KSH International Q1 FY27 call: transformer OEMs carry 3-5 year order books; Transformers & Rectifiers Q2 FY27 has ~₹21,000 crore of inquiries under negotiation."}
+        }
+      ]
+    },
+    {
+      "schema_version": "theme_story_v1",
+      "theme_slug": "specialty-chemicals-rebound",
+      "driver": {
+        "kind": "pricing",
+        "title": "Pricing and China+1",
+        "line": "Refrigerant quotas, EU duties and tariff shifts lift select chemistries; agro pricing is still soft."
+      },
+      "kpis": [
+        {
+          "label": "R32 refrigerant demand",
+          "value": "2× in 10 yrs",
+          "sub": "while quota supply halves",
+          "source": {"company_code": "NAVINFLUOR", "quarter": "Q1 FY27", "document": "concall", "note": "Navin Fluorine Q1 FY27 call: long-term R32 demand to double over a decade while quota-driven supply shrinks to half."}
+        },
+        {
+          "label": "India electronics chem",
+          "value": "$50bn",
+          "sub": "→ $110bn by 2030",
+          "series": [
+            {"period": "CY25", "value": 50},
+            {"period": "CY30", "value": 110, "est": true}
+          ],
+          "source": {"company_code": "AETHER", "quarter": "Q1 FY27", "document": "concall", "note": "Aether Industries Q1 FY27 call: India semiconductor/electronics market $50bn to $110bn by 2030; no domestic maker of foundational silicone molecules."}
+        },
+        {
+          "label": "Metformin API price",
+          "value": "+15-20%",
+          "sub": "vs pre-war, easing from peak",
+          "source": {"company_code": "AARTIDRUGS", "quarter": "Q1 FY27", "document": "concall", "note": "Aarti Drugs Q1 FY27 call: API prices ~15-20% above pre-war for metformin, off the March-April peak but still elevated."}
+        }
+      ]
+    },
+    {
+      "schema_version": "theme_story_v1",
+      "theme_slug": "renewables-build-out",
+      "driver": {
+        "kind": "policy",
+        "title": "Policy and energy security",
+        "line": "ALMM, GST cuts and the 500 GW non-fossil target pull installs; storage tenders add a leg."
+      },
+      "kpis": [
+        {
+          "label": "India solar additions",
+          "value": "38 GW",
+          "sub": "→ 100 GW a year by 2035",
+          "series": [
+            {"period": "CY25", "value": 38},
+            {"period": "CY35", "value": 100, "est": true}
+          ],
+          "source": {"company_code": "WAAREEENER", "quarter": "Q1 FY27", "document": "concall", "note": "Waaree Energies Q1 FY27 call: India annual solar additions from 38 GW to 100 GW by 2035 (10% CAGR); global from 698 GW to 993 GW."}
+        },
+        {
+          "label": "Wind installs",
+          "value": "10 GW+",
+          "sub": "near-term, 15 GW by FY31",
+          "series": [
+            {"period": "FY26", "value": 6},
+            {"period": "FY27", "value": 10, "est": true},
+            {"period": "FY31", "value": 15, "est": true}
+          ],
+          "source": {"company_code": "SUZLON", "quarter": "Q1 FY27", "document": "concall", "note": "Suzlon Q2 FY26 call (~6 GW industry installs in FY26) and Q1 FY27 call (annual installs to exceed 10 GW near-term, 15 GW by FY31; ~25 GW repowering potential)."}
+        },
+        {
+          "label": "Peak power demand",
+          "value": "270 GW",
+          "sub": "→ 690 GW by FY36",
+          "series": [
+            {"period": "FY24", "value": 240},
+            {"period": "FY27", "value": 270},
+            {"period": "FY36", "value": 690, "est": true}
+          ],
+          "source": {"company_code": "BONDADA", "quarter": "Q4 FY26", "document": "concall", "note": "Bondada Q4 FY26 call: peak demand 240 GW in FY24 to 690 GW by FY36, 500 GW non-fossil target by 2030; Suzlon Q1 FY27: peak demand crossed 270 GW."}
+        }
+      ]
+    },
+    {
+      "schema_version": "theme_story_v1",
+      "theme_slug": "cdmo-crams",
+      "driver": {
+        "kind": "supply",
+        "title": "Supply-chain diversification",
+        "line": "China+1 and a reopening biotech funding window push innovator work to integrated Indian sites."
+      },
+      "kpis": [
+        {
+          "label": "US biotech IPOs",
+          "value": "18",
+          "sub": "funding window reopening",
+          "source": {"company_code": "SAILIFE", "quarter": "Q1 FY27", "document": "concall", "note": "Sai Life Sciences Q1 FY27 call: 18 biotech IPOs in the US and large acquisitions; capital expected to flow to leaner biotechs that outsource."}
+        },
+        {
+          "label": "Senores registrations",
+          "value": "942",
+          "sub": "under way, 513 approved, 40+ markets",
+          "source": {"company_code": "SENORES", "quarter": "Q1 FY27", "document": "concall", "note": "Senores Pharmaceuticals Q1 FY27 call: 513 approved products and 942 under registration across 40+ countries."}
+        },
+        {
+          "label": "Neuland EBITDA margin",
+          "value": "25%+",
+          "sub": "guided as sustainable",
+          "source": {"company_code": "NEULANDLAB", "quarter": "Q1 FY27", "document": "concall", "note": "Neuland Laboratories Q1 FY27 call: favourable FX helped the quarter, but 25%+ EBITDA margin is the sustainable level; interest rising in peptides and complex APIs."}
+        }
+      ]
+    }
+  ]
+}

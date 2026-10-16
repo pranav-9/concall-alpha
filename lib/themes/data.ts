@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import { getOverallBoardRows } from "@/lib/overall-board";
 
 import { assembleThemeBlocks } from "./assemble";
+import { getThemeStories } from "./story";
 import {
   themeMembershipRowSchema,
   themeRowSchema,
@@ -71,7 +72,17 @@ export async function getFeaturedThemeBlocks(): Promise<ThemeBlock[]> {
     return parsed.success ? [parsed.data] : [];
   });
 
-  return assembleThemeBlocks(themes, memberships, boardRows);
+  return assembleThemeBlocks(themes, memberships, boardRows, getThemeStories());
+}
+
+/**
+ * One featured theme by slug, for /themes/[slug]. Built from the same featured
+ * set so its index / ranking / best-read match the index page exactly; null when
+ * the slug is not a featured theme with members (the page 404s).
+ */
+export async function getFeaturedThemeBlock(slug: string): Promise<ThemeBlock | null> {
+  const blocks = await getFeaturedThemeBlocks();
+  return blocks.find((block) => block.slug === slug) ?? null;
 }
 
 /**

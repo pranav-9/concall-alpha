@@ -7,12 +7,14 @@ import { classifyBoardRead } from "@/lib/board-read";
 import { logger } from "@/lib/logger";
 import type { ScoreBoardRow } from "@/components/score-board-table";
 
+import { earliestQuarterLabel, type ThemeStory } from "./story";
 import type { ThemeBlock, ThemeMember, ThemeMembershipRow, ThemeRow } from "./types";
 
 export function assembleThemeBlocks(
   themes: ThemeRow[],
   memberships: ThemeMembershipRow[],
   boardRows: ScoreBoardRow[],
+  stories: ReadonlyMap<string, ThemeStory> = new Map(),
 ): ThemeBlock[] {
   const boardByCode = new Map<string, ScoreBoardRow>();
   for (const row of boardRows) boardByCode.set(row.companyCode.toUpperCase(), row);
@@ -95,6 +97,13 @@ export function assembleThemeBlocks(
       members,
       hotness: theme.hotness ?? null,
       updatedAt: theme.updated_at ?? null,
+      // Position among the themes that actually render (empty ones were skipped
+      // above), so the cards read THEME 01, 02, … without a gap.
+      index: blocks.length + 1,
+      sinceQuarter: earliestQuarterLabel(
+        (membershipsByTheme.get(theme.slug) ?? []).map((m) => m.as_of_quarter),
+      ),
+      story: stories.get(theme.slug) ?? null,
     });
   }
 

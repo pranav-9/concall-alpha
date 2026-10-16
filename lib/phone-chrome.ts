@@ -37,10 +37,12 @@ const PHONE_APP_ROUTES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Tabs whose one-level children are the same tab: every scan is its own page
- * (`/scanners/peg`, 2026-10-14), and the bar must stay on and lit Scanners there.
+ * Routes whose one-level children keep the parent's chrome: every scan is its
+ * own page (`/scanners/peg`, 2026-10-14) and the bar must stay on and lit
+ * Scanners there; every theme is its own page (`/themes/<slug>`, 2026-10-16)
+ * and the bar stays on with "Other" lit.
  */
-const PHONE_SUBROUTE_TABS: ReadonlySet<string> = new Set(["/scanners"]);
+const PHONE_SUBROUTE_TABS: ReadonlySet<string> = new Set(["/scanners", "/themes"]);
 
 /**
  * `/leaderboards/` → `/leaderboards`. next.config sets skipTrailingSlashRedirect
@@ -70,8 +72,8 @@ export function isPhoneAppRoute(pathname: string | null | undefined): boolean {
   return phoneChromeRoute(pathname) != null;
 }
 
-/** True on a route reached through the "Other" sheet — lights that tab. */
+/** True on a route reached through the "Other" sheet (or one of its subroutes) — lights that tab. */
 export function isPhoneMoreRoute(pathname: string | null | undefined): boolean {
-  const key = normalizePhonePathname(pathname);
-  return key != null && PHONE_MORE_ROUTES.has(key);
+  const route = phoneChromeRoute(pathname);
+  return route != null && PHONE_MORE_ROUTES.has(route);
 }
