@@ -36,7 +36,10 @@ function validCategories(): Record<string, unknown> {
 
   const cat1 = n!.categories[0];
   assert.equal(cat1.state, "addressed");
-  assert.deepEqual(cat1.keyPoints, ["Rev +34% YoY", "EBITDA margin 34.2%", "FY26 +41%"]);
+  assert.deepEqual(
+    cat1.keyPoints.map((p) => p.detail),
+    ["Rev +34% YoY", "EBITDA margin 34.2%", "FY26 +41%"],
+  );
 
   const cat5 = n!.categories[4];
   assert.equal(cat5.state, "absent_in_concall");
@@ -136,3 +139,94 @@ assert.equal(normalizeQuarterlyV4Categories(undefined, "Q4 FY26"), null);
 }
 
 console.log("quarterly-v4-normalize.test.ts: all assertions passed");
+
+// ---- Structured key points (2026-10-16): {heading, detail, metric?, quote?, watch?, tone?}
+// alongside legacy strings. Both validate; strings fold into {heading: null, detail}.
+import { streakLabel } from "../lib/quarterly-v4/streak";
+
+// 11. Structured point normalizes with all fields; a string in the same list folds.
+{
+  const c = validCategories();
+  c.cat_2_forward_guidance = {
+    state: "addressed",
+    key_points: [
+      {
+        heading: "'15 and 15' needs a faster H2",
+        detail: "Volume and EBITDA both held at ~15%.",
+        metric: "Guide ~15% · H1 10–15%",
+        quote: "your observations are right",
+        watch: "Year-end update deferred to Q3.",
+        tone: "neutral",
+      },
+      { heading: "Also unchanged", detail: "domestic branded ₹550–600 cr", tone: "minor" },
+      "Debt guidance held at ₹1,000–1,200 cr gross.",
+    ],
+  };
+  const n = normalizeQuarterlyV4Categories(c, "Q2 FY27");
+  assert.ok(n, "structured + string mix should normalize");
+  const pts = n!.categories[1].keyPoints;
+  assert.equal(pts.length, 3);
+  assert.deepEqual(pts[0], {
+    heading: "'15 and 15' needs a faster H2",
+    detail: "Volume and EBITDA both held at ~15%.",
+    metric: "Guide ~15% · H1 10–15%",
+    quote: "your observations are right",
+    watch: "Year-end update deferred to Q3.",
+    tone: "neutral",
+  });
+  assert.equal(pts[1].tone, "minor");
+  assert.equal(pts[1].metric, null);
+  assert.deepEqual(pts[2], {
+    heading: null,
+    detail: "Debt guidance held at ₹1,000–1,200 cr gross.",
+    metric: null,
+    quote: null,
+    watch: null,
+    tone: "neutral",
+  });
+}
+
+// 12. Legacy strings still come back as neutral, heading-less points (test 1 reshaped).
+{
+  const n = normalizeQuarterlyV4Categories(validCategories(), "Q4 FY26");
+  assert.deepEqual(
+    n!.categories[0].keyPoints.map((p) => p.detail),
+    ["Rev +34% YoY", "EBITDA margin 34.2%", "FY26 +41%"],
+  );
+  assert.ok(n!.categories[0].keyPoints.every((p) => p.heading === null && p.tone === "neutral"));
+}
+
+// 13. Tone outside the enum → the whole block fails closed (no silent remap).
+{
+  const c = validCategories();
+  c.cat_2_forward_guidance = {
+    state: "addressed",
+    key_points: [{ heading: "h", detail: "d", tone: "bullish" }],
+  };
+  assert.equal(normalizeQuarterlyV4Categories(c, "Q2 FY27"), null);
+}
+
+// 14. Missing tone defaults to neutral; empty heading or detail → fail closed.
+{
+  const c = validCategories();
+  c.cat_2_forward_guidance = { state: "addressed", key_points: [{ heading: "h", detail: "d" }] };
+  const n = normalizeQuarterlyV4Categories(c, "Q2 FY27");
+  assert.equal(n!.categories[1].keyPoints[0].tone, "neutral");
+
+  const bad = validCategories();
+  bad.cat_2_forward_guidance = { state: "addressed", key_points: [{ heading: " ", detail: "d" }] };
+  assert.equal(normalizeQuarterlyV4Categories(bad, "Q2 FY27"), null);
+  const bad2 = validCategories();
+  bad2.cat_2_forward_guidance = { state: "addressed", key_points: [{ heading: "h", detail: "" }] };
+  assert.equal(normalizeQuarterlyV4Categories(bad2, "Q2 FY27"), null);
+}
+
+// 15. Streak caption: counts only (the chip names the direction); null below 2 or with no lean.
+assert.equal(streakLabel(0, 3), "3rd quarter running");
+assert.equal(streakLabel(2, 2), "2nd quarter running");
+assert.equal(streakLabel(-1, 4), "4th quarter running");
+assert.equal(streakLabel(0, 1), null);
+assert.equal(streakLabel(null, 5), null);
+assert.equal(streakLabel(1, undefined), null);
+
+console.log("quarterly-v4-normalize.test.ts: structured key-point assertions passed");

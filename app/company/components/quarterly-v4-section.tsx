@@ -10,7 +10,9 @@
 
 import { cn } from "@/lib/utils";
 
-import type { NormalizedCategory } from "@/lib/quarterly-v4/normalize";
+import type { NormalizedCategory, NormalizedKeyPoint } from "@/lib/quarterly-v4/normalize";
+import { streakLabel } from "@/lib/quarterly-v4/streak";
+import type { KeyPointTone } from "@/lib/quarterly-v4/types";
 import { chipClass, type ChipTone } from "./chip-tone";
 import { nestedDetailClass } from "./surface-tokens";
 
@@ -181,26 +183,110 @@ export function V4CoverageStrip({ categories }: { categories: NormalizedCategory
   );
 }
 
-// Mirrors renderCard in concall-score-section.tsx: nestedDetailClass, accent-dot
-// uppercase label, amber dot-bullet list.
-// A single addressed category card. Exported so it can be placed outside the
-// breakdown grid (e.g. Quantitative decomposition rendered next to the chart).
+// Per-point tone → the dot beside it and the colour of its figure tag.
+// neutral = the section's amber (a point that is in line / a caution);
+// positive = teal (delivered / helps); negative = rose (hurts);
+// minor = hollow dot, compact aside.
+const POINT_DOT: Record<KeyPointTone, string> = {
+  neutral: "bg-amber-400/80",
+  positive: "bg-teal-400",
+  negative: "bg-rose-400",
+  minor: "border border-muted-foreground/60 bg-transparent",
+};
+const POINT_METRIC: Record<KeyPointTone, string> = {
+  neutral: "text-amber-400/90",
+  positive: "text-teal-400",
+  negative: "text-rose-400",
+  minor: "text-muted-foreground",
+};
+
+// One key point. Structured points get the bold lead + right-aligned figure tag
+// + body (+ quote, + amber watch phrase); a legacy string renders as the plain
+// dot-bullet it always was. "minor" points fold heading and body into one
+// compact line ("Also unchanged: …").
+function KeyPointRow({ point }: { point: NormalizedKeyPoint }) {
+  const minor = point.tone === "minor";
+  const watch = point.watch ? (
+    <>
+      {" "}
+      <span className="text-amber-400/90">{point.watch}</span>
+    </>
+  ) : null;
+  return (
+    <li className="flex gap-2.5">
+      <span
+        className={cn("mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full", POINT_DOT[point.tone])}
+        aria-hidden
+      />
+      <div className="min-w-0 flex-1">
+        {point.heading === null ? (
+          <p className="text-[12px] leading-snug text-foreground/85">
+            {point.detail}
+            {watch}
+          </p>
+        ) : minor ? (
+          <p className="text-[12px] leading-snug text-foreground/75">
+            <span className="font-medium text-foreground/85">{point.heading}:</span> {point.detail}
+            {watch}
+          </p>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+              <p className="text-[12.5px] font-semibold leading-snug text-foreground">
+                {point.heading}
+              </p>
+              {point.metric && (
+                <p
+                  className={cn(
+                    "shrink-0 font-mono text-[11px] tabular-nums tracking-tight",
+                    POINT_METRIC[point.tone],
+                  )}
+                >
+                  {point.metric}
+                </p>
+              )}
+            </div>
+            <p className="mt-0.5 text-[12px] leading-snug text-foreground/85">
+              {point.detail}
+              {watch}
+            </p>
+            {point.quote && (
+              <blockquote className="mt-1.5 border-l-2 border-border/60 pl-2.5 text-[11.5px] italic leading-snug text-muted-foreground">
+                &ldquo;{point.quote}&rdquo;
+              </blockquote>
+            )}
+          </>
+        )}
+      </div>
+    </li>
+  );
+}
+
+// A single addressed category card: accent-dot uppercase label, the lean chip
+// (with its streak caption) on the right, then the ranked key points. Exported
+// so it can be placed outside the breakdown grid (e.g. Quantitative
+// decomposition rendered next to the chart).
 export function V4Card({
   cat,
   id,
   highlighted = false,
+  streak = null,
 }: {
   cat: NormalizedCategory;
   id?: string;
   highlighted?: boolean;
+  // Consecutive quarters (ending at the selected one) with the same lean sign.
+  streak?: number | null;
 }) {
   const chip = leanChip(cat.lean);
+  const streakText = streakLabel(cat.lean, streak);
+  const hasStructured = cat.keyPoints.some((p) => p.heading !== null);
   return (
     <div
       id={id}
       className={cn(nestedDetailClass, "scroll-mt-24 p-3", highlighted && "ring-2 ring-amber-400/60")}
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="mb-2.5 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", STATE_DOT.addressed)} />
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -210,21 +296,23 @@ export function V4Card({
         {chip && (
           <span
             className={cn(chipClass(chip.tone), "shrink-0 gap-1 px-2 py-0.5 text-[10px]")}
-            title="How this category leans the quarter's score (−2 to +2)"
+            title={
+              streakText
+                ? `How this category leans the quarter's score (−2 to +2), and for how many quarters running`
+                : "How this category leans the quarter's score (−2 to +2)"
+            }
           >
             {chip.label}
             {chip.value && (
               <span className="font-semibold tabular-nums opacity-80">{chip.value}</span>
             )}
+            {streakText && <span className="opacity-70">· {streakText}</span>}
           </span>
         )}
       </div>
-      <ul className="space-y-1.5">
+      <ul className={hasStructured ? "space-y-3" : "space-y-1.5"}>
         {cat.keyPoints.map((point, i) => (
-          <li key={i} className="relative pl-3 text-[12px] leading-snug text-foreground/85">
-            <span className="absolute left-0 top-1.5 h-1 w-1 rounded-full bg-amber-400/80" />
-            {point}
-          </li>
+          <KeyPointRow key={i} point={point} />
         ))}
       </ul>
     </div>
@@ -241,12 +329,15 @@ export function V4CategoryCards({
   categories,
   omit = [],
   focusKey = null,
+  streaks = {},
 }: {
   categories: NormalizedCategory[];
   omit?: string[];
   // Category key selected via the leans strip — that card gets an anchor id
   // (scroll target) and a highlight ring.
   focusKey?: string | null;
+  // Per-category lean streak (consecutive quarters, same sign) for the chip caption.
+  streaks?: Partial<Record<string, number>>;
 }) {
   return (
     <>
@@ -258,6 +349,7 @@ export function V4CategoryCards({
             cat={cat}
             id={`v4-cat-${cat.key}`}
             highlighted={cat.key === focusKey}
+            streak={streaks[cat.key] ?? null}
           />
         ))}
     </>
