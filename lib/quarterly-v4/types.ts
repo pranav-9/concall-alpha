@@ -9,6 +9,14 @@
 //   3. cat_6_management_quality        ⇒ state === "deferred_v2"
 //
 // Each content category surfaces up to 3 ranked key_points (most important first).
+//
+// key_points items come in two shapes (structural authority:
+// /schemas/quarterly_v4_extraction_v2.json → definitions.keyPoint):
+//   - legacy: a plain sentence (rows scored before 2026-10-16);
+//   - structured: {heading, detail, metric?, quote?, watch?, tone?} — the shape
+//     the card design renders as a bold lead, a right-aligned figure tag, the
+//     body, an optional verbatim quote and an amber "watch" phrase.
+// Both validate; the normalizer folds a string into {heading: null, detail}.
 
 export type ContentState = "addressed" | "absent_in_concall" | "deferred_v2";
 
@@ -16,9 +24,28 @@ export const MAX_KEY_POINTS = 3;
 
 export const DEFERRED_V2_CATS = ["cat_6_management_quality"] as const;
 
+export const KEY_POINT_TONES = ["positive", "negative", "neutral", "minor"] as const;
+export type KeyPointTone = (typeof KEY_POINT_TONES)[number];
+
+export type StructuredKeyPoint = {
+  heading: string;
+  detail: string;
+  // Short figure tag, e.g. "Guide ~15% · H1 10–15%". Numbers only — no prose.
+  metric?: string | null;
+  // Verbatim words from the call (or deck). Never paraphrased.
+  quote?: string | null;
+  // What to watch next on this point, e.g. "Year-end update deferred to Q3."
+  watch?: string | null;
+  // positive / negative = the point itself helps or hurts the quarter's read;
+  // neutral = in line (default); minor = a compact aside ("also unchanged: …").
+  tone?: KeyPointTone | null;
+};
+
+export type KeyPoint = string | StructuredKeyPoint;
+
 export type ContentCategory = {
   state: "addressed" | "absent_in_concall";
-  key_points?: string[];
+  key_points?: KeyPoint[];
   absence_justification?: string | null;
 };
 
@@ -65,6 +92,29 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+function nonEmpty(v: unknown): v is string {
+  return typeof v === "string" && v.trim().length > 0;
+}
+
+function optionalString(v: unknown): boolean {
+  return v === undefined || v === null || typeof v === "string";
+}
+
+// A key point is a non-empty string, or an object with non-empty heading +
+// detail, string-or-null extras, and a tone from KEY_POINT_TONES when set.
+export function isValidKeyPoint(p: unknown): p is KeyPoint {
+  if (typeof p === "string") return p.trim().length > 0;
+  if (!isRecord(p)) return false;
+  if (!nonEmpty(p.heading) || !nonEmpty(p.detail)) return false;
+  if (!optionalString(p.metric) || !optionalString(p.quote) || !optionalString(p.watch)) {
+    return false;
+  }
+  if (p.tone !== undefined && p.tone !== null) {
+    if (!(KEY_POINT_TONES as readonly unknown[]).includes(p.tone)) return false;
+  }
+  return true;
+}
+
 function isValidCategory(v: unknown, key: CategoryKey): boolean {
   if (!isRecord(v)) return false;
 
@@ -73,9 +123,7 @@ function isValidCategory(v: unknown, key: CategoryKey): boolean {
   }
   if (v.state === "addressed") {
     if (!Array.isArray(v.key_points)) return false;
-    const points = v.key_points.filter(
-      (p): p is string => typeof p === "string" && p.trim().length > 0,
-    );
+    const points = v.key_points.filter(isValidKeyPoint);
     return points.length >= 1 && points.length <= MAX_KEY_POINTS;
   }
   if (v.state === "absent_in_concall") {

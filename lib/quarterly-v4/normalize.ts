@@ -7,17 +7,30 @@
 import {
   CATEGORY_KEYS,
   CATEGORY_LABELS,
+  isValidKeyPoint,
   validateQuarterlyV4Categories,
   type CategoryKey,
   type ContentState,
+  type KeyPointTone,
 } from "./types";
+
+// One rendered key point. A legacy string becomes {heading: null, detail} with
+// neutral tone, so the card can draw both shapes from one list.
+export type NormalizedKeyPoint = {
+  heading: string | null;
+  detail: string;
+  metric: string | null;
+  quote: string | null;
+  watch: string | null;
+  tone: KeyPointTone;
+};
 
 export type NormalizedCategory = {
   key: CategoryKey;
   number: number; // 1..7 for display
   label: string;
   state: ContentState;
-  keyPoints: string[]; // ranked, most important first (addressed only)
+  keyPoints: NormalizedKeyPoint[]; // ranked, most important first (addressed only)
   absenceJustification: string | null;
   deferredReason: string | null;
   // Per-category lean (-2..+2) from details.score_breakdown — the integer this
@@ -37,11 +50,26 @@ function asString(v: unknown): string | null {
   return null;
 }
 
-function keyPointsOf(cat: Record<string, unknown>): string[] {
+function normalizeKeyPoint(p: unknown): NormalizedKeyPoint | null {
+  if (!isValidKeyPoint(p)) return null;
+  if (typeof p === "string") {
+    return { heading: null, detail: p.trim(), metric: null, quote: null, watch: null, tone: "neutral" };
+  }
+  return {
+    heading: p.heading.trim(),
+    detail: p.detail.trim(),
+    metric: asString(p.metric),
+    quote: asString(p.quote),
+    watch: asString(p.watch),
+    tone: p.tone ?? "neutral",
+  };
+}
+
+function keyPointsOf(cat: Record<string, unknown>): NormalizedKeyPoint[] {
   if (!Array.isArray(cat.key_points)) return [];
   return cat.key_points
-    .map(asString)
-    .filter((s): s is string => Boolean(s))
+    .map(normalizeKeyPoint)
+    .filter((p): p is NormalizedKeyPoint => p !== null)
     .slice(0, 3);
 }
 

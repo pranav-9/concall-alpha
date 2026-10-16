@@ -449,6 +449,36 @@ export function ConcallScoreSection({
     return { net, pos, neg, count: vals.length };
   }, [quarterContext]);
 
+  // Lean streak per category for the selected quarter: how many consecutive,
+  // contiguous quarters (walking older from the selected one) leaned the same
+  // WAY. Surfaces as "· 3rd quarter in line" on the card chip. A quarter gap
+  // or a missing breakdown ends the streak — no inference across holes.
+  const leanStreaks = React.useMemo(() => {
+    const breakdownAt = (i: number): Record<string, unknown> | null => {
+      const d = parseJsonObject(detailQuarters[i]?.details) as ConcallDetails | null;
+      const bd = d?.score_breakdown;
+      return bd && typeof bd === "object" ? (bd as Record<string, unknown>) : null;
+    };
+    const out: Record<string, number> = {};
+    const selected = breakdownAt(selectedIndex);
+    if (!selected) return out;
+    for (const [key, lean] of Object.entries(selected)) {
+      if (typeof lean !== "number" || !Number.isInteger(lean)) continue;
+      const sign = Math.sign(lean);
+      let n = 1;
+      for (let i = selectedIndex + 1; i < detailQuarters.length; i++) {
+        const prev = detailQuarters[i - 1];
+        const cur = detailQuarters[i];
+        if (quarterIndex(prev.fy, prev.qtr) - quarterIndex(cur.fy, cur.qtr) !== 1) break;
+        const v = breakdownAt(i)?.[key];
+        if (typeof v !== "number" || !Number.isInteger(v) || Math.sign(v) !== sign) break;
+        n++;
+      }
+      out[key] = n;
+    }
+    return out;
+  }, [detailQuarters, selectedIndex]);
+
   // Whether the proportional leans strip has anything to draw — zero-lean and
   // lean-less cats carry no segment, so the strip (and its caption) hide.
   const hasLeanSegments = Boolean(
@@ -694,6 +724,7 @@ export function ConcallScoreSection({
                   <V4CategoryCards
                     categories={quarterContext.v4.categories}
                     focusKey={focusCategoryKey}
+                    streaks={leanStreaks}
                   />
                 ) : (
                   <>
