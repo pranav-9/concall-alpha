@@ -26,3 +26,11 @@
 2026-10-16 | THEMES | theme-set=auto-components-premiumisation [hotness]
 2026-10-16 | THEMES | reorder=[ai-datacentre-fibre,defence-order-inflows,transmission-grid-capex,specialty-chemicals-rebound,renewables-build-out,jewellery-gold-retail,cdmo-crams,auto-components-premiumisation] rows=8
 2026-10-16 | THEMES | theme-set=metals-mining-upcycle [hotness]
+2026-10-16 | THEMES | theme-set=renewables-build-out [blurb,hotness]
+2026-10-16 | THEMES | bench=auto-components-premiumisation sort=108
+2026-10-16 | THEMES | feature=ems sort=8
+2026-10-16 | THEMES | theme-set=ems [blurb,hotness]
+2026-10-16 | THEMES | theme-set=auto-components-premiumisation [hotness]
+2026-10-16 | THEMES | theme-create=semiconductor-supply-chain featured=false sort=109 hotness=null
+2026-10-16 | THEMES | adds=5 [semiconductor-supply-chain:AVALON,semiconductor-supply-chain:SYRMA,semiconductor-supply-chain:ROSSTECH,semiconductor-supply-chain:CENTUM,semiconductor-supply-chain:ACUTAAS]
+2026-10-16 | THEMES | reorder=[ai-datacentre-fibre,ems,defence-order-inflows,jewellery-gold-retail,transmission-grid-capex,specialty-chemicals-rebound,renewables-build-out,cdmo-crams] rows=8

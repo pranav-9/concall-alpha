@@ -30,15 +30,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
-import { DRIFT_SIGNATURES, CANDIDATE_SIGNATURES } from "./themes-signatures.mjs";
+import { DRIFT_SIGNATURES, CANDIDATE_SIGNATURES, sigHits } from "./themes-signatures.mjs";
+import { loadEnv, isAdmittedLargeCap as isLarge, isDiscoveryListed as isListed } from "./themes-lib.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, "..");
-const env = Object.fromEntries(
-  fs.readFileSync(path.join(ROOT, ".env"), "utf8").split("\n")
-    .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
-    .map((l) => [l.slice(0, l.indexOf("=")).trim(), l.slice(l.indexOf("=") + 1).trim()]),
-);
+const env = loadEnv(ROOT);
 const SUPA = env.NEXT_PUBLIC_SUPABASE_URL;
 const KEY = env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY;
 if (!SUPA || !KEY) throw new Error("missing Supabase env in .env");
@@ -57,15 +54,12 @@ for (let i = 0; i < argv.length; i += 1) {
   else if (t.startsWith("--")) opt.set(t.slice(2), true);
 }
 const DAYS = Number(opt.get("days") ?? 90);
+if (!Number.isInteger(DAYS) || DAYS < 7 || DAYS > 730) throw new Error(`--days must be an integer 7..730, got "${opt.get("days")}"`);
+if (opt.get("company") === true) throw new Error("--company needs a CODE");
 const ONLY = opt.get("company") ? String(opt.get("company")).toUpperCase() : null;
 const SINCE = new Date(Date.now() - DAYS * 864e5);
 const SINCE_ISO = SINCE.toISOString();
 const SINCE_DAY = SINCE_ISO.slice(0, 10);
-
-// --- coverage predicates (mirror lib/coverage-policy.ts) ----------------------
-const isLarge = (c) => c?.market_cap_band_at_admission === "large";
-const isBelowCut = (c) => c?.excluded_from_discovery === true;
-const isListed = (c) => !!c && !isLarge(c) && !isBelowCut(c);
 
 // --- helpers ------------------------------------------------------------------
 const sb = createClient(SUPA, KEY);
@@ -73,6 +67,15 @@ const readJsonl = (p) => (fs.existsSync(p) ? fs.readFileSync(p, "utf8").split("\
 const num = (n, d = 1) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
 const sum = (a) => a.reduce((x, y) => x + y, 0);
 const mean = (a) => (a.length ? sum(a) / a.length : null);
+function groupBy(rows, keyOf) {
+  const m = new Map();
+  for (const r of rows) {
+    const k = keyOf(r);
+    const list = m.get(k);
+    if (list) list.push(r); else m.set(k, [r]);
+  }
+  return m;
+}
 const must = (r, label) => { if (r.error) throw new Error(`${label}: ${r.error.message}`); return r.data ?? []; };
 
 async function pageAll(build, pageSize = 1000) {
@@ -95,15 +98,17 @@ async function load() {
   // Concall prints — every scored row, thin projection (details is heavy).
   const prints = await pageAll(() => sb
     .from("concall_analysis")
-    .select("company_code,quarter_label,score:details->score,scored_at:details->scoring_meta->>scored_at,industry:details->v4_categories->cat_4_industry_context->key_points,guidance:details->v4_categories->cat_2_forward_guidance->key_points")
+    .select("id,company_code,quarter_label,fy,qtr,score:details->score,scored_at:details->scoring_meta->>scored_at,industry:details->v4_categories->cat_4_industry_context->key_points,guidance:details->v4_categories->cat_2_forward_guidance->key_points")
     .not("details->scoring_meta", "is", null)
-    .order("company_code"));
+    .order("company_code")
+    .order("id")); // unique tiebreak: paging on a non-unique key can skip / duplicate rows at the boundary
 
   // Growth — latest run per company (one row per run; take newest).
   const growth = await pageAll(() => sb
     .from("growth_outlook")
-    .select("company,run_timestamp,growth_score,catalysts,summary_bullets")
-    .order("run_timestamp", { ascending: false }));
+    .select("id,company,run_timestamp,growth_score,catalysts,summary_bullets")
+    .order("run_timestamp", { ascending: false })
+    .order("id"));
 
   // Guidance trend — never select guidance_snapshot.details (13 MB fleet-wide).
   const guidance = must(await sb.from("guidance_snapshot").select("company_code,generated_at,cyg:current_year_revenue_guidance"), "guidance_snapshot");
@@ -114,7 +119,8 @@ async function load() {
     .select("company_code,filed_at,category,impact,headline,summary,pct_of_mcap:details->classifier->order_size->pct_of_mcap,order_cr:details->order->value_cr,order_status:details->order->status")
     .gte("filed_at", SINCE_ISO)
     .or("category.eq.order_win,impact.eq.positive,impact.eq.transformative,impact.eq.negative,impact.eq.severe")
-    .order("filed_at", { ascending: false }));
+    .order("filed_at", { ascending: false })
+    .order("announcement_id"));
 
   const ledger = readJsonl(LEDGER).filter((r) => (r.report_date ?? "") >= SINCE_DAY);
   const manifest = readJsonl(MANIFEST).filter((r) => (r.date_ist ?? "") >= SINCE_DAY);
@@ -128,39 +134,28 @@ function catalystText(c) {
 
 function buildCards(d) {
   const byCode = new Map(d.companies.map((c) => [String(c.code).toUpperCase(), c]));
-  const themesOf = new Map();
-  for (const m of d.memberships) {
-    const code = String(m.company_code).toUpperCase();
-    themesOf.set(code, [...(themesOf.get(code) ?? []), m.theme_slug]);
-  }
-
-  // Latest + prior concall print per company (by scored_at desc, distinct quarter).
-  const printsBy = new Map();
-  for (const p of d.prints) {
-    const code = String(p.company_code).toUpperCase();
-    printsBy.set(code, [...(printsBy.get(code) ?? []), p]);
-  }
+  const up = (s) => String(s).toUpperCase();
+  const themesOf = new Map([...groupBy(d.memberships, (m) => up(m.company_code))].map(([k, v]) => [k, v.map((m) => m.theme_slug)]));
+  const printsBy = groupBy(d.prints, (p) => up(p.company_code));
   const growthBy = new Map();
   for (const g of d.growth) {
-    const code = String(g.company).toUpperCase();
-    if (!growthBy.has(code)) growthBy.set(code, g); // first = newest
+    const code = up(g.company);
+    if (!growthBy.has(code)) growthBy.set(code, g); // first = newest (ordered run_timestamp desc)
   }
-  const guidanceBy = new Map(d.guidance.map((g) => [String(g.company_code).toUpperCase(), g]));
-  const filingsBy = new Map();
-  for (const f of d.filings) {
-    const code = String(f.company_code).toUpperCase();
-    filingsBy.set(code, [...(filingsBy.get(code) ?? []), f]);
-  }
-  const ledgerBy = new Map();
-  for (const r of d.ledger) {
-    const code = String(r.company).toUpperCase();
-    ledgerBy.set(code, [...(ledgerBy.get(code) ?? []), r]);
-  }
+  const guidanceBy = new Map(d.guidance.map((g) => [up(g.company_code), g]));
+  const filingsBy = groupBy(d.filings, (f) => up(f.company_code));
+  const ledgerBy = groupBy(d.ledger, (r) => up(r.company));
+
+  // Latest print = highest (fy, qtr), like every portal reader (lib/desk-leaderboard.ts) —
+  // NOT newest scored_at: Phase 1 re-scores an older quarter routinely, and that would
+  // make the old quarter "latest" and flip the delta's sign. scored_at only breaks ties
+  // between two prints of the same quarter (official re-score over unofficial).
+  const byQuarterDesc = (a, b) => (Number(b.fy) - Number(a.fy)) || (Number(b.qtr) - Number(a.qtr)) || String(b.scored_at ?? "").localeCompare(String(a.scored_at ?? ""));
 
   const cards = [];
   for (const [code, c] of byCode) {
     if (ONLY && code !== ONLY) continue;
-    const ps = (printsBy.get(code) ?? []).slice().sort((a, b) => String(b.scored_at ?? "").localeCompare(String(a.scored_at ?? "")));
+    const ps = (printsBy.get(code) ?? []).slice().sort(byQuarterDesc);
     const latest = ps[0] ?? null;
     const prior = ps.find((p) => latest && p.quarter_label !== latest.quarter_label) ?? null;
     const g = growthBy.get(code) ?? null;
@@ -219,7 +214,7 @@ function buildCards(d) {
 
     const sigs = {};
     for (const [slug, kws] of Object.entries({ ...DRIFT_SIGNATURES, ...CANDIDATE_SIGNATURES })) {
-      const hits = kws.filter((k) => text.includes(k));
+      const hits = sigHits(text, kws);
       if (hits.length) sigs[slug] = { n: hits.length, hits };
     }
 
@@ -251,7 +246,11 @@ function streetThemes(manifest) {
     const cap = String(r.caption ?? "").toLowerCase();
     let any = false;
     for (const [slug, kws] of Object.entries(all)) {
-      if (kws.some((k) => cap.includes(k))) { any = true; bySig.set(slug, [...(bySig.get(slug) ?? []), r]); }
+      if (sigHits(cap, kws).length) {
+        any = true;
+        const list = bySig.get(slug);
+        if (list) list.push(r); else bySig.set(slug, [r]);
+      }
     }
     if (!any) unmatched.push(r);
   }
@@ -311,16 +310,18 @@ function print(cards, d, cr, st) {
     console.log(`  ${slug.padEnd(32)} ${String(rows.length).padStart(2)}  e.g. ${rows.slice(0, 2).map((r) => `${r.date_ist} ${String(r.caption).replace(/\s+/g, " ").slice(0, 70)}`).join(" | ")}`);
   }
   console.log(`  (unmatched thematic notes: ${st.unmatched.length} — in discover.json → street.unmatched; read them for themes we have no signature for)`);
-
-  if (ONLY) {
-    console.log("\n--- FULL CARD ---");
-    console.log(JSON.stringify(cards[0], null, 2));
-  }
 }
 
 // --- main ---------------------------------------------------------------------
 const d = await load();
 const cards = buildCards(d);
+if (ONLY) {
+  // Single-company mode: print the card and stop. No clusters / rosters (meaningless
+  // on one card) and no discover.json (a one-card file would masquerade as a run).
+  if (!cards.length) throw new Error(`--company ${ONLY}: not in the company table`);
+  console.log(JSON.stringify(cards[0], null, 2));
+  process.exit(0);
+}
 const cr = clusterReport(cards, d.themes);
 const st = streetThemes(d.manifest);
 fs.mkdirSync(OUT_DIR, { recursive: true });

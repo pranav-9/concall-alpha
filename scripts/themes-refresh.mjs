@@ -43,18 +43,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
-import { DRIFT_SIGNATURES } from "./themes-signatures.mjs";
+import { DRIFT_SIGNATURES, sigHits } from "./themes-signatures.mjs";
+import { loadEnv, isAdmittedLargeCap, isBelowCoverageCut, isDiscoveryListed } from "./themes-lib.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, "..");
-const envPath = path.join(ROOT, ".env");
-const env = Object.fromEntries(
-  fs
-    .readFileSync(envPath, "utf8")
-    .split("\n")
-    .filter((l) => l.includes("=") && !l.trim().startsWith("#"))
-    .map((l) => [l.slice(0, l.indexOf("=")).trim(), l.slice(l.indexOf("=") + 1).trim()]),
-);
+const env = loadEnv(ROOT);
 
 const SUPA = env.NEXT_PUBLIC_SUPABASE_URL;
 // Writes to theme_membership are service-role only (RLS: public read, no write policy —
@@ -93,11 +87,6 @@ for (let i = 0; i < argv.length; i += 1) {
   }
 }
 const STALE_DAYS = Number(options.get("stale-days") ?? 90);
-
-// --- coverage predicates (mirror lib/coverage-policy.ts) ----------------------
-const isAdmittedLargeCap = (c) => c?.market_cap_band_at_admission === "large";
-const isBelowCoverageCut = (c) => c?.excluded_from_discovery === true;
-const isDiscoveryListed = (c) => !!c && !isAdmittedLargeCap(c) && !isBelowCoverageCut(c);
 
 // --- current reporting quarter, no-space form (mirror lib/current-quarter) -----
 function reportingQuarterCompact(today = new Date()) {
@@ -391,11 +380,7 @@ async function touch(sb, isWrite) {
 function scoreDriverText(text) {
   const t = (text || "").toLowerCase();
   const out = {};
-  for (const [slug, kws] of Object.entries(DRIFT_SIGNATURES)) {
-    let s = 0;
-    for (const k of kws) if (t.includes(k)) s += 1;
-    out[slug] = s;
-  }
+  for (const [slug, kws] of Object.entries(DRIFT_SIGNATURES)) out[slug] = sigHits(t, kws).length;
   return out;
 }
 
@@ -403,7 +388,9 @@ function scoreDriverText(text) {
 // `company_code`; growth_outlook keys on `company` (not company_code) — a known asymmetry.
 async function fetchDriverText(sb, code) {
   const [caR, goR] = await Promise.all([
-    sb.from("concall_analysis").select("quarter_label,details,updated_at").eq("company_code", code).order("updated_at", { ascending: false }).limit(1),
+    // Latest = highest (fy, qtr), scored rows only — never a legacy pre-scoring_meta
+    // print (hidden portal-wide) and never a re-scored older quarter by updated_at.
+    sb.from("concall_analysis").select("quarter_label,details").eq("company_code", code).not("details->scoring_meta", "is", null).order("fy", { ascending: false }).order("qtr", { ascending: false }).limit(1),
     sb.from("growth_outlook").select("catalysts,summary_bullets,run_timestamp").eq("company", code).order("run_timestamp", { ascending: false }).limit(1),
   ]);
   const ca = caR.data && caR.data[0];
