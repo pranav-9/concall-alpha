@@ -30,6 +30,9 @@ export function assembleThemeBlocks(
 
   for (const theme of themes) {
     const members: ThemeMember[] = [];
+    // as_of_quarter of the memberships that actually render — a dropped row
+    // (typo / large-cap / uncovered) must not date the card's SINCE.
+    const resolvedQuarters: (string | null | undefined)[] = [];
 
     for (const m of membershipsByTheme.get(theme.slug) ?? []) {
       const code = m.company_code.toUpperCase();
@@ -52,6 +55,7 @@ export function assembleThemeBlocks(
       });
       const hasRead = read.key !== "no_read" && read.score != null;
 
+      resolvedQuarters.push(m.as_of_quarter);
       members.push({
         companyCode: code,
         companyName: board.companyName,
@@ -100,9 +104,7 @@ export function assembleThemeBlocks(
       // Position among the themes that actually render (empty ones were skipped
       // above), so the cards read THEME 01, 02, … without a gap.
       index: blocks.length + 1,
-      sinceQuarter: earliestQuarterLabel(
-        (membershipsByTheme.get(theme.slug) ?? []).map((m) => m.as_of_quarter),
-      ),
+      sinceQuarter: earliestQuarterLabel(resolvedQuarters),
       story: stories.get(theme.slug) ?? null,
     });
   }

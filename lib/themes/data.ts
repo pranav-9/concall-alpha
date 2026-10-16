@@ -3,6 +3,8 @@
 // result so the /themes section and the homepage teaser render nothing rather
 // than breaking the page.
 
+import { cache } from "react";
+
 import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { logger } from "@/lib/logger";
 import { getOverallBoardRows } from "@/lib/overall-board";
@@ -18,8 +20,12 @@ import {
   type ThemeTeaser,
 } from "./types";
 
-/** Featured themes with their members scored live off the board. Empty on any failure. */
-export async function getFeaturedThemeBlocks(): Promise<ThemeBlock[]> {
+/**
+ * Featured themes with their members scored live off the board. Empty on any
+ * failure. Request-deduped with React `cache()` (like lib/overall-board), so
+ * /themes/[slug]'s generateMetadata and page body share one set of queries.
+ */
+export const getFeaturedThemeBlocks = cache(async function getFeaturedThemeBlocks(): Promise<ThemeBlock[]> {
   const supabase = createPublicReadClient();
 
   const { data: themeData, error: themeError } = await supabase
@@ -73,7 +79,7 @@ export async function getFeaturedThemeBlocks(): Promise<ThemeBlock[]> {
   });
 
   return assembleThemeBlocks(themes, memberships, boardRows, getThemeStories());
-}
+});
 
 /**
  * One featured theme by slug, for /themes/[slug]. Built from the same featured

@@ -4,6 +4,7 @@
 // last period labels sit under the line. Two points is a valid series (a from →
 // to figure); the schema forbids padding, so never interpolate here.
 
+import { periodYear } from "@/lib/themes/format";
 import type { ThemeStoryPoint } from "@/lib/themes/story";
 
 const W = 120;
@@ -17,7 +18,14 @@ export function ThemeSparkline({ points, label }: { points: readonly ThemeStoryP
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
-  const xs = points.map((_, i) => PAD_X + (i * (W - 2 * PAD_X)) / (points.length - 1));
+  // x by YEAR, not by index: FY26 → FY27 → FY31 must show a short step then a
+  // long one, or a slope reads wrong. Falls back to even spacing only when a
+  // period label is unreadable or the years are not strictly increasing.
+  const years = points.map((p) => periodYear(p.period));
+  const yearsOk = years.every((y, i) => y != null && (i === 0 || y > (years[i - 1] as number)));
+  const x0 = yearsOk ? (years[0] as number) : 0;
+  const xSpan = yearsOk ? (years[years.length - 1] as number) - x0 || 1 : points.length - 1;
+  const xs = points.map((_, i) => PAD_X + (((yearsOk ? (years[i] as number) - x0 : i) * (W - 2 * PAD_X)) / xSpan));
   const ys = points.map((p) => PAD_Y + (H - 2 * PAD_Y) * (1 - (p.value - min) / span));
 
   let lastActual = -1;

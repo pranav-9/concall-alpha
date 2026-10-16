@@ -12,7 +12,6 @@ import { currentReportingQuarter } from "@/lib/current-quarter";
 import { PAGE_BACKGROUND_ATMOSPHERIC, PAGE_SHELL } from "@/lib/design/shell";
 import { getFeaturedThemeBlock } from "@/lib/themes/data";
 import { BelowSm, FromSm } from "@/components/viewport-gate";
-import { MOBILE_DEK, MobileMasthead } from "@/components/mobile-card";
 
 import { ThemeBlockView } from "../theme-block";
 import { ThemeBlockPhone } from "../theme-block-phone";
@@ -41,16 +40,15 @@ export default async function ThemePage({ params }: { params: Promise<Params> })
 
   return (
     <main className="relative isolate overflow-hidden">
+      {/* Phone: the theme card already carries title, blurb and In Focus, so no
+          masthead above it (it would print them twice) — just the way back. */}
       <BelowSm className="house min-h-screen pb-6">
-        <MobileMasthead eyebrow="Hot theme" title={block.title}>
-          {block.blurb && <p className={MOBILE_DEK}>{block.blurb}</p>}
-        </MobileMasthead>
-        <ThemeBlockPhone block={block} quarterLabel={quarterLabel} />
-        <p className="mx-4 mt-4 text-[12.5px] leading-[1.5] text-[var(--ink-soft)]">
+        <p className="house-data mx-4 pt-4 text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">
           <Link href="/themes" className="house-link">
-            ← All hot themes
+            ← Hot themes
           </Link>
         </p>
+        <ThemeBlockPhone block={block} quarterLabel={quarterLabel} />
       </BelowSm>
       <FromSm>
         <div className={PAGE_BACKGROUND_CLASS} />

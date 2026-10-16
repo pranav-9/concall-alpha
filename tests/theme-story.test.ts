@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { earliestQuarterLabel, parseQuarterLabel, parseThemeStories, themeStorySchema } from "../lib/themes/story";
-import { shortCompanyName, themeIndexLabel } from "../app/themes/theme-card";
+import { periodYear, shortCompanyName, themeIndexLabel } from "../lib/themes/format";
 
 // --- the shipped stories file must be fully valid: a dropped story is a card without tiles ---
 const raw = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "themes", "stories.json"), "utf8"));
@@ -48,6 +48,14 @@ assert.equal(
 );
 assert.equal(themeStorySchema.safeParse({ ...base, kpis: [] }).success, false, "no tiles is rejected");
 assert.equal(
+  themeStorySchema.safeParse({
+    ...base,
+    kpis: [{ label: "Demand", value: "1 GW", source: { note: "Somebody said so, Q1 FY27 call." }, series: [{ period: "CY25", value: 1 }, { period: "CY30", value: 5, estimate: true }] }],
+  }).success,
+  false,
+  "an unknown key (a typo'd `est`) is rejected, not stripped",
+);
+assert.equal(
   themeStorySchema.safeParse({ ...base, driver: { ...base.driver, kind: "vibes" }, kpis: [{ label: "Demand", value: "1", source: { note: "Somebody said so, Q1 FY27 call." } }] }).success,
   false,
   "driver kind is a closed vocabulary",
@@ -73,5 +81,8 @@ assert.equal(themeIndexLabel(12), "Theme 12");
 assert.equal(shortCompanyName("E2E Networks Limited"), "E2E Networks");
 assert.equal(shortCompanyName("HFCL Ltd."), "HFCL");
 assert.equal(shortCompanyName("Limited"), "Limited", "never blanks a name");
+assert.equal(periodYear("CY25"), 2025);
+assert.equal(periodYear("FY2031"), 2031);
+assert.equal(periodYear("2025"), null);
 
 console.log("theme-story: ok");

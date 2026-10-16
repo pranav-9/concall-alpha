@@ -2,6 +2,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "prebuild": "tsx tests/theme-story.test.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

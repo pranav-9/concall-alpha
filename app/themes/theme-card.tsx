@@ -8,16 +8,13 @@
 import Link from "next/link";
 
 import { InFocusPips } from "@/components/in-focus-pips";
+import { shortCompanyName, themeIndexLabel } from "@/lib/themes/format";
 import { DRIVER_KIND_LABEL, type ThemeStoryKpi } from "@/lib/themes/story";
 import type { ThemeBlock, ThemeMember } from "@/lib/themes/types";
 
 import { ThemeSparkline } from "./theme-sparkline";
 
 const EYEBROW = "font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground";
-
-export function themeIndexLabel(index: number): string {
-  return `Theme ${String(index).padStart(2, "0")}`;
-}
 
 function KpiTile({ kpi }: { kpi: ThemeStoryKpi }) {
   return (
@@ -36,11 +33,6 @@ function KpiTile({ kpi }: { kpi: ThemeStoryKpi }) {
       {kpi.series && <ThemeSparkline points={kpi.series} label={kpi.label} />}
     </div>
   );
-}
-
-/** "E2E Networks Limited" → "E2E Networks": the riding-it line is a roll call, not a filing. */
-export function shortCompanyName(name: string): string {
-  return name.replace(/\s+(Limited|Ltd\.?|Pvt\.?\s+Ltd\.?)$/i, "").trim() || name;
 }
 
 function RidingName({ member, last }: { member: ThemeMember; last: boolean }) {
@@ -86,18 +78,24 @@ export function ThemeCard({
             <span>{themeIndexLabel(block.index)}</span>
             {block.sinceQuarter && <span>Since {block.sinceQuarter}</span>}
           </div>
-          <h2
-            id={`theme-${block.slug}`}
-            className="mt-3 text-[30px] font-black leading-[1.05] tracking-[-0.04em] text-foreground sm:text-[34px]"
-          >
-            {standalone ? (
-              block.title
-            ) : (
+          {standalone ? (
+            // On its own page the card IS the hero, so the title is the route's h1.
+            <h1
+              id={`theme-${block.slug}`}
+              className="mt-3 text-[30px] font-black leading-[1.05] tracking-[-0.04em] text-foreground sm:text-[34px]"
+            >
+              {block.title}
+            </h1>
+          ) : (
+            <h2
+              id={`theme-${block.slug}`}
+              className="mt-3 text-[30px] font-black leading-[1.05] tracking-[-0.04em] text-foreground sm:text-[34px]"
+            >
               <Link href={href} prefetch={false} className="hover:underline decoration-2 underline-offset-4">
                 {block.title}
               </Link>
-            )}
-          </h2>
+            </h2>
+          )}
           <div className="mt-3">
             <InFocusPips value={block.hotness} updatedAt={block.updatedAt} />
           </div>
@@ -148,7 +146,8 @@ export function ThemeCard({
           </Link>
         )}
       </div>
-      {quarterLabel && provisionalCount > 0 && (
+      {/* On the theme page the board beneath owns the scores line. */}
+      {!standalone && quarterLabel && provisionalCount > 0 && (
         <p className="px-7 pb-3 font-mono text-[10px] tracking-[0.02em] text-muted-foreground/70">
           Scores as of {quarterLabel} · {provisionalCount} provisional
         </p>

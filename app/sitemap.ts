@@ -6,6 +6,7 @@ import { getAllPostMeta } from "@/app/blog/posts";
 import { getCachedCompanySearchRows } from "@/lib/company-search-cache";
 import { getCachedSectorSlugs } from "@/lib/sector-slug-cache";
 import { getSiteUrl } from "@/lib/site-url";
+import { getFeaturedThemeTeasers } from "@/lib/themes/data";
 
 export const revalidate = 3600;
 
@@ -15,6 +16,7 @@ const STATIC_ROUTES = [
   "/leaderboards",
   "/scanners",
   "/sectors",
+  "/themes",
   "/activity",
   "/coverage",
   "/how-scores-work",
@@ -28,9 +30,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl();
 
   // A Supabase hiccup should degrade to a static-only sitemap, not fail the build.
-  const [companies, sectorSlugs] = await Promise.all([
+  const [companies, sectorSlugs, themes] = await Promise.all([
     getCachedCompanySearchRows().catch(() => []),
     getCachedSectorSlugs().catch(() => []),
+    // Featured themes only (the teaser query is the cheap one): each has its own
+    // canonical page at /themes/<slug> (2026-10-16).
+    getFeaturedThemeTeasers().catch(() => []),
   ]);
 
   let posts: ReturnType<typeof getAllPostMeta> = [];
@@ -59,6 +64,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...sectorSlugs.map((slug) => ({
       url: `${base}/sector/${slug}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    })),
+    ...themes.map((theme) => ({
+      url: `${base}/themes/${theme.slug}`,
       changeFrequency: "weekly" as const,
       priority: 0.6,
     })),

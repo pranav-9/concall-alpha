@@ -10,21 +10,28 @@
 import { z } from "zod";
 
 import storiesJson from "@/data/themes/stories.json";
+import { logger } from "@/lib/logger";
 
 const PERIOD_RE = /^(CY|FY)\d{2}(\d{2})?$/;
 
-export const themeStoryPointSchema = z.object({
-  period: z.string().regex(PERIOD_RE),
-  value: z.number(),
-  est: z.boolean().optional(),
-});
+// Every object is `.strict()` because the JSON schema sets additionalProperties:
+// false — a typo'd key ("estimate" for "est") must fail here, not silently strip.
+export const themeStoryPointSchema = z
+  .object({
+    period: z.string().regex(PERIOD_RE),
+    value: z.number(),
+    est: z.boolean().optional(),
+  })
+  .strict();
 
-export const themeStorySourceSchema = z.object({
-  company_code: z.string().min(1).max(50).optional(),
-  quarter: z.string().regex(/^Q[1-4] ?FY\d{2}$/).optional(),
-  document: z.enum(["concall", "deck", "broker_note", "press_release", "annual_report"]).optional(),
-  note: z.string().min(8).max(240),
-});
+export const themeStorySourceSchema = z
+  .object({
+    company_code: z.string().min(1).max(50).optional(),
+    quarter: z.string().regex(/^Q[1-4] ?FY\d{2}$/).optional(),
+    document: z.enum(["concall", "deck", "broker_note", "press_release", "annual_report"]).optional(),
+    note: z.string().min(8).max(240),
+  })
+  .strict();
 
 export const themeStoryKpiSchema = z
   .object({
@@ -34,6 +41,7 @@ export const themeStoryKpiSchema = z
     series: z.array(themeStoryPointSchema).min(2).max(12).optional(),
     source: themeStorySourceSchema,
   })
+  .strict()
   .superRefine((kpi, ctx) => {
     // Estimates must trail the actuals: the sparkline draws actuals solid up to
     // the last real point, then dashed — an estimate before an actual has no
@@ -49,16 +57,20 @@ export const themeStoryKpiSchema = z
     }
   });
 
-export const themeStorySchema = z.object({
-  schema_version: z.literal("theme_story_v1"),
-  theme_slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  driver: z.object({
-    kind: z.enum(["capex", "policy", "demand", "supply", "pricing"]),
-    title: z.string().min(3).max(40),
-    line: z.string().min(10).max(160),
-  }),
-  kpis: z.array(themeStoryKpiSchema).min(1).max(3),
-});
+export const themeStorySchema = z
+  .object({
+    schema_version: z.literal("theme_story_v1"),
+    theme_slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    driver: z
+      .object({
+        kind: z.enum(["capex", "policy", "demand", "supply", "pricing"]),
+        title: z.string().min(3).max(40),
+        line: z.string().min(10).max(160),
+      })
+      .strict(),
+    kpis: z.array(themeStoryKpiSchema).min(1).max(3),
+  })
+  .strict();
 
 export type ThemeStory = z.infer<typeof themeStorySchema>;
 export type ThemeStoryKpi = z.infer<typeof themeStoryKpiSchema>;
@@ -100,13 +112,16 @@ export function parseThemeStories(raw: unknown): { stories: Map<string, ThemeSto
 
 let cached: Map<string, ThemeStory> | null = null;
 
-/** The bundled stories, validated once per process. */
+/**
+ * The bundled stories, validated once per process. An invalid entry is dropped
+ * and logged (the card renders without tiles rather than the page failing);
+ * the build itself is guarded by `npm run prebuild`, which runs
+ * tests/theme-story.test.ts and refuses an invalid stories.json.
+ */
 export function getThemeStories(): Map<string, ThemeStory> {
   if (cached) return cached;
   const { stories, errors } = parseThemeStories(storiesJson);
-  if (errors.length && process.env.NODE_ENV !== "production") {
-    console.warn(`[themes] ${errors.length} story entr${errors.length === 1 ? "y" : "ies"} dropped: ${errors.join(" | ")}`);
-  }
+  if (errors.length) logger.warn("Hot Themes: story entries dropped", { count: errors.length, errors });
   cached = stories;
   return cached;
 }
