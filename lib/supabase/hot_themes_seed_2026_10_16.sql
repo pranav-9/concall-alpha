@@ -81,7 +81,6 @@ insert into theme_membership (theme_slug, company_code, as_of_quarter) values
   ('specialty-chemicals-rebound', 'YASHO', 'Q1FY27'),
   ('renewables-build-out', 'ADVAIT', 'Q2FY27'),
   ('renewables-build-out', 'BONDADA', 'Q2FY27'),
-  ('renewables-build-out', 'CLEANMAX', 'Q2FY27'),
   ('renewables-build-out', 'SUZLON', 'Q2FY27'),
   ('renewables-build-out', 'WAAREEENER', 'Q2FY27'),
   ('cdmo-crams', 'ACUTAAS', 'Q1FY27'),

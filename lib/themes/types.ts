@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import type { BoardReadKey } from "@/lib/board-read";
 import type { ScoreSourceStatus } from "@/lib/score-freshness";
+import type { ThemeStory } from "./story";
 
 // --- Raw editorial rows (validated on read) ---
 
@@ -67,6 +68,12 @@ export type ThemeBlock = {
   hotness: number | null;
   /** ISO timestamp the theme row was last edited; dates the In-Focus tooltip. */
   updatedAt: string | null;
+  /** 1-based position in the featured order (the card's "THEME 01"). */
+  index: number;
+  /** Earliest membership `as_of_quarter`, printed "Q3 FY26"; null when none parse. */
+  sinceQuarter: string | null;
+  /** The editorial story (driving factor + KPI tiles) from data/themes/stories.json, if written. */
+  story: ThemeStory | null;
 };
 
 /** Homepage teaser: title + raw membership count only. No board build. */

@@ -3,11 +3,14 @@
 // result so the /themes section and the homepage teaser render nothing rather
 // than breaking the page.
 
+import { cache } from "react";
+
 import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { logger } from "@/lib/logger";
 import { getOverallBoardRows } from "@/lib/overall-board";
 
 import { assembleThemeBlocks } from "./assemble";
+import { getThemeStories } from "./story";
 import {
   themeMembershipRowSchema,
   themeRowSchema,
@@ -17,8 +20,12 @@ import {
   type ThemeTeaser,
 } from "./types";
 
-/** Featured themes with their members scored live off the board. Empty on any failure. */
-export async function getFeaturedThemeBlocks(): Promise<ThemeBlock[]> {
+/**
+ * Featured themes with their members scored live off the board. Empty on any
+ * failure. Request-deduped with React `cache()` (like lib/overall-board), so
+ * /themes/[slug]'s generateMetadata and page body share one set of queries.
+ */
+export const getFeaturedThemeBlocks = cache(async function getFeaturedThemeBlocks(): Promise<ThemeBlock[]> {
   const supabase = createPublicReadClient();
 
   const { data: themeData, error: themeError } = await supabase
@@ -71,7 +78,17 @@ export async function getFeaturedThemeBlocks(): Promise<ThemeBlock[]> {
     return parsed.success ? [parsed.data] : [];
   });
 
-  return assembleThemeBlocks(themes, memberships, boardRows);
+  return assembleThemeBlocks(themes, memberships, boardRows, getThemeStories());
+});
+
+/**
+ * One featured theme by slug, for /themes/[slug]. Built from the same featured
+ * set so its index / ranking / best-read match the index page exactly; null when
+ * the slug is not a featured theme with members (the page 404s).
+ */
+export async function getFeaturedThemeBlock(slug: string): Promise<ThemeBlock | null> {
+  const blocks = await getFeaturedThemeBlocks();
+  return blocks.find((block) => block.slug === slug) ?? null;
 }
 
 /**
