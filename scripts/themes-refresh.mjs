@@ -43,6 +43,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
+import { DRIFT_SIGNATURES } from "./themes-signatures.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, "..");
@@ -385,21 +386,7 @@ async function touch(sb, isWrite) {
 // "realisation" hits metals; an EMS name that serves auto trips auto-components). A flag
 // is a prompt to WEB-CONFIRM the primary driver + segment mix, never an auto-move. Edit
 // the signatures as themes evolve; a theme with no signature here is skipped (warned).
-const DRIFT_SIGNATURES = {
-  "ai-datacentre-fibre": ["data cent", "data-cent", "hyperscal", "optical fibre", "optic fiber", "fibre", "ai server", "ai system", "gpu", "compute", "genset", "gas engine", "gas turbine", "fuel cell", "switchgear", "liquid cooling", "behind-the-meter"],
-  "transmission-grid-capex": ["transmission", "grid", "t&d", "transformer", "conductor", "substation", "power evacuation", "hvdc", "tariff-based"],
-  "metals-mining-upcycle": ["ferro", "alloy", "base metal", "steel", "iron ore", "smelter", "recycl", "realisation", "realization", "tube", "pipe", "billet", "coil"],
-  "specialty-chemicals-rebound": ["specialty chemical", "speciality chemical", "fluorine", "intermediate", "restock", "china +1", "china plus one", "agrochem", "pigment", "aroma"],
-  "defence-order-inflows": ["defence", "defense", "mod ", "indigenis", "indigeniz", "missile", "radar", "shipbuild", "naval", "warship", "aerospace", "order finalis"],
-  "cdmo-crams": ["cdmo", "crams", "crdmo", "contract research", "contract manufactur", "api", "oncology", "peptide", "molecule", "innovator", "filing"],
-  "capital-markets-boom": ["folio", "aum", "wealth", "broking", "demat", "exchange", "amc", "mutual fund", "sip", "capital market", "depository"],
-  "auto-components-premiumisation": ["auto", "vehicle", "content per vehicle", "premiumis", "premiumiz", "oem", "two-wheeler", "passenger vehicle", "forging"],
-  "cables-wires": ["cable", "wire", "housing wire", "power cable", "wiring"],
-  "travel-tourism": ["travel", "tourism", "hotel", "hospitality", "occupancy", "revpar", "adr", "booking", "mobility"],
-  "jewellery-gold-retail": ["jewellery", "jewelry", "gold", "showroom", "wedding", "diamond", "studded"],
-  "ev-electrification": ["electric vehicle", "electrification", "battery", "charging", "e-2w", "powertrain", "bev", "shunt"],
-  "ems": ["ems", "electronic manufactur", "pcb", "box build", "odm", "order book"],
-};
+// Signatures live in scripts/themes-signatures.mjs (shared with themes-discover.mjs).
 
 function scoreDriverText(text) {
   const t = (text || "").toLowerCase();
