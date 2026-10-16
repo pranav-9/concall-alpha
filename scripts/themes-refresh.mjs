@@ -77,8 +77,16 @@ const options = new Map();
 for (let i = 0; i < argv.length; i += 1) {
   const token = argv[i];
   if (VALUE_FLAGS.has(token)) {
-    options.set(token.slice(2), argv[i + 1]);
-    i += 1;
+    // A value flag with no value (last token, or followed by another flag) is
+    // recorded as `true` so callers can refuse it — otherwise `--blurb --yes`
+    // would swallow `--yes` as the blurb and `--sort` alone would read as 1.
+    const next = argv[i + 1];
+    if (next === undefined || next.startsWith("--")) {
+      options.set(token.slice(2), true);
+    } else {
+      options.set(token.slice(2), next);
+      i += 1;
+    }
   } else if (token.startsWith("--")) {
     options.set(token.slice(2), true);
   }
@@ -507,21 +515,37 @@ const FEATURED_SORT_CEIL = 100;
 
 function parseSort(v) {
   if (v == null) return null;
+  if (v === true) throw new Error("--sort needs a value");
   const n = Number(v);
   if (!Number.isInteger(n) || n < 0) throw new Error(`--sort must be a non-negative integer, got "${v}"`);
   return n;
 }
 function parseHotness(v) {
   if (v == null) return undefined; // not supplied
+  if (v === true) throw new Error('--hotness needs a value (1-5 or "none")');
   if (String(v).toLowerCase() === "none") return null;
   const n = Number(v);
   if (!Number.isInteger(n) || n < 1 || n > 5) throw new Error(`--hotness must be 1-5 or "none", got "${v}"`);
   return n;
 }
+// --title / --blurb: present-with-no-value is refused (a bare --blurb would
+// otherwise clear the card's "why now" line by accident).
+function parseText(flag) {
+  if (!options.has(flag)) return undefined;
+  const v = options.get(flag);
+  if (v === true) throw new Error(`--${flag} needs a value`);
+  return v;
+}
 function nextSlot(themes, featured) {
   const pool = themes.filter((t) => t.is_featured === featured).map((t) => t.sort);
   if (featured) return pool.length ? Math.max(0, ...pool.filter((n) => n < FEATURED_SORT_CEIL)) + 1 : 1;
   return pool.length ? Math.max(FEATURED_SORT_CEIL, ...pool) + 1 : FEATURED_SORT_CEIL + 1;
+}
+// Two themes sharing (hotness, sort) in the same band have an undefined order —
+// /themes and /desk run separate queries and can disagree. Warn on the echo.
+function warnSortTaken(themes, slug, featured, hotness, sort) {
+  const clash = themes.filter((t) => t.slug !== slug && t.is_featured === featured && t.sort === sort && (t.hotness ?? null) === (hotness ?? null));
+  if (clash.length) console.log(`  ⚠ sort=${sort} is already held by ${clash.map((t) => t.slug).join(", ")} in the same band (hot=${hotness ?? "—"}) — order between them will be undefined; pick a free sort or --reorder`);
 }
 const hot = (t) => (t.hotness == null ? "—" : String(t.hotness));
 
@@ -551,7 +575,11 @@ async function writeTheme(sb, isWrite, slug, patch, verb) {
   console.log(`${isWrite ? verb.toUpperCase() : `DRY-RUN ${verb}`} theme ${slug}:`);
   for (const k of Object.keys(patch)) console.log(`  ${k} = ${JSON.stringify(patch[k])}`);
   if (!isWrite) { console.log("\n(add --yes to write)"); return null; }
-  const { data, error } = await sb.from("theme").update({ ...patch, updated_at: new Date().toISOString() }).eq("slug", slug).select();
+  // theme.updated_at is what the In Focus meter prints as "Updated <date>"
+  // (components/in-focus-pips.tsx) — it dates the hotness read, so only a
+  // hotness change may bump it. A blurb / sort / feature edit must not.
+  const stamp = "hotness" in patch ? { updated_at: new Date().toISOString() } : {};
+  const { data, error } = await sb.from("theme").update({ ...patch, ...stamp }).eq("slug", slug).select();
   if (error) throw new Error(`theme update failed: ${error.message}`);
   if (!data.length) throw new Error(`theme ${slug} not found — nothing written`);
   console.log(`✓ ${verb} ${slug}`);
@@ -561,17 +589,19 @@ async function writeTheme(sb, isWrite, slug, patch, verb) {
 async function themeCreate(sb, isWrite) {
   const slug = String(options.get("theme-create"));
   if (!SLUG_RE.test(slug)) throw new Error(`bad slug "${slug}" — lowercase letters, digits and single hyphens only`);
-  const title = options.get("title");
-  if (!title || title === true) throw new Error("--theme-create needs --title");
-  const blurb = options.get("blurb") === true ? null : (options.get("blurb") ?? null);
+  const title = parseText("title");
+  if (!title) throw new Error("--theme-create needs --title");
+  const blurb = parseText("blurb") ?? null;
   const { themes } = await loadAll(sb);
   if (themes.some((t) => t.slug === slug)) throw new Error(`theme ${slug} already exists — use --theme-set / --feature / --bench`);
   const featured = options.get("featured") === true;
-  const sort = parseSort(options.get("sort")) ?? nextSlot(themes, featured);
+  const explicitSort = parseSort(options.get("sort"));
+  const sort = explicitSort ?? nextSlot(themes, featured);
   const hotness = parseHotness(options.get("hotness")) ?? null;
   const row = { slug, title, blurb, is_featured: featured, sort, hotness };
   console.log(`${isWrite ? "CREATING" : "DRY-RUN create"} theme:`);
   for (const [k, v] of Object.entries(row)) console.log(`  ${k} = ${JSON.stringify(v)}`);
+  if (explicitSort != null) warnSortTaken(themes, slug, featured, hotness, sort);
   if (!blurb) console.log("  ⚠ no --blurb: the card will render without its one-line 'why now' claim");
   if (!DRIFT_SIGNATURES[slug]) console.log(`  ⚠ add a DRIFT_SIGNATURES["${slug}"] entry so --driver-drift / --un-themed can scan it`);
   if (!isWrite) { console.log(`\n(add --yes to write; then --add ${slug}:CODE,... for members)`); return null; }
@@ -587,11 +617,10 @@ async function themeSet(sb, isWrite) {
   const cur = themes.find((t) => t.slug === slug);
   if (!cur) throw new Error(`theme ${slug} not found (slugs: ${themes.map((t) => t.slug).join(", ")})`);
   const patch = {};
-  if (options.has("title")) {
-    if (options.get("title") === true) throw new Error("--title needs a value");
-    patch.title = options.get("title");
-  }
-  if (options.has("blurb")) patch.blurb = options.get("blurb") === true ? null : options.get("blurb");
+  const title = parseText("title");
+  if (title !== undefined) patch.title = title;
+  const blurb = parseText("blurb");
+  if (blurb !== undefined) patch.blurb = blurb;
   if (options.has("sort")) patch.sort = parseSort(options.get("sort"));
   const h = parseHotness(options.get("hotness"));
   if (h !== undefined) patch.hotness = h;
@@ -599,6 +628,9 @@ async function themeSet(sb, isWrite) {
   for (const k of Object.keys(patch)) console.log(`  (was) ${k} = ${JSON.stringify(cur[k])}`);
   if ("sort" in patch && cur.is_featured && patch.sort >= FEATURED_SORT_CEIL) {
     console.log("  ⚠ sort >= 100 on a FEATURED theme breaks the 1..N / 101+ convention — use --bench to unpublish");
+  }
+  if ("sort" in patch || "hotness" in patch) {
+    warnSortTaken(themes, slug, cur.is_featured, "hotness" in patch ? patch.hotness : cur.hotness, "sort" in patch ? patch.sort : cur.sort);
   }
   return writeTheme(sb, isWrite, slug, patch, "set");
 }
@@ -608,10 +640,18 @@ async function themeFeature(sb, isWrite, featured) {
   const { themes, memberships } = await loadAll(sb);
   const cur = themes.find((t) => t.slug === slug);
   if (!cur) throw new Error(`theme ${slug} not found`);
-  if (cur.is_featured === featured) console.log(`  (already ${featured ? "featured" : "benched"} — only sort changes)`);
   const members = memberships.filter((m) => m.theme_slug === slug).length;
   if (featured && members === 0) console.log("  ⚠ featuring a theme with 0 members — it renders as an empty block; --add members first");
-  const sort = parseSort(options.get("sort")) ?? nextSlot(themes.filter((t) => t.slug !== slug), featured);
+  const explicitSort = parseSort(options.get("sort"));
+  // Idempotent: re-featuring an already-featured theme with no --sort keeps its
+  // slot (nextSlot would silently drop it to the bottom of its band).
+  const sort = explicitSort ?? (cur.is_featured === featured ? cur.sort : nextSlot(themes.filter((t) => t.slug !== slug), featured));
+  if (cur.is_featured === featured && sort === cur.sort) {
+    console.log(`  (already ${featured ? "featured" : "benched"} at sort=${cur.sort} — nothing to change; pass --sort N to move it)`);
+    return null;
+  }
+  if (cur.is_featured === featured) console.log(`  (already ${featured ? "featured" : "benched"} — only sort changes, ${cur.sort} -> ${sort})`);
+  if (explicitSort != null) warnSortTaken(themes, slug, featured, cur.hotness, sort);
   return writeTheme(sb, isWrite, slug, { is_featured: featured, sort }, featured ? "feature" : "bench");
 }
 
@@ -633,15 +673,22 @@ async function themeReorder(sb, isWrite) {
     console.log("  ⚠ hotness differs across these themes — the board sorts by hotness FIRST, so this order only holds within equal-hotness bands (--theme-set <slug> --hotness N to move a theme up)");
   }
   if (!isWrite) { console.log("\n(add --yes to write)"); return { n: 0 }; }
-  const nowIso = new Date().toISOString();
-  let n = 0;
+  // One UPDATE per theme (PostgREST has no multi-row update without an upsert
+  // that would need every NOT NULL column). Not atomic — so on a mid-loop
+  // failure say exactly which slugs were written, so the editor can re-run
+  // the same --reorder rather than guess at a half-renumbered board.
+  // No updated_at bump: that column dates the hotness read (see writeTheme).
+  const written = [];
   for (let i = 0; i < wanted.length; i += 1) {
-    const { data, error } = await sb.from("theme").update({ sort: i + 1, updated_at: nowIso }).eq("slug", wanted[i]).select();
-    if (error) throw new Error(`reorder failed at ${wanted[i]}: ${error.message}`);
-    n += data.length;
+    const { data, error } = await sb.from("theme").update({ sort: i + 1 }).eq("slug", wanted[i]).select();
+    if (error || !data.length) {
+      const why = error ? error.message : "0 rows matched";
+      throw new Error(`reorder failed at ${wanted[i]} (${why}). Written so far: [${written.join(", ")}]; NOT written: [${wanted.slice(i).join(", ")}]. Re-run the same --reorder to finish.`);
+    }
+    written.push(wanted[i]);
   }
-  console.log(`✓ reordered ${n} featured theme(s)`);
-  return { n };
+  console.log(`✓ reordered ${written.length} featured theme(s)`);
+  return { n: written.length };
 }
 
 async function themeDelete(sb, isWrite) {
@@ -658,7 +705,11 @@ async function themeDelete(sb, isWrite) {
   if (!isWrite) { console.log("\n(add --yes to write)"); return null; }
   const { data, error } = await sb.from("theme").delete().eq("slug", slug).select();
   if (error) throw new Error(`theme delete failed: ${error.message}`);
-  console.log(`✓ deleted ${slug} (${data.length} row)`);
+  if (!data.length) {
+    console.log(`  ⚠ deleted 0 rows — ${slug} was not found at delete time (already gone, or the key lacks delete rights). Nothing logged.`);
+    return null;
+  }
+  console.log(`✓ deleted ${slug}`);
   return data[0];
 }
 
