@@ -1,6 +1,6 @@
 ---
 name: themes-refresh
-description: Use when the Hot Themes editorial tables (`theme` / `theme_membership`, rendered on /themes and /desk) should be reviewed and updated — a health check for broken/stale/large-cap memberships, missing-linkage suggestions for who else belongs, and the theme lifecycle itself (create, feature, bench, reorder, re-blurb, hotness, delete). Triggers on "refresh the themes", "update hot themes", "themes health check", "any themes to update?", "which themes are stale?", "who's missing from a theme?", "add <CODE> to <theme>", "create a theme for <X>", "feature / bench <theme>", "reorder the themes", "rewrite the blurb on <theme>", "set hotness on <theme>".
+description: Use when the Hot Themes editorial tables (`theme` / `theme_membership`, rendered on /themes and /desk) should be brought up to date — an AUTONOMOUS research pass over every demand substrate we hold (concall industry-context and guidance notes, growth catalysts, guidance trend, order wins, the broker research-report archive) that finds where demand is unusually strong across several covered companies, then does the theme CRUD itself (create / feature / bench / reorder / re-blurb / hotness) and the membership adds, with the user informed, not gated. Also the plain health check and one-off member or lifecycle edits. Triggers on "check hot themes", "refresh the themes", "update hot themes", "what themes are hot", "find new themes", "run the themes research", "themes health check", "any themes to update?", "who's missing from a theme?", "add <CODE> to <theme>", "create a theme for <X>", "feature / bench <theme>", "reorder the themes", "rewrite the blurb on <theme>", "set hotness on <theme>".
 ---
 
 # Themes Refresh (Hot Themes editorial maintenance)
@@ -9,16 +9,47 @@ Keep the two editorial tables current. **Themes carry no stored score** — ever
 
 Work from `concall-alpha/`. Writes are **service-role only** (`SUPABASE_SERVICE_ROLE_KEY` in `.env`) — RLS is public-read / no-write, so the anon key silently no-ops (`lib/supabase/hot_themes.sql`). The one render rule that governs everything: the board is built `getConcallData({ excludeLargeCaps: true, includeBelowCut: true })`, so an **admitted large-cap member is dropped at render** (never appears) while a **below-cut member renders greyed**. The script refuses large-cap adds for exactly this reason.
 
+**Operating principle (user decision 2026-10-16): the skill owns theme selection.** The user does not want to pick themes or members. Run the research pass (Step R), make the calls by the rules in Step 1, do the writes (dry-run echo, then `--yes`), and report what changed with the evidence per theme. Ask only when a write is destructive (`--theme-delete`) or the evidence is genuinely contradictory. Never hand back a menu.
+
+## The loop
+
+1. **Step R — research**: `node scripts/themes-discover.mjs` → evidence cards + clusters + the street's thematic notes. Read it; pull a broker PDF from R2 when a cluster needs confirming.
+2. **Step 0 — health**: `node scripts/themes-refresh.mjs` → integrity / staleness / sub-sector adjacency.
+3. **Step 1 — decide** by the rules below (create / feature / bench / hotness / members / blurbs).
+4. **Steps 2–2b — write**: each change dry-run, then `--yes`. **Step 3** touch what you re-confirmed. **Step 4** `--dump-seed`. **Step 5** verify + report.
+
 ## Scope
 
 | Do | Don't |
 |---|---|
 | Add / remove theme members; flag broken, stale, and non-rendering memberships | Write to `theme_membership` by hand-SQL — the script is the one path, and it logs every write |
 | Create, feature, bench, reorder, re-blurb, set hotness on, or delete whole themes (Step 2b: `--theme-create`, `--feature`, `--bench`, `--reorder`, `--theme-set`, `--theme-delete`) | Skip the dry-run, or delete a theme that still has members (the script refuses; `--remove` them or `--bench` instead) |
-| Suggest missing members by sub-sector adjacency, ranked by stored composite | Auto-add suggestions — they are proposals the user trims |
+| Research where demand is unusually strong (`themes-discover.mjs`) and decide the themes and members yourself | Hand the user a list to pick from — the decision and its rationale are the deliverable |
+| Suggest missing members by sub-sector adjacency, ranked by stored composite | Add a sub-sector-adjacency suggestion without a demand read in its evidence card |
 | Audit drift/gaps by CURRENT driver (`--driver-drift`, `--un-themed`), then web-confirm | Move a member on a keyword hit alone — web-confirm segment mix + order context first |
 | Bump `last_reviewed_at` when a thesis is re-confirmed | Bump it on re-score — freshness is editor-driven, not score-driven |
 | Regenerate the seed `.sql` so the repo mirrors live | Treat the seed as the source of truth — the live DB is |
+
+## Step R — Research pass (`themes-discover.mjs`, no writes)
+
+```bash
+node scripts/themes-discover.mjs                 # 90-day window; --days N; --company CODE prints one full card
+```
+
+Builds one **evidence card** per covered company (227 on 2026-10-16) from every demand substrate we hold, scores a transparent **demand heat 0–10** with its parts printed, clusters the cards against the theme signatures (`scripts/themes-signatures.mjs`: `DRIFT_SIGNATURES` for themes that exist, `CANDIDATE_SIGNATURES` for ones that don't yet), and writes `/tmp/sandbox_themes/discover.json`.
+
+| Substrate | What the card takes | Heat |
+|---|---|---|
+| `concall_analysis` (latest print vs prior) | score delta, `cat_4_industry_context` + `cat_2_forward_guidance` key points | up ≥0.5 +2 · up +1 · down ≥0.5 −1 · score ≥7 +1 |
+| `guidance_snapshot.current_year_revenue_guidance` | `signal_trend` | upgraded +2 · moderated −1 |
+| `bse_announcements` (window) | order wins with `pct_of_mcap`, positive / negative filings | any order +1 · one ≥5% or total ≥10% of mcap +2 · negatives −1 |
+| `growth_outlook` (latest run) | growth score, top-3 catalysts by selection rank | score ≥7 +1 · a `ramping` catalyst +1 |
+| broker ledger `data/external-takes/broker-reports.jsonl` | covered notes in window, direction, claims | ≥2 notes +1 · ≥4 +2 · any DOWNSIDE −1 |
+| manifest `../concallyser/data/research-reports/manifest.jsonl` | `sector_or_thematic` captions = the street's theme language | (report only) |
+
+The report prints: **roster heat per existing theme** (mean heat of listed members, hot / cold members, a suggested hotness), **clusters** (every company whose card hits a signature ≥2 times, heat-sorted, with its current themes — `NEW?` = a candidate signature), the **hottest 25**, and the **street's thematic notes by signature** plus the unmatched ones (read those: a recurring unmatched sector note is a theme we have no vocabulary for — add a `CANDIDATE_SIGNATURES` entry).
+
+**Reading it honestly.** Heat is a prompt, not a verdict: a stale latest print (SUZLON / WAAREEENER were still on Q2 FY26 on 2026-10-16) caps heat at ~3 even when the street and the filings say the demand is there, so read the card's `industry` / `guidance` lines and the order list, not just the number. Keyword clusters over-flag (`chip` trips a chemicals call; `api` trips everything) — the card's `sigs` shows which words hit, so you can discount. When a cluster is new and would be featured, **confirm it against the archive**: pick the most-read `sector_or_thematic` notes on the driver from the manifest, `resolve_report(file)` from `concallyser/app/research_reports/r2_store.py` (R2 → local cache), `pdftotext -l 4 -layout`, and read the first pages. The report fetch (`/research-reports-refresh` Step 1) should be current; run it first when the manifest's last date is more than a week old.
 
 ## Step 0 — Health report (no writes)
 
@@ -50,18 +81,26 @@ Both keyword-scan each company's latest `concall_analysis` + `growth_outlook` ca
 2. **Web-confirm (the decisive step).** For each surviving suspect, web-search `"<name> Q1FY27 results growth driver 2026"`. **Web is what actually makes the call** because membership turns on *segment-revenue mix* + *external order/demand context* — data our own extraction doesn't reliably carry (TDPS's INNIO 1.1GW DC order and "93% export" split; NAVINFLUOR's Specialty-still-largest-vs-CDMO-fastest segment mix). Fan out parallel agents for a whole-fleet pass. Cross-check hype against our filings (TDPS mgmt: "no India hyperscaler demand" — nuance the bullish articles omit).
 3. **Human gate.** DRIFT with a clear alt theme → move (`--remove` old + `--add` new). AMBIGUOUS with no clean home → hold (don't move to a wrong theme just to clear the flag). A name legitimately driven by two themes it's filed in → dual-home (`--add` the second, keep the first). Never auto-move on a keyword hit.
 
-## Step 1 — Review suggestions (STOP for approval)
+## Step 1 — Decide (the editor's rules; no approval gate)
 
-Open `/tmp/sandbox_themes/proposed.json` and **trim it to the pairs you endorse**. The suggestions are sub-sector-adjacency noise until a human confirms the thesis fit — most will be dropped. This is the gate; don't promote the raw file.
+Make every call from the Step R cards + Step 0 health, write the rationale into the run report, then write. The rules, in the order they were set (2026-10-16 first autonomous pass — created `renewables-build-out` (featured) and `semiconductor-supply-chain` (benched), featured `jewellery-gold-retail` and `ems`, benched `metals-mining-upcycle` and `auto-components-premiumisation`, re-set hotness across the board, added AEROFLEX / ETHOSLTD / the renewables and semiconductor rosters). **Re-run Step R after a script fix before acting on it** — the first pass picked each company's latest print by scoring date and read SUZLON on a year-old quarter; the (fy, qtr) fix moved its true print to Q1 FY27 at 5.4 and changed the renewables call from hotness 3 to 2.
 
-## Step 2 — Promote approved adds
+- **Create a theme** when ≥3 **discovery-listed** names share one demand driver that no existing theme covers, at least two show real evidence (an upgraded guide, order wins ≥5% of mcap, a print up ≥0.5, or the street initiating on the driver), and the archive confirms the sector story. One hot name is a company story, not a theme. Create it **featured** when those bars are met; benched when the names are there but the evidence is thin. Add a `DRIFT_SIGNATURES` entry under the same slug in `scripts/themes-signatures.mjs` in the same change.
+- **Feature a benched theme** when its listed members' mean heat is ≥ the weakest featured theme's and it has ≥3 listed members with a current driver. **Bench a featured theme** when no listed member is hot (heat ≥5), the mean is ≤2.5, and the blurb itself describes a cooling cycle — the section is for unusually strong demand, not for marking time. Benching clears nothing; members stay.
+- **Hotness (1–5)** is hand-set from the roster's evidence, roughly mean heat ÷ 1.6, bounded by judgement: 5 only for the theme where most members print upgrades and orders at once (ai-datacentre-fibre on 2026-10-16); 2 for a theme carried by one or two names. It is the PRIMARY board key, so set it before you reorder. Benched themes carry `none`.
+- **Members**: add an un-themed listed name whose card's industry / guidance lines name the theme's driver as its own (AEROFLEX's liquid-cooling skids → ai-datacentre-fibre), dual-home a name legitimately driven by two themes (ADVAIT grid + renewables), hold a hot name whose driver has no theme (DEEDEV thermal piping, KMEW ports, COFORGE, INTERARCH industrial sheds on 2026-10-16 — list them in the report as "no home yet" so the next pass sees them). Never move a well-placed name on adjacency; never remove a member for a cold print alone — membership is about the driver, heat is about the quarter.
+- **Blurbs** are the one-line "why now": dated numbers from the cards (a guide, an install figure, an order as % of mcap), the roster's mechanism, and the one thing to watch. One to three sentences. Re-write a featured theme's blurb whenever its hotness moves or a wave of members changes what it describes.
+- **Order**: hotness desc, then `--reorder` inside each band by mean heat. The warning that hotness differs is expected.
+- **Report** (the user reads only this): per theme changed — what, the two or three evidence lines that decided it, and what would reverse it; the no-home list; the next pass's open questions (stale prints to refresh, a candidate signature to add).
+
+## Step 2 — Write the approved adds
 
 ```bash
 node scripts/themes-refresh.mjs --apply             # dry-run: prints what it would write
 node scripts/themes-refresh.mjs --apply --yes       # writes the upsert
 ```
 
-Reads the trimmed `proposed.json` (or pass `--add theme:CODE,theme:CODE` for a quick one-off). Upserts on `(theme_slug, company_code)` with `as_of_quarter` = current reporting quarter. Orphan and large-cap pairs are refused with a printed reason — they can't render. To drop a member: `--remove theme:CODE --yes`.
+Pass `--add theme:CODE,theme:CODE` with the pairs Step 1 decided (the sub-sector `proposed.json` from Step 0 is a candidate list, not a worklist — only pairs with a demand read in their card go in). Upserts on `(theme_slug, company_code)` with `as_of_quarter` = current reporting quarter. Orphan and large-cap pairs are refused with a printed reason — they can't render. To drop a member: `--remove theme:CODE --yes`.
 
 ## Step 2b — Theme lifecycle (create / feature / bench / reorder / re-blurb / hotness / delete)
 
