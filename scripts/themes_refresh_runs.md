@@ -14,3 +14,4 @@
 2026-08-20 | THEMES | adds=1 [defence-order-inflows:SHREEREF]
 2026-08-30 | THEMES | adds=4 [ai-datacentre-fibre:E2E,transmission-grid-capex:ADVAIT,defence-order-inflows:VINYAS,jewellery-gold-retail:SKYGOLD]
 2026-10-03 | THEMES | adds=1 [ai-datacentre-fibre:KRN]
+2026-10-16 | THEMES | adds=6 [defence-order-inflows:ROSSTECH,transmission-grid-capex:YASHHVOLT,cables-wires:DYCL,ems:AVALON,ems:SYRMA,ems:CENTUM]
