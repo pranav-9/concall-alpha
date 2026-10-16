@@ -96,8 +96,10 @@ begin
 end $$;
 
 -- Preferred maintenance path: `/themes-refresh` (scripts/themes-refresh.mjs) runs the
--- checks below plus missing-linkage suggestions and a gated membership upsert. Use raw
--- SQL for theme lifecycle (create / is_featured / sort / blurb), which the skill omits.
+-- checks below plus missing-linkage suggestions, a gated membership upsert, and (since
+-- 2026-10-16) the theme lifecycle too — --theme-create / --feature / --bench / --reorder /
+-- --theme-set (title, blurb, sort, hotness) / --theme-delete, all dry-run by default.
+-- Raw SQL here is the rebuild path only; the live DB is edited through the script.
 --
 -- Integrity check to run after editing memberships (surfaces typo'd codes at edit time):
 --   select tm.theme_slug, tm.company_code
