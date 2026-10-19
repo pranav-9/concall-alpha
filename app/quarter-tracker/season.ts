@@ -283,33 +283,52 @@ export function buildSeasonChart(
 // ---------------------------------------------------------------------------
 
 export type UpcomingGroups = {
-  /** Board met, no score yet — results-date order, oldest first. */
+  /** Call held, no score yet — call-date order, oldest first. */
   pending: TrackerEntry[];
-  /** Dated and still ahead, grouped by day in date order. */
+  /** Call today or ahead, grouped by call day in date order, earliest time first. */
   ahead: Array<{ date: ISODate; entries: TrackerEntry[] }>;
-  /** Not yet reported, no date on file. */
+  /** Results date on file but no call yet — results-date order. */
+  noCall: TrackerEntry[];
+  /** Not yet reported, no date of either kind on file. */
   undated: TrackerEntry[];
 };
 
+/**
+ * The panel is a concall calendar, not a results calendar: a score lands only
+ * after the call, so the call day is what a reader waits on. The board meeting
+ * matters only as a fallback when no invite has been filed yet.
+ */
 export function groupUpcoming(entries: TrackerEntry[], today: ISODate): UpcomingGroups {
   const byName = (a: TrackerEntry, b: TrackerEntry) => a.name.localeCompare(b.name);
+  // An invite without a time sorts after the timed calls on its day.
+  const byTime = (a: TrackerEntry, b: TrackerEntry) =>
+    (a.callTime ?? "99:99").localeCompare(b.callTime ?? "99:99");
   const upcoming = entries.filter((e) => e.score == null);
-  const dated = upcoming
-    .filter((e) => e.resultsDate)
-    .sort((a, b) => a.resultsDate!.localeCompare(b.resultsDate!) || byName(a, b));
-  const pending = dated.filter((e) => e.resultsDate! < today);
+  const called = upcoming
+    .filter((e) => e.callDate)
+    .sort((a, b) => a.callDate!.localeCompare(b.callDate!) || byTime(a, b) || byName(a, b));
   const groups = new Map<ISODate, TrackerEntry[]>();
-  for (const e of dated) {
-    if (e.resultsDate! < today) continue;
-    const list = groups.get(e.resultsDate!);
+  for (const e of called) {
+    if (e.callDate! < today) continue;
+    const list = groups.get(e.callDate!);
     if (list) list.push(e);
-    else groups.set(e.resultsDate!, [e]);
+    else groups.set(e.callDate!, [e]);
   }
   return {
-    pending,
+    pending: called.filter((e) => e.callDate! < today),
     ahead: [...groups.entries()].map(([date, list]) => ({ date, entries: list })),
-    undated: upcoming.filter((e) => !e.resultsDate).sort(byName),
+    noCall: upcoming
+      .filter((e) => !e.callDate && e.resultsDate)
+      .sort((a, b) => a.resultsDate!.localeCompare(b.resultsDate!) || byName(a, b)),
+    undated: upcoming.filter((e) => !e.callDate && !e.resultsDate).sort(byName),
   };
+}
+
+/** The right-hand cell of a row already grouped under its call day: just the time. */
+export function callTimeLabel(entry: TrackerEntry): { text: string; href: string | null; muted: boolean } {
+  return entry.callTime
+    ? { text: formatTime(entry.callTime), href: entry.callUrl, muted: false }
+    : { text: "Time TBA", href: entry.callUrl, muted: true };
 }
 
 /**

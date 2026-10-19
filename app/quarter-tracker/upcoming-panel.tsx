@@ -1,7 +1,8 @@
-// Who reports next: the not-yet-scored companies grouped by board-meeting day,
-// each with its earnings call off the company's own invite filing. Board met
-// but no score yet sits on top (the transcript is usually the wait); companies
-// with no date on file fold away at the bottom.
+// Whose call is next: the not-yet-scored companies grouped by earnings-call day,
+// read off each company's own invite filing. A score lands only after the call,
+// so this is a concall calendar, not a results calendar. Call held but no score
+// yet sits on top (the transcript is usually the wait); companies with no call
+// on file fold away at the bottom, with their results date where one is set.
 
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -9,7 +10,15 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 import type { TrackerEntry } from "./data";
-import { callLabel, formatDay, relativeDay, type ISODate, type UpcomingGroups } from "./season";
+import {
+  callLabel,
+  callTimeLabel,
+  formatDay,
+  formatTick,
+  relativeDay,
+  type ISODate,
+  type UpcomingGroups,
+} from "./season";
 
 function GroupHead({ label, note }: { label: string; note?: string }) {
   return (
@@ -35,8 +44,7 @@ function CompanyLink({ entry }: { entry: TrackerEntry }) {
   );
 }
 
-function CallCell({ entry }: { entry: TrackerEntry }) {
-  const call = callLabel(entry);
+function CallCell({ call }: { call: { text: string; href: string | null; muted: boolean } }) {
   const cls = cn(
     "house-data shrink-0 whitespace-nowrap text-[11px] tabular-nums",
     call.muted ? "text-[var(--ink-soft)]" : "text-[var(--ink)]",
@@ -84,8 +92,9 @@ export function UpcomingPanel({
   /** The watchlist filter is on — the empty state must say so. */
   scoped: boolean;
 }) {
-  const { pending, ahead, undated } = groups;
-  const nothingDated = pending.length === 0 && ahead.length === 0;
+  const { pending, ahead, noCall, undated } = groups;
+  const nothingCalled = pending.length === 0 && ahead.length === 0;
+  const notAnnounced = noCall.length + undated.length;
 
   return (
     <section
@@ -94,19 +103,19 @@ export function UpcomingPanel({
     >
       <div className="flex items-center justify-between gap-3 border-b border-[var(--rule)] px-4 py-2.5">
         <h2 id="upcoming-heading" className="house-data text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">
-          Upcoming results
+          Upcoming concalls
         </h2>
         {chip}
       </div>
 
       {pending.length > 0 ? (
         <div>
-          <GroupHead label="Results out · score pending" />
+          <GroupHead label="Call held · score pending" />
           <Rows
             entries={pending}
             right={(entry) => (
               <span className="house-data shrink-0 whitespace-nowrap text-[11px] text-[var(--ink-soft)]">
-                {formatDay(entry.resultsDate!)}
+                {formatDay(entry.callDate!)}
               </span>
             )}
           />
@@ -116,48 +125,70 @@ export function UpcomingPanel({
       {ahead.map(({ date, entries }) => (
         <div key={date}>
           <GroupHead label={formatDay(date)} note={relativeDay(today, date)} />
-          <Rows entries={entries} right={(entry) => <CallCell entry={entry} />} />
+          <Rows entries={entries} right={(entry) => <CallCell call={callTimeLabel(entry)} />} />
         </div>
       ))}
 
-      {nothingDated ? (
+      {nothingCalled ? (
         <p className="px-4 py-8 text-center text-[13px] leading-[1.5] text-[var(--ink-soft)]">
           {scoped
-            ? undated.length > 0
-              ? "None of your watchlist companies has a results date yet."
+            ? notAnnounced > 0
+              ? "None of your watchlist companies has a call date yet."
               : "Every company on your watchlists has reported."
-            : undated.length > 0
-              ? "No results dates on file yet. Companies give the exchange two to seven days' notice, so most appear the week before."
+            : notAnnounced > 0
+              ? "No call dates on file yet. Companies file the call invite a few days ahead, so most appear the week before."
               : "Every covered company has reported."}
         </p>
       ) : null}
 
-      {undated.length > 0 ? (
-        <details className="group border-t border-[var(--rule)]">
+      {notAnnounced > 0 ? (
+        // A named group: a bare `group` here would light every row's group-hover at once.
+        <details className="group/fold border-t border-[var(--rule)]">
           <summary className="house-data flex cursor-pointer list-none items-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-[0.14em] text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] [&::-webkit-details-marker]:hidden">
-            <span aria-hidden className="inline-block transition-transform group-open:rotate-90">
+            <span aria-hidden className="inline-block transition-transform group-open/fold:rotate-90">
               ›
             </span>
-            Date not announced yet
-            <span className="tabular-nums opacity-70">{undated.length}</span>
+            Call not announced yet
+            <span className="tabular-nums opacity-70">{notAnnounced}</span>
           </summary>
           <p className="px-4 pb-2 text-[11.5px] leading-[1.5] text-[var(--ink-soft)]">
-            Companies give the exchange two to seven days&rsquo; notice of a results meeting, so most
-            dates appear the week before.
+            Companies file the call invite with the exchange a few days ahead, so most calls appear
+            the week before. The results date is shown where the board meeting is on file.
           </p>
-          <ul className="flex flex-wrap gap-x-3 gap-y-1 px-4 pb-3">
-            {undated.map((entry) => (
-              <li key={entry.code}>
-                <Link
-                  href={`/company/${encodeURIComponent(entry.code)}`}
-                  prefetch={false}
-                  className="text-[12px] text-[var(--ink)] hover:text-[var(--signal)] hover:underline"
-                >
-                  {entry.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {noCall.length > 0 ? (
+            <Rows
+              entries={noCall}
+              right={(entry) =>
+                entry.callUnreadable && entry.callUrl ? (
+                  <CallCell call={callLabel(entry)} />
+                ) : (
+                  <span className="house-data shrink-0 whitespace-nowrap text-[11px] text-[var(--ink-soft)]">
+                    Results {formatTick(entry.resultsDate!)}
+                  </span>
+                )
+              }
+            />
+          ) : null}
+          {undated.length > 0 ? (
+            <ul
+              className={cn(
+                "flex flex-wrap gap-x-3 gap-y-1 px-4 pb-3",
+                noCall.length > 0 && "border-t border-[var(--rule)] pt-2.5",
+              )}
+            >
+              {undated.map((entry) => (
+                <li key={entry.code}>
+                  <Link
+                    href={`/company/${encodeURIComponent(entry.code)}`}
+                    prefetch={false}
+                    className="text-[12px] text-[var(--ink)] hover:text-[var(--signal)] hover:underline"
+                  >
+                    {entry.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </details>
       ) : null}
     </section>
