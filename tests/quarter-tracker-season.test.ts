@@ -2,6 +2,7 @@ import type { TrackerEntry } from "../app/quarter-tracker/data";
 import {
   buildSeasonChart,
   callLabel,
+  callTimeLabel,
   formatDay,
   formatTick,
   formatTime,
@@ -123,10 +124,33 @@ assert(closed.todayIndex === -1 && closed.days[closed.days.length - 1].date === 
 
 // --- the upcoming panel ------------------------------------------------------
 
-const groups = groupUpcoming(chartEntries, today);
-assert(groups.pending.map((e) => e.code).join() === "PENDING", "pending = board met, no score");
-assert(groups.ahead.map((g) => g.date).join() === "2026-10-30,2026-11-20", "ahead grouped by date in order");
-assert(groups.undated.map((e) => e.code).join() === "TBA", "undated listed");
+// A concall calendar: grouped by the call day, since a score lands only after the call.
+const groups = groupUpcoming(
+  [
+    entry({ code: "SCORED", score: 7.0, callDate: "2026-10-28" }),
+    // Board met two days before the call: it's the call that has to happen.
+    entry({ code: "HELD", resultsDate: "2026-10-26", callDate: "2026-10-28" }),
+    entry({ code: "LATECALL", resultsDate: "2026-10-27", callDate: "2026-10-29", callTime: "17:00" }),
+    entry({ code: "TODAY", resultsDate: "2026-10-29", callDate: "2026-10-29", callTime: "11:00" }),
+    entry({ code: "NOTIME", resultsDate: "2026-10-29", callDate: "2026-10-29" }),
+    entry({ code: "SET", resultsDate: "2026-10-30", callDate: "2026-11-02", callTime: "16:00" }),
+    // Results out, no invite: not on the call calendar, listed by results date.
+    entry({ code: "NOCALL2", resultsDate: "2026-11-20" }),
+    entry({ code: "NOCALL1", resultsDate: "2026-10-27" }),
+    entry({ code: "TBA" }),
+  ],
+  today,
+);
+assert(groups.pending.map((e) => e.code).join() === "HELD", "pending = call held, no score");
+assert(groups.ahead.map((g) => g.date).join() === "2026-10-29,2026-11-02", "ahead grouped by call day in order");
+assert(
+  groups.ahead[0].entries.map((e) => e.code).join() === "TODAY,LATECALL,NOTIME",
+  `a day's calls run earliest first, untimed last: ${groups.ahead[0].entries.map((e) => e.code).join()}`,
+);
+assert(groups.noCall.map((e) => e.code).join() === "NOCALL1,NOCALL2", "no call on file → by results date");
+assert(groups.undated.map((e) => e.code).join() === "TBA", "nothing on file → undated");
+assert(callTimeLabel(entry({ code: "T", callDate: "2026-10-29", callTime: "17:00" })).text === "5:00 PM", "call cell is the time");
+assert(callTimeLabel(entry({ code: "N", callDate: "2026-10-29" })).muted, "untimed call is muted");
 
 const set = chartEntries.find((e) => e.code === "SET")!;
 assert(callLabel(set).text === "Call Mon 4:00 PM", `call on another day names the weekday: ${callLabel(set).text}`);
