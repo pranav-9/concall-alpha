@@ -4,7 +4,8 @@
 // pipeline (concallyser/scripts/exchange_desk_classify.py) keeps only
 // business-material filings (order wins, capex, M&A, fundraises, approvals,
 // partnerships, ratings, business updates) and drops procedural noise, so this
-// tape is signal-only. Quality chips filter (impact tier); recency (Today /
+// tape is signal-only. Quality chips filter (impact tier) and open on
+// Non-neutral, so routine filings sit behind a tap; recency (Today /
 // This week / Earlier) is the spine. Reuses the house skin from desk-recency-ledger.
 
 import { useMemo, useState } from "react";
@@ -48,7 +49,16 @@ const MAX_BELOW_CUT = 8;
 // the full /announcements page; the full feed + below-cut list live there.
 const MAX_COMPACT = 6;
 
-type Filter = "all" | ExchangeImpact;
+// "non-neutral" = every tier but neutral (the "Routine" badge). It is the
+// default view when the window has any such filing; with none it gets no chip
+// and the feed opens on All.
+type Filter = "all" | "non-neutral" | ExchangeImpact;
+
+function applyFilter(updates: ExchangeUpdate[], filter: Filter): ExchangeUpdate[] {
+  if (filter === "all") return updates;
+  if (filter === "non-neutral") return updates.filter((u) => u.impact !== "neutral");
+  return updates.filter((u) => u.impact === filter);
+}
 
 function FilterTab({
   active,
@@ -402,6 +412,7 @@ function PhoneAnnouncements({
   data,
   filter,
   onSelectFilter,
+  nonNeutralCount,
   buckets,
   filteredCount,
   expanded,
@@ -413,6 +424,7 @@ function PhoneAnnouncements({
   data: ExchangeDeskData;
   filter: Filter;
   onSelectFilter: (next: Filter) => void;
+  nonNeutralCount: number;
   buckets: { key: RecencyBucketKey; label: string; items: ExchangeUpdate[] }[];
   filteredCount: number;
   expanded: boolean;
@@ -430,6 +442,17 @@ function PhoneAnnouncements({
             aria-label="Filter by impact"
             className={cn(MOBILE_CHIP_STRIP, "px-4 pb-1 pt-3.5")}
           >
+            {nonNeutralCount > 0 ? (
+              <button
+                type="button"
+                aria-pressed={filter === "non-neutral"}
+                onClick={() => onSelectFilter("non-neutral")}
+                className={mobileChipClass(filter === "non-neutral")}
+              >
+                <span>Non-neutral</span>
+                <span className="ml-1.5 tabular-nums">{nonNeutralCount}</span>
+              </button>
+            ) : null}
             <button
               type="button"
               aria-pressed={filter === "all"}
@@ -508,7 +531,11 @@ function PhoneAnnouncements({
 function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
   // All three live here, not in the paints, so a breakpoint crossing (tablet
   // rotation across sm) keeps the reader's filter and both show-all toggles.
-  const [filter, setFilter] = useState<Filter>("all");
+  const nonNeutralCount = useMemo(
+    () => data.updates.filter((u) => u.impact !== "neutral").length,
+    [data.updates],
+  );
+  const [filter, setFilter] = useState<Filter>(nonNeutralCount > 0 ? "non-neutral" : "all");
   const [expanded, setExpanded] = useState(false);
   const [belowCutExpanded, setBelowCutExpanded] = useState(false);
 
@@ -518,10 +545,7 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
     setExpanded(false);
   };
 
-  const filtered = useMemo(
-    () => (filter === "all" ? data.updates : data.updates.filter((u) => u.impact === filter)),
-    [data.updates, filter],
-  );
+  const filtered = useMemo(() => applyFilter(data.updates, filter), [data.updates, filter]);
 
   const buckets = useMemo(() => {
     const visible = expanded ? filtered : filtered.slice(0, MAX_COLLAPSED);
@@ -548,6 +572,7 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
           data={data}
           filter={filter}
           onSelectFilter={selectFilter}
+          nonNeutralCount={nonNeutralCount}
           buckets={buckets}
           filteredCount={filtered.length}
           expanded={expanded}
@@ -567,6 +592,14 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
       {/* No eyebrow / heading / intro here: this variant renders under the
           /announcements page header, which already says all three. */}
       <div className="flex flex-wrap gap-2">
+        {nonNeutralCount > 0 && (
+          <FilterTab
+            active={filter === "non-neutral"}
+            label="Non-neutral"
+            count={nonNeutralCount}
+            onClick={() => selectFilter("non-neutral")}
+          />
+        )}
         <FilterTab
           active={filter === "all"}
           label="All"

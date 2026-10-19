@@ -186,6 +186,39 @@ const compact = render("compact", fullData);
 }
 
 // ---------------------------------------------------------------------------
+// /announcements opens on Non-neutral: the chip leads both strips, is pressed,
+// and neutral ("Routine") rows wait behind All. A window with no non-neutral
+// filing gets no such chip and opens on All.
+// ---------------------------------------------------------------------------
+{
+  const mixed = [...updates, update({ id: "n1", impact: "neutral", companyCode: "GAMMA", companyName: "Gamma Tubes" })];
+  const doc = render("full", { ...fullData, updates: mixed, impacts: buildImpactFacet(mixed), total: mixed.length });
+  const { chips, card, desktopSection } = paints(doc);
+  const desktopChips = only(
+    descendants(desktopSection).filter((e) => cls(e).has("flex-wrap")),
+    "desktop chip row",
+  ).children;
+  for (const [where, row] of [["phone", chips.children], ["desktop", desktopChips]] as const) {
+    assert.equal(textOf(row[0]), "Non-neutral3", `${where}: Non-neutral chip leads, counting non-neutral rows`);
+    assert.equal(row[0].attrs["aria-pressed"], "true", `${where}: Non-neutral is the default`);
+    assert.equal(textOf(row[1]), "All4", `${where}: All follows, counting every row`);
+    assert.equal(row[1].attrs["aria-pressed"], "false", `${where}: All is not pressed by default`);
+  }
+  for (const [where, el] of [["phone", card], ["desktop", desktopSection]] as const) {
+    assert.ok(!textOf(el).includes("Gamma Tubes"), `${where}: the neutral row is hidden by default`);
+    assert.ok(textOf(el).includes("Acme Industries"), `${where}: non-neutral rows show`);
+  }
+
+  const routine = [update({ id: "n2", impact: "neutral" })];
+  const quiet = paints(
+    render("full", { ...fullData, updates: routine, impacts: buildImpactFacet(routine), total: routine.length }),
+  );
+  assert.ok(!textOf(quiet.chips).includes("Non-neutral"), "no Non-neutral chip when every row is neutral");
+  assert.equal(quiet.chips.children[0].attrs["aria-pressed"], "true", "an all-neutral window opens on All");
+  assert.ok(textOf(quiet.card).includes("Acme Industries"), "an all-neutral window still shows its rows");
+}
+
+// ---------------------------------------------------------------------------
 // Line clamps actually clamp. line-clamp-N is display:-webkit-box + overflow +
 // box-orient + line-clamp; any other class on the same element that re-declares
 // one of those and is emitted later (e.g. `block`, which Tailwind emits after
