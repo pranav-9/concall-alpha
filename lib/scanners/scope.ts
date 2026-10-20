@@ -9,6 +9,7 @@ import type { ReportingQuarter } from "@/lib/current-quarter";
 
 import { buildGarpScan, type GarpRow, type GarpScan } from "./garp";
 import { buildGuidanceUpgradeScan, type GuidanceUpgradeRow, type GuidanceUpgradeScan } from "./guidance-upgrades";
+import { buildOrderBookScan, type OrderBookRow, type OrderBookScan } from "./order-book";
 import { buildPegScan, type PegRow, type PegScan } from "./peg";
 import { buildTrendScan, type TrendRow, type TrendScan } from "./price-trend";
 import { buildRedFlagScan, type RedFlagRow, type RedFlagScan, type ScanCompany } from "./red-flags";
@@ -19,6 +20,7 @@ export type ScanInputs = {
   guidance: { rows: GuidanceUpgradeRow[]; readable: ScanCompany[] } | null;
   trendRows: TrendRow[] | null;
   garpRows: GarpRow[] | null;
+  orderBookRows: OrderBookRow[] | null;
 };
 
 export type Scans = {
@@ -27,6 +29,7 @@ export type Scans = {
   guidance: GuidanceUpgradeScan | null;
   trend: TrendScan | null;
   garp: GarpScan | null;
+  orderBook: OrderBookScan | null;
 };
 
 export type ScanCounts = {
@@ -35,6 +38,7 @@ export type ScanCounts = {
   guidance: number | null;
   trend: number | null;
   garp: number | null;
+  "order-book": number | null;
 };
 
 export const listedScope = (c: ScanCompany) => c.listed;
@@ -59,6 +63,7 @@ export function buildScans(
       : null,
     trend: inputs.trendRows ? buildTrendScan(inputs.trendRows.filter(scope), now) : null,
     garp: inputs.garpRows ? buildGarpScan(inputs.garpRows.filter(scope), now) : null,
+    orderBook: inputs.orderBookRows ? buildOrderBookScan(inputs.orderBookRows.filter(scope), now) : null,
   };
 }
 
@@ -71,5 +76,7 @@ export function scanCounts(scans: Scans): ScanCounts {
     // Every fresh company lands in a group, so the tab counts what it scanned.
     trend: scans.trend?.scanned ?? null,
     garp: scans.garp?.hits.length ?? null,
+    // Every fresh company with a book is a row, so the card counts what it scanned.
+    "order-book": scans.orderBook?.scanned ?? null,
   };
 }

@@ -4,8 +4,10 @@
 // forensic checks that trip), PEG (under 1× on both forward and trailing, off
 // the Valuation Check), GARP (Growth score Solid or better AND Valuation score
 // Fair or better, off the leaderboard's two columns), Guidance upgrades (live
-// commitments management raised on the latest call, off the Guidance tab) and
-// Price trend (every company's current price phase, off the Price journey card).
+// commitments management raised on the latest call, off the Guidance tab),
+// Price trend (every company's current price phase, off the Price journey card)
+// and Order book vs market cap (the disclosed book off the Key Variables card
+// against the Screener market cap under the Valuation Check, with its growth).
 //
 // Each card carries its scan's count over the discovery-listed companies. An old
 // tab link (`?scan=` / `?mine=` / `?sort=`) redirects to the scan's own page.
@@ -25,7 +27,7 @@ import { readScanInputs } from "./read";
 export const metadata: Metadata = {
   title: "Scanners – Story of a Stock",
   description:
-    "Every company we cover, run through one rule at a time: forensic red flags from the annual numbers, forward and trailing PEG, growth at a reasonable price, who just raised guidance, and which prices are rising, sideways or falling — and why.",
+    "Every company we cover, run through one rule at a time: forensic red flags from the annual numbers, forward and trailing PEG, growth at a reasonable price, who just raised guidance, which prices are rising, sideways or falling — and why — and whose order book is biggest against its market cap.",
   alternates: { canonical: "/scanners" },
 };
 

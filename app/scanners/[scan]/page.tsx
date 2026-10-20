@@ -15,6 +15,7 @@ import { notFound } from "next/navigation";
 import { mobileChipClass } from "@/components/mobile-card";
 import { currentReportingQuarter } from "@/lib/current-quarter";
 import { authHrefWithNext } from "@/lib/safe-next-path";
+import { parseOrderBookSort } from "@/lib/scanners/order-book";
 import { parsePegSort } from "@/lib/scanners/peg";
 import { buildScans, listedScope, scanCounts, watchlistScope, type Scans } from "@/lib/scanners/scope";
 import { getReaderWatchlist } from "@/lib/watchlist-codes";
@@ -23,6 +24,7 @@ import { GarpScanView } from "../garp-scan";
 import { GuidanceUpgradeScanView } from "../guidance-upgrade-scan";
 import { scannersHref, SCANS, toScanId, type ScanId } from "../href";
 import { SCAN_META } from "../meta";
+import { OrderBookScanView } from "../order-book-scan";
 import { PegScanView } from "../peg-scan";
 import { PriceTrendScanView } from "../price-trend-scan";
 import { readScanInputs } from "../read";
@@ -67,7 +69,12 @@ export default async function ScanPage({
   const watchCount = watchCodes
     ? scanCounts(mine ? scans : buildScans(inputs, watchlistScope(watchCodes), current))[scan]
     : null;
-  const keep = scan === "peg" && query.sort === "trailing" ? { sort: "trailing" } : undefined;
+  const keep =
+    scan === "peg" && query.sort === "trailing"
+      ? { sort: "trailing" }
+      : scan === "order-book" && query.sort === "growth"
+        ? { sort: "growth" }
+        : undefined;
   const filter: WatchlistFilterState = !reader.userId
     ? { kind: "signed-out", signInHref: authHrefWithNext("/auth/login", scannersHref(scan, true, keep)) }
     : watchCodes && watchCodes.size === 0
@@ -150,6 +157,18 @@ function ScanBody({
       );
     case "trend":
       return scans.trend ? <PriceTrendScanView scan={scans.trend} mine={mine} filter={filter} /> : <Unavailable />;
+    case "order-book":
+      return scans.orderBook ? (
+        <OrderBookScanView
+          scan={scans.orderBook}
+          sort={parseOrderBookSort(sort)}
+          mine={mine}
+          filter={filter}
+          sortHref={(s) => scannersHref("order-book", mine, s === "growth" ? { sort: s } : undefined)}
+        />
+      ) : (
+        <Unavailable />
+      );
   }
 }
 

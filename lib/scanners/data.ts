@@ -27,6 +27,7 @@ import type { ValuationCheckRow } from "@/lib/valuation-check/types";
 
 import type { GarpRow } from "./garp";
 import { buildGuidanceUpgradeRow, type GuidanceUpgradeRow } from "./guidance-upgrades";
+import { buildOrderBookRow, pickOrderBookSeries, type OrderBookRow } from "./order-book";
 import type { PegRow } from "./peg";
 import { buildTrendRow, type TrendRow } from "./price-trend";
 import { buildRedFlagRow, type RedFlagRow, type ScanCompany } from "./red-flags";
@@ -244,6 +245,71 @@ export const getGarpRows = withBackoff("garp", unstable_cache(fetchGarpRows, ["s
 
 /** Every company with at least one PEG leg, fresh or stale. Throws on a failed read. */
 export const getPegRows = withBackoff("peg", unstable_cache(fetchPegRows, ["scanners-peg-v2"], { revalidate: 600 }));
+
+// Order book: the latest key_variables_snapshot per company (only its deep-treated
+// variables — never the discovery list or the synthesis text) beside the market
+// cap on its published valuation. Snapshots are read in batches of BATCH
+// companies, like the guidance scan, so no one statement carries the fleet.
+async function fetchOrderBookRows(): Promise<OrderBookRow[]> {
+  const companies = await readCompanies();
+  const codes = [...companies.keys()];
+  const supabase = createPublicReadClient();
+  type SnapshotVariablesRow = { company_code: string | null; generated_at: string | null; variables: unknown };
+  const [snapshotBatches, valuationRes] = await Promise.all([
+    Promise.all(
+      chunk(codes, BATCH).map(async (batch) => {
+        const { data, error } = await supabase
+          .from("key_variables_snapshot")
+          .select("company_code, generated_at, variables:deep_treatment->variables")
+          .in("company_code", batch)
+          .order("generated_at", { ascending: false });
+        if (error) throw error;
+        return (data ?? []) as unknown as SnapshotVariablesRow[];
+      }),
+    ),
+    supabase
+      .from("valuation_check")
+      .select("company_code, priced_as_of, price_at_run, market_cap_cr:market_data->market_cap_cr")
+      .eq("valuation_published", true),
+  ]);
+  if (valuationRes.error) throw valuationRes.error;
+
+  const latest = new Map<string, SnapshotVariablesRow>();
+  for (const row of snapshotBatches.flat()) {
+    const code = upper(row.company_code);
+    const seen = latest.get(code);
+    if (code && (!seen || String(row.generated_at ?? "") > String(seen.generated_at ?? ""))) latest.set(code, row);
+  }
+
+  const rows: OrderBookRow[] = [];
+  for (const raw of (valuationRes.data ?? []) as unknown as Array<{
+    company_code: string | null;
+    priced_as_of: string | null;
+    price_at_run: number | null;
+    market_cap_cr: unknown;
+  }>) {
+    const code = upper(raw.company_code);
+    const company = companies.get(code);
+    const snapshot = latest.get(code);
+    const marketCap = typeof raw.market_cap_cr === "number" ? raw.market_cap_cr : Number(raw.market_cap_cr);
+    if (!company || !snapshot || !Number.isFinite(marketCap) || marketCap <= 0) continue;
+    const series = pickOrderBookSeries(snapshot.variables);
+    if (!series) continue;
+    const row = buildOrderBookRow(company, series, {
+      marketCap,
+      pricedAsOf: raw.priced_as_of,
+      priceAtRun: typeof raw.price_at_run === "number" ? raw.price_at_run : null,
+    });
+    if (row) rows.push(row);
+  }
+  return rows;
+}
+
+/** Every company with a disclosed order book and a market cap, fresh or stale. Throws on a failed read. */
+export const getOrderBookRows = withBackoff(
+  "order book",
+  unstable_cache(fetchOrderBookRows, ["scanners-order-book-v1"], { revalidate: 600 }),
+);
 
 // Same item source, quarter anchor and stored verdict as the company page's
 // Guidance section and the watchlist signals (lib/watchlist-signals.ts): the

@@ -1,4 +1,4 @@
-export const SCANS = ["red-flags", "peg", "garp", "guidance", "trend"] as const;
+export const SCANS = ["red-flags", "peg", "garp", "guidance", "trend", "order-book"] as const;
 export type ScanId = (typeof SCANS)[number];
 
 /** A path segment → a scan, or null (the page 404s). */

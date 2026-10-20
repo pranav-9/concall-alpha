@@ -10,6 +10,18 @@ import {
   type GuidanceUpgradeRow,
 } from "../lib/scanners/guidance-upgrades";
 import { buildGarpScan, compareGarpRows, isGarpHit, type GarpRow } from "../lib/scanners/garp";
+import {
+  bookPeriodEnd,
+  buildOrderBookRow,
+  buildOrderBookScan,
+  orderBookRatio,
+  parseBookPeriod,
+  parseOrderBookSort,
+  pickOrderBookSeries,
+  rupeeCroreScale,
+  sortOrderBookRows,
+  type OrderBookRow,
+} from "../lib/scanners/order-book";
 import { buildPegScan, comparePegRows, isPegHit, parsePegSort, sortPegHits, type PegRow } from "../lib/scanners/peg";
 import {
   buildTrendRow,
@@ -317,6 +329,163 @@ assert.equal(garpScan.richGrowers, 1, "RICH grows but is priced above Fair");
 assert.equal(garpScan.latestPricedAsOf, "2026-10-05");
 assert.ok(compareGarpRows(gp("A", 7, 5), gp("B", 6, 6)) > 0, "same blend → the cheaper row leads");
 
+// ── Order book vs market cap: the Key Variables ₹ series against the Screener market cap ──
+
+const company = (code: string, listed = true) => ({ code, name: `${code} Ltd`, sector: null, listed });
+const ob = (code: string, book: number, marketCap: number, o: Partial<OrderBookRow> = {}): OrderBookRow => ({
+  ...company(code),
+  variable: "Order book",
+  metric: "Order book (₹ cr)",
+  book,
+  period: { fy: 2027, qtr: 1, label: "Q1 FY27" },
+  growthPct: 25,
+  growthFrom: { fy: 2026, qtr: 1, label: "Q1 FY26" },
+  growthKind: "yoy",
+  marketCap,
+  pricedAsOf: "2026-10-05",
+  priceAtRun: 100,
+  ...o,
+});
+
+assert.deepEqual(parseBookPeriod("Q1 FY27"), { fy: 2027, qtr: 1, label: "Q1 FY27" });
+assert.deepEqual(parseBookPeriod("Q4FY25"), { fy: 2025, qtr: 4, label: "Q4 FY25" }, "no space, still a quarter");
+assert.deepEqual(parseBookPeriod("FY26"), { fy: 2026, qtr: 4, label: "FY26" }, "a year ends at Q4");
+assert.deepEqual(parseBookPeriod("H1 FY26"), { fy: 2026, qtr: 2, label: "H1 FY26" });
+assert.deepEqual(parseBookPeriod("9M FY25"), { fy: 2025, qtr: 3, label: "9M FY25" });
+assert.deepEqual(parseBookPeriod("Q1 FY2027"), { fy: 2027, qtr: 1, label: "Q1 FY27" }, "four-digit year");
+assert.equal(parseBookPeriod("Jun-2026"), null);
+assert.equal(bookPeriodEnd({ fy: 2027, qtr: 1 }), "2026-06-30");
+assert.equal(bookPeriodEnd({ fy: 2026, qtr: 4 }), "2026-03-31");
+
+assert.equal(rupeeCroreScale("Order book (₹ cr)"), 1);
+assert.equal(rupeeCroreScale("Order Book (Rs. in Mn)"), 0.1);
+assert.equal(rupeeCroreScale("Order book (INR crore)"), 1);
+assert.equal(rupeeCroreScale("Automotive net order book (₹ bn)"), 100);
+assert.equal(rupeeCroreScale("Order backlog ($ mn)"), null, "dollars are not rupees");
+assert.equal(rupeeCroreScale("Order book (End of Period)"), null, "no unit at all");
+
+const kv = (variables: unknown[]) => pickOrderBookSeries(variables);
+const series = kv([
+  {
+    variable: "Export share of order book",
+    kpi_history: { rows: [{ metric: "Export share of order book (%)", values_by_period: { "Q1 FY27": 40 } }] },
+  },
+  {
+    variable: "Order book and order inflow",
+    lead_metric_index: 1,
+    lead_unit: "₹ cr",
+    kpi_history: {
+      rows: [
+        { metric: "Order inflow in the quarter (₹ cr)", values_by_period: { "Q1 FY27": 972 } },
+        { metric: "Order book (₹ cr)", values_by_period: { "Q1 FY27": "3116.63", "Q4 FY26": 2492, "Q1 FY26": 1584, "FY24": null } },
+      ],
+    },
+  },
+]);
+assert.ok(series, "a share-only variable is skipped; the level row is found");
+assert.equal(series?.metric, "Order book (₹ cr)");
+assert.deepEqual(
+  series?.points.map((p) => [p.label, p.value]),
+  [
+    ["Q1 FY26", 1584],
+    ["Q4 FY26", 2492],
+    ["Q1 FY27", 3116.63],
+  ],
+  "oldest first; a numeric string counts, a null does not",
+);
+
+const millions = kv([
+  {
+    variable: "Order Book (Rs. in Mn)",
+    lead_metric_index: 0,
+    lead_unit: "₹ Mn",
+    kpi_history: { rows: [{ metric: "Order Book (End of Period)", values_by_period: { "Q1 FY27": 22073, "Q1 FY26": 14679 } }] },
+  },
+]);
+assert.deepEqual(
+  millions?.points.map((p) => p.value),
+  [1467.9, 2207.3],
+  "a unit-less hero row takes the lead unit, scaled to crore",
+);
+assert.deepEqual(
+  kv([
+    {
+      variable: "Order book, blended (Rs Mn)",
+      lead_metric_index: 0,
+      lead_unit: "₹ cr",
+      kpi_history: { rows: [{ metric: "Order book, blended total (Rs Mn)", values_by_period: { "Q1 FY27": 25069 } }] },
+    },
+  ])?.points.map((p) => p.value),
+  [2506.9],
+  "the row's own unit wins over the lead unit",
+);
+assert.equal(
+  kv([
+    {
+      variable: "Order book quality (TBCB wins & pipeline)",
+      kpi_history: { rows: [{ metric: "TBCB project wins (₹ Cr)", values_by_period: { FY26: 35000 } }] },
+    },
+    {
+      variable: "Order backlog and bookings",
+      kpi_history: { rows: [{ metric: "Order backlog ($ mn)", values_by_period: { "Q1 FY27": 949 } }] },
+    },
+    {
+      variable: "Order book cover",
+      kpi_history: { rows: [{ metric: "Order book cover (x trailing revenue)", values_by_period: { "Q1 FY27": 1.25 } }] },
+    },
+    {
+      variable: "NorUDCA order book and partner uptake",
+      kpi_history: {
+        rows: [{ metric: "Domestic formulations revenue, all products (INR cr, quarter)", values_by_period: { "Q1 FY27": 24 } }],
+      },
+    },
+  ]),
+  null,
+  "wins, dollars, a cover ratio and a revenue line under a book-named variable are not the book's rupee level",
+);
+assert.equal(pickOrderBookSeries("nope"), null);
+
+const built = buildOrderBookRow(company("HFC"), series!, { marketCap: 41154, pricedAsOf: "2026-10-05", priceAtRun: 1 });
+assert.ok(built);
+assert.equal(built?.book, 3116.63);
+assert.equal(built?.period.label, "Q1 FY27");
+assert.equal(built?.growthKind, "yoy", "Q1 FY26 is on record, so growth is year on year");
+assert.equal(Math.round(built?.growthPct ?? 0), 97);
+assert.equal(built?.growthFrom?.label, "Q1 FY26");
+const noYoy = buildOrderBookRow(company("MTR"), { ...series!, points: series!.points.slice(1) }, { marketCap: 1, pricedAsOf: "2026-10-05", priceAtRun: 1 });
+assert.equal(noYoy?.growthKind, "prior", "without the year-earlier point, growth reads against the previous disclosure");
+assert.equal(noYoy?.growthFrom?.label, "Q4 FY26");
+const single = buildOrderBookRow(company("ONE"), { ...series!, points: series!.points.slice(-1) }, { marketCap: 1, pricedAsOf: "2026-10-05", priceAtRun: 1 });
+assert.equal(single?.growthPct, null);
+assert.equal(single?.growthKind, null);
+assert.equal(buildOrderBookRow(company("ZERO"), series!, { marketCap: 0, pricedAsOf: "2026-10-05", priceAtRun: 1 }), null, "no market cap, no ratio");
+
+const obScan = buildOrderBookScan(
+  [
+    ob("HALF", 500, 1000),
+    ob("TWICE", 2000, 1000, { growthPct: 5 }),
+    ob("FLAT", 800, 1000, { growthPct: null, growthFrom: null, growthKind: null }),
+    ob("OLD", 900, 1000, { period: { fy: 2025, qtr: 1, label: "Q1 FY25" } }),
+    ob("STALE", 900, 1000, { pricedAsOf: "2026-09-01" }),
+  ],
+  NOW,
+);
+assert.deepEqual(obScan.rows.map((r) => r.code), ["TWICE", "FLAT", "HALF"], "biggest book against market cap first");
+assert.equal(obScan.scanned, 3);
+assert.equal(obScan.oldBookCount, 1, "a book last disclosed 15+ months ago is held back");
+assert.equal(obScan.staleCount, 1, "a stale price is held back");
+assert.equal(obScan.latestPricedAsOf, "2026-10-05");
+assert.equal(orderBookRatio(ob("X", 2500, 1000)), 2.5);
+assert.deepEqual(
+  sortOrderBookRows(obScan, "growth").map((r) => r.code),
+  ["HALF", "TWICE", "FLAT"],
+  "growth sort: fastest first, a book with no earlier point last",
+);
+assert.deepEqual(sortOrderBookRows(obScan, "ratio").map((r) => r.code), ["TWICE", "FLAT", "HALF"]);
+assert.equal(parseOrderBookSort("growth"), "growth");
+assert.equal(parseOrderBookSort("anything"), "ratio");
+assert.equal(parseOrderBookSort(undefined), "ratio");
+
 // ── Scope: listed by default, the reader's watchlist (listed or not) with the filter ──
 
 const unlisted = { ...rf("BIGCAP", [cash]), listed: false };
@@ -329,9 +498,14 @@ const inputs = {
   },
   trendRows: [tr("AAA", "up", 2, 1, { asOf: "2026-10-05" }), { ...tr("BIGCAP", "down", 0.5, 1, { asOf: "2026-10-05" }), listed: false }],
   garpRows: [gp("AAA", 7, 6), gp("BBB", 5, 6), gp("BIGCAP", 8, 7, { listed: false })],
+  orderBookRows: [ob("AAA", 500, 1000), ob("BIGCAP", 900, 1000, { listed: false })],
 };
 const listed = buildScans(inputs, listedScope, Q2FY27, NOW);
-assert.deepEqual(scanCounts(listed), { "red-flags": 2, peg: 1, guidance: 1, trend: 1, garp: 1 }, "default = listed companies only");
+assert.deepEqual(
+  scanCounts(listed),
+  { "red-flags": 2, peg: 1, guidance: 1, trend: 1, garp: 1, "order-book": 1 },
+  "default = listed companies only",
+);
 assert.equal(listed.redFlags?.scanned, 3, "an unlisted company is not in the default universe");
 assert.equal(listed.guidance?.scanned, 2);
 
@@ -341,11 +515,18 @@ assert.deepEqual(
   ["AAA", "BIGCAP"],
   "watchlist = the reader's companies, including one outside the discovery list",
 );
-assert.deepEqual(scanCounts(mineScans), { "red-flags": 2, peg: 2, guidance: 0, trend: 2, garp: 2 });
+assert.deepEqual(scanCounts(mineScans), { "red-flags": 2, peg: 2, guidance: 0, trend: 2, garp: 2, "order-book": 2 });
 assert.equal(mineScans.guidance?.scanned, 2, "BBB isn't watched, so its raise drops; AAA + BIGCAP were read");
 assert.deepEqual(
-  scanCounts(buildScans({ redFlagRows: null, pegRows: null, guidance: null, trendRows: null, garpRows: null }, listedScope, Q2FY27, NOW)),
-  { "red-flags": null, peg: null, guidance: null, trend: null, garp: null },
+  scanCounts(
+    buildScans(
+      { redFlagRows: null, pegRows: null, guidance: null, trendRows: null, garpRows: null, orderBookRows: null },
+      listedScope,
+      Q2FY27,
+      NOW,
+    ),
+  ),
+  { "red-flags": null, peg: null, guidance: null, trend: null, garp: null, "order-book": null },
   "a failed read stays unavailable, never an empty scan",
 );
 
