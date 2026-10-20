@@ -38,4 +38,9 @@ export const SCAN_META: Record<ScanId, ScanMeta> = {
     blurb: "Every company's current price phase — rising, sideways or falling — and whether earnings or the P/E drove it.",
     countNoun: "scanned",
   },
+  "order-book": {
+    label: "Order book vs market cap",
+    blurb: "Signed-but-unbilled work set against today's market value, with how fast the book is growing.",
+    countNoun: "disclose a book",
+  },
 };
