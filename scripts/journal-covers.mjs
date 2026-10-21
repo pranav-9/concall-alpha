@@ -633,6 +633,36 @@ const COVERS = {
   ],
 };
 
+// Yash Highvoltage — a ribbed transformer bushing and a cutaway condenser core.
+// The mounting flange, terminal and graded layers are the product, not the story's metaphor.
+COVERS["yashhvolt-two-opening-days"] = [
+  "rose",
+  L(156, 250, 510, 250) +
+    // mounting flange and transformer-side insulated tail
+    R(206, 198, 94, 18, 5, "s l") +
+    E(253, 198, 58, 12, "s w") +
+    [213, 293].map((x) => C(x, 198, 4, "s a")).join("") +
+    R(240, 216, 26, 28, 3, "s w") +
+    // central housing, with the sheds widening toward the flange
+    P("M240 76 h26 l12 112 h-50 z", "s w") +
+    range(8).map((i) => {
+      const y = 86 + i * 13;
+      const half = 20 + i * 2;
+      return P(`M${253-half} ${y} q${half} -8 ${half*2} 0 l-5 7 h-${half*2-10} z`, "s m");
+    }).join("") +
+    R(245, 50, 16, 25, 3, "s a") +
+    R(237, 71, 32, 8, 2, "s l") +
+    L(249, 57, 257, 57, "s t") +
+    // a second product view: the concentric grading layers around its conductor
+    P("M384 92 h54 l14 126 h-82 z", "s l") +
+    P("M391 95 h40 l10 117 h-60 z", "s w") +
+    P("M399 98 h24 l7 108 h-38 z", "s m") +
+    P("M407 72 h8 v153 h-8 z", "s a") +
+    [119, 148, 177].map((y) => L(387, y, 435, y, "s t")).join("") +
+    E(411, 218, 47, 10, "s w") +
+    R(397, 228, 28, 16, 3, "s l"),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
