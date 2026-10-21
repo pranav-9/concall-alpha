@@ -139,7 +139,7 @@ export default async function DeskPage() {
               <p className="house-data house-micro mb-4 text-[var(--ink-soft)]">Top of the book</p>
             </FromSm>
             <DeskTopOfBook
-              quarterLabel={board.quarterLabel}
+              quarterLabel={board.quarterLeadersLabel}
               topPerformers={quarterLeaders.slice(0, 5)}
               mostViewedWeek={mostViewedWeek.slice(0, 5)}
               mostViewedMonth={mostViewedMonth.slice(0, 5)}
