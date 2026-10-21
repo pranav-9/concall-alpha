@@ -6,7 +6,7 @@ import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { selectMostViewed } from "@/lib/desk-most-viewed";
 import { COVERAGE_SELECT, isAdmittedLargeCap, isDiscoveryListed } from "@/lib/coverage-policy";
 import { isCompanyNew } from "@/lib/company-freshness";
-import { currentReportingQuarter } from "@/lib/current-quarter";
+import { currentReportingQuarter, quarterLabelFor } from "@/lib/current-quarter";
 import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
@@ -73,7 +73,13 @@ export type DeskLeaderboard = {
   /** Covered companies with a current-quarter read. */
   reportedCount: number;
   latestReads: DeskRow[];
+  /** Ranked reads from one quarter only — quarterLeadersLabel says which. */
   quarterLeaders: DeskRow[];
+  /**
+   * The quarter quarterLeaders is drawn from: the reporting quarter, or the one
+   * before it while no covered company has a read for the reporting quarter yet.
+   */
+  quarterLeadersLabel: string;
   positiveTwist: DeskRow[];
   growthLeaders: DeskRow[];
   moatLeaders: DeskRow[];
@@ -419,6 +425,8 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
 
   let reportedCount = 0;
   const rows: DeskRow[] = [];
+  // Each row's latest-read quarter, keyed by uppercased code (quarterLeaders).
+  const latestQuarterByCode = new Map<string, { fy: number; qtr: number }>();
 
   byCompany.forEach((companyRows, key) => {
     const sorted = [...companyRows].sort((a, b) => b.fy - a.fy || b.qtr - a.qtr);
@@ -450,6 +458,7 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
       .map((r) => Number(r.score));
 
     if (latest.fy === quarter.fy && latest.qtr === quarter.qtr) reportedCount += 1;
+    latestQuarterByCode.set(upper(latest.company_code), { fy: latest.fy, qtr: latest.qtr });
 
     rows.push({
       code: latest.company_code,
@@ -476,7 +485,24 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
     .sort((a, b) => Date.parse(b.filedRaw!) - Date.parse(a.filedRaw!))
     .slice(0, 12);
 
-  const quarterLeaders = [...scored]
+  // Quarter leaders rank only reads FROM the quarter they're labelled with — a
+  // company still on last quarter's score isn't a this-quarter performer. Until
+  // the season's first read lands, show the previous quarter (and say so) rather
+  // than an empty block.
+  const readsIn = (fy: number, qtr: number) =>
+    scored.filter((r) => {
+      const q = latestQuarterByCode.get(upper(r.code));
+      return q?.fy === fy && q?.qtr === qtr;
+    });
+  let leadersQuarter: { fy: number; qtr: number } = quarter;
+  let leadersPool = readsIn(quarter.fy, quarter.qtr);
+  if (leadersPool.length === 0) {
+    leadersQuarter =
+      quarter.qtr === 1 ? { fy: quarter.fy - 1, qtr: 4 } : { fy: quarter.fy, qtr: quarter.qtr - 1 };
+    leadersPool = readsIn(leadersQuarter.fy, leadersQuarter.qtr);
+  }
+  const quarterLeadersLabel = quarterLabelFor(leadersQuarter.fy, leadersQuarter.qtr);
+  const quarterLeaders = [...leadersPool]
     .sort((a, b) => (b.latestScore ?? 0) - (a.latestScore ?? 0))
     .slice(0, 12);
 
@@ -588,6 +614,7 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
     reportedCount,
     latestReads,
     quarterLeaders,
+    quarterLeadersLabel,
     positiveTwist,
     growthLeaders,
     moatLeaders,
