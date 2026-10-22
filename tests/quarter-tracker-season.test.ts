@@ -9,10 +9,12 @@ import {
   groupUpcoming,
   isImprover,
   istDateOf,
+  latestCallsLabel,
   quarterEnd,
   relativeDay,
   seasonWindow,
   sortScored,
+  splitLatestCalls,
 } from "../app/quarter-tracker/season";
 import { trackerHref } from "../app/quarter-tracker/href";
 
@@ -84,6 +86,35 @@ const byDeltaAsc = sortScored([down, up, flat, fresh], "delta", "asc").map((e) =
 assert(byDeltaAsc.join() === "DOWN,FLAT,UP,FRESH", `delta asc still puts the no-prior row last: ${byDeltaAsc.join()}`);
 const byScored = sortScored([down, up, flat, fresh], "scored", "desc").map((e) => e.code);
 assert(byScored.join() === "FRESH,FLAT,DOWN,UP", `scored desc = most recent first: ${byScored.join()}`);
+
+// --- the latest-calls block --------------------------------------------------
+
+const callsToday = "2026-10-22";
+const board = [
+  entry({ code: "TODAY_HI", score: 8.0, callDate: "2026-10-22" }),
+  // Re-scored today off the official transcript, but its call was last week: not pinned.
+  entry({ code: "RESCORED", score: 7.8, callDate: "2026-10-15", scoredAt: "2026-10-22T06:00:00Z" }),
+  entry({ code: "YDAY", score: 7.5, callDate: "2026-10-21" }),
+  entry({ code: "TODAY_LO", score: 6.0, callDate: "2026-10-22" }),
+  entry({ code: "NOCAL", score: 5.0 }),
+];
+const split = splitLatestCalls(board, callsToday);
+assert(split.day === "2026-10-22", "today's calls are pinned once any is scored");
+assert(split.latest.map((e) => e.code).join() === "TODAY_HI,TODAY_LO", `pinned keeps the board order: ${split.latest.map((e) => e.code).join()}`);
+assert(split.rest.map((e) => e.code).join() === "RESCORED,YDAY,NOCAL", "re-scores and undated rows stay below");
+
+const morning = splitLatestCalls(board.filter((e) => e.callDate !== "2026-10-22"), callsToday);
+assert(morning.day === "2026-10-21", "nothing from today scored yet → yesterday's calls are pinned");
+const monday = splitLatestCalls([entry({ code: "FRI", score: 7, callDate: "2026-10-23" })], "2026-10-26");
+assert(monday.day === "2026-10-23", "a Monday morning reaches back to Friday");
+const stale = splitLatestCalls([entry({ code: "OLD", score: 7, callDate: "2026-10-15" })], callsToday);
+assert(stale.day === null && stale.rest.length === 1, "no call inside the lookback → one list");
+const ahead = splitLatestCalls([entry({ code: "AHEAD", score: 7, callDate: "2026-10-24" })], callsToday);
+assert(ahead.day === null, "a call date ahead of today is never pinned");
+
+assert(latestCallsLabel("2026-10-22", callsToday) === "Today's calls", "label today");
+assert(latestCallsLabel("2026-10-21", callsToday) === "Yesterday's calls", "label yesterday");
+assert(latestCallsLabel("2026-10-23", "2026-10-26") === "Calls on Fri 23 Oct", "label names an older day");
 
 // --- the season chart --------------------------------------------------------
 

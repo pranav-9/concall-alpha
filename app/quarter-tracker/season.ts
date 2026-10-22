@@ -176,6 +176,47 @@ const byScoreThenName = (a: TrackerEntry, b: TrackerEntry): number => {
   return a.name.localeCompare(b.name);
 };
 
+/** How far back the pinned block reaches when none of today's calls is scored yet — a Monday morning still finds Friday. */
+export const LATEST_CALLS_LOOKBACK_DAYS = 3;
+
+export type LatestCallsSplit = {
+  /** The call day pinned on top; null = no recent call scored, the board is one list. */
+  day: ISODate | null;
+  latest: TrackerEntry[];
+  rest: TrackerEntry[];
+};
+
+/**
+ * Pin the latest call day's scored rows above the rest of the board. Keyed on
+ * the call date, not when the score landed: an official re-score of last
+ * week's call is not news, today's call is. Today's calls once any of them is
+ * scored; until then the most recent call day within the lookback, so a
+ * morning visit still opens on last evening's calls. Both halves keep the
+ * order they arrive in, so the board's sort applies inside each.
+ */
+export function splitLatestCalls(entries: TrackerEntry[], today: ISODate): LatestCallsSplit {
+  const floor = addDays(today, -LATEST_CALLS_LOOKBACK_DAYS);
+  let day: ISODate | null = null;
+  for (const e of entries) {
+    if (e.score == null || !e.callDate || e.callDate > today || e.callDate < floor) continue;
+    if (!day || e.callDate > day) day = e.callDate;
+  }
+  if (!day) return { day: null, latest: [], rest: entries };
+  return {
+    day,
+    latest: entries.filter((e) => e.callDate === day),
+    rest: entries.filter((e) => e.callDate !== day),
+  };
+}
+
+/** "Today's calls" / "Yesterday's calls" / "Calls on Fri 17 Oct". */
+export const latestCallsLabel = (day: ISODate, today: ISODate): string => {
+  const n = daysBetween(day, today);
+  if (n === 0) return "Today's calls";
+  if (n === 1) return "Yesterday's calls";
+  return `Calls on ${formatDay(day)}`;
+};
+
 // ---------------------------------------------------------------------------
 // The season chart: one square per company on the day its board meets
 // ---------------------------------------------------------------------------
