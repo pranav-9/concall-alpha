@@ -19,9 +19,11 @@ import {
   groupUpcoming,
   isImprover,
   istToday,
+  latestCallsLabel,
   parseDir,
   parseSort,
   sortScored,
+  splitLatestCalls,
   type SortKey,
 } from "./season";
 import { SeasonChartCard } from "./season-chart";
@@ -71,6 +73,8 @@ export default async function QuarterTrackerPage({
   const scopedUpcoming = mine ? upcoming.filter(inWatchlist) : upcoming;
   const improverRows = scopedScored.filter(isImprover);
   const boardRows = sortScored(improvers ? improverRows : scopedScored, sort, dir);
+  const split = splitLatestCalls(boardRows, today);
+  const pinned = split.day ? { label: latestCallsLabel(split.day, today), rows: split.latest } : null;
 
   const chart = buildSeasonChart(entries, target, today);
   const groups = groupUpcoming(scopedUpcoming, today);
@@ -131,7 +135,8 @@ export default async function QuarterTrackerPage({
 
         <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
           <ScoredBoard
-            rows={boardRows}
+            pinned={pinned}
+            rows={split.rest}
             scoreLabel={target.label}
             sort={sort}
             dir={dir}

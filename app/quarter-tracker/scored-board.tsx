@@ -1,8 +1,9 @@
 // Every company scored this quarter, as a sortable table: score + band, Δ on
 // the prior quarter, a 7-quarter sparkline, where the transcript came from and
 // when the score landed. Column heads are links (`?sort=`), so the order is a
-// URL and the table needs no client JS. Below `md` the trailing three columns
-// fold into a meta line under the company name.
+// URL and the table needs no client JS. The latest call day's rows are pinned
+// in their own block above the rest; the sort applies inside each block. Below
+// `md` the trailing three columns fold into a meta line under the company name.
 
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -175,7 +176,26 @@ function Row({ entry, now }: { entry: TrackerEntry; now: Date }) {
   );
 }
 
+/** A block's caption row inside the table: "Today's calls · 4". */
+function GroupHead({ label, count, lead }: { label: string; count: number; lead: boolean }) {
+  return (
+    <tr className="border-t border-[var(--rule)] bg-[var(--paper)]">
+      <th
+        scope="rowgroup"
+        colSpan={6}
+        className={cn(
+          "house-data px-3 py-1.5 text-left text-[10px] font-normal uppercase tracking-[0.14em] md:px-4",
+          lead ? "text-[var(--ink)]" : "text-[var(--ink-soft)]",
+        )}
+      >
+        {label} <span className="tabular-nums text-[var(--ink-soft)]">· {count}</span>
+      </th>
+    </tr>
+  );
+}
+
 export function ScoredBoard({
+  pinned,
   rows,
   scoreLabel,
   sort,
@@ -185,6 +205,9 @@ export function ScoredBoard({
   now,
   emptyMessage,
 }: {
+  /** The latest call day's rows, drawn first under their own caption; null = one list. */
+  pinned: { label: string; rows: TrackerEntry[] } | null;
+  /** Every other scored row (all of them when nothing is pinned). */
   rows: TrackerEntry[];
   scoreLabel: string;
   sort: SortKey;
@@ -194,6 +217,7 @@ export function ScoredBoard({
   now: Date;
   emptyMessage: string;
 }) {
+  const total = (pinned?.rows.length ?? 0) + rows.length;
   return (
     <section
       aria-labelledby="scored-board-heading"
@@ -205,11 +229,11 @@ export function ScoredBoard({
           id="scored-board-heading"
           className="house-data text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]"
         >
-          {rows.length} scored
+          {total} scored
         </h2>
       </div>
 
-      {rows.length === 0 ? (
+      {total === 0 ? (
         <p className="px-4 py-10 text-center text-[13px] leading-[1.5] text-[var(--ink-soft)]">{emptyMessage}</p>
       ) : (
         <table className="w-full border-collapse">
@@ -240,11 +264,22 @@ export function ScoredBoard({
               </SortHead>
             </tr>
           </thead>
-          <tbody>
-            {rows.map((entry) => (
-              <Row key={entry.code} entry={entry} now={now} />
-            ))}
-          </tbody>
+          {pinned ? (
+            <tbody>
+              <GroupHead label={pinned.label} count={pinned.rows.length} lead />
+              {pinned.rows.map((entry) => (
+                <Row key={entry.code} entry={entry} now={now} />
+              ))}
+            </tbody>
+          ) : null}
+          {rows.length > 0 ? (
+            <tbody>
+              {pinned ? <GroupHead label="Earlier" count={rows.length} lead={false} /> : null}
+              {rows.map((entry) => (
+                <Row key={entry.code} entry={entry} now={now} />
+              ))}
+            </tbody>
+          ) : null}
         </table>
       )}
     </section>
