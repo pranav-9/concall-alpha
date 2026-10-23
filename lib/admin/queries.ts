@@ -25,6 +25,7 @@ import {
   activeSince,
   aggregateApiMetrics,
   buildAccountActivity,
+  buildAccountPages,
   buildActiveVisitors,
   buildLatestWatchlistActivity,
   buildTopSavedCompanies,
@@ -34,6 +35,7 @@ import {
   emptyApiPerformance,
   formatAverageSavesPerWatchlist,
   type AccountActivityUser,
+  type AccountPageViewRow,
   type ActiveAccountRow,
   type ActiveVisitorPoint,
   type AdminUserSummary,
@@ -55,6 +57,7 @@ const PAGE_SIZE = 1000;
 const VISITOR_ROWS_MAX = 20000;
 const WATCHLIST_ITEMS_MAX = 20000;
 const WATCHLIST_ACTIVITY_LIMIT = 100;
+const ACCOUNT_VIEWS_MAX = 10000;
 const API_METRICS_MAX_ROWS = 5000;
 const API_METRICS_SLOW_ROWS = 50;
 const EPOCH_ISO = "1970-01-01T00:00:00.000Z";
@@ -267,7 +270,42 @@ export type AccountsData = {
    * watchlist writes.
    */
   sessionSignal: { state: "ok" } | { state: "missing" } | { state: "error"; message: string };
+  /** Whether page views carry user_id (page_view_events migration 2026-10-23). */
+  pagesSignal: { state: "ok"; capped: boolean } | { state: "missing" } | { state: "error"; message: string };
 };
+
+/**
+ * Signed-in page views in the range, newest first, capped. Never throws: a
+ * missing user_id column (42703, migration not applied) leaves the Pages
+ * column empty instead of blanking the page.
+ */
+async function fetchAccountPageViews(
+  supabase: Client,
+  startIso: string | null,
+): Promise<{ rows: AccountPageViewRow[] | null; signal: AccountsData["pagesSignal"] }> {
+  const rows: AccountPageViewRow[] = [];
+  let from = 0;
+  while (rows.length < ACCOUNT_VIEWS_MAX) {
+    const to = Math.min(from + PAGE_SIZE - 1, ACCOUNT_VIEWS_MAX - 1);
+    let query = supabase
+      .from("page_view_events")
+      .select("user_id, path, created_at")
+      .not("user_id", "is", null)
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (startIso) query = query.gte("created_at", startIso);
+    const { data, error } = await query;
+    if (error) {
+      if (error.code === "42703") return { rows: null, signal: { state: "missing" } };
+      return { rows: null, signal: { state: "error", message: error.message } };
+    }
+    const page = (data ?? []) as AccountPageViewRow[];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) return { rows, signal: { state: "ok", capped: false } };
+    from += PAGE_SIZE;
+  }
+  return { rows, signal: { state: "ok", capped: true } };
+}
 
 /**
  * Latest session activity per account, via the service-role-only RPC in
@@ -286,13 +324,15 @@ async function fetchSessionActivity(
 
 export async function getAccountsData(window: RangeWindow): Promise<AccountsData> {
   const supabase = createAdminClient();
-  const [accounts, sessions, watchlists, items] = await Promise.all([
+  const [accounts, sessions, watchlists, items, views] = await Promise.all([
     listAccounts(supabase, window),
     fetchSessionActivity(supabase),
     supabase.from("watchlists").select("id, user_id, created_at"),
     fetchWatchlistItems(supabase, null),
+    fetchAccountPageViews(supabase, window.startIso),
   ]);
   if (watchlists.error) throw watchlists.error;
+  const pages = views.rows ? buildAccountPages(views.rows) : null;
 
   const activity = buildAccountActivity({
     users: accounts.users,
@@ -305,9 +345,12 @@ export async function getAccountsData(window: RangeWindow): Promise<AccountsData
     created: computeDelta(accounts.count, accounts.prior),
     total: accounts.total,
     rows: accounts.rows.slice(0, 100),
-    active: activeSince(activity, window.startIso).slice(0, 200),
+    active: activeSince(activity, window.startIso)
+      .slice(0, 200)
+      .map((row) => ({ ...row, pages: pages ? (pages.get(row.id) ?? { views: 0, pages: [] }) : null })),
     everActive: activity.length,
     sessionSignal: sessions.signal,
+    pagesSignal: views.signal,
   };
 }
 

@@ -501,6 +501,41 @@ export function formatCount(value: number): string {
   return value.toLocaleString("en-IN");
 }
 
+// ── Account page views ───────────────────────────────────────────────────────
+//
+// Page views carry user_id since 2026-10-23 (page_view_events migration), so an
+// account's visits can be listed. Earlier views, and any made signed out, stay
+// anonymous and are not attributed.
+
+export type AccountPageViewRow = { user_id: string | null; path: string | null; created_at: string | null };
+
+export type AccountPage = { path: string; views: number; lastAt: string };
+
+export type AccountPages = { views: number; pages: AccountPage[] };
+
+/** Views per account, each account's pages most recently visited first. */
+export function buildAccountPages(rows: AccountPageViewRow[]): Map<string, AccountPages> {
+  const byUser = new Map<string, Map<string, AccountPage>>();
+  for (const row of rows) {
+    if (!row.user_id || !row.path || !row.created_at || !Number.isFinite(Date.parse(row.created_at))) continue;
+    let pages = byUser.get(row.user_id);
+    if (!pages) byUser.set(row.user_id, (pages = new Map()));
+    const page = pages.get(row.path);
+    if (!page) pages.set(row.path, { path: row.path, views: 1, lastAt: row.created_at });
+    else {
+      page.views += 1;
+      page.lastAt = laterOf(page.lastAt, row.created_at) ?? page.lastAt;
+    }
+  }
+
+  const out = new Map<string, AccountPages>();
+  for (const [userId, pages] of byUser) {
+    const list = [...pages.values()].sort((a, b) => Date.parse(b.lastAt) - Date.parse(a.lastAt));
+    out.set(userId, { views: list.reduce((n, p) => n + p.views, 0), pages: list });
+  }
+  return out;
+}
+
 // ── Account activity ─────────────────────────────────────────────────────────
 //
 // "Last active" for an account is the newest of three signals, because page
@@ -544,6 +579,8 @@ export type ActiveAccountRow = {
   source: ActivitySource;
   /** Companies across the account's watchlists. */
   saves: number;
+  /** Pages visited in the range; null when page views can't be attributed. */
+  pages?: AccountPages | null;
 };
 
 function laterOf(a: string | null, b: string | null | undefined): string | null {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getOwnHosts, normalizeExternalReferrer, sanitizeUtmValue } from "@/lib/attribution";
 import { withRouteMetric } from "@/lib/api-metrics";
+import { getAuthenticatedUserId } from "@/lib/supabase/auth-state";
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import { applyVisitorIdCookie, getOrCreateVisitorId } from "@/lib/visitor-id";
@@ -58,7 +59,10 @@ async function handlePOST(request: Request) {
     const referrer = normalizeExternalReferrer(body.referrer, getOwnHosts(process.env));
 
     const supabase = await createClient();
-    const { error: insertError } = await supabase.from("page_view_events").insert({
+    // Signed-in views carry the account (Admin → Accounts lists its pages).
+    // getClaims verifies locally, so this adds no Auth round trip.
+    const userId = await getAuthenticatedUserId();
+    const row: Record<string, string | null> = {
       visitor_id: visitorId,
       path: parsed.path,
       company_code: parsed.companyCode,
@@ -69,7 +73,15 @@ async function handlePOST(request: Request) {
       utm_campaign: sanitizeUtmValue(body.utmCampaign),
       utm_content: sanitizeUtmValue(body.utmContent),
       utm_term: sanitizeUtmValue(body.utmTerm),
-    });
+    };
+    let { error: insertError } = await supabase
+      .from("page_view_events")
+      .insert(userId ? { ...row, user_id: userId } : row);
+    // PGRST204 = no user_id column yet (migration 2026-10-23 not applied):
+    // keep the view, drop the account tag.
+    if (insertError?.code === "PGRST204" && userId) {
+      ({ error: insertError } = await supabase.from("page_view_events").insert(row));
+    }
 
     if (insertError) {
       logger.error("supabase: failed to insert page_view_event", {
