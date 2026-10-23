@@ -1,0 +1,285 @@
+{
+  "company": "KMEW",
+  "company_name": "Knowledge Marine & Engineering Works",
+  "prepared_on": "2026-10-06",
+  "review_status": "user_approved",
+  "source_period": "Q1 FY27",
+  "latest_source_date": "2026-08-26",
+  "about_company": {
+    "about_short": "Integrated maritime infrastructure company offering dredging, charter hire, and shipbuilding services.",
+    "business_intro": "KMEW dredges ports, channels and inland waterways with its own fleet, charters tugs, pilot and patrol boats to ports, and since FY26 builds vessels through its 51%-owned shipyard. Its customers are central-government maritime bodies: major port authorities, the Inland Waterways Authority of India and Dredging Corporation of India. Dredging, short project work, was 72% of FY26 revenue; the charters run 10 to 15 years.",
+    "about_long": "Knowledge Marine & Engineering Works (KMEW) dredges ports, channels and inland waterways with its own fleet, charters port ancillary crafts such as tugs, pilot, mooring and patrol boats, and, through its 51%-owned subsidiary Knowledge Shipyard, builds vessels. Its customers are central-government maritime bodies: the major port authorities, the Inland Waterways Authority of India and Dredging Corporation of India. Dredging is project work that runs off over two to three years at most; the long-term contracts are in charter and hire, which run 10 to 15 years and include two 15-year Green Tug charters. Overseas dredging in Myanmar and Bahrain wound down in FY26 and neither country had work running in June 2026. The FY26 annual report counts 50+ marine assets, including 19 dredging units and 28 port ancillary crafts. At Q1 FY27 the order book stood above ₹1,300 Cr, not counting a ₹200 Cr order KMEW placed with its own shipyard.",
+    "company_timeline": [
+      {
+        "year": 2015,
+        "title": "Incorporated as a ship repair unit",
+        "detail": "Incorporated in 2015, KMEW started as a ship repair and refitting business before moving into dredging and port crafts.",
+        "sources": [
+          {
+            "label": "KMEW annual report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/7eb3b2d6-3057-4de9-8da7-2ec50c176596.pdf",
+            "locator": "Corporate overview"
+          }
+        ]
+      },
+      {
+        "year": 2021,
+        "title": "Lists on the BSE SME platform",
+        "detail": "Shares listed on the BSE SME platform on 22 March 2021.",
+        "sources": [
+          {
+            "label": "KMEW annual report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/7eb3b2d6-3057-4de9-8da7-2ec50c176596.pdf",
+            "locator": "Journey timeline, 2020-21"
+          }
+        ]
+      },
+      {
+        "year": 2022,
+        "title": "Starts first overseas dredging job at Sittwe, Myanmar",
+        "detail": "Work on the channel and port basin at Sittwe Port, Myanmar, began in January 2022 with the dredger River Pearl 8.",
+        "sources": [
+          {
+            "label": "KMEW Q2 FY23 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=16ffb7e0-a0c1-4f03-8424-e6ee72cd0c58.pdf",
+            "locator": "Sittwe project overview"
+          },
+          {
+            "label": "KMEW annual report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/7eb3b2d6-3057-4de9-8da7-2ec50c176596.pdf",
+            "locator": "Journey timeline, 2021-22"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Lists on the BSE and NSE main board",
+        "detail": "Moved from the BSE SME platform to the main board of BSE and NSE with effect from 14 November 2024.",
+        "sources": [
+          {
+            "label": "KMEW annual report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/7eb3b2d6-3057-4de9-8da7-2ec50c176596.pdf",
+            "locator": "Board's report, item 6"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Acquires 51% of Knowledge Shipyard, enters shipbuilding",
+        "detail": "Knowledge Shipyard (formerly Kamal Marine & Engineering Works) became a subsidiary from 6 August 2025. Its first commercial orders, over ₹230 Cr, came from the Inland Waterways Authority of India in FY26.",
+        "sources": [
+          {
+            "label": "KMEW annual report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/32b9889e-99a7-411b-8e26-334815ec128a.pdf",
+            "locator": "Board's report, subsidiaries"
+          },
+          {
+            "label": "KMEW Q3 FY26 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=4f87b27d-13fe-4f0a-ace1-ac86cf3fc142.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Wins first 15-year Green Tug charter from VOC Port",
+        "detail": "The V.O. Chidambaranar Port charter (₹367.09 Cr) was followed in FY26 by a second from Visakhapatnam Port (₹325.71 Cr); both run 15 years, with operations scheduled to start in late 2027.",
+        "sources": [
+          {
+            "label": "KMEW H1 FY26 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=daa6a063-b7a8-475e-bbce-561d4128f949.pdf",
+            "locator": "Chairman's message"
+          },
+          {
+            "label": "KMEW Q4 FY26 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c24381b2-0c55-422d-9865-f3ec7036779c.pdf",
+            "locator": "Order book table"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Two Green Tug charters are half the FY26 order book",
+        "text": "The two 15-year Green Tug charters from V.O. Chidambaranar Port (₹367.09 Cr) and Visakhapatnam Port (₹325.71 Cr) make up ₹692.80 Cr, or 49.6%, of the ₹1,395.43 Cr unexecuted order book at the end of FY26. The client base is central-government maritime bodies: major port authorities, the Inland Waterways Authority of India and Dredging Corporation of India.",
+        "period": "FY26 year-end order book",
+        "sources": [
+          {
+            "label": "KMEW Q4 FY26 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c24381b2-0c55-422d-9865-f3ec7036779c.pdf",
+            "locator": "Order book table"
+          },
+          {
+            "label": "KMEW annual report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/32b9889e-99a7-411b-8e26-334815ec128a.pdf",
+            "locator": "Corporate overview"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "VOC Port Green Tug",
+            "value": 26.3,
+            "unit": "% of order book"
+          },
+          {
+            "label": "Visakhapatnam Green Tug",
+            "value": 23.3,
+            "unit": "% of order book"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Overseas work fell to 10% of revenue in FY26",
+        "text": "Dredging in Myanmar and sand-mining dredging in Bahrain were 20.7% of consolidated revenue from operations in FY24, 41.1% in FY25 and 10.4% in FY26. In June 2026 management said neither country had work running; the bid pipeline it describes is domestic.",
+        "period": "FY24 to FY26",
+        "sources": [
+          {
+            "label": "KMEW annual report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/7eb3b2d6-3057-4de9-8da7-2ec50c176596.pdf",
+            "locator": "Consolidated segment note"
+          },
+          {
+            "label": "KMEW annual report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/32b9889e-99a7-411b-8e26-334815ec128a.pdf",
+            "locator": "Note 31, segment reporting"
+          },
+          {
+            "label": "KMEW Q4 FY26 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1159dd13-63b2-458c-adcf-5bccf183df90.pdf",
+            "locator": null
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Overseas, FY24",
+            "value": 20.7,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Overseas, FY25",
+            "value": 41.1,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Overseas, FY26",
+            "value": 10.4,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "Owns 50+ marine assets, 19 of them for dredging",
+        "text": "The FY26 annual report counts 50+ marine assets: 19 dredging units (hopper and cutter suction dredgers, grab and backhoe dredgers, and hopper barges) and 28 port ancillary crafts, run by a workforce of 550+.",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "KMEW annual report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/32b9889e-99a7-411b-8e26-334815ec128a.pdf",
+            "locator": "Corporate overview"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Dredging is 2–3 year project work; charters run 10–15 years",
+        "text": "Management says dredging and shipbuilding orders turn into revenue over two to three years at most, while charter contracts run 10 to 15 years. At Q1 FY27 the order book of more than ₹1,300 Cr was about ₹240 Cr dredging, ₹850 Cr charter and hire and ₹240 Cr shipbuilding, excluding a ₹200 Cr intercompany order for Green Tugs and patrol boats.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "KMEW Q1 FY27 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8e738e31-2eca-4af3-81e8-d2e11d880fc1.pdf",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Shipbuilding sits in a 51%-owned subsidiary",
+        "text": "KMEW holds 51% of Knowledge Shipyard; management said in June 2026 the stake will rise to 75% (a plan, not done). In April 2026 the company applied to the NCLT to merge two other subsidiaries, Indian Ports Dredging and Knowledge Infra Ports, into itself.",
+        "period": "As of June 2026",
+        "sources": [
+          {
+            "label": "KMEW Q4 FY26 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1159dd13-63b2-458c-adcf-5bccf183df90.pdf",
+            "locator": null
+          },
+          {
+            "label": "KMEW annual report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/32b9889e-99a7-411b-8e26-334815ec128a.pdf",
+            "locator": "Board's report, material changes"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Bought 15 acres at Saphale for a new shipyard",
+        "text": "KMEW acquired 15 acres near Saphale, Palghar district, close to the upcoming Vadhvan Port, to build a shipyard. Management plans to take it from Phase 1 to Phase 3 and build about 18 vessels a year when complete; the yard is not yet commissioned.",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "KMEW Q4 FY26 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1159dd13-63b2-458c-adcf-5bccf183df90.pdf",
+            "locator": null
+          },
+          {
+            "label": "KMEW Q1 FY27 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8e738e31-2eca-4af3-81e8-d2e11d880fc1.pdf",
+            "locator": null
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Shipbuilding arrived and overseas dredging wound down in FY26",
+      "text": "Shipbuilding went from nothing in FY25 to ₹53.26 Cr, 21% of FY26 revenue from operations, after KMEW bought 51% of Knowledge Shipyard in August 2025; ₹17.22 Cr of the segment's revenue was inter-segment and eliminated on consolidation. Over the same year, Myanmar and Bahrain fell from 41.1% of revenue to 10.4%.",
+      "period": "FY26 vs FY25",
+      "sources": [
+        {
+          "label": "KMEW annual report 2025-26",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/32b9889e-99a7-411b-8e26-334815ec128a.pdf",
+          "locator": "Note 31, segment reporting"
+        },
+        {
+          "label": "KMEW Q4 FY26 investor presentation",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c24381b2-0c55-422d-9865-f3ec7036779c.pdf",
+          "locator": "Operational highlights"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "KMEW annual report 2025-26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/32b9889e-99a7-411b-8e26-334815ec128a.pdf",
+      "locator": "Corporate overview; board's report; note 31"
+    },
+    {
+      "label": "KMEW annual report 2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/7eb3b2d6-3057-4de9-8da7-2ec50c176596.pdf",
+      "locator": "Journey timeline; board's report; segment note"
+    },
+    {
+      "label": "KMEW Q4 FY26 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c24381b2-0c55-422d-9865-f3ec7036779c.pdf",
+      "locator": "Operational highlights; order book"
+    },
+    {
+      "label": "KMEW Q1 FY27 earnings-call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8e738e31-2eca-4af3-81e8-d2e11d880fc1.pdf",
+      "locator": null
+    },
+    {
+      "label": "KMEW Q4 FY26 earnings-call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1159dd13-63b2-458c-adcf-5bccf183df90.pdf",
+      "locator": null
+    },
+    {
+      "label": "KMEW Q3 FY26 earnings-call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=4f87b27d-13fe-4f0a-ace1-ac86cf3fc142.pdf",
+      "locator": null
+    }
+  ]
+}

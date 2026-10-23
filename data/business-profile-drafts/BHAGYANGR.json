@@ -1,0 +1,338 @@
+{
+  "company": "BHAGYANGR",
+  "company_name": "Bhagyanagar India",
+  "prepared_on": "2026-10-07",
+  "review_status": "user_approved",
+  "source_period": "Q1 FY27",
+  "latest_source_date": "2026-08-27",
+  "about_company": {
+    "about_short": "Secondary copper recycler and value-added product manufacturer.",
+    "about_long": "Bhagyanagar India Limited (BIL), incorporated in Hyderabad in 1985, recycles copper scrap into copper products: bus bars (including silver- and tin-plated bus bars for AI data centres), strips, enamelled wires, transposed conductors and transformer windings, foils, and commodity rods, ingots and billets. It sources scrap from 30+ countries and processes it at two Hyderabad units of about 4 and 60 acres with 35,000 MTPA of capacity. It sells to 500+ customers, mostly OEMs in the electrical, switchgear, transformer, automotive and renewable-energy end-markets, mainly in India; exports were about 10% of FY26 product sales and 18% of Q1 FY27 sales. Selling prices and scrap purchases are both linked to LME copper, so management manages margins in percentage terms: 6-12% EBITDA on value-added products against about 2-2.5% on commodity. All figures on this page are BIL consolidated; the copper business sits in the wholly owned subsidiary Bhagyanagar Copper Private Limited (BCPL), and standalone BIL is only a 9 MW windmill. A pending Composite Scheme of Arrangement would merge BCPL into BIL and then demerge the copper undertaking into Tieramet Limited, to be listed with an identical shareholding, leaving BIL with the windmill and three land parcels; the FY2026 annual report (27 August 2026) says the NCLT has heard the petition and reserved its order, so the scheme is not yet effective.",
+    "business_intro": "BIL melts imported and domestic copper scrap into copper products sold to over 500 OEMs: bus bars for switchgear, transformers and AI data centres, strips, enamelled wires and transformer windings, plus commodity rods and billets. Customers pay a price linked to LME copper plus a conversion margin; value-added products earn 6-12% EBITDA margins against about 2-2.5% on commodity. In Q1 FY27, 63% of sales were value-added products and 18% of sales were exports.",
+    "company_timeline": [
+      {
+        "year": 1985,
+        "title": "Founded in Hyderabad",
+        "detail": "Incorporated on 2 September 1985 by the late Shri G.M. Surana. Management dates the group's copper rod production in Hyderabad to 1982, when rods were needed for telecom equipment.",
+        "sources": [
+          {
+            "url": "https://bhagyanagarindia.com/wp-content/uploads/2026/09/Bhagyanagar-India-Limited-Annual-Report.pdf",
+            "label": "Annual Report FY2025-26 (27 Aug 2026)",
+            "locator": "Corporate overview; Note 1 to the standalone financial statements"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9b1fc339-afd0-4a63-9000-54490272bb6a.pdf",
+            "label": "Q3 FY26 earnings call transcript (31 Jan 2026)"
+          }
+        ]
+      },
+      {
+        "year": 1988,
+        "title": "Reaches 10,000 MTPA with Finnish CC-rod technology",
+        "detail": "Imported Outokumpu (Finland) continuous-cast rod equipment, taking capacity to 10,000 tonnes a year.",
+        "sources": [
+          {
+            "url": "https://bhagyanagarindia.com/wp-content/uploads/2026/09/Bhagyanagar-India-Limited-Annual-Report.pdf",
+            "label": "Annual Report FY2025-26 (27 Aug 2026)",
+            "locator": "Milestones, Corporate overview"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9b1fc339-afd0-4a63-9000-54490272bb6a.pdf",
+            "label": "Q3 FY26 earnings call transcript (31 Jan 2026)"
+          }
+        ]
+      },
+      {
+        "year": 1992,
+        "title": "Enters value-added products with copper strips",
+        "detail": "The first value-added line; enamelled wires and other products followed, auto components in 1994.",
+        "sources": [
+          {
+            "url": "https://bhagyanagarindia.com/wp-content/uploads/2026/09/Bhagyanagar-India-Limited-Annual-Report.pdf",
+            "label": "Annual Report FY2025-26 (27 Aug 2026)",
+            "locator": "Milestones, Corporate overview"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9b1fc339-afd0-4a63-9000-54490272bb6a.pdf",
+            "label": "Q3 FY26 earnings call transcript (31 Jan 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=a377e310-015d-40ce-81c5-ffc1c2643fe6.pdf",
+            "label": "Q1 FY27 investor presentation (Jul 2026)"
+          }
+        ]
+      },
+      {
+        "year": 2004,
+        "title": "Adds Conform continuous extrusion",
+        "detail": "Conform continuous extrusion for high-precision copper profiles with tighter dimensional consistency; copper pipes and solar collectors followed in 2007.",
+        "sources": [
+          {
+            "url": "https://bhagyanagarindia.com/wp-content/uploads/2026/09/Bhagyanagar-India-Limited-Annual-Report.pdf",
+            "label": "Annual Report FY2025-26 (27 Aug 2026)",
+            "locator": "Milestones, Corporate overview"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9b1fc339-afd0-4a63-9000-54490272bb6a.pdf",
+            "label": "Q3 FY26 earnings call transcript (31 Jan 2026)"
+          }
+        ]
+      },
+      {
+        "year": 2017,
+        "title": "Reaches 25,000 MTPA, integrates scrap recycling",
+        "detail": "A scrap-recycling plant at the 60-acre Toopran site outside Hyderabad took capacity to 25,000 MTPA; management calls the 2014-2017 backward integration the game changer.",
+        "sources": [
+          {
+            "url": "https://bhagyanagarindia.com/wp-content/uploads/2026/09/Bhagyanagar-India-Limited-Annual-Report.pdf",
+            "label": "Annual Report FY2025-26 (27 Aug 2026)",
+            "locator": "Milestones, Corporate overview"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9b1fc339-afd0-4a63-9000-54490272bb6a.pdf",
+            "label": "Q3 FY26 earnings call transcript (31 Jan 2026)"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Reaches 35,000 MTPA; launches silver-plated bus bars",
+        "detail": "Capacity rose from 30,000 to 35,000 MTPA during FY26 and was online by the Q1 FY27 call; silver- and tin-plated bus bars for AI data centres began shipping, including exports to Canada and the US.",
+        "sources": [
+          {
+            "url": "https://bhagyanagarindia.com/wp-content/uploads/2026/09/Bhagyanagar-India-Limited-Annual-Report.pdf",
+            "label": "Annual Report FY2025-26 (27 Aug 2026)",
+            "locator": "Milestones, Corporate overview"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=431bf628-c59f-4366-9259-8cfd1416d077.pdf",
+            "label": "Q1 FY27 earnings call transcript (28 Jul 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5932469c-ea84-4e4b-a619-5cafcad8c94a.pdf",
+            "label": "Q4 FY26 earnings call transcript (May 2026)"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "text": "BIL supplies over 500 customers, mostly OEMs, with hardly any government business and a tilt towards South India; some OEMs have bought from it every month for about 35 years. The transformer and motor products alone have over 50 customers, centred on Chennai. Customers shown or named include L&T, Amara Raja, Racold, Hammond, V-Guard, Crompton Greaves, Atlanta, TMC, Blue Star, Micron and OBO. No top-10 or single-customer share of revenue is disclosed.",
+        "title": "500+ OEM customers, no concentration disclosed",
+        "period": "Q1 FY27 deck and call; Q2 FY26 call",
+        "metrics": [
+          {
+            "unit": "count",
+            "label": "Customers (500+)",
+            "value": 500
+          },
+          {
+            "unit": "count",
+            "label": "Transformer & motor customers (50+)",
+            "value": 50
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=a377e310-015d-40ce-81c5-ffc1c2643fe6.pdf",
+            "label": "Q1 FY27 investor presentation (Jul 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=431bf628-c59f-4366-9259-8cfd1416d077.pdf",
+            "label": "Q1 FY27 earnings call transcript (28 Jul 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=506636c5-4bab-41f9-84b4-cbcbe650594f.pdf",
+            "label": "Q2 FY26 earnings call transcript (13 Nov 2025)"
+          }
+        ],
+        "category": "customers"
+      },
+      {
+        "text": "Exports were 14.5% of consolidated product sales in FY24 (Rs 206 crore of Rs 1,424 crore), 11.9% in FY25 (Rs 193 crore of Rs 1,620 crore) and 10.3% in FY26 (Rs 244 crore of Rs 2,372 crore), as domestic value-added sales grew faster. In Q1 FY27 exports rose to 18% of sales, mostly commodity material, and the Company shipped over 100 tonnes of bus bars to North America; silver-plated data-centre bus bars go to Canada and the US. Management says the US is not a major market for it and that it had not exported to Europe as of January 2026.",
+        "title": "Exports 10% of FY26 product sales, 18% in Q1 FY27",
+        "period": "FY24-FY26 (annual reports); Q1 FY27",
+        "metrics": [
+          {
+            "unit": "% of product sales",
+            "label": "Exports, FY24",
+            "value": 14.5
+          },
+          {
+            "unit": "% of product sales",
+            "label": "Exports, FY25",
+            "value": 11.9
+          },
+          {
+            "unit": "% of product sales",
+            "label": "Exports, FY26",
+            "value": 10.3
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://bhagyanagarindia.com/wp-content/uploads/2026/09/Bhagyanagar-India-Limited-Annual-Report.pdf",
+            "label": "Annual Report FY2025-26 (27 Aug 2026)",
+            "locator": "Note: Sale of products, consolidated"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/03c25e12-829e-4532-96b6-85ca3108185d.pdf",
+            "label": "Annual Report FY2024-25",
+            "locator": "Note: Sale of products, consolidated"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=431bf628-c59f-4366-9259-8cfd1416d077.pdf",
+            "label": "Q1 FY27 earnings call transcript (28 Jul 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=a377e310-015d-40ce-81c5-ffc1c2643fe6.pdf",
+            "label": "Q1 FY27 investor presentation (Jul 2026)"
+          }
+        ],
+        "category": "geography"
+      },
+      {
+        "text": "Two manufacturing units in Hyderabad of about 4 acres and 60 acres (Toopran) run 35,000 MTPA of copper capacity at roughly 70% utilisation, after the FY26 addition from 30,000 MTPA; the 60-acre site houses the scrap-recycling plant and a solar power plant, and management says it has room for three to four times the current capacity. BIL also owns a 9 MW windmill and three land parcels in the city, the assets that would stay with BIL under the pending scheme.",
+        "title": "Two Hyderabad units, 35,000 MTPA at about 70% utilisation",
+        "period": "FY26 annual report; Q1 FY27 call",
+        "sources": [
+          {
+            "url": "https://bhagyanagarindia.com/wp-content/uploads/2026/09/Bhagyanagar-India-Limited-Annual-Report.pdf",
+            "label": "Annual Report FY2025-26 (27 Aug 2026)",
+            "locator": "Managing Director's message; Infrastructure & Capabilities"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=431bf628-c59f-4366-9259-8cfd1416d077.pdf",
+            "label": "Q1 FY27 earnings call transcript (28 Jul 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9b1fc339-afd0-4a63-9000-54490272bb6a.pdf",
+            "label": "Q3 FY26 earnings call transcript (31 Jan 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=a377e310-015d-40ce-81c5-ffc1c2643fe6.pdf",
+            "label": "Q1 FY27 investor presentation (Jul 2026)"
+          }
+        ],
+        "category": "footprint"
+      },
+      {
+        "text": "The Company says it is the only manufacturer in India producing copper bus bars up to 300 mm in width. Processes include Upcast continuous casting (Outokumpu, Finland), Conform continuous extrusion, rolling, tinning and silver plating, and a 48-conductor CTC line added in FY27 so it can wind the full copper range of power transformers. Systems are ISO 9001, ISO 14001 and ISO 45001 certified, with a BIS licence for copper strips for electrical purposes.",
+        "title": "Only Indian maker of copper bus bars up to 300 mm wide",
+        "period": "FY26 annual report; Q1 FY27 call",
+        "sources": [
+          {
+            "url": "https://bhagyanagarindia.com/wp-content/uploads/2026/09/Bhagyanagar-India-Limited-Annual-Report.pdf",
+            "label": "Annual Report FY2025-26 (27 Aug 2026)",
+            "locator": "Managing Director's message; Infrastructure & Capabilities"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=344186ce-e6a6-40e6-91db-20f76b0f76c0.pdf",
+            "label": "Investor presentation, June 2026"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=431bf628-c59f-4366-9259-8cfd1416d077.pdf",
+            "label": "Q1 FY27 earnings call transcript (28 Jul 2026)"
+          }
+        ],
+        "category": "capabilities"
+      },
+      {
+        "text": "Scrap is bought at 86-95% of the LME copper price depending on quality and products are sold at LME-linked prices, so management tracks margins as a percentage rather than rupees per kg. Value-added products earn 6-12% EBITDA depending on the product (silver-plated data-centre bus bars about 10%); commodity rods and billets earn about 2-2.5%, and commodity volumes are kept partly to run capacity and to arbitrage Indian scrap against Chinese ingot prices. Scrap comes from 30+ countries through 50+ supplier partners; the US is the largest single source at 35%, with Brazil, the UK, Australia, Colombia and Canada at roughly 7-8% each.",
+        "title": "Priced off LME copper; margins managed in percentage terms",
+        "period": "Q2 FY26 to Q1 FY27 calls; Q1 FY27 deck",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=431bf628-c59f-4366-9259-8cfd1416d077.pdf",
+            "label": "Q1 FY27 earnings call transcript (28 Jul 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=506636c5-4bab-41f9-84b4-cbcbe650594f.pdf",
+            "label": "Q2 FY26 earnings call transcript (13 Nov 2025)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5932469c-ea84-4e4b-a619-5cafcad8c94a.pdf",
+            "label": "Q4 FY26 earnings call transcript (May 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=a377e310-015d-40ce-81c5-ffc1c2643fe6.pdf",
+            "label": "Q1 FY27 investor presentation (Jul 2026)"
+          }
+        ],
+        "category": "business_model"
+      },
+      {
+        "text": "The Company has committed about Rs 40 crore of capital expenditure across FY27 and FY28 as the first tranche of a phased programme for capacity, finishing capability and process technology. Management's plan is to take capacity from 35,000 to 45,000 MTPA, expected between April and June 2027 (more likely June), and it states an ambition of Rs 5,000 crore of revenue by FY30. These are plans; operating capacity today is 35,000 MTPA at about 70% utilisation.",
+        "title": "Rs 40 crore first-tranche capex over FY27-FY28",
+        "period": "FY26 annual report (Aug 2026); Q1 FY27 call",
+        "sources": [
+          {
+            "url": "https://bhagyanagarindia.com/wp-content/uploads/2026/09/Bhagyanagar-India-Limited-Annual-Report.pdf",
+            "label": "Annual Report FY2025-26 (27 Aug 2026)",
+            "locator": "Managing Director's message"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=431bf628-c59f-4366-9259-8cfd1416d077.pdf",
+            "label": "Q1 FY27 earnings call transcript (28 Jul 2026)"
+          }
+        ],
+        "category": "expansion"
+      }
+    ],
+    "what_changed": {
+      "text": "In FY26 the value-added share of volume rose to 59.0% from 54.1% in FY25 (+495 bps on the issuer's results deck) while volume grew 34.4% to 24,654 MT, and EBITDA per kg rose from Rs 20.19 to Rs 43.05. Revenue crossed Rs 2,000 crore for the first time, with operational EBITDA above Rs 100 crore and PAT above Rs 50 crore. The issuer labels the same value-added/commodity split '% by volume' in the Q4 FY26 results deck and 'segment-wise revenue' in the Q1 FY27 deck; the figures here are the volume ones. The shift continued into Q1 FY27, when value-added products were 63% of sales.",
+      "period": "FY26 vs FY25 (results deck 29 Apr 2026; Q4 FY26 call)",
+      "sources": [
+        {
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=48bc379d-6e74-4d6f-83f7-8f56cc170f98.pdf",
+          "label": "Q4 FY26 results presentation (29 Apr 2026)"
+        },
+        {
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5932469c-ea84-4e4b-a619-5cafcad8c94a.pdf",
+          "label": "Q4 FY26 earnings call transcript (May 2026)"
+        }
+      ],
+      "headline": "Value-added share of FY26 volume rose to 59.0% from 54.1%; EBITDA per kg more than doubled to Rs 43.05"
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Annual Report FY2025-26 (27 Aug 2026)",
+      "url": "https://bhagyanagarindia.com/wp-content/uploads/2026/09/Bhagyanagar-India-Limited-Annual-Report.pdf",
+      "locator": "Corporate overview; Note 1 to the standalone financial statements"
+    },
+    {
+      "label": "Q3 FY26 earnings call transcript (31 Jan 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9b1fc339-afd0-4a63-9000-54490272bb6a.pdf"
+    },
+    {
+      "label": "Q1 FY27 investor presentation (Jul 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=a377e310-015d-40ce-81c5-ffc1c2643fe6.pdf"
+    },
+    {
+      "label": "Q1 FY27 earnings call transcript (28 Jul 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=431bf628-c59f-4366-9259-8cfd1416d077.pdf"
+    },
+    {
+      "label": "Q4 FY26 earnings call transcript (May 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5932469c-ea84-4e4b-a619-5cafcad8c94a.pdf"
+    },
+    {
+      "label": "Q2 FY26 earnings call transcript (13 Nov 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=506636c5-4bab-41f9-84b4-cbcbe650594f.pdf"
+    },
+    {
+      "label": "Annual Report FY2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/03c25e12-829e-4532-96b6-85ca3108185d.pdf",
+      "locator": "Note: Sale of products, consolidated"
+    },
+    {
+      "label": "Investor presentation, June 2026",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=344186ce-e6a6-40e6-91db-20f76b0f76c0.pdf"
+    },
+    {
+      "label": "Q4 FY26 results presentation (29 Apr 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=48bc379d-6e74-4d6f-83f7-8f56cc170f98.pdf"
+    }
+  ]
+}

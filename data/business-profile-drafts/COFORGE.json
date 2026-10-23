@@ -1,0 +1,264 @@
+{
+  "company": "COFORGE",
+  "company_name": "Coforge",
+  "prepared_on": "2026-09-19",
+  "review_status": "user_approved",
+  "source_period": "Q1 FY27",
+  "latest_source_date": "2026-07-28",
+  "about_company": {
+    "about_long": "Coforge is a Indian IT services company that builds and runs technology for enterprise clients, positioning itself as an AI-native engineering firm. Its largest verticals are banking and financial services, travel, healthcare & hi-tech, and insurance, and the Americas contributed about 62% of revenue in Q1 FY27 (including two months of Encora). About 86% of that quarter's revenue came from AI-led engineering, data & integration and cloud services, with intelligent automation and BPM making up the rest. Revenue is earned mainly on multi-year service contracts, including large engineering programmes such as a 13-year partnership with Sabre. It has grown by acquisition as well as organically: Cigniti (quality engineering) joined in FY25, and Encora (US/LATAM engineering, estimated at about $600 million of FY26 revenue when it was signed) has been consolidated since May 2026.",
+    "about_short": "IT services firm: AI-led engineering, data and cloud for banking, travel, insurance, healthcare and hi-tech",
+    "what_changed": {
+      "text": "From 1 May 2026 Encora added US$100.7 million to Q1 FY27 revenue of US$592.2 million. Versus Q4 FY26 (ex-Encora), Healthcare & HiTech rose from 11.5% to 17.3% of revenue, Americas from 56.7% to 61.8%, AI-led Engineering from 45.1% to 50.4%, and fixed-price work fell from 46.3% to 43.0%.",
+      "period": "Q4 FY26 to Q1 FY27",
+      "sources": [
+        {
+          "url": "https://investors.coforge.com/hubfs/Coforge_Q1FY27%20Earnings%20Conference%20Call%20Transcript.pdf",
+          "label": "Q1 FY27 earnings call",
+          "locator": null
+        },
+        {
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3c063cf7-0415-4631-a1cb-6c9cedcd84d7.pdf",
+          "label": "Q1 FY27 investor presentation",
+          "locator": "Factsheet, Vertical, Business Mix, Geography and Project Type tables"
+        }
+      ],
+      "headline": "Encora added two months of revenue and shifted the mix towards healthcare, hi-tech and the Americas"
+    },
+    "business_facts": [
+      {
+        "text": "Revenue was US$1,870.3 million in FY26, up 29.2% YoY in reported US dollars (FY25: US$1,448 million). This is not an organic figure: Cigniti was consolidated from Q2 FY25, so the FY25 base carries it for three quarters. Encora is not in FY26.",
+        "title": "FY26 revenue: US$1,870 million, reported",
+        "period": "FY26, consolidated, ex-Encora",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e1748b92-a29a-47e5-9347-8dca589e1219.pdf",
+            "label": "Q4 FY26 factsheet",
+            "locator": "Factsheet, Revenue and Revenue Growth table"
+          },
+          {
+            "url": "https://www.coforge.com/hubfs/Q1FY25-earnings-call-transcript.pdf",
+            "label": "Q1 FY25 earnings call",
+            "locator": null
+          }
+        ],
+        "category": "business_model"
+      },
+      {
+        "text": "Share of total consolidated revenue: Banking & Financial Services 24.7%, Travel, Transportation & Hospitality 21.3%, Healthcare & HiTech 17.3%, Insurance 13.6%, Government outside India 6.0%, Others (retail, energy & utilities, manufacturing) 17.1%. Includes two months of Encora.",
+        "title": "Five verticals carry most of the revenue",
+        "period": "Q1 FY27, consolidated incl. two months of Encora",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3c063cf7-0415-4631-a1cb-6c9cedcd84d7.pdf",
+            "label": "Q1 FY27 investor presentation",
+            "locator": "Factsheet, Vertical table"
+          }
+        ],
+        "category": "customers"
+      },
+      {
+        "text": "The top 5 clients were 18.0% and the top 10 clients 26.1% of Q1 FY27 revenue (total consolidated revenue, incl. two months of Encora), down from 21.8% and 31.4% in Q4 FY26 (ex-Encora).",
+        "title": "Client concentration is moderate",
+        "period": "Q1 FY27 vs Q4 FY26",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3c063cf7-0415-4631-a1cb-6c9cedcd84d7.pdf",
+            "label": "Q1 FY27 investor presentation",
+            "locator": "Factsheet, client concentration table"
+          }
+        ],
+        "category": "customers"
+      },
+      {
+        "text": "Share of total consolidated revenue: Americas 61.8%, EMEA 27.0%, Rest of World 11.2%. In Q4 FY26, before Encora, Americas was 56.7%.",
+        "title": "Americas is over three-fifths of revenue",
+        "period": "Q1 FY27, consolidated incl. two months of Encora",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3c063cf7-0415-4631-a1cb-6c9cedcd84d7.pdf",
+            "label": "Q1 FY27 investor presentation",
+            "locator": "Factsheet, Geography table"
+          }
+        ],
+        "category": "geography"
+      },
+      {
+        "text": "Share of total revenue by service line: AI-led Engineering 50.4%, Data and Integration 20.9%, Cloud 14.8%, Intelligent Automation 7.0%, Business Process Management 7.0% (as reported; sums to 100.1% on rounding).",
+        "title": "AI-led engineering, data and cloud are 86% of revenue",
+        "period": "Q1 FY27, consolidated incl. two months of Encora",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3c063cf7-0415-4631-a1cb-6c9cedcd84d7.pdf",
+            "label": "Q1 FY27 investor presentation",
+            "locator": "Factsheet, Business Mix table"
+          }
+        ],
+        "category": "capabilities"
+      },
+      {
+        "text": "Time-and-materials was 57.0% and fixed price 43.0% of Q1 FY27 revenue. Of IT revenue only (BPS excluded), 49.0% was delivered onsite and 51.0% offshore.",
+        "title": "Contract mix: 57% time-and-materials",
+        "period": "Q1 FY27, consolidated incl. two months of Encora",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3c063cf7-0415-4631-a1cb-6c9cedcd84d7.pdf",
+            "label": "Q1 FY27 investor presentation",
+            "locator": "Factsheet, Project Type and Onsite vs. Offshore tables"
+          }
+        ],
+        "category": "business_model"
+      },
+      {
+        "text": "Total headcount was 46,228 at the end of Q1 FY27, of which 43,421 were billable, against 35,777 at the end of Q4 FY26 before Encora (the Q1 FY27 figure includes Encora).",
+        "title": "About 46,000 people after Encora",
+        "period": "End Q1 FY27 (30 Jun 2026), incl. Encora",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3c063cf7-0415-4631-a1cb-6c9cedcd84d7.pdf",
+            "label": "Q1 FY27 investor presentation",
+            "locator": "Factsheet, People Data table"
+          }
+        ],
+        "category": "footprint"
+      },
+      {
+        "text": "Its AI strategy rests on Coforge Nuuron, an AI platform that unifies enterprise data, context and AI agents, plus pre-built vertical solutions such as Nexa, Aeronova and TravelCore.AI. The deck describes the platform; it gives no revenue for it.",
+        "title": "Sells an AI platform and pre-built industry solutions",
+        "period": "Q1 FY27 presentation",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3c063cf7-0415-4631-a1cb-6c9cedcd84d7.pdf",
+            "label": "Q1 FY27 investor presentation",
+            "locator": "slide 'Coforge's AI strategy'"
+          }
+        ],
+        "category": "capabilities"
+      }
+    ],
+    "business_intro": "Coforge is an Indian IT services firm that designs, builds and runs software and data platforms for large enterprises, mainly in banking, travel, insurance and healthcare. It earns revenue from multi-year engagements billed on time-and-materials (57% of Q1 FY27 revenue) or fixed price (43%), with about half of IT revenue delivered onsite. It has grown by buying firms and cross-selling into their clients: Cigniti (2024) and Encora (consolidated from May 2026).",
+    "company_timeline": [
+      {
+        "year": 2023,
+        "title": "Annual revenue crosses US$1 billion",
+        "detail": "FY23 revenue was US$1,002 million, against US$628 million in FY21 (issuer figures adjusted for exceptional and one-time items).",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f994402e-89bc-4a7d-a922-46de9d3b387e.pdf",
+            "label": "Investor Day 2025 deck (filed with Q2 FY26 results)",
+            "locator": "Investor Day slide 'Exceptional execution...' (printed no. 8)"
+          },
+          {
+            "url": "https://www.coforge.com/hubfs/Earnings-Conference-Call-Transcript-Q3FY25.pdf",
+            "label": "Q3 FY25 earnings call",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Takes board control of Cigniti Technologies",
+        "detail": "Coforge held 28% of Cigniti (a quality-engineering firm) and board control from 5 July 2024, and consolidated its results from Q2 FY25. The stake was still 27.98% on the October 2024 call.",
+        "sources": [
+          {
+            "url": "https://www.coforge.com/hubfs/Q1FY25-earnings-call-transcript.pdf",
+            "label": "Q1 FY25 earnings call (23 Jul 2024)",
+            "locator": null
+          },
+          {
+            "url": "https://www.coforge.com/hubfs/Transcript-of-Earnings-Conference-Call-Q2-FY25pdf.pdf",
+            "label": "Q2 FY25 earnings call (23 Oct 2024)",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Wins the Sabre deal, US$1.56 billion over 13 years",
+        "detail": "Announced during Q4 FY25 (Jan-Mar 2025); management said Sabre picked Coforge as its engineering partner for a 13-year period after a shortlist of four. The deal is counted as US$1.56 billion of FY25 order intake.",
+        "sources": [
+          {
+            "url": "https://www.coforge.com/hubfs/Earnings-Conference-Call-Transcript-Q4FY25.pdf",
+            "label": "Q4 FY25 earnings call (5 May 2025)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e1748b92-a29a-47e5-9347-8dca589e1219.pdf",
+            "label": "Q4 FY26 factsheet, order book table footnote",
+            "locator": "Factsheet, order book table footnote"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Signs an agreement to buy Encora for US$2.35 billion",
+        "detail": "Announced on 26 December 2025: 100% of Encora at an enterprise value of US$2.35 billion, US$1.89 billion of it in Coforge shares issued to the sellers. Closing was still pending at that date.",
+        "sources": [
+          {
+            "url": "https://www.coforge.com/hubfs/Transcript-Coforge-Encora-Acquisition-Conference-Call.pdf",
+            "label": "Encora acquisition conference call (26 Dec 2025)",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Closes the Encora acquisition",
+        "detail": "The transaction closed in April 2026 and Encora has been consolidated from 1 May 2026. Q1 FY27 includes two months of Encora revenue, US$100.7 million.",
+        "sources": [
+          {
+            "url": "https://investors.coforge.com/hubfs/Coforge_Q1FY27%20Earnings%20Conference%20Call%20Transcript.pdf",
+            "label": "Q1 FY27 earnings call (28 Jul 2026)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3c063cf7-0415-4631-a1cb-6c9cedcd84d7.pdf",
+            "label": "Q1 FY27 investor presentation",
+            "locator": "note under slides: consolidation effective 1 May"
+          }
+        ]
+      }
+    ]
+  },
+  "about_sources": [
+    {
+      "label": "Investor Day 2025 deck (filed with Q2 FY26 results)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f994402e-89bc-4a7d-a922-46de9d3b387e.pdf",
+      "locator": "Investor Day slide 'Exceptional execution...' (printed no. 8)"
+    },
+    {
+      "label": "Q3 FY25 earnings call",
+      "url": "https://www.coforge.com/hubfs/Earnings-Conference-Call-Transcript-Q3FY25.pdf"
+    },
+    {
+      "label": "Q1 FY25 earnings call (23 Jul 2024)",
+      "url": "https://www.coforge.com/hubfs/Q1FY25-earnings-call-transcript.pdf"
+    },
+    {
+      "label": "Q2 FY25 earnings call (23 Oct 2024)",
+      "url": "https://www.coforge.com/hubfs/Transcript-of-Earnings-Conference-Call-Q2-FY25pdf.pdf"
+    },
+    {
+      "label": "Q4 FY25 earnings call (5 May 2025)",
+      "url": "https://www.coforge.com/hubfs/Earnings-Conference-Call-Transcript-Q4FY25.pdf"
+    },
+    {
+      "label": "Q4 FY26 factsheet, order book table footnote",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e1748b92-a29a-47e5-9347-8dca589e1219.pdf",
+      "locator": "Factsheet, order book table footnote"
+    },
+    {
+      "label": "Encora acquisition conference call (26 Dec 2025)",
+      "url": "https://www.coforge.com/hubfs/Transcript-Coforge-Encora-Acquisition-Conference-Call.pdf"
+    },
+    {
+      "label": "Q1 FY27 earnings call (28 Jul 2026)",
+      "url": "https://investors.coforge.com/hubfs/Coforge_Q1FY27%20Earnings%20Conference%20Call%20Transcript.pdf"
+    },
+    {
+      "label": "Q1 FY27 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3c063cf7-0415-4631-a1cb-6c9cedcd84d7.pdf",
+      "locator": "note under slides: consolidation effective 1 May"
+    }
+  ]
+}

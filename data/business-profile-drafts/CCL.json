@@ -1,0 +1,373 @@
+{
+  "company": "CCL",
+  "company_name": "CCL Products (India) Limited",
+  "prepared_on": "2026-09-20",
+  "review_status": "user_approved",
+  "source_period": "Q1 FY27",
+  "latest_source_date": "2026-07-28",
+  "about_company": {
+    "about_short": "CCL Products (India) Limited makes private-label and bulk instant coffee, and also sells its own consumer brands.",
+    "about_long": "CCL Products (India) Limited makes instant coffee, mainly spray-dried, freeze-dried and agglomerated, that brand owners, retailers and other coffee users buy in bulk or as private label. It describes itself as one of the world's largest private-label coffee manufacturers, and its FY25 annual report counts 110+ countries exported to. The coffee is made at plants in India (Andhra Pradesh), Vietnam and Switzerland, and contracts are priced cost-plus on the green coffee it buys. Premix, flavoured and roast-and-ground coffee are also offered; the company reports no revenue for them. It also owns consumer brands, Continental in India and Percol and Rocket Fuel in the UK, together about a tenth of group turnover (derived). Most of its turnover comes from customers outside India.",
+    "business_intro": "CCL turns green coffee into instant coffee that brand owners, retailers and other coffee users, mostly outside India, buy in bulk or as private label. It prices contracts cost-plus, so revenue moves with coffee prices while management steers by EBITDA per kg. About a tenth of turnover now comes from its own consumer brands, chiefly Continental in India (brand sales of about INR440 crore in FY26).",
+    "company_timeline": [
+      {
+        "year": 2005,
+        "title": "Duggirala plant starts what CCL calls India's first freeze-dried instant coffee unit",
+        "detail": "The FY25 annual report and the 2024 corporate presentation both date it to 2005; one earnings call (Feb 2025) says 2006. The plant has since become a multi-format site making spray-dried, agglomerated and freeze-dried coffee.",
+        "sources": [
+          {
+            "label": "FY25 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/bb50311c-3d2c-4273-aa70-5f713de8a0d9.pdf",
+            "locator": "PDF p.10"
+          },
+          {
+            "label": "Corporate presentation, 2024 (company website)",
+            "url": "https://www.cclproducts.com/wp-content/uploads/2024/04/CCL-Products-Corporate_Presentation_2024-1.pdf",
+            "locator": "PDF p.4"
+          },
+          {
+            "label": "Q3 FY25 earnings call (6 Feb 2025)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ac3f31df-f5c0-4d45-be73-0e0ff34ed548.pdf",
+            "locator": "Printed p.9 of 26 (the 2006 remark)"
+          }
+        ]
+      },
+      {
+        "year": 2012,
+        "title": "Vietnam plant (Ngon Coffee) starts with 10,000 t of spray-dried capacity",
+        "detail": "A spray-dried coffee plant in Dak Lak province, per the March 2019 and February 2020 investor presentations. After later expansions its capacity was 36,000 t, per the FY25 annual report.",
+        "sources": [
+          {
+            "label": "Investor presentation, Feb 2020 (Q3 FY20)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/53d13288-7412-4298-9d48-e433af22c1b8.pdf",
+            "locator": "PDF p.11"
+          },
+          {
+            "label": "Investor presentation, Mar 2019 (Q3 FY19)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/66c5e02b-e5d0-4b9e-bc78-395f71511e9d.pdf",
+            "locator": "PDF p.10"
+          },
+          {
+            "label": "FY25 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/bb50311c-3d2c-4273-aa70-5f713de8a0d9.pdf",
+            "locator": "PDF p.21 (36,000 t)"
+          }
+        ]
+      },
+      {
+        "year": 2019,
+        "title": "Unit II starts commercial operations as a 5,000 t freeze-dried plant",
+        "detail": "An SEZ unit in Andhra Pradesh. The February 2020 presentation says it 'commenced commercial operations from April, 2019'; the March 2019 presentation still described it as commencing.",
+        "sources": [
+          {
+            "label": "Investor presentation, Feb 2020 (Q3 FY20)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/53d13288-7412-4298-9d48-e433af22c1b8.pdf",
+            "locator": "PDF p.10"
+          },
+          {
+            "label": "Investor presentation, Mar 2019 (Q3 FY19)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/66c5e02b-e5d0-4b9e-bc78-395f71511e9d.pdf",
+            "locator": "PDF p.9"
+          }
+        ]
+      },
+      {
+        "year": 2023,
+        "title": "Buys UK coffee brands Percol and Rocket Fuel",
+        "detail": "Bought from Lofbergs; management said the Percol acquisition finished in July 2023. It is small next to the group: about INR26-27 crore of Percol UK sales in FY26, about 0.6% of group turnover (derived).",
+        "sources": [
+          {
+            "label": "Q4 FY24 earnings call (13 May 2024)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6bfdfd65-298a-4285-8828-c8d05cd33704.pdf",
+            "locator": "Printed p.2 of 20"
+          },
+          {
+            "label": "Q2 FY24 earnings call (7 Nov 2023)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/cc5ec94d-5e4e-4a49-8c7e-0a9ba3afb121.pdf",
+            "locator": "Printed p.11 of 18"
+          },
+          {
+            "label": "Q1 FY27 earnings call (28 Jul 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5f8bf29a-4dc3-45f2-b4e6-26ef45340714.pdf",
+            "locator": "Printed p.12 of 19"
+          }
+        ]
+      },
+      {
+        "year": 2023,
+        "title": "Marketing subsidiary's coffee and FMCG division demerged into CCL",
+        "detail": "Continental Coffee Private Limited, a wholly owned subsidiary, demerged its marketing and distribution division into CCL. The NCLT approved the scheme on 18 Oct 2023, effective 1 Oct 2022; CCL restated its FY23 financial information to reflect it.",
+        "sources": [
+          {
+            "label": "FY24 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4d822591-2e09-405d-9633-3e974fd74971.pdf",
+            "locator": "PDF pp.25-27"
+          },
+          {
+            "label": "FY25 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/bb50311c-3d2c-4273-aa70-5f713de8a0d9.pdf",
+            "locator": "PDF p.21 (wholly owned subsidiary)"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Vietnam freeze-dried expansion completed; group capacity about 77,000 t",
+        "detail": "The completed Ngon Coffee expansion was disclosed to the exchanges on 5 May 2025, taking the plant to 36,000 t of capacity. The Q4 FY24 call described the Vietnam project then under way as freeze-dried ('FD'). In Nov 2025 management put group capacity at about 77,000 t: India about 40,000 t, Vietnam 36,000-37,000 t.",
+        "sources": [
+          {
+            "label": "FY25 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/bb50311c-3d2c-4273-aa70-5f713de8a0d9.pdf",
+            "locator": "PDF p.21"
+          },
+          {
+            "label": "Q4 FY25 earnings call (6 May 2025)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c99c2027-681a-4625-af46-09b35ff1ad6a.pdf",
+            "locator": "Printed p.2 of 19"
+          },
+          {
+            "label": "Q2 FY26 earnings call (6 Nov 2025)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4c14bd14-29d0-4f31-976c-0a846372ab90.pdf",
+            "locator": "Printed p.16 of 21"
+          },
+          {
+            "label": "Q4 FY24 earnings call (13 May 2024)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6bfdfd65-298a-4285-8828-c8d05cd33704.pdf",
+            "locator": "Printed p.2 of 20 ('FD at Vietnam')"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "business_model",
+        "title": "Priced cost-plus on green coffee",
+        "text": "Management says 100% of its business is on cost-plus terms: it builds its costs on top of the green coffee and adds a margin, so revenue moves with coffee prices while EBITDA per kg is what it steers by. On freight it said 'since 100% of our business is on cost plus and 70% is on FOB'; asked how much of exports is FOB (buyer pays freight), it said 'almost if I take exports, 70% of our sales would be FOB based', which does not settle whether 70% is of exports or of all sales. On CIF contracts freight and insurance sit with CCL and cannot always be passed on. The FY25 annual report also says the cost-plus model 'helps shield clients from price volatility'.",
+        "period": "FY26 (call of 8 May 2026); FY25 annual report",
+        "sources": [
+          {
+            "label": "Q4 FY26 earnings call (8 May 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/0ffd2b71-d0a0-4e18-ae35-20959e9de72e.pdf",
+            "locator": "Printed pp.4, 15, 17 of 17"
+          },
+          {
+            "label": "Q1 FY27 earnings call (28 Jul 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5f8bf29a-4dc3-45f2-b4e6-26ef45340714.pdf",
+            "locator": "Printed p.11 of 19"
+          },
+          {
+            "label": "FY25 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/bb50311c-3d2c-4273-aa70-5f713de8a0d9.pdf",
+            "locator": "PDF p.34"
+          }
+        ]
+      },
+      {
+        "category": "customers",
+        "title": "Sells to brand owners, retailers and other coffee users",
+        "text": "The FY25 annual report lists customers as 'brand owners, retailers, manufacturers, traders, repackers and other entities that have applications for coffee products', in India and abroad. Neither the annual reports nor the earnings calls reviewed name a customer or give a top-customer or concentration figure. Consumer sales run through CCL's own brands (below); the rest is business-to-business.",
+        "period": "FY25 annual report (standalone company)",
+        "sources": [
+          {
+            "label": "FY25 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/bb50311c-3d2c-4273-aa70-5f713de8a0d9.pdf",
+            "locator": "PDF p.40 (business responsibility report)"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Most turnover is earned outside India",
+        "text": "Exports were 76.49% of the standalone company's turnover in FY25 (annual report, business responsibility section, standalone boundary). For the group, about 86% of FY25 turnover came from outside India (derived: domestic 'gross turnover' of about INR440 crore against group turnover of INR3,114.2 crore); the FY26 equivalent is about 85% (about INR650 crore against INR4,465.80 crore). The two figures use different bases and should not be blended.",
+        "period": "FY25 standalone; FY25-FY26 group (derived)",
+        "sources": [
+          {
+            "label": "FY25 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/bb50311c-3d2c-4273-aa70-5f713de8a0d9.pdf",
+            "locator": "PDF pp.39-40"
+          },
+          {
+            "label": "Q4 FY25 earnings call (6 May 2025)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c99c2027-681a-4625-af46-09b35ff1ad6a.pdf",
+            "locator": "Printed p.2 of 19"
+          },
+          {
+            "label": "Q4 FY26 earnings call (8 May 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/0ffd2b71-d0a0-4e18-ae35-20959e9de72e.pdf",
+            "locator": "Printed p.2 of 17"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Own consumer brands are about a tenth of turnover",
+        "text": "Brand sales in India were about INR440 crore of about INR650 crore of domestic 'gross turnover' in FY26, about 10% of group turnover of INR4,465.80 crore (derived); in Q1 FY27, about INR125 crore of INR180 crore, about 10% of INR1,203.59 crore (derived). Percol in the UK adds about INR26-27 crore (FY26). CCL reports one segment, 'Coffee and Coffee-related products', so this split comes from management's call remarks, and the company does not say whether 'gross' is before discounts or taxes.",
+        "period": "FY26 and Q1 FY27 (shares derived)",
+        "sources": [
+          {
+            "label": "Q4 FY26 earnings call (8 May 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/0ffd2b71-d0a0-4e18-ae35-20959e9de72e.pdf",
+            "locator": "Printed p.2 of 17"
+          },
+          {
+            "label": "Q1 FY27 earnings call (28 Jul 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5f8bf29a-4dc3-45f2-b4e6-26ef45340714.pdf",
+            "locator": "Printed pp.2-3, 12 of 19"
+          },
+          {
+            "label": "FY25 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/bb50311c-3d2c-4273-aa70-5f713de8a0d9.pdf",
+            "locator": "PDF p.34 (single segment)"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "Plants in India, Vietnam and Switzerland; capacity about 77,000 t",
+        "text": "Duggirala (spray-dried, agglomerated, freeze-dried) and Kuvvakolli (freeze-dried only) in Andhra Pradesh; Ngon Coffee in Vietnam (spray- and freeze-dried, 36,000 t); Continental Coffee SA in Switzerland (agglomerated and granulated instant coffee); and CCL Food and Beverages, an Indian subsidiary making spray-dried coffee. In Nov 2025 management put capacity at about 77,000 t (India about 40,000 t, Vietnam 36,000-37,000 t); in July 2026 it said the parent company's own capacity has been constant for over 10 years and that all expansions have been in subsidiaries.",
+        "period": "Plants: FY25 report; capacity: Nov 2025 call",
+        "sources": [
+          {
+            "label": "FY25 annual report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/bb50311c-3d2c-4273-aa70-5f713de8a0d9.pdf",
+            "locator": "PDF pp.10, 21"
+          },
+          {
+            "label": "Q2 FY26 earnings call (6 Nov 2025)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4c14bd14-29d0-4f31-976c-0a846372ab90.pdf",
+            "locator": "Printed p.16 of 21"
+          },
+          {
+            "label": "Q1 FY27 earnings call (28 Jul 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5f8bf29a-4dc3-45f2-b4e6-26ef45340714.pdf",
+            "locator": "Printed pp.5, 18 of 19"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "Plants ran at about 65% of capacity in FY26",
+        "text": "Management put capacity utilisation, all plants together, at about 65% for FY26 and at 65-70% in Q1 FY27. Freeze-dried runs above the average, and India and Vietnam are at similar levels; the company does not give plant-level or product-level utilisation figures.",
+        "period": "FY26; Q1 FY27 (to 30 Jun 2026)",
+        "sources": [
+          {
+            "label": "Q4 FY26 earnings call (8 May 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/0ffd2b71-d0a0-4e18-ae35-20959e9de72e.pdf",
+            "locator": "Printed p.10 of 17"
+          },
+          {
+            "label": "Q1 FY27 earnings call (28 Jul 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5f8bf29a-4dc3-45f2-b4e6-26ef45340714.pdf",
+            "locator": "Printed p.5 of 19"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Where exports go: Europe and Asia lead, the Americas about a tenth",
+        "text": "Management's split of exports (not of total turnover), as said on 6 Aug 2025: around 10% to the Americas, around 35% to 40% to Europe including Russia and the CIS, and the balance, 35% to 40%, to Asia, with very little to Australia. It is management's verbal estimate, not a reported figure.",
+        "period": "Of exports, as said on 6 Aug 2025",
+        "sources": [
+          {
+            "label": "Q1 FY26 earnings call (6 Aug 2025)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ffa92e04-57f0-4f8f-a740-1e91c97b794c.pdf",
+            "locator": "Printed p.15 of 17"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Freeze-dried earns about 30-40% more EBITDA per kg than spray-dried",
+        "text": "Management's 'thumb rule' on the Q1 FY27 call: freeze-dried earns 'anywhere between 30% to 40% more EBITDA than spray-dried'. It compares EBITDA per kg, not revenue, and says nothing about how much of the volume is freeze-dried: the company will 'not detail out the volume numbers', and spray-dried is still 'the larger volumes'.",
+        "period": "Q1 FY27 call (28 Jul 2026)",
+        "sources": [
+          {
+            "label": "Q1 FY27 earnings call (28 Jul 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5f8bf29a-4dc3-45f2-b4e6-26ef45340714.pdf",
+            "locator": "Printed pp.5, 14 of 19"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Own-brand sales in India have about tripled in three years, to about a tenth of group turnover",
+      "text": "Continental brand sales in India were about INR150 crore in FY23 and about INR440 crore in FY26, of about INR650 crore of domestic 'gross turnover' that year. Against group turnover of INR2,071.22 crore in FY23 (annual report, consolidated revenue from operations) and INR4,465.80 crore in FY26 (Q4 FY26 call), that is about 7% rising to about 10% (both derived). FY26 growth was volume of about 25% to 30% plus value of another 15% to 20%, per the CEO. The rest of the group is bulk and private-label coffee. This is a change in scale and mix only.",
+      "period": "FY23 to FY26",
+      "sources": [
+        {
+          "label": "Q3 FY24 earnings call (6 Feb 2024)",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/33d5b22e-49fd-406f-ab27-3d14161d6f31.pdf",
+          "locator": "Printed p.6 of 22 (FY23 brand sales)"
+        },
+        {
+          "label": "Q4 FY26 earnings call (8 May 2026)",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/0ffd2b71-d0a0-4e18-ae35-20959e9de72e.pdf",
+          "locator": "Printed pp.2, 10 of 17"
+        },
+        {
+          "label": "FY24 annual report",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4d822591-2e09-405d-9633-3e974fd74971.pdf",
+          "locator": "PDF p.25 (FY23 group turnover)"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "FY25 annual report",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/bb50311c-3d2c-4273-aa70-5f713de8a0d9.pdf"
+    },
+    {
+      "label": "Corporate presentation, 2024 (company website)",
+      "url": "https://www.cclproducts.com/wp-content/uploads/2024/04/CCL-Products-Corporate_Presentation_2024-1.pdf"
+    },
+    {
+      "label": "Q3 FY25 earnings call (6 Feb 2025)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ac3f31df-f5c0-4d45-be73-0e0ff34ed548.pdf"
+    },
+    {
+      "label": "Investor presentation, Feb 2020 (Q3 FY20)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/53d13288-7412-4298-9d48-e433af22c1b8.pdf"
+    },
+    {
+      "label": "Investor presentation, Mar 2019 (Q3 FY19)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/66c5e02b-e5d0-4b9e-bc78-395f71511e9d.pdf"
+    },
+    {
+      "label": "Q4 FY24 earnings call (13 May 2024)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6bfdfd65-298a-4285-8828-c8d05cd33704.pdf"
+    },
+    {
+      "label": "Q2 FY24 earnings call (7 Nov 2023)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/cc5ec94d-5e4e-4a49-8c7e-0a9ba3afb121.pdf"
+    },
+    {
+      "label": "Q1 FY27 earnings call (28 Jul 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5f8bf29a-4dc3-45f2-b4e6-26ef45340714.pdf"
+    },
+    {
+      "label": "FY24 annual report",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4d822591-2e09-405d-9633-3e974fd74971.pdf"
+    },
+    {
+      "label": "Q4 FY25 earnings call (6 May 2025)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c99c2027-681a-4625-af46-09b35ff1ad6a.pdf"
+    },
+    {
+      "label": "Q2 FY26 earnings call (6 Nov 2025)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4c14bd14-29d0-4f31-976c-0a846372ab90.pdf"
+    },
+    {
+      "label": "Q4 FY26 earnings call (8 May 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/0ffd2b71-d0a0-4e18-ae35-20959e9de72e.pdf"
+    },
+    {
+      "label": "Q1 FY26 earnings call (6 Aug 2025)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ffa92e04-57f0-4f8f-a740-1e91c97b794c.pdf"
+    },
+    {
+      "label": "Q3 FY24 earnings call (6 Feb 2024)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/33d5b22e-49fd-406f-ab27-3d14161d6f31.pdf"
+    }
+  ]
+}

@@ -1,0 +1,391 @@
+{
+  "company": "HFCL",
+  "company_name": "HFCL Limited",
+  "prepared_on": "2026-10-19",
+  "review_status": "user_approved",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-10-19",
+  "about_company": {
+    "about_short": "Telecom equipment maker: OFC, fiber, defence, EPC.",
+    "business_intro": "HFCL makes optical fibre and cable, data-centre connectivity products, Wi-Fi, 5G and networking equipment, and defence electronics, and runs telecom network projects (turnkey EPC and O&M) that it is deliberately scaling back. Its Q2 FY27 deck puts products at about 91% of revenue, exports at about 63% and private-sector customers at 92%. Revenue comes mainly from product sales to telecom operators, hyperscalers and enterprises in India and abroad, and on the project side from contract execution.",
+    "about_long": "HFCL Limited makes optical fibre and optical fibre cable, passive and data-centre connectivity products, telecom and networking equipment (Wi-Fi, 5G FWA CPE, routers, switches) and defence products (fuzes, radars, thermal sights, hand grenades, tactical cables), and executes telecom network projects (EPC, system integration and O&M). It reports four segments: Telecom Products (87.8% of H1 FY27 consolidated revenue), Turnkey Contracts and Services (9.3%), Defence Product & Services (1.8%) and Others (1.1%). Its Q2 FY27 deck puts products at about 91% of revenue, exports at about 63% and private-sector customers at 92%; customers include global hyperscalers and telecom operators. A 600 MT-a-year preform plant (₹1,250 Cr, targeted by October 2028, being set up in Madhya Pradesh) and fibre and cable expansions due by July 2028 are planned, not operating. A pending acquisition of an aerospace business into subsidiary HFCL Advance Systems (MoU signed 25 March 2026, completion expected in the October-December 2026 quarter) is not yet in the reported numbers. A board Strategic Restructuring Committee (formed 30 April 2026, Ernst & Young as adviser) is evaluating strategic options across the business verticals; no business, form or timeline has been named.",
+    "company_timeline": [
+      {
+        "year": 1987,
+        "title": "Incorporated on 11 May 1987",
+        "detail": "Date of incorporation as given in the company's FY26 annual report.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/60894750-bb6f-4e13-8e70-876062e55b18.pdf",
+            "label": "Annual report FY26 (BRSR, listed entity details)",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "EU exempts HFCL from OFC anti-dumping duty",
+        "detail": "European Commission verdict of 11 October 2024 exempted HFCL; on 16 December 2024 definitive duties were imposed on other Indian OFC makers, HFCL remaining exempt.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=45a6fa81-372f-4ebd-8a07-41a9a30d53c8.pdf",
+            "label": "Concall Q2 FY25 (opening remarks)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=99e47dd3-9c58-46c6-aa30-cb596b8b4455.pdf",
+            "label": "Concall Q3 FY25 (opening remarks)",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Doubles optical fibre capacity to 28 mn fkm a year",
+        "detail": "Optical fibre capacity was 14 mn fkm a year in the Q1 FY26 deck (July 2025); on the 17 October 2025 call management said 28 mn fkm a year had been achieved. Optical fibre cable capacity was 34 mn fkm a year at end FY26.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9f05c17e-2d03-4e56-84c3-6edc036ac0b8.pdf",
+            "label": "Concall Q2 FY26 (opening remarks)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=70085fa5-6a51-4280-a9d1-eeb62d3ec96d.pdf",
+            "label": "Investor presentation Q1 FY26",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa76fc75-e13e-477a-9311-73915e6e1575.pdf",
+            "label": "Investor presentation Q4 FY26, Four Engines slide",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Wins ~₹10,159 Cr five-year export OFC contract",
+        "detail": "A five-year optical fibre cable supply agreement with a leading global hyperscaler, about USD 1.1 billion, secured during FY26 and reported on the 30 April 2026 results call; the order book rose from ₹11,125 Cr at 31 December 2025 to ₹21,206 Cr at end FY26.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/60894750-bb6f-4e13-8e70-876062e55b18.pdf",
+            "label": "Annual report FY26 (MD's message)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3d0dd925-2be0-4b2f-9445-072ed9304615.pdf",
+            "label": "Concall Q4 FY26 (opening remarks)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa76fc75-e13e-477a-9311-73915e6e1575.pdf",
+            "label": "Investor presentation Q4 FY26",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Sets up strategic restructuring committee",
+        "detail": "Formed by the board on 30 April 2026 to study business realignment, including what to merge or demerge; Ernst & Young was later appointed adviser. In October 2026 the company said it is evaluating strategic options for its business verticals, without naming a business, form or timeline.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3d0dd925-2be0-4b2f-9445-072ed9304615.pdf",
+            "label": "Concall Q4 FY26 (Q&A)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bbc45887-fdfd-4470-8565-f5f5b09fee2d.pdf",
+            "label": "Concall Q1 FY27 (opening remarks)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/52bcff6e-34cb-4d4b-88ca-a59046342f27.pdf",
+            "label": "Investor presentation Q2 FY27 (MD's message)",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Breaks ground on Andhra ammunition complex",
+        "detail": "Groundbreaking ceremony on 15 May 2026; the complex is still being set up and is not producing.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bbc45887-fdfd-4470-8565-f5f5b09fee2d.pdf",
+            "label": "Concall Q1 FY27 (opening remarks)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2e9e286f-aad3-4a3f-aa7d-72edbfa7323e.pdf",
+            "label": "Q2 FY27 financial results and press release (press release)",
+            "locator": null
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "business_model",
+        "title": "Four reported segments; Telecom Products was 88% of H1 FY27 revenue",
+        "text": "HFCL reports four segments. In H1 FY27, of consolidated revenue of ₹4,456.77 Cr, Telecom Products was ₹3,911.51 Cr (87.8%), Turnkey Contracts and Services ₹416.39 Cr (9.3%), Defence Product & Services ₹78.68 Cr (1.8%) and Others ₹50.19 Cr (1.1%). Telecom Products bundles two of the deck's four engines, optical fibre, cable and connectivity, and telecom and networking equipment; no consolidated split between them is published. The Q2 FY27 deck puts products at about 91% of revenue without naming the period. The FY26 annual report's standalone product table gave optical fibre cables 46.17% of turnover and telecom products/equipment 10.44%.",
+        "period": "H1 FY27 (segments); FY26 standalone (product table)",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2e9e286f-aad3-4a3f-aa7d-72edbfa7323e.pdf",
+            "label": "Q2 FY27 financial results and press release (segment results)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/52bcff6e-34cb-4d4b-88ca-a59046342f27.pdf",
+            "label": "Investor presentation Q2 FY27 (Differentiated Play slide)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/60894750-bb6f-4e13-8e70-876062e55b18.pdf",
+            "label": "Annual report FY26 (BRSR, products sold)",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "customers",
+        "title": "Largest customer was 13% of FY26 revenue",
+        "text": "One customer brought in ₹646.32 Cr in FY26, 13.1% of consolidated revenue of ₹4,949.27 Cr, and was the only customer above 10%. In FY25 three customers were each above 10% and together brought in ₹1,899.37 Cr, 46.7% of revenue of ₹4,064.52 Cr. Private-sector customers were 92% of revenue in the Q2 FY27 deck (period not named), which describes a shift from government to private customers.",
+        "period": "FY26 (concentration); Q2 FY27 deck (private share)",
+        "metrics": [
+          {
+            "label": "Largest customer, FY26",
+            "value": 13.1,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Private-sector customers",
+            "value": 92,
+            "unit": "% of revenue"
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/60894750-bb6f-4e13-8e70-876062e55b18.pdf",
+            "label": "Annual report FY26 (segment note, major customers)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/52bcff6e-34cb-4d4b-88ca-a59046342f27.pdf",
+            "label": "Investor presentation Q2 FY27 (Well-Defined Growth Levers slide)",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Exports jumped to 41% of revenue in FY26",
+        "text": "Revenue from customers outside India was ₹2,047.18 Cr in FY26, 41.4% of consolidated revenue, against ₹496.97 Cr (12.2%) in FY25, ₹500.64 Cr (11.2%) in FY24 and ₹817.49 Cr (17.2%) in FY23. The Q2 FY27 deck puts exports at about 63% of revenue (period not named), and 57% of the ₹28,911 Cr order book is export.",
+        "period": "FY23-FY26; Q2 FY27 deck",
+        "metrics": [
+          {
+            "label": "Exports, FY23",
+            "value": 17.2,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, FY24",
+            "value": 11.2,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, FY25",
+            "value": 12.2,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, FY26",
+            "value": 41.4,
+            "unit": "% of revenue"
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/60894750-bb6f-4e13-8e70-876062e55b18.pdf",
+            "label": "Annual report FY26 (geographical information)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/b01243a0-25e5-4474-9c34-b0b0ec7eb6d6.pdf",
+            "label": "Annual report FY24 (geographical information)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/52bcff6e-34cb-4d4b-88ca-a59046342f27.pdf",
+            "label": "Investor presentation Q2 FY27 (Well-Defined Growth Levers slide)",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "Fibre and cable capacity today vs planned",
+        "text": "Operating capacity is 28 mn fkm a year of optical fibre and 39 mn fkm a year of optical fibre cable. Both are being expanded, to about 43.1 mn fkm (fibre) and 62 mn fkm (cable) by July 2028; that added capacity is planned, not yet operating. HFCL's plants are in Hyderabad, Goa, Chennai (through subsidiary HTL Limited) and Hosur (defence equipment).",
+        "period": "As at Q2 FY27 (expansion planned by July 2028)",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/52bcff6e-34cb-4d4b-88ca-a59046342f27.pdf",
+            "label": "Investor presentation Q2 FY27 (manufacturing infrastructure slide)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2e9e286f-aad3-4a3f-aa7d-72edbfa7323e.pdf",
+            "label": "Q2 FY27 financial results and press release (press release)",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Order book ₹28,911 Cr at Q2 FY27",
+        "text": "The order book was ₹28,911 Cr at Q2 FY27, against ₹26,665 Cr at Q1 FY27 and ₹21,206 Cr at end FY26; 57% of it is export and 64% comes from OFC and data-centre interconnect. At end FY26 it split into OF/OFC and connectivity ₹13,483 Cr (including ₹12,248 Cr export), telecom equipment ₹804 Cr, EPC and system integration ₹6,620 Cr and defence about ₹300 Cr, excluding ₹1,930 Cr held by the aerospace business HFCL proposes to acquire.",
+        "period": "Q2 FY27; split at end FY26",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/52bcff6e-34cb-4d4b-88ca-a59046342f27.pdf",
+            "label": "Investor presentation Q2 FY27 (order book slide)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=04062a8c-13f7-4769-8d46-8232a221febc.pdf",
+            "label": "Investor presentation Q1 FY27",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa76fc75-e13e-477a-9311-73915e6e1575.pdf",
+            "label": "Investor presentation Q4 FY26, Four Engines slide",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Preform plant planned: 600 MT a year by October 2028",
+        "text": "HFCL plans a 600 MT-a-year preform plant with ₹1,250 Cr of capex, targeted by October 2028, and says it is now establishing the facility in Madhya Pradesh. It sits within about ₹1,800 Cr of planned investment across optical fibre, cable and preform. In July 2026 the plan was 300 MT a year for ₹580 Cr by July 2029. The plant is planned, not operating.",
+        "period": "As at Q2 FY27 (planned)",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/52bcff6e-34cb-4d4b-88ca-a59046342f27.pdf",
+            "label": "Investor presentation Q2 FY27 (manufacturing infrastructure slide)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2e9e286f-aad3-4a3f-aa7d-72edbfa7323e.pdf",
+            "label": "Q2 FY27 financial results and press release (press release)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=04062a8c-13f7-4769-8d46-8232a221febc.pdf",
+            "label": "Investor presentation Q1 FY27",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Aerospace business acquisition: pending, not closed",
+        "text": "HFCL signed an MoU on 25 March 2026 to acquire an aerospace business into its wholly owned subsidiary HFCL Advance Systems. On 19 October 2026 it said completion is expected during the current quarter (October-December 2026). The Q2 FY27 deck puts that business's export order book at about ₹1,600 Cr (about ₹1,930 Cr in the Q4 FY26 deck) within a total defence order book of about ₹1,850 Cr; the drop is not explained. None of the business is in the reported numbers yet.",
+        "period": "As at Q2 FY27 (pending)",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa76fc75-e13e-477a-9311-73915e6e1575.pdf",
+            "label": "Investor presentation Q4 FY26, abbreviations footnote",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/52bcff6e-34cb-4d4b-88ca-a59046342f27.pdf",
+            "label": "Investor presentation Q2 FY27 (Defence panel and Differentiated Play slide)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2e9e286f-aad3-4a3f-aa7d-72edbfa7323e.pdf",
+            "label": "Q2 FY27 financial results and press release (press release and consolidation note)",
+            "locator": null
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Defence is still small",
+        "text": "Defence Product & Services revenue was ₹76.70 Cr in FY26 (about 1.5% of consolidated revenue of ₹4,949.27 Cr) and ₹78.68 Cr in H1 FY27 (1.8%), with a segment loss of ₹5.05 Cr in FY26 and ₹4.59 Cr in H1 FY27. The company aims for about ₹500 Cr of defence and aerospace revenue in FY27 and says it is on track; that is a target, and it does not say whether it counts the aerospace business being acquired.",
+        "period": "FY26 and H1 FY27",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/60894750-bb6f-4e13-8e70-876062e55b18.pdf",
+            "label": "Annual report FY26 (segment note)",
+            "locator": null
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2e9e286f-aad3-4a3f-aa7d-72edbfa7323e.pdf",
+            "label": "Q2 FY27 financial results and press release (segment results and press release)",
+            "locator": null
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "In H1 FY27 products and exports took a far larger share of revenue, while shrinking turnkey projects slid deeper into loss",
+      "text": "In H1 FY27 Turnkey Contracts and Services was ₹416.39 Cr, 9.3% of consolidated revenue of ₹4,456.77 Cr, against 37.9% of FY26 revenue in the annual report (31.8% after the Q2 FY27 filing regrouped FY26). Its segment loss widened to ₹122.58 Cr in Q2 FY27 on ₹136.07 Cr of revenue; the filing gives no cause. Telecom Products was 87.8% of H1 revenue. Exports were about 63% of revenue in the Q2 FY27 deck against 41.4% for FY26. The EBITDA margin, including other income, was 25.89% in Q2 FY27 against 16.70% for FY26.",
+      "period": "H1 / Q2 FY27 vs FY26",
+      "sources": [
+        {
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2e9e286f-aad3-4a3f-aa7d-72edbfa7323e.pdf",
+          "label": "Q2 FY27 financial results and press release (segment results and press release)",
+          "locator": null
+        },
+        {
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/52bcff6e-34cb-4d4b-88ca-a59046342f27.pdf",
+          "label": "Investor presentation Q2 FY27 (Differentiated Play slide)",
+          "locator": null
+        },
+        {
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/60894750-bb6f-4e13-8e70-876062e55b18.pdf",
+          "label": "Annual report FY26 (segment note)",
+          "locator": null
+        },
+        {
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa76fc75-e13e-477a-9311-73915e6e1575.pdf",
+          "label": "Investor presentation Q4 FY26, financial highlights",
+          "locator": null
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Q2 FY27 financial results and press release (19 Oct 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2e9e286f-aad3-4a3f-aa7d-72edbfa7323e.pdf",
+      "locator": null
+    },
+    {
+      "label": "Investor presentation Q2 FY27 (19 Oct 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/52bcff6e-34cb-4d4b-88ca-a59046342f27.pdf",
+      "locator": null
+    },
+    {
+      "label": "Annual report FY26 (filed 5 Sep 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/60894750-bb6f-4e13-8e70-876062e55b18.pdf",
+      "locator": null
+    },
+    {
+      "label": "Investor presentation Q4 FY26 (30 Apr 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa76fc75-e13e-477a-9311-73915e6e1575.pdf",
+      "locator": null
+    },
+    {
+      "label": "Concall Q4 FY26 (30 Apr 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3d0dd925-2be0-4b2f-9445-072ed9304615.pdf",
+      "locator": null
+    },
+    {
+      "label": "Concall Q1 FY27 (22 Jul 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bbc45887-fdfd-4470-8565-f5f5b09fee2d.pdf",
+      "locator": null
+    }
+  ]
+}
