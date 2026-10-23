@@ -663,6 +663,29 @@ COVERS["yashhvolt-two-opening-days"] = [
     R(397, 228, 28, 16, 3, "s l"),
 ];
 
+// Sterlite Tech — glass at one end, a plug at the other: the preform necking down into the fibre it is
+// drawn into, the fibre looped once, and the pre-terminated connector it ends in.
+COVERS["stltech-tenants-moved-in"] = [
+  "violet",
+  L(140, 250, 540, 250) +
+    // the glass preform with its core, tapering to the drawn fibre
+    R(170, 44, 48, 146, 10, "s l") +
+    L(194, 56, 194, 182, "s t sm") +
+    P("M170 186 L190 226 h8 L218 186", "s l") +
+    // the draw furnace ringing the neck
+    R(156, 196, 76, 14, 4, "s m") +
+    C(194, 230, 5, "a") +
+    // the fibre, looped once on its way to the connector
+    P("M194 236 C206 262 254 262 276 236 C296 212 272 192 254 210 C238 228 268 252 322 238 L370 210", "s") +
+    // boot, connector body with its latch, ferrule and the fibre ends in it
+    P("M370 196 L400 186 v44 L370 222 z", "s m") +
+    R(400, 176, 94, 64, 6, "s w") +
+    R(420, 164, 42, 12, 3, "s l") +
+    L(414, 208, 480, 208, "s t") +
+    R(494, 190, 30, 36, 3, "s l") +
+    range(4).map((i) => L(524, 196 + i * 8, 536, 196 + i * 8, i === 1 ? "s sa" : "s t")).join(""),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
