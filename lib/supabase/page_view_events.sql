@@ -131,3 +131,25 @@ grant execute on function public.get_top_company_visitors(timestamptz, int) to a
 -- group by company_code, count distinct visitor_id.
 create index if not exists idx_page_view_events_created_company_visitor
   on public.page_view_events (created_at, company_code, visitor_id);
+
+-- Migration 2026-10-23: tie a page view to the signed-in account, so Admin →
+-- Accounts → "Recently active" can list the pages each account visited. Rows
+-- before this migration (and every anonymous view) keep user_id null. Run in
+-- the Supabase SQL editor, then: notify pgrst, 'reload schema';
+alter table public.page_view_events
+  add column if not exists user_id uuid null references auth.users (id) on delete set null;
+
+create index if not exists idx_page_view_events_user_id_created_at
+  on public.page_view_events (user_id, created_at desc)
+  where user_id is not null;
+
+-- The insert policy above accepts any row, and the anon key is public: without
+-- this a caller could stamp page views onto someone else's account. A row may
+-- carry only the inserting session's own user id (the track route inserts
+-- through the cookie client, so auth.uid() is the reader).
+drop policy if exists allow_insert_page_view_events on public.page_view_events;
+create policy allow_insert_page_view_events
+  on public.page_view_events
+  for insert
+  to anon, authenticated
+  with check (user_id is null or user_id = auth.uid());

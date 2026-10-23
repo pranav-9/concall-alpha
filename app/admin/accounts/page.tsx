@@ -45,6 +45,15 @@ async function AdminAccountsPage({
           watchlist writes.
         </AdminAlert>
       ) : null}
+      {data?.pagesSignal.state === "missing" ? (
+        <AdminAlert tone="warn">
+          Pages visited are not recorded per account yet. Apply the 2026-10-23 migration at the end of
+          lib/supabase/page_view_events.sql in the Supabase SQL editor, then run notify pgrst, &apos;reload schema&apos;.
+        </AdminAlert>
+      ) : null}
+      {data?.pagesSignal.state === "error" ? (
+        <AdminAlert tone="warn">Pages visited could not be read ({data.pagesSignal.message}).</AdminAlert>
+      ) : null}
       {data ? (
         <>
           <AdminStatRow columns={4}>

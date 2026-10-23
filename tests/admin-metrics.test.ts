@@ -5,6 +5,7 @@ import {
   activeSince,
   aggregateApiMetrics,
   buildAccountActivity,
+  buildAccountPages,
   buildActiveVisitors,
   computeDelta,
   countRequestsByType,
@@ -248,6 +249,32 @@ assert.equal(
     "the window start is inclusive",
   );
   assert.equal(activeSince(rows, null).length, 4, "All time keeps every active account");
+}
+
+// ── account pages ────────────────────────────────────────────────────────────
+
+{
+  const pages = buildAccountPages([
+    { user_id: "a", path: "/company/DIXON", created_at: "2026-10-06T00:00:00.000Z" },
+    { user_id: "a", path: "/desk", created_at: "2026-10-07T01:00:00.000Z" },
+    { user_id: "a", path: "/company/DIXON", created_at: "2026-10-07T02:00:00.000Z" },
+    { user_id: "b", path: "/", created_at: "2026-10-05T00:00:00.000Z" },
+    { user_id: null, path: "/", created_at: "2026-10-07T00:00:00.000Z" }, // anonymous: ignored
+    { user_id: "b", path: null, created_at: "2026-10-07T00:00:00.000Z" }, // malformed: ignored
+  ]);
+  assert.deepEqual(
+    pages.get("a"),
+    {
+      views: 3,
+      pages: [
+        { path: "/company/DIXON", views: 2, lastAt: "2026-10-07T02:00:00.000Z" },
+        { path: "/desk", views: 1, lastAt: "2026-10-07T01:00:00.000Z" },
+      ],
+    },
+    "repeat visits fold into one page, ordered by the most recent visit",
+  );
+  assert.equal(pages.get("b")?.views, 1);
+  assert.equal(pages.size, 2);
 }
 
 console.log("admin-metrics: ok");
