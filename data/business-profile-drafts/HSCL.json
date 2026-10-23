@@ -1,0 +1,350 @@
+{
+  "company": "HSCL",
+  "company_name": "Himadri Speciality Chemical Ltd",
+  "prepared_on": "2026-10-22",
+  "review_status": "user_approved",
+  "source_period": "FY23 to Q2 FY27; provisional unofficial call delta",
+  "latest_source_date": "2026-10-22",
+  "about_company": {
+    "about_long": "Himadri Speciality Chemical distils coal tar, a by-product of steelmaking, into coal tar pitch, naphthalene and speciality oils, and makes carbon black from its own feedstock. It has 600,000 MTPA of coal tar distillation and about 250,000 MTPA of carbon black capacity, about 130,000 MTPA of it speciality grades, and a 65% share of India's coal tar pitch market. Pitch is a binder for aluminium smelting and graphite electrodes, and carbon black goes into tyres, rubber, plastics, coatings and inks; it also sells SNF and PCE concrete admixtures and Durofresh naphthalene balls. Carbon materials and chemicals were about 91% of Q2 FY27 consolidated revenue (₹1,539.02 Cr of ₹1,691.43 Cr, derived) and the Others segment, Birla Tyres resale plus mining, about 8.5%; customers outside India took 29.1% of FY26 revenue, up from 18.8% in FY24. Birla Tyres Ltd has been wholly owned since April 2025, but the tyre business itself sits with Dalmia Bharat Refractories (DBRL) and a Himadri subsidiary resells its tyres; in September 2026 the board approved a scheme to demerge that business into Himadri from 1 October 2026, which still needs statutory, creditor and shareholder approvals. In battery materials, a 200 MTPA anode plant started in April 2026 and an LFP cathode plant is being built.",
+    "about_short": "Advanced materials & application-driven solutions company, formerly a coal tar derivative processor.",
+    "what_changed": {
+      "text": "Revenue from customers outside India grew about 72% from FY24 to FY26, to ₹1,357.58 Cr, while revenue from customers in India slipped about 3%; exports went from 18.8% to 29.1% of consolidated revenue, above the 22.0% of FY23. Himadri has liquid coal tar pitch terminals at Haldia and Mangalore ports and sent its first liquid pitch export from Mangalore, to the Middle East, in November 2025. FY26 revenue also includes the new Others segment (₹274.46 Cr of tyre resale and mining).",
+      "period": "FY24 → FY26 (consolidated)",
+      "sources": [
+        {
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8cbe5c4e-369b-466b-8197-fbebde03cb8c.pdf",
+          "label": "Integrated Annual Report 2025-26 - consolidated notes 26 (revenue), 40 (segments), 42 (customers)"
+        },
+        {
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/51cc71ca-f3f9-4d49-b49e-57a1ca4d2541.pdf",
+          "label": "Annual Report 2023-24 - consolidated notes on revenue, segments and customers"
+        },
+        {
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8cbe5c4e-369b-466b-8197-fbebde03cb8c.pdf",
+          "label": "Integrated Annual Report 2025-26 - How we have grown across four decades",
+          "locator": "pp. 12-13"
+        }
+      ],
+      "headline": "Exports rose from 18.8% to 29.1% of revenue between FY24 and FY26"
+    },
+    "business_facts": [
+      {
+        "text": "The five largest customers took 32% of consolidated revenue in FY26, against 41% in FY25, 42% in FY24 and 44% in FY23. The single largest took 9% in FY26 and 10% in FY25, down from 16% in FY23 and FY24. The company does not name them; it says it works with customers under long-term agreements.",
+        "title": "Top five customers were 32% of FY26 revenue, down from 44% in FY23",
+        "period": "FY23-FY26 (consolidated revenue)",
+        "metrics": [
+          {
+            "unit": "% of revenue",
+            "label": "Top 5 customers, FY23",
+            "value": 44
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Top 5 customers, FY24",
+            "value": 42
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Top 5 customers, FY25",
+            "value": 41
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Top 5 customers, FY26",
+            "value": 32
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8cbe5c4e-369b-466b-8197-fbebde03cb8c.pdf",
+            "label": "Integrated Annual Report 2025-26 - consolidated notes 26 (revenue), 40 (segments), 42 (customers)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/f1782c89-a24f-4983-a98f-aaeaede88f97.pdf",
+            "label": "Annual Report 2024-25 - consolidated notes on revenue, segments and customers"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/51cc71ca-f3f9-4d49-b49e-57a1ca4d2541.pdf",
+            "label": "Annual Report 2023-24 - consolidated notes on revenue, segments and customers"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/93e33f8d-7638-4a7d-8d72-3a8bd896a115.pdf",
+            "label": "Q2 FY27 investor presentation (October 2026)",
+            "locator": "slide 23"
+          }
+        ],
+        "category": "customers"
+      },
+      {
+        "text": "Revenue from customers outside India was ₹1,357.58 Cr in FY26, 29.1% of consolidated revenue, against ₹787.41 Cr (18.8%) in FY24 and 22.0% in FY23; revenue from customers in India slipped from ₹3,397.48 Cr to ₹3,303.12 Cr over the same two years. The split is by the customer's location. Liquid pitch terminals at Haldia and Mangalore ports were built for international demand, and a wholly owned sales and trading subsidiary was set up in Dubai in June 2026.",
+        "title": "Exports were 29.1% of FY26 revenue, up from 18.8% in FY24",
+        "period": "FY23-FY26 (consolidated revenue)",
+        "metrics": [
+          {
+            "unit": "% of revenue",
+            "label": "Exports, FY23",
+            "value": 22.0
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Exports, FY24",
+            "value": 18.8
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Exports, FY25",
+            "value": 26.7
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Exports, FY26",
+            "value": 29.1
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8cbe5c4e-369b-466b-8197-fbebde03cb8c.pdf",
+            "label": "Integrated Annual Report 2025-26 - consolidated notes 26 (revenue), 40 (segments), 42 (customers)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/51cc71ca-f3f9-4d49-b49e-57a1ca4d2541.pdf",
+            "label": "Annual Report 2023-24 - consolidated notes on revenue, segments and customers"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/93e33f8d-7638-4a7d-8d72-3a8bd896a115.pdf",
+            "label": "Q2 FY27 investor presentation (October 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/249b5f1a-3524-4893-932a-e4d2c0455539.pdf",
+            "label": "Q2 FY27 financial results - note 6 (group companies)"
+          }
+        ],
+        "category": "geography"
+      },
+      {
+        "text": "Himadri reports three segments. In Q2 FY27, carbon materials and chemicals made ₹1,539.02 Cr of ₹1,691.43 Cr consolidated revenue (about 91%), Others (Birla Tyres resale and mining) ₹144.14 Cr (8.5%) and Power ₹8.27 Cr of outside sales (0.5%); in FY26 the split was 93.7% / 5.9% / 0.4%. The investor deck groups the first segment's products as commodity (carbon black, naphthalene balls, oils), speciality (coal tar pitch, speciality carbon black, SNF/PCE, speciality oils) and new energy materials (anode, LFP cathode), but gives no revenue for those groups.",
+        "title": "Carbon materials and chemicals are about 91% of revenue",
+        "period": "Q2 FY27 and FY26 (consolidated; shares derived)",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/249b5f1a-3524-4893-932a-e4d2c0455539.pdf",
+            "label": "Q2 FY27 financial results - consolidated segment results and notes 5 and 8"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/93e33f8d-7638-4a7d-8d72-3a8bd896a115.pdf",
+            "label": "Q2 FY27 investor presentation (October 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8cbe5c4e-369b-466b-8197-fbebde03cb8c.pdf",
+            "label": "Integrated Annual Report 2025-26 - consolidated notes 26 (revenue), 40 (segments), 42 (customers)"
+          }
+        ],
+        "category": "business_model"
+      },
+      {
+        "text": "Himadri has owned Birla Tyres Ltd since 7 April 2025, but the tyre manufacturing undertaking remains with DBRL. Himadri buys and resells its tyres: FY26 resale revenue was ₹187 Cr. UNOFFICIAL Q2 FY27 call — re-verify: Q2 tyre trading revenue was approximately ₹140 Cr and trading EBITDA approximately ₹1 Cr. These are not manufacturing results. The board-approved September scheme proposes transferring DBRL’s tyre business into Himadri, with an appointed date of 1 October 2026; statutory and other approvals remain pending.",
+        "title": "Birla Tyres is owned, but its tyres are still made by DBRL",
+        "period": "April 2025 - September 2026",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=cda3f878-ed7c-4dbb-8fb5-1bcdee62cf79.pdf",
+            "label": "Q4 FY25 investor presentation - Birla Tyres acquisition highlights",
+            "locator": "slide 17"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/249b5f1a-3524-4893-932a-e4d2c0455539.pdf",
+            "label": "Q2 FY27 financial results - consolidated segment results and notes 5 and 8"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aba2c1e9-bf26-4569-afee-2e8b196215cb.pdf",
+            "label": "Q1 FY27 earnings call transcript"
+          },
+          {
+            "label": "UNOFFICIAL Q2 FY27 call — issuer re-verification required",
+            "url": "https://alphastreet.com/india/himadri-speciality-chemical-ltd-hscl-q2-2027-earnings-call-transcript/"
+          }
+        ],
+        "category": "business_model"
+      },
+      {
+        "text": "Himadri has 600,000 MTPA of coal tar distillation capacity and a 65% domestic share in coal tar pitch and about 67% in naphthalene. Carbon black capacity is about 250,000 MTPA, about 130,000 MTPA of it speciality grades, with 70+ speciality grades sold under 9 brands such as ENERGEX for batteries. A 200 MTPA anode material plant has run since April 2026.",
+        "title": "600,000 MTPA of coal tar distillation; 65% of India's pitch market",
+        "period": "Q2 FY27 presentation (October 2026)",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/93e33f8d-7638-4a7d-8d72-3a8bd896a115.pdf",
+            "label": "Q2 FY27 investor presentation (October 2026)",
+            "locator": "slides 26-30, 33"
+          }
+        ],
+        "category": "capabilities"
+      },
+      {
+        "text": "Plants at Mahistikry (Hooghly), Liluah I and II (Howrah), Falta SEZ (all West Bengal), Korba, Visakhapatnam, Sambalpur and Longkou in Shandong, China, plus liquid coal tar pitch terminals at Haldia and Mangalore ports and a fleet of 292 heated tankers.",
+        "title": "Eight zero-discharge plants in India and China",
+        "period": "Q2 FY27 presentation (October 2026)",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/93e33f8d-7638-4a7d-8d72-3a8bd896a115.pdf",
+            "label": "Q2 FY27 investor presentation (October 2026)",
+            "locator": "slides 20, 29"
+          }
+        ],
+        "category": "footprint"
+      },
+      {
+        "text": "Expansion plans, not operating capacity: LFP phase 1 is 40,000 MTPA at ₹1,125 Cr. UNOFFICIAL Q2 FY27 call — re-verify: 2,000 MTPA trial production in Q3 FY27, plant samples in Q4, then qualification; 40,000 MTPA commissioning by FY28-end, with material commercialisation discussed for FY29. The chemicals first phase moves from Q2 FY27 to a combined 5,300 MTPA start in Q4 FY27, advancing full capacity from Q2 FY28; trials may run into Q1 FY28. IBC provides technology/EPC access, not captive offtake.",
+        "title": "Planned: LFP cathode, anthraquinone, nanotubes, super-speciality black",
+        "period": "Q2 FY27 presentation (October 2026)",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/93e33f8d-7638-4a7d-8d72-3a8bd896a115.pdf",
+            "label": "Q2 FY27 investor presentation (October 2026)",
+            "locator": "slides 14-15, 35, 40-43"
+          },
+          {
+            "label": "UNOFFICIAL Q2 FY27 call — issuer re-verification required",
+            "url": "https://alphastreet.com/india/himadri-speciality-chemical-ltd-hscl-q2-2027-earnings-call-transcript/"
+          }
+        ],
+        "category": "expansion"
+      }
+    ],
+    "business_intro": "Himadri buys coal tar, a by-product of steelmaking, distils it into coal tar pitch, naphthalene and oils, and turns its own oils into carbon black. It sells pitch to aluminium smelters and graphite-electrode makers and carbon black to tyre, plastics, coatings and ink makers, in India and abroad. These carbon materials and chemicals were about 91% of Q2 FY27 revenue; the rest came from reselling Birla Tyres products, mining and a little power.",
+    "company_timeline": [
+      {
+        "year": 1990,
+        "title": "Begins operations with a coal tar plant in Howrah",
+        "detail": "Founded as a private company in 1987, Himadri commenced operations in 1990 with a coal tar distillation plant in Howrah, West Bengal.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8cbe5c4e-369b-466b-8197-fbebde03cb8c.pdf",
+            "label": "Integrated Annual Report 2025-26 - How we have grown across four decades",
+            "locator": "pp. 12-13"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/51cc71ca-f3f9-4d49-b49e-57a1ca4d2541.pdf",
+            "label": "Annual Report 2023-24 - management discussion and analysis, company overview"
+          }
+        ]
+      },
+      {
+        "year": 2009,
+        "title": "Begins making carbon black at Mahistikry",
+        "detail": "Commenced carbon black production at its Mahistikry facility in Hooghly, West Bengal, with a captive power plant, and commissioned SNF production there; it also bought an SNF plant in Vapi, Gujarat.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8cbe5c4e-369b-466b-8197-fbebde03cb8c.pdf",
+            "label": "Integrated Annual Report 2025-26 - How we have grown across four decades",
+            "locator": "pp. 12-13"
+          }
+        ]
+      },
+      {
+        "year": 2014,
+        "title": "Enters speciality carbon black",
+        "detail": "Ventured into speciality carbon black and completed a brownfield project that raised its coal tar distillation capacity in India by 60%.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8cbe5c4e-369b-466b-8197-fbebde03cb8c.pdf",
+            "label": "Integrated Annual Report 2025-26 - How we have grown across four decades",
+            "locator": "pp. 12-13"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Buys DBRL's shares in Birla Tyres, making it wholly owned",
+        "detail": "Himadri and Dalmia Bharat Refractories (DBRL) won Birla Tyres Ltd in insolvency (NCLT approval 19 October 2023); on 7 April 2025 Himadri bought the shares from DBRL. The tyre business itself stays with DBRL until a demerger the board approved on 21 September 2026 is cleared.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=cda3f878-ed7c-4dbb-8fb5-1bcdee62cf79.pdf",
+            "label": "Q4 FY25 investor presentation - Birla Tyres acquisition highlights",
+            "locator": "slide 17"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/249b5f1a-3524-4893-932a-e4d2c0455539.pdf",
+            "label": "Q2 FY27 financial results - consolidated segment results and notes 5 and 8"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Commissions a 70,000 TPA speciality black line",
+        "detail": "Commercial production began in February 2026 at Mahistikry, taking speciality carbon black capacity to 130,000 TPA within about 250,000 MTPA of total carbon black capacity.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8cbe5c4e-369b-466b-8197-fbebde03cb8c.pdf",
+            "label": "Integrated Annual Report 2025-26 - How we have grown across four decades",
+            "locator": "pp. 12-13"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=fa980d82-dd43-4cf9-8449-a3e68e21ff61.pdf",
+            "label": "Q4 FY26 investor presentation",
+            "locator": "slide 10"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Commissions a 200 MTPA anode material plant",
+        "detail": "Its first anode material facility, at Mahistikry, started operating in April 2026; customer approvals are at various stages.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=fa980d82-dd43-4cf9-8449-a3e68e21ff61.pdf",
+            "label": "Q4 FY26 investor presentation",
+            "locator": "slide 9"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/93e33f8d-7638-4a7d-8d72-3a8bd896a115.pdf",
+            "label": "Q2 FY27 investor presentation (October 2026)",
+            "locator": "slide 33"
+          }
+        ]
+      }
+    ]
+  },
+  "about_sources": [
+    {
+      "label": "Integrated Annual Report 2025-26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8cbe5c4e-369b-466b-8197-fbebde03cb8c.pdf"
+    },
+    {
+      "label": "Annual Report 2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/51cc71ca-f3f9-4d49-b49e-57a1ca4d2541.pdf"
+    },
+    {
+      "label": "Q4 FY25 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=cda3f878-ed7c-4dbb-8fb5-1bcdee62cf79.pdf"
+    },
+    {
+      "label": "Q2 FY27 financial results",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/249b5f1a-3524-4893-932a-e4d2c0455539.pdf"
+    },
+    {
+      "label": "Q4 FY26 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=fa980d82-dd43-4cf9-8449-a3e68e21ff61.pdf"
+    },
+    {
+      "label": "Q2 FY27 investor presentation (October 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/93e33f8d-7638-4a7d-8d72-3a8bd896a115.pdf"
+    },
+    {
+      "label": "Annual Report 2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/f1782c89-a24f-4983-a98f-aaeaede88f97.pdf"
+    },
+    {
+      "label": "Q1 FY27 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aba2c1e9-bf26-4569-afee-2e8b196215cb.pdf"
+    },
+    {
+      "label": "Q4 FY26 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=4d692690-5309-49f1-9328-33ae32723066.pdf"
+    },
+    {
+      "label": "UNOFFICIAL Q2 FY27 call — issuer re-verification required",
+      "url": "https://alphastreet.com/india/himadri-speciality-chemical-ltd-hscl-q2-2027-earnings-call-transcript/"
+    }
+  ]
+}

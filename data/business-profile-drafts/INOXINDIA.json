@@ -1,0 +1,335 @@
+{
+ "company": "INOXINDIA",
+ "company_name": "INOX India",
+ "prepared_on": "2026-10-10",
+ "review_status": "user_approved",
+ "source_period": "Q1 FY27",
+ "latest_source_date": "2026-08-10",
+ "about_company": {
+  "about_short": "World's leading provider of customized cryogenic equipment",
+  "about_long": "INOX India (INOXCVA) describes itself as a leading global provider of customized cryogenic equipment, with over 30 years of experience in design, manufacturing and installation. It makes cryogenic storage tanks, transport tanks and systems for industrial gases (oxygen, nitrogen, argon, hydrogen), LNG infrastructure, and advanced scientific applications (fusion, aerospace), plus stainless-steel beverage kegs. Its decks cite 5,000+ customers across 100+ countries over its history; the FY26 annual report says it served 590+ customers in FY26, across industrial gas, energy, healthcare, aerospace and food & beverage end-markets. Revenue comes from the sale of equipment and turnkey project solutions, and exports were about 59% of FY26 consolidated revenue.",
+  "business_intro": "INOX India (INOXCVA) designs and builds cryogenic tanks, trailers and systems that store and move industrial gases and LNG, engineered equipment for science and space projects such as the ITER fusion reactor, and stainless-steel beer kegs. It sells to industrial gas producers, LNG operators, research institutions and breweries, and earns revenue on each equipment order or turnkey project; about 59% of FY26 revenue came from exports.",
+  "company_timeline": [
+   {
+    "year": 1992,
+    "title": "Founded as INOXCVA by Pavan Kumar Jain",
+    "detail": "Set up to make India self-reliant in cryogenic tanks and solutions. The FY26 annual report dates the company's inception to 1991.",
+    "sources": [
+     {
+      "label": "INOX India Annual Report 2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/0880b2d6-e3dc-427e-ad5c-efe9616143cd.pdf",
+      "locator": "Our Achievements"
+     },
+     {
+      "label": "INOX India Annual Report 2025-26",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa48dd4e-fc39-4e6b-b0a1-c8633360a67a.pdf",
+      "locator": "Our Business"
+     }
+    ]
+   },
+   {
+    "year": 2019,
+    "title": "Installs a mini-LNG terminal in Scotland",
+    "detail": "Installed a 2 x 1,000 m³ mini-LNG terminal at Kyleakin, Scotland, UK.",
+    "sources": [
+     {
+      "label": "INOX India Annual Report 2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/0880b2d6-e3dc-427e-ad5c-efe9616143cd.pdf",
+      "locator": "Our Achievements"
+     },
+     {
+      "label": "INOX India Q4 FY24 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=04352a4b-dece-417f-ad6c-1ecebad13c1b.pdf",
+      "locator": "Journey"
+     }
+    ]
+   },
+   {
+    "year": 2021,
+    "title": "Completes cryolines for the ITER fusion project",
+    "detail": "Completed manufacturing of cryolines and warmlines for ITER, the experimental fusion reactor in France; ITER later placed repair orders with the company.",
+    "sources": [
+     {
+      "label": "INOX India Annual Report 2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/0880b2d6-e3dc-427e-ad5c-efe9616143cd.pdf",
+      "locator": "Our Achievements"
+     },
+     {
+      "label": "INOX India Q4 FY24 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=04352a4b-dece-417f-ad6c-1ecebad13c1b.pdf",
+      "locator": "Journey"
+     }
+    ]
+   },
+   {
+    "year": 2023,
+    "title": "Lists on NSE and BSE",
+    "detail": "Equity shares listed on the National Stock Exchange and BSE on 21 December 2023.",
+    "sources": [
+     {
+      "label": "INOX India Annual Report 2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/0880b2d6-e3dc-427e-ad5c-efe9616143cd.pdf"
+     }
+    ]
+   },
+   {
+    "year": 2024,
+    "title": "Wins its largest-ever LNG order, in The Bahamas",
+    "detail": "Turnkey mini-LNG receiving and regasification terminals in The Bahamas, won in Q3 FY25. Total order value was about ₹240 Cr, of which about ₹160 Cr was supplied in FY26.",
+    "sources": [
+     {
+      "label": "INOX India Q3 FY25 earnings-call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=967b17a2-a277-4491-a71d-35f67d55f5e3.pdf"
+     },
+     {
+      "label": "INOX India Q4 FY26 earnings-call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=40f532e6-d0f3-4dd0-a061-d2894663abb7.pdf"
+     }
+    ]
+   },
+   {
+    "year": 2026,
+    "title": "Wins first marine LNG fuel-tank order",
+    "detail": "Order from Cochin Shipyard for six 800 m³ LNG fuel tanks for LNG-powered ships, received in Q4 FY26; the company's entry into marine LNG.",
+    "sources": [
+     {
+      "label": "INOX India Q4 FY26 earnings-call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=40f532e6-d0f3-4dd0-a061-d2894663abb7.pdf"
+     },
+     {
+      "label": "INOX India Q1 FY27 earnings-call transcript",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/d5dacfe9-299d-4497-b4b9-c364dae67781.pdf"
+     }
+    ]
+   }
+  ],
+  "business_facts": [
+   {
+    "category": "customers",
+    "title": "Top 10 customers are 51% of revenue",
+    "text": "The top ten customers contributed 51% of FY26 revenues, up from about 47% of revenue from operations in FY25 and 45.7% in FY24. The largest single customer was about 13% in FY25 and 8.5% in FY24. The company served 590+ customers in FY26; its decks cite 5,000+ customers across 100+ countries over its history.",
+    "period": "FY24-FY26",
+    "sources": [
+     {
+      "label": "INOX India Annual Report 2025-26",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa48dd4e-fc39-4e6b-b0a1-c8633360a67a.pdf",
+      "locator": "Management discussion - SWOT"
+     },
+     {
+      "label": "INOX India Annual Report 2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/267f9e0a-ad08-472d-af68-8fb9d765daa1.pdf",
+      "locator": "Risk factors"
+     },
+     {
+      "label": "INOX India Annual Report 2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/0880b2d6-e3dc-427e-ad5c-efe9616143cd.pdf",
+      "locator": "Risk factors"
+     },
+     {
+      "label": "INOX India Q4 FY26 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=da3be13b-ad9a-4f19-b292-5ce70499c40f.pdf"
+     }
+    ],
+    "metrics": [
+     {
+      "label": "Top 10, FY24",
+      "value": 45.7,
+      "unit": "% of revenue"
+     },
+     {
+      "label": "Top 10, FY25 (about 47%)",
+      "value": 47,
+      "unit": "% of revenue"
+     },
+     {
+      "label": "Top 10, FY26",
+      "value": 51,
+      "unit": "% of revenue"
+     }
+    ]
+   },
+   {
+    "category": "geography",
+    "title": "Exports rose from 34% to about 59% of revenue",
+    "text": "Exports were 34% of total income in FY22, 45% in FY23 and 55% in FY24, around 53% in FY25 and approximately 59% of total income in FY26. Key export geographies are the US, Europe, Saudi Arabia, Brazil, Korea, UAE, Australia and Bangladesh.",
+    "period": "FY22-FY26",
+    "sources": [
+     {
+      "label": "INOX India Q4 FY24 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=04352a4b-dece-417f-ad6c-1ecebad13c1b.pdf",
+      "locator": "Geography-wise total income"
+     },
+     {
+      "label": "INOX India Annual Report 2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/267f9e0a-ad08-472d-af68-8fb9d765daa1.pdf",
+      "locator": "Risk factors"
+     },
+     {
+      "label": "INOX India Annual Report 2025-26",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa48dd4e-fc39-4e6b-b0a1-c8633360a67a.pdf",
+      "locator": "Chairman's message"
+     },
+     {
+      "label": "INOX India Q1 FY27 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=09ffaefc-91f1-49d4-ae5c-6a63685fef4c.pdf"
+     }
+    ],
+    "metrics": [
+     {
+      "label": "Exports, FY22",
+      "value": 34,
+      "unit": "% of total income"
+     },
+     {
+      "label": "Exports, FY23",
+      "value": 45,
+      "unit": "% of total income"
+     },
+     {
+      "label": "Exports, FY24",
+      "value": 55,
+      "unit": "% of total income"
+     },
+     {
+      "label": "Exports, FY25 (around 53%)",
+      "value": 53,
+      "unit": "% of total income"
+     },
+     {
+      "label": "Exports, FY26 (about 59%)",
+      "value": 59,
+      "unit": "% of total income"
+     }
+    ]
+   },
+   {
+    "category": "footprint",
+    "title": "Four manufacturing locations in India, plus Brazil and Europe",
+    "text": "Large-scale serial manufacturing at four locations in India, part manufacturing and service distribution from one location in Brazil, and a stock-and-sale facility in the Netherlands. Export-oriented manufacturing sits in the Kandla Special Economic Zone.",
+    "period": "Q1 FY27",
+    "sources": [
+     {
+      "label": "INOX India Q1 FY27 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=09ffaefc-91f1-49d4-ae5c-6a63685fef4c.pdf"
+     },
+     {
+      "label": "INOX India Annual Report 2025-26",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa48dd4e-fc39-4e6b-b0a1-c8633360a67a.pdf",
+      "locator": "Management discussion - SWOT"
+     }
+    ]
+   },
+   {
+    "category": "business_model",
+    "title": "Order backlog of ₹1,514 Cr at end-FY26, 63% export",
+    "text": "Order backlog stood at ₹1,514 Cr at the end of FY26: 49% industrial gas, 28% LNG, 22% Cryo Scientific Division and 1% others including kegs. Export orders were 63% of the backlog. Order inflow in FY26 was ₹1,685 Cr, up 9.9%.",
+    "period": "FY26 (31 March 2026)",
+    "sources": [
+     {
+      "label": "INOX India Annual Report 2025-26",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa48dd4e-fc39-4e6b-b0a1-c8633360a67a.pdf",
+      "locator": "Management discussion - financial performance"
+     }
+    ]
+   },
+   {
+    "category": "capabilities",
+    "title": "Keg plant capacity of about 300,000 kegs a year",
+    "text": "Installed keg capacity is around 300,000 kegs a year; FY26 sales were around 61,000 kegs, up from 46,000 in FY25, and management said the plant ran at about one-third of capacity. Keg revenue was about ₹26.13 Cr in FY26 against ₹27.15 Cr in FY25 as the mix moved to smaller kegs. Heineken, AB InBev and Molson Coors have approved its kegs.",
+    "period": "FY26",
+    "sources": [
+     {
+      "label": "INOX India Q4 FY26 earnings-call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=40f532e6-d0f3-4dd0-a061-d2894663abb7.pdf"
+     }
+    ]
+   },
+   {
+    "category": "capabilities",
+    "title": "450+ engineers; mini-LNG terminals and LNG trailers",
+    "text": "An in-house team of 450+ engineers develops new products and customised solutions. The company has delivered mini-LNG terminal projects in Scotland and Antigua, with The Bahamas under execution, and more than 250 of its LNG semi-trailers operate on Indian roads (May 2026).",
+    "period": "FY26",
+    "sources": [
+     {
+      "label": "INOX India Q4 FY26 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=da3be13b-ad9a-4f19-b292-5ce70499c40f.pdf"
+     },
+     {
+      "label": "INOX India Annual Report 2025-26",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa48dd4e-fc39-4e6b-b0a1-c8633360a67a.pdf",
+      "locator": "Management discussion"
+     },
+     {
+      "label": "INOX India Q4 FY26 earnings-call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=40f532e6-d0f3-4dd0-a061-d2894663abb7.pdf"
+     }
+    ]
+   }
+  ],
+  "what_changed": {
+   "headline": "Industrial gas fell from 77% to 54% of revenue as LNG and cryo-scientific work scaled",
+   "text": "Consolidated revenue roughly doubled from ₹803 Cr in FY22 to ₹1,632 Cr in FY26. Industrial gas grew more slowly (₹620 Cr to ₹874 Cr) than LNG (₹126 Cr to ₹457 Cr) and the Cryo Scientific Division (₹36 Cr to ₹228 Cr), so its share fell from 77% to 54%. Over the same years exports rose from 34% of total income to about 59%.",
+   "period": "FY22-FY26",
+   "sources": [
+    {
+     "label": "INOX India Q4 FY24 investor presentation",
+     "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=04352a4b-dece-417f-ad6c-1ecebad13c1b.pdf",
+     "locator": "Business division-wise total income"
+    },
+    {
+     "label": "INOX India Annual Report 2024-25",
+     "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/267f9e0a-ad08-472d-af68-8fb9d765daa1.pdf",
+     "locator": "Segment-wise revenue"
+    },
+    {
+     "label": "INOX India Annual Report 2025-26",
+     "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa48dd4e-fc39-4e6b-b0a1-c8633360a67a.pdf",
+     "locator": "Segment wise revenue"
+    },
+    {
+     "label": "INOX India Q4 FY26 investor presentation",
+     "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=da3be13b-ad9a-4f19-b292-5ce70499c40f.pdf",
+     "locator": "Segment wise revenue"
+    }
+   ]
+  }
+ },
+ "about_sources": [
+  {
+   "label": "INOX India Q1 FY27 investor presentation",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=09ffaefc-91f1-49d4-ae5c-6a63685fef4c.pdf"
+  },
+  {
+   "label": "INOX India Q1 FY27 earnings-call transcript",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/d5dacfe9-299d-4497-b4b9-c364dae67781.pdf"
+  },
+  {
+   "label": "INOX India Q4 FY26 investor presentation",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=da3be13b-ad9a-4f19-b292-5ce70499c40f.pdf"
+  },
+  {
+   "label": "INOX India Q4 FY26 earnings-call transcript",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=40f532e6-d0f3-4dd0-a061-d2894663abb7.pdf"
+  },
+  {
+   "label": "INOX India Annual Report 2025-26",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=aa48dd4e-fc39-4e6b-b0a1-c8633360a67a.pdf"
+  },
+  {
+   "label": "INOX India Annual Report 2024-25",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/267f9e0a-ad08-472d-af68-8fb9d765daa1.pdf"
+  },
+  {
+   "label": "INOX India Annual Report 2023-24",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/0880b2d6-e3dc-427e-ad5c-efe9616143cd.pdf"
+  },
+  {
+   "label": "INOX India Q4 FY24 investor presentation",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=04352a4b-dece-417f-ad6c-1ecebad13c1b.pdf"
+  },
+  {
+   "label": "INOX India Q3 FY25 earnings-call transcript",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=967b17a2-a277-4491-a71d-35f67d55f5e3.pdf"
+  }
+ ]
+}

@@ -1,0 +1,248 @@
+{
+  "company": "SYRMA",
+  "company_name": "Syrma SGS Technology",
+  "prepared_on": "2026-10-07",
+  "review_status": "user_approved",
+  "source_period": "FY26",
+  "latest_source_date": "2026-08-07",
+  "about_company": {
+    "about_short": "Electronics System Design and Manufacturing (ESDM) platform for global OEMs across auto, industrial, consumer, healthcare, and railways.",
+    "about_long": "Syrma SGS Technology Limited is an Electronics System Design and Manufacturing (ESDM) company that builds high-mix, high-complexity electronics for domestic and global original equipment manufacturers (OEMs). Its work runs from product design and prototyping to volume manufacturing and after-sale support, covering printed circuit board assembly (PCBA), box builds, electromechanical assemblies, RFID products and original design manufacturing (ODM), where Syrma designs the product its customer sells. It serves automotive and electric mobility, industrial, consumer, healthcare and medical devices, and IT and railway customers. ODM was about 17% of FY26 revenue, up from 12% a year earlier. In December 2025 it bought 60% of Elcome, a supplier of naval and maritime electronics, which sits in its industrial business. It runs 17 manufacturing facilities and exports to markets including Germany, Belgium and the USA; a multilayer PCB plant at Naidupeta, Andhra Pradesh (a 75:25 joint venture with Korea's Shinhyup) is targeted to start commercial operations around March 2027.",
+    "business_intro": "Syrma SGS makes electronics for other companies: circuit board assemblies, complete box builds and RFID products, and a growing share of products it designs itself and its customers sell under their own brands (ODM). Its customers are automotive, industrial, consumer, healthcare, IT and railway equipment makers in India and abroad, and it earns revenue on the manufacturing and design work it does for them.",
+    "company_timeline": [
+      {
+        "year": 1990,
+        "title": "SGS Tekniks incorporated",
+        "detail": "SGS Tekniks built an R&D and manufacturing footprint across Gurgaon, Manesar, Bangalore and Germany.",
+        "sources": [
+          {
+            "label": "Syrma SGS Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6a57268a-76e7-4813-bfc8-86a0e2d02428.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2004,
+        "title": "Syrma Technology founded",
+        "detail": "Syrma Technology grew through design-led manufacturing, with plants in Chennai and Bawal.",
+        "sources": [
+          {
+            "label": "Syrma SGS Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6a57268a-76e7-4813-bfc8-86a0e2d02428.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2021,
+        "title": "SGS Tekniks becomes a wholly owned subsidiary",
+        "detail": "SGS Tekniks, an associate until 16 September 2021, became wholly owned from 17 September 2021; the two businesses later merged into Syrma SGS.",
+        "sources": [
+          {
+            "label": "Syrma SGS Annual Report 2022-23",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c862f7f9-4b8b-44f3-a823-576929ba9c2f.pdf"
+          },
+          {
+            "label": "Syrma SGS Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6a57268a-76e7-4813-bfc8-86a0e2d02428.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2022,
+        "title": "Lists on NSE and BSE through its IPO",
+        "detail": "The initial public offering and listing came in August 2022.",
+        "sources": [
+          {
+            "label": "Syrma SGS Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6a57268a-76e7-4813-bfc8-86a0e2d02428.pdf"
+          },
+          {
+            "label": "Syrma SGS FY26 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5d8fbf36-7a03-4037-b2a5-024adb2cb2e5.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2023,
+        "title": "Acquires 51% of Johari Digital Healthcare",
+        "detail": "The 51% stake in Johari Digital Healthcare, a Jodhpur-based ODM of medical devices, was acquired on 5 September 2023 and sits in the healthcare segment.",
+        "sources": [
+          {
+            "label": "Syrma SGS Annual Report 2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/83f35d16-1544-42ae-8bcc-41c1c4b6d170.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Acquires 60% of Elcome, entering maritime electronics",
+        "detail": "Syrma bought 60% of Elcome for ₹235 Cr in December 2025, adding naval and maritime defence electronics. Elcome is reported inside the industrial segment and was consolidated from mid-December 2025.",
+        "sources": [
+          {
+            "label": "Syrma SGS FY26 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5d8fbf36-7a03-4037-b2a5-024adb2cb2e5.pdf"
+          },
+          {
+            "label": "Syrma SGS Q3 FY26 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=dc41d98a-6b79-42bb-b344-2870bbf678fa.pdf"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Top 10 customers are about 47% of revenue",
+        "text": "In FY26 the top 5 customers contributed around 34% of revenue, the top 10 around 47% and the top 20 around 63%, on a full-year basis.",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "Syrma SGS Q4 FY26 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=35f78458-fda9-4486-b457-33d418a9eca5.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Top 5 (around)",
+            "value": 34,
+            "unit": "% of FY26 revenue"
+          },
+          {
+            "label": "Customers 6-10 (around)",
+            "value": 13,
+            "unit": "% of FY26 revenue"
+          },
+          {
+            "label": "Customers 11-20 (around)",
+            "value": 16,
+            "unit": "% of FY26 revenue"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Exports are about a quarter of revenue",
+        "text": "Export revenue was ₹12,048 Mn in FY26, 25% of operating revenue and up 41% on the year. Key export markets are Germany, Belgium, the USA, Mexico, Canada and Singapore. Elcome's sales are all domestic.",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "Syrma SGS Q4 FY26 results presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6cf89dd4-5cde-439e-b3a0-4f8664a80b12.pdf"
+          },
+          {
+            "label": "Syrma SGS FY26 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5d8fbf36-7a03-4037-b2a5-024adb2cb2e5.pdf"
+          },
+          {
+            "label": "Syrma SGS Q3 FY26 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=dc41d98a-6b79-42bb-b344-2870bbf678fa.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Exports, FY26",
+            "value": 25,
+            "unit": "% of operating revenue"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "17 factories and four R&D centres",
+        "text": "As on 31 March 2026 Syrma ran 17 operational manufacturing facilities with 1.27 Mn sq. ft. of manufacturing area, four R&D centres (Gurgaon, Pune, Chennai and Germany) with 195+ people in R&D, and 10,763 employees.",
+        "period": "As on 31 March 2026",
+        "sources": [
+          {
+            "label": "Syrma SGS FY26 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5d8fbf36-7a03-4037-b2a5-024adb2cb2e5.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Own-design (ODM) work is about 17% of revenue",
+        "text": "ODM revenue rose from ₹453 Cr in FY25 (12% of revenue) to ₹825 Cr in FY26 (about 17%). Medical devices are almost all ODM: management estimated ₹395 Cr of the FY26 ODM revenue came from MedTech.",
+        "period": "FY25 to FY26",
+        "sources": [
+          {
+            "label": "Syrma SGS Q4 FY26 earnings-call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=35f78458-fda9-4486-b457-33d418a9eca5.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "ODM revenue, FY25",
+            "value": 453,
+            "unit": "₹ Cr"
+          },
+          {
+            "label": "ODM revenue, FY26",
+            "value": 825,
+            "unit": "₹ Cr"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Certified for auto, aerospace, medical and rail work",
+        "text": "Syrma's qualifications include IATF 16949 (automotive), AS9100D (aerospace and defence), ISO 13485 and MDSAP (medical devices), an FDA-registered facility and IRIS (railways).",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "Syrma SGS FY26 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5d8fbf36-7a03-4037-b2a5-024adb2cb2e5.pdf"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "PCB plant and Elemaster venture are being built out",
+        "text": "Planned, not yet operating: a multilayer PCB plant at Naidupeta, Andhra Pradesh, in a 75:25 joint venture with Shinhyup of Korea, with about ₹1,600 Cr of capex to be spent in phases over the next 3-5 years and commercial operations targeted around March 2027. A 60:40 joint venture with Elemaster of Italy for high-reliability electronics is being set up in the Bengaluru area.",
+        "period": "Plans as of FY26",
+        "sources": [
+          {
+            "label": "Syrma SGS FY26 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5d8fbf36-7a03-4037-b2a5-024adb2cb2e5.pdf"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Consumer fell from 40% to 30% of revenue while own-design work grew",
+      "text": "Consumer was 40% of segment revenue in FY24 and 30% in FY26, as auto, industrial and IT & railways grew faster (consumer grew 8% in FY26, the segments overall 27%). Management calls consumer a low-margin business and says it will hold it near 30% of sales. Over the same stretch, ODM revenue rose from 12% of revenue in FY25 to about 17% in FY26.",
+      "period": "FY24 to FY26",
+      "sources": [
+        {
+          "label": "Syrma SGS Q4 FY24 investor presentation",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=4691a6c1-dbb7-4f42-8cca-38cbff07fe72.pdf"
+        },
+        {
+          "label": "Syrma SGS Q4 FY26 results presentation",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6cf89dd4-5cde-439e-b3a0-4f8664a80b12.pdf"
+        },
+        {
+          "label": "Syrma SGS Q4 FY26 earnings-call transcript",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=35f78458-fda9-4486-b457-33d418a9eca5.pdf"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Syrma SGS FY26 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5d8fbf36-7a03-4037-b2a5-024adb2cb2e5.pdf"
+    },
+    {
+      "label": "Syrma SGS Q4 FY26 results presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6cf89dd4-5cde-439e-b3a0-4f8664a80b12.pdf"
+    },
+    {
+      "label": "Syrma SGS Q4 FY26 earnings-call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=35f78458-fda9-4486-b457-33d418a9eca5.pdf"
+    },
+    {
+      "label": "Syrma SGS Annual Report 2025-26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/6a57268a-76e7-4813-bfc8-86a0e2d02428.pdf"
+    }
+  ]
+}

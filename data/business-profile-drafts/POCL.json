@@ -1,0 +1,292 @@
+{
+  "company": "POCL",
+  "company_name": "Pondy Oxides",
+  "prepared_on": "2026-10-07",
+  "review_status": "user_approved",
+  "source_period": "Q1 FY27",
+  "latest_source_date": "2026-08-11",
+  "about_company": {
+    "about_short": "Lead recycler (76% of FY26 revenue) scaling copper recycling; plastics and aluminium are small verticals.",
+    "about_long": "Pondy Oxides and Chemicals Limited (POCL) recycles scrap into non-ferrous metals and granules across four verticals: lead (204,000 MTPA), copper (12,000 MTPA), plastics (9,000 MTPA) and aluminium (12,000 MTPA). Lead - pure lead and 100+ alloys sold mainly to lead-acid battery OEMs - was 76.2% of FY26 consolidated revenue of Rs 2,958.4 Cr; copper, sold as recycled copper grades (Clove, Cobra, Mill Berry) to copper wire and other copper users, was 22.7%; plastics and aluminium together were 1.1% (shares derived from the FY26 annual report's segment table). Scrap comes from 300+ overseas suppliers in 90+ countries: imports were about 73% of lead and 98% of copper procurement in FY26. Exports were 66% of FY26 revenue (issuer-stated; the consolidated geography note gives 63.8%), across 20+ destinations led by Southeast Asia; in Q1 FY27 exports fell to 45% of sales as copper, which sells 75% domestically, scaled. A Rs 200 Cr, 36,000 MTPA LME Grade A copper cathode plant is planned, with Phase I (18,000 MTPA) expected to be commissioned by December 2026 - today's copper output is recycled copper, not cathodes. Figures in the issuer's decks are standalone; the gap to consolidated is the plastics subsidiary POCL Future Tech (Rs 23.6 Cr turnover in FY26), whose amalgamation into the parent is pending before the NCLT.",
+    "business_intro": "POCL buys lead, copper, plastic and aluminium scrap - mostly imported - and smelts, refines or extrudes it into pure lead, 100+ lead alloys, recycled copper and plastic granules. Lead-acid battery manufacturers in India and overseas are the core buyers of its lead products; copper goes to wire and other copper users. Revenue is the sale of these recycled products, 66% of it exported in FY26, and management runs each metal on EBITDA per tonne sold.",
+    "company_timeline": [
+      {
+        "year": 1995,
+        "title": "Incorporated in Tamil Nadu and listed regionally",
+        "detail": "Incorporated as a public limited company in Tamil Nadu and listed on the Madras and Coimbatore Stock Exchanges.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8b6cb526-20e4-461a-a06e-3fcd325453e4.pdf",
+            "label": "Q1 FY27 investor presentation - Journey of POCL slide"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/61176bbd-f651-4dce-b9ed-ff1e8b425458.pdf",
+            "label": "Annual Report FY2024-25 - Our Lineage"
+          }
+        ]
+      },
+      {
+        "year": 2006,
+        "title": "Commissions first lead smelter SMD-I (18,000 MTPA)",
+        "detail": "First lead smelter (SMD-I) inaugurated in Tamil Nadu with 18,000 MTPA capacity; the battery manufacturing unit was sold to AMCO Batteries the same year.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c9812016-4ce6-4234-97e9-7f4a77658c0d.pdf",
+            "label": "Q4 FY26 investor presentation - Journey of POCL slide"
+          }
+        ]
+      },
+      {
+        "year": 2019,
+        "title": "Registers India's first 3N7 lead brand on the LME",
+        "detail": "Became the first Indian 3N7 lead brand registered on the London Metal Exchange.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c9812016-4ce6-4234-97e9-7f4a77658c0d.pdf",
+            "label": "Q4 FY26 investor presentation - Journey of POCL slide"
+          },
+          {
+            "url": "https://pocl.com/wp-content/uploads/pdocs/2026/08/Annual-Report-2025-26.pdf",
+            "label": "Annual Report FY2025-26 - milestones page"
+          }
+        ]
+      },
+      {
+        "year": 2020,
+        "title": "Acquires Meloy Metals, adding 48,000 MTPA of lead",
+        "detail": "Meloy Metals Private Limited (48,000 MTPA) acquired through an NCLT-approved amalgamation, taking combined lead and lead alloy capacity to over 1,20,000 MTPA.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c9812016-4ce6-4234-97e9-7f4a77658c0d.pdf",
+            "label": "Q4 FY26 investor presentation - Journey of POCL slide"
+          },
+          {
+            "url": "https://pocl.com/wp-content/uploads/pdocs/2026/08/Annual-Report-2025-26.pdf",
+            "label": "Annual Report FY2025-26 - milestones page"
+          }
+        ]
+      },
+      {
+        "year": 2023,
+        "title": "Lists on NSE; starts aluminium recycling",
+        "detail": "Equity shares listed on the National Stock Exchange; an aluminium recycling/melting facility commenced at Sriperumbudur, Tamil Nadu; Harsha Exito Engineering (Thervoykandigai) acquired through an NCLT order dated 12 January 2023.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c9812016-4ce6-4234-97e9-7f4a77658c0d.pdf",
+            "label": "Q4 FY26 investor presentation - Journey of POCL slide"
+          },
+          {
+            "url": "https://pocl.com/wp-content/uploads/pdocs/2026/08/Annual-Report-2025-26.pdf",
+            "label": "Annual Report FY2025-26 - wholly owned subsidiaries table"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Lead capacity reaches 204,000 MTPA; copper doubles to 12,000",
+        "detail": "TKD lead expansion: Phase 1 and Phase 2 of 36,000 MTPA each began commercial production in April 2025 and December 2025, taking lead capacity from 132,000 to 204,000 MTPA; copper recycling capacity doubled to 12,000 MTPA in FY26.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c9812016-4ce6-4234-97e9-7f4a77658c0d.pdf",
+            "label": "Q4 FY26 investor presentation - FY26 highlights"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/49dacb06-4966-40b5-b7db-dbd377039cf6.pdf",
+            "label": "Q4 FY26 earnings call transcript (27 May 2026)"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "text": "Customers that each contributed more than 10% of consolidated revenue: three in FY26 buying Rs 1,707.8 Cr (57.7% of Rs 2,958.4 Cr), four in FY25 buying Rs 1,488.5 Cr (72.4% of Rs 2,056.9 Cr) and three in FY24 buying Rs 951.0 Cr (61.7% of Rs 1,542.4 Cr). Lead-acid battery manufacturers in India and overseas are the core customers for lead products; copper is sold to copper wire and other copper applications.",
+        "title": "Three customers over 10% each were 57.7% of FY26 revenue",
+        "period": "FY24-FY26 (consolidated)",
+        "metrics": [
+          {
+            "unit": "% of consol. revenue",
+            "label": "Over-10% customers, FY24",
+            "value": 61.7
+          },
+          {
+            "unit": "% of consol. revenue",
+            "label": "Over-10% customers, FY25",
+            "value": 72.4
+          },
+          {
+            "unit": "% of consol. revenue",
+            "label": "Over-10% customers, FY26",
+            "value": 57.7
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://pocl.com/wp-content/uploads/pdocs/2026/08/Annual-Report-2025-26.pdf",
+            "label": "Annual Report FY2025-26 - consolidated note 43(h), major customers"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/61176bbd-f651-4dce-b9ed-ff1e8b425458.pdf",
+            "label": "Annual Report FY2024-25 - consolidated note 42(c), major customers"
+          }
+        ],
+        "category": "customers"
+      },
+      {
+        "text": "Exports as a share of total turnover, the issuer's own series: 54% FY22, 57% FY23, 56% FY24, 66% FY25, 66% FY26 (the FY26 BRSR also says 66%). The consolidated geography note puts revenue from outside India at Rs 1,888.7 Cr of Rs 2,958.4 Cr, or 63.8%, in FY26 (64.5% in FY25). Sales go to 20+ export destinations, mainly Southeast Asia. In FY26 lead sold 74% to exports and copper 42%; in Q1 FY27 the overall export share fell to 45% as copper, 25% exported, scaled.",
+        "title": "Exports were 66% of revenue in FY26, up from 54% in FY22",
+        "period": "FY22-FY26; Q1 FY27",
+        "metrics": [
+          {
+            "unit": "% of revenue",
+            "label": "Exports, FY22",
+            "value": 54
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Exports, FY23",
+            "value": 57
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Exports, FY24",
+            "value": 56
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Exports, FY25",
+            "value": 66
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Exports, FY26",
+            "value": 66
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://pocl.com/wp-content/uploads/pdocs/2026/08/Annual-Report-2025-26.pdf",
+            "label": "Annual Report FY2025-26 - five-year exports chart, BRSR, consolidated geography note"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/61176bbd-f651-4dce-b9ed-ff1e8b425458.pdf",
+            "label": "Annual Report FY2024-25 - exports chart"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9b938865-8148-4184-b0bd-19cfda3aeb3b.pdf",
+            "label": "Q1 FY27 earnings call transcript (5 Aug 2026)"
+          }
+        ],
+        "category": "geography"
+      },
+      {
+        "text": "Lead Smelter Division I, Tamil Nadu (48 KTPA lead); Smelter Division II, Andhra Pradesh (84 KTPA lead and 12 KTPA copper); TKD Lead Division, Tamil Nadu (72 KTPA); plastics (9 KTPA) and aluminium (12 KTPA) divisions in Tamil Nadu; headquarters in Chennai. 123 acres of land were acquired at Mundra, Gujarat in 2024 for a future expansion that has not begun.",
+        "title": "Four plants in Tamil Nadu and Andhra Pradesh; 123 acres at Mundra",
+        "period": "Q1 FY27 presentation (Aug 2026)",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8b6cb526-20e4-461a-a06e-3fcd325453e4.pdf",
+            "label": "Q1 FY27 investor presentation - Robust Manufacturing Facilities and Journey slides"
+          }
+        ],
+        "category": "footprint"
+      },
+      {
+        "text": "Pure lead, lead-calcium, lead-tin, lead-antimony, master and specialty alloys - 100+ specialised alloys - with India's first 3N7 lead brand registered on the LME. Value-added products were 65% of lead segment revenue in FY26 and 85% in Q1 FY27 (management expects 65% to 70% over a year); lead EBITDA per tonne rose 39% to Rs 18,462 in FY26 and reached Rs 21,595 in Q1 FY27.",
+        "title": "Value-added products were 65% of lead revenue in FY26",
+        "period": "FY26; Q1 FY27 (standalone)",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8b6cb526-20e4-461a-a06e-3fcd325453e4.pdf",
+            "label": "Q1 FY27 investor presentation - products slide"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/49dacb06-4966-40b5-b7db-dbd377039cf6.pdf",
+            "label": "Q4 FY26 earnings call transcript (27 May 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9b938865-8148-4184-b0bd-19cfda3aeb3b.pdf",
+            "label": "Q1 FY27 earnings call transcript (5 Aug 2026)"
+          }
+        ],
+        "category": "capabilities"
+      },
+      {
+        "text": "Raw material is scrap procured from 300+ overseas suppliers across 90+ countries under MoEF import licences; in FY26 imports were about 73% of lead, 61% of plastic and 98% of copper procurement, and the Q1 FY27 deck shows lead at 97% imports. Management is looking at 25% to 30% domestic sourcing for copper. Earnings are managed as EBITDA per tonne of metal sold: lead guided at Rs 17,000 to 19,000 and recycled copper at Rs 35,000 to 40,000.",
+        "title": "Imported scrap from 300+ suppliers in 90+ countries",
+        "period": "FY26; Q1 FY27",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8b6cb526-20e4-461a-a06e-3fcd325453e4.pdf",
+            "label": "Q1 FY27 investor presentation - procurement and verticals slides"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/49dacb06-4966-40b5-b7db-dbd377039cf6.pdf",
+            "label": "Q4 FY26 earnings call transcript (27 May 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9b938865-8148-4184-b0bd-19cfda3aeb3b.pdf",
+            "label": "Q1 FY27 earnings call transcript (5 Aug 2026)"
+          }
+        ],
+        "category": "business_model"
+      },
+      {
+        "text": "A 36,000 MTPA LME Grade A copper cathode facility at Thervoykandigai, about Rs 200 Cr funded from internal accruals, in two phases: Phase I of 18,000 MTPA expected to be commissioned by December 2026 (trial runs in Q4 FY27), Phase 2 targeted for Q3 FY28. About Rs 25 Cr had been spent by Q1 FY27; of the Rs 175 Cr FY27 capex plan, Rs 140 to 150 Cr is for this plant. Not yet operating - current copper output is recycled copper, not cathodes.",
+        "title": "Planned: Rs 200 Cr copper cathode plant, Phase I due Dec 2026",
+        "period": "As of Aug 2026 (Q1 FY27 call)",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8b6cb526-20e4-461a-a06e-3fcd325453e4.pdf",
+            "label": "Q1 FY27 investor presentation - key highlights"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9b938865-8148-4184-b0bd-19cfda3aeb3b.pdf",
+            "label": "Q1 FY27 earnings call transcript (5 Aug 2026)"
+          }
+        ],
+        "category": "expansion"
+      }
+    ],
+    "what_changed": {
+      "text": "Copper segment revenue rose from Rs 55.5 Cr in FY25 to Rs 672.6 Cr in FY26 after recycling capacity doubled to 12,000 MTPA and copper sales volumes rose from 700 MT to 6,543 MT; lead grew 14.8% to Rs 2,253.7 Cr but its share fell from 95.4% to 76.2%. Lead still earned most of the profit: segment result Rs 190.0 Cr against copper's Rs 25.0 Cr. Separately, the board approved on 28 January 2026 the amalgamation of the plastics subsidiary POCL Future Tech into the parent; the NCLT application is pending, and as a 100% subsidiary it does not change consolidated figures.",
+      "period": "FY25 to FY26 (consolidated)",
+      "sources": [
+        {
+          "url": "https://pocl.com/wp-content/uploads/pdocs/2026/08/Annual-Report-2025-26.pdf",
+          "label": "Annual Report FY2025-26 - consolidated segment note 43 and directors' report"
+        },
+        {
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c9812016-4ce6-4234-97e9-7f4a77658c0d.pdf",
+          "label": "Q4 FY26 investor presentation - copper operational performance"
+        }
+      ],
+      "headline": "Copper went from 2.7% to 22.7% of consolidated revenue in one year"
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Q1 FY27 investor presentation - Journey of POCL slide",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8b6cb526-20e4-461a-a06e-3fcd325453e4.pdf"
+    },
+    {
+      "label": "Annual Report FY2024-25 - Our Lineage",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/61176bbd-f651-4dce-b9ed-ff1e8b425458.pdf"
+    },
+    {
+      "label": "Q4 FY26 investor presentation - Journey of POCL slide",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/c9812016-4ce6-4234-97e9-7f4a77658c0d.pdf"
+    },
+    {
+      "label": "Annual Report FY2025-26 - milestones page",
+      "url": "https://pocl.com/wp-content/uploads/pdocs/2026/08/Annual-Report-2025-26.pdf"
+    },
+    {
+      "label": "Q4 FY26 earnings call transcript (27 May 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/49dacb06-4966-40b5-b7db-dbd377039cf6.pdf"
+    },
+    {
+      "label": "Q1 FY27 earnings call transcript (5 Aug 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9b938865-8148-4184-b0bd-19cfda3aeb3b.pdf"
+    }
+  ]
+}

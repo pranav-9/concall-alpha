@@ -1,0 +1,401 @@
+{
+  "company": "SGFIN",
+  "company_name": "SG Finserve",
+  "prepared_on": "2026-10-19",
+  "review_status": "user_approved",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-10-16",
+  "about_company": {
+    "about_short": "NBFC providing supply chain finance to MSMEs and corporates in India.",
+    "about_long": "SG Finserve is a non-deposit-taking NBFC registered with the RBI as an Investment and Credit Company and classified in the Middle Layer. It lends working capital to the dealers, distributors and vendors of large corporate anchors through dealer and vendor finance, invoice financing, factoring and TReDS, and in H1 FY27 it launched a loan-against-property product (starting in Delhi-NCR) and digital lending through a lending-service-provider partnership. Supply-chain finance was about two-thirds of its ₹5,694 Cr loan book at 30 September 2026. Income is almost all interest: ₹320.2 Cr of FY26's ₹333.7 Cr total income. Supply-chain loans carry stop-supply arrangements with the anchor, and the company has reported nil NPAs since lending began. It is part of the APL Apollo group but is not a subsidiary of APL Apollo Tubes: it is promoted by Rahul and Rohan Gupta, sons of Sanjay Gupta, whose promoter group held about 53% at March 2026.",
+    "business_intro": "SG Finserve is an RBI-registered NBFC that finances the dealers, distributors and vendors of large companies against their invoices; if a borrower defaults, the anchor company stops supplying it. This supply-chain finance was about two-thirds of the ₹5,694 Cr loan book at September 2026; the rest is lending beyond the supply chain, such as loans against property and business loans. Interest is about 96% of income (FY26). It is promoted by Rahul and Rohan Gupta, sons of Sanjay Gupta, and is part of the APL Apollo group.",
+    "company_timeline": [
+      {
+        "year": 1994,
+        "title": "Incorporated as Moongipa Securities",
+        "detail": "The company was incorporated in 1994 as Moongipa Securities Limited and received an RBI registration as a non-deposit-taking NBFC on 16 May 2018.",
+        "sources": [
+          {
+            "label": "SG Finserve annual report FY2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/91faef69-24ce-461e-96dd-14acfe3f7bdc.pdf",
+            "locator": "Notes to accounts, note 1: company overview"
+          }
+        ]
+      },
+      {
+        "year": 2022,
+        "title": "Starts supply-chain lending as SG Finserve",
+        "detail": "Renamed SG Finserve in 2022, it began lending on 1 September 2022, at first entirely within the APL Apollo group's dealer and vendor network.",
+        "sources": [
+          {
+            "label": "SG Finserve Q4 FY24 results release and investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5ce9a4b1-9069-4f52-a9da-bfd17d860550.pdf",
+            "locator": "Results release: management's message"
+          },
+          {
+            "label": "SG Finserve annual report FY2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/a1b35d90-ffed-40e3-b650-13e47186b8ee.pdf",
+            "locator": "About us"
+          },
+          {
+            "label": "SG Finserve Q1 FY27 earnings call transcript (14 Jul 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=54333b40-37fd-4a91-a5a1-007b822381ae.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2023,
+        "title": "Rahul and Rohan Gupta's open offer closes",
+        "detail": "After RBI approval in February 2023, Rahul and Rohan Gupta, with Sudesh Business Ventures, offered to buy up to 26% of the shares between 28 April and 15 May 2023; no shares were tendered.",
+        "sources": [
+          {
+            "label": "SG Finserve annual report FY2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/91faef69-24ce-461e-96dd-14acfe3f7bdc.pdf",
+            "locator": "Secretarial audit report: specific events"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Gets RBI registration as a Type II NBFC",
+        "detail": "The loan book was cut while the conversion was pending, from ₹1,891 Cr at December 2023 to ₹822 Cr at September 2024. The company called it a regulatory hurdle, regularised by the RBI in October 2024, and the book rebuilt to ₹2,246 Cr by March 2025.",
+        "sources": [
+          {
+            "label": "SG Finserve annual report FY2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/a1b35d90-ffed-40e3-b650-13e47186b8ee.pdf",
+            "locator": "Directors' report: material changes"
+          },
+          {
+            "label": "SG Finserve Q2 FY25 earnings call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b7660943-cedc-4c24-bb81-32810b4f26df.pdf"
+          },
+          {
+            "label": "SG Finserve Q3 FY24 results release and investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b37058a1-f91e-45f9-ac68-917b3672898f.pdf"
+          },
+          {
+            "label": "SG Finserve Q4 FY25 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d3208798-b1d9-4857-8613-1ea07598a090.pdf",
+            "locator": "Recouping growth momentum"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Lists on the NSE",
+        "detail": "Already listed on BSE, the shares were listed on the National Stock Exchange from 5 August 2025.",
+        "sources": [
+          {
+            "label": "SG Finserve annual report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/931fe3c5-d70e-441a-8222-f9a1ee2ebdfb.pdf",
+            "locator": "Directors' report: listing of equity shares"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Launches factoring under an RBI licence",
+        "detail": "Under the management team led by CEO Vinay Gupta (from 24 November 2025), it received an RBI factoring registration in January 2026 and commercialised factoring in March 2026, with ₹175 Cr outstanding at year-end; it also joined the RXIL and M1xchange TReDS platforms.",
+        "sources": [
+          {
+            "label": "SG Finserve annual report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/931fe3c5-d70e-441a-8222-f9a1ee2ebdfb.pdf",
+            "locator": "Product and technology innovations; directors' report"
+          },
+          {
+            "label": "SG Finserve Q1 FY27 earnings call transcript (14 Jul 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=54333b40-37fd-4a91-a5a1-007b822381ae.pdf"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Top 20 borrowers: 38.89% of advances in FY26, from 58.41% in FY23",
+        "text": "The twenty largest borrowers held 58.41% of total advances at March 2023, 49.76% at March 2024 and again at March 2025, and 38.89% at March 2026, as lending spread across more anchors and borrowers. Average outstanding per borrower was about ₹5 Cr in April 2026.",
+        "period": "FY23 to FY26",
+        "sources": [
+          {
+            "label": "SG Finserve annual report FY2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/91faef69-24ce-461e-96dd-14acfe3f7bdc.pdf",
+            "locator": "Notes: concentration of advances"
+          },
+          {
+            "label": "SG Finserve annual report FY2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/a1b35d90-ffed-40e3-b650-13e47186b8ee.pdf",
+            "locator": "Notes: concentration of advances"
+          },
+          {
+            "label": "SG Finserve annual report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/931fe3c5-d70e-441a-8222-f9a1ee2ebdfb.pdf",
+            "locator": "Notes: concentration of advances"
+          },
+          {
+            "label": "SG Finserve Q4 FY26 earnings call transcript (16 Apr 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=0301ae3a-b3ec-453f-9314-f786f505379a.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Top 20, FY23",
+            "value": 58.41,
+            "unit": "% of advances"
+          },
+          {
+            "label": "Top 20, FY24",
+            "value": 49.76,
+            "unit": "% of advances"
+          },
+          {
+            "label": "Top 20, FY25",
+            "value": 49.76,
+            "unit": "% of advances"
+          },
+          {
+            "label": "Top 20, FY26",
+            "value": 38.89,
+            "unit": "% of advances"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Loan book by region: North 44%, South 30%, West 23%, East 3%",
+        "text": "All lending is in India; the company has no overseas operations. By zone, the loan book at March 2025 was 44% North, 30% South, 23% West and 3% East. Later presentations do not repeat the split.",
+        "period": "March 2025",
+        "sources": [
+          {
+            "label": "SG Finserve Q4 FY25 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d3208798-b1d9-4857-8613-1ea07598a090.pdf",
+            "locator": "Our customers - Pan India: loan book zone-wise"
+          },
+          {
+            "label": "SG Finserve board meeting outcome and Q2 FY27 results (16 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/f2377c14-6fae-49c8-b202-7147589fdf38.pdf",
+            "locator": "Notes to the results: segment reporting"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "North",
+            "value": 44,
+            "unit": "% of loan book"
+          },
+          {
+            "label": "South",
+            "value": 30,
+            "unit": "% of loan book"
+          },
+          {
+            "label": "West",
+            "value": 23,
+            "unit": "% of loan book"
+          },
+          {
+            "label": "East",
+            "value": 3,
+            "unit": "% of loan book"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Supply-chain finance is about two-thirds of the loan book",
+        "text": "Dealer, distributor and vendor finance, invoice financing, factoring and TReDS made up about two-thirds of the ₹5,694 Cr loan book at September 2026; the remaining third is lending beyond the supply chain. In December 2025 the issuer's own portfolio mix was 40% supply-chain finance within the APL Apollo group, 30% supply-chain finance outside it and 30% other lending. It worked with 52 anchor companies in July 2026 and added 14 new anchors in H1 FY27.",
+        "period": "December 2025 to September 2026",
+        "sources": [
+          {
+            "label": "SG Finserve Q2 FY27 investor presentation and press release",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5e9bf39b-d855-4c1d-a74e-c798a3870b77.pdf",
+            "locator": "Key highlights H1'FY27"
+          },
+          {
+            "label": "SG Finserve Q3 FY26 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bb8f1bcd-8748-450c-b5ee-051a7a77c4f9.pdf",
+            "locator": "Guidance - March 2030: portfolio mix"
+          },
+          {
+            "label": "SG Finserve Q1 FY27 earnings call transcript (14 Jul 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=54333b40-37fd-4a91-a5a1-007b822381ae.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Construction is the largest industry in the book, about 35% of AUM",
+        "text": "Construction was the largest industry in the book at about 35% of AUM in April 2026, with automotive second and mobile phones about 2%. Management says supply-chain finance suits a few industries: auto, steel, construction, white goods and IT peripherals.",
+        "period": "Q4 FY26",
+        "sources": [
+          {
+            "label": "SG Finserve Q4 FY26 earnings call transcript (16 Apr 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=0301ae3a-b3ec-453f-9314-f786f505379a.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "92% of the loan book was secured at March 2026, up from 80%",
+        "text": "Secured loans were ₹3,628 Cr of the ₹3,936 Cr loan book at March 2026, against ₹1,807 Cr of ₹2,246 Cr a year earlier; security is a charge on the funded inventory and on the receivables from its sale. The same annual report also puts the secured share at 80% to 90% in its text and at 80-87% in its risk table.",
+        "period": "FY25 to FY26",
+        "sources": [
+          {
+            "label": "SG Finserve annual report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/931fe3c5-d70e-441a-8222-f9a1ee2ebdfb.pdf",
+            "locator": "MD&A: loan book composition; risk management framework"
+          },
+          {
+            "label": "SG Finserve Q4 FY25 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d3208798-b1d9-4857-8613-1ea07598a090.pdf",
+            "locator": "Robust secured portfolio"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "5.15 lakh invoices financed since lending began",
+        "text": "Loans are disbursed on a fully digital platform integrated with anchors' ERP systems. Since lending began it has financed more than 5.15 lakh invoices and disbursed over ₹65,000 Cr in total, including 1.65 lakh invoices and ₹25,368 Cr of gross disbursements in FY26.",
+        "period": "September 2022 to March 2026",
+        "sources": [
+          {
+            "label": "SG Finserve annual report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/931fe3c5-d70e-441a-8222-f9a1ee2ebdfb.pdf",
+            "locator": "MD&A: operational highlights; our competitive advantage"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "34 locations and a team of 100",
+        "text": "The company covered 34 locations with a team of 100 at September 2026, up from 25 locations in Q1 FY26 and 30 at March 2026.",
+        "period": "Q1 FY26 to Q2 FY27",
+        "sources": [
+          {
+            "label": "SG Finserve Q2 FY27 investor presentation and press release",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5e9bf39b-d855-4c1d-a74e-c798a3870b77.pdf",
+            "locator": "Our presence"
+          },
+          {
+            "label": "SG Finserve Q1 FY26 investor presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bcbc6d10-a1eb-4844-8728-ec69e6cbbb36.pdf",
+            "locator": "Our presence"
+          },
+          {
+            "label": "SG Finserve annual report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/931fe3c5-d70e-441a-8222-f9a1ee2ebdfb.pdf",
+            "locator": "MD&A: business overview"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Board approves a GIFT City arm and two minority stakes",
+        "text": "On 16 October 2026 the board approved up to USD 5 million (about ₹48 Cr) for a wholly owned finance company in GIFT City, subject to regulatory approvals; buying 15.5% of Succesship Technologies for ₹4.65 Cr to build in-house AI and digital capabilities; and buying 24.5% of SG Enterprise Solutions, a new group shared-services company, from SG Green Buildings, a related party. Two wholly owned subsidiaries, SG Insurance Brokers and SG Alternative Investment Fund, were incorporated in the quarter and have not started operations.",
+        "period": "Q2 FY27 (board meeting of 16 October 2026)",
+        "sources": [
+          {
+            "label": "SG Finserve board meeting outcome and Q2 FY27 results (16 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/f2377c14-6fae-49c8-b202-7147589fdf38.pdf",
+            "locator": "Outcome of board meeting; notes to the results"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "APL Apollo group now about a quarter of the loan book",
+      "text": "Lending began in 2022 entirely within the APL Apollo group's dealer and vendor network. In December 2025 the group's ecosystem was still 40% of AUM, and in July 2026 management put it at about one-third. By September 2026 about 75% of the ₹5,694 Cr loan book sat outside the group, after 14 new anchor companies were added in H1 FY27 and more than 80% of the book's growth came from new customers.",
+      "period": "2022 to Q2 FY27",
+      "sources": [
+        {
+          "label": "SG Finserve Q1 FY27 earnings call transcript (14 Jul 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=54333b40-37fd-4a91-a5a1-007b822381ae.pdf"
+        },
+        {
+          "label": "SG Finserve Q3 FY26 investor presentation",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bb8f1bcd-8748-450c-b5ee-051a7a77c4f9.pdf",
+          "locator": "Guidance - March 2030: portfolio mix"
+        },
+        {
+          "label": "SG Finserve Q2 FY27 investor presentation and press release",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5e9bf39b-d855-4c1d-a74e-c798a3870b77.pdf",
+          "locator": "Key highlights H1'FY27"
+        }
+      ],
+      "stat": {
+        "value": "75",
+        "unit": "%",
+        "label": "loan book outside the group"
+      }
+    }
+  },
+  "about_sources": [
+    {
+      "label": "SG Finserve Q2 FY27 investor presentation and press release",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5e9bf39b-d855-4c1d-a74e-c798a3870b77.pdf"
+    },
+    {
+      "label": "SG Finserve board meeting outcome and Q2 FY27 results (16 Oct 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/f2377c14-6fae-49c8-b202-7147589fdf38.pdf"
+    },
+    {
+      "label": "SG Finserve Q1 FY27 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=95544336-b01c-419f-a292-e53d1cbecb52.pdf"
+    },
+    {
+      "label": "SG Finserve Q1 FY27 earnings call transcript (14 Jul 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=54333b40-37fd-4a91-a5a1-007b822381ae.pdf"
+    },
+    {
+      "label": "SG Finserve Q4 FY26 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b54406b2-af4c-418b-a84d-a5a0e2d3063d.pdf"
+    },
+    {
+      "label": "SG Finserve Q4 FY26 earnings call transcript (16 Apr 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=0301ae3a-b3ec-453f-9314-f786f505379a.pdf"
+    },
+    {
+      "label": "SG Finserve annual report FY2025-26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/931fe3c5-d70e-441a-8222-f9a1ee2ebdfb.pdf"
+    },
+    {
+      "label": "SG Finserve Q3 FY26 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bb8f1bcd-8748-450c-b5ee-051a7a77c4f9.pdf"
+    },
+    {
+      "label": "SG Finserve Q3 FY26 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=19ef3e64-3206-447d-9ee3-b005ec1a27b8.pdf"
+    },
+    {
+      "label": "SG Finserve Q1 FY26 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bcbc6d10-a1eb-4844-8728-ec69e6cbbb36.pdf"
+    },
+    {
+      "label": "SG Finserve Q1 FY26 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=750b1f42-00a6-425d-86d5-5dfbde9daf78.pdf"
+    },
+    {
+      "label": "SG Finserve annual report FY2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/a1b35d90-ffed-40e3-b650-13e47186b8ee.pdf"
+    },
+    {
+      "label": "SG Finserve Q4 FY25 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d3208798-b1d9-4857-8613-1ea07598a090.pdf"
+    },
+    {
+      "label": "SG Finserve Q2 FY25 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b7660943-cedc-4c24-bb81-32810b4f26df.pdf"
+    },
+    {
+      "label": "SG Finserve annual report FY2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/91faef69-24ce-461e-96dd-14acfe3f7bdc.pdf"
+    },
+    {
+      "label": "SG Finserve Q4 FY24 results release and investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5ce9a4b1-9069-4f52-a9da-bfd17d860550.pdf"
+    },
+    {
+      "label": "SG Finserve Q3 FY24 results release and investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b37058a1-f91e-45f9-ac68-917b3672898f.pdf"
+    }
+  ]
+}

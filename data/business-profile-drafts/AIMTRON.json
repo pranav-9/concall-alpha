@@ -1,0 +1,201 @@
+{
+  "company": "AIMTRON",
+  "company_name": "Aimtron Electronics",
+  "prepared_on": "2026-09-25",
+  "review_status": "user_approved",
+  "source_period": "FY26",
+  "latest_source_date": "2026-05-02",
+  "about_company": {
+    "about_long": "Aimtron Electronics provides electronics system design and manufacturing, including PCB assembly, box-build system integration and ODM programs. It serves industrial, telecom, power, IoT, medical, automotive, defence and other customers. Its India operations are in Vadodara and Bengaluru. The group also includes Aimtron Electronics LLC in Texas and Aimtron International Controls in Decatur, Illinois, following the 2026 acquisition of International Control Services. Revenue comes from design and manufacturing programs; the FY26 product mix reported by the company covers India standalone operations.",
+    "about_short": "Aimtron Electronics is an ODM-led ESDM company offering design, PCB assembly, Box Build and system integration.",
+    "business_intro": "Aimtron designs and manufactures electronics for industrial and other equipment makers. Customers pay for PCB assembly, full-system box builds and design-led manufacturing programs; its US acquisition joined group results for two months of FY26.",
+    "company_timeline": [
+      {
+        "year": 2011,
+        "title": "Aimtron Electronics Private Limited incorporated",
+        "sources": [
+          {
+            "label": "FY26 investor presentation",
+            "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_29042026180627_Intimation_Investor_Presentation_for_Concall_29-04-2026.pdf",
+            "locator": "Slide 7"
+          }
+        ]
+      },
+      {
+        "year": 2012,
+        "title": "Operations began with the first SMT line",
+        "sources": [
+          {
+            "label": "FY26 investor presentation",
+            "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_29042026180627_Intimation_Investor_Presentation_for_Concall_29-04-2026.pdf",
+            "locator": "Slide 7"
+          }
+        ]
+      },
+      {
+        "year": 2021,
+        "title": "Bengaluru manufacturing facility inaugurated",
+        "sources": [
+          {
+            "label": "FY26 investor presentation",
+            "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_29042026180627_Intimation_Investor_Presentation_for_Concall_29-04-2026.pdf",
+            "locator": "Slide 7"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Listed on the NSE Emerge platform",
+        "sources": [
+          {
+            "label": "FY26 investor presentation",
+            "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_29042026180627_Intimation_Investor_Presentation_for_Concall_29-04-2026.pdf",
+            "locator": "Slide 7"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Acquired International Control Services in Decatur, Illinois",
+        "sources": [
+          {
+            "label": "FY26 investor presentation",
+            "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_29042026180627_Intimation_Investor_Presentation_for_Concall_29-04-2026.pdf",
+            "locator": "Slides 7 and 13"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "business_model",
+        "title": "India product mix",
+        "text": "In FY26 India standalone revenue, Box Build contributed 68.8%, PCBA 28.6% and ODM 2.6%. These shares exclude the US acquired business.",
+        "period": "FY26, India standalone",
+        "sources": [
+          {
+            "label": "FY26 investor presentation",
+            "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_29042026180627_Intimation_Investor_Presentation_for_Concall_29-04-2026.pdf",
+            "locator": "Slide 33"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Box Build share",
+            "value": 68.8,
+            "unit": "% of India revenue"
+          },
+          {
+            "label": "PCBA share",
+            "value": 28.6,
+            "unit": "% of India revenue"
+          },
+          {
+            "label": "ODM share",
+            "value": 2.6,
+            "unit": "% of India revenue"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "India standalone customer geography",
+        "text": "India accounted for 74.3% of FY26 India standalone revenue by customer geography; the USA accounted for 11.1%. This split is not the consolidated group mix.",
+        "period": "FY26, India standalone",
+        "sources": [
+          {
+            "label": "FY26 investor presentation",
+            "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_29042026180627_Intimation_Investor_Presentation_for_Concall_29-04-2026.pdf",
+            "locator": "Slide 33"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "India share",
+            "value": 74.3,
+            "unit": "% of India revenue"
+          },
+          {
+            "label": "USA share",
+            "value": 11.1,
+            "unit": "% of India revenue"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "India and US operating footprint",
+        "text": "The deck lists manufacturing operations in Vadodara and Bengaluru, and the acquired International Control Services facility in Decatur, Illinois, under the Texas subsidiary.",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "FY26 investor presentation",
+            "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_29042026180627_Intimation_Investor_Presentation_for_Concall_29-04-2026.pdf"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Current approvals and qualifications",
+        "text": "The deck lists AS9100D, ISO 13485, IATF 16949, CDSCO and Trusted Telecom Partner status. RDSO railway vendor approval remains in progress.",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "FY26 investor presentation",
+            "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_29042026180627_Intimation_Investor_Presentation_for_Concall_29-04-2026.pdf",
+            "locator": "Slide 17"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "US acquisition contribution",
+        "text": "International Control Services, now Aimtron International Controls, contributed US$1.6 million to consolidated FY26 revenue over two months.",
+        "period": "FY26, two months",
+        "sources": [
+          {
+            "label": "H2 FY26 earnings call transcript",
+            "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_02052026182728_Intimation_InvestorPresentation_Transcripts_02-05-2026.pdf",
+            "locator": "Page 21"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "AIC contribution",
+            "value": 1.6,
+            "unit": "USD million"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "A US operating business joined Aimtron’s group",
+      "text": "Aimtron acquired International Control Services in Decatur, Illinois, in 2026 and now operates it as Aimtron International Controls. The acquired business contributed US$1.6 million during two months of FY26 consolidation. The reported India product mix therefore describes the standalone India business, while the FY26 group financials include the acquired US operation.",
+      "period": "FY26",
+      "sources": [
+        {
+          "label": "FY26 investor presentation",
+          "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_29042026180627_Intimation_Investor_Presentation_for_Concall_29-04-2026.pdf",
+          "locator": "Slides 7 and 13"
+        },
+        {
+          "label": "H2 FY26 earnings call transcript",
+          "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_02052026182728_Intimation_InvestorPresentation_Transcripts_02-05-2026.pdf",
+          "locator": "Page 21"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Aimtron FY26 investor presentation",
+      "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_29042026180627_Intimation_Investor_Presentation_for_Concall_29-04-2026.pdf",
+      "locator": "Slides 7, 13 and 33"
+    },
+    {
+      "label": "Aimtron H2 FY26 earnings-call transcript",
+      "url": "https://nsearchives.nseindia.com/corporate/AIMTRON_02052026182728_Intimation_InvestorPresentation_Transcripts_02-05-2026.pdf",
+      "locator": "Management remarks and page 21"
+    }
+  ]
+}
