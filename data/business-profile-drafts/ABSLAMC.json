@@ -1,0 +1,278 @@
+{
+  "company": "ABSLAMC",
+  "company_name": "Aditya Birla Sun Life AMC Limited",
+  "prepared_on": "2026-10-25",
+  "review_status": "draft",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-10-21",
+  "about_company": {
+    "about_short": "Runs Aditya Birla Sun Life Mutual Fund and earns fees on its assets, plus PMS, AIF, offshore and government mandates.",
+    "business_intro": "Aditya Birla Sun Life AMC manages the Aditya Birla Sun Life Mutual Fund and smaller PMS, AIF, real estate and offshore businesses. Investors pay a fee that is a percentage of the assets managed, highest on equity funds. Asset management and advisory fees were 93.7% of consolidated fee income in FY26 and PMS and other services the other 6.3%.",
+    "about_long": "Aditya Birla Sun Life AMC is the investment manager of Aditya Birla Sun Life Mutual Fund; Aditya Birla Capital held 44.89% and Sun Life 29.93% at 31 March 2026. It earns a fee on the average assets it manages, and the rate depends on the asset class: about 62-63 basis points on equity, 24-25 on debt and 12-13 on liquid funds in Q4 FY26. Mutual fund average AUM was ₹4,418 bn in Q2 FY27, up 4% year on year, of which equity was ₹2,092 bn. Beyond mutual funds it runs PMS, AIF, real estate and offshore funds, a specialised investment fund (Apex SIF) and a GIFT City subsidiary. It also manages the ESIC and EPFO debt mandates: ₹6,528 bn of Q2 FY27 average AUM that takes the reported total to ₹11,056 bn but earns very little; without them AUM was ₹4,528 bn. Fees from PMS and other services were 6.3% of consolidated fee income in FY26.",
+    "company_timeline": [
+      {
+        "year": 1994,
+        "title": "Incorporated as Birla Capital International AMC",
+        "detail": "Set up by the Aditya Birla Group and the Capital Group; Aditya Birla Capital and Sun Life (India) AMC Investments are now the promoters.",
+        "sources": [
+          {
+            "label": "Annual Report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8a064fcf-142f-4d81-9a0a-f34c59026ea3.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2021,
+        "title": "Lists on NSE and BSE",
+        "detail": "Shares listed on 11 October 2021. In March 2024 the promoters sold 11.16% through an offer for sale on the exchanges to meet the 25% public-shareholding rule.",
+        "sources": [
+          {
+            "label": "Annual Report 2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/cc6d5fa6-a833-43fe-8f14-0f9460ef175a.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Starts managing the ESIC debt mandate",
+        "detail": "The ESIC debt portfolio was ₹7,456 crore for the quarter ended 31 March 2025. Management says mandate revenue is very marginal.",
+        "sources": [
+          {
+            "label": "Q4 FY25 earnings call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/7e87bdb9-fdd9-4a37-b8d8-b0c256162ca2.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8d970154-ac8a-4d7a-9649-c5528e9316d7.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Incorporates a GIFT City IFSC subsidiary",
+        "detail": "Aditya Birla Sun Life AMC International (IFSC) Limited became a wholly owned subsidiary on 4 December 2025 and later received a retail licence.",
+        "sources": [
+          {
+            "label": "Q3 FY26 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/b6047e38-164e-4630-9d8a-c4a14b812b2d.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8d970154-ac8a-4d7a-9649-c5528e9316d7.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Launches Apex SIF, its specialised investment fund",
+        "detail": "The first offering was the Apex SIF Hybrid Long-Short Fund, reported on the Q4 FY26 call.",
+        "sources": [
+          {
+            "label": "Q4 FY26 earnings call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/eb5f2812-8f72-41cb-b2d5-9052dfd65da2.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Takes on the EPFO debt mandate",
+        "detail": "EPFO picked the company to manage part of its debt portfolio for five years; about ₹6.08 lakh crore came in during Q1 FY27 and closing total AUM passed ₹10 lakh crore on 30 June 2026.",
+        "sources": [
+          {
+            "label": "Q2 FY26 earnings call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/278d2bac-124f-474e-a02a-19d9ec50f1cb.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8d970154-ac8a-4d7a-9649-c5528e9316d7.pdf"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Individual investors hold half of mutual fund AUM",
+        "text": "Individual investors' monthly average AUM was ₹2,177 bn in September 2026, 50% of mutual fund AUM, up from 48% in September 2025; the rest is institutional money. The fund served 11.4 million folios at 30 September 2026.",
+        "period": "Sep 2025 to Sep 2026",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation and press release (21 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e67d19ab-d5fc-4d89-8286-4f650fc10189.pdf"
+          },
+          {
+            "label": "Q4 FY26 investor presentation and press release",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/d5a3c787-2864-4426-8044-ae261e338125.pdf"
+          },
+          {
+            "label": "Q2 FY26 investor presentation and press release",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e8f172a5-eaef-4d4a-8f6e-fedbdc10dc4a.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Individual, Sep 2025",
+            "value": 48,
+            "unit": "% of MF AUM"
+          },
+          {
+            "label": "Individual, Mar 2026",
+            "value": 47.4,
+            "unit": "% of MF AUM"
+          },
+          {
+            "label": "Individual, Sep 2026",
+            "value": 50,
+            "unit": "% of MF AUM"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Smaller (B-30) cities are about 18% of mutual fund AUM",
+        "text": "Monthly average AUM from beyond the top 30 cities was ₹780 bn in September 2026, 17.9% of mutual fund AUM (17.5% a year earlier). Over 80% of its 310+ locations are in B-30 cities. Offshore funds averaged ₹51 bn of AUM in Q2 FY27. The company gives no revenue split by region.",
+        "period": "Sep 2025 to Sep 2026",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation and press release (21 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e67d19ab-d5fc-4d89-8286-4f650fc10189.pdf"
+          },
+          {
+            "label": "Q4 FY26 investor presentation and press release",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/d5a3c787-2864-4426-8044-ae261e338125.pdf"
+          },
+          {
+            "label": "Q2 FY26 investor presentation and press release",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e8f172a5-eaef-4d4a-8f6e-fedbdc10dc4a.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "B-30, Sep 2025",
+            "value": 17.5,
+            "unit": "% of MF AUM"
+          },
+          {
+            "label": "B-30, Mar 2026",
+            "value": 17.1,
+            "unit": "% of MF AUM"
+          },
+          {
+            "label": "B-30, Sep 2026",
+            "value": 17.9,
+            "unit": "% of MF AUM"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "96,000+ distributors and 90+ banks sell its funds",
+        "text": "Over 96,000 KYD-compliant mutual fund distributors, 360+ national distributors and 90+ banks, served through 310+ locations, plus 130+ digital partners.",
+        "period": "Sep 2026",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation and press release (21 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e67d19ab-d5fc-4d89-8286-4f650fc10189.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Fee rates differ about fivefold by asset class",
+        "text": "Management put yields at about 62-63 basis points on equity, 24-25 on debt and 12-13 on liquid funds in Q4 FY26, and 63-64 on equity in Q1 FY27. Equity was 47.4% of mutual fund average AUM in Q2 FY27, so it carries more of the fee income than its AUM share.",
+        "period": "Q4 FY26 to Q2 FY27",
+        "sources": [
+          {
+            "label": "Q4 FY26 earnings call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/eb5f2812-8f72-41cb-b2d5-9052dfd65da2.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8d970154-ac8a-4d7a-9649-c5528e9316d7.pdf"
+          },
+          {
+            "label": "Q2 FY27 investor presentation and press release (21 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e67d19ab-d5fc-4d89-8286-4f650fc10189.pdf"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Government mandates lift AUM but add little revenue",
+        "text": "The ESIC (from Q4 FY25) and EPFO (from Q1 FY27) debt mandates were ₹6,528 bn of Q2 FY27 average AUM, taking the total to ₹11,056 bn, up 140% year on year, while mutual fund AUM rose 4% to ₹4,418 bn. Management calls the mandate revenue very marginal.",
+        "period": "Q2 FY27",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation and press release (21 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e67d19ab-d5fc-4d89-8286-4f650fc10189.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8d970154-ac8a-4d7a-9649-c5528e9316d7.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Equity fund market share fell every quarter since Q3 FY24",
+        "text": "Equity mutual fund market share (excluding ETFs) fell from 5.0% in Q3 FY24 to 4.06% in Q4 FY26 and 3.92% in Q2 FY27. Overall mutual fund share fell from 7.1% to 5.69% over the same quarters.",
+        "period": "Q3 FY24 to Q2 FY27",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation and press release (21 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e67d19ab-d5fc-4d89-8286-4f650fc10189.pdf"
+          },
+          {
+            "label": "Q4 FY26 investor presentation and press release",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/d5a3c787-2864-4426-8044-ae261e338125.pdf"
+          },
+          {
+            "label": "Q3 FY24 investor presentation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ebba85ec-cf76-44f9-9a2d-524632e4b1cf.pdf"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "PMS and other services rose from 3.6% to 6.3% of fee income",
+      "text": "Fees from PMS, AIF and other services grew from ₹44.60 crore in FY23 to ₹115.39 crore in FY26, about 37% a year, while asset management and advisory fees grew about 14% a year to ₹1,729.64 crore. Their share of consolidated fee income rose every year: 3.6%, 4.9%, 5.8%, 6.3%. Net of distributor commission the alternates share is smaller: management put it at about 6% gross and 3.5% net. The government mandates that lifted reported AUM in FY27 are not part of this change.",
+      "period": "FY23 to FY26",
+      "sources": [
+        {
+          "label": "Annual Report 2023-24",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/cc6d5fa6-a833-43fe-8f14-0f9460ef175a.pdf"
+        },
+        {
+          "label": "Annual Report 2024-25",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8a064fcf-142f-4d81-9a0a-f34c59026ea3.pdf"
+        },
+        {
+          "label": "Annual Report 2025-26",
+          "url": "https://nsearchives.nseindia.com/annual_reports/AR_29605_ABSLAMC_2025_2026_A_8053616_07072026111525.pdf"
+        },
+        {
+          "label": "Q4 FY26 earnings call transcript",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/eb5f2812-8f72-41cb-b2d5-9052dfd65da2.pdf"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Q2 FY27 investor presentation and press release (21 Oct 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e67d19ab-d5fc-4d89-8286-4f650fc10189.pdf"
+    },
+    {
+      "label": "Q1 FY27 earnings call transcript",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8d970154-ac8a-4d7a-9649-c5528e9316d7.pdf"
+    },
+    {
+      "label": "Annual Report 2025-26",
+      "url": "https://nsearchives.nseindia.com/annual_reports/AR_29605_ABSLAMC_2025_2026_A_8053616_07072026111525.pdf"
+    },
+    {
+      "label": "Annual Report 2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/8a064fcf-142f-4d81-9a0a-f34c59026ea3.pdf"
+    }
+  ]
+}

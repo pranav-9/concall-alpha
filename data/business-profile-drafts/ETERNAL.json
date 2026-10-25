@@ -1,0 +1,263 @@
+{
+  "company": "ETERNAL",
+  "company_name": "Eternal Limited",
+  "prepared_on": "2026-10-25",
+  "review_status": "draft",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-10-21",
+  "about_company": {
+    "about_short": "Runs Zomato food delivery, Blinkit quick commerce, District going-out and Hyperpure restaurant supply in India.",
+    "business_intro": "Eternal earns a take on orders placed through its apps: commissions, delivery and platform fees and advertising in food delivery and going-out, and, since FY26, the margin on goods Blinkit sells from its own stock. Customers are Indian households ordering food, groceries and tickets; restaurants, brands and event organisers pay to reach them. Hyperpure sells supplies to restaurants.",
+    "about_long": "Eternal Limited, renamed from Zomato Limited in March 2025, is a professionally managed consumer internet group with no identifiable promoter. It runs three consumer businesses, Zomato (food delivery), Blinkit (quick commerce from dark stores) and District (dining out, movies and events, expanded with Paytm's ticketing business in August 2024), plus Hyperpure, which supplies restaurants. In FY26, 109 million Indians transacted over $10 billion through the three apps; B2C net order value was ₹95,959 crore, and ₹35,644 crore in Q2 FY27, up 54% year on year. Blinkit began owning most of its inventory in FY26 (about 90% of its order value by Q3 FY26), so consolidated revenue of ₹54,364 crore in FY26 is not comparable with ₹20,243 crore in FY25. It raised ₹8,500 crore through a QIP in November 2024 and held ₹16,475 crore of cash at September 2026; shareholders approved a 49.5% cap on foreign shareholding in 2025, which made it an Indian owned and controlled company. Albinder Dhindsa, Blinkit's founder, became Group CEO on 1 February 2026. In October 2026 the board approved moving the Going-out India business into a wholly owned subsidiary by slump sale, an internal transfer that leaves the group unchanged, and agreed to swap its Adonmo stake for Mygate shares ahead of a proposed merger of the two.",
+    "company_timeline": [
+      {
+        "year": 2008,
+        "title": "Founded, collecting restaurant menus by motorbike",
+        "detail": "The founder's own account of how the business began; the company itself was incorporated in 2010, as its corporate identity number (L93030DL2010PLC198141) shows.",
+        "sources": [
+          {
+            "label": "Q4 FY26 shareholders' letter",
+            "url": "https://b.zmtcdn.com/investor-relations/Eternal_Shareholders_Letter_Q4FY26_Results.pdf"
+          },
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://b.zmtcdn.com/investor-relations/Eternal_Annual_Report_2025-26.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2022,
+        "title": "Acquires Blinkit, the quick-commerce business",
+        "detail": "The acquisition was completed on 10 August 2022 (FY23), so FY24 was Blinkit's first full year in the group.",
+        "sources": [
+          {
+            "label": "Annual Report 2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/629bfe24-4e55-4b14-957e-8c8bc5828ff0.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Acquires Paytm's entertainment ticketing business",
+        "detail": "Movies, sports and events ticketing joined the Going-out segment from 27 August 2024, for a final consideration of ₹2,014 crore.",
+        "sources": [
+          {
+            "label": "Q2 FY25 shareholders' letter",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/f2668990-81cf-4b19-9de5-ad64ab84236b.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Renames itself Eternal Limited",
+        "detail": "Zomato Limited became Eternal Limited with effect from 20 March 2025; the consumer apps keep their own brands (Zomato, Blinkit, District, Hyperpure).",
+        "sources": [
+          {
+            "label": "Annual Report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e2687a83-7148-436f-9c29-f2d06f912134.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Blinkit starts selling from its own inventory",
+        "detail": "From the quarter ended 30 June 2025 Blinkit moved from a pure marketplace to mostly owning its stock; about 90% of its order value was on own inventory by Q3 FY26. Its revenue now includes the full value of goods sold.",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://b.zmtcdn.com/investor-relations/Eternal_Annual_Report_2025-26.pdf"
+          },
+          {
+            "label": "Q3 FY26 shareholders' letter",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/bf94ed1c-0352-41a3-a9af-ae5c9d568ff6.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Appoints Albinder Dhindsa as Group CEO",
+        "detail": "Blinkit's founder became CEO from 1 February 2026, when Deepinder Goyal stepped down as Managing Director and CEO.",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://b.zmtcdn.com/investor-relations/Eternal_Annual_Report_2025-26.pdf"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Largest customer under 10% of revenue in FY26",
+        "text": "No single customer was 10% or more of FY26 consolidated revenue (₹54,364 crore). In FY25 one customer was more than 10%: ₹2,378 crore of ₹20,243 crore, about 11.7%. Revenue comes from millions of consumers, restaurants and brands rather than a few large accounts.",
+        "period": "FY25 to FY26",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://b.zmtcdn.com/investor-relations/Eternal_Annual_Report_2025-26.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "One customer, FY25",
+            "value": 11.7,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "About 0.1% of revenue comes from outside India",
+        "text": "Revenue from customers outside India was ₹65 crore in FY26 (₹51 crore in FY25), about 0.1% of FY26 consolidated revenue of ₹54,364 crore. The business is almost entirely Indian.",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://b.zmtcdn.com/investor-relations/Eternal_Annual_Report_2025-26.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Outside India, FY26",
+            "value": 0.12,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Quick commerce is now half of the ₹95,959 crore B2C order value",
+        "text": "B2C net order value (NOV) was ₹95,959 crore in FY26, up 55%: quick commerce ₹48,567 crore (50.6%), food delivery ₹37,993 crore (39.6%) and going-out ₹9,399 crore (9.8%). Shares are derived from the annual report's NOV table. Bistro is outside B2C NOV, and Hyperpure is a B2B supplies business measured on revenue.",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://b.zmtcdn.com/investor-relations/Eternal_Annual_Report_2025-26.pdf"
+          },
+          {
+            "label": "Q2 FY27 shareholders' letter (21 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/cbfbd146-6a68-43d6-9cbc-dfb7d0f50fd0.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Quick commerce",
+            "value": 50.6,
+            "unit": "% of B2C NOV"
+          },
+          {
+            "label": "Food delivery",
+            "value": 39.6,
+            "unit": "% of B2C NOV"
+          },
+          {
+            "label": "Going-out",
+            "value": 9.8,
+            "unit": "% of B2C NOV"
+          }
+        ]
+      },
+      {
+        "category": "customers",
+        "title": "28 million monthly food customers, 37 million on Blinkit",
+        "text": "Average monthly transacting customers were 24.3 million in food delivery and 22.1 million in quick commerce in FY26. By Q2 FY27 food delivery had 28.0 million (up 16% year on year) and Blinkit 37 million.",
+        "period": "FY26 to Q2 FY27",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://b.zmtcdn.com/investor-relations/Eternal_Annual_Report_2025-26.pdf"
+          },
+          {
+            "label": "Q2 FY27 shareholders' letter (21 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/cbfbd146-6a68-43d6-9cbc-dfb7d0f50fd0.pdf"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "2,751 Blinkit dark stores at September 2026",
+        "text": "Blinkit added 308 net new stores in Q2 FY27 to reach 2,751, up from 2,243 at March 2026 and 1,301 at March 2025. Management plans to cross 3,500 stores by March 2027 and about 5,000 by March 2028; those are plans, not operating stores.",
+        "period": "Mar 2025 to Sep 2026",
+        "sources": [
+          {
+            "label": "Q2 FY27 shareholders' letter (21 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/cbfbd146-6a68-43d6-9cbc-dfb7d0f50fd0.pdf"
+          },
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://b.zmtcdn.com/investor-relations/Eternal_Annual_Report_2025-26.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Hyperpure supplies restaurants; revenue +22.7% like-for-like",
+        "text": "Hyperpure sells fresh produce, staples and kitchen supplies to restaurants. Its supply to sellers on Blinkit fell away once Blinkit began owning inventory in FY26, so reported revenue fell from ₹6,196 crore (FY25) to ₹5,366 crore (FY26). On a like-for-like basis Q2 FY27 revenue grew 22.7% to ₹1,154 crore, at a 0.9% Adjusted EBITDA margin.",
+        "period": "FY25 to Q2 FY27",
+        "sources": [
+          {
+            "label": "Q2 FY27 shareholders' letter (21 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/cbfbd146-6a68-43d6-9cbc-dfb7d0f50fd0.pdf"
+          },
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://b.zmtcdn.com/investor-relations/Eternal_Annual_Report_2025-26.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "₹16,475 crore of cash at September 2026",
+        "text": "The cash balance was ₹16,475 crore at the end of Q2 FY27, down ₹1,813 crore in the quarter as quick commerce built inventory ahead of the festive season. It includes the proceeds of the ₹8,500 crore QIP raised in November 2024.",
+        "period": "Sep 2026",
+        "sources": [
+          {
+            "label": "Q2 FY27 shareholders' letter (21 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/cbfbd146-6a68-43d6-9cbc-dfb7d0f50fd0.pdf"
+          },
+          {
+            "label": "Q4 FY25 earnings call transcript",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/33ef27d3-1271-48fa-9ab9-89c6f96c833b.pdf"
+          },
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://b.zmtcdn.com/investor-relations/Eternal_Annual_Report_2025-26.pdf"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Quick commerce overtook food delivery as the largest B2C business by order value in FY26",
+      "text": "Quick commerce NOV grew 117% to ₹48,567 crore in FY26 while food delivery grew 16% to ₹37,993 crore. Quick commerce went from 36% of B2C NOV in FY25 to 51% in FY26, and food delivery from 53% to 40% (derived from the annual report's NOV table). In Q2 FY27 quick commerce was 59% of ₹35,644 crore B2C NOV. Reported revenue overstates the shift, because Blinkit's revenue includes the full value of goods it sells from FY26.",
+      "period": "FY25 to FY26",
+      "sources": [
+        {
+          "label": "Annual Report 2025-26",
+          "url": "https://b.zmtcdn.com/investor-relations/Eternal_Annual_Report_2025-26.pdf"
+        },
+        {
+          "label": "Q2 FY27 shareholders' letter (21 Oct 2026)",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/cbfbd146-6a68-43d6-9cbc-dfb7d0f50fd0.pdf"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Q2 FY27 shareholders' letter (21 Oct 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/cbfbd146-6a68-43d6-9cbc-dfb7d0f50fd0.pdf"
+    },
+    {
+      "label": "Q4 FY26 shareholders' letter",
+      "url": "https://b.zmtcdn.com/investor-relations/Eternal_Shareholders_Letter_Q4FY26_Results.pdf"
+    },
+    {
+      "label": "Annual Report 2025-26",
+      "url": "https://b.zmtcdn.com/investor-relations/Eternal_Annual_Report_2025-26.pdf"
+    },
+    {
+      "label": "Annual Report 2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e2687a83-7148-436f-9c29-f2d06f912134.pdf"
+    }
+  ]
+}
