@@ -11,6 +11,10 @@ const RULES: [string, RegExp][] = [
   ["Investment", /\bstake\b|strategic investment|invests? in\b/],
   ["Fundraise", /\bqip\b|\braises\b|fund ?rais|preferential|rights issue|private equity/],
   ["Joint venture", /joint venture|\bjv\b|partnership with|partners with|ties up|tie-up|collaborat|alliance/],
+  // A launch that goes on to mention an order is still a launch (STLTECH 2026-10-23: "India's first hollow-core
+  // fibre cable launched; first commercial order for G.654.E fibre" was headed "Order win"). Only a launch verb
+  // ahead of the order word counts, so "Order for the launch vehicle" stays an order win.
+  ["New line", /\b(?:launch(?:es|ed)|unveil(?:s|ed)|introduc(?:es|ed))\b.*\b(?:orders?|contracts?|wins?)\b/],
   ["Order win", /\borders?\b|contract|\bwins\b|awarded|supply agreement|\bloi\b/],
   ["Approval", /approv|certif|accredit|qualif|licen[cs]e|clearance|usfda|inspection|consent|exempts/],
   ["R&D", /r&d|research cent|research and development|\blabs?\b/],

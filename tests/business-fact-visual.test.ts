@@ -57,6 +57,10 @@ test("milestone headings: first matching rule wins; an unrecognised title gets n
     ["Begins supplying crankshafts for SUVs, entering passenger vehicles", "New line"], ["Begins manufacturing for Indian defence companies", "New line"],
     ["Began operations in Chhattisgarh as Sambhv Sponge Power, making sponge iron", "Founded"], ["Exchange began operations", "Founded"],
     ["Operations began with the first SMT line", "Founded"], ["Begins with telecom electronics", "Founded"], ["Began its precision-engineering journey", "Founded"],
+    // a launch that also mentions an order is a launch (STLTECH 2026-10-23); an order for a launch vehicle is still an order
+    ["India's first hollow-core fibre cable launched; first commercial order for G.654.E fibre", "New line"],
+    ["Launches NETRA 5 and SWITCH V2; wins ₹137 Cr mini-UAV order", "New line"],
+    ["Wins ISRO order for launch vehicle structures", "Order win"], ["Reaches 35,000 MTPA; launches silver-plated bus bars", "Capacity"],
   ];
   for (const [title, label] of cases) assert.equal(milestoneLabel(title), label, title);
 });
