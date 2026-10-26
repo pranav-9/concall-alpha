@@ -686,6 +686,37 @@ COVERS["stltech-tenants-moved-in"] = [
     range(4).map((i) => L(524, 196 + i * 8, 536, 196 + i * 8, i === 1 ? "s sa" : "s t")).join(""),
 ];
 
+// Steel Strips Wheels — the two wheels it makes, side by side: a pressed steel wheel with its vent holes and
+// lug nuts, and the cast alloy wheel with open spokes that now carries the growth.
+COVERS["sswl-sign-says-steel"] = [
+  "green",
+  L(140, 250, 540, 250) +
+    // steel wheel: rim, pressed disc, six vent holes, five lug holes, centre bore
+    C(240, 146, 98, "s l") +
+    C(240, 146, 84, "s w") +
+    C(240, 146, 70, "s m") +
+    range(6).map((i) => {
+      const a = (i * Math.PI) / 3 + Math.PI / 6;
+      return C(f(240 + 48 * Math.cos(a)), f(146 + 48 * Math.sin(a)), 11, "s w");
+    }).join("") +
+    C(240, 146, 26, "s l") +
+    range(5).map((i) => {
+      const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+      return C(f(240 + 17 * Math.cos(a)), f(146 + 17 * Math.sin(a)), 3.5, "s d");
+    }).join("") +
+    C(240, 146, 8, "s w") +
+    // alloy wheel: rim, five open spokes from the hub, accent centre cap
+    C(442, 146, 98, "s l") +
+    C(442, 146, 84, "s w") +
+    range(5).map((i) => {
+      const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+      const pt = (r, da) => `${f(442 + r * Math.cos(a + da))} ${f(146 + r * Math.sin(a + da))}`;
+      return P(`M${pt(22, -0.32)} L${pt(82, -0.12)} A82 82 0 0 1 ${pt(82, 0.12)} L${pt(22, 0.32)} Z`, "s m");
+    }).join("") +
+    C(442, 146, 26, "s l") +
+    C(442, 146, 11, "s a"),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
