@@ -717,6 +717,34 @@ COVERS["sswl-sign-says-steel"] = [
     C(442, 146, 11, "s a"),
 ];
 
+// Ather Energy — the product in side view: a family electric scooter with its flat floorboard, the battery pack
+// slung beneath it, the long seat over the rear panel, the leg shield and handlebar, and the headlamp.
+COVERS["atherenerg-queue-out-the-door"] = [
+  "blue",
+  L(140, 250, 540, 250) +
+    // rear and front fenders behind the wheels
+    P("M168 204 A46 46 0 0 1 260 204", "s t") +
+    P("M412 204 A46 46 0 0 1 504 204", "s t") +
+    // wheels: tyre, rim, hub
+    [214, 458].map((x) => C(x, 212, 38, "s d") + C(x, 212, 24, "s l") + C(x, 212, 7, "s w")).join("") +
+    // rear body panel and the long seat over it
+    P("M170 172 C172 140 210 126 258 128 L334 132 L344 180 L252 186 C224 186 196 182 170 172 Z", "s m") +
+    P("M194 126 C208 108 298 106 326 116 L330 132 L196 134 Z", "s d") +
+    // flat floorboard and the battery pack beneath it
+    R(262, 174, 142, 14, 4, "s l") +
+    R(284, 188, 98, 16, 3, "s d") +
+    range(3).map((i) => L(306 + i * 26, 191, 306 + i * 26, 201, "s t")).join("") +
+    // leg shield up to the handlebar, the fork down to the front wheel
+    P("M394 188 L404 100 C406 86 420 80 432 88 L446 188 Z", "s w") +
+    L(436, 150, 458, 212) +
+    L(418, 84, 424, 60) +
+    L(398, 58, 450, 58) +
+    R(388, 54, 12, 8, 2, "s d") +
+    R(448, 54, 12, 8, 2, "s d") +
+    // headlamp
+    C(440, 104, 7, "s a"),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
