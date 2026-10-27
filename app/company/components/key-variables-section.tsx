@@ -2,10 +2,8 @@ import type {
   NormalizedKeyVariableDeepTreatmentItem,
   NormalizedKeyVariableDiscoverySummary,
   NormalizedKeyVariableKpiHistory,
-  NormalizedKeyVariableKpiHistoryRow,
   NormalizedKeyVariableSourceBasis,
   NormalizedKeyVariablesSnapshot,
-  ThesisEffect,
 } from "@/lib/key-variables-snapshot/types";
 import { Button } from "@/components/ui/button";
 import { KpiHistoryTrendCell } from "./kpi-history-trend-cell";
@@ -29,7 +27,6 @@ import {
 } from "./surface-tokens";
 import { getDeltaToneClass } from "./delta-tone";
 import {
-  getThesisEffect,
   thesisEffectLineClass,
   thesisEffectTextClass,
 } from "./thesis-effect";
@@ -38,17 +35,18 @@ import { formatPeriodDelta, getPeriodOverPeriodDelta } from "@/lib/period-delta"
 import {
   asNumericValue,
   buildTrendGeometry,
-  classifyUnit,
   compactPeriodLabel,
   formatMetricNumber,
-  formatTrendChange,
   formatValueWithUnit,
   normalizeVariableName,
   periodNounLong,
   trendSpanPhrase,
-  splitMetricName,
-  splitUnitAffixes,
 } from "@/lib/key-variables-snapshot/presentation";
+import {
+  buildLeadMetric,
+  resolveHistoryPeriods as resolvePeriods,
+  type LeadMetric,
+} from "@/lib/key-variables-snapshot/lead-metric";
 
 /* ------------------------------------------------------------------------ */
 /* Type + tone tokens (the section is violet; effects are emerald/rose/amber) */
@@ -59,9 +57,6 @@ const dataFont = "font-[family-name:var(--font-data)] tabular-nums";
 const eyebrowClass = "text-[10px] font-semibold uppercase tracking-[0.16em]";
 const violetText = "text-violet-700 dark:text-violet-300";
 const hoverColor = "transition-colors duration-150";
-
-/** The hero trend plots up to this many trailing periods. */
-const TREND_PERIODS = 8;
 
 const formatCellValue = (value: string | number | null | undefined) => {
   if (typeof value === "number") return formatMetricNumber(value);
@@ -121,11 +116,6 @@ const sourceBasisDisplay: Record<
 const compactLabel = (value: string | null) =>
   value?.replace(/[_>]+/g, " ").replace(/\s+/g, " ").trim() ?? null;
 
-/** History periods, falling back to the union of row keys when the list is empty. */
-const resolvePeriods = (history: NormalizedKeyVariableKpiHistory) => {
-  if (history.periods.length > 0) return history.periods;
-  return Array.from(new Set(history.rows.flatMap((row) => Object.keys(row.valuesByPeriod))));
-};
 
 /* ------------------------------------------------------------------------ */
 /* Discovery drawer (unchanged content; now opened from the funnel)           */
@@ -479,61 +469,6 @@ function VariableDrawerBody({
 /* ------------------------------------------------------------------------ */
 /* Deep-tracked card                                                          */
 /* ------------------------------------------------------------------------ */
-
-type LeadMetric = {
-  row: NormalizedKeyVariableKpiHistoryRow;
-  name: string;
-  unitPrefix: string;
-  unitSuffix: string;
-  latestPeriod: string;
-  latestValue: number | null;
-  /** The trend's periods: up to TREND_PERIODS, starting at the first one with a value. */
-  trendPeriods: string[];
-  trendValues: Array<number | null>;
-  /** First plotted → latest, over the trend. */
-  change: { label: string; delta: number } | null;
-  effect: ThesisEffect;
-};
-
-const buildLeadMetric = (item: NormalizedKeyVariableDeepTreatmentItem): LeadMetric | null => {
-  const history = item.kpiHistory;
-  if (!history || history.rows.length === 0) return null;
-  const periods = resolvePeriods(history);
-  if (periods.length === 0) return null;
-
-  const row = history.rows[item.leadMetricIndex] ?? history.rows[0];
-  const { name, unit: parsedUnit } = splitMetricName(row.metric);
-  const unit = item.leadUnit ?? parsedUnit;
-  const { prefix, suffix } = splitUnitAffixes(unit);
-
-  const latestPeriod = periods[periods.length - 1];
-  const latestValue = asNumericValue(row.valuesByPeriod[latestPeriod]);
-
-  const recent = periods.slice(-TREND_PERIODS);
-  const recentValues = recent.map((period) => asNumericValue(row.valuesByPeriod[period]));
-  const firstIndex = recentValues.findIndex((value) => value != null);
-  const trendPeriods = firstIndex > 0 ? recent.slice(firstIndex) : recent;
-  const trendValues = firstIndex > 0 ? recentValues.slice(firstIndex) : recentValues;
-  // One plotted period has no "first → latest": a lone value must not print "0 pp".
-  const change =
-    trendPeriods.length >= 2
-      ? formatTrendChange(trendValues[0] ?? null, latestValue, classifyUnit(unit))
-      : null;
-  const direction = item.metricDirections?.[row.metric] ?? "higher_is_better";
-
-  return {
-    row,
-    name,
-    unitPrefix: prefix,
-    unitSuffix: suffix,
-    latestPeriod,
-    latestValue,
-    trendPeriods,
-    trendValues,
-    change,
-    effect: getThesisEffect(change?.delta ?? null, direction),
-  };
-};
 
 /** Left-anchored at the first point, right-anchored at the last, centred between. */
 const anchorClass = (x: number) =>

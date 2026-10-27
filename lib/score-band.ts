@@ -40,6 +40,7 @@ export type BandDef = {
   textOnBarClass: string; // text colour ON the solid fill (circle / bar badge)
   ringClass: string; // ring for the score circle
   chartHex: string; // hex for chart points/lines
+  washClass: string; // soft band-coloured wash + border — the ConcallScore hero band
 };
 
 export const BANDS: Record<BandKey, BandDef> = {
@@ -54,6 +55,8 @@ export const BANDS: Record<BandKey, BandDef> = {
     textOnBarClass: "text-white",
     ringClass: "ring-teal-300/50 dark:ring-teal-600/35",
     chartHex: "#0f766e",
+    washClass:
+      "border-teal-500/30 bg-gradient-to-r from-teal-500/[0.14] via-teal-500/[0.06] to-transparent dark:border-teal-400/25 dark:from-teal-400/[0.16] dark:via-teal-400/[0.06]",
   },
   bullish: {
     key: "bullish",
@@ -66,6 +69,8 @@ export const BANDS: Record<BandKey, BandDef> = {
     textOnBarClass: "text-white",
     ringClass: "ring-teal-300/50 dark:ring-teal-600/35",
     chartHex: "#14b8a6",
+    washClass:
+      "border-teal-500/25 bg-gradient-to-r from-teal-500/[0.12] via-teal-500/[0.05] to-transparent dark:border-teal-400/20 dark:from-teal-400/[0.13] dark:via-teal-400/[0.05]",
   },
   mildly_bullish: {
     key: "mildly_bullish",
@@ -78,6 +83,8 @@ export const BANDS: Record<BandKey, BandDef> = {
     textOnBarClass: "text-zinc-900",
     ringClass: "ring-teal-300/50 dark:ring-teal-600/35",
     chartHex: "#5eead4",
+    washClass:
+      "border-teal-400/25 bg-gradient-to-r from-teal-400/[0.10] via-teal-400/[0.04] to-transparent dark:border-teal-300/20 dark:from-teal-300/[0.10] dark:via-teal-300/[0.04]",
   },
   neutral: {
     key: "neutral",
@@ -90,6 +97,8 @@ export const BANDS: Record<BandKey, BandDef> = {
     textOnBarClass: "text-zinc-900",
     ringClass: "ring-amber-300/50 dark:ring-amber-600/35",
     chartHex: "#f59e0b",
+    washClass:
+      "border-amber-400/30 bg-gradient-to-r from-amber-400/[0.12] via-amber-400/[0.05] to-transparent dark:border-amber-400/25 dark:from-amber-400/[0.12] dark:via-amber-400/[0.05]",
   },
   mildly_bearish: {
     key: "mildly_bearish",
@@ -102,6 +111,8 @@ export const BANDS: Record<BandKey, BandDef> = {
     textOnBarClass: "text-white",
     ringClass: "ring-orange-300/50 dark:ring-orange-600/35",
     chartHex: "#f97316",
+    washClass:
+      "border-orange-500/30 bg-gradient-to-r from-orange-500/[0.12] via-orange-500/[0.05] to-transparent dark:border-orange-400/25 dark:from-orange-400/[0.12] dark:via-orange-400/[0.05]",
   },
   strongly_bearish: {
     key: "strongly_bearish",
@@ -114,6 +125,8 @@ export const BANDS: Record<BandKey, BandDef> = {
     textOnBarClass: "text-white",
     ringClass: "ring-red-300/50 dark:ring-red-600/35",
     chartHex: "#dc2626",
+    washClass:
+      "border-red-500/30 bg-gradient-to-r from-red-500/[0.12] via-red-500/[0.05] to-transparent dark:border-red-400/25 dark:from-red-400/[0.12] dark:via-red-400/[0.05]",
   },
   upcoming: {
     key: "upcoming",
@@ -126,6 +139,8 @@ export const BANDS: Record<BandKey, BandDef> = {
     textOnBarClass: "text-zinc-900 dark:text-zinc-100",
     ringClass: "ring-zinc-300/50 dark:ring-zinc-600/35",
     chartHex: "#a1a1aa",
+    washClass:
+      "border-border/40 bg-muted/30",
   },
 };
 

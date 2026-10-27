@@ -2,12 +2,15 @@ import { notFound } from "next/navigation";
 import { ConcallScoreSection } from "@/app/company/components/concall-score-section";
 import { transformToChartData } from "@/app/company/utils";
 import { QUARTERLY_V4_FIXTURE } from "./fixture";
+import { FINANCIALS_FIXTURE, HIGHLIGHTS_FIXTURE } from "./fixture-extras";
 
 // Dev-only preview harness for the ConcallScore section's category cards. The
 // fixture mixes both key_point shapes: the latest quarter is structured
 // (heading + metric + quote + watch + tones, incl. a "minor" aside), the older
 // three are plain strings — pick a quarter in the section to see each, and the
 // lean-streak caption on the chip (Guidance: "In line · 2nd quarter running").
+// fixture-extras.ts adds CCL's quarterly_financials rows (read 2026-10-27) and
+// a hand-slimmed highlights set so the Results card and Top highlights draw too.
 export default function QuarterlyV4Preview() {
   if (process.env.NODE_ENV !== "development") notFound();
   const chartData = transformToChartData(QUARTERLY_V4_FIXTURE, 24);
@@ -22,7 +25,12 @@ export default function QuarterlyV4Preview() {
           Latest quarter = structured key points (sandbox); older quarters = stored plain strings.
         </p>
       </div>
-      <ConcallScoreSection chartData={chartData} detailQuarters={QUARTERLY_V4_FIXTURE} />
+      <ConcallScoreSection
+        chartData={chartData}
+        detailQuarters={QUARTERLY_V4_FIXTURE}
+        financials={FINANCIALS_FIXTURE}
+        highlights={HIGHLIGHTS_FIXTURE}
+      />
     </main>
   );
 }
