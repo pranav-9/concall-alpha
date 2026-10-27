@@ -33,6 +33,8 @@ import {
   type QuarterlyFinancialsRow,
 } from "@/lib/quarter-expectation/types";
 import { buildExpectedUpdates, parseRationaleLines } from "@/lib/quarter-expectation/updates";
+import type { QuarterFinancialsPoint } from "@/lib/quarter-results";
+import { buildQuarterHighlights } from "@/lib/key-variables-snapshot/highlights";
 import { logger } from "@/lib/logger";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
 import type { ValuationCheckRow } from "@/lib/valuation-check/types";
@@ -212,15 +214,17 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
       // read — one query per request across the three.
       getGuidanceSnapshotRow(overview.company_code).catch(() => null),
       // Screener's quarterly P&L (scrape_screener_quarters.py): the year-ago
-      // quarter the guide is applied to, and the trailing run-rate. Twelve
-      // rows cover four YoY pairs plus the year-ago target.
+      // quarter the guide is applied to, the trailing run-rate, and the
+      // Results card for whichever quarter is selected.
       supabase
         .from("quarterly_financials")
-        .select("company_code, fy, qtr, period_end, basis, revenue_cr, opm_pct, net_profit_cr")
+        .select("company_code, fy, qtr, period_end, basis, revenue_cr, operating_profit_cr, opm_pct, net_profit_cr, eps")
         .eq("company_code", overview.company_code)
         .order("fy", { ascending: false })
         .order("qtr", { ascending: false })
-        .limit(12),
+        // 24 detail quarters + the year-ago row of the oldest, so the Results
+        // card can print YoY for any quarter the picker offers.
+        .limit(28),
       supabase
         .from("bse_announcements")
         .select("announcement_id, filed_at, summary, category, impact")
@@ -304,6 +308,21 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
     const parsed = quarterlyFinancialsRowSchema.safeParse(row);
     return parsed.success ? [parsed.data] : [];
   });
+  // The Results card's rows: the same parsed financials, in the slim shape
+  // the client chunk takes (newest first, as fetched).
+  const financialPoints: QuarterFinancialsPoint[] = financials.map((r) => ({
+    fy: r.fy,
+    qtr: r.qtr,
+    periodEnd: r.period_end,
+    basis: r.basis,
+    revenueCr: r.revenue_cr,
+    operatingProfitCr: r.operating_profit_cr ?? null,
+    opmPct: r.opm_pct,
+    netProfitCr: r.net_profit_cr,
+    eps: r.eps ?? null,
+  }));
+  // Top highlights: the deep-tracked key variables, slimmed for three cards.
+  const highlights = buildQuarterHighlights(keyVarSnapshot);
   const filings: ExpectationFiling[] = (filingsResult.data ?? []).flatMap((row) => {
     const r = row as { announcement_id?: unknown; filed_at?: unknown; summary?: unknown; category?: unknown; impact?: unknown };
     if (typeof r.announcement_id !== "string" || typeof r.filed_at !== "string" || typeof r.summary !== "string") return [];
@@ -347,6 +366,8 @@ export async function ConcallScorePanel({ overview }: CompanyDetailSectionProps)
         detailQuarters={detailQuarters}
         growthScore={growthScore}
         expectation={expectation}
+        financials={financialPoints}
+        highlights={highlights}
       />
     </SectionCard>
   );

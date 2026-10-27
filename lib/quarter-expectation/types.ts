@@ -35,6 +35,10 @@ export const quarterlyFinancialsRowSchema = z.object({
   revenue_cr: z.coerce.number().nullable(),
   opm_pct: z.coerce.number().nullable(),
   net_profit_cr: z.coerce.number().nullable(),
+  // Printed by the ConcallScore tab's Results card; optional so the
+  // expectation builders (which never read them) keep accepting narrower selects.
+  operating_profit_cr: z.coerce.number().nullable().optional(),
+  eps: z.coerce.number().nullable().optional(),
 });
 export type QuarterlyFinancialsRow = z.infer<typeof quarterlyFinancialsRowSchema>;
 

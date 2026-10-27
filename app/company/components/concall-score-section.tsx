@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ArrowDown, ArrowUp, ChevronDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ListChecks, TrendingUp } from "lucide-react";
 import ConcallScore from "@/components/concall-score";
 import { cn } from "@/lib/utils";
 import { BANDS, bandForScore } from "@/lib/score-band";
@@ -14,17 +14,22 @@ import {
 import { buildNextQuarterWatch } from "@/lib/next-quarter-watch/select";
 import { buildQuarterExpectationView, type QuarterExpectationData } from "@/lib/quarter-expectation/build";
 import { scoreVsBaseline } from "@/lib/quarter-expectation/baseline";
+import { buildQuarterResults, type QuarterFinancialsPoint } from "@/lib/quarter-results";
+import type { QuarterHighlight } from "@/lib/key-variables-snapshot/highlights";
 import { normalizeSourceStatus } from "@/lib/score-freshness";
 import { ChartLineLabel } from "../[code]/chart";
 import { QuarterExpectationCard } from "./quarter-expectation-card";
+import { QuarterHighlights } from "./quarter-highlights";
+import { QuarterResultsTable } from "./quarter-results-table";
+import { ScoreBreakdownTiles } from "./score-breakdown-tiles";
 import { TrendBadge } from "./trend-badge";
 import { chipClass } from "./chip-tone";
-import { elevatedBlockClass, nestedDetailClass } from "./surface-tokens";
+import { nestedDetailClass } from "./surface-tokens";
 import {
   normalizeQuarterlyV4Categories,
   type NormalizedQuarterlyV4,
 } from "@/lib/quarterly-v4/normalize";
-import { V4CategoryCards, V4CoverageStrip, V4LeansStrip } from "./quarterly-v4-section";
+import { V4CategoryCards } from "./quarterly-v4-section";
 
 import type { ChartDataPoint, QuarterData } from "../types";
 
@@ -38,6 +43,12 @@ type ConcallScoreSectionProps = {
   // stay quiet when there's nothing to say.
   growthScore?: number | null;
   expectation?: QuarterExpectationData | null;
+  // The reported quarterly P&L (quarterly_financials, newest first) behind the
+  // Results card; the card is omitted for a quarter with no row.
+  financials?: QuarterFinancialsPoint[];
+  // The deep-tracked key variables, slimmed for the Top highlights strip.
+  // Company-level, so drawn only on the latest quarter.
+  highlights?: QuarterHighlight[];
 };
 
 // rationale on the row: new rows are structured {direction, heading, detail};
@@ -76,6 +87,8 @@ type DetailQuarterContext = {
   detailScore: number;
   band: { label: string; tone: string };
   detailQuarterLabel: string;
+  fy: number;
+  qtr: number;
   v4: NormalizedQuarterlyV4 | null;
 };
 
@@ -123,6 +136,8 @@ const buildDetailQuarterContext = (quarter: QuarterData): DetailQuarterContext =
   const guidance = typeof details?.guidance === "string" ? details.guidance : null;
   const detailScore = typeof details?.score === "number" ? details.score : quarter.score;
   const band = BANDS[bandForScore(detailScore)];
+  const fy = typeof details?.fy === "number" ? details.fy : quarter.fy;
+  const qtr = typeof details?.qtr === "number" ? details.qtr : quarter.qtr;
   const detailQuarterLabel =
     typeof details?.qtr === "number" && typeof details?.fy === "number"
       ? `Q${details.qtr} FY${details.fy}`
@@ -142,9 +157,14 @@ const buildDetailQuarterContext = (quarter: QuarterData): DetailQuarterContext =
     detailScore,
     band,
     detailQuarterLabel,
+    fy,
+    qtr,
     v4,
   };
 };
+
+// "Q2 FY2027" → "Q2 FY27": the section names quarters the short way everywhere.
+const shortQuarterLabel = (label: string) => label.replace(/FY(\d{2})(\d{2})\b/, "FY$2");
 
 type SectionCard = {
   key: string;
@@ -154,6 +174,7 @@ type SectionCard = {
   text?: string;
 };
 
+// Legacy rows (scored before the v4 breakdown) keep their flat cards.
 const renderCard = (card: SectionCard) => {
   const hasItems = card.items && card.items.length > 0;
   const hasText = !!card.text;
@@ -162,9 +183,7 @@ const renderCard = (card: SectionCard) => {
     <div key={card.key} className={`${nestedDetailClass} p-3`}>
       <div className="mb-2 flex items-center gap-1.5">
         <span className={`h-1.5 w-1.5 rounded-full ${card.accent}`} />
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          {card.label}
-        </p>
+        <h4 className="text-[13px] font-semibold leading-tight text-foreground">{card.label}</h4>
       </div>
       {hasText ? (
         <p className="text-[12px] leading-snug text-foreground/85">{card.text}</p>
@@ -212,79 +231,8 @@ const withRollingAverage = (data: ChartDataPoint[]): ChartDataPoint[] => {
   });
 };
 
-const renderChartCard = ({
-  chartData,
-  selectedQuarterLabel,
-  onQuarterSelect,
-  range,
-  onRangeChange,
-  showRangeToggle,
-  trajectory,
-  title = "Where it's heading",
-}: {
-  chartData: ChartDataPoint[];
-  selectedQuarterLabel: string;
-  onQuarterSelect: (label: string) => void;
-  range: ChartRange;
-  onRangeChange: (range: ChartRange) => void;
-  showRangeToggle: boolean;
-  // Series-level trajectory (as of the latest quarter) — same classification the
-  // leaderboard/watchlist Trend column uses. Labels the chart, not a single quarter.
-  trajectory: TrajectoryResult;
-  title?: string;
-}) => (
-  <div className={`${nestedDetailClass} flex min-w-0 flex-col gap-2 p-2.5`}>
-    {/* Mobile: title row, then the chart, then the legend as a caption.
-        Desktop: title + badge left, legend + range toggle right, one row. */}
-    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          {title}
-        </p>
-        {trajectory.key !== "no_read" && (
-          <TrendBadge
-            trajectoryKey={trajectory.key}
-            trendChange={trajectory.change}
-            trendDescription={trajectory.description}
-          />
-        )}
-      </div>
-      <span className="hidden items-center gap-2 text-[10px] text-muted-foreground sm:flex">
-        <span>
-          <span className="text-amber-400/90">⭐</span> 8.5+&nbsp;&nbsp;·&nbsp;&nbsp;
-          {chartData.some((d) => d.rollingAvg != null) && (
-            <>
-              <span className="tracking-[0.18em]">┄</span> 4Q avg&nbsp;&nbsp;·&nbsp;&nbsp;
-            </>
-          )}
-          {chartData.length === 1 ? "1 quarter" : `${chartData.length} quarters`}
-        </span>
-        {showRangeToggle && (
-          <ChartRangeToggle range={range} onRangeChange={onRangeChange} />
-        )}
-      </span>
-    </div>
-    <div className="mx-auto flex w-full max-w-[34rem] justify-center">
-      <ChartLineLabel
-        chartData={chartData}
-        selectedQuarter={selectedQuarterLabel}
-        onQuarterSelect={onQuarterSelect}
-      />
-    </div>
-    <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground sm:hidden">
-      <span>
-        {chartData.some((d) => d.rollingAvg != null) && (
-          <>
-            <span className="tracking-[0.18em]">┄</span> 4Q avg&nbsp;&nbsp;·&nbsp;&nbsp;
-          </>
-        )}
-        {chartData.length === 1 ? "1 quarter" : `${chartData.length} quarters`}
-        &nbsp;&nbsp;·&nbsp;&nbsp;tap a dot for detail
-      </span>
-      {showRangeToggle && <ChartRangeToggle range={range} onRangeChange={onRangeChange} />}
-    </div>
-  </div>
-);
+const dataFont = "font-[family-name:var(--font-data)] tabular-nums";
+const displayFont = "font-[family-name:var(--font-display)] font-bold";
 
 const ChartRangeToggle = ({
   range,
@@ -312,28 +260,103 @@ const ChartRangeToggle = ({
   </span>
 );
 
+// The trail card: title + quarter count, the trajectory badge, the band
+// legend, the range toggle, then the chart. Dots and axis labels select a quarter.
+const ScoreTrailCard = ({
+  chartData,
+  totalQuarters,
+  selectedQuarterLabel,
+  onQuarterSelect,
+  range,
+  onRangeChange,
+  showRangeToggle,
+  trajectory,
+}: {
+  chartData: ChartDataPoint[];
+  totalQuarters: number;
+  selectedQuarterLabel: string;
+  onQuarterSelect: (label: string) => void;
+  range: ChartRange;
+  onRangeChange: (range: ChartRange) => void;
+  showRangeToggle: boolean;
+  // Series-level trajectory (as of the latest quarter) — same classification the
+  // leaderboard/watchlist Trend column uses. Labels the chart, not a single quarter.
+  trajectory: TrajectoryResult;
+}) => {
+  const hasRolling = chartData.some((d) => d.rollingAvg != null);
+  return (
+    <div className={cn(nestedDetailClass, "flex min-w-0 flex-col gap-2 p-3 sm:p-4")}>
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-muted-foreground" aria-hidden />
+          <h3 className="text-[15px] font-semibold leading-tight text-foreground">Score trail</h3>
+          <span className={cn(chipClass("slate"), dataFont, "px-2 py-0.5 text-[10px]")}>
+            {totalQuarters === 1 ? "1 quarter" : `${totalQuarters} quarters`}
+          </span>
+          {trajectory.key !== "no_read" && (
+            <TrendBadge
+              trajectoryKey={trajectory.key}
+              trendChange={trajectory.change}
+              trendDescription={trajectory.description}
+            />
+          )}
+        </div>
+        {showRangeToggle && (
+          <div className="hidden sm:block">
+            <ChartRangeToggle range={range} onRangeChange={onRangeChange} />
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-sm bg-teal-700" aria-hidden /> strongly bullish ≥8
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-sm bg-teal-500" aria-hidden /> bullish ≥7
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <span className="h-2 w-2 rounded-sm bg-amber-400" aria-hidden /> neutral
+        </span>
+        {hasRolling && (
+          <span>
+            <span className="tracking-[0.16em]">┄</span> 4Q avg
+          </span>
+        )}
+      </div>
+      <div className="mx-auto flex w-full max-w-[34rem] justify-center">
+        <ChartLineLabel
+          chartData={chartData}
+          selectedQuarter={selectedQuarterLabel}
+          onQuarterSelect={onQuarterSelect}
+        />
+      </div>
+      <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground sm:hidden">
+        <span>tap a dot for that quarter</span>
+        {showRangeToggle && <ChartRangeToggle range={range} onRangeChange={onRangeChange} />}
+      </div>
+    </div>
+  );
+};
+
 export function ConcallScoreSection({
   chartData,
   detailQuarters,
   growthScore,
   expectation,
+  financials = [],
+  highlights = [],
 }: ConcallScoreSectionProps) {
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [range, setRange] = React.useState<ChartRange>(12);
-  // Quarter-breakdown disclosure is controlled (not a native <details>) so the
-  // leans strip can stay visible while collapsed and a segment click can both
-  // expand and focus its category card.
-  const [breakdownOpen, setBreakdownOpen] = React.useState(false);
   const [focusCategoryKey, setFocusCategoryKey] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setSelectedIndex(0);
   }, [detailQuarters]);
 
-  // Collapse + clear the category focus when the quarter changes — the strip
-  // (and card set) belongs to the newly selected quarter.
+  // Clear the category focus when the quarter changes — the card set belongs
+  // to the newly selected quarter.
   React.useEffect(() => {
-    setBreakdownOpen(false);
     setFocusCategoryKey(null);
   }, [selectedIndex, detailQuarters]);
 
@@ -433,22 +456,6 @@ export function ConcallScoreSection({
     }
   };
 
-  // Net category lean for the selected quarter — summed from the v4
-  // score_breakdown (-2..+2 per discussed category) the deterministic
-  // composite is built from. Null for legacy rows without a breakdown.
-  const leanSummary = React.useMemo(() => {
-    const bd = quarterContext?.details?.score_breakdown;
-    if (!bd) return null;
-    const vals = Object.values(bd).filter(
-      (v): v is number => typeof v === "number" && Number.isFinite(v),
-    );
-    if (vals.length === 0) return null;
-    const net = vals.reduce((a, b) => a + b, 0);
-    const pos = vals.filter((v) => v > 0).reduce((a, b) => a + b, 0);
-    const neg = vals.filter((v) => v < 0).reduce((a, b) => a + Math.abs(b), 0);
-    return { net, pos, neg, count: vals.length };
-  }, [quarterContext]);
-
   // Lean streak per category for the selected quarter: how many consecutive,
   // contiguous quarters (walking older from the selected one) leaned the same
   // WAY. Surfaces as "· 3rd quarter in line" on the card chip. A quarter gap
@@ -479,13 +486,18 @@ export function ConcallScoreSection({
     return out;
   }, [detailQuarters, selectedIndex]);
 
-  // Whether the proportional leans strip has anything to draw — zero-lean and
-  // lean-less cats carry no segment, so the strip (and its caption) hide.
-  const hasLeanSegments = Boolean(
-    quarterContext?.v4?.categories.some(
-      (cat) => cat.state === "addressed" && typeof cat.lean === "number" && cat.lean !== 0,
-    ),
+  // The scored quarter's reported P&L, when a row is on file for it.
+  const results = React.useMemo(
+    () => (quarterContext ? buildQuarterResults(financials, quarterContext.fy, quarterContext.qtr) : null),
+    [financials, quarterContext],
   );
+
+  const focusCategory = (key: string) => {
+    setFocusCategoryKey(key);
+    requestAnimationFrame(() => {
+      document.getElementById(`v4-cat-${key}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
 
   const cards: Record<string, SectionCard> = quarterContext
     ? {
@@ -510,232 +522,195 @@ export function ConcallScoreSection({
       }
     : {};
 
-  return (
-    <div className="flex flex-col gap-3">
-    {expectationView && (
-      <QuarterExpectationCard view={expectationView} setup={setup} lastQuarter={lastQuarterForCard} />
-    )}
-    <div className={`${elevatedBlockClass} p-2.5`}>
+  const quarterPicker = (
+    <select
+      aria-label="Select quarter"
+      value={selectedIndex}
+      onChange={(e) => {
+        const index = Number(e.target.value);
+        setSelectedIndex(index);
+        expandRangeFor(index);
+      }}
+      className={cn(
+        dataFont,
+        "h-8 cursor-pointer rounded-md border border-border/60 bg-background px-2.5 text-[11.5px] font-medium text-foreground shadow-none transition-colors hover:bg-accent",
+      )}
+    >
+      {detailQuarters.map((quarter, index) => (
+        <option key={`${quarter.fy}-${quarter.qtr}-${index}`} value={index}>
+          {shortQuarterLabel(buildDetailQuarterContext(quarter).detailQuarterLabel)}
+          {index === 0 ? " · latest" : ""}
+        </option>
+      ))}
+    </select>
+  );
+
+  const trailCard = (
+    <ScoreTrailCard
+      chartData={visibleChartData}
+      totalQuarters={chartData.length}
+      selectedQuarterLabel={selectedQuarter?.quarter_label ?? ""}
+      onQuarterSelect={handleQuarterSelect}
+      range={range}
+      onRangeChange={setRange}
+      showRangeToggle={showRangeToggle}
+      trajectory={trajectory}
+    />
+  );
+
+  if (!quarterContext) {
+    return (
       <div className="flex flex-col gap-3">
-        {quarterContext ? (
-          <>
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
-              {/* LEFT — Where it sits: verdict (circle + band) → lean meter → rationale. */}
-              <div className={`${nestedDetailClass} flex flex-col gap-3 p-3`}>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      Where it sits
-                    </p>
-                  </div>
-                  {/* Quarter picker — the full label list lives here (and via
-                     chart dot/axis clicks), replacing the old chip row. */}
-                  <select
-                    aria-label="Select quarter"
-                    value={selectedIndex}
-                    onChange={(e) => {
-                      const index = Number(e.target.value);
-                      setSelectedIndex(index);
-                      expandRangeFor(index);
-                    }}
-                    className="h-7 cursor-pointer rounded-md border border-border/60 bg-background px-2 text-[11px] font-medium text-foreground shadow-none transition-colors hover:bg-accent"
-                  >
-                    {detailQuarters.map((quarter, index) => (
-                      <option key={`${quarter.fy}-${quarter.qtr}-${index}`} value={index}>
-                        {buildDetailQuarterContext(quarter).detailQuarterLabel}
-                        {index === 0 ? " · latest" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex items-center gap-3">
-                  <ConcallScore
-                    score={quarterContext.detailScore}
-                    size="md"
-                    className="shrink-0 shadow-none ring-1"
-                  />
-                  <div>
-                    <div className={`text-[18px] font-bold ${quarterContext.band.tone}`}>
-                      {quarterContext.band.label}
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-muted-foreground">
-                      Band {BANDS[bandForScore(quarterContext.detailScore)].description} · fixed cuts
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[11px] tabular-nums text-muted-foreground">
-                      {vsBaseline ? (
-                        Math.abs(vsBaseline.delta) <= vsBaseline.band ? (
-                          <span>In line with its 4Q avg ({vsBaseline.baseline.toFixed(1)})</span>
-                        ) : (
-                          <span>
-                            <span className={vsBaseline.delta > 0 ? "text-emerald-500" : "text-rose-500"}>
-                              {vsBaseline.delta > 0 ? "+" : "−"}
-                              {Math.abs(vsBaseline.delta).toFixed(1)}
-                            </span>{" "}
-                            vs its 4Q avg ({vsBaseline.baseline.toFixed(1)})
-                          </span>
-                        )
-                      ) : (
-                        <span>Trail too short to compare</span>
-                      )}
-                      {selectedSourceStatus === "unofficial" && (
-                        <span className={cn(chipClass("amber"), "px-1.5 py-0 text-[9px] uppercase tracking-[0.1em]")}>
-                          unofficial · re-score pending
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-1 flex-col border-t border-border/40 pt-3">
-                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Why this score
-                  </p>
-                  {quarterContext.rationale.length > 0 ? (
-                    <ul className="flex flex-1 flex-col justify-between gap-3">
-                      {quarterContext.rationale.map((item, i) => (
-                        <li
-                          key={i}
-                          className="flex gap-2 text-[12px] leading-snug text-foreground/85"
-                        >
-                          {item.direction === "positive" ? (
-                            <ArrowUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                          ) : item.direction === "negative" ? (
-                            <ArrowDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-400" />
-                          ) : (
-                            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400/80" />
-                          )}
-                          <span>
-                            {item.heading && (
-                              <span className="font-semibold text-foreground">{item.heading}</span>
-                            )}
-                            {item.heading && item.detail ? " — " : ""}
-                            {item.detail}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-[11px] italic text-muted-foreground">
-                      No rationale for this quarter.
-                    </p>
-                  )}
-                </div>
-              </div>
-              {renderChartCard({
-                chartData: visibleChartData,
-                selectedQuarterLabel: selectedQuarter?.quarter_label ?? "",
-                onQuarterSelect: handleQuarterSelect,
-                range,
-                onRangeChange: setRange,
-                showRangeToggle,
-                trajectory,
-              })}
-            </div>
-          </>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-            <div
-              className={`${nestedDetailClass} flex items-center justify-center p-4 text-[11px] text-muted-foreground`}
-            >
-              No quarterly context available.
-            </div>
-            {renderChartCard({
-              chartData: visibleChartData,
-              selectedQuarterLabel: "",
-              onQuarterSelect: handleQuarterSelect,
-              range,
-              onRangeChange: setRange,
-              showRangeToggle,
-              trajectory,
-            })}
-          </div>
+        {expectationView && (
+          <QuarterExpectationCard view={expectationView} setup={setup} lastQuarter={lastQuarterForCard} />
         )}
+        <div className={cn(nestedDetailClass, "p-4 text-[12px] text-muted-foreground")}>
+          No scored quarter yet.
+        </div>
+        {trailCard}
       </div>
-    </div>
+    );
+  }
 
-      {quarterContext && (
-        <div className={`${elevatedBlockClass} p-2.5`}>
-          <button
-            type="button"
-            onClick={() => setBreakdownOpen((open) => !open)}
-            aria-expanded={breakdownOpen}
-            className="flex w-full cursor-pointer items-center justify-between gap-3 text-left"
-          >
-            <span className="flex min-w-0 flex-wrap items-center gap-2">
-              <h3 className="text-[13px] font-semibold text-foreground">
-                <span className="sm:hidden">Category breakdown</span>
-                <span className="hidden sm:inline">Quarter breakdown by category</span>
-              </h3>
-              {leanSummary && (
-                <span
-                  className={cn(
-                    chipClass(leanSummary.net >= 0 ? "emerald" : "rose"),
-                    "px-2 py-0.5 text-[10px]",
-                  )}
-                >
-                  Net {leanSummary.net >= 0 ? "+" : "−"}
-                  {Math.abs(leanSummary.net)} · {leanSummary.count} discussed
-                </span>
-              )}
+  const band = BANDS[bandForScore(quarterContext.detailScore)];
+  const [leadRationale, ...otherRationale] = quarterContext.rationale;
+  const headline = leadRationale?.heading || leadRationale?.detail || null;
+  const headlineDetail = leadRationale?.heading ? leadRationale.detail : null;
+  const quarterLabel = shortQuarterLabel(quarterContext.detailQuarterLabel);
+  const isLatest = selectedIndex === 0;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {expectationView && (
+        <QuarterExpectationCard view={expectationView} setup={setup} lastQuarter={lastQuarterForCard} />
+      )}
+
+      {/* The verdict band: the quarter's lead reason as the headline, the score
+          and its band on the right, the other reasons underneath. The wash is
+          the band's own colour (lib/score-band), the one place score colour
+          is allowed to tint a surface. */}
+      <section
+        aria-label={`${quarterLabel} verdict`}
+        className={cn("rounded-xl border p-4 sm:p-5", band.washClass)}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={cn(dataFont, "text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground")}>
+              {quarterLabel}
+              {isLatest ? " · latest" : ""}
             </span>
-            <span className="flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground">
-              {/* The quarter is already chosen above; only desktop has room to echo it. */}
-              <span className="hidden tabular-nums sm:inline">{quarterContext.detailQuarterLabel}</span>
-              <span className="font-medium text-foreground/80">
-                {breakdownOpen ? "Collapse" : "Expand"}
+            {selectedSourceStatus === "unofficial" && (
+              <span className={cn(chipClass("amber"), "px-1.5 py-0 text-[9px] uppercase tracking-[0.14em]")}>
+                unofficial · re-score pending
               </span>
-              <ChevronDown
-                className={cn("h-4 w-4 transition-transform", breakdownOpen && "rotate-180")}
-              />
-            </span>
-          </button>
-
-          {/* The leans strip lives here (moved from the verdict card) so the
-              quarter's category tilt reads at a glance even while collapsed. */}
-          {quarterContext.v4 && hasLeanSegments && (
-            <div className="mt-2.5 space-y-1.5">
-              <V4LeansStrip
-                categories={quarterContext.v4.categories}
-                onSelect={(key) => {
-                  setBreakdownOpen(true);
-                  setFocusCategoryKey(key);
-                  requestAnimationFrame(() => {
-                    document
-                      .getElementById(`v4-cat-${key}`)
-                      ?.scrollIntoView({ behavior: "smooth", block: "center" });
-                  });
-                }}
-              />
-              <p className="text-[10px] text-muted-foreground">
-                Select a category to open its detail; expand for all cards.
-              </p>
-            </div>
-          )}
-
-          {/* First-order extraction: the category cards (cat_1 included). "Why this
-              score" + Quarter summary live in the verdict block above; risks is folded
-              into cat_5 (Concentration/dependencies). Legacy rows with no v4 keep the
-              old flat cards so no data is lost. */}
-          {breakdownOpen && (
-            <div className="mt-3">
-              {quarterContext.v4 && <V4CoverageStrip categories={quarterContext.v4.categories} />}
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-start">
-                {quarterContext.v4 ? (
-                  <V4CategoryCards
-                    categories={quarterContext.v4.categories}
-                    focusKey={focusCategoryKey}
-                    streaks={leanStreaks}
-                  />
+            )}
+          </div>
+          {quarterPicker}
+        </div>
+        <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div className="min-w-0">
+            {headline ? (
+              <h3
+                className={cn(
+                  displayFont,
+                  "text-pretty text-[21px] leading-[1.2] tracking-[-0.02em] text-foreground sm:text-[26px]",
+                )}
+              >
+                {headline}
+              </h3>
+            ) : (
+              <h3 className={cn(displayFont, "text-[21px] leading-[1.2] tracking-[-0.02em] text-foreground sm:text-[26px]")}>
+                {band.label}
+              </h3>
+            )}
+            {headlineDetail && (
+              <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-foreground/75">{headlineDetail}</p>
+            )}
+            {otherRationale.length > 0 && (
+              <ul className="mt-3 flex flex-col gap-2 border-t border-border/30 pt-3">
+                {otherRationale.map((item, i) => (
+                  <li key={i} className="flex gap-2 text-[12.5px] leading-snug text-foreground/85">
+                    {item.direction === "positive" ? (
+                      <ArrowUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" aria-label="positive" />
+                    ) : item.direction === "negative" ? (
+                      <ArrowDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-500" aria-label="negative" />
+                    ) : (
+                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400/80" aria-hidden />
+                    )}
+                    <span>
+                      {item.heading && <span className="font-semibold text-foreground">{item.heading}</span>}
+                      {item.heading && item.detail ? " — " : ""}
+                      {item.detail}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="flex items-center gap-3 lg:flex-col lg:items-center lg:pl-4 lg:text-center">
+            <ConcallScore score={quarterContext.detailScore} size="lg" className="shrink-0 shadow-none ring-[3px]" />
+            <div className="lg:mt-1">
+              <div className={cn("text-[15px] font-bold leading-tight", band.tone)}>{band.label}</div>
+              <div className={cn(dataFont, "mt-0.5 text-[11px] text-muted-foreground")}>
+                {vsBaseline ? (
+                  Math.abs(vsBaseline.delta) <= vsBaseline.band ? (
+                    <span>In line with its 4Q avg ({vsBaseline.baseline.toFixed(1)})</span>
+                  ) : (
+                    <span>
+                      <span className={vsBaseline.delta > 0 ? "text-emerald-500" : "text-rose-500"}>
+                        {vsBaseline.delta > 0 ? "+" : "−"}
+                        {Math.abs(vsBaseline.delta).toFixed(1)}
+                      </span>{" "}
+                      vs its 4Q avg ({vsBaseline.baseline.toFixed(1)})
+                    </span>
+                  )
                 ) : (
-                  <>
-                    {renderCard(cards.resultsSummary)}
-                    {renderCard(cards.guidance)}
-                    {renderCard(cards.risks)}
-                  </>
+                  <span>Trail too short to compare</span>
                 )}
               </div>
             </div>
-          )}
+          </div>
+        </div>
+      </section>
+
+      {/* Reported numbers beside the trail. Without a P&L row the trail takes the row. */}
+      <div className={cn("grid grid-cols-1 gap-3", results && "lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-stretch")}>
+        {results && <QuarterResultsTable results={results} quarterLabel={quarterLabel} />}
+        {trailCard}
+      </div>
+
+      {isLatest && <QuarterHighlights highlights={highlights} />}
+
+      {quarterContext.v4 ? (
+        <>
+          <ScoreBreakdownTiles categories={quarterContext.v4.categories} onSelect={focusCategory} />
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <ListChecks className="h-4 w-4 text-muted-foreground" aria-hidden />
+              <h3 className="text-[15px] font-semibold leading-tight text-foreground">What the call said</h3>
+              <span className={cn(chipClass("slate"), dataFont, "px-2 py-0.5 text-[10px]")}>{quarterLabel}</span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-start">
+              <V4CategoryCards
+                categories={quarterContext.v4.categories}
+                focusKey={focusCategoryKey}
+                streaks={leanStreaks}
+              />
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <ListChecks className="h-4 w-4 text-muted-foreground" aria-hidden />
+            <h3 className="text-[15px] font-semibold leading-tight text-foreground">What the call said</h3>
+            <span className={cn(chipClass("slate"), dataFont, "px-2 py-0.5 text-[10px]")}>{quarterLabel}</span>
+          </div>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-start">
+            {renderCard(cards.resultsSummary)}
+            {renderCard(cards.guidance)}
+            {renderCard(cards.risks)}
+          </div>
         </div>
       )}
     </div>

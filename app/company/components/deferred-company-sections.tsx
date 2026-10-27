@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import type { ChartDataPoint, QuarterData } from "../types";
 import type { QuarterExpectationData } from "@/lib/quarter-expectation/build";
+import type { QuarterFinancialsPoint } from "@/lib/quarter-results";
+import type { QuarterHighlight } from "@/lib/key-variables-snapshot/highlights";
 import type { NormalizedHistoricalEconomics } from "@/lib/business-snapshot/types";
 import type { GuidanceHistorySectionProps } from "./guidance-history-section";
 import {
@@ -97,6 +99,8 @@ export const ConcallScoreSection = dynamic<{
   detailQuarters: QuarterData[];
   growthScore?: number | null;
   expectation?: QuarterExpectationData | null;
+  financials?: QuarterFinancialsPoint[];
+  highlights?: QuarterHighlight[];
 }>(loadConcallScoreSection, {
   ssr: false,
   loading: () => <SectionPlaceholder label="Loading ConcallScore..." />,
