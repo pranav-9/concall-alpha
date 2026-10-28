@@ -745,6 +745,38 @@ COVERS["atherenerg-queue-out-the-door"] = [
     C(440, 104, 7, "s a"),
 ];
 
+// Acutaas Chemicals (Q2 FY27) — where the intermediates are made: a jacketed reactor with its agitator, the batch
+// run off through a valve into drums.
+COVERS["acutaas-farm-raised-forecast"] = [
+  "amber",
+  L(150, 252, 520, 252) +
+    // legs, jacket, the vessel inside it and the batch
+    L(234, 226, 222, 252) +
+    L(326, 226, 338, 252) +
+    P("M214 96 h132 v104 a66 38 0 0 1 -132 0 z", "s l") +
+    P("M226 104 h108 v96 a54 30 0 0 1 -108 0 z", "s w") +
+    P("M226 168 h108 v32 a54 30 0 0 1 -108 0 z", "s m") +
+    E(280, 96, 66, 14, "s l") +
+    // motor and gearbox on the head, the shaft and two impellers
+    R(262, 42, 36, 32, 4, "s d") +
+    R(270, 74, 20, 14, 2, "s w") +
+    L(280, 88, 280, 204) +
+    P("M256 200 l24 -8 l24 8", "s") +
+    P("M262 150 l18 -6 l18 6", "s t") +
+    R(314, 70, 12, 18, 2, "s w") +
+    // the run-off line, its valve, and the drums it fills
+    P("M280 238 v6 h96 v-40 h14", "s sa") +
+    C(376, 222, 7, "s a") +
+    R(390, 150, 56, 98, 6, "s w") +
+    E(418, 150, 28, 6, "s l") +
+    L(390, 178, 446, 178, "s t") +
+    L(390, 222, 446, 222, "s t") +
+    R(456, 172, 56, 76, 6, "s l") +
+    E(484, 172, 28, 6, "s w") +
+    L(456, 198, 512, 198, "s t") +
+    L(456, 228, 512, 228, "s t"),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
