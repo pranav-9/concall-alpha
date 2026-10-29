@@ -4,18 +4,14 @@ import { unstable_cache } from "next/cache";
 
 import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { selectMostViewed } from "@/lib/desk-most-viewed";
-import { COVERAGE_SELECT, isAdmittedLargeCap, isDiscoveryListed } from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { currentReportingQuarter, quarterLabelFor } from "@/lib/current-quarter";
-import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
-import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
-import { MOAT_RATING_ORDER, moatTierRank } from "@/lib/moat-analysis/rank";
-import type { MoatAnalysisRow, NormalizedMoatAnalysis } from "@/lib/moat-analysis/types";
 
 // Every desk fetcher reads through the cookie-free public-read client: the raw
 // reads are cached with unstable_cache (getCachedDeskSubstrate), and
 // unstable_cache forbids cookies() inside its callback. Row parity with the
-// cookie/service client was verified for all four tables (2026-08-26).
+// cookie/service client was verified for these tables (2026-08-26).
 type DeskReadClient = ReturnType<typeof createPublicReadClient>;
 
 // How many quarters of score history a row's sparkline draws.
@@ -61,18 +57,8 @@ export type DeskLeaderboard = {
    * calls read" can't disagree with "N reported" in the banner.
    */
   coveredCount: number;
-  /** Distinct sectors with more than one covered company (matches /sectors). */
-  sectorCount: number;
-  /**
-   * Every mid/small-cap company on file (all but large-cap admissions), the
-   * coverage cut included — the masthead's Coverage figure.
-   */
-  universeCount: number;
-  /** Distinct sectors with more than one company in that universe. */
-  universeSectorCount: number;
   /** Covered companies with a current-quarter read. */
   reportedCount: number;
-  latestReads: DeskRow[];
   /** Ranked reads from one quarter only — quarterLeadersLabel says which. */
   quarterLeaders: DeskRow[];
   /**
@@ -80,15 +66,29 @@ export type DeskLeaderboard = {
    * before it while no covered company has a read for the reporting quarter yet.
    */
   quarterLeadersLabel: string;
-  positiveTwist: DeskRow[];
-  growthLeaders: DeskRow[];
-  moatLeaders: DeskRow[];
   /** Most-viewed covered companies over the trailing 7 days (unique visitors). */
   mostViewedWeek: DeskRow[];
   /** Most-viewed covered companies over the trailing 30 days (unique visitors). */
   mostViewedMonth: DeskRow[];
   /** Which window the right-rail block opens on — Week unless it's empty. */
   mostViewedInitial: "week" | "month";
+  /**
+   * Every discovery-listed company, scored or not — the lookup the other desk
+   * blocks (research updates, new coverage, movers) join against, so each one
+   * applies the same coverage gate and shows the same score.
+   */
+  companies: DeskCompany[];
+};
+
+/** One discovery-listed company, as the desk's other blocks need it. */
+export type DeskCompany = {
+  code: string;
+  name: string;
+  sector: string | null;
+  /** company.created_at — when the company entered coverage. */
+  createdAt: string | null;
+  /** Latest ConcallScore; null until its first scored call. */
+  latestScore: number | null;
 };
 
 type ConcallRow = {
@@ -150,18 +150,10 @@ async function fetchCompanyRows(supabase: DeskReadClient): Promise<CoverageRow[]
 function buildCoverage(companyRows: CoverageRow[]) {
   const byCode = new Map<string, CoverageInfo>();
   const excludedKeys = new Set<string>();
-  const sectorCounts = new Map<string, number>();
-  const universeSectorCounts = new Map<string, number>();
+  const listed: CoverageRow[] = [];
   let coveredCount = 0;
-  let universeCount = 0;
 
   companyRows.forEach((row) => {
-    if (!isAdmittedLargeCap(row)) {
-      universeCount += 1;
-      if (row.sector) {
-        universeSectorCounts.set(row.sector, (universeSectorCounts.get(row.sector) ?? 0) + 1);
-      }
-    }
     if (!isDiscoveryListed(row)) {
       if (row.code) excludedKeys.add(upper(row.code));
       if (row.name) excludedKeys.add(upper(row.name));
@@ -175,17 +167,10 @@ function buildCoverage(companyRows: CoverageRow[]) {
     };
     if (row.code) byCode.set(upper(row.code), info);
     if (row.name) byCode.set(upper(row.name), info);
-    if (row.sector) {
-      sectorCounts.set(row.sector, (sectorCounts.get(row.sector) ?? 0) + 1);
-    }
+    if (row.code) listed.push(row);
   });
 
-  // Sectors with a single company are noise on a sector view (matches
-  // app/sectors/page.tsx, which drops companyCount <= 1).
-  const sectorCount = Array.from(sectorCounts.values()).filter((n) => n > 1).length;
-  const universeSectorCount = Array.from(universeSectorCounts.values()).filter((n) => n > 1).length;
-
-  return { byCode, excludedKeys, coveredCount, sectorCount, universeCount, universeSectorCount };
+  return { byCode, excludedKeys, listed, coveredCount };
 }
 
 async function fetchConcallRows(supabase: DeskReadClient) {
@@ -210,118 +195,6 @@ async function fetchConcallRows(supabase: DeskReadClient) {
     from += FETCH_ALL_PAGE_SIZE;
   }
   return rows;
-}
-
-// Only the fields a desk moat-leader row actually needs. Slimming the sorted
-// output before it enters the substrate cache keeps the full v15 payload
-// (~700KB across the fleet) OUT of the cached entry — it's parsed here to derive
-// the sort keys, then dropped, so the cache stays well under the 2MB ceiling
-// (past which Next silently skips caching and the whole optimization no-ops).
-type DeskMoatLeader = {
-  companyCode: string;
-  companyName: string | null;
-  moatRatingLabel: string;
-};
-
-async function fetchMoatLeaders(supabase: DeskReadClient): Promise<DeskMoatLeader[]> {
-  const { data, error } = await supabase
-    .from("moat_analysis")
-    .select(
-      "id, company_code, company_name, industry, rating, tier, gatekeeper_answer, cycle_tested, assessment_payload, assessment_version, created_at, updated_at",
-    )
-    .order("updated_at", { ascending: false })
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false });
-  if (error) throw error;
-
-  const latestByCompany = new Map<string, NormalizedMoatAnalysis>();
-  ((data ?? []) as MoatAnalysisRow[]).forEach((row) => {
-    const normalized = normalizeMoatAnalysis(row);
-    if (!normalized) return;
-    const key = upper(normalized.companyCode);
-    if (!latestByCompany.has(key)) latestByCompany.set(key, normalized);
-  });
-
-  // Sort on the full normalized objects (rating → tier → applies-source-count →
-  // name), THEN project to the slim shape the desk consumes.
-  return Array.from(latestByCompany.values())
-    .sort((a, b) => {
-      const ratingDiff = MOAT_RATING_ORDER[a.moatRating] - MOAT_RATING_ORDER[b.moatRating];
-      if (ratingDiff !== 0) return ratingDiff;
-      const tierDiff = moatTierRank(a.moatTier) - moatTierRank(b.moatTier);
-      if (tierDiff !== 0) return tierDiff;
-      if (b.appliesSourceCount !== a.appliesSourceCount) {
-        return b.appliesSourceCount - a.appliesSourceCount;
-      }
-      return (a.companyName ?? a.companyCode).localeCompare(b.companyName ?? b.companyCode);
-    })
-    .map((m) => ({
-      companyCode: m.companyCode,
-      companyName: m.companyName,
-      moatRatingLabel: m.moatRatingLabel,
-    }));
-}
-
-type GrowthLeader = {
-  companyCode: string;
-  companyName: string | null;
-  /** Base forward-growth display text (e.g. "18%" or "15-18%"). */
-  baseDisplay: string | null;
-  /** Bear-case (downside) growth display text. */
-  downsideDisplay: string | null;
-  /** Bull-case (upside) growth display text. */
-  upsideDisplay: string | null;
-  /** Growth score, the primary sort key. */
-  growthScore: number | null;
-};
-
-// Latest growth_outlook row per company, ranked by growth score (base growth as
-// the tiebreaker). Mirrors the /leaderboards Growth ordering, trimmed to what a
-// desk row needs. Off-discovery names are dropped by the caller via excludedKeys.
-async function fetchGrowthLeaders(supabase: DeskReadClient): Promise<GrowthLeader[]> {
-  const { data, error } = await supabase
-    .from("growth_outlook")
-    .select(
-      "company, run_timestamp, base_growth_pct, upside_growth_pct, downside_growth_pct, growth_score",
-    )
-    .order("run_timestamp", { ascending: false });
-  if (error) throw error;
-
-  type GrowthOutlookRow = {
-    company: string | null;
-    base_growth_pct?: string | number | null;
-    upside_growth_pct?: string | number | null;
-    downside_growth_pct?: string | number | null;
-    growth_score?: string | number | null;
-  };
-
-  const latestByCompany = new Map<string, GrowthLeader>();
-  ((data ?? []) as GrowthOutlookRow[]).forEach((row) => {
-    const key = upper(row.company);
-    if (!key || latestByCompany.has(key)) return; // rows are newest-first
-    const scoreNum =
-      row.growth_score == null ? null : Number(row.growth_score);
-    latestByCompany.set(key, {
-      companyCode: row.company ?? "",
-      companyName: row.company ?? null,
-      baseDisplay: normalizeGrowthPct(row.base_growth_pct).rawText,
-      downsideDisplay: normalizeGrowthPct(row.downside_growth_pct).rawText,
-      upsideDisplay: normalizeGrowthPct(row.upside_growth_pct).rawText,
-      growthScore: scoreNum != null && Number.isFinite(scoreNum) ? scoreNum : null,
-    });
-  });
-
-  return Array.from(latestByCompany.values()).sort((a, b) => {
-    const aScore = a.growthScore;
-    const bScore = b.growthScore;
-    if (aScore != null && bScore != null && bScore !== aScore) return bScore - aScore;
-    if (aScore != null && bScore == null) return -1;
-    if (aScore == null && bScore != null) return 1;
-    const aBase = normalizeGrowthPct(a.baseDisplay).sortValue ?? Number.NEGATIVE_INFINITY;
-    const bBase = normalizeGrowthPct(b.baseDisplay).sortValue ?? Number.NEGATIVE_INFINITY;
-    if (bBase !== aBase) return bBase - aBase;
-    return (a.companyName ?? a.companyCode).localeCompare(b.companyName ?? b.companyCode);
-  });
 }
 
 type MostViewedCodes = { week: string[]; month: string[] };
@@ -373,30 +246,28 @@ const getCachedMostViewedCodes = unstable_cache(
   { revalidate: 300 },
 );
 
-// The heavy, user-independent reads (whole concall_analysis history, the full
-// moat payload parse, coverage and growth) behind one cross-request cache. This
+// The heavy, user-independent reads (whole concall_analysis history and
+// coverage) behind one cross-request cache. This
 // caches RAW data only — no time-derived fields — so a warm board can't freeze
 // the reporting quarter, the reportedCount, or the isNew badge for a whole
 // revalidate window. Cookie-free client, same reason getConcallData is.
 type DeskSubstrate = {
   companyRows: CoverageRow[];
   concallRows: ConcallRow[];
-  moatLeaders: DeskMoatLeader[];
-  growthLeaders: GrowthLeader[];
 };
 
 const getCachedDeskSubstrate = unstable_cache(
   async (): Promise<DeskSubstrate> => {
     const supabase = createPublicReadClient();
-    const [companyRows, concallRows, moatLeaders, growthLeaders] = await Promise.all([
+    const [companyRows, concallRows] = await Promise.all([
       fetchCompanyRows(supabase),
       fetchConcallRows(supabase),
-      fetchMoatLeaders(supabase),
-      fetchGrowthLeaders(supabase),
     ]);
-    return { companyRows, concallRows, moatLeaders, growthLeaders };
+    return { companyRows, concallRows };
   },
-  ["desk-substrate-v1"],
+  // v2 (2026-10-29): the moat + growth leader lists left the substrate with the
+  // desk's ranking table; the new key drops cached entries that still carry them.
+  ["desk-substrate-v2"],
   { revalidate: 300 },
 );
 
@@ -412,7 +283,7 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
   ]);
 
   const coverage = buildCoverage(substrate.companyRows);
-  const { concallRows, moatLeaders: moat, growthLeaders: growth } = substrate;
+  const { concallRows } = substrate;
 
   // Group each covered company's reads, newest-first.
   const byCompany = new Map<string, ConcallRow[]>();
@@ -480,11 +351,6 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
 
   const scored = rows.filter((r) => r.latestScore != null);
 
-  const latestReads = [...rows]
-    .filter((r) => r.filedRaw)
-    .sort((a, b) => Date.parse(b.filedRaw!) - Date.parse(a.filedRaw!))
-    .slice(0, 12);
-
   // Quarter leaders rank only reads FROM the quarter they're labelled with — a
   // company still on last quarter's score isn't a this-quarter performer. Until
   // the season's first read lands, show the previous quarter (and say so) rather
@@ -506,86 +372,7 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
     .sort((a, b) => (b.latestScore ?? 0) - (a.latestScore ?? 0))
     .slice(0, 12);
 
-  const positiveTwist = [...rows]
-    .filter((r) => (r.twistPct ?? 0) > 0)
-    .sort((a, b) => (b.twistPct ?? 0) - (a.twistPct ?? 0))
-    .slice(0, 12);
-
-  // Moat leaders: enrich the moat ordering with each company's score history
-  // (sector, sparkline, filed) from the concall rows built above. Skip names
-  // that are off discovery (large-cap / below-cut).
   const rowByCode = new Map(rows.map((r) => [upper(r.code), r]));
-  const rowByName = new Map(rows.map((r) => [upper(r.name), r]));
-  const moatLeaders: DeskRow[] = moat
-    // Resolve by code OR name: moat_analysis sometimes stores a different
-    // company_code (an internal id, e.g. "S00003") than concall_analysis, which
-    // would otherwise blank the score/sparkline and produce a dead /company link.
-    .filter(
-      (m) =>
-        !coverage.excludedKeys.has(upper(m.companyCode)) &&
-        !coverage.excludedKeys.has(upper(m.companyName ?? "")),
-    )
-    .slice(0, 12)
-    .map((m) => {
-      const enriched =
-        rowByCode.get(upper(m.companyCode)) ??
-        (m.companyName ? rowByName.get(upper(m.companyName)) : undefined);
-      const info =
-        coverage.byCode.get(upper(m.companyCode)) ??
-        (m.companyName ? coverage.byCode.get(upper(m.companyName)) : undefined);
-      return {
-        // Prefer the resolved concall/company code so the /company link works.
-        code: enriched?.code ?? m.companyCode,
-        name: enriched?.name ?? m.companyName ?? m.companyCode,
-        sector: enriched?.sector ?? info?.sector ?? null,
-        isNew: enriched?.isNew ?? false,
-        latestScore: enriched?.latestScore ?? null,
-        delta: enriched?.delta ?? null,
-        twistPct: enriched?.twistPct ?? null,
-        sparkPoints: enriched?.sparkPoints ?? [],
-        filedRaw: enriched?.filedRaw ?? null,
-        moatLabel: m.moatRatingLabel,
-        growthLabel: null,
-        growthDownside: null,
-        growthUpside: null,
-        growthScore: null,
-      };
-    });
-
-  // Growth leaders: same enrich-from-concall-history shape as moat leaders, so
-  // the row carries a score/sparkline/filed date and a live /company link. Drop
-  // off-discovery names (large-cap / below-cut) and label with base FY growth.
-  const growthLeaders: DeskRow[] = growth
-    .filter(
-      (g) =>
-        !coverage.excludedKeys.has(upper(g.companyCode)) &&
-        !coverage.excludedKeys.has(upper(g.companyName ?? "")),
-    )
-    .slice(0, 12)
-    .map((g) => {
-      const enriched =
-        rowByCode.get(upper(g.companyCode)) ??
-        (g.companyName ? rowByName.get(upper(g.companyName)) : undefined);
-      const info =
-        coverage.byCode.get(upper(g.companyCode)) ??
-        (g.companyName ? coverage.byCode.get(upper(g.companyName)) : undefined);
-      return {
-        code: enriched?.code ?? g.companyCode,
-        name: enriched?.name ?? g.companyName ?? g.companyCode,
-        sector: enriched?.sector ?? info?.sector ?? null,
-        isNew: enriched?.isNew ?? false,
-        latestScore: enriched?.latestScore ?? null,
-        delta: enriched?.delta ?? null,
-        twistPct: enriched?.twistPct ?? null,
-        sparkPoints: enriched?.sparkPoints ?? [],
-        filedRaw: enriched?.filedRaw ?? null,
-        moatLabel: null,
-        growthLabel: g.baseDisplay,
-        growthDownside: g.downsideDisplay,
-        growthUpside: g.upsideDisplay,
-        growthScore: g.growthScore,
-      };
-    });
 
   // Most viewed: turn the RPC's popularity-ordered codes into rows, gated by the
   // coverage map (so off-discovery / uncovered / fake codes drop) and enriched
@@ -605,21 +392,26 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
   const mostViewedInitial: "week" | "month" =
     mostViewedWeek.length > 0 ? "week" : "month";
 
+  const companies: DeskCompany[] = coverage.listed.map((row) => {
+    const code = row.code as string;
+    return {
+      code,
+      name: row.name ?? code,
+      sector: row.sector,
+      createdAt: row.created_at,
+      latestScore: rowByCode.get(upper(code))?.latestScore ?? null,
+    };
+  });
+
   return {
     quarterLabel: quarter.label,
     coveredCount: coverage.coveredCount,
-    sectorCount: coverage.sectorCount,
-    universeCount: coverage.universeCount,
-    universeSectorCount: coverage.universeSectorCount,
     reportedCount,
-    latestReads,
     quarterLeaders,
     quarterLeadersLabel,
-    positiveTwist,
-    growthLeaders,
-    moatLeaders,
     mostViewedWeek,
     mostViewedMonth,
     mostViewedInitial,
+    companies,
   };
 }

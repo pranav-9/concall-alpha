@@ -103,8 +103,7 @@ async function readForensics(codes: string[]): Promise<Map<string, ForensicSigna
 }
 
 // Same item source, quarter anchor and stored verdict as the company page's
-// Guidance section, the overview cache and the Desk's Featured Reads
-// (lib/desk-featured/guidance-record-data.ts): the latest snapshot's items
+// Guidance section and the overview cache: the latest snapshot's items
 // when one exists, else the legacy guidance_tracking rows. Forward strength
 // only ever comes from a snapshot (it's a deep-track layer).
 async function readGuidance(

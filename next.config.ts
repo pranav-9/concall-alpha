@@ -28,8 +28,11 @@ const nextConfig: NextConfig = {
   // The sitemap revalidates hourly on Vercel and reads app/blog/posts via fs,
   // but the tracer doesn't follow that read into the metadata route — without
   // this the regenerated sitemap silently drops every Journal post.
+  // /desk renders per request and reads the same posts (its Journal and New
+  // to coverage blocks), plus the covers, whose existence parseCover checks.
   outputFileTracingIncludes: {
     "/sitemap.xml": ["./app/blog/posts/**/*"],
+    "/desk": ["./app/blog/posts/**/*", "./public/blog/covers/**/*"],
   },
   experimental: {
     optimizePackageImports: [
