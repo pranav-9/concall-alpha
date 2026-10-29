@@ -31,7 +31,7 @@ function ResearchRow({ read, score }: { read: FeaturedRead; score: number | null
       href={read.href}
       className={cn("flex items-start gap-3 px-4 py-4 sm:gap-4 sm:px-5", DESK_ROW_RULE, DESK_HOVER, DESK_FOCUS)}
     >
-      <DeskCrest name={read.companyName} />
+      <DeskCrest code={read.companyCode} name={read.companyName} />
       <span className="min-w-0 flex-1">
         <span className="house-display block text-[15px] leading-snug sm:text-base">{read.companyName}</span>
         <span className="mt-1 line-clamp-3 text-sm leading-relaxed text-[var(--ink-soft)] [text-wrap:pretty] sm:line-clamp-2">

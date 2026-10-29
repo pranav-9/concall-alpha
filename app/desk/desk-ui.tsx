@@ -7,7 +7,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { initials } from "@/components/mobile-card";
+import { CompanyMark } from "@/components/company-logo";
 import { cn } from "@/lib/utils";
 
 export const DESK_CARD = "overflow-hidden rounded-md border border-[var(--rule)] bg-[var(--paper-2)]";
@@ -69,23 +69,26 @@ export function DeskSection({
 }
 
 const CREST_SIZE = {
-  sm: "h-6 w-6 rounded text-[9px]",
-  md: "h-8 w-8 rounded-[5px] text-[11px]",
-  lg: "h-11 w-11 rounded-md text-sm",
+  sm: "h-6 w-6 rounded",
+  md: "h-8 w-8 rounded-[5px]",
+  lg: "h-11 w-11 rounded-md",
 } as const;
 
-/** The company monogram: initials in a hairline square. */
-export function DeskCrest({ name, size = "md" }: { name: string; size?: keyof typeof CREST_SIZE }) {
+const CREST_TEXT = {
+  sm: "text-[9px]",
+  md: "text-[11px]",
+  lg: "text-sm",
+} as const;
+
+/** The company mark: its logo when on file, else initials in a hairline square. */
+export function DeskCrest({ code, name, size = "md" }: { code: string; name: string; size?: keyof typeof CREST_SIZE }) {
   return (
-    <span
-      aria-hidden
-      className={cn(
-        "inline-flex shrink-0 items-center justify-center border border-[var(--rule)] bg-[var(--paper)] font-semibold tracking-tight text-[var(--ink)]",
-        CREST_SIZE[size],
-      )}
-    >
-      {initials(name)}
-    </span>
+    <CompanyMark
+      code={code}
+      name={name}
+      className={CREST_SIZE[size]}
+      initialsClassName={cn("bg-[var(--paper)] font-semibold tracking-tight text-[var(--ink)]", CREST_TEXT[size])}
+    />
   );
 }
 

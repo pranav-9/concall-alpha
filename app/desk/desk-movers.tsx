@@ -33,7 +33,7 @@ function MoverRow({ mover }: { mover: Mover }) {
           {/* U+2212 so a slip lines up with a climb's "+". */}
           {up ? `+${mover.delta}` : `−${Math.abs(mover.delta)}`}
         </span>
-        <DeskCrest name={mover.name} />
+        <DeskCrest code={mover.code} name={mover.name} />
         <span className="min-w-0 flex-1">
           <span className="house-display block truncate text-[15px]">{tradingName(mover.name)}</span>
           <span className="house-data block text-[11px] text-[var(--ink-soft)]">now #{mover.rank}</span>

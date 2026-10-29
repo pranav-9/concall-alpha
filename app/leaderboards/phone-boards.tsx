@@ -142,7 +142,7 @@ function OverallRow({
         className={cn(ROW, row.dim && "opacity-60")}
       >
         <RankCell rank={rank} />
-        <Crest name={row.companyName} />
+        <Crest name={row.companyName} code={row.companyCode} />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
             <span className={cn(NAME, row.dim ? "text-[var(--ink-soft)]" : "text-[var(--ink)]")}>
@@ -312,7 +312,7 @@ export function PhoneQuarterBoard({
                 className={ROW}
               >
                 <RankCell rank={rank} />
-                <Crest name={name} />
+                <Crest name={name} code={code} />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
                     <span className={cn(NAME, "text-[var(--ink)]")}>{name}</span>
