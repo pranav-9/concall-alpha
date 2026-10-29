@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 
 import {
-  FEATURED_SLOTS,
+  RESEARCH_SLOTS,
   SELECTION_ORDER,
-  selectFeaturedReads,
+  selectResearchUpdates,
 } from "../lib/desk-featured/select";
 import type { FeaturedRead } from "../lib/desk-featured/types";
 
@@ -29,7 +29,11 @@ const mk = (
   pinnedUntilRaw: null,
 });
 
-const codes = (reads: FeaturedRead[]) => selectFeaturedReads(reads).map((r) => r.companyCode);
+// Most cases below were written against the three-slot strip; they hold for any
+// slot count, so they keep three and the list's own size is checked on its own.
+const SLOTS = 3;
+const pick = (reads: FeaturedRead[], nowMs: number = Date.now()) => selectResearchUpdates(reads, nowMs, SLOTS);
+const codes = (reads: FeaturedRead[]) => pick(reads).map((r) => r.companyCode);
 
 // The live pool as of 2026-09-13, deliberately handed over in NON-recency order
 // so the test proves selection sorts rather than trusting the caller's order.
@@ -54,13 +58,34 @@ const virgin = [
   mk("NEW", "2026-09-12T00:00:00Z", 50),
 ];
 const virginOrder = ["OLD", "NEW"];
-selectFeaturedReads(virgin);
+pick(virgin);
 assert.deepEqual(virgin.map((r) => r.companyCode), virginOrder, "input order preserved");
 console.log("  ok  does not mutate the cached pool");
 
-// --- the contract: hero AND both secondaries are the three freshest ---
+// --- the contract: every slot is the freshest, newest first ---
 assert.deepEqual(codes(pool), ["AVANTIFEED", "PAYTM", "PWL"]);
-console.log("  ok  all three slots are the freshest reads, hero first");
+console.log("  ok  every slot is a freshest read, newest first");
+
+assert.equal(selectResearchUpdates(pool).length, RESEARCH_SLOTS, "the default is the list's size");
+assert.deepEqual(
+  selectResearchUpdates(pool).map((r) => r.companyCode),
+  ["AVANTIFEED", "PAYTM", "PWL", "TRANSRAILL", "NETWEB", "KALYANKJIL", "ATHERENERG"],
+);
+console.log("  ok  the desk list holds RESEARCH_SLOTS rows by default");
+
+// One row per company: a company's older card never takes a second slot.
+assert.deepEqual(
+  codes([mk("PAYTM", "2026-09-14T00:00:00Z"), mk("PAYTM", "2026-09-13T00:00:00Z"), mk("PWL", "2026-09-12T00:00:00Z")]),
+  ["PAYTM", "PWL"],
+);
+console.log("  ok  one row per company, its newest card");
+
+// Journal cards belong to the Journal block, not the research list.
+assert.deepEqual(
+  codes([{ ...mk("EMS", "2026-09-14T00:00:00Z"), section: "journal" }, mk("PWL", "2026-09-12T00:00:00Z")]),
+  ["PWL"],
+);
+console.log("  ok  Journal cards are left to the Journal block");
 
 // No clock dependence. Calling twice in one process would pass even for a
 // day-index rotation, so freeze the clock on two different IST calendar days
@@ -106,7 +131,7 @@ assert.deepEqual(codes(tied), ["HIGH", "LOW"]);
 console.log("  ok  equal published_at falls back to weight");
 
 // --- shape ---
-assert.equal(codes(pool).length, FEATURED_SLOTS);
+assert.equal(codes(pool).length, SLOTS);
 assert.deepEqual(codes([]), [], "empty pool renders nothing");
 assert.deepEqual(codes([pool[1]]), ["AVANTIFEED"], "a single read is just the hero");
 assert.deepEqual(
@@ -121,9 +146,9 @@ assert.deepEqual(
     mk("B", "2026-09-11T00:00:00Z"),
   ]),
   ["A", "B", "C"],
-  "a pool of exactly FEATURED_SLOTS is sorted but not truncated",
+  "a pool of exactly the slot count is sorted but not truncated",
 );
-console.log("  ok  returns at most FEATURED_SLOTS and degrades on a short pool");
+console.log("  ok  returns at most the slot count and degrades on a short pool");
 
 // A missing or unparseable timestamp sorts last rather than throwing or winning
 // on its weight. published_at is NOT NULL in the table, so null is defensive
@@ -169,7 +194,7 @@ console.log("  ok  a total tie is decided by id, not by arrival order");
 // data.ts drives its .order() calls from SELECTION_ORDER. The leading key is
 // what keeps the freshest eligible rows inside READ_LIMIT, so reordering these
 // (or flipping one to ascending) must fail a test, not silently un-lead the
-// strip.
+// list.
 assert.deepEqual(
   SELECTION_ORDER.map((o) => [o.column, o.ascending]),
   [
@@ -183,32 +208,30 @@ console.log("  ok  fetch order matches the selection comparator");
 
 console.log("All desk featured selection tests passed.");
 
-// --- the editorial pin (2026-10-11): a live pin holds the hero regardless of age ---
+// --- the editorial pin (2026-10-11): a live pin leads regardless of age ---
 const NOW = Date.parse("2026-10-11T12:00:00Z");
 const pin = (companyCode: string, publishedAtRaw: string, pinnedUntilRaw: string | null): FeaturedRead => ({
   ...mk(companyCode, publishedAtRaw, 80),
-  id: `journal-${companyCode}-2026-10-11`,
-  section: "journal",
-  href: "/blog/ems-chain-two-cohorts",
+  id: `guidance-${companyCode}-2026-10-11`,
   pinnedUntilRaw,
 });
 const withPin = [...pool, pin("EMS", "2026-09-01T00:00:00Z", "2026-10-18T12:00:00Z")];
 assert.deepEqual(
-  selectFeaturedReads(withPin, NOW).map((r) => r.companyCode),
+  pick(withPin, NOW).map((r) => r.companyCode),
   ["EMS", "AVANTIFEED", "PAYTM"],
-  "a live pin is the hero; the two freshest reads fill the secondaries",
+  "a live pin leads; the freshest reads follow",
 );
-console.log("  ok  a live pin holds the hero slot ahead of fresher reads");
+console.log("  ok  a live pin leads ahead of fresher reads");
 
 assert.deepEqual(
-  selectFeaturedReads(withPin, Date.parse("2026-10-18T12:00:01Z")).map((r) => r.companyCode),
+  pick(withPin, Date.parse("2026-10-18T12:00:01Z")).map((r) => r.companyCode),
   ["AVANTIFEED", "PAYTM", "PWL"],
   "an expired pin is ordinary recency again (and here too old to show)",
 );
 console.log("  ok  an expired pin falls back to recency");
 
 const unreadable = [...pool, pin("EMS", "2026-09-01T00:00:00Z", "not a date")];
-assert.deepEqual(selectFeaturedReads(unreadable, NOW).map((r) => r.companyCode), ["AVANTIFEED", "PAYTM", "PWL"]);
+assert.deepEqual(pick(unreadable, NOW).map((r) => r.companyCode), ["AVANTIFEED", "PAYTM", "PWL"]);
 console.log("  ok  an unreadable pinned_until is no pin");
 
 const twoPins = [
@@ -216,10 +239,10 @@ const twoPins = [
   pin("OLDPIN", "2026-09-01T00:00:00Z", "2026-10-18T12:00:00Z"),
   pin("NEWPIN", "2026-09-05T00:00:00Z", "2026-10-18T12:00:00Z"),
 ];
-assert.deepEqual(selectFeaturedReads(twoPins, NOW).map((r) => r.companyCode), ["NEWPIN", "OLDPIN", "AVANTIFEED"]);
+assert.deepEqual(pick(twoPins, NOW).map((r) => r.companyCode), ["NEWPIN", "OLDPIN", "AVANTIFEED"]);
 console.log("  ok  several live pins order by recency among themselves");
 
 const pinnedVirgin = [pin("B", "2026-09-01T00:00:00Z", "2026-10-18T12:00:00Z"), mk("A", "2026-09-12T00:00:00Z")];
-selectFeaturedReads(pinnedVirgin, NOW);
+pick(pinnedVirgin, NOW);
 assert.deepEqual(pinnedVirgin.map((r) => r.companyCode), ["B", "A"], "pin path does not mutate the pool either");
 console.log("  ok  the pin path leaves the cached pool untouched");

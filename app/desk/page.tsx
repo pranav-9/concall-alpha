@@ -2,180 +2,102 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { formatRelativeActivityTime } from "@/lib/activity-feed";
+import { getCachedDeskFeaturedReads } from "@/lib/desk-featured/data";
+import { selectResearchUpdates } from "@/lib/desk-featured/select";
 import { getDeskLeaderboard, type DeskRow } from "@/lib/desk-leaderboard";
-import DeskRecencyLedger, {
-  DeskRecencyLedgerFallback,
-} from "./desk-recency-ledger";
-import DeskFeaturedReads, {
-  DeskFeaturedReadsFallback,
-} from "./desk-featured-reads";
-import { DeskHotThemes, DeskHotThemesFallback } from "./desk-hot-themes";
-import DeskExchangeSection, {
-  DeskExchangeSectionFallback,
-} from "./desk-exchange-section";
-import DeskLeaderboardTable, {
-  type DeskTableRow,
-} from "./desk-leaderboard-table";
+import { DeskJournalReads } from "./desk-journal-reads";
+import { DeskMovers } from "./desk-movers";
+import { DeskNewCoverage } from "./desk-new-coverage";
+import type { RankedRow } from "./desk-ranked-rows";
+import { DeskResearchUpdated } from "./desk-research-updated";
+import { DeskSectionTracker } from "./desk-section-tracker";
 import DeskTopOfBook from "./desk-top-of-book";
-import { DeskTelegramStrip } from "./desk-telegram-strip";
-import { BelowSm, FromSm } from "@/components/viewport-gate";
+import { DESK_FOCUS, DeskSectionFallback } from "./desk-ui";
+import { DeskWire } from "./desk-wire";
 
 export const metadata: Metadata = {
-  title: "The Desk — every covered company, ranked and read",
+  title: "The Desk — what moved in India's covered mid- & small-caps",
   description:
-    "The working surface: India's covered mid- & small-caps ranked by ConcallScore, quarter leaders, positive trend twists, growth outlook, and moat leaders — read from the documents.",
+    "The daily front page: research just updated, the quarter's top reads, new Journal stories, newly covered companies, the week's filings that mattered and the leaderboard's biggest movers — read from the documents.",
   alternates: { canonical: "/desk" },
 };
 
-// Relative time is computed here (server) so the client table can't drift it on
-// hydration; filedRaw stays raw in the data layer.
-const toTableRow = (row: DeskRow): DeskTableRow => ({
-  code: row.code,
-  name: row.name,
-  sector: row.sector,
-  isNew: row.isNew,
-  latestScore: row.latestScore,
-  delta: row.delta,
-  twistPct: row.twistPct,
-  sparkPoints: row.sparkPoints,
-  filedLabel: row.filedRaw ? formatRelativeActivityTime(row.filedRaw) : "—",
-  moatLabel: row.moatLabel,
-  growthLabel: row.growthLabel,
-  growthDownside: row.growthDownside,
-  growthUpside: row.growthUpside,
-  growthScore: row.growthScore,
-});
+const toRanked = (row: DeskRow): RankedRow => ({ code: row.code, name: row.name, latestScore: row.latestScore });
 
+// The desk (2026-10-29 redesign, to the user's mockup): a front page of what
+// moved, top-down — research updated beside the top of the book, then the
+// Journal, new coverage, the wire and the week's leaderboard movers. One tree
+// for every width: each block's grid collapses to one column on the phone, in
+// the same change-first order. The full ranking lives on /leaderboards.
 export default async function DeskPage() {
-  const board = await getDeskLeaderboard();
+  const [board, featuredReads] = await Promise.all([getDeskLeaderboard(), getCachedDeskFeaturedReads()]);
 
-  const latestReads = board.latestReads.map(toTableRow);
-  const quarterLeaders = board.quarterLeaders.map(toTableRow);
-  const positiveTwist = board.positiveTwist.map(toTableRow);
-  const growthLeaders = board.growthLeaders.map(toTableRow);
-  const moatLeaders = board.moatLeaders.map(toTableRow);
-  const mostViewedWeek = board.mostViewedWeek.map(toTableRow);
-  const mostViewedMonth = board.mostViewedMonth.map(toTableRow);
+  // The opening list and the rail paint with the page (no streaming above the
+  // fold); everything below streams in its own Suspense.
+  // Discovery surface: only the covered hundred (isDiscoveryListed, applied in
+  // getDeskLeaderboard). Producers write a card for every deep-track, including
+  // below-cut names and large-cap admissions; those stay on the company page.
+  const scoreByCode = new Map(board.companies.map((c) => [c.code.toUpperCase(), c.latestScore]));
+  const research = selectResearchUpdates(
+    featuredReads.filter((r) => scoreByCode.has(r.companyCode.toUpperCase())),
+    Date.now(),
+  );
 
   return (
     <main className="house relative min-h-screen">
-      {/*
-        One tree, two presentations. Below `sm` the page is a flex column and
-        each block carries an `order-*` so the phone reads change-first —
-        masthead → Featured → Latest activity → Reference (Ranking → Top of the
-        book) → Exchange → Themes — while from `sm` the same blocks fall back
-        into the desktop grid + stacked sections. The grid wrapper and the main
-        column are `contents` on the phone so their children join the column.
-        Each section paints its own phone/desktop variant (viewport-gate).
-      */}
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col pb-6 pt-0 sm:block sm:px-6 sm:py-8 lg:px-10 lg:py-10">
-        <div className="contents sm:grid sm:grid-cols-1 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          {/* Main column — screener header + dense table */}
-          <div className="contents sm:block sm:min-w-0">
-            <div className="order-1">
-              <BelowSm>
-                <header className="px-4 pb-1 pt-[18px]">
-                  <h1 className="house-display text-[30px] leading-[1.02]">The Desk</h1>
-                  <p className="house-data mt-[9px] flex items-center gap-[7px] text-[11px] text-[var(--ink-soft)]">
-                    <span aria-hidden className="text-[9px] text-[var(--signal)]">
-                      ●
-                    </span>
-                    <Link
-                      href="/quarter-tracker"
-                      prefetch={false}
-                      className="underline decoration-[var(--rule)] underline-offset-[3px] hover:text-[var(--ink)]"
-                    >
-                      {board.quarterLabel} · {board.reportedCount} of {board.coveredCount} calls read →
-                    </Link>
-                  </p>
-                </header>
-              </BelowSm>
-              <FromSm>
-              <header className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4 border-b border-[var(--rule)] pb-6">
-                <div className="min-w-0">
-                  <h1 className="house-display max-w-xl text-3xl leading-[1.05] sm:text-4xl lg:text-[2.75rem]">
-                    Ranking India&apos;s top 100 companies.
-                  </h1>
-                </div>
+      <div className="mx-auto w-full max-w-[1200px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8 lg:px-10 lg:pt-10">
+        <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 border-b border-[var(--rule)] pb-4 sm:pb-5">
+          <h1 className="house-display text-[30px] leading-none sm:text-[40px]">The Desk</h1>
+          <Link
+            href="/quarter-tracker"
+            prefetch={false}
+            className={`house-data flex items-center gap-2 text-[11px] text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] ${DESK_FOCUS}`}
+          >
+            <span aria-hidden className="text-[8px] text-[var(--signal)]">
+              ●
+            </span>
+            {board.quarterLabel} · {board.reportedCount} of {board.coveredCount} calls read →
+          </Link>
+        </header>
 
-                <dl className="shrink-0 text-right">
-                  <dt className="house-data house-micro text-[var(--ink-soft)]">Coverage</dt>
-                  <dd className="house-display text-4xl leading-none text-[var(--ink)]">
-                    {board.universeCount}
-                  </dd>
-                  <dd className="house-data house-micro mt-1 text-[var(--ink-soft)]">
-                    Mid &amp; small caps · {board.universeSectorCount} sectors
-                  </dd>
-                </dl>
-              </header>
-              </FromSm>
-            </div>
-
-            <div className="order-4 sm:mt-6">
-              {/* Phone: the "Reference" divider demotes the scored ranking below the movement sections. */}
-              <BelowSm>
-                <div className="flex items-center gap-2.5 px-4 pb-3 pt-[26px]">
-                  <span className="house-data whitespace-nowrap text-[9px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">
-                    Reference
-                  </span>
-                  <span aria-hidden className="h-px flex-1 bg-[var(--ink)]" />
-                </div>
-              </BelowSm>
-              <DeskLeaderboardTable
-                latestReads={latestReads}
-                quarterLeaders={quarterLeaders}
-                positiveTwist={positiveTwist}
-                growthLeaders={growthLeaders}
-                moatLeaders={moatLeaders}
-                seeAllCount={board.coveredCount}
-              />
-            </div>
-          </div>
-
-          {/* Right rail — top of the book */}
-          <aside aria-label="Top of the book" className="order-5 mt-4 sm:mt-0">
-            <FromSm>
-              <p className="house-data house-micro mb-4 text-[var(--ink-soft)]">Top of the book</p>
-            </FromSm>
+        <div className="mt-7 grid gap-10 sm:mt-9 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-6">
+          <DeskSectionTracker sectionId="desk_research_updated">
+            <DeskResearchUpdated reads={research} scoreByCode={scoreByCode} />
+          </DeskSectionTracker>
+          <aside aria-label="Top of the book">
             <DeskTopOfBook
               quarterLabel={board.quarterLeadersLabel}
-              topPerformers={quarterLeaders.slice(0, 5)}
-              mostViewedWeek={mostViewedWeek.slice(0, 5)}
-              mostViewedMonth={mostViewedMonth.slice(0, 5)}
+              topPerformers={board.quarterLeaders.slice(0, 5).map(toRanked)}
+              mostViewedWeek={board.mostViewedWeek.slice(0, 5).map(toRanked)}
+              mostViewedMonth={board.mostViewedMonth.slice(0, 5).map(toRanked)}
               mostViewedInitial={board.mostViewedInitial}
             />
           </aside>
         </div>
 
-        {/* Phone: order-3 before the ledger in DOM → Featured → Telegram → Latest
-            activity. Desktop: DOM order → ranking grid → Telegram → Featured.
-            The strip owns its slot classes so an unset env var leaves no gap. */}
-        <DeskTelegramStrip className="order-3 mt-6 px-4 sm:mt-14 sm:px-0" />
+        <Suspense fallback={<DeskSectionFallback height="19rem" className="mt-12" />}>
+          <div className="mt-12 empty:hidden">
+            <DeskJournalReads />
+          </div>
+        </Suspense>
 
-        <div className="order-2 mt-4 sm:mt-14">
-          <Suspense fallback={<div className="px-4 sm:px-0"><DeskFeaturedReadsFallback /></div>}>
-            <DeskFeaturedReads />
-          </Suspense>
-        </div>
+        <Suspense fallback={<DeskSectionFallback height="17rem" className="mt-12" />}>
+          <div className="mt-12 empty:hidden">
+            <DeskNewCoverage companies={board.companies} />
+          </div>
+        </Suspense>
 
-        <div className="order-3 mt-4 sm:mt-14">
-          <Suspense fallback={<div className="px-4 sm:px-0"><DeskRecencyLedgerFallback /></div>}>
-            <DeskRecencyLedger quarterLabel={board.quarterLabel} />
-          </Suspense>
-        </div>
+        <Suspense fallback={<DeskSectionFallback height="24rem" className="mt-12" />}>
+          <div className="mt-12 empty:hidden">
+            <DeskWire />
+          </div>
+        </Suspense>
 
-        <div className="order-6 mt-10 px-4 sm:mt-12 sm:px-0">
-          <Suspense fallback={<DeskExchangeSectionFallback />}>
-            <DeskExchangeSection />
-          </Suspense>
-        </div>
-
-        <div className="order-7 mt-10 px-4 sm:mt-12 sm:px-0">
-          <Suspense fallback={<DeskHotThemesFallback />}>
-            <DeskHotThemes />
-          </Suspense>
-        </div>
+        <Suspense fallback={<DeskSectionFallback height="14rem" className="mt-12" />}>
+          <div className="mt-12 empty:hidden">
+            <DeskMovers companies={board.companies} />
+          </div>
+        </Suspense>
       </div>
     </main>
   );

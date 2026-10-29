@@ -1,5 +1,7 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
+
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { logger } from "@/lib/logger";
@@ -114,3 +116,71 @@ export async function writeTodaySnapshotIfMissing(rows: RankSnapshotRow[]): Prom
     });
   }
 }
+
+// ---------------------------------------------------------------------------
+// The desk's "Leaderboard movers · this week" (lib/desk-movers.ts) compares the
+// newest snapshot with the newest one at least a week older. Gaps are tolerated
+// the same way as the Δ column: zero-traffic days leave no snapshot, so "a week
+// before" is the nearest earlier date, not an exact calendar day.
+// ---------------------------------------------------------------------------
+
+const MOVERS_WINDOW_DAYS = 7;
+
+export type WeeklyRankPair = {
+  latestDate: string | null;
+  priorDate: string | null;
+  /** UPPERCASE code → rank. Plain Records: they cross unstable_cache's JSON. */
+  latest: Record<string, number>;
+  prior: Record<string, number>;
+};
+
+const EMPTY_PAIR: WeeklyRankPair = { latestDate: null, priorDate: null, latest: {}, prior: {} };
+
+async function readWeeklyRankPair(): Promise<WeeklyRankPair> {
+  // Non-essential like the Δ column: any failure (including a missing table)
+  // hides the movers block instead of breaking the desk.
+  try {
+    const supabase = createPublicReadClient();
+    const { data: newest, error: newestErr } = await supabase
+      .from(SNAPSHOT_TABLE)
+      .select("snapshot_date")
+      .order("snapshot_date", { ascending: false })
+      .limit(1);
+    if (newestErr || !newest?.length) return EMPTY_PAIR;
+    const latestDate = newest[0].snapshot_date as string;
+
+    const cutoff = new Date(`${latestDate}T00:00:00Z`);
+    cutoff.setUTCDate(cutoff.getUTCDate() - MOVERS_WINDOW_DAYS);
+    const { data: older, error: olderErr } = await supabase
+      .from(SNAPSHOT_TABLE)
+      .select("snapshot_date")
+      .lte("snapshot_date", utcDateString(cutoff))
+      .order("snapshot_date", { ascending: false })
+      .limit(1);
+    if (olderErr || !older?.length) return { ...EMPTY_PAIR, latestDate };
+    const priorDate = older[0].snapshot_date as string;
+
+    // Two days of the whole board (~200 rows each), well under the 1000-row cap.
+    const { data, error } = await supabase
+      .from(SNAPSHOT_TABLE)
+      .select("snapshot_date, company_code, rank")
+      .in("snapshot_date", [latestDate, priorDate]);
+    if (error || !data) return EMPTY_PAIR;
+
+    const latest: Record<string, number> = {};
+    const prior: Record<string, number> = {};
+    for (const r of data) {
+      const target = r.snapshot_date === latestDate ? latest : prior;
+      target[String(r.company_code).toUpperCase()] = Number(r.rank);
+    }
+    return { latestDate, priorDate, latest, prior };
+  } catch {
+    return EMPTY_PAIR;
+  }
+}
+
+// A snapshot lands at most once a UTC day, so half an hour of staleness costs
+// nothing and spares the desk three reads per request.
+export const getCachedWeeklyRankPair = unstable_cache(readWeeklyRankPair, ["leaderboard-rank-pair-v1"], {
+  revalidate: 1800,
+});

@@ -1,32 +1,33 @@
-// Deterministic selection for the Featured Reads strip: the three freshest
-// eligible reads, hero first.
+// Deterministic selection for the desk's "Research updated" list (2026-10-29
+// redesign; it was the three-card Featured Reads strip before): the freshest
+// eligible research cards, one per company.
 //
-// Recency governs EVERY slot. An earlier cut pinned only the hero to the
-// freshest read and rotated the two secondary slots by IST day index, to give a
+// Recency governs EVERY slot. An earlier cut of the strip pinned only the hero
+// to the freshest read and rotated the other slots by IST day index, to give a
 // daily visitor something new and to buy high-effort deep-tracks more than one
-// day of airtime. It paid for that by lying about recency: the strip would lead
-// with today's read and fill both secondaries with older cards while fresher
-// ones sat hidden, so a returning reader could not tell that new work had
-// landed. The honest, complete tape is the recency ledger directly below this
-// strip, so nothing is hidden by not featuring it; shelf life for older reads
-// belongs in an archive, not in a carousel on a "what's new" surface.
+// day of airtime. It paid for that by lying about recency: fresher cards sat
+// hidden behind older ones, so a returning reader could not tell that new work
+// had landed. Shelf life for older reads belongs in an archive (/activity), not
+// in a rotation on a "what's new" surface.
 //
 // Stateless by design — the portal is a read-only consumer and writes nothing
 // (no last_featured_at column, no cron). The pick is a pure function of the
-// eligible pool, so every viewer sees the same front page and it turns over
-// exactly when a producer promotes a new card, not on a timer.
+// eligible pool, so every viewer sees the same list and it turns over exactly
+// when a producer promotes a new card, not on a timer.
 //
 // The one exception (2026-10-11, the user's call): an editorial PIN. A card
-// whose `pinned_until` is still ahead holds the hero slot for that long — the
-// week's deep-dive report stays in the big box while fresher company reads
-// fill the two secondaries. The producer sets the instant; the portal only
-// reads the clock to compare against it, so the pick stays the same for every
-// viewer and expires on its own.
+// whose `pinned_until` is still ahead leads the list for that long. The
+// producer sets the instant; the portal only reads the clock to compare against
+// it, so the pick stays the same for every viewer and expires on its own.
+//
+// Journal cards (section "journal") are not research updates: the desk's
+// "Featured reads · from the Journal" block reads the posts themselves, and a
+// pinned Journal card leads that block instead (lib/desk-journal.ts).
 
 import { isPinned, type FeaturedRead } from "./types";
 
-// How many cards the strip shows: 1 hero + 2 secondaries.
-export const FEATURED_SLOTS = 3;
+// How many rows the "Research updated" list shows.
+export const RESEARCH_SLOTS = 7;
 
 // The one definition of "freshest", shared with the fetch in data.ts so the SQL
 // order and this comparator cannot drift apart. Leading key decides which rows
@@ -49,13 +50,28 @@ const byRecency = (a: FeaturedRead, b: FeaturedRead): number =>
   b.weight - a.weight ||
   (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
-// The FEATURED_SLOTS freshest eligible reads, hero first. Feature weight only
-// breaks an exact recency tie — it gates eligibility upstream (data.ts) but
-// never promotes an older read over a newer one. Key precedence here must match
-// SELECTION_ORDER. A live pin (pinned_until ahead of `nowMs`) comes first
-// regardless of age; several live pins order among themselves by recency.
-export function selectFeaturedReads(reads: FeaturedRead[], nowMs: number = Date.now()): FeaturedRead[] {
-  const pinned = reads.filter((r) => isPinned(r, nowMs)).sort(byRecency);
-  const rest = reads.filter((r) => !isPinned(r, nowMs)).sort(byRecency);
-  return [...pinned, ...rest].slice(0, FEATURED_SLOTS);
+// The `slots` freshest research cards, one per company (its newest card), live
+// pins first. Feature weight only breaks an exact recency tie — it gates
+// eligibility upstream (data.ts) but never promotes an older read over a newer
+// one. Key precedence here must match SELECTION_ORDER. Several live pins order
+// among themselves by recency. Never mutates `reads` — the cached pool is
+// shared by every request in the revalidate window.
+export function selectResearchUpdates(
+  reads: FeaturedRead[],
+  nowMs: number = Date.now(),
+  slots: number = RESEARCH_SLOTS,
+): FeaturedRead[] {
+  const research = reads.filter((r) => r.section !== "journal");
+  const pinned = research.filter((r) => isPinned(r, nowMs)).sort(byRecency);
+  const rest = research.filter((r) => !isPinned(r, nowMs)).sort(byRecency);
+  const seen = new Set<string>();
+  const out: FeaturedRead[] = [];
+  for (const read of [...pinned, ...rest]) {
+    if (out.length >= slots) break;
+    const key = read.companyCode.toUpperCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(read);
+  }
+  return out;
 }
