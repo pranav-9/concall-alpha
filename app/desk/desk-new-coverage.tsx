@@ -57,7 +57,7 @@ export async function DeskNewCoverage({ companies }: { companies: DeskCompany[] 
           >
             <CardEyebrow parts={["Initiated", formatRelativeActivityTime(lead.createdAt)]} />
             <span className="mt-3 flex items-center gap-3.5">
-              <DeskCrest name={lead.name} size="lg" />
+              <DeskCrest code={lead.code} name={lead.name} size="lg" />
               <span className="house-display min-w-0 text-[26px] leading-[1.08] [text-wrap:balance] sm:text-[30px]">
                 {tradingName(lead.name)}
               </span>
@@ -92,7 +92,7 @@ export async function DeskNewCoverage({ companies }: { companies: DeskCompany[] 
                       href={`/company/${company.code}`}
                       className={cn("flex items-start gap-3 px-4 py-4 sm:px-5", DESK_HOVER, DESK_FOCUS)}
                     >
-                      <DeskCrest name={company.name} />
+                      <DeskCrest code={company.code} name={company.name} />
                       <span className="min-w-0 flex-1">
                         <span className="house-display block truncate text-base leading-snug">{tradingName(company.name)}</span>
                         <span className="house-data mt-1 block text-[11px] leading-snug text-[var(--ink-soft)]">

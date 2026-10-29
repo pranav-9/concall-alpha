@@ -26,7 +26,7 @@ const hrefFor = (item: WireItem) => `/company/${item.companyCode}#company-announ
 function CompanyLine({ item }: { item: WireItem }) {
   return (
     <span className="mt-2.5 flex min-w-0 items-center gap-2">
-      <DeskCrest name={item.companyName} size="sm" />
+      <DeskCrest code={item.companyCode} name={item.companyName} size="sm" />
       <span className="house-data min-w-0 truncate text-xs text-[var(--ink-soft)]">
         {tradingName(item.companyName)} · {item.companyCode}
         {item.belowCut ? " · below the cut" : ""}
@@ -92,7 +92,7 @@ function RowItem({ item }: { item: WireItem }) {
     >
       <span className="house-data pt-0.5 text-xs text-[var(--ink-soft)] sm:pt-0">{istDayMonth(item.filedRaw)}</span>
       <span className="flex min-w-0 items-center gap-2">
-        <DeskCrest name={item.companyName} size="sm" />
+        <DeskCrest code={item.companyCode} name={item.companyName} size="sm" />
         <span className="house-display truncate text-[15px]">{tradingName(item.companyName)}</span>
       </span>
       <span className="col-start-2 text-sm leading-snug text-[var(--ink-soft)] sm:col-start-auto sm:truncate">

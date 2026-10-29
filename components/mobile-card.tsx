@@ -6,6 +6,7 @@
 
 import type { ReactNode } from "react";
 
+import { CompanyMark } from "@/components/company-logo";
 import { cn } from "@/lib/utils";
 
 /**
@@ -251,24 +252,17 @@ export function RankCell({ rank, className }: { rank: number | string | null; cl
   );
 }
 
-// Company initials for the monogram crest: first letter of the first two words;
-// a single-word name takes its first two letters. "&" is not a word.
-export function initials(name: string): string {
-  const words = name.replace(/&/g, " ").split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "";
-  const pick = words.length === 1 ? words[0].slice(0, 2) : words[0][0] + words[1][0];
-  return pick.toUpperCase();
-}
+export { initials } from "@/components/company-logo";
 
-/** The 34px monogram crest beside a company name. */
-export function Crest({ name }: { name: string }) {
+/** The 34px monogram crest beside a company name: its logo when on file, else initials. */
+export function Crest({ name, code }: { name: string; code?: string | null }) {
   return (
-    <span
-      aria-hidden
-      className="house-data flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg border border-[var(--rule)] bg-[var(--paper)] text-[11px] text-[var(--ink-soft)]"
-    >
-      {initials(name)}
-    </span>
+    <CompanyMark
+      code={code}
+      name={name}
+      className="h-[34px] w-[34px] rounded-lg"
+      initialsClassName="house-data bg-[var(--paper)] text-[11px] text-[var(--ink-soft)]"
+    />
   );
 }
 
