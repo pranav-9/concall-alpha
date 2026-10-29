@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 
 import { getCachedDeskFeaturedReads } from "@/lib/desk-featured/data";
@@ -12,7 +11,7 @@ import type { RankedRow } from "./desk-ranked-rows";
 import { DeskResearchUpdated } from "./desk-research-updated";
 import { DeskSectionTracker } from "./desk-section-tracker";
 import DeskTopOfBook from "./desk-top-of-book";
-import { DESK_FOCUS, DeskSectionFallback } from "./desk-ui";
+import { DeskSectionFallback } from "./desk-ui";
 import { DeskWire } from "./desk-wire";
 
 export const metadata: Metadata = {
@@ -46,21 +45,10 @@ export default async function DeskPage() {
   return (
     <main className="house relative min-h-screen">
       <div className="mx-auto w-full max-w-[1200px] px-4 pb-12 pt-5 sm:px-6 sm:pt-8 lg:px-10 lg:pt-10">
-        <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 border-b border-[var(--rule)] pb-4 sm:pb-5">
-          <h1 className="house-display text-[30px] leading-none sm:text-[40px]">The Desk</h1>
-          <Link
-            href="/quarter-tracker"
-            prefetch={false}
-            className={`house-data flex items-center gap-2 text-[11px] text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] ${DESK_FOCUS}`}
-          >
-            <span aria-hidden className="text-[8px] text-[var(--signal)]">
-              ●
-            </span>
-            {board.quarterLabel} · {board.reportedCount} of {board.coveredCount} calls read →
-          </Link>
-        </header>
+        {/* No visible masthead (user call 2026-10-29): the blocks open the page. */}
+        <h1 className="sr-only">The Desk</h1>
 
-        <div className="mt-7 grid gap-10 sm:mt-9 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-6">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-6">
           <DeskSectionTracker sectionId="desk_research_updated">
             <DeskResearchUpdated reads={research} scoreByCode={scoreByCode} />
           </DeskSectionTracker>
