@@ -1,10 +1,10 @@
 {
   "company": "AEROFLEX",
   "company_name": "Aeroflex Industries",
-  "prepared_on": "2026-10-03",
+  "prepared_on": "2026-10-29",
   "review_status": "user_approved",
-  "source_period": "Q1 FY27",
-  "latest_source_date": "2026-07-30",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-10-28",
   "about_company": {
     "about_short": "Makes flexible metal flow systems and is expanding into liquid-cooling assemblies for AI data centres.",
     "business_intro": "Aeroflex makes stainless-steel flexible hoses, assemblies, fittings, bellows and liquid-cooling skid assemblies. Customers use them to control liquids and gases in industrial and mission-critical systems; revenue comes from selling engineered components and customised assemblies in India and export markets.",
@@ -82,32 +82,27 @@
       },
       {
         "year": 2026,
-        "title": "Expands skid capacity to 9,000 units",
-        "detail": "The disclosed 15,000-unit target remained an expansion plan at Q1 FY27.",
+        "title": "Expands capacity to 20 Mn m of hose and 12,000 skids",
+        "detail": "Completed in Q2 FY27. Skid capacity is due to reach 15,000 by December 2026, and a ₹202 crore programme targets 30 million metres of hose and 30,000 skids by March 2028.",
         "sources": [
           {
-            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/6401402c-a5ca-4785-87db-477dd4e8d73c.pdf",
-            "label": "Aeroflex Q1 FY27 earnings-call transcript",
-            "locator": "Pages 2–3"
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e1a520e0-0759-4e33-9459-54e5f41143d2.pdf",
+            "label": "Aeroflex Q2 FY27 investor presentation",
+            "locator": "Slides 5 and 13"
           }
         ]
       }
     ],
     "business_facts": [
       {
-        "text": "In Q1 FY27, stainless-steel flexible hoses were 37% of revenue, assemblies and other products (fittings, metal bellows, Hyd-Air) 41%, and SFN skid assemblies 23%. Percentages are company-reported and rounded.",
+        "text": "In Q2 FY27 the deck's product chart put stainless-steel flexible hoses at 34% of revenue, assemblies and other products (fittings, metal bellows) at 41% and SFN skid assemblies at 25%, against 48% hoses and 52% assemblies a year earlier. The chart's shares match standalone revenue; on consolidated revenue from operations, which also counts Hyd-Air's fittings, hoses were about 33%, assemblies and others about 43% and skids 24.1%. In FY26 hoses were 43% and assemblies and others 52% of consolidated revenue.",
         "title": "Product mix",
-        "period": "Q1 FY27",
+        "period": "Q2 FY27",
         "sources": [
           {
-            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/667a7c2b-69e4-4a7c-862a-b051b31878d7.pdf",
-            "label": "Aeroflex Q1 FY27 investor presentation",
-            "locator": "Slide 6"
-          },
-          {
-            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/6401402c-a5ca-4785-87db-477dd4e8d73c.pdf",
-            "label": "Aeroflex Q1 FY27 earnings-call transcript",
-            "locator": "Pages 2 and 5"
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e1a520e0-0759-4e33-9459-54e5f41143d2.pdf",
+            "label": "Aeroflex Q2 FY27 investor presentation",
+            "locator": "Slides 7, 8, 12 and 18"
           },
           {
             "url": "https://www.aeroflexindia.com/uploads/topics/aae9a445-e14c-43c6-a623-ced272cb3252.pdf",
@@ -118,28 +113,44 @@
         "category": "business_model"
       },
       {
-        "text": "Exports were 58% of Q1 FY27 revenue and domestic sales 42%. Within exports, the Americas contributed 57% and Europe 33%; Asia, Africa and other markets made up the rest. The company reports a presence in more than 90 countries.",
+        "text": "Exports were 60% of Q2 FY27 revenue and domestic sales 40%, against 74% and 26% a year earlier. Within exports, the Americas were 66%, Europe 25% and other markets 9%. The shares come from the deck's chart, which matches standalone revenue. The company reports a presence in more than 90 countries.",
         "title": "Export reach",
-        "period": "Q1 FY27",
+        "period": "Q2 FY27",
+        "metrics": [
+          {
+            "label": "Exports, Q2 FY27",
+            "value": 60,
+            "unit": "% of standalone revenue"
+          },
+          {
+            "label": "Domestic, Q2 FY27",
+            "value": 40,
+            "unit": "% of standalone revenue"
+          }
+        ],
         "sources": [
           {
-            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/667a7c2b-69e4-4a7c-862a-b051b31878d7.pdf",
-            "label": "Aeroflex Q1 FY27 investor presentation",
-            "locator": "Slides 6 and 19"
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e1a520e0-0759-4e33-9459-54e5f41143d2.pdf",
+            "label": "Aeroflex Q2 FY27 investor presentation",
+            "locator": "Slides 7 and 25"
           }
         ],
         "category": "geography"
       },
       {
-        "category": "customers",
+        "text": "Management said its biggest international customer contributed about 25–26% of sales (Q4 FY26 call). Skid assemblies go to a single customer, the Indian subsidiary of a US-listed company, under a five-year exclusivity agreement that covers India only; in Q2 FY27 skid sales to that customer were ₹50.03 crore, 24.1% of consolidated revenue from operations.",
         "title": "Customer concentration",
-        "text": "Management said its biggest international customer contributed about 25–26% of sales. Skid assemblies went to a single customer, the Indian subsidiary of a US-listed company, under a five-year exclusivity agreement that covers India only.",
-        "period": "Q4 FY26 call",
+        "period": "Q4 FY26 call; Q2 FY27",
         "sources": [
           {
             "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5153911e-87f3-4042-8b66-02da375d52f6.pdf",
             "label": "Aeroflex Q4 FY26 earnings-call transcript",
             "locator": "Pages 11 and 16"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e1a520e0-0759-4e33-9459-54e5f41143d2.pdf",
+            "label": "Aeroflex Q2 FY27 investor presentation",
+            "locator": "Slides 8 and 18"
           },
           {
             "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1610ad90-389b-4cad-b930-d7db5fbc6f7f.pdf",
@@ -151,85 +162,121 @@
             "label": "Aeroflex Q2 FY26 earnings-call transcript",
             "locator": "Page 8"
           }
+        ],
+        "category": "customers",
+        "metrics": [
+          {
+            "label": "Skids, single customer, Q2 FY27",
+            "value": 24.1,
+            "unit": "% of consol. revenue"
+          }
         ]
       },
       {
-        "text": "Aeroflex reports three manufacturing plants near the JNPT port: Taloja in Navi Mumbai, Lodha-Palava in Thane and Chakan in Pune. The footprint supports hoses, fittings, bellows and liquid-cooling skid assemblies.",
+        "text": "Aeroflex reports four manufacturing plants near the JNPT port; its map names Taloja in Navi Mumbai, Lodha-Palava in Thane and Chakan in Pune, where its subsidiary Hyd-Air is based. A ₹202 crore programme due by March 2028 is set to add hose and skid capacity.",
         "title": "Manufacturing footprint",
-        "period": "Q1 FY27",
+        "period": "Q2 FY27",
         "sources": [
           {
-            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/667a7c2b-69e4-4a7c-862a-b051b31878d7.pdf",
-            "label": "Aeroflex Q1 FY27 investor presentation",
-            "locator": "Slide 20"
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e1a520e0-0759-4e33-9459-54e5f41143d2.pdf",
+            "label": "Aeroflex Q2 FY27 investor presentation",
+            "locator": "Slides 5, 13 and 26"
+          },
+          {
+            "url": "https://www.aeroflexindia.com/uploads/topics/aae9a445-e14c-43c6-a623-ced272cb3252.pdf",
+            "label": "Aeroflex FY26 annual report",
+            "locator": "Operational performance (Hyd-Air in Chakan, Pune)"
           }
         ],
         "category": "footprint"
       },
       {
-        "text": "Annual hose capacity was 17.5 million metres and skid capacity 9,000 units. Management said hose utilisation was about 65–66%; the planned increases to 20 million metres and 15,000 skids were targeted for Q3 FY27 and were not yet operating capacity.",
+        "text": "Installed capacity at Q2 FY27 was 20 million metres of hose, 12,000 skid assemblies, 46 assembly stations with 2 robotic welding lines and 1,20,000 metal bellows a year. Skid capacity is due to reach 15,000 by December 2026, and a ₹202 crore programme targets 30 million metres of hose and 30,000 skids by March 2028; those are plans, not operating capacity. Hose capacity ran at about 70% utilisation in FY26.",
         "title": "Capacity & utilisation",
-        "period": "Q1 FY27",
+        "period": "Q2 FY27; utilisation FY26",
         "sources": [
           {
-            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/667a7c2b-69e4-4a7c-862a-b051b31878d7.pdf",
-            "label": "Aeroflex Q1 FY27 investor presentation",
-            "locator": "Slide 17"
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e1a520e0-0759-4e33-9459-54e5f41143d2.pdf",
+            "label": "Aeroflex Q2 FY27 investor presentation",
+            "locator": "Slides 5, 13 and 23"
           },
           {
-            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/6401402c-a5ca-4785-87db-477dd4e8d73c.pdf",
-            "label": "Aeroflex Q1 FY27 earnings-call transcript",
-            "locator": "Pages 2 and 4"
+            "url": "https://www.aeroflexindia.com/uploads/topics/aae9a445-e14c-43c6-a623-ced272cb3252.pdf",
+            "label": "Aeroflex FY26 annual report",
+            "locator": "MD&A, SS flexible hoses"
           }
         ],
         "category": "capabilities"
       },
       {
-        "text": "The company reports 58 products at different R&D stages, including 16 related to data-centre liquid cooling, supported by 14 qualified R&D staff and a NABL-accredited laboratory. Products in development are not counted as commercial products.",
-        "title": "R&D pipeline",
-        "period": "Q1 FY27",
+        "text": "The company reports 29 qualified R&D professionals and a NABL-accredited laboratory, and has worked with IIT Bombay, IIT Indore, IIT Guwahati and IIT Ropar to develop new products. Its October 2026 investor presentation reports a newly granted Indian patent for automatically generating 3D CAD models of braided hose assemblies.",
+        "title": "R&D team and patent",
+        "period": "Q2 FY27",
         "sources": [
           {
-            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/667a7c2b-69e4-4a7c-862a-b051b31878d7.pdf",
-            "label": "Aeroflex Q1 FY27 investor presentation",
-            "locator": "Slide 22"
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e1a520e0-0759-4e33-9459-54e5f41143d2.pdf",
+            "label": "Aeroflex Q2 FY27 investor presentation",
+            "locator": "Slides 14 and 28"
           }
         ],
         "category": "capabilities"
       },
       {
-        "text": "Skid assemblies are made to the cooling-system design for each data-centre floor, so unit values vary with configuration. Management said individual skids supplied have ranged from about ₹1 lakh to ₹5 lakh; this is not a standard selling-price series.",
+        "text": "Skid assemblies are made to the cooling-system design for each data-centre floor, so unit values vary with configuration. The company says a skid typically sells for ₹1.1 lakh to ₹5.5 lakh depending on specifications; the Q2 FY27 average was about ₹3.39 lakh (1,475 skids for ₹50.03 crore). This is a mix average, not a price series.",
         "title": "Custom engineering",
-        "period": "Q1 FY27 call",
+        "period": "Q2 FY27",
         "sources": [
           {
             "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/6401402c-a5ca-4785-87db-477dd4e8d73c.pdf",
             "label": "Aeroflex Q1 FY27 earnings-call transcript",
             "locator": "Pages 5–6"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e1a520e0-0759-4e33-9459-54e5f41143d2.pdf",
+            "label": "Aeroflex Q2 FY27 investor presentation",
+            "locator": "Slide 18"
           }
         ],
         "category": "business_model"
+      },
+      {
+        "category": "business_model",
+        "title": "Hyd-Air to merge into Aeroflex (proposed)",
+        "text": "Aeroflex has announced a proposed merger of Hyd-Air Engineering, the wholly owned subsidiary it acquired in April 2024, into the company, subject to necessary approvals. The company says the merger should eliminate operational overlaps, simplify the corporate structure and reduce administrative and compliance-related costs.",
+        "period": "Q2 FY27",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e1a520e0-0759-4e33-9459-54e5f41143d2.pdf",
+            "label": "Aeroflex Q2 FY27 investor presentation",
+            "locator": "Slides 5, 6 and 16"
+          },
+          {
+            "url": "https://www.aeroflexindia.com/uploads/topics/aae9a445-e14c-43c6-a623-ced272cb3252.pdf",
+            "label": "Aeroflex FY26 annual report",
+            "locator": "Form AOC-1 (Annexure C); MD&A"
+          }
+        ]
       }
     ],
     "what_changed": {
-      "text": "SFN skid assemblies contributed ₹32.4 crore, or about 23% of Q1 FY27 revenue. As that business scaled, domestic revenue share rose to 42% from 28% a year earlier; the company still earned 58% of revenue from exports.",
-      "period": "Q1 FY27 vs Q1 FY26",
+      "headline": "Liquid cooling has become a material revenue line.",
+      "text": "SFN skid assemblies brought in ₹50.03 crore in Q2 FY27, 24.1% of consolidated revenue from operations. As that business scaled, domestic sales rose to 40% of revenue from 26% a year earlier and exports were 60%; those two shares come from the deck's chart, which matches standalone revenue.",
+      "period": "Q2 FY27 vs Q2 FY26",
       "sources": [
         {
-          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/667a7c2b-69e4-4a7c-862a-b051b31878d7.pdf",
-          "label": "Aeroflex Q1 FY27 investor presentation",
-          "locator": "Slides 5–6"
-        },
-        {
-          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/6401402c-a5ca-4785-87db-477dd4e8d73c.pdf",
-          "label": "Aeroflex Q1 FY27 earnings-call transcript",
-          "locator": "Pages 2–3"
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e1a520e0-0759-4e33-9459-54e5f41143d2.pdf",
+          "label": "Aeroflex Q2 FY27 investor presentation",
+          "locator": "Slides 7, 8 and 18"
         }
-      ],
-      "headline": "Liquid cooling has become a material revenue line."
+      ]
     }
   },
   "about_sources": [
+    {
+      "label": "Aeroflex Q2 FY27 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e1a520e0-0759-4e33-9459-54e5f41143d2.pdf",
+      "locator": "Slides 5–8, 12–18, 23–28"
+    },
     {
       "label": "Aeroflex Q1 FY27 investor presentation",
       "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/667a7c2b-69e4-4a7c-862a-b051b31878d7.pdf",
