@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   RESEARCH_SLOTS,
   SELECTION_ORDER,
+  researchEligible,
   selectResearchUpdates,
 } from "../lib/desk-featured/select";
 import type { FeaturedRead } from "../lib/desk-featured/types";
@@ -246,3 +247,30 @@ const pinnedVirgin = [pin("B", "2026-09-01T00:00:00Z", "2026-10-18T12:00:00Z"), 
 pick(pinnedVirgin, NOW);
 assert.deepEqual(pinnedVirgin.map((r) => r.companyCode), ["B", "A"], "pin path does not mutate the pool either");
 console.log("  ok  the pin path leaves the cached pool untouched");
+
+// --- which companies' research the desk shows (user call 2026-10-29) ---
+// UNIMECH's 2026-10-28 deep-track vanished from the desk because the list was
+// gated to the ranked hundred. Below-cut companies show (tagged); large-cap
+// admissions and codes we don't cover never do. Do not "fix" this back to
+// isDiscoveryListed.
+{
+  const coverage = { listed: new Set(["PAYTM"]), belowCut: new Set(["UNIMECH"]) };
+  const pool = [
+    mk("UNIMECH", "2026-10-28T13:37:07+00:00"),
+    mk("ETERNAL", "2026-10-28T09:25:40+00:00"),
+    mk("PAYTM", "2026-10-28T09:25:40+00:00"),
+    mk("NOSUCHCO", "2026-10-28T09:00:00+00:00"),
+    { ...mk("unimech", "2026-10-01T00:00:00Z"), id: "lowercase-code" },
+  ];
+  assert.deepEqual(
+    researchEligible(pool, coverage).map((r) => r.companyCode),
+    ["UNIMECH", "PAYTM", "unimech"],
+    "below-cut and listed stay (any case); a large-cap admission and an unknown code drop",
+  );
+  assert.deepEqual(
+    selectResearchUpdates(researchEligible(pool, coverage)).map((r) => r.companyCode),
+    ["UNIMECH", "PAYTM"],
+    "a fresh below-cut deep-track leads the list like any other",
+  );
+  console.log("  ok  research list keeps below-cut companies, drops large-cap admissions");
+}

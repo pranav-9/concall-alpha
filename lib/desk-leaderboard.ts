@@ -4,7 +4,12 @@ import { unstable_cache } from "next/cache";
 
 import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { selectMostViewed } from "@/lib/desk-most-viewed";
-import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
+import {
+  COVERAGE_SELECT,
+  isAdmittedLargeCap,
+  isBelowCoverageCut,
+  isDiscoveryListed,
+} from "@/lib/coverage-policy";
 import { isCompanyNew } from "@/lib/company-freshness";
 import { currentReportingQuarter, quarterLabelFor } from "@/lib/current-quarter";
 
@@ -78,9 +83,16 @@ export type DeskLeaderboard = {
    * applies the same coverage gate and shows the same score.
    */
   companies: DeskCompany[];
+  /**
+   * Companies below the coverage cut (still ours, not in the ranked hundred) —
+   * large-cap admissions are never here. Only blocks that report fresh work on
+   * a company show them, tagged (Research updated, 2026-10-29); the ranked
+   * blocks stay on `companies`.
+   */
+  belowCutCompanies: DeskCompany[];
 };
 
-/** One discovery-listed company, as the desk's other blocks need it. */
+/** One covered company, as the desk's other blocks need it. */
 export type DeskCompany = {
   code: string;
   name: string;
@@ -151,12 +163,14 @@ function buildCoverage(companyRows: CoverageRow[]) {
   const byCode = new Map<string, CoverageInfo>();
   const excludedKeys = new Set<string>();
   const listed: CoverageRow[] = [];
+  const belowCut: CoverageRow[] = [];
   let coveredCount = 0;
 
   companyRows.forEach((row) => {
     if (!isDiscoveryListed(row)) {
       if (row.code) excludedKeys.add(upper(row.code));
       if (row.name) excludedKeys.add(upper(row.name));
+      if (row.code && isBelowCoverageCut(row) && !isAdmittedLargeCap(row)) belowCut.push(row);
       return;
     }
     coveredCount += 1;
@@ -170,7 +184,7 @@ function buildCoverage(companyRows: CoverageRow[]) {
     if (row.code) listed.push(row);
   });
 
-  return { byCode, excludedKeys, listed, coveredCount };
+  return { byCode, excludedKeys, listed, belowCut, coveredCount };
 }
 
 async function fetchConcallRows(supabase: DeskReadClient) {
@@ -392,16 +406,25 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
   const mostViewedInitial: "week" | "month" =
     mostViewedWeek.length > 0 ? "week" : "month";
 
-  const companies: DeskCompany[] = coverage.listed.map((row) => {
+  const toDeskCompany = (row: CoverageRow, latestScore: number | null): DeskCompany => {
     const code = row.code as string;
-    return {
-      code,
-      name: row.name ?? code,
-      sector: row.sector,
-      createdAt: row.created_at,
-      latestScore: rowByCode.get(upper(code))?.latestScore ?? null,
-    };
+    return { code, name: row.name ?? code, sector: row.sector, createdAt: row.created_at, latestScore };
+  };
+  const companies = coverage.listed.map((row) =>
+    toDeskCompany(row, rowByCode.get(upper(row.code as string))?.latestScore ?? null),
+  );
+  // Below-cut companies were skipped when grouping reads above; their latest
+  // score is the first row per code (concallRows is newest-quarter first).
+  const belowCutScore = new Map<string, number>();
+  const belowCutKeys = new Set(coverage.belowCut.map((row) => upper(row.code)));
+  concallRows.forEach((row) => {
+    const key = upper(row.company_code);
+    const score = Number(row.score);
+    if (belowCutKeys.has(key) && !belowCutScore.has(key) && Number.isFinite(score)) belowCutScore.set(key, score);
   });
+  const belowCutCompanies = coverage.belowCut.map((row) =>
+    toDeskCompany(row, belowCutScore.get(upper(row.code)) ?? null),
+  );
 
   return {
     quarterLabel: quarter.label,
@@ -413,5 +436,6 @@ export async function getDeskLeaderboard(): Promise<DeskLeaderboard> {
     mostViewedMonth,
     mostViewedInitial,
     companies,
+    belowCutCompanies,
   };
 }

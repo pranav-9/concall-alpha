@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { getCachedDeskFeaturedReads } from "@/lib/desk-featured/data";
-import { selectResearchUpdates } from "@/lib/desk-featured/select";
+import { researchEligible, selectResearchUpdates } from "@/lib/desk-featured/select";
 import { getDeskLeaderboard, type DeskRow } from "@/lib/desk-leaderboard";
 import { DeskJournalReads } from "./desk-journal-reads";
 import { DeskMovers } from "./desk-movers";
@@ -33,14 +33,15 @@ export default async function DeskPage() {
 
   // The opening list and the rail paint with the page (no streaming above the
   // fold); everything below streams in its own Suspense.
-  // Discovery surface: only the covered hundred (isDiscoveryListed, applied in
-  // getDeskLeaderboard). Producers write a card for every deep-track, including
-  // below-cut names and large-cap admissions; those stay on the company page.
-  const scoreByCode = new Map(board.companies.map((c) => [c.code.toUpperCase(), c.latestScore]));
-  const research = selectResearchUpdates(
-    featuredReads.filter((r) => scoreByCode.has(r.companyCode.toUpperCase())),
-    Date.now(),
+  // Research updated shows the ranked hundred AND below-cut companies, tagged —
+  // fresh work on a below-cut name must not vanish (researchEligible). Large-cap
+  // admissions stay on their company page.
+  const listed = new Set(board.companies.map((c) => c.code.toUpperCase()));
+  const belowCut = new Set(board.belowCutCompanies.map((c) => c.code.toUpperCase()));
+  const scoreByCode = new Map(
+    [...board.companies, ...board.belowCutCompanies].map((c) => [c.code.toUpperCase(), c.latestScore]),
   );
+  const research = selectResearchUpdates(researchEligible(featuredReads, { listed, belowCut }), Date.now());
 
   return (
     <main className="house relative min-h-screen">
@@ -50,7 +51,7 @@ export default async function DeskPage() {
 
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-6">
           <DeskSectionTracker sectionId="desk_research_updated">
-            <DeskResearchUpdated reads={research} scoreByCode={scoreByCode} />
+            <DeskResearchUpdated reads={research} scoreByCode={scoreByCode} belowCut={belowCut} />
           </DeskSectionTracker>
           <aside aria-label="Top of the book">
             <DeskTopOfBook
