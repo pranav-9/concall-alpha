@@ -75,3 +75,24 @@ export function selectResearchUpdates(
   }
   return out;
 }
+
+export type ResearchCoverage = {
+  /** UPPERCASE codes of the ranked hundred (isDiscoveryListed). */
+  listed: ReadonlySet<string>;
+  /** UPPERCASE codes below the coverage cut — never large-cap admissions. */
+  belowCut: ReadonlySet<string>;
+};
+
+// Which research cards the desk may show (user call 2026-10-29). Research
+// updated reports fresh work, so it is the one ranked-desk block that does NOT
+// apply isDiscoveryListed: a deep-track on a below-cut company (UNIMECH,
+// 2026-10-28) is exactly the update that could earn it back into the hundred,
+// and hiding it read as "the run never landed". Below-cut cards show, tagged;
+// large-cap admissions (outside the mid/small positioning) and codes we don't
+// cover stay out. Pinned by tests/desk-featured-select.test.ts.
+export function researchEligible(reads: FeaturedRead[], coverage: ResearchCoverage): FeaturedRead[] {
+  return reads.filter((r) => {
+    const key = r.companyCode.toUpperCase();
+    return coverage.listed.has(key) || coverage.belowCut.has(key);
+  });
+}

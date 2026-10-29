@@ -1,8 +1,10 @@
 // "Research updated" — the desk's opening list (2026-10-29 redesign). One row
 // per company whose research just moved: the producer's research card
 // (desk_featured_read — a deep-track's strategy line, written at promote time)
-// with the company's latest ConcallScore and how long ago it landed. The full,
-// honest tape of every section update lives at /activity.
+// with the company's latest ConcallScore and how long ago it landed. A company
+// below the coverage cut shows too, tagged — its fresh research is news even
+// off the ranked hundred (lib/desk-featured/select.ts researchEligible). The
+// full, honest tape of every section update lives at /activity.
 
 import Link from "next/link";
 
@@ -21,7 +23,7 @@ import {
   compactAge,
 } from "./desk-ui";
 
-function ResearchRow({ read, score }: { read: FeaturedRead; score: number | null }) {
+function ResearchRow({ read, score, belowCut }: { read: FeaturedRead; score: number | null; belowCut: boolean }) {
   const age = compactAge(formatRelativeActivityTime(read.publishedAtRaw));
   return (
     <HomepageModuleLink
@@ -33,7 +35,17 @@ function ResearchRow({ read, score }: { read: FeaturedRead; score: number | null
     >
       <DeskCrest code={read.companyCode} name={read.companyName} />
       <span className="min-w-0 flex-1">
-        <span className="house-display block text-[15px] leading-snug sm:text-base">{read.companyName}</span>
+        <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="house-display text-[15px] leading-snug sm:text-base">{read.companyName}</span>
+          {belowCut ? (
+            <span
+              className="house-data house-micro whitespace-nowrap rounded-full border border-dashed border-[var(--rule)] px-2 py-0.5 leading-none text-[var(--ink-soft)]"
+              title="Below the coverage cut — still tracked, not in the ranked hundred"
+            >
+              Below the cut
+            </span>
+          ) : null}
+        </span>
         <span className="mt-1 line-clamp-3 text-sm leading-relaxed text-[var(--ink-soft)] [text-wrap:pretty] sm:line-clamp-2">
           {read.headline}
         </span>
@@ -49,17 +61,25 @@ function ResearchRow({ read, score }: { read: FeaturedRead; score: number | null
 export function DeskResearchUpdated({
   reads,
   scoreByCode,
+  belowCut,
 }: {
   reads: FeaturedRead[];
-  /** UPPERCASE code → latest ConcallScore (discovery-listed companies only). */
+  /** UPPERCASE code → latest ConcallScore (listed and below-cut companies). */
   scoreByCode: ReadonlyMap<string, number | null>;
+  /** UPPERCASE codes below the coverage cut — their rows carry the tag. */
+  belowCut: ReadonlySet<string>;
 }) {
   if (reads.length === 0) return null;
   return (
     <DeskSection id="desk-research-updated" eyebrow="Research updated" live link={{ href: "/activity", label: "All activity →" }}>
       <div className={DESK_CARD}>
         {reads.map((read) => (
-          <ResearchRow key={read.id} read={read} score={scoreByCode.get(read.companyCode.toUpperCase()) ?? null} />
+          <ResearchRow
+            key={read.id}
+            read={read}
+            score={scoreByCode.get(read.companyCode.toUpperCase()) ?? null}
+            belowCut={belowCut.has(read.companyCode.toUpperCase())}
+          />
         ))}
         <div className="border-t border-[var(--rule)] px-4 py-4 sm:px-5">
           <Link href="/activity" prefetch={false} className={cn("house-link house-data text-xs", DESK_FOCUS)}>
