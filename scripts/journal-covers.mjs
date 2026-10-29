@@ -777,6 +777,31 @@ COVERS["acutaas-farm-raised-forecast"] = [
     L(456, 228, 512, 228, "s t"),
 ];
 
+// Aarti Pharmalabs, Q2 FY27 — the Xanthine reactors nearly full, on one feed header, and the drums of product
+// stacked beside them.
+COVERS["aartipharm-vats-filling-till-not"] = [
+  "teal",
+  L(140, 252, 540, 252) +
+    G(188, 172, vat(92)) +
+    G(288, 172, vat(84)) +
+    G(388, 172, vat(74)) +
+    // feed header across the vessel heads, with its valve
+    P("M188 92 v-22 h200 v22 M288 70 v22", "s") +
+    C(338, 70, 7, "s a") +
+    // run-off from the last vessel to the drums
+    P("M388 226 v12 h56", "s sa") +
+    // two drums on the floor, one on top
+    R(446, 196, 44, 56, 6, "s w") +
+    E(468, 196, 22, 5, "s l") +
+    L(446, 218, 490, 218, "s t") +
+    R(494, 196, 44, 56, 6, "s l") +
+    E(516, 196, 22, 5, "s w") +
+    L(494, 218, 538, 218, "s t") +
+    R(470, 138, 44, 56, 6, "s m") +
+    E(492, 138, 22, 5, "s l") +
+    L(470, 160, 514, 160, "s t"),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
