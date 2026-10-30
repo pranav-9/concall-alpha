@@ -309,6 +309,25 @@ const COVERS = {
     G(240, 160, gear(0, 0, 80, 10, "s l")) +
       G(440, 150, C(0, 0, 62, "s w") + range(12).map((i) => { const a = (i * Math.PI) / 6; return L(f(50 * Math.cos(a)), f(50 * Math.sin(a)), f(56 * Math.cos(a)), f(56 * Math.sin(a)), "s t"); }).join("") + L(0, 0, 0, -38) + L(0, 0, 26, 14, "s sa") + C(0, 0, 6, "s d") + R(-8, -78, 16, 16, 2, "s d")),
   ],
+  // MTAR — the fuel-cell hot box it ships most of, beside a liquid-propulsion engine nozzle.
+  "mtartech-trains-ran-on-time": [
+    "slate",
+    R(170, 82, 160, 148, 8, "s l") +
+      R(186, 98, 128, 88, 4, "s w") +
+      range(7).map((i) => L(200 + i * 17, 106, 200 + i * 17, 178, "s t sm")).join("") +
+      R(228, 58, 44, 24, 4, "s m") +
+      R(186, 196, 128, 22, 4, "s w") +
+      C(296, 207, 7, "s a") +
+      R(182, 230, 22, 12, 2, "s d") +
+      R(296, 230, 22, 12, 2, "s d") +
+      R(416, 42, 32, 16, 4, "s d") +
+      R(404, 58, 56, 60, 10, "s w") +
+      L(404, 78, 460, 78, "s t sm") +
+      L(404, 98, 460, 98, "s t sm") +
+      P("M414 118 C414 152 386 204 372 252 L492 252 C478 204 450 152 450 118 Z", "s m") +
+      P("M432 120 C432 160 418 210 410 252", "s t") +
+      P("M396 210 H468", "s t"),
+  ],
   // E2E — the rack, and the GPU that fills it.
   "e2e-hotel-new-wing": ["violet", G(300, 165, rack(4)) + G(476, 96, chip())],
   // Sansera — the connecting rod it is known for, and the gear it is betting on.
