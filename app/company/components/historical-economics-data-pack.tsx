@@ -49,6 +49,7 @@ import type {
   NormalizedRevenueMixHistoryByUnitRow,
 } from "@/lib/business-snapshot/types";
 import { hasAnyNumericValue } from "@/lib/business-snapshot/has-any-numeric-value";
+import { partPeriodColumn } from "@/lib/business-snapshot/part-period";
 
 // The pinned right-hand column (CAGR / net Δ) on the four history tables. Opaque
 // on purpose: a translucent background let scrolled period headers paint
@@ -805,6 +806,8 @@ function RevenueHistorySegmentModule({
   // empty grid — and skip the whole card when there are no takeaways either.
   const hasAnyValue = hasAnyNumericValue(module.rows, displayPeriods, (row) => row.revenueByYear);
   if (!hasAnyValue && module.insights.length === 0) return null;
+  // The results-season half/quarter, after the years and out of the deltas, sparkline and CAGR (part-period.ts).
+  const partPeriod = partPeriodColumn(module);
 
   return (
     <div className="space-y-3 rounded-xl border border-border/25 bg-background/45 p-3">
@@ -835,6 +838,16 @@ function RevenueHistorySegmentModule({
                   {period}
                 </TableHead>
               ))}
+              {partPeriod && (
+                <TableHead className="text-right">
+                  <span className="flex flex-col items-end leading-tight">
+                    <span>{partPeriod}</span>
+                    <span className="text-[9px] font-normal normal-case tracking-normal text-muted-foreground">
+                      part year
+                    </span>
+                  </span>
+                </TableHead>
+              )}
               <TableHead className={PINNED_COL_HEAD}>
                 CAGR
               </TableHead>
@@ -907,6 +920,16 @@ function RevenueHistorySegmentModule({
                     </div>
                   </TableCell>
                 ))}
+                {partPeriod && (
+                  <TableCell className="text-right">
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className="text-[12px] text-muted-foreground">
+                        {formatAbsoluteValue(row.latestPeriodRevenue)}
+                      </span>
+                      <span className="text-[10px] leading-none text-muted-foreground">&nbsp;</span>
+                    </div>
+                  </TableCell>
+                )}
                 <TableCell className={PINNED_COL_CELL}>
                   <span
                     className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${getCagrDisplayClassName(
