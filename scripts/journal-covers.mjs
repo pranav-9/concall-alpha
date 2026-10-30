@@ -631,6 +631,32 @@ const COVERS = {
       P("M466 92 a18 10 0 0 0 36 0", "s w") +
       C(484, 86, 5, "s a"),
   ],
+  // Pine Labs — what it makes: a card terminal printing a receipt with a card in its slot, beside a QR soundbox.
+  "pinelabs-toll-booths-rides-free": [
+    "rose",
+    P("M276 70 V40 l6 -4 l6 4 l6 -4 l6 4 l6 -4 l6 4 l6 -4 l6 4 l6 -4 l6 4 V70", "s w") +
+      L(286, 50, 324, 50, "s t") +
+      L(286, 58, 314, 58, "s t") +
+      R(248, 66, 114, 178, 16, "s l") +
+      R(262, 82, 86, 56, 6, "s w") +
+      L(272, 98, 320, 98, "s t") +
+      L(272, 110, 334, 110, "s t") +
+      R(272, 120, 30, 8, 2, "a") +
+      range(4)
+        .map((r) => range(3).map((c) => R(268 + c * 26, 150 + r * 18, 20, 12, 3, r === 3 && c === 2 ? "s a" : "s w")).join(""))
+        .join("") +
+      R(272, 222, 66, 42, 4, "s m") +
+      L(272, 234, 338, 234, "s d") +
+      P("M232 112 q-10 14 0 28", "s sa") +
+      P("M220 104 q-18 22 0 44", "s sa") +
+      R(398, 112, 100, 132, 16, "s w") +
+      R(418, 128, 60, 60, 4, "s l") +
+      [[422, 132], [458, 132], [422, 168]].map(([x, y]) => R(x, y, 16, 16, 2, "s d")).join("") +
+      [[446, 148], [452, 162], [462, 172], [442, 174], [466, 154]].map(([x, y]) => R(x, y, 6, 6, 1, "d")).join("") +
+      range(4).map((i) => L(418, 204 + i * 9, 478, 204 + i * 9, "s t")).join("") +
+      P("M508 150 q10 14 0 28", "s sa") +
+      P("M520 142 q18 22 0 44", "s sa"),
+  ],
 };
 
 // Yash Highvoltage — a ribbed transformer bushing and a cutaway condenser core.
