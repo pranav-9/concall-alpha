@@ -1,0 +1,286 @@
+{
+  "company": "PINELABS",
+  "company_name": "Pine Labs Limited",
+  "prepared_on": "2026-10-30",
+  "review_status": "draft_pending_user_review",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-10-29",
+  "about_company": {
+    "about_short": "Payment terminals, online payments, EMI offers and prepaid cards for merchants, banks and brands in India and abroad.",
+    "about_long": "Pine Labs runs a commerce and payments platform for merchants, banks, non-bank lenders and consumer brands, reported as two segments. Digital Infrastructure and Transaction Platform (DITP) covers in-store payment terminals (digital checkout points), online and UPI payments, EMI and other affordability offers at the point of sale, and APIs that customers use to build bill-payment, credit and savings products; its brands include Setu, Mosambee and Fave. Issuing and Acquiring Platform (IAP) issues, processes and distributes prepaid and gift cards for brands and banks. The company earns subscription fees, a take rate on transaction value, per-transaction fees on its fintech infrastructure, card processing fees and distribution commissions, and interest on prepaid balances held in a bank escrow account. Revenue is booked net of the fees paid to banks and card networks, except prepaid card distribution, which is booked at gross value. About 85% of FY26 revenue came from customers in India; merchants are mainly in India, Malaysia and Dubai.",
+    "business_intro": "Pine Labs sells payment acceptance to merchants (in-store terminals, online and UPI payments) and layers EMI offers from banks and brands on top. It also issues, processes and distributes prepaid and gift cards for brands and banks, and offers APIs for building bill-payment, credit and savings products. Merchants, banks, non-bank lenders and brands pay subscription or transaction-based fees, and the company also earns interest on prepaid balances held in escrow.",
+    "company_timeline": [
+      {
+        "year": 1998,
+        "title": "Incorporated in India",
+        "detail": "Incorporated on 18 May 1998; the company was formerly known as Pine Labs Private Limited.",
+        "sources": [
+          {
+            "label": "Pine Labs Annual Report 2025-26",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=24faa495-7fc8-4a82-a88f-beb9514fd016.pdf"
+          },
+          {
+            "label": "Q2 FY27 financial results (29 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/b4f06c47-38a4-477b-b4b2-f2f59c8a5292.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Receives RBI payment aggregator certificate",
+        "detail": "RBI granted final authorisation as an online payment aggregator on 9 May 2025; a revised certificate dated 10 November 2025 covers online, physical and cross-border payment aggregation. The company also holds RBI authorisation to issue and operate prepaid payment instruments.",
+        "sources": [
+          {
+            "label": "Pine Labs Annual Report 2025-26",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=24faa495-7fc8-4a82-a88f-beb9514fd016.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Merges its Singapore parent into the Indian company",
+        "detail": "Under a scheme approved by the NCLT Chandigarh bench on 9 April 2025, the Singapore holding company merged into Pine Labs Limited with effect from 6 June 2025. Its shares in the company were cancelled, and the company has no identifiable promoter.",
+        "sources": [
+          {
+            "label": "Pine Labs Annual Report 2025-26",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=24faa495-7fc8-4a82-a88f-beb9514fd016.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Lists on NSE and BSE",
+        "detail": "Listed on 14 November 2025 after an IPO priced at ₹221 a share: a fresh issue of about ₹2,080 Cr and an offer for sale of about ₹1,820 Cr by existing shareholders.",
+        "sources": [
+          {
+            "label": "Pine Labs Annual Report 2025-26",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=24faa495-7fc8-4a82-a88f-beb9514fd016.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Acquires Shopflo, a D2C checkout platform",
+        "detail": "Bought 100% of Shopflo Technologies, a direct-to-consumer checkout platform, for ₹88.00 Cr in cash including deferred consideration; consolidated from 26 May 2026, with ₹59.83 Cr of goodwill.",
+        "sources": [
+          {
+            "label": "Q2 FY27 financial results (29 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/b4f06c47-38a4-477b-b4b2-f2f59c8a5292.pdf",
+            "locator": "Note 6"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Customer concentration: no customer above 10% of FY26 revenue",
+        "text": "No single customer contributed more than 10% of consolidated FY26 revenue from contracts with customers. In FY25 one customer in the DITP segment contributed ₹243.12 Cr, 12.8% of that year's ₹1,904.80 Cr revenue from contracts with customers. The base is broad: 11.6 lakh merchants (unique customers using at least one product) at Q2 FY27, up from 9.5 lakh at end-FY25 and 11.0 lakh at end-FY26.",
+        "period": "FY25–Q2 FY27",
+        "sources": [
+          {
+            "label": "Pine Labs Annual Report 2025-26",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=24faa495-7fc8-4a82-a88f-beb9514fd016.pdf",
+            "locator": "Consolidated note 45, Operating segments"
+          },
+          {
+            "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a3d408e6-0ad0-4682-b20f-c7b716317f31.pdf",
+            "locator": "Key Performance Indicators table"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Merchants, FY25",
+            "value": 9.5,
+            "unit": "lakh merchants"
+          },
+          {
+            "label": "Merchants, FY26",
+            "value": 11.0,
+            "unit": "lakh merchants"
+          },
+          {
+            "label": "Merchants, Q2 FY27",
+            "value": 11.6,
+            "unit": "lakh merchants"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Revenue by region: 15% from customers outside India",
+        "text": "Customers outside India brought in ₹403.02 Cr, 14.9% of consolidated FY26 revenue of ₹2,710.59 Cr (FY25: ₹337.76 Cr, 14.9%). The share was 15% in Q2 FY27, down from 17% a year earlier, while Southeast Asia revenue grew about 40% YoY. Merchants are mainly in India, Malaysia and Dubai, and the company is present in 22+ markets.",
+        "period": "FY25–Q2 FY27",
+        "sources": [
+          {
+            "label": "Pine Labs Annual Report 2025-26",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=24faa495-7fc8-4a82-a88f-beb9514fd016.pdf",
+            "locator": "Consolidated note 45, Operating segments"
+          },
+          {
+            "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a3d408e6-0ad0-4682-b20f-c7b716317f31.pdf",
+            "locator": "Key Performance Indicators table"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Outside India, FY25",
+            "value": 15.0,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Outside India, FY26",
+            "value": 15.0,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Outside India, Q2 FY27",
+            "value": 15.0,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Revenue is booked net, except prepaid card distribution",
+        "text": "Revenue is recognised net of the processing fees and pass-through charges paid to banks and network partners; the CEO said prepaid card distribution is the only line booked at gross value, because of accounting policies. Of IAP's FY26 revenue of ₹873.77 Cr, ₹352.54 Cr came from processing and distributing prepaid cards, ₹231.11 Cr from selling prepaid cards (against ₹219.35 Cr of stock-in-trade purchases and inventory changes in the segment), and ₹290.12 Cr was interest on customer funds held in escrow, after netting ₹64.91 Cr spent on customers' promotional activities under contracts amended in FY26.",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "Q2 FY26 results presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=998d3cb3-fde5-4d06-83e3-b09bf28979fa.pdf"
+          },
+          {
+            "label": "Q4 FY26 earnings call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3b167afe-5626-443a-b1ab-d818bdd0e4b7.pdf"
+          },
+          {
+            "label": "Pine Labs Annual Report 2025-26",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=24faa495-7fc8-4a82-a88f-beb9514fd016.pdf",
+            "locator": "Consolidated notes 26 and 45"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "FY26 revenue: terminals 32%, affordability 33%, issuing 32%",
+        "text": "In FY26, in-store and online payments infrastructure was 32% of revenue, flow, affordability and transaction processing 33%, fintech infrastructure 3% and issuing (IAP) 32%. Subscriptions were 27% of revenue in Q2 FY27, and 30% of installed checkout points generated flow and affordability GTV. Flow, affordability and transaction processing GTV rose to ₹96k Cr in Q2 FY27 from ₹63k Cr a year earlier; fintech infrastructure is paid per transaction (37 Cr transactions in Q2 FY27, 27 Cr a year earlier).",
+        "period": "FY26–Q2 FY27",
+        "sources": [
+          {
+            "label": "Investor and Analyst Day 2026 presentation (16 Jun 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e86a1757-790f-4ccc-b2d9-d81d1f327e97.pdf"
+          },
+          {
+            "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a3d408e6-0ad0-4682-b20f-c7b716317f31.pdf"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "22.3 lakh checkout points and 229 Cr transactions in Q2 FY27",
+        "text": "At the end of Q2 FY27 the platform had 22.3 lakh digital checkout points live at merchant stores, up from 19.0 lakh a year earlier, and processed 229 Cr transactions in the quarter (188 Cr in Q2 FY26). Platform GTV was ₹445k Cr, of which fintech infrastructure was ₹179k Cr; GTV excluding fintech infrastructure was ₹266k Cr, up 31% YoY. It issued 28 Cr prepaid cards in the quarter.",
+        "period": "Q2 FY27",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a3d408e6-0ad0-4682-b20f-c7b716317f31.pdf"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Affordability network of 450+ brands and 40+ card issuers",
+        "text": "The company describes its point-of-sale affordability (EMI) network as India's largest, with 450+ brands and 40+ issuers (Q4 FY26). On a terminal EMI sale it earns fees from the merchant, the brand and the consumer; when a card purchase is converted to EMI in the bank's own app, it earns nothing (Q1 FY27 call).",
+        "period": "Q4 FY26–Q1 FY27",
+        "sources": [
+          {
+            "label": "Q4 FY26 results presentation",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b7129aba-2733-43b2-995f-892c5c649f6a.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=83c289fa-7547-4b23-a91a-44b9b622e3c1.pdf"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "International: Malaysia, UAE and Southeast Asia",
+        "text": "In Malaysia the company works with 12 banks and a 25,000+ merchant footprint, with ~$1.3B of annualised GTV and what it calls a ~40%+ share of instalments; the UAE business runs ~$490M of annualised GTV (Investor and Analyst Day, June 2026). At Q2 FY27 Southeast Asia had 80k+ checkout points and the UAE ~1 lakh daily transactions, and six airlines went live in H1 FY27.",
+        "period": "FY26–H1 FY27",
+        "sources": [
+          {
+            "label": "Investor and Analyst Day 2026 presentation (16 Jun 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e86a1757-790f-4ccc-b2d9-d81d1f327e97.pdf"
+          },
+          {
+            "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a3d408e6-0ad0-4682-b20f-c7b716317f31.pdf"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Issuing grew to a third of revenue; contribution margin fell while Adjusted EBITDA margin held",
+      "text": "IAP's share of revenue rose from 27.9% in FY24 to 32.2% in FY26 and 34.1% in Q2 FY27, as it grew about 33% a year over FY24–FY26 against about 20% for DITP. IAP earns a lower contribution margin (54.9% in Q2 FY27, down from 61.8% a year earlier, against DITP's 82.1%), which management ties to the scale-up of lower-margin card distribution, whose cost rose 54% YoY in Q2 FY27. Group contribution margin slipped to 73% of revenue in Q2 FY27 from 77% a year earlier, while Adjusted EBITDA margin held at 19% as employee cost fell from 37% to about 30% of revenue (excluding ESOP cost).",
+      "period": "FY24–Q2 FY27",
+      "sources": [
+        {
+          "label": "Q2 FY26 results presentation",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=998d3cb3-fde5-4d06-83e3-b09bf28979fa.pdf"
+        },
+        {
+          "label": "Q4 FY26 results presentation",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b7129aba-2733-43b2-995f-892c5c649f6a.pdf"
+        },
+        {
+          "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a3d408e6-0ad0-4682-b20f-c7b716317f31.pdf"
+        },
+        {
+          "label": "Q2 FY27 financial results (29 Oct 2026)",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/b4f06c47-38a4-477b-b4b2-f2f59c8a5292.pdf",
+          "locator": "Consolidated segment information"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Pine Labs Annual Report 2025-26",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=24faa495-7fc8-4a82-a88f-beb9514fd016.pdf"
+    },
+    {
+      "label": "Q2 FY27 financial results (29 Oct 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/b4f06c47-38a4-477b-b4b2-f2f59c8a5292.pdf"
+    },
+    {
+      "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a3d408e6-0ad0-4682-b20f-c7b716317f31.pdf"
+    },
+    {
+      "label": "Investor and Analyst Day 2026 presentation (16 Jun 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e86a1757-790f-4ccc-b2d9-d81d1f327e97.pdf"
+    },
+    {
+      "label": "Q4 FY26 results presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b7129aba-2733-43b2-995f-892c5c649f6a.pdf"
+    },
+    {
+      "label": "Q2 FY26 results presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=998d3cb3-fde5-4d06-83e3-b09bf28979fa.pdf"
+    },
+    {
+      "label": "Q4 FY26 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3b167afe-5626-443a-b1ab-d818bdd0e4b7.pdf"
+    },
+    {
+      "label": "Q1 FY27 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=83c289fa-7547-4b23-a91a-44b9b622e3c1.pdf"
+    }
+  ]
+}
