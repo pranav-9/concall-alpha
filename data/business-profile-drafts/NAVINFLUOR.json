@@ -1,24 +1,133 @@
 {
   "company": "NAVINFLUOR",
   "company_name": "Navin Fluorine International Ltd",
-  "prepared_on": "2026-10-12",
+  "prepared_on": "2026-10-30",
   "review_status": "user_approved",
-  "source_period": "FY26",
-  "latest_source_date": "2026-08-11",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-10-30",
   "about_company": {
+    "about_long": "Navin Fluorine International, founded in 1967 at Surat, makes fluorine-based chemicals in three verticals. High Performance Products (HPP) sells refrigerant gases under the Mafron brand, including R22 and R32, HFO made under a long-term supply contract first signed with Honeywell and now held by Solstice Advanced Materials, and inorganic fluorides and hydrofluoric acid. Specialty Chemicals makes fluoro-intermediates for agrochemical and pharma companies in multi-purpose plants at Surat and Dahej. CDMO, branded Navin Molecular since FY24, develops and manufactures pharma intermediates for innovators from Dewas and Manchester Organics in the UK. The company makes its own hydrofluoric acid, its core input, and started a new AHF plant at Dahej in FY26. About 67% of FY26 revenue came from exports. An Advanced Materials business, starting with a data-centre liquid coolant built with Chemours, is still being set up and is not yet a reported vertical.",
     "about_short": "Navin Fluorine is an Indian fluorochemicals maker: refrigerant gases and inorganic fluorides (HPP), specialty fluoro-intermediates, and contract pharma manufacturing (CDMO).",
-    "about_long": "Navin Fluorine International, founded in 1967 at Surat, makes fluorine-based chemicals in three verticals. High Performance Products (HPP) sells refrigerant gases under the Mafron brand, including R22 and R32, the HFO it makes for Honeywell, and inorganic fluorides and hydrofluoric acid. Specialty Chemicals makes fluoro-intermediates for agrochemical and pharma companies in multi-purpose plants at Surat and Dahej. CDMO, branded Navin Molecular since FY24, develops and manufactures pharma intermediates for innovators from Dewas and Manchester Organics in the UK. The company makes its own hydrofluoric acid, its core input, and started a new AHF plant at Dahej in FY26. About 67% of FY26 revenue came from exports. An Advanced Materials business, starting with a data-centre liquid coolant built with Chemours, is still being set up and is not yet a reported vertical.",
+    "what_changed": {
+      "text": "Revenue rose from ₹2,349.38 Cr in FY25 to ₹3,313.90 Cr in FY26 and the operating EBITDA margin from 22.72% to 32.64%. All three verticals grew: Specialty Chemicals by 43.94% and CDMO from ₹342.82 Cr to ₹546.43 Cr. Management attributes about 70% of the margin gain to new capacity and higher volumes and the rest to pricing.",
+      "period": "FY25-FY26",
+      "sources": [
+        {
+          "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
+          "label": "Navin Fluorine Integrated Annual Report 2025-26",
+          "locator": "Management discussion - financial performance"
+        },
+        {
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1440596d-ed29-441c-b785-0c8dbf3b5dbd.pdf",
+          "label": "Navin Fluorine Q4 FY26 earnings call transcript"
+        }
+      ],
+      "headline": "Revenue grew 41% and the operating margin rose about ten points in FY26 as new capacity filled"
+    },
+    "business_facts": [
+      {
+        "text": "In FY26 export revenue was ₹2,225.40 Cr and domestic revenue ₹1,088.50 Cr, so exports were about 67% of revenue. By vertical, exports were 54.74% of HPP revenue, 70.77% of Specialty Chemicals and 96.24% of CDMO. Markets span North America, Europe, the Middle East and Asia Pacific.",
+        "title": "Exports are about two-thirds of revenue",
+        "period": "FY26",
+        "metrics": [
+          {
+            "unit": "% of revenue",
+            "label": "Exports, FY26",
+            "value": 67.2
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Domestic, FY26",
+            "value": 32.8
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
+            "label": "Navin Fluorine Integrated Annual Report 2025-26",
+            "locator": "Business Model (pp. 22-23); MD&A Revenue Mix (p. 178)"
+          }
+        ],
+        "category": "geography"
+      },
+      {
+        "text": "In FY26 three customers each bought 10% or more of consolidated revenue: ₹545.03 Cr, ₹390.61 Cr and ₹341.72 Cr, together ₹1,277.36 Cr or 38.5% of ₹3,313.90 Cr. In FY25 only one crossed 10%, at ₹498.54 Cr (21.2% of ₹2,349.38 Cr). The annual report does not name them. The company reports 900+ customers, served from four factories.",
+        "title": "Top 3 customers were 38.5% of FY26 revenue",
+        "period": "FY26",
+        "metrics": [
+          {
+            "unit": "% of revenue",
+            "label": "Biggest customer, FY26",
+            "value": 16.4
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Second-biggest, FY26",
+            "value": 11.8
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Third-biggest, FY26",
+            "value": 10.3
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
+            "label": "Navin Fluorine Integrated Annual Report 2025-26",
+            "locator": "Consolidated notes, Note 43(ii) (p. 396)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/4d2756d1-c416-4fa9-a6ad-4149c41c3cd9.pdf",
+            "label": "Navin Fluorine Q4 FY26 investor presentation",
+            "locator": "Company overview"
+          }
+        ],
+        "category": "customers"
+      },
+      {
+        "text": "The company says it was the first to introduce refrigerants to India in 1967, the first Indian company to make R22 gas, and is the first and only producer of next-generation HFO refrigerant gases in India.",
+        "title": "India's only producer of HFO refrigerants",
+        "period": "FY26",
+        "sources": [
+          {
+            "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
+            "label": "Navin Fluorine Integrated Annual Report 2025-26",
+            "locator": "Our business edge"
+          }
+        ],
+        "category": "capabilities"
+      },
+      {
+        "text": "Navin makes HFO refrigerants at Dahej under a long-term supply contract first signed with Honeywell for seven years and now held by Solstice Advanced Materials US. In October 2026 it was extended by four years over the original seven, adding about $180 million of revenue potential for a total contract value of about $590 million over 11 years.",
+        "title": "HFO supply contract extended to 11 years",
+        "period": "Oct 2026",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/bc0352c2-413f-45c2-997b-fd9d3516d9c4.pdf",
+            "label": "Navin Fluorine Q2 FY27 investor presentation",
+            "locator": "HPP key highlights"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8efd175a-4c8d-467b-aa33-b788176175f2.pdf",
+            "label": "Navin Fluorine Q1 FY27 earnings call transcript",
+            "locator": "p. 15"
+          }
+        ],
+        "category": "customers"
+      }
+    ],
     "business_intro": "Navin Fluorine makes fluorine chemicals at Surat, Dewas and Dahej. It earns money three ways: selling refrigerant gases, HFO and inorganic fluorides (HPP, 49% of FY26 revenue), making fluoro-intermediates for agrochemical and pharma companies (Specialty Chemicals, 35%), and manufacturing pharma intermediates under contract for drug innovators (CDMO, 16%). About two-thirds of revenue is exported.",
     "company_timeline": [
       {
         "year": 1967,
         "title": "Founded at Surat",
-        "detail": "Set up at Surat in Western India as East Asia's first integrated fluorochemicals complex outside Japan, making hydrofluoric acid, refrigerant gases and inorganic chemicals.",
+        "detail": "Set up at Surat in Western India as South East Asia's first integrated fluorochemicals complex (outside Japan), to make hydrofluoric acid, refrigerant gases and inorganic chemicals; commercial refrigerant production began in 1969.",
         "sources": [
           {
-            "label": "Navin Fluorine Integrated Annual Report 2025-26",
             "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
-            "locator": "Our journey"
+            "label": "Navin Fluorine Integrated Annual Report 2025-26",
+            "locator": "Key Milestones (pp. 16-17)"
           }
         ]
       },
@@ -28,21 +137,26 @@
         "detail": "Bought a controlling stake in Manchester Organics in the UK to add complex fluorination capability; it is now a wholly owned subsidiary.",
         "sources": [
           {
-            "label": "Navin Fluorine Integrated Annual Report 2025-26",
             "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
-            "locator": "Our journey"
+            "label": "Navin Fluorine Integrated Annual Report 2025-26",
+            "locator": "Key Milestones (pp. 16-17)"
           }
         ]
       },
       {
-        "year": 2023,
-        "title": "Launches the Navin Molecular CDMO brand",
-        "detail": "The contract development and manufacturing business was rebranded Navin Molecular, bringing the Dewas site into one global CDMO platform.",
+        "year": 2022,
+        "title": "Commissions the HFO plant at Dahej",
+        "detail": "Began commercial production of HFO refrigerants at Dahej in FY23 (from July 2022, per management), becoming India's first and only HFO producer, under a seven-year supply contract with Honeywell.",
         "sources": [
           {
-            "label": "Navin Fluorine Integrated Annual Report 2025-26",
-            "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
-            "locator": "Our journey"
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/56a74eb3-6e0e-4915-83e8-135f894a9f6b.pdf",
+            "label": "Navin Fluorine Annual Report 2023-24",
+            "locator": "HPP business overview"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8efd175a-4c8d-467b-aa33-b788176175f2.pdf",
+            "label": "Navin Fluorine Q1 FY27 earnings call transcript",
+            "locator": "p. 15"
           }
         ]
       },
@@ -52,9 +166,9 @@
         "detail": "The fluoro specialty project at Dahej (Nectar), built for a specialty-chemicals customer, started in December 2024.",
         "sources": [
           {
-            "label": "Navin Fluorine Integrated Annual Report 2025-26",
             "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
-            "locator": "Our journey"
+            "label": "Navin Fluorine Integrated Annual Report 2025-26",
+            "locator": "Key Milestones (pp. 16-17)"
           }
         ]
       },
@@ -64,9 +178,9 @@
         "detail": "Raised ₹750 Cr of equity from qualified institutional buyers in July 2025 to strengthen the balance sheet; the same year R32 Phase 2 and Phase 1 of the cGMP-4 plant at Dewas started commercial production.",
         "sources": [
           {
-            "label": "Navin Fluorine Integrated Annual Report 2025-26",
             "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
-            "locator": "Our journey"
+            "label": "Navin Fluorine Integrated Annual Report 2025-26",
+            "locator": "Key Milestones (pp. 16-17)"
           }
         ]
       },
@@ -76,93 +190,17 @@
         "detail": "Commercial production started at the new anhydrous hydrofluoric acid (AHF) plant at Dahej, the core input for its refrigerants.",
         "sources": [
           {
-            "label": "Navin Fluorine Integrated Annual Report 2025-26",
             "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
-            "locator": "Our journey"
+            "label": "Navin Fluorine Integrated Annual Report 2025-26",
+            "locator": "Key Milestones (pp. 16-17)"
           },
           {
-            "label": "Navin Fluorine Q4 FY26 earnings call transcript",
-            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1440596d-ed29-441c-b785-0c8dbf3b5dbd.pdf"
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1440596d-ed29-441c-b785-0c8dbf3b5dbd.pdf",
+            "label": "Navin Fluorine Q4 FY26 earnings call transcript"
           }
         ]
       }
-    ],
-    "business_facts": [
-      {
-        "category": "geography",
-        "title": "Exports are about two-thirds of revenue",
-        "text": "In FY26 export revenue was ₹2,225.40 Cr and domestic revenue ₹1,088.50 Cr, so exports were about 67% of revenue. By vertical, exports were 54.74% of HPP revenue, 70.77% of Specialty Chemicals and 96.24% of CDMO. Markets span North America, Europe, the Middle East and Asia Pacific.",
-        "period": "FY26",
-        "sources": [
-          {
-            "label": "Navin Fluorine Integrated Annual Report 2025-26",
-            "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
-            "locator": "Management discussion - revenue mix"
-          }
-        ],
-        "metrics": [
-          {
-            "label": "Exports, FY26",
-            "value": 67.2,
-            "unit": "% of revenue"
-          },
-          {
-            "label": "Domestic, FY26",
-            "value": 32.8,
-            "unit": "% of revenue"
-          }
-        ]
-      },
-      {
-        "category": "customers",
-        "title": "More than 900 customers",
-        "text": "The company reports over 900 customers across three verticals, served from four factories. It does not disclose how concentrated revenue is across its largest customers.",
-        "period": "FY26",
-        "sources": [
-          {
-            "label": "Navin Fluorine Q4 FY26 investor presentation",
-            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/4d2756d1-c416-4fa9-a6ad-4149c41c3cd9.pdf",
-            "locator": "Company overview"
-          }
-        ],
-        "metrics": [
-          {
-            "label": "Customers (900+)",
-            "value": 900,
-            "unit": "customers"
-          }
-        ]
-      },
-      {
-        "category": "capabilities",
-        "title": "India's only producer of HFO refrigerants",
-        "text": "The company says it was the first to introduce refrigerants to India in 1967, the first Indian company to make R22 gas, and is the first and only producer of next-generation HFO refrigerant gases in India.",
-        "period": "FY26",
-        "sources": [
-          {
-            "label": "Navin Fluorine Integrated Annual Report 2025-26",
-            "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
-            "locator": "Our business edge"
-          }
-        ]
-      }
-    ],
-    "what_changed": {
-      "headline": "Revenue grew 41% and the operating margin rose about ten points in FY26 as new capacity filled",
-      "text": "Revenue rose from ₹2,349.38 Cr in FY25 to ₹3,313.90 Cr in FY26 and the operating EBITDA margin from 22.72% to 32.64%. All three verticals grew: Specialty Chemicals by 43.94% and CDMO from ₹342.82 Cr to ₹546.43 Cr. Management attributes about 70% of the margin gain to new capacity and higher volumes and the rest to pricing.",
-      "period": "FY25-FY26",
-      "sources": [
-        {
-          "label": "Navin Fluorine Integrated Annual Report 2025-26",
-          "url": "https://www.nfil.in/uploads/investor/financial/nfil-annual-report-2025-26.pdf",
-          "locator": "Management discussion - financial performance"
-        },
-        {
-          "label": "Navin Fluorine Q4 FY26 earnings call transcript",
-          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1440596d-ed29-441c-b785-0c8dbf3b5dbd.pdf"
-        }
-      ]
-    }
+    ]
   },
   "about_sources": [
     {
@@ -176,6 +214,18 @@
     {
       "label": "Navin Fluorine Q4 FY26 earnings call transcript",
       "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1440596d-ed29-441c-b785-0c8dbf3b5dbd.pdf"
+    },
+    {
+      "label": "Navin Fluorine Q2 FY27 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/bc0352c2-413f-45c2-997b-fd9d3516d9c4.pdf"
+    },
+    {
+      "label": "Navin Fluorine Q1 FY27 earnings call transcript",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/8efd175a-4c8d-467b-aa33-b788176175f2.pdf"
+    },
+    {
+      "label": "Navin Fluorine Annual Report 2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/56a74eb3-6e0e-4915-83e8-135f894a9f6b.pdf"
     }
   ]
 }

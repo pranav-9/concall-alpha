@@ -847,6 +847,37 @@ COVERS["aartipharm-vats-filling-till-not"] = [
     L(470, 160, 514, 160, "s t"),
 ];
 
+// Navin Fluorine — what it makes: a distillation column on its skirt, its overhead line running through a valve
+// to a tall returnable refrigerant cylinder (shoulder band, neck valve, foot ring), beside a squat refrigerant can
+// with its handle collar and label.
+COVERS["navinfluor-theatres-opened-late"] = [
+  "violet",
+  G(-18, 0, L(160, 252, 530, 252) +
+    // the column: skirt, shell, alternating trays, a manway
+    P("M200 252 l6 -24 h36 l6 24 z", "s d") +
+    R(198, 52, 52, 178, 24, "s l") +
+    range(6).map((i) => (i % 2 ? L(210, 82 + i * 22, 250, 82 + i * 22, "s t") : L(198, 82 + i * 22, 238, 82 + i * 22, "s t"))).join("") +
+    C(224, 210, 7, "s w") +
+    // overhead line through a valve to the cylinder's side outlet
+    P("M224 52 V36 H382 V70 H354", "s") +
+    C(300, 36, 7, "s a") +
+    // tall returnable cylinder: domed body, shoulder band, neck, valve, foot ring
+    P("M310 116 a30 30 0 0 1 60 0 V236 a8 8 0 0 1 -8 8 h-44 a8 8 0 0 1 -8 -8 Z", "s w") +
+    R(310, 126, 60, 18, 0, "s m") +
+    R(332, 76, 16, 12, 2, "s l") +
+    R(328, 62, 24, 14, 3, "s d") +
+    E(340, 58, 14, 4, "s a") +
+    R(314, 240, 52, 12, 3, "s d") +
+    // squat refrigerant can: body, handle collar with its opening, label, foot ring
+    P("M412 176 q0 -14 40 -16 q40 2 40 16 v62 q0 10 -10 10 h-60 q-10 0 -10 -10 z", "s m") +
+    P("M424 166 v-30 a6 6 0 0 1 6 -6 h44 a6 6 0 0 1 6 6 v30", "s w") +
+    R(436, 138, 32, 10, 5, "s l") +
+    R(412, 196, 80, 24, 0, "s w") +
+    L(424, 204, 470, 204, "s t") +
+    L(424, 212, 458, 212, "s t") +
+    R(416, 244, 72, 8, 3, "s d")),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
