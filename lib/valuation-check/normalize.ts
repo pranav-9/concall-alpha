@@ -133,6 +133,8 @@ export function derivePeg(
     : null;
 }
 
+const REBASE_METRIC_LABEL: Record<string, string> = { ebitda: "EBITDA", pat: "Profit", revenue: "Revenue" };
+
 export function normalizeValuationCheck(
   row: ValuationCheckRow | null,
 ): NormalizedValuationCheck | null {
@@ -194,6 +196,15 @@ export function normalizeValuationCheck(
           currentPeriod: marginPathRaw.current_period ?? null,
           guidedPct: marginPathRaw.guided_pct ?? null,
           guidedPeriod: marginPathRaw.guided_period ?? null,
+        }
+      : null,
+    ladderRebase: rdcf?.ladder_rebase
+      ? {
+          metricLabel: REBASE_METRIC_LABEL[rdcf.ladder_rebase.metric ?? ""] ?? null,
+          fyLabel: rdcf.ladder_rebase.fy_label ?? null,
+          ttmEnd: rdcf.ladder_rebase.ttm_end ?? null,
+          ttmOverFy: toNumber(rdcf.ladder_rebase.ttm_over_fy),
+          statedBase: toNumber(rdcf.ladder_rebase.scenarios_as_stated?.base),
         }
       : null,
     // Markers must share units with the cases: profit windows for an earnings ladder.

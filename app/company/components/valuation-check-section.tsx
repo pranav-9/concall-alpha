@@ -354,6 +354,23 @@ function PriceAssumes({ valuation }: { valuation: NormalizedValuationCheck }) {
           .{valuation.ladderMetric && valuation.ladderMetric !== "pat" ? ` ${valuation.ladderMetric.toUpperCase()} growth stands in for earnings growth.` : ""}
         </p>
       ) : null}
+      {impliedCagrPct !== null && valuation.ladderRebase ? (
+        <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+          Our cases here are restated from the trailing twelve months
+          {valuation.ladderRebase.ttmEnd ? ` to ${valuation.ladderRebase.ttmEnd}` : ""}, which is where the
+          price is measured
+          {valuation.ladderRebase.ttmOverFy !== null
+            ? `: ${valuation.ladderRebase.metricLabel ?? "Earnings"} there is already ${valuation.ladderRebase.ttmOverFy.toFixed(2)}× the year to ${valuation.ladderRebase.fyLabel ?? "the last full year"}`
+            : ""}
+          . The end point is the Growth tab&rsquo;s
+          {valuation.ladderRebase.statedBase !== null
+            ? ` (base case ${(valuation.ladderRebase.statedBase * 100).toFixed(0)}% a year from the last full year)`
+            : ""}
+          {valuation.ladderRebase.ttmOverFy !== null && valuation.ladderRebase.ttmOverFy !== 1
+            ? `, so the growth still needed from here is ${valuation.ladderRebase.ttmOverFy > 1 ? "lower" : "higher"}.`
+            : "."}
+        </p>
+      ) : null}
 
       {impliedCagrPct !== null ? (
         <>
