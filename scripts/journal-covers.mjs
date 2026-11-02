@@ -878,6 +878,37 @@ COVERS["navinfluor-theatres-opened-late"] = [
     R(416, 244, 72, 8, 3, "s d")),
 ];
 
+// Quality Power — what it makes: air-core reactors (the HVDC / FACTS coils), each a wound cylinder with its spider
+// arms on top and a terminal pad, standing on ribbed post insulators; the big one bussed to a smaller one.
+const airCoreReactor = (cx, yt, yb, rx, ry, insX) =>
+  // post insulators from the bottom spider to the plinth, ribs over the stem
+  insX
+    .map((x) => R(x - 5, yb + ry + 10, 10, 244 - (yb + ry + 10), 2, "s l") +
+      range(Math.floor((244 - (yb + ry + 18)) / 8)).map((i) => E(x, yb + ry + 20 + i * 8, i % 2 ? 7 : 12, i % 2 ? 2 : 3, "s w")).join(""))
+    .join("") +
+  R(cx - rx - 6, yb + ry, 2 * rx + 12, 10, 3, "s d") +
+  // the winding: body, bands following the front of the cylinder, spacer sticks
+  P(`M${cx - rx} ${yt} V${yb} A${rx} ${ry} 0 0 0 ${cx + rx} ${yb} V${yt}`, "s w") +
+  range(Math.floor((yb - yt) / 14)).map((i) => P(`M${cx - rx} ${yt + 14 + i * 14} A${rx} ${ry} 0 0 0 ${cx + rx} ${yt + 14 + i * 14}`, "s t")).join("") +
+  [-0.55, 0, 0.55].map((k) => L(f(cx + k * rx), yt + ry + 2, f(cx + k * rx), yb + ry * 0.8, "s t sm")).join("") +
+  // top: the spider arms across the open end, hub
+  E(cx, yt, rx, ry, "s l") +
+  range(6).map((i) => { const a = (i * Math.PI) / 3; return L(cx, yt, f(cx + rx * Math.cos(a)), f(yt + ry * Math.sin(a)), "s t"); }).join("") +
+  C(cx, yt, 5, "s d");
+
+COVERS["qpower-smallest-workshop-best-margin"] = [
+  "slate",
+  L(150, 252, 530, 252) +
+    R(194, 244, 152, 8, 2, "s m") +
+    R(400, 244, 96, 8, 2, "s m") +
+    airCoreReactor(270, 60, 166, 72, 16, [214, 270, 326]) +
+    airCoreReactor(448, 122, 182, 44, 10, [420, 476]) +
+    // terminal pads and the bus between them
+    R(342, 74, 18, 9, 2, "s a") +
+    R(386, 128, 18, 8, 2, "s a") +
+    P("M360 78 H372 V132 H386", "s sa"),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
