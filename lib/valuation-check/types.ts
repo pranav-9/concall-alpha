@@ -168,6 +168,22 @@ export type ValuationCheckRow = {
     reading?: string;
     held_constant?: Record<string, number | string | null>;
     phase5_scenarios?: { downside?: number | null; base?: number | null; upside?: number | null };
+    /**
+     * Present when Phase 12 restated the cases from the TTM level (the price is solved on TTM
+     * earnings, the cases compound from the last fiscal year): `phase5_scenarios` then holds the
+     * RESTATED rates, `scenarios_as_stated` the Growth tab's. Since 2026-11-02 it fires when the
+     * TTM has run ahead of the base case's own path, not only on a 1.5x step — `trigger` says which.
+     */
+    ladder_rebase?: {
+      metric?: string | null;
+      fy_label?: string | null;
+      ttm_end?: string | null;
+      ttm_over_fy?: number | null;
+      scenarios_as_stated?: { downside?: number | null; base?: number | null; upside?: number | null } | null;
+      scenarios_rebased?: { downside?: number | null; base?: number | null; upside?: number | null } | null;
+      trigger?: "step" | "ahead_of_base_path" | null;
+      base_path_ratio?: number | null;
+    } | null;
     plausibility_check?: string | null;
     /** Phase E (financials): the reverse residual-income model rides in this block, disambiguated
      * by zone_basis="delivered_roe". implied_cagr(_pct) carries the implied RoE, not a CAGR. */
@@ -248,6 +264,18 @@ export type NormalizedValuationCheck = {
     currentPeriod: string | null;
     guidedPct: string | null;
     guidedPeriod: string | null;
+  } | null;
+  /**
+   * Set when the cases above were restated from the trailing twelve months, so they differ from
+   * the Growth tab's: the base case as the Growth tab states it, and what the TTM already shows.
+   */
+  ladderRebase: {
+    /** What ran ahead: "EBITDA", "profit" or "revenue" (the ladder's own metric). */
+    metricLabel: string | null;
+    fyLabel: string | null;
+    ttmEnd: string | null;
+    ttmOverFy: number | null;
+    statedBase: number | null;
   } | null;
   /**
    * Delivered CAGR markers for the reverse-DCF horizon bar (percent units): revenue windows
