@@ -909,6 +909,42 @@ COVERS["qpower-smallest-workshop-best-margin"] = [
     P("M360 78 H372 V132 H386", "s sa"),
 ];
 
+// Shree Refrigerations H1 FY27 — what it makes: a naval chiller plant on its skid. Two shells (evaporator over
+// condenser), the oil-free magnetic-bearing compressor on top, the control panel cabinet beside it.
+COVERS["shreeref-four-crates-out"] = [
+  "green",
+  // skid and its feet
+  R(176, 236, 280, 12, 3, "s d") +
+    R(188, 248, 16, 10, 2, "s d") +
+    R(428, 248, 16, 10, 2, "s d") +
+    // condenser (lower) and evaporator (upper) shells, tube sheets at each end
+    R(190, 176, 252, 52, 26, "s l") +
+    L(222, 176, 222, 228, "s t") +
+    L(410, 176, 410, 228, "s t") +
+    R(204, 118, 224, 48, 24, "s w") +
+    L(234, 118, 234, 166, "s t") +
+    L(398, 118, 398, 166, "s t") +
+    L(258, 166, 258, 176) +
+    L(374, 166, 374, 176) +
+    // water nozzles on the shell ends
+    P("M190 196 H170 M190 210 H170", "s sm") +
+    P("M204 136 H184 M204 150 H184", "s sm") +
+    // compressor: motor body and volute, suction from the evaporator, discharge to the condenser
+    R(250, 70, 84, 40, 12, "s m") +
+    C(346, 90, 22, "s l") +
+    C(346, 90, 8, "s d") +
+    L(292, 110, 292, 118) +
+    P("M368 90 H420 V176", "s sa") +
+    // control panel cabinet: screen, three buttons, vents
+    R(470, 92, 64, 144, 6, "s w") +
+    R(482, 106, 40, 26, 3, "s l") +
+    C(489, 148, 5, "s a") +
+    C(502, 148, 5, "s d") +
+    C(515, 148, 5, "s d") +
+    range(4).map((i) => L(484, 176 + i * 12, 520, 176 + i * 12, "s t sm")).join("") +
+    P("M470 120 H446 V176", "s t"),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
