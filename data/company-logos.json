@@ -348,6 +348,13 @@
     "source": "https://www.imfa.in/_next/static/media/imfa-logo.ce2aef33.svg",
     "fetchedAt": "2026-10-29"
   },
+  "INDGN": {
+    "site": "https://www.indegene.com/",
+    "siteFrom": "company.website",
+    "tier": "icon",
+    "source": "https://www.indegene.com/icon.png?icon.0_tsgkr19y9r5.png",
+    "fetchedAt": "2026-11-03"
+  },
   "INDIGO": {
     "tier": "icon",
     "source": "https://www.goindigo.in/favicon-apple-icon-180x180.png",
