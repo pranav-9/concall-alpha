@@ -1,0 +1,325 @@
+{
+  "company": "INDGN",
+  "company_name": "Indegene",
+  "prepared_on": "2026-11-03",
+  "review_status": "user_approved",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-10-29",
+  "about_company": {
+    "about_short": "Runs outsourced commercial, medical and regulatory operations for global biopharma companies.",
+    "business_intro": "Indegene does outsourced work for drug companies' commercial and medical teams: it produces and reviews promotional and medical content, runs omnichannel campaigns aimed at doctors, writes regulatory documents and processes drug-safety cases, using its own GenAI platforms alongside domain-trained staff. Its clients are mainly large biopharma companies (the FY26 annual report says all 20 of the top 20 rely on it), and it is paid mostly on fixed-price and volume-based contracts delivered largely from offshore centres.",
+    "about_long": "Indegene, founded in 1998 and listed on NSE and BSE on 13 May 2024, runs outsourced commercial, medical and regulatory work for life sciences companies, mostly through offshore delivery teams. Enterprise Commercial Solutions (71.3% of Q2 FY27 revenue) covers brand strategy, content production, campaign operations and omnichannel engagement; Enterprise Medical Solutions (24.5%) covers regulatory affairs, medical affairs, pharmacovigilance and evidence generation; Others (4.2%) is mainly consultancy and clinical work. Biopharma companies brought in 91.8% of Q2 FY27 revenue and North American clients 74.5%. Most revenue is earned on fixed-price and volume-based contracts (₹30,424 Mn of FY26's ₹35,105 Mn), the rest on time and material. FY26 revenue was ₹35,105 Mn, up 23.6% on a consolidated basis and 16.8% without BioPharm, the US healthcare marketing agency it has controlled since 1 October 2025. In Q2 FY27 revenue grew 39.5% YoY to ₹11,223 Mn; management stopped splitting out BioPharm from Q1 FY27.",
+    "company_timeline": [
+      {
+        "year": 1998,
+        "title": "Founded by five co-founders",
+        "detail": "Manish Gupta, Gaurav Kapoor, Anand Kiran, Dr. Sanjay Parikh and Dr. Rajesh Nair came together to build Indegene; it introduced medical education services for Indian pharma companies in 2000.",
+        "sources": [
+          {
+            "label": "Indegene Annual Report 2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e1461432-d0da-4938-84cc-03582464e914.pdf",
+            "locator": "Celebrating 25 years of Indegene"
+          },
+          {
+            "label": "Indegene Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/d2ca0f9b-5da2-44d5-b2db-dfb491f22180.pdf",
+            "locator": "Our Journey"
+          }
+        ]
+      },
+      {
+        "year": 2021,
+        "title": "Carlyle and Brighton Park take a stake for US$200 million",
+        "detail": "The Carlyle Group and Brighton Park Capital invested US$200 million in Indegene.",
+        "sources": [
+          {
+            "label": "Indegene Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/d2ca0f9b-5da2-44d5-b2db-dfb491f22180.pdf",
+            "locator": "Our Journey"
+          }
+        ]
+      },
+      {
+        "year": 2022,
+        "title": "Acquires CultHealth, a healthcare marketing agency",
+        "detail": "A full-service healthcare marketing agency. Management says Tectonic, part of Enterprise Commercial Solutions, combines enterprise commercial work with capabilities acquired through CultHealth.",
+        "sources": [
+          {
+            "label": "Indegene Annual Report 2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e1461432-d0da-4938-84cc-03582464e914.pdf",
+            "locator": "Celebrating 25 years of Indegene"
+          },
+          {
+            "label": "Q3 FY26 earnings call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=931c0806-b248-4d46-8968-3e4662d841ba.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Lists on NSE and BSE",
+        "detail": "The IPO combined a fresh issue of ₹7,600 Mn with an offer for sale of ₹10,818 Mn by selling shareholders; the shares listed on 13 May 2024.",
+        "sources": [
+          {
+            "label": "Indegene Annual Report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/04cd4545-e397-49d0-a4e6-491582728dbb.pdf",
+            "locator": "Note 32, IPO fund utilisation"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Acquires US agency BioPharm for US$104 million",
+        "detail": "Control from 1 Oct 2025 (Q3 FY26). Total purchase price US$104 million on a debt-free, cash-free basis, including earn-outs of US$8 million and US$19 million on calendar 2025 and 2026 performance; the FY26 annual report books the consideration at ₹8,821 Mn. Its goodwill sits in Enterprise Commercial Solutions.",
+        "sources": [
+          {
+            "label": "BioPharm acquisition call transcript, 6 Oct 2025",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e16c1f8b-450a-4754-a0ec-9645850e201c.pdf"
+          },
+          {
+            "label": "Indegene Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/d2ca0f9b-5da2-44d5-b2db-dfb491f22180.pdf",
+            "locator": "Note 7, business combinations"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Acquires CAKE, a DACH healthcare advertising agency",
+        "detail": "Control from 30 Jan 2026 (Q4 FY26) for EUR 7.96 million including earn-out. It followed MJL, a UK healthcare communications agency (control 25 Mar 2025), and Warn & Co, a transformation consulting firm acquired on 16 Oct 2025.",
+        "sources": [
+          {
+            "label": "Indegene Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/d2ca0f9b-5da2-44d5-b2db-dfb491f22180.pdf",
+            "locator": "Note 7, business combinations"
+          },
+          {
+            "label": "Indegene Annual Report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/04cd4545-e397-49d0-a4e6-491582728dbb.pdf",
+            "locator": "Note 7, business combinations"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Top 10 clients were 49.1% of revenue in Q2 FY27, from 55.0%",
+        "text": "In the quarter to 30 Sep 2026 the largest client was 7.8% of revenue, the top 5 31.4%, the top 10 49.1% and the top 20 67.3%, against 11.0%, 37.4%, 55.0% and 75.2% a year earlier (consolidated: BioPharm's clients count only in the later quarter). Clients billing over $1 million in the trailing twelve months rose to 59 from 40, and 56.3% of Q2 FY27 revenue came from the global top-20 pharma companies.",
+        "period": "Q2 FY27 vs Q2 FY26",
+        "sources": [
+          {
+            "label": "Investor presentation and fact sheet, Q2 FY27",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=92d1d877-e0b0-4ac0-90ad-025f1c032024.pdf",
+            "locator": "Fact sheet, client data"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Top 5",
+            "value": 31.4,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "6-10",
+            "value": 17.7,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "11-20",
+            "value": 18.2,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "North America leads the region mix at 74.5% of Q2 FY27 revenue",
+        "text": "By customer geography, North America was 74.5% of Q2 FY27 revenue, Europe 22.9%, Rest of World 2.2% and India 0.4%. North America's share rose from 69.6% a year earlier as revenue there grew 49.3% YoY against 18.5% in Europe; management describes BioPharm as entirely a US-focused business.",
+        "period": "Q2 FY27",
+        "sources": [
+          {
+            "label": "Investor presentation and fact sheet, Q2 FY27",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=92d1d877-e0b0-4ac0-90ad-025f1c032024.pdf",
+            "locator": "Fact sheet, revenue by customer geography"
+          },
+          {
+            "label": "Q4 FY26 earnings call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=73ad56ca-dd91-464b-ae69-0ae768c03572.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "North America",
+            "value": 74.5,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Europe",
+            "value": 22.9,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Rest of World",
+            "value": 2.2,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "India",
+            "value": 0.4,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Fixed-price and volume-based contracts were 86.7% of FY26 revenue",
+        "text": "The FY26 annual report splits revenue by contract type: ₹30,424 Mn from fixed-price and volume-based contracts and ₹4,681 Mn from time and material, out of ₹35,105 Mn. The Q2 FY27 deck says over 60% of revenue is outcome-aligned (output-based engagements, excluding pure FTE or time-and-material contracts).",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "Indegene Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/d2ca0f9b-5da2-44d5-b2db-dfb491f22180.pdf",
+            "locator": "Note 20, revenue from operations"
+          },
+          {
+            "label": "Investor presentation and fact sheet, Q2 FY27",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=92d1d877-e0b0-4ac0-90ad-025f1c032024.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Fixed price and volume based",
+            "value": 86.7,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Time and material",
+            "value": 13.3,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Biopharma clients were 91.8% of Q2 FY27 revenue",
+        "text": "By customer industry, with agency revenue mapped to the end client, biopharma was 91.8% of Q2 FY27 revenue, emerging biotech 3.2%, medical devices 3.0% and others 2.0%.",
+        "period": "Q2 FY27",
+        "sources": [
+          {
+            "label": "Investor presentation and fact sheet, Q2 FY27",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=92d1d877-e0b0-4ac0-90ad-025f1c032024.pdf",
+            "locator": "Fact sheet, revenue by customer industry"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "5,952 employees, 82.7% of them offshore",
+        "text": "At 30 Sep 2026 Indegene had 5,952 employees, 5,090 in delivery and 862 in sales and support; 82.7% worked offshore and 17.3% onsite. Voluntary attrition over the last twelve months was 15.4%.",
+        "period": "Q2 FY27 (30 Sep 2026)",
+        "sources": [
+          {
+            "label": "Investor presentation and fact sheet, Q2 FY27",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=92d1d877-e0b0-4ac0-90ad-025f1c032024.pdf",
+            "locator": "Fact sheet, employee metrics"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "28.8% of delivery staff have healthcare educational backgrounds",
+        "text": "28.8% of delivery employees came from healthcare-related educational backgrounds at 30 Sep 2026, against 26.3% a year earlier. Its own software includes Cortex, an enterprise GenAI platform, and products for commercial content authoring (NCCA), medical and regulatory review of content (MLR) and pharmacovigilance case processing (NAEM).",
+        "period": "Q2 FY27 (30 Sep 2026)",
+        "sources": [
+          {
+            "label": "Investor presentation and fact sheet, Q2 FY27",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=92d1d877-e0b0-4ac0-90ad-025f1c032024.pdf",
+            "locator": "Fact sheet, employee metrics; GenAI strategy slide"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "BioPharm added ₹1,942 Mn of revenue in its first two quarters",
+        "text": "BioPharm, consolidated from 1 Oct 2025, contributed ₹1,942 Mn to FY26 Enterprise Commercial revenue (₹24,605 Mn with it, ₹22,663 Mn without). A year after the deal, the Q2 FY27 deck reports about $1.5 million of annual cost synergies realised and HCP profiles more than doubled, from 1.8 million at acquisition to over 3.6 million.",
+        "period": "FY26 to Q2 FY27",
+        "sources": [
+          {
+            "label": "Investor presentation, Q4 FY26",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e00cb4a5-fa53-4f5c-8149-a940d57d6dbc.pdf",
+            "locator": "Segment performance"
+          },
+          {
+            "label": "Investor presentation and fact sheet, Q2 FY27",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=92d1d877-e0b0-4ac0-90ad-025f1c032024.pdf",
+            "locator": "One Year of BioPharm"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "BioPharm lifted FY26 revenue growth to 23.6% from 16.8% without it, and tilted the mix further to commercial work",
+      "text": "Indegene took control of BioPharm on 1 Oct 2025 and, from the same date, merged Brand Activation into Enterprise Commercial Solutions, leaving three reported segments. FY26 revenue grew 23.6% to ₹35,105 Mn, 16.8% without BioPharm. Enterprise Commercial rose to 70.1% of revenue from 68.1% in FY25; without BioPharm it would have been 68.3%, so the shift came from the acquisition. Management stopped splitting out BioPharm from Q1 FY27; Q2 FY27 revenue grew 39.5% YoY with Enterprise Commercial at 71.3%.",
+      "period": "FY26 to Q2 FY27",
+      "sources": [
+        {
+          "label": "Investor presentation, Q4 FY26",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e00cb4a5-fa53-4f5c-8149-a940d57d6dbc.pdf",
+          "locator": "FY26 consolidated and ex-BioPharm financials; FY26 business mix"
+        },
+        {
+          "label": "Q3 FY26 earnings call transcript",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=931c0806-b248-4d46-8968-3e4662d841ba.pdf"
+        },
+        {
+          "label": "Investor presentation and fact sheet, Q2 FY27",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=92d1d877-e0b0-4ac0-90ad-025f1c032024.pdf",
+          "locator": "Fact sheet, revenue by service offering"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Indegene Annual Report 2025-26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/d2ca0f9b-5da2-44d5-b2db-dfb491f22180.pdf",
+      "locator": "corporate overview; segment and revenue notes; business combinations note"
+    },
+    {
+      "label": "Indegene Annual Report 2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/04cd4545-e397-49d0-a4e6-491582728dbb.pdf",
+      "locator": "IPO and listing; segment note"
+    },
+    {
+      "label": "Indegene Annual Report 2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e1461432-d0da-4938-84cc-03582464e914.pdf",
+      "locator": "corporate overview; history"
+    },
+    {
+      "label": "Investor presentation and fact sheet, Q2 FY27",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=92d1d877-e0b0-4ac0-90ad-025f1c032024.pdf",
+      "locator": "fact sheet: segment, geography and client mix"
+    },
+    {
+      "label": "Investor presentation, Q4 FY26",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e00cb4a5-fa53-4f5c-8149-a940d57d6dbc.pdf",
+      "locator": "consolidated vs ex-BioPharm slide"
+    },
+    {
+      "label": "BioPharm acquisition call transcript, 6 Oct 2025",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e16c1f8b-450a-4754-a0ec-9645850e201c.pdf",
+      "locator": "transaction details (CFO)"
+    },
+    {
+      "label": "Q3 FY26 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=931c0806-b248-4d46-8968-3e4662d841ba.pdf",
+      "locator": "prepared remarks"
+    },
+    {
+      "label": "Q4 FY26 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=73ad56ca-dd91-464b-ae69-0ae768c03572.pdf",
+      "locator": "prepared remarks"
+    }
+  ]
+}
