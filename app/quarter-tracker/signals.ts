@@ -10,7 +10,12 @@
 //               from → to values print only when they read as that move on
 //               their own (the scanner's legibility rule: same unit, under 3×),
 //               because at the top of a season board a mislabelled number is
-//               the headline.
+//               the headline. A quarter that raised and cut nothing still
+//               says what it did (user call 2026-11-06: a blank cell must
+//               mean "not read yet", never "read, nothing moved"): "Revised"
+//               when a commitment was re-guided in figures that don't compare
+//               (a % guide restated as an amount), else "Held" when the
+//               quarter restated commitments it carried in, unchanged.
 //   Key variables · YoY — the deep-tracked key variables' lead metric, this
 //               quarter against the same quarter a year ago, coloured by its
 //               effect on the case (getThesisEffect), never by sign. Only when
@@ -74,12 +79,26 @@ export type GuidanceMove = {
   to: string | null;
 };
 
+/** What the quarter did to the book when it raised and cut nothing. */
+export type GuidanceStanding = {
+  /** The Guidance tab's own chip words: "Revised" / "Held". */
+  key: "revised" | "held";
+  /** The most material such commitment, labelled the way a move is. No number: a held
+   *  guide's standing figure can be read off the wrong sentence (SAILIFE Q2 FY27, "healthy
+   *  growth; no number" printed as "+90%" from a "90% pipeline visibility" banner), and a
+   *  revision's figures don't compare — the Guidance tab carries both. */
+  label: string;
+  count: number;
+};
+
 export type QuarterGuidance = {
   /** The most material raise made on this quarter's call — a readable one first. */
   raised: GuidanceMove | null;
   lowered: GuidanceMove | null;
   raisedCount: number;
   loweredCount: number;
+  /** Only when there is no raise and no cut. */
+  standing: GuidanceStanding | null;
 };
 
 /** A horizon that names a period ("FY27", "Q4 FY27", "FY28–FY31"), not prose ("Ongoing", "standing band, no date"). */
@@ -123,6 +142,24 @@ function moveOf(row: LiveRow, direction: "raised" | "lowered", target: QuarterRe
 
 const isReadable = (move: GuidanceMove | null) => move != null && move.to != null;
 
+const quarterIndex = (q: QuarterRef) => q.fy * 4 + q.qtr;
+const mentionKey = (mentionType: string | null) => (mentionType ?? "").toLowerCase().replace(/\s+/g, "_");
+
+/**
+ * How the target quarter left a live commitment that it did not raise or cut:
+ * "revised" when the quarter re-guided it (a revision step) in figures the
+ * trail can't compare, "held" when the quarter restated it and the commitment
+ * was already on the book before — a commitment first made this quarter is
+ * new, not held. Null when the quarter never mentioned it.
+ */
+function standingOf(row: LiveRow, target: QuarterRef): GuidanceStanding["key"] | null {
+  const steps = row.item.trail.map((s) => ({ q: parseQuarterPeriod(s.quarter), key: mentionKey(s.mentionType) }));
+  const onTarget = steps.filter((s) => sameQuarter(s.q, target));
+  if (onTarget.length === 0) return null;
+  if (!steps.some((s) => s.q != null && quarterIndex(s.q) < quarterIndex(target))) return null;
+  return onTarget.some((s) => s.key === "revision") ? "revised" : "held";
+}
+
 /**
  * Raises and cuts made on the `target` quarter's call. `current` anchors the
  * live/resolved split exactly as the Guidance tab does (the reporting quarter
@@ -135,22 +172,33 @@ export function quarterGuidanceMoves(
   current: QuarterRef & { label: string },
   target: QuarterRef,
 ): QuarterGuidance {
-  const out: QuarterGuidance = { raised: null, lowered: null, raisedCount: 0, loweredCount: 0 };
+  const out: QuarterGuidance = { raised: null, lowered: null, raisedCount: 0, loweredCount: 0, standing: null };
   if (items.length === 0) return out;
   const verdict = buildGuidanceVerdict(items, current);
+  // Live rows arrive materiality-ranked, so the first of each standing is the one shown.
+  const standing: Record<GuidanceStanding["key"], GuidanceStanding | null> = { revised: null, held: null };
   for (const row of verdict.live) {
     const key = liveStateKey(row);
-    if (key !== "raised" && key !== "lowered") continue;
-    const move = moveOf(row, key, target);
-    if (!move) continue;
-    if (key === "raised") {
-      out.raisedCount += 1;
-      if (!out.raised || (!isReadable(out.raised) && isReadable(move))) out.raised = move;
-    } else {
-      out.loweredCount += 1;
-      if (!out.lowered || (!isReadable(out.lowered) && isReadable(move))) out.lowered = move;
+    const move = key === "raised" || key === "lowered" ? moveOf(row, key, target) : null;
+    if (move) {
+      if (move.direction === "raised") {
+        out.raisedCount += 1;
+        if (!out.raised || (!isReadable(out.raised) && isReadable(move))) out.raised = move;
+      } else {
+        out.loweredCount += 1;
+        if (!out.lowered || (!isReadable(out.lowered) && isReadable(move))) out.lowered = move;
+      }
+      continue;
     }
+    // Raised or cut on an earlier call and restated now is held THIS quarter.
+    if (key === "no_update") continue;
+    const s = standingOf(row, target);
+    if (!s) continue;
+    const prior = standing[s];
+    if (prior) prior.count += 1;
+    else standing[s] = { key: s, label: moveLabel(row.item), count: 1 };
   }
+  if (!out.raised && !out.lowered) out.standing = standing.revised ?? standing.held;
   return out;
 }
 

@@ -20,7 +20,14 @@ import { cn } from "@/lib/utils";
 
 import type { TrackerEntry } from "./data";
 import { formatAgo, type SortDir, type SortKey } from "./season";
-import { EMPTY_SIGNALS, type GuidanceMove, type KeyVariableYoy, type QuarterGuidance, type QuarterSignals } from "./signals";
+import {
+  EMPTY_SIGNALS,
+  type GuidanceMove,
+  type GuidanceStanding,
+  type KeyVariableYoy,
+  type QuarterGuidance,
+  type QuarterSignals,
+} from "./signals";
 
 const HEAD =
   "house-data px-3 py-2.5 text-left text-[10px] font-normal uppercase tracking-[0.14em] text-[var(--ink-soft)] md:px-4";
@@ -103,8 +110,33 @@ function Move({ move, count, quarter }: { move: GuidanceMove; count: number; qua
   );
 }
 
+// Read the quarter, raised and cut nothing (signals.ts): a blank cell then
+// means only that the quarter has not been read yet.
+function Standing({ standing, quarter }: { standing: GuidanceStanding; quarter: string }) {
+  const revised = standing.key === "revised";
+  const word = revised ? "Revised" : "Held";
+  const more = standing.count - 1;
+  const title = revised
+    ? `Revised on the ${quarter} call, in figures that don't compare with the earlier guide: ${standing.label}`
+    : `Restated unchanged on the ${quarter} call: ${standing.label}`;
+  return (
+    <div title={`${title}${more > 0 ? ` (and ${more} more)` : ""}`}>
+      <span className={cn("text-[12px] font-semibold leading-tight", revised ? "text-[var(--warn)]" : "text-[var(--ink)]")}>
+        {word}
+        {more > 0 ? <span className="ml-1.5 text-[10.5px] font-normal text-[var(--ink-soft)]">+{more} more</span> : null}
+      </span>
+      <span className="house-data mt-0.5 line-clamp-2 text-[10.5px] leading-snug text-[var(--ink-soft)]">
+        {standing.label}
+      </span>
+    </div>
+  );
+}
+
 function GuidanceCell({ guidance, quarter }: { guidance: QuarterGuidance | null; quarter: string }) {
-  if (!guidance || (!guidance.raised && !guidance.lowered)) return null;
+  if (!guidance) return null;
+  if (!guidance.raised && !guidance.lowered) {
+    return guidance.standing ? <Standing standing={guidance.standing} quarter={quarter} /> : null;
+  }
   return (
     <div className="space-y-1.5">
       {guidance.raised ? <Move move={guidance.raised} count={guidance.raisedCount} quarter={quarter} /> : null}

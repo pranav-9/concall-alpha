@@ -199,6 +199,97 @@ test("a prose horizon is not glued onto the metric", () => {
   );
 });
 
+// --- read, nothing moved: Held / Revised --------------------------------------------
+// User call 2026-11-06: SAILIFE and INTERARCH were re-read on their Q2 FY27 calls,
+// raised and cut nothing, and their cells were as blank as the companies nobody had
+// read yet.
+
+const restated = (quarter: string, value: string, mentionType = "repeat"): NormalizedGuidanceTrailItem => ({
+  ...step(quarter, value),
+  mentionType,
+});
+
+test("a commitment carried in and restated unchanged this quarter reads as Held", () => {
+  const moves = quarterGuidanceMoves(
+    [
+      item({ statusKey: "active", trail: [restated("Q4 FY26", "17%", "first_mention"), restated("Q2 FY27", "17%")] }),
+      item({
+        statusKey: "active",
+        metricLabel: "EBITDA margin",
+        metricLabelMidSentence: "EBITDA margin",
+        metricSubtype: "ebitda_margin",
+        guidanceFamily: "margin",
+        trail: [restated("Q1 FY27", "23%", "first_mention"), restated("Q2 FY27", "23%", "update")],
+      }),
+    ],
+    Q2FY27,
+    Q2FY27,
+  );
+  assert.equal(moves.raised, null);
+  assert.equal(moves.lowered, null);
+  assert.deepEqual(moves.standing, { key: "held", label: "FY27 revenue growth", count: 2 });
+});
+
+test("a commitment first made this quarter is new, not held", () => {
+  const moves = quarterGuidanceMoves(
+    [item({ statusKey: "active", trail: [restated("Q2 FY27", "17%", "first_mention")] })],
+    Q2FY27,
+    Q2FY27,
+  );
+  assert.equal(moves.standing, null);
+});
+
+test("a book the quarter never mentioned stays blank", () => {
+  const moves = quarterGuidanceMoves(
+    [item({ statusKey: "active", trail: [restated("Q4 FY26", "17%", "first_mention"), restated("Q1 FY27", "17%")] })],
+    Q2FY27,
+    Q2FY27,
+  );
+  assert.equal(moves.standing, null);
+});
+
+test("a raise made on an earlier call and restated now is held this quarter", () => {
+  const moves = quarterGuidanceMoves(
+    [item({ trail: [step("Q4 FY26", "17%"), step("Q1 FY27", "23%"), restated("Q2 FY27", "23%")] })],
+    Q2FY27,
+    Q2FY27,
+  );
+  assert.equal(moves.raised, null, "the raise is last quarter's news");
+  assert.equal(moves.standing?.key, "held");
+});
+
+test("a re-guide in figures that don't compare reads as Revised, with no numbers, ahead of Held", () => {
+  const moves = quarterGuidanceMoves(
+    [
+      item({ statusKey: "active", trail: [restated("Q4 FY26", "17%", "first_mention"), restated("Q2 FY27", "17%")] }),
+      // SANSERA Q2 FY27: an FY27 growth guide restated as an amount; the trail can't call the direction.
+      item({
+        metricLabel: "Revenue",
+        metricLabelMidSentence: "revenue",
+        trail: [restated("Q4 FY26", "17%", "first_mention"), restated("Q2 FY27", "₹4250cr", "revision")],
+      }),
+    ],
+    Q2FY27,
+    Q2FY27,
+  );
+  assert.equal(moves.raised, null);
+  assert.equal(moves.lowered, null);
+  assert.deepEqual(moves.standing, { key: "revised", label: "FY27 revenue", count: 1 });
+});
+
+test("a raise or cut on this quarter's call is the cell; Held never shows beside it", () => {
+  const moves = quarterGuidanceMoves(
+    [
+      item({ trail: [step("Q4 FY26", "17%"), step("Q2 FY27", "23%")] }),
+      item({ statusKey: "active", trail: [restated("Q4 FY26", "12%", "first_mention"), restated("Q2 FY27", "12%")] }),
+    ],
+    Q2FY27,
+    Q2FY27,
+  );
+  assert.equal(moves.raisedCount, 1);
+  assert.equal(moves.standing, null);
+});
+
 // --- key variables YoY ------------------------------------------------------------
 
 const deep = (
