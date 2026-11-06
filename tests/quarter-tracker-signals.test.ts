@@ -137,18 +137,56 @@ test("a move made on an earlier call is not this quarter's news", () => {
   assert.equal(moves.raisedCount, 0);
 });
 
-test("a move whose printed values don't read as one is left out", () => {
+test("a move whose printed values don't read as one still counts, but prints no numbers", () => {
   const moves = quarterGuidanceMoves(
     [item({ trail: [step("Q1 FY27", "₹45cr"), step("Q2 FY27", "₹500cr")] })],
     Q2FY27,
     Q2FY27,
   );
-  assert.equal(moves.raised, null, "an 11× 'raise' is two different quantities");
+  // The Guidance tab calls it Raised, so the filter counts it; an 11× jump is
+  // likely two different quantities, so the numbers are not printed.
+  assert.deepEqual(moves.raised, { direction: "raised", label: "FY27 revenue growth", from: null, to: null });
+  assert.equal(moves.raisedCount, 1);
   assert.equal(isLegibleMove("20%", "24%", "raised"), true);
   assert.equal(isLegibleMove("20%", "24%", "lowered"), false, "direction must match");
   assert.equal(isLegibleMove("₹500cr", "20%", "lowered"), false, "units must match");
   assert.equal(isLegibleMove("27%", "23%", "lowered"), true);
   assert.equal(isLegibleMove("$2B", "$500M", "lowered"), false, "billions vs millions are different units");
+});
+
+test("several raises: count every one, show the most material readable one", () => {
+  const moves = quarterGuidanceMoves(
+    [
+      item({ horizonLabel: "FY28", appliesFrom: "FY28", appliesTo: "FY28", trail: [step("Q4 FY26", "15%"), step("Q2 FY27", "18%")] }),
+      item({ trail: [step("Q1 FY27", "₹45cr"), step("Q2 FY27", "₹500cr")] }),
+      item({ trail: [step("Q4 FY26", "17%"), step("Q2 FY27", "23%")] }),
+    ],
+    Q2FY27,
+    Q2FY27,
+  );
+  assert.equal(moves.raisedCount, 3, "the unreadable one counts too");
+  assert.deepEqual(moves.raised, { direction: "raised", label: "FY27 revenue growth", from: "17%", to: "23%" });
+});
+
+test("a cut to zero counts as lowered, without numbers when they don't read as a cut", () => {
+  const moves = quarterGuidanceMoves([item({ trail: [step("Q1 FY27", "15%"), step("Q2 FY27", "0%")] })], Q2FY27, Q2FY27);
+  assert.equal(moves.loweredCount, 1);
+  assert.equal(moves.lowered?.direction, "lowered");
+  assert.equal(moves.lowered?.from, null);
+  assert.equal(moves.lowered?.to, null);
+});
+
+test("cuts: the unreadable one counts, a readable cut is the one shown", () => {
+  const moves = quarterGuidanceMoves(
+    [
+      item({ trail: [step("Q1 FY27", "15%"), step("Q2 FY27", "0%")] }),
+      item({ metricLabelMidSentence: "EBITDA margin", trail: [step("Q1 FY27", "27%"), step("Q2 FY27", "23%")] }),
+    ],
+    Q2FY27,
+    Q2FY27,
+  );
+  assert.equal(moves.loweredCount, 2);
+  assert.deepEqual(moves.lowered, { direction: "lowered", label: "FY27 EBITDA margin", from: "27%", to: "23%" });
 });
 
 test("a prose horizon is not glued onto the metric", () => {
@@ -215,6 +253,27 @@ test("YoY reads this quarter against the same quarter a year ago, coloured by ef
   );
 });
 
+test("a change that rounds to zero is neutral, not coloured as helping", () => {
+  const [r] = keyVariablesYoy(snapshot([deep("Margin", "EBITDA margin (%)", { "Q2 FY26": 12, "Q2 FY27": 12.001 })]), Q2FY27);
+  assert.equal(r.change, "0 bps");
+  assert.equal(r.effect, "neutral");
+});
+
+test("a multiple that rounds to zero is neutral too", () => {
+  // "0x" has no word boundary after the 0; it was still coloured "helps".
+  const [r] = keyVariablesYoy(snapshot([deep("Turns", "Asset turnover (x)", { "Q2 FY26": 1.2, "Q2 FY27": 1.201 })]), Q2FY27);
+  assert.equal(r.change, "0x");
+  assert.equal(r.effect, "neutral");
+});
+
+test("an empty spelling of the quarter does not hide a filled one", () => {
+  const [r] = keyVariablesYoy(
+    snapshot([deep("Orders", "Order inflow (₹ cr)", { "Q2 FY27": null, Q2FY27: 849, "Q2 FY26": 758 })]),
+    Q2FY27,
+  );
+  assert.equal(r?.to, "₹849 Cr");
+});
+
 test("a snapshot without this quarter, or without last year's, shows nothing", () => {
   assert.deepEqual(keyVariablesYoy(snapshot([deep("Stale", "Utilisation (%)", { "Q1 FY27": 70, "Q1 FY26": 68 })]), Q2FY27), []);
   assert.deepEqual(keyVariablesYoy(snapshot([deep("New", "Utilisation (%)", { "Q2 FY27": 70 })]), Q2FY27), []);
@@ -234,6 +293,11 @@ test("YoY change wording per unit", () => {
   assert.equal(formatYoyChange(0, 5, "₹ cr"), null, "no % change off zero");
   assert.equal(formatYoyChange(-10, 5, "₹ cr"), null, "no % change off a negative base");
   assert.equal(formatYoyChange(3, 3, "count"), "0%");
+  // A swing below zero is not a multiple: it printed "−-10×".
+  assert.equal(formatYoyChange(10, -100, "₹ cr"), "−1100%");
+  // A move that rounds to nothing carries no sign: it printed "+0 bps".
+  assert.equal(formatYoyChange(12, 12.001, "%"), "0 bps");
+  assert.equal(formatYoyChange(1000, 1000.2, "₹ cr"), "0%");
 });
 
 test("YoY values carry the unit once, on the latest", () => {

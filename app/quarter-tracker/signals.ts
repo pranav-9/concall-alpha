@@ -5,10 +5,12 @@
 //   Guidance  — a live commitment management RAISED or LOWERED on this
 //               quarter's call. The same "Raised" / "Lowered" call the Guidance
 //               tab prints (buildGuidanceVerdict → liveStateKey), narrowed to
-//               moves dated to the quarter in season and to from → to values
-//               that read as that move on their own (the scanner's legibility
-//               rule: same unit, under 3×), because at the top of a season
-//               board a mislabelled number is the headline.
+//               moves dated to the quarter in season. Every such move counts
+//               (user call 2026-11-06: a 15% → 0% cut is still a cut), but the
+//               from → to values print only when they read as that move on
+//               their own (the scanner's legibility rule: same unit, under 3×),
+//               because at the top of a season board a mislabelled number is
+//               the headline.
 //   Key variables · YoY — the deep-tracked key variables' lead metric, this
 //               quarter against the same quarter a year ago, coloured by its
 //               effect on the case (getThesisEffect), never by sign. Only when
@@ -67,12 +69,13 @@ export type GuidanceMove = {
   direction: "raised" | "lowered";
   /** "FY27 EBITDA margin" — horizon first, the way a desk says it. */
   label: string;
-  from: string;
-  to: string;
+  /** The printed values; both null when they don't read as this move on their own. */
+  from: string | null;
+  to: string | null;
 };
 
 export type QuarterGuidance = {
-  /** The most material legible raise made on this quarter's call. */
+  /** The most material raise made on this quarter's call — a readable one first. */
   raised: GuidanceMove | null;
   lowered: GuidanceMove | null;
   raisedCount: number;
@@ -114,15 +117,18 @@ function moveOf(row: LiveRow, direction: "raised" | "lowered", target: QuarterRe
   if (step.direction !== (direction === "raised" ? "up" : "down")) return null;
   if (!sameQuarter(parseQuarterPeriod(step.quarter), target)) return null;
   const from = row.trail[i - 1].label;
-  if (!isLegibleMove(from, step.label, direction)) return null;
-  return { direction, label: moveLabel(row.item), from, to: step.label };
+  const legible = isLegibleMove(from, step.label, direction);
+  return { direction, label: moveLabel(row.item), from: legible ? from : null, to: legible ? step.label : null };
 }
+
+const isReadable = (move: GuidanceMove | null) => move != null && move.to != null;
 
 /**
  * Raises and cuts made on the `target` quarter's call. `current` anchors the
  * live/resolved split exactly as the Guidance tab does (the reporting quarter
- * in season). Live rows arrive materiality-ranked, so the first legible move
- * each way is the one shown.
+ * in season). Live rows arrive materiality-ranked; every move counts, and the
+ * one shown each way is the most material readable one, else the most
+ * material one (label only).
  */
 export function quarterGuidanceMoves(
   items: NormalizedGuidanceItem[],
@@ -139,10 +145,10 @@ export function quarterGuidanceMoves(
     if (!move) continue;
     if (key === "raised") {
       out.raisedCount += 1;
-      out.raised ??= move;
+      if (!out.raised || (!isReadable(out.raised) && isReadable(move))) out.raised = move;
     } else {
       out.loweredCount += 1;
-      out.lowered ??= move;
+      if (!out.lowered || (!isReadable(out.lowered) && isReadable(move))) out.lowered = move;
     }
   }
   return out;
@@ -170,21 +176,33 @@ export type KeyVariableYoy = {
 
 const sign = (n: number) => (n > 0 ? "+" : n < 0 ? "−" : "");
 
-/** A percentage moves in bps under 5 points, in points from there; amounts and days move in %. */
+/** Sign + magnitude; a magnitude that prints as zero carries no sign ("0 bps", never "+0 bps"). */
+const signed = (delta: number, magnitude: string) => (/^0(\.0+)?$/.test(magnitude) ? magnitude : `${sign(delta)}${magnitude}`);
+
+/**
+ * A percentage moves in bps under 5 points, in points from there; amounts and
+ * days move in %, or as a multiple once growth passes 1,000% — growth only:
+ * a swing below zero is not a multiple (it printed "−-10×").
+ */
 export function formatYoyChange(from: number, to: number, unit: string | null): string | null {
   const delta = to - from;
   const kind = classifyUnit(unit);
   if (kind === "percent") {
     const pp = Math.abs(delta);
-    return pp < 5 ? `${sign(delta)}${Math.round(pp * 100)} bps` : `${sign(delta)}${formatMetricNumber(Math.round(pp * 10) / 10)} pp`;
+    return pp < 5
+      ? `${signed(delta, String(Math.round(pp * 100)))} bps`
+      : `${signed(delta, formatMetricNumber(Math.round(pp * 10) / 10))} pp`;
   }
-  if (kind === "bps") return `${sign(delta)}${formatMetricNumber(Math.abs(delta))} bps`;
-  if (kind === "multiple") return `${sign(delta)}${formatMetricNumber(Math.abs(delta))}x`;
+  if (kind === "bps") return `${signed(delta, formatMetricNumber(Math.abs(delta)))} bps`;
+  if (kind === "multiple") return `${signed(delta, formatMetricNumber(Math.abs(delta)))}x`;
   if (from <= 0) return null;
   const pct = (delta / from) * 100;
-  if (Math.abs(pct) >= 1000) return `${sign(delta)}${formatMetricNumber(Math.round(to / from))}×`;
-  return `${sign(delta)}${Math.round(Math.abs(pct))}%`;
+  if (pct >= 1000) return `+${formatMetricNumber(Math.round(to / from))}×`;
+  return `${signed(delta, String(Math.round(Math.abs(pct))))}%`;
 }
+
+/** A printed change of zero ("0 bps", "0%", "0x") is no move at all; only zero prints unsigned. */
+const isZeroChange = (change: string | null) => change != null && /^0(\.0+)?(?=\s|%|x|×|$)/.test(change);
 
 /** The two ends of a YoY reading. The unit rides the latest value only, except % and a currency sign. */
 export function formatYoyValues(
@@ -203,10 +221,12 @@ export function formatYoyValues(
   return { from: n(from), to: `${n(to)}${tail}` };
 }
 
-/** The value a row holds for `q`, matching any spelling of the period. */
+/** The value a row holds for `q`, matching any spelling of the period; an empty spelling doesn't hide a filled one. */
 function valueAt(valuesByPeriod: Record<string, string | number | null>, q: QuarterRef): number | null {
   for (const [period, value] of Object.entries(valuesByPeriod)) {
-    if (sameQuarter(parseQuarterPeriod(period), q)) return asNumericValue(value);
+    if (!sameQuarter(parseQuarterPeriod(period), q)) continue;
+    const n = asNumericValue(value);
+    if (n != null) return n;
   }
   return null;
 }
@@ -233,13 +253,14 @@ export function keyVariablesYoy(
     const unit = item.leadUnit ?? splitMetricName(lead.row.metric).unit;
     const values = formatYoyValues(from, to, lead.unitPrefix, lead.unitSuffix);
     const direction = item.metricDirections?.[lead.row.metric] ?? "higher_is_better";
+    const change = formatYoyChange(from, to, unit);
     out.push({
       name: lead.name,
       variable: item.variable,
       from: values.from,
       to: values.to,
-      change: formatYoyChange(from, to, unit),
-      effect: getThesisEffect(to - from, direction),
+      change,
+      effect: isZeroChange(change) ? "neutral" : getThesisEffect(to - from, direction),
     });
   }
   return out;

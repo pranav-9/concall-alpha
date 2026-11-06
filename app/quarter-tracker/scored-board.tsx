@@ -4,9 +4,10 @@
 // the score landed (marked when it came off a third-party transcript). Column
 // heads are links (`?sort=`), so the order is a URL and the table needs no
 // client JS. The latest call day's rows are pinned in their own block above
-// the rest; the sort applies inside each block. Below `lg` the Guidance and Key
-// variables columns fold under the company name; below `md` the sparkline and
-// Scored columns fold into a meta line too.
+// the rest; the sort applies inside each block. Below `xl` the Guidance and Key
+// variables columns fold under the company name (at `lg` the seven columns
+// overflow the card and clip Scored); below `md` the sparkline and Scored
+// columns fold into a meta line too.
 
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -67,7 +68,7 @@ function SortHead({
   );
 }
 
-/** Tiny score-history sparkline in the house ramp — teal up, red down, muted flat. */
+/** Tiny score-history sparkline: a neutral ink line, its end dot teal / red / muted by the last quarter's move. */
 function Sparkline({ entry }: { entry: TrackerEntry }) {
   const points = entry.scorePath.map((p) => p.value).filter((v): v is number => v != null);
   if (points.length < 2) {
@@ -137,14 +138,17 @@ function Move({ move, count, quarter }: { move: GuidanceMove; count: number; qua
   const raised = move.direction === "raised";
   const word = raised ? "Raised" : "Lowered";
   const more = count - 1;
+  // Numbers print only when they read as the move on their own (signals.ts).
+  const values = move.from != null && move.to != null ? ` ${move.from} → ${move.to}` : "";
   return (
-    <div title={`${word} on the ${quarter} call: ${move.label}, ${move.from} → ${move.to}${more > 0 ? ` (and ${more} more)` : ""}`}>
+    <div title={`${word} on the ${quarter} call: ${move.label}${values ? `,${values}` : ""}${more > 0 ? ` (and ${more} more)` : ""}`}>
       <span className={cn("text-[12px] font-semibold leading-tight", raised ? "text-[var(--signal)]" : "text-[var(--alarm)]")}>
         {word}
         {more > 0 ? <span className="ml-1.5 text-[10.5px] font-normal text-[var(--ink-soft)]">+{more} more</span> : null}
       </span>
       <span className="house-data mt-0.5 line-clamp-2 text-[10.5px] leading-snug text-[var(--ink-soft)]">
-        {move.label} {move.from} → {move.to}
+        {move.label}
+        {values}
       </span>
     </div>
   );
@@ -160,10 +164,15 @@ function GuidanceCell({ guidance, quarter }: { guidance: QuarterGuidance | null;
   );
 }
 
-function KeyVariablesCell({ readings }: { readings: KeyVariableYoy[] }) {
+function KeyVariablesCell({ readings, labelled = false }: { readings: KeyVariableYoy[]; labelled?: boolean }) {
   if (readings.length === 0) return null;
   return (
-    <ul className="space-y-1">
+    <div>
+      {/* Folded under the name there is no column head, and Δ QoQ sits beside it. */}
+      {labelled ? (
+        <p className="house-data mb-1 text-[9.5px] uppercase tracking-[0.12em] text-[var(--ink-soft)]">Key variables · YoY</p>
+      ) : null}
+      <ul className="space-y-1">
       {readings.map((r) => (
         // One line when it fits; otherwise the numbers wrap under the name
         // rather than cutting the name down to a stub.
@@ -173,15 +182,20 @@ function KeyVariablesCell({ readings }: { readings: KeyVariableYoy[] }) {
           title={`${r.variable} — ${r.name}: ${r.from} → ${r.to}, against the same quarter last year`}
         >
           <span className="max-w-full truncate text-[var(--ink)]">{r.name}</span>
-          <span className="house-data whitespace-nowrap text-[10.5px] text-[var(--ink-soft)]">
+          {/* Two pieces that wrap apart, and the numbers themselves wrap on a
+              phone: at 360px the folded column is ~100px wide. */}
+          <span className="house-data text-[10.5px] text-[var(--ink-soft)] sm:whitespace-nowrap">
             {r.from} → {r.to}
-            {r.change ? (
-              <span className={cn("ml-1.5 font-semibold", EFFECT_TONE[r.effect])}>{r.change}</span>
-            ) : null}
           </span>
+          {r.change ? (
+            <span className={cn("house-data whitespace-nowrap text-[10.5px] font-semibold", EFFECT_TONE[r.effect])}>
+              {r.change}
+            </span>
+          ) : null}
         </li>
       ))}
-    </ul>
+      </ul>
+    </div>
   );
 }
 
@@ -214,10 +228,11 @@ function Row({
           prefetch={false}
           className="group flex min-w-0 items-start gap-3 md:min-w-[14rem]"
         >
+          {/* Hidden on a phone: at 360px its 44px (mark + gap) pushed Δ QoQ out of the card. */}
           <CompanyMark
             code={entry.code}
             name={entry.name}
-            className="mt-0.5 h-8 w-8 rounded-[6px]"
+            className="mt-0.5 hidden h-8 w-8 rounded-[6px] sm:inline-flex"
             initialsClassName="house-data bg-[var(--paper)] text-[10px] text-[var(--ink-soft)]"
           />
           <span className="min-w-0 flex-1">
@@ -246,16 +261,21 @@ function Row({
                 </>
               ) : null}
             </span>
-            {hasReading ? (
-              // w-0 + min-w-full: the folded readings take the cell's width but
-              // never widen it — a long metric name would push Score off a phone.
-              <span className="mt-2 block w-0 min-w-full space-y-2 lg:hidden">
-                <GuidanceCell guidance={signals.guidance} quarter={quarter} />
-                <KeyVariablesCell readings={signals.keyVariables} />
-              </span>
-            ) : null}
           </span>
         </Link>
+        {hasReading ? (
+          // Below xl the readings fold under the name — outside the link, so a
+          // screen reader's link name stays the company and a tap on a reading
+          // does nothing. sm:pl-11 = the mark (2rem) + gap (0.75rem). w-0 +
+          // min-w-full: they take the cell's width but never widen it — a long
+          // metric name would push Score off a phone.
+          <div className="mt-2 sm:pl-11 xl:hidden">
+            <div className="w-0 min-w-full space-y-2">
+              <GuidanceCell guidance={signals.guidance} quarter={quarter} />
+              <KeyVariablesCell readings={signals.keyVariables} labelled />
+            </div>
+          </div>
+        ) : null}
       </td>
       <td className={CELL}>
         <span className={cn("block text-[16px] font-semibold leading-none tabular-nums", band.textClass)}>
@@ -271,13 +291,13 @@ function Row({
       </td>
       {/* Fixed content widths hold these two columns: an auto-layout table
           would otherwise hand them their one-line width and squeeze Company. */}
-      <td className={cn(CELL, "hidden lg:table-cell")}>
-        <div className="w-[10rem] xl:w-[11.5rem]">
+      <td className={cn(CELL, "hidden xl:table-cell")}>
+        <div className="w-[11.5rem]">
           <GuidanceCell guidance={signals.guidance} quarter={quarter} />
         </div>
       </td>
-      <td className={cn(CELL, "hidden lg:table-cell")}>
-        <div className="w-[14rem] xl:w-[16.5rem]">
+      <td className={cn(CELL, "hidden xl:table-cell")}>
+        <div className="w-[16.5rem]">
           <KeyVariablesCell readings={signals.keyVariables} />
         </div>
       </td>
@@ -319,6 +339,7 @@ export function ScoredBoard({
   filters,
   now,
   emptyMessage,
+  notice,
 }: {
   /** The latest call day's rows, drawn first under their own caption; null = one list. */
   pinned: { label: string; rows: TrackerEntry[] } | null;
@@ -334,6 +355,8 @@ export function ScoredBoard({
   filters: ReactNode;
   now: Date;
   emptyMessage: string;
+  /** A reading column's read failed: say so above the board, never imply "none". */
+  notice?: string | null;
 }) {
   const total = (pinned?.rows.length ?? 0) + rows.length;
   const row = (entry: TrackerEntry) => (
@@ -364,11 +387,17 @@ export function ScoredBoard({
         </div>
       </div>
 
+      {notice ? (
+        <p role="status" className="border-b border-[var(--rule)] bg-[var(--paper)] px-3 py-2 text-[12px] leading-[1.5] text-[var(--warn)] md:px-4">
+          {notice}
+        </p>
+      ) : null}
+
       {total === 0 ? (
         <p className="px-4 py-10 text-center text-[13px] leading-[1.5] text-[var(--ink-soft)]">{emptyMessage}</p>
       ) : (
         // Auto layout on purpose: a fixed table takes its column count from the
-        // group heads' colSpan, so the columns hidden below lg/md would become
+        // group heads' colSpan, so the columns hidden below xl/md would become
         // empty phantom columns squeezing Company.
         <table className="w-full border-collapse">
           <thead>
@@ -385,10 +414,10 @@ export function ScoredBoard({
               <th scope="col" className={cn(HEAD, "hidden w-[5.75rem] md:table-cell")}>
                 7 qtrs
               </th>
-              <th scope="col" className={cn(HEAD, "hidden w-[12rem] lg:table-cell xl:w-[13.5rem]")}>
+              <th scope="col" className={cn(HEAD, "hidden w-[13.5rem] xl:table-cell")}>
                 Guidance
               </th>
-              <th scope="col" className={cn(HEAD, "hidden w-[16rem] lg:table-cell xl:w-[18rem]")}>
+              <th scope="col" className={cn(HEAD, "hidden w-[18.5rem] xl:table-cell")}>
                 Key variables · YoY
               </th>
               <SortHead active={sort === "scored"} dir={dir} href={sortHref("scored")} className="hidden w-[5.75rem] md:table-cell">

@@ -2,24 +2,37 @@
 
 // The board's sector filter. Every option's URL is built on the server
 // (trackerHref), so this only navigates: the filtered view is still a link.
+// The pick is shown optimistically while the navigation is in flight — a
+// controlled <select> otherwise snaps back to the old sector until it lands —
+// and falls back to the server's value when the transition ends, including
+// when a chip click supersedes the navigation (local state that only resynced
+// on a changed `value` kept showing the abandoned sector).
 
 import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useOptimistic, useTransition } from "react";
 
 export type SectorOption = { value: string; label: string; href: string };
 
 export function SectorSelect({ options, value }: { options: SectorOption[]; value: string }) {
   const router = useRouter();
+  const [picked, setPicked] = useOptimistic(value);
+  const [pending, startTransition] = useTransition();
   return (
     <label className="relative inline-flex shrink-0">
       <span className="sr-only">Sector</span>
       <select
-        value={value}
+        value={picked}
+        aria-busy={pending || undefined}
         onChange={(event) => {
           const option = options.find((o) => o.value === event.target.value);
-          if (option) router.push(option.href, { scroll: false });
+          if (!option) return;
+          startTransition(() => {
+            setPicked(option.value);
+            router.push(option.href, { scroll: false });
+          });
         }}
-        className="h-7 max-w-[13rem] cursor-pointer appearance-none truncate rounded-[5px] border border-[var(--rule)] bg-[var(--paper-2)] pl-2.5 pr-7 text-[11.5px] text-[var(--ink)] transition-colors hover:border-[var(--ink-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--signal)]"
+        className="h-11 sm:h-7 max-w-[13rem] aria-busy:opacity-60 cursor-pointer appearance-none truncate rounded-[5px] border border-[var(--rule)] bg-[var(--paper-2)] pl-2.5 pr-7 text-[11.5px] text-[var(--ink)] transition-colors hover:border-[var(--ink-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--signal)]"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

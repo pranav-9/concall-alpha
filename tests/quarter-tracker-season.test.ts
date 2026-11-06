@@ -14,6 +14,7 @@ import {
   parseFilter,
   parseSector,
   quarterEnd,
+  scopeBoard,
   relativeDay,
   seasonWindow,
   sortScored,
@@ -227,5 +228,47 @@ assert(parseFilter("raised") === "raised" && parseFilter("lowered") === "lowered
 assert(parseFilter("decliners") === null && parseFilter(undefined) === null, "unknown filter → none");
 assert(parseSector("chemicals", ["Capital Goods", "Chemicals"]) === "Chemicals", "sector matches case-insensitively");
 assert(parseSector("Steel", ["Chemicals"]) === null && parseSector("", ["Chemicals"]) === null, "unknown sector → none");
+// Next hands `?sector=a&sector=b` over as an array; `.trim()` on it 500'd the page.
+assert(parseSector(["Chemicals", "Steel"], ["Chemicals", "Steel"]) === "Chemicals", "repeated sector → first value, no throw");
+assert(parseSector([], ["Chemicals"]) === null, "empty sector array → none");
+
+// --- the board's scope and every count beside it ------------------------------
+
+{
+  const rows = [
+    entry({ code: "A1", sector: "Chem", score: 7, priorScore: 6 }), // improver, watched, raised
+    entry({ code: "A2", sector: "Chem", score: 6, priorScore: 7 }), // watched
+    entry({ code: "B1", sector: "Auto", score: 8, priorScore: 7 }), // improver, raised
+    entry({ code: "B2", sector: "Auto", score: 5, priorScore: 5 }), // watched, lowered
+  ];
+  const watched = new Set(["A1", "A2", "B2"]);
+  const raised = new Set(["A1", "B1"]);
+  const matches = {
+    improvers: isImprover,
+    raised: (e: TrackerEntry) => raised.has(e.code),
+    lowered: (e: TrackerEntry) => e.code === "B2",
+  };
+  const scope = (over: Partial<Parameters<typeof scopeBoard>[0]>) =>
+    scopeBoard({ scored: rows, filter: null, sector: null, mine: false, inWatchlist: (e) => watched.has(e.code), matches, ...over });
+
+  const all = scope({});
+  assert(all.rows.length === 4 && all.filterCounts.improvers === 2 && all.filterCounts.raised === 2, "no filter: everything, chips count the whole board");
+  assert(all.watchlistCount === 3, "watchlist chip = what turning it on would leave");
+
+  const chem = scope({ sector: "Chem" });
+  assert(chem.rows.map((e) => e.code).join() === "A1,A2", "sector narrows the rows");
+  assert(chem.filterCounts.raised === 1 && chem.filterCounts.lowered === 0, "chips count inside the sector");
+  assert(all.sectorCounts.get("Chem") === 2 && all.sectorCounts.get("Auto") === 2, "sector counts with no filter");
+
+  const raisedOnly = scope({ filter: "raised" });
+  assert(raisedOnly.rows.map((e) => e.code).join() === "A1,B1", "filter narrows the rows");
+  assert(raisedOnly.sectorCounts.get("Auto") === 1 && raisedOnly.sectorCounts.get("Chem") === 1, "sector counts honour the active filter");
+  assert(raisedOnly.filterCounts.improvers === 2, "a chip's own count ignores the other filter (filters are exclusive)");
+  assert(raisedOnly.watchlistCount === 1, "watchlist count honours the active filter");
+
+  const mineChem = scope({ mine: true, sector: "Chem", filter: "improvers" });
+  assert(mineChem.rows.map((e) => e.code).join() === "A1", "watchlist ∩ sector ∩ filter");
+  assert(mineChem.sectorCounts.get("Auto") === undefined, "sector counts honour the watchlist scope");
+}
 
 console.log("\nAll quarter-tracker season tests passed.");

@@ -4,8 +4,8 @@
 // The season chart and the week's call calendar sit behind the header's
 // "Upcoming calls" button, in a dialog. The board's sort, its one filter
 // (Improvers / Raised guidance / Lowered guidance), the sector and the
-// Watchlist scope are all links, so any view is a shareable URL; the only
-// client code is the dialog and the sector select. The chart and the headline
+// Watchlist scope are all links, so any view is a shareable URL; the client
+// code is the dialog, the sector select and the chart's scroller. The chart and the headline
 // count always show the whole of coverage; the Watchlist scope narrows the
 // board and the upcoming list only, the sector the board only.
 
@@ -29,6 +29,7 @@ import {
   parseFilter,
   parseSector,
   parseSort,
+  scopeBoard,
   sortScored,
   splitLatestCalls,
   type BoardFilter,
@@ -52,25 +53,31 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-type SearchParams = { sort?: string; dir?: string; filter?: string; sector?: string; mine?: string };
+type Param = string | string[] | undefined;
+type SearchParams = { sort?: Param; dir?: Param; filter?: Param; sector?: Param; mine?: Param };
+
+/** A repeated query parameter arrives as an array; the first value counts. */
+const one = (value: Param): string | undefined => (Array.isArray(value) ? value[0] : value);
 
 const FILTER_TITLES: Record<BoardFilter, { off: string; on: string; none: string }> = {
   improvers: {
     off: "Only companies that scored above their prior quarter",
     on: "Back to every scored company",
-    none: "No company has scored above its prior quarter yet",
+    none: "None here has scored above its prior quarter yet",
   },
   raised: {
     off: "Only companies that raised a live guidance number on this quarter's call",
     on: "Back to every scored company",
-    none: "No raised guidance on this quarter's calls yet",
+    none: "None here has raised guidance on this quarter's call yet",
   },
   lowered: {
     off: "Only companies that lowered a live guidance number on this quarter's call",
     on: "Back to every scored company",
-    none: "No lowered guidance on this quarter's calls yet",
+    none: "None here has lowered guidance on this quarter's call yet",
   },
 };
+
+const GUIDANCE_DOWN_TITLE = "Guidance couldn't be read just now";
 
 const EMPTY_FILTERED: Record<BoardFilter, string> = {
   improvers: "No company here has scored above its prior quarter yet.",
@@ -84,21 +91,26 @@ export default async function QuarterTrackerPage({
   searchParams?: Promise<SearchParams>;
 }) {
   const params = (await searchParams) ?? {};
-  const sort = parseSort(params.sort);
-  const dir = parseDir(params.dir);
-  const filter = parseFilter(params.filter);
+  const sort = parseSort(one(params.sort));
+  const dir = parseDir(one(params.dir));
+  const filter = parseFilter(one(params.filter));
 
-  const [data, reader] = await Promise.all([getTrackerData(), getReaderWatchlist()]);
+  // Three independent reads: the signals are keyed on the quarter alone, so
+  // they never wait on the tracker data or the reader's auth + watchlist.
+  const [data, reader, signals] = await Promise.all([
+    getTrackerData(),
+    getReaderWatchlist(),
+    getQuarterSignals(getTargetQuarter()),
+  ]);
   const { target, entries, totalCompanies, reportedCompanies, unofficialCompanies, freshCompanies } = data;
   const scored = entries.filter((e) => e.score != null);
   const upcoming = entries.filter((e) => e.score == null);
-  const signals = await getQuarterSignals(target, scored.map((e) => e.code));
 
   const userId = reader.userId;
   const watchCodes = reader.codes ? new Set(reader.codes) : null;
   // A shared `mine=1` link opened signed out (or with an empty watchlist)
   // falls back to the whole of coverage.
-  const mine = params.mine === "1" && watchCodes != null && watchCodes.size > 0;
+  const mine = one(params.mine) === "1" && watchCodes != null && watchCodes.size > 0;
   const boardSectors = [...new Set(scored.map((e) => e.sector).filter((s): s is string => Boolean(s?.trim())))].sort(
     (a, b) => a.localeCompare(b),
   );
@@ -109,27 +121,32 @@ export default async function QuarterTrackerPage({
   const today = istToday(now);
 
   const inWatchlist = (e: TrackerEntry) => watchCodes?.has(e.code.toUpperCase()) ?? false;
-  const inSector = (e: TrackerEntry) => !sector || e.sector === sector;
-  const signalsOf = (e: TrackerEntry) => signals.get(e.code.toUpperCase()) ?? EMPTY_SIGNALS;
-  const matches: Record<BoardFilter, (e: TrackerEntry) => boolean> = {
-    improvers: isImprover,
-    raised: (e) => Boolean(signalsOf(e).guidance?.raised),
-    lowered: (e) => Boolean(signalsOf(e).guidance?.lowered),
-  };
-
-  // Each chip counts what turning IT on would leave, everything else as is.
-  const sectorScoped = scored.filter(inSector);
-  const scope = mine ? sectorScoped.filter(inWatchlist) : sectorScoped;
-  const filterCount = (key: BoardFilter) => scope.filter(matches[key]).length;
-  const filtered = filter ? scope.filter(matches[filter]) : scope;
-  const boardRows = sortScored(filtered, sort, dir);
+  const signalsOf = (e: TrackerEntry) => signals.byCode.get(e.code.toUpperCase()) ?? EMPTY_SIGNALS;
+  const board = scopeBoard({
+    scored,
+    filter,
+    sector,
+    mine,
+    inWatchlist,
+    matches: {
+      improvers: isImprover,
+      raised: (e) => Boolean(signalsOf(e).guidance?.raised),
+      lowered: (e) => Boolean(signalsOf(e).guidance?.lowered),
+    },
+  });
+  // A failed guidance read must not read as "nobody moved guidance".
+  const guidanceDown = !signals.guidanceAvailable;
+  const boardRows = sortScored(board.rows, sort, dir);
   const split = splitLatestCalls(boardRows, today);
   const pinned = split.day ? { label: latestCallsLabel(split.day, today), rows: split.latest } : null;
 
   const scopedUpcoming = mine ? upcoming.filter(inWatchlist) : upcoming;
   const chart = buildSeasonChart(entries, target, today);
   const groups = groupUpcoming(scopedUpcoming, today);
-  const thisWeek = callsThisWeek(upcoming, today);
+  // The button, the summary and the list under it count the same companies:
+  // the watchlist scope narrows all three.
+  const thisWeek = callsThisWeek(scopedUpcoming, today);
+  const callDateTba = groups.noCall.length + groups.undated.length;
 
   const watchlistChip = (count: number): WatchlistChipState =>
     !userId
@@ -142,7 +159,8 @@ export default async function QuarterTrackerPage({
   const chip = (key: BoardFilter, label: string, glyph?: string, tone?: string) => (
     <FilterChip
       on={filter === key}
-      count={filterCount(key)}
+      count={board.filterCounts[key]}
+      unavailable={key !== "improvers" && guidanceDown ? GUIDANCE_DOWN_TITLE : undefined}
       href={trackerHref({ ...query, filter: filter === key ? null : key })}
       label={label}
       glyph={glyph}
@@ -150,15 +168,11 @@ export default async function QuarterTrackerPage({
       titles={FILTER_TITLES[key]}
     />
   );
-  const sectorCounts = new Map<string, number>();
-  for (const e of mine ? scored.filter(inWatchlist) : scored) {
-    if (e.sector) sectorCounts.set(e.sector, (sectorCounts.get(e.sector) ?? 0) + 1);
-  }
   const sectorOptions = [
     { value: "", label: "All sectors", href: trackerHref({ ...query, sector: null }) },
     ...boardSectors.map((s) => ({
       value: s,
-      label: `${s} (${sectorCounts.get(s) ?? 0})`,
+      label: `${s} (${board.sectorCounts.get(s) ?? 0})`,
       href: trackerHref({ ...query, sector: s }),
     })),
   ];
@@ -167,12 +181,26 @@ export default async function QuarterTrackerPage({
   const emptyMessage =
     scored.length === 0
       ? `No ${target.label} scores yet — each company lands here once its call is scored.`
-      : filter
+      : filter && filter !== "improvers" && guidanceDown
+        ? `${GUIDANCE_DOWN_TITLE}, so this filter can't run. Try again in a minute.`
+        : filter
         ? EMPTY_FILTERED[filter]
         : mine
           ? "None of your watchlist companies here has been scored yet."
           : "No company in this sector has been scored yet.";
-  const summary = `${target.label} · ${thisWeek} dated this week · ${chart.undated.length} date TBA`;
+  // "Call date TBA" counts what the list's own fold counts (no call date on
+  // file), not the chart's "no board-meeting date", so no company is in both halves.
+  const summary = `${target.label} · ${thisWeek} dated this week · ${callDateTba} call date TBA${mine ? " · your watchlist" : ""}`;
+  const unreadable = [
+    signals.guidanceAvailable ? null : "Guidance",
+    signals.keyVariablesAvailable ? null : "Key variables",
+  ].filter((leg): leg is string => leg != null);
+  const notice =
+    unreadable.length > 0
+      ? `${unreadable.join(" and ")} couldn't be read just now${
+          signals.guidanceAvailable ? "" : ", so the Raised / Lowered filters are paused"
+        }. Try again in a minute.`
+      : null;
 
   return (
     <main className="house min-h-screen">
@@ -224,20 +252,21 @@ export default async function QuarterTrackerPage({
           <ScoredBoard
             pinned={pinned}
             rows={split.rest}
-            signals={signals}
+            signals={signals.byCode}
             scoreLabel={target.label}
             sort={sort}
             dir={dir}
             sortHref={sortHref}
             now={now}
             emptyMessage={emptyMessage}
+            notice={notice}
             filters={
               <>
                 <SectorSelect options={sectorOptions} value={sector ?? ""} />
                 {chip("improvers", "Improvers", "▲", "text-[var(--signal)]")}
                 {chip("raised", "Raised guidance")}
                 {chip("lowered", "Lowered guidance")}
-                <WatchlistChip state={watchlistChip(sectorScoped.filter(inWatchlist).filter(filter ? matches[filter] : () => true).length)} />
+                <WatchlistChip state={watchlistChip(board.watchlistCount)} />
               </>
             }
           />

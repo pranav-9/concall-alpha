@@ -17,7 +17,9 @@ import {
   callTimeLabel,
   formatDay,
   formatTick,
+  formatTime,
   relativeDay,
+  UPCOMING_DAYS,
   type ISODate,
   type UpcomingGroups,
 } from "./season";
@@ -103,7 +105,7 @@ export function UpcomingPanel({
       <div className="flex items-center justify-between gap-3 border-b border-[var(--rule)] px-4 py-2.5">
         <h2 id="upcoming-heading" className="house-data flex items-baseline gap-3 text-[10px] uppercase tracking-[0.16em]">
           <span className="font-semibold text-[var(--ink)]">Upcoming calls</span>
-          <span className="text-[var(--ink-soft)]">Next 7 days</span>
+          <span className="text-[var(--ink-soft)]">Next {UPCOMING_DAYS} days</span>
         </h2>
         {chip}
       </div>
@@ -150,12 +152,19 @@ export function UpcomingPanel({
             Later calls
             <span className="tabular-nums opacity-70">{later.length}</span>
           </summary>
+          {/* Day, time and the invite filing, as these rows had before the week fold. */}
           <Rows
             entries={later}
             right={(entry) => (
-              <span className="house-data shrink-0 whitespace-nowrap text-[11px] text-[var(--ink-soft)]">
-                {formatDay(entry.callDate!)}
-              </span>
+              <CallCell
+                call={{
+                  text: entry.callTime
+                    ? `${formatDay(entry.callDate!)} · ${formatTime(entry.callTime)}`
+                    : formatDay(entry.callDate!),
+                  href: entry.callUrl,
+                  muted: false,
+                }}
+              />
             )}
           />
         </details>

@@ -7,7 +7,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const CHIP =
-  "inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[5px] border px-2.5 text-[11.5px] leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--signal)]";
+  // 44px boxes in the phone's sideways strip (docs/portal-design-system.md), compact from sm.
+  "inline-flex h-11 sm:h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[5px] border px-2.5 text-[11.5px] leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--signal)]";
 
 export function chipClass(on: boolean, disabled = false): string {
   return cn(
@@ -40,9 +41,12 @@ export function FilterChip({
   glyph,
   tone,
   titles,
+  unavailable,
 }: {
   on: boolean;
   count: number;
+  /** The read behind this filter failed: the chip is disabled and says so, never "none". */
+  unavailable?: string;
   href: string;
   label: string;
   glyph?: string;
@@ -50,7 +54,7 @@ export function FilterChip({
   /** Tooltips: when off, when on, and when there is nothing to filter to. */
   titles: { off: string; on: string; none: string };
 }) {
-  const none = count === 0 && !on;
+  const none = (count === 0 || unavailable != null) && !on;
   return (
     <Link
       href={href}
@@ -59,12 +63,12 @@ export function FilterChip({
       aria-current={on ? "true" : undefined}
       aria-disabled={none || undefined}
       tabIndex={none ? -1 : undefined}
-      title={none ? titles.none : on ? titles.on : titles.off}
+      title={unavailable ?? (none ? titles.none : on ? titles.on : titles.off)}
       className={chipClass(on, none)}
     >
       {glyph ? <Mark on={on} glyph={glyph} tone={tone ?? ""} /> : null}
       {label}
-      <Count n={count} />
+      {unavailable != null ? <span className="opacity-60">—</span> : <Count n={count} />}
     </Link>
   );
 }

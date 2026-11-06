@@ -14,6 +14,7 @@ import { unstable_cache } from "next/cache";
 import { parseCompanyQualityPayload } from "@/lib/company-quality/types";
 import { currentReportingQuarter } from "@/lib/current-quarter";
 import { readFleetGuidance } from "@/lib/guidance-snapshot/fleet-items";
+import { withBackoff } from "@/lib/read-backoff";
 import { COVERAGE_SELECT, isDiscoveryListed, type CoverageFields } from "@/lib/coverage-policy";
 import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
 import { phaseSchema, pivotSchema } from "@/lib/price-phases/types";
@@ -210,44 +211,24 @@ async function fetchTrendRows(): Promise<TrendRow[]> {
   return rows;
 }
 
-// A failed read is never cached (see the header), so without this every
-// request would re-run it while the database is struggling — the 2026-10-06
-// timeout did exactly that. After a failure, this server instance serves
-// "unavailable" for BACKOFF_MS before it asks again.
-const BACKOFF_MS = 60_000;
-
-function withBackoff<T>(label: string, read: () => Promise<T>): () => Promise<T> {
-  let failedAt = 0;
-  return async () => {
-    if (Date.now() - failedAt < BACKOFF_MS) {
-      throw new Error(`scanners: ${label} backing off after a failed read`);
-    }
-    try {
-      return await read();
-    } catch (error) {
-      failedAt = Date.now();
-      throw error;
-    }
-  };
-}
+// A failed read is never cached (see the header); lib/read-backoff.ts keeps a
+// struggling database from being asked again on every request. It wraps each
+// fetcher INSIDE the cache, so it gates only the database read: a failed
+// background refresh of a stale entry trips it too, and a cache hit is never
+// refused. The wrapper's source is the same for every scan, so the key parts
+// carry the identity (versions bumped 2026-11-06 when the wrapper moved inside).
 
 /** Every company with a forensic read (assessed > 0). Throws on a failed read. */
-export const getRedFlagRows = withBackoff(
-  "red flags",
-  unstable_cache(fetchRedFlagRows, ["scanners-red-flags-v2"], { revalidate: 600 }),
-);
+export const getRedFlagRows = unstable_cache(withBackoff("scanners: red flags", fetchRedFlagRows), ["scanners-red-flags-v3"], { revalidate: 600 });
 
 /** Every company with a price_phases row, fresh or stale. Throws on a failed read. */
-export const getTrendRows = withBackoff(
-  "price trend",
-  unstable_cache(fetchTrendRows, ["scanners-price-trend-v1"], { revalidate: 600 }),
-);
+export const getTrendRows = unstable_cache(withBackoff("scanners: price trend", fetchTrendRows), ["scanners-price-trend-v2"], { revalidate: 600 });
 
 /** Every company with both a growth score and a rateable valuation, fresh or stale. Throws on a failed read. */
-export const getGarpRows = withBackoff("garp", unstable_cache(fetchGarpRows, ["scanners-garp-v1"], { revalidate: 600 }));
+export const getGarpRows = unstable_cache(withBackoff("scanners: garp", fetchGarpRows), ["scanners-garp-v2"], { revalidate: 600 });
 
 /** Every company with at least one PEG leg, fresh or stale. Throws on a failed read. */
-export const getPegRows = withBackoff("peg", unstable_cache(fetchPegRows, ["scanners-peg-v2"], { revalidate: 600 }));
+export const getPegRows = unstable_cache(withBackoff("scanners: peg", fetchPegRows), ["scanners-peg-v3"], { revalidate: 600 });
 
 // Order book: the latest key_variables_snapshot per company (only its deep-treated
 // variables — never the discovery list or the synthesis text) beside the market
@@ -309,10 +290,7 @@ async function fetchOrderBookRows(): Promise<OrderBookRow[]> {
 }
 
 /** Every company with a disclosed order book and a market cap, fresh or stale. Throws on a failed read. */
-export const getOrderBookRows = withBackoff(
-  "order book",
-  unstable_cache(fetchOrderBookRows, ["scanners-order-book-v1"], { revalidate: 600 }),
-);
+export const getOrderBookRows = unstable_cache(withBackoff("scanners: order book", fetchOrderBookRows), ["scanners-order-book-v2"], { revalidate: 600 });
 
 // Same item source, quarter anchor and stored verdict as the company page's
 // Guidance section and the watchlist signals (lib/watchlist-signals.ts); the
@@ -341,7 +319,4 @@ async function fetchGuidanceUpgradeRows(): Promise<GuidanceUpgradeData> {
 }
 
 /** Every company with a raised live commitment, plus every company with guidance on record. Throws on a failed read. */
-export const getGuidanceUpgradeRows = withBackoff(
-  "guidance upgrades",
-  unstable_cache(fetchGuidanceUpgradeRows, ["scanners-guidance-upgrades-v3"], { revalidate: 600 }),
-);
+export const getGuidanceUpgradeRows = unstable_cache(withBackoff("scanners: guidance upgrades", fetchGuidanceUpgradeRows), ["scanners-guidance-upgrades-v4"], { revalidate: 600 });

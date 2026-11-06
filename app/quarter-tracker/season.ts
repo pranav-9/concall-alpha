@@ -147,12 +147,67 @@ export type BoardFilter = "improvers" | "raised" | "lowered";
 export const parseFilter = (raw: string | undefined): BoardFilter | null =>
   raw === "improvers" || raw === "raised" || raw === "lowered" ? raw : null;
 
-/** `?sector=` matched against the sectors on the board, case-insensitively; unknown → no filter. */
-export const parseSector = (raw: string | undefined, sectors: readonly string[]): string | null => {
-  const want = raw?.trim().toLowerCase();
+/**
+ * `?sector=` matched against the sectors on the board, case-insensitively;
+ * unknown → no filter. Next hands a repeated parameter over as an array, so
+ * the first value counts — `.trim()` on an array threw and 500'd the page.
+ */
+export const parseSector = (raw: string | string[] | undefined, sectors: readonly string[]): string | null => {
+  const first = Array.isArray(raw) ? raw[0] : raw;
+  const want = typeof first === "string" ? first.trim().toLowerCase() : "";
   if (!want) return null;
   return sectors.find((s) => s.toLowerCase() === want) ?? null;
 };
+
+export type BoardScope = {
+  /** What the board lists: the sector + watchlist scope ∩ the active filter. */
+  rows: TrackerEntry[];
+  /** Each filter chip: what turning IT on would leave, the sector and scope as they are. */
+  filterCounts: Record<BoardFilter, number>;
+  /** What turning the watchlist scope on would leave, the sector and filter as they are. */
+  watchlistCount: number;
+  /** Per sector: what picking it would leave, the filter and scope as they are. */
+  sectorCounts: Map<string, number>;
+};
+
+/**
+ * The board's scoping and every count beside it, in one place so the rule the
+ * chips promise ("what turning it on would leave") is testable. `matches` holds
+ * each filter's predicate — Raised / Lowered read the Guidance column's signals.
+ */
+export function scopeBoard({
+  scored,
+  filter,
+  sector,
+  mine,
+  inWatchlist,
+  matches,
+}: {
+  scored: TrackerEntry[];
+  filter: BoardFilter | null;
+  sector: string | null;
+  mine: boolean;
+  inWatchlist: (e: TrackerEntry) => boolean;
+  matches: Record<BoardFilter, (e: TrackerEntry) => boolean>;
+}): BoardScope {
+  const passes = (e: TrackerEntry) => !filter || matches[filter](e);
+  const sectorScoped = scored.filter((e) => !sector || e.sector === sector);
+  const scope = mine ? sectorScoped.filter(inWatchlist) : sectorScoped;
+  const sectorCounts = new Map<string, number>();
+  for (const e of (mine ? scored.filter(inWatchlist) : scored).filter(passes)) {
+    if (e.sector) sectorCounts.set(e.sector, (sectorCounts.get(e.sector) ?? 0) + 1);
+  }
+  return {
+    rows: scope.filter(passes),
+    filterCounts: {
+      improvers: scope.filter(matches.improvers).length,
+      raised: scope.filter(matches.raised).length,
+      lowered: scope.filter(matches.lowered).length,
+    },
+    watchlistCount: sectorScoped.filter(passes).filter(inWatchlist).length,
+    sectorCounts,
+  };
+}
 
 export type SortKey = "score" | "delta" | "scored";
 export type SortDir = "asc" | "desc";
