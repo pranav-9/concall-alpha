@@ -13,10 +13,7 @@ import { unstable_cache } from "next/cache";
 
 import { parseCompanyQualityPayload } from "@/lib/company-quality/types";
 import { currentReportingQuarter } from "@/lib/current-quarter";
-import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
-import type { GuidanceSnapshotRow } from "@/lib/guidance-snapshot/types";
-import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
-import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
+import { readFleetGuidance } from "@/lib/guidance-snapshot/fleet-items";
 import { COVERAGE_SELECT, isDiscoveryListed, type CoverageFields } from "@/lib/coverage-policy";
 import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
 import { phaseSchema, pivotSchema } from "@/lib/price-phases/types";
@@ -57,6 +54,12 @@ type ValuationPegRow = {
 };
 
 const upper = (code: string | null | undefined) => (code ?? "").trim().toUpperCase();
+
+// Fleet-wide reads go in batches of BATCH companies so no one statement carries the fleet.
+const BATCH = 12;
+
+const chunk = <T>(xs: T[], size: number): T[][] =>
+  Array.from({ length: Math.ceil(xs.length / size) }, (_, i) => xs.slice(i * size, (i + 1) * size));
 
 async function readCompanies(): Promise<Map<string, ScanCompany>> {
   const out = new Map<string, ScanCompany>();
@@ -312,89 +315,26 @@ export const getOrderBookRows = withBackoff(
 );
 
 // Same item source, quarter anchor and stored verdict as the company page's
-// Guidance section and the watchlist signals (lib/watchlist-signals.ts): the
-// latest snapshot's items when one exists, else the legacy guidance_tracking rows.
-//
-// Sized for the whole fleet (2026-10-06 prod incident): one read of every
-// snapshot WITH `details` was 17.8MB / ~13s and hit Postgres' statement
-// timeout on every request. `details` (forward strength, strategy narrative —
-// ~13MB of it) is never read here, so it is not selected, and both tables are
-// read in batches of BATCH companies so each statement stays short.
-const SNAPSHOT_COLUMNS = "company_code, generated_at, credibility_verdict, guidance_items";
-const TRACKING_COLUMNS =
-  "id, company_code, guidance_key, guidance_text, guidance_type, first_mentioned_in, target_period, source_mentions, trail, status, status_reason, latest_view, confidence, generated_at, details";
-
-type SnapshotRow = GuidanceSnapshotRow & { credibility_verdict?: unknown };
-
+// Guidance section and the watchlist signals (lib/watchlist-signals.ts); the
+// batched fleet read itself lives in lib/guidance-snapshot/fleet-items.ts,
+// shared with the quarter tracker's Guidance column.
 export type GuidanceUpgradeData = {
   rows: GuidanceUpgradeRow[];
   /** Companies with any guidance on record — what the scan could read. */
   readable: ScanCompany[];
 };
 
-const BATCH = 12;
-
-const chunk = <T>(xs: T[], size: number): T[][] =>
-  Array.from({ length: Math.ceil(xs.length / size) }, (_, i) => xs.slice(i * size, (i + 1) * size));
-
 async function fetchGuidanceUpgradeRows(): Promise<GuidanceUpgradeData> {
   const companies = await readCompanies();
-  const codes = [...companies.keys()];
-  const supabase = createPublicReadClient();
-  const snapshotBatches = await Promise.all(
-    chunk(codes, BATCH).map(async (batch) => {
-      const { data, error } = await supabase
-        .from("guidance_snapshot")
-        .select(SNAPSHOT_COLUMNS)
-        .in("company_code", batch)
-        .order("generated_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as SnapshotRow[];
-    }),
-  );
-
-  const latestSnapshot = new Map<string, SnapshotRow>();
-  for (const row of snapshotBatches.flat()) {
-    const code = upper(row.company_code);
-    const seen = latestSnapshot.get(code);
-    if (code && (!seen || String(row.generated_at ?? "") > String(seen.generated_at ?? ""))) {
-      latestSnapshot.set(code, row);
-    }
-  }
-
-  const legacyCodes = codes.filter((code) => !latestSnapshot.has(code));
-  const legacyRows = new Map<string, GuidanceTrackingRow[]>();
-  const trackingBatches = await Promise.all(
-    chunk(legacyCodes, BATCH).map(async (batch) => {
-      const { data, error } = await supabase
-        .from("guidance_tracking")
-        .select(TRACKING_COLUMNS)
-        .in("company_code", batch)
-        .order("generated_at", { ascending: false })
-        .order("id", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as GuidanceTrackingRow[];
-    }),
-  );
-  for (const row of trackingBatches.flat()) {
-    const code = upper(row.company_code);
-    if (!code) continue;
-    const bucket = legacyRows.get(code);
-    if (bucket) bucket.push(row);
-    else legacyRows.set(code, [row]);
-  }
-
+  const guidance = await readFleetGuidance([...companies.keys()]);
   const current = currentReportingQuarter();
   const rows: GuidanceUpgradeRow[] = [];
   const readable: ScanCompany[] = [];
   for (const [code, company] of companies) {
-    const snapshot = latestSnapshot.get(code);
-    const items = snapshot
-      ? (normalizeGuidanceSnapshot(snapshot)?.guidanceItems ?? [])
-      : normalizeGuidanceTrackingRows(legacyRows.get(code) ?? []);
-    if (items.length === 0) continue;
+    const record = guidance.get(code);
+    if (!record) continue;
     readable.push(company);
-    const row = buildGuidanceUpgradeRow(company, items, current, snapshot?.credibility_verdict);
+    const row = buildGuidanceUpgradeRow(company, record.items, current, record.credibility);
     if (row) rows.push(row);
   }
   return { rows, readable };

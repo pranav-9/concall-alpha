@@ -137,6 +137,23 @@ export const isImprover = (e: TrackerEntry): boolean => {
   return d != null && d >= SCORE_DELTA_EPSILON;
 };
 
+/**
+ * The board's one filter at a time (`?filter=`): score rose on the prior
+ * quarter, or management raised / lowered a live commitment on this quarter's
+ * call (the Guidance column). Exclusive, so a view stays one shareable URL.
+ */
+export type BoardFilter = "improvers" | "raised" | "lowered";
+
+export const parseFilter = (raw: string | undefined): BoardFilter | null =>
+  raw === "improvers" || raw === "raised" || raw === "lowered" ? raw : null;
+
+/** `?sector=` matched against the sectors on the board, case-insensitively; unknown → no filter. */
+export const parseSector = (raw: string | undefined, sectors: readonly string[]): string | null => {
+  const want = raw?.trim().toLowerCase();
+  if (!want) return null;
+  return sectors.find((s) => s.toLowerCase() === want) ?? null;
+};
+
 export type SortKey = "score" | "delta" | "scored";
 export type SortDir = "asc" | "desc";
 
@@ -323,11 +340,22 @@ export function buildSeasonChart(
 // The upcoming panel
 // ---------------------------------------------------------------------------
 
+/** The upcoming list reads one week ahead: today and the six days after. */
+export const UPCOMING_DAYS = 7;
+
+/** Not-yet-scored companies whose call falls inside the upcoming week. */
+export const callsThisWeek = (entries: TrackerEntry[], today: ISODate, days = UPCOMING_DAYS): number => {
+  const last = addDays(today, days - 1);
+  return entries.filter((e) => e.score == null && e.callDate && e.callDate >= today && e.callDate <= last).length;
+};
+
 export type UpcomingGroups = {
   /** Call held, no score yet — call-date order, oldest first. */
   pending: TrackerEntry[];
-  /** Call today or ahead, grouped by call day in date order, earliest time first. */
+  /** Call today or inside the upcoming week, grouped by call day in date order, earliest time first. */
   ahead: Array<{ date: ISODate; entries: TrackerEntry[] }>;
+  /** Call dated past the upcoming week — call-date order. */
+  later: TrackerEntry[];
   /** Results date on file but no call yet — results-date order. */
   noCall: TrackerEntry[];
   /** Not yet reported, no date of either kind on file. */
@@ -339,7 +367,12 @@ export type UpcomingGroups = {
  * after the call, so the call day is what a reader waits on. The board meeting
  * matters only as a fallback when no invite has been filed yet.
  */
-export function groupUpcoming(entries: TrackerEntry[], today: ISODate): UpcomingGroups {
+export function groupUpcoming(
+  entries: TrackerEntry[],
+  today: ISODate,
+  days: number = UPCOMING_DAYS,
+): UpcomingGroups {
+  const last = addDays(today, days - 1);
   const byName = (a: TrackerEntry, b: TrackerEntry) => a.name.localeCompare(b.name);
   // An invite without a time sorts after the timed calls on its day.
   const byTime = (a: TrackerEntry, b: TrackerEntry) =>
@@ -350,7 +383,7 @@ export function groupUpcoming(entries: TrackerEntry[], today: ISODate): Upcoming
     .sort((a, b) => a.callDate!.localeCompare(b.callDate!) || byTime(a, b) || byName(a, b));
   const groups = new Map<ISODate, TrackerEntry[]>();
   for (const e of called) {
-    if (e.callDate! < today) continue;
+    if (e.callDate! < today || e.callDate! > last) continue;
     const list = groups.get(e.callDate!);
     if (list) list.push(e);
     else groups.set(e.callDate!, [e]);
@@ -358,6 +391,7 @@ export function groupUpcoming(entries: TrackerEntry[], today: ISODate): Upcoming
   return {
     pending: called.filter((e) => e.callDate! < today),
     ahead: [...groups.entries()].map(([date, list]) => ({ date, entries: list })),
+    later: called.filter((e) => e.callDate! > last),
     noCall: upcoming
       .filter((e) => !e.callDate && e.resultsDate)
       .sort((a, b) => a.resultsDate!.localeCompare(b.resultsDate!) || byName(a, b)),

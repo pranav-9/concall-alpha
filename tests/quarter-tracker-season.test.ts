@@ -2,6 +2,7 @@ import type { TrackerEntry } from "../app/quarter-tracker/data";
 import {
   buildSeasonChart,
   callLabel,
+  callsThisWeek,
   callTimeLabel,
   formatDay,
   formatTick,
@@ -10,6 +11,8 @@ import {
   isImprover,
   istDateOf,
   latestCallsLabel,
+  parseFilter,
+  parseSector,
   quarterEnd,
   relativeDay,
   seasonWindow,
@@ -165,6 +168,9 @@ const groups = groupUpcoming(
     entry({ code: "TODAY", resultsDate: "2026-10-29", callDate: "2026-10-29", callTime: "11:00" }),
     entry({ code: "NOTIME", resultsDate: "2026-10-29", callDate: "2026-10-29" }),
     entry({ code: "SET", resultsDate: "2026-10-30", callDate: "2026-11-02", callTime: "16:00" }),
+    // Today + 6 is the week's last day; a day later folds into "later".
+    entry({ code: "WEEKEND", resultsDate: "2026-11-04", callDate: "2026-11-04" }),
+    entry({ code: "NEXTWEEK", resultsDate: "2026-11-05", callDate: "2026-11-05" }),
     // Results out, no invite: not on the call calendar, listed by results date.
     entry({ code: "NOCALL2", resultsDate: "2026-11-20" }),
     entry({ code: "NOCALL1", resultsDate: "2026-10-27" }),
@@ -173,7 +179,11 @@ const groups = groupUpcoming(
   today,
 );
 assert(groups.pending.map((e) => e.code).join() === "HELD", "pending = call held, no score");
-assert(groups.ahead.map((g) => g.date).join() === "2026-10-29,2026-11-02", "ahead grouped by call day in order");
+assert(
+  groups.ahead.map((g) => g.date).join() === "2026-10-29,2026-11-02,2026-11-04",
+  "ahead grouped by call day in order, through today + 6",
+);
+assert(groups.later.map((e) => e.code).join() === "NEXTWEEK", "a call past the week folds into later");
 assert(
   groups.ahead[0].entries.map((e) => e.code).join() === "TODAY,LATECALL,NOTIME",
   `a day's calls run earliest first, untimed last: ${groups.ahead[0].entries.map((e) => e.code).join()}`,
@@ -181,6 +191,19 @@ assert(
 assert(groups.noCall.map((e) => e.code).join() === "NOCALL1,NOCALL2", "no call on file → by results date");
 assert(groups.undated.map((e) => e.code).join() === "TBA", "nothing on file → undated");
 assert(callTimeLabel(entry({ code: "T", callDate: "2026-10-29", callTime: "17:00" })).text === "5:00 PM", "call cell is the time");
+assert(
+  callsThisWeek(
+    [
+      entry({ code: "W1", callDate: "2026-10-29" }),
+      entry({ code: "W2", callDate: "2026-11-04" }),
+      entry({ code: "OUT", callDate: "2026-11-05" }),
+      entry({ code: "PAST", callDate: "2026-10-28" }),
+      entry({ code: "DONE", score: 7, callDate: "2026-10-30" }),
+    ],
+    today,
+  ) === 2,
+  "this week = unscored calls from today through today + 6",
+);
 assert(callTimeLabel(entry({ code: "N", callDate: "2026-10-29" })).muted, "untimed call is muted");
 
 const set = chartEntries.find((e) => e.code === "SET")!;
@@ -191,10 +214,18 @@ assert(callLabel(entry({ code: "C" })).muted && callLabel(entry({ code: "C" })).
 
 // --- hrefs -------------------------------------------------------------------
 
-assert(trackerHref({ sort: "score", dir: "desc", improvers: false, mine: false }) === "/quarter-tracker", "defaults carry no query");
 assert(
-  trackerHref({ sort: "delta", dir: "asc", improvers: true, mine: true }) === "/quarter-tracker?sort=delta&dir=asc&filter=improvers&mine=1",
+  trackerHref({ sort: "score", dir: "desc", filter: null, sector: null, mine: false }) === "/quarter-tracker",
+  "defaults carry no query",
+);
+assert(
+  trackerHref({ sort: "delta", dir: "asc", filter: "improvers", sector: "Capital Goods", mine: true }) ===
+    "/quarter-tracker?sort=delta&dir=asc&filter=improvers&sector=Capital+Goods&mine=1",
   "every non-default is a parameter",
 );
+assert(parseFilter("raised") === "raised" && parseFilter("lowered") === "lowered", "guidance filters parse");
+assert(parseFilter("decliners") === null && parseFilter(undefined) === null, "unknown filter → none");
+assert(parseSector("chemicals", ["Capital Goods", "Chemicals"]) === "Chemicals", "sector matches case-insensitively");
+assert(parseSector("Steel", ["Chemicals"]) === null && parseSector("", ["Chemicals"]) === null, "unknown sector → none");
 
 console.log("\nAll quarter-tracker season tests passed.");

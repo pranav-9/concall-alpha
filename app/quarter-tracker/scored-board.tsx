@@ -1,25 +1,38 @@
 // Every company scored this quarter, as a sortable table: score + band, Δ on
-// the prior quarter, a 7-quarter sparkline, where the transcript came from and
-// when the score landed. Column heads are links (`?sort=`), so the order is a
-// URL and the table needs no client JS. The latest call day's rows are pinned
-// in their own block above the rest; the sort applies inside each block. Below
-// `md` the trailing three columns fold into a meta line under the company name.
+// the prior quarter, a 7-quarter sparkline, the guidance management raised or
+// lowered on the call, the deep-tracked key variables year on year, and when
+// the score landed (marked when it came off a third-party transcript). Column
+// heads are links (`?sort=`), so the order is a URL and the table needs no
+// client JS. The latest call day's rows are pinned in their own block above
+// the rest; the sort applies inside each block. Below `lg` the Guidance and Key
+// variables columns fold under the company name; below `md` the sparkline and
+// Scored columns fold into a meta line too.
 
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { MobileTag } from "@/components/mobile-card";
+import { CompanyMark } from "@/components/company-logo";
 import { BANDS, bandForScore } from "@/lib/score-band";
 import { formatScoredAt } from "@/lib/score-freshness";
+import type { ThesisEffect } from "@/lib/key-variables-snapshot/types";
 import { cn } from "@/lib/utils";
 
 import type { TrackerEntry } from "./data";
 import { formatAgo, scoreDelta, type SortDir, type SortKey } from "./season";
+import { EMPTY_SIGNALS, type GuidanceMove, type KeyVariableYoy, type QuarterGuidance, type QuarterSignals } from "./signals";
 
 const HEAD =
   "house-data px-3 py-2.5 text-left text-[10px] font-normal uppercase tracking-[0.14em] text-[var(--ink-soft)] md:px-4";
 const CELL = "px-3 py-3 align-top md:px-4";
 const RULES = "divide-x divide-[var(--rule)]";
+const COLUMNS = 7;
+
+const EFFECT_TONE: Record<ThesisEffect, string> = {
+  helps: "text-[var(--signal)]",
+  hurts: "text-[var(--alarm)]",
+  caution: "text-[var(--warn)]",
+  neutral: "text-[var(--ink-soft)]",
+};
 
 function SortHead({
   active,
@@ -69,8 +82,8 @@ function Sparkline({ entry }: { entry: TrackerEntry }) {
   const step = (w - pad * 2) / (points.length - 1);
   const coords = points.map((v, i) => [pad + i * step, h - pad - ((v - min) / range) * (h - pad * 2)] as const);
   const d = coords.map((c, i) => `${i ? "L" : "M"}${c[0].toFixed(1)} ${c[1].toFixed(1)}`).join(" ");
-  const dir = points[points.length - 1] - points[0];
-  const stroke = dir > 0.05 ? "var(--signal)" : dir < -0.05 ? "var(--alarm)" : "var(--ink-soft)";
+  const last = points[points.length - 1] - points[points.length - 2];
+  const dot = last > 0.05 ? "var(--signal)" : last < -0.05 ? "var(--alarm)" : "var(--ink-soft)";
   const [lx, ly] = coords[coords.length - 1];
   return (
     <svg
@@ -81,8 +94,8 @@ function Sparkline({ entry }: { entry: TrackerEntry }) {
       aria-label={`${entry.name}: score over the last ${points.length} quarters`}
       className="overflow-visible"
     >
-      <path d={d} fill="none" stroke={stroke} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={lx} cy={ly} r={1.9} fill={stroke} />
+      <path d={d} fill="none" stroke="var(--ink)" strokeOpacity={0.7} strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={lx} cy={ly} r={2} fill={dot} />
     </svg>
   );
 }
@@ -108,44 +121,139 @@ function Delta({ entry }: { entry: TrackerEntry }) {
 const UNOFFICIAL_TITLE =
   "Scored from a third-party transcript, published before the company filed its own. It will be re-scored when the official transcript lands.";
 
-function Source({ entry, className }: { entry: TrackerEntry; className?: string }) {
-  if (entry.sourceStatus === "unofficial") {
-    return (
-      <span className={cn("text-[var(--warn)]", className)} title={UNOFFICIAL_TITLE}>
-        Unofficial
-      </span>
-    );
-  }
-  return <span className={cn("text-[var(--ink-soft)]", className)}>Official</span>;
+function UnofficialTag() {
+  return (
+    <span className="house-data whitespace-nowrap text-[9.5px] uppercase tracking-[0.1em] text-[var(--warn)]" title={UNOFFICIAL_TITLE}>
+      Unofficial
+    </span>
+  );
 }
 
-function Row({ entry, now }: { entry: TrackerEntry; now: Date }) {
+// ---------------------------------------------------------------------------
+// Reading columns
+// ---------------------------------------------------------------------------
+
+function Move({ move, count, quarter }: { move: GuidanceMove; count: number; quarter: string }) {
+  const raised = move.direction === "raised";
+  const word = raised ? "Raised" : "Lowered";
+  const more = count - 1;
+  return (
+    <div title={`${word} on the ${quarter} call: ${move.label}, ${move.from} → ${move.to}${more > 0 ? ` (and ${more} more)` : ""}`}>
+      <span className={cn("text-[12px] font-semibold leading-tight", raised ? "text-[var(--signal)]" : "text-[var(--alarm)]")}>
+        {word}
+        {more > 0 ? <span className="ml-1.5 text-[10.5px] font-normal text-[var(--ink-soft)]">+{more} more</span> : null}
+      </span>
+      <span className="house-data mt-0.5 line-clamp-2 text-[10.5px] leading-snug text-[var(--ink-soft)]">
+        {move.label} {move.from} → {move.to}
+      </span>
+    </div>
+  );
+}
+
+function GuidanceCell({ guidance, quarter }: { guidance: QuarterGuidance | null; quarter: string }) {
+  if (!guidance || (!guidance.raised && !guidance.lowered)) return null;
+  return (
+    <div className="space-y-1.5">
+      {guidance.raised ? <Move move={guidance.raised} count={guidance.raisedCount} quarter={quarter} /> : null}
+      {guidance.lowered ? <Move move={guidance.lowered} count={guidance.loweredCount} quarter={quarter} /> : null}
+    </div>
+  );
+}
+
+function KeyVariablesCell({ readings }: { readings: KeyVariableYoy[] }) {
+  if (readings.length === 0) return null;
+  return (
+    <ul className="space-y-1">
+      {readings.map((r) => (
+        // One line when it fits; otherwise the numbers wrap under the name
+        // rather than cutting the name down to a stub.
+        <li
+          key={`${r.variable}:${r.name}`}
+          className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-[11.5px] leading-snug"
+          title={`${r.variable} — ${r.name}: ${r.from} → ${r.to}, against the same quarter last year`}
+        >
+          <span className="max-w-full truncate text-[var(--ink)]">{r.name}</span>
+          <span className="house-data whitespace-nowrap text-[10.5px] text-[var(--ink-soft)]">
+            {r.from} → {r.to}
+            {r.change ? (
+              <span className={cn("ml-1.5 font-semibold", EFFECT_TONE[r.effect])}>{r.change}</span>
+            ) : null}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Rows
+// ---------------------------------------------------------------------------
+
+function Row({
+  entry,
+  signals,
+  quarter,
+  now,
+}: {
+  entry: TrackerEntry;
+  signals: QuarterSignals;
+  quarter: string;
+  now: Date;
+}) {
   const score = entry.score!;
   const band = BANDS[bandForScore(score)];
   const ago = formatAgo(entry.scoredAt, now);
   const scoredTitle = formatScoredAt(entry.scoredAt) ?? undefined;
+  const unofficial = entry.sourceStatus === "unofficial";
+  const hasReading = Boolean(signals.guidance) || signals.keyVariables.length > 0;
   return (
     <tr className={cn(RULES, "border-t border-[var(--rule)] transition-colors hover:bg-[var(--paper)]")}>
       <td className={CELL}>
         <Link
           href={`/company/${encodeURIComponent(entry.code)}#sentiment-score`}
           prefetch={false}
-          className="group block min-w-0"
+          className="group flex min-w-0 items-start gap-3 md:min-w-[14rem]"
         >
-          <span className="house-display block text-[14px] leading-tight text-[var(--ink)] transition-colors group-hover:text-[var(--signal)]">
-            {entry.name}
-          </span>
-          <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[11px] leading-tight text-[var(--ink-soft)]">
-            <span className="house-data text-[10px]">{entry.code}</span>
-            {entry.sector ? <span>{entry.sector}</span> : null}
-          </span>
-          <span className="house-data mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-[var(--ink-soft)] md:hidden">
-            <Source entry={entry} />
-            <span aria-hidden>·</span>
-            <span className="whitespace-nowrap" title={scoredTitle}>
-              {ago}
+          <CompanyMark
+            code={entry.code}
+            name={entry.name}
+            className="mt-0.5 h-8 w-8 rounded-[6px]"
+            initialsClassName="house-data bg-[var(--paper)] text-[10px] text-[var(--ink-soft)]"
+          />
+          <span className="min-w-0 flex-1">
+            <span className="flex flex-wrap items-baseline gap-x-1.5">
+              <span className="house-display text-[14px] leading-tight text-[var(--ink)] transition-colors group-hover:text-[var(--signal)]">
+                {entry.name}
+              </span>
+              {entry.scoredWithin24h ? (
+                <span className="house-data text-[8.5px] font-semibold uppercase tracking-[0.12em] text-[var(--signal)]" title="Scored in the last 24 hours">
+                  New
+                </span>
+              ) : null}
             </span>
-            {entry.scoredWithin24h ? <MobileTag tone="signal">new</MobileTag> : null}
+            <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[11px] leading-tight text-[var(--ink-soft)]">
+              <span className="house-data text-[10px]">{entry.code}</span>
+              {entry.sector ? <span>{entry.sector}</span> : null}
+            </span>
+            <span className="house-data mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-[var(--ink-soft)] md:hidden">
+              <span className="whitespace-nowrap" title={scoredTitle}>
+                {ago}
+              </span>
+              {unofficial ? (
+                <>
+                  <span aria-hidden>·</span>
+                  <UnofficialTag />
+                </>
+              ) : null}
+            </span>
+            {hasReading ? (
+              // w-0 + min-w-full: the folded readings take the cell's width but
+              // never widen it — a long metric name would push Score off a phone.
+              <span className="mt-2 block w-0 min-w-full space-y-2 lg:hidden">
+                <GuidanceCell guidance={signals.guidance} quarter={quarter} />
+                <KeyVariablesCell readings={signals.keyVariables} />
+              </span>
+            ) : null}
           </span>
         </Link>
       </td>
@@ -153,7 +261,7 @@ function Row({ entry, now }: { entry: TrackerEntry; now: Date }) {
         <span className={cn("block text-[16px] font-semibold leading-none tabular-nums", band.textClass)}>
           {score.toFixed(1)}
         </span>
-        <span className={cn("mt-1 block text-[10.5px] leading-tight", band.textClass)}>{band.label}</span>
+        <span className={cn("mt-1 block text-[10.5px] leading-tight md:whitespace-nowrap", band.textClass)}>{band.label}</span>
       </td>
       <td className={CELL}>
         <Delta entry={entry} />
@@ -161,32 +269,38 @@ function Row({ entry, now }: { entry: TrackerEntry; now: Date }) {
       <td className={cn(CELL, "hidden md:table-cell")}>
         <Sparkline entry={entry} />
       </td>
-      <td className={cn(CELL, "hidden md:table-cell")}>
-        <Source entry={entry} className="text-[12px]" />
+      {/* Fixed content widths hold these two columns: an auto-layout table
+          would otherwise hand them their one-line width and squeeze Company. */}
+      <td className={cn(CELL, "hidden lg:table-cell")}>
+        <div className="w-[10rem] xl:w-[11.5rem]">
+          <GuidanceCell guidance={signals.guidance} quarter={quarter} />
+        </div>
+      </td>
+      <td className={cn(CELL, "hidden lg:table-cell")}>
+        <div className="w-[14rem] xl:w-[16.5rem]">
+          <KeyVariablesCell readings={signals.keyVariables} />
+        </div>
       </td>
       <td className={cn(CELL, "hidden md:table-cell")}>
-        <span className="flex flex-wrap items-center gap-1.5">
+        <span className="flex flex-col items-start gap-1">
           <span className="house-data whitespace-nowrap text-[11px] tabular-nums text-[var(--ink-soft)]" title={scoredTitle}>
             {ago}
           </span>
-          {entry.scoredWithin24h ? <MobileTag tone="signal" title="Scored in the last 24 hours">new</MobileTag> : null}
+          {unofficial ? <UnofficialTag /> : null}
         </span>
       </td>
     </tr>
   );
 }
 
-/** A block's caption row inside the table: "Today's calls · 4". */
-function GroupHead({ label, count, lead }: { label: string; count: number; lead: boolean }) {
+/** A block's caption row inside the table: "Yesterday's calls · 4". */
+function GroupHead({ label, count }: { label: string; count: number }) {
   return (
     <tr className="border-t border-[var(--rule)] bg-[var(--paper)]">
       <th
         scope="rowgroup"
-        colSpan={6}
-        className={cn(
-          "house-data px-3 py-1.5 text-left text-[10px] font-normal uppercase tracking-[0.14em] md:px-4",
-          lead ? "text-[var(--ink)]" : "text-[var(--ink-soft)]",
-        )}
+        colSpan={COLUMNS}
+        className="house-data px-3 py-2 text-left text-[10px] font-normal uppercase tracking-[0.14em] text-[var(--ink)] md:px-4"
       >
         {label} <span className="tabular-nums text-[var(--ink-soft)]">· {count}</span>
       </th>
@@ -197,11 +311,12 @@ function GroupHead({ label, count, lead }: { label: string; count: number; lead:
 export function ScoredBoard({
   pinned,
   rows,
+  signals,
   scoreLabel,
   sort,
   dir,
   sortHref,
-  chips,
+  filters,
   now,
   emptyMessage,
 }: {
@@ -209,75 +324,88 @@ export function ScoredBoard({
   pinned: { label: string; rows: TrackerEntry[] } | null;
   /** Every other scored row (all of them when nothing is pinned). */
   rows: TrackerEntry[];
+  /** Upper-cased code → the row's guidance and key-variable readings. */
+  signals: ReadonlyMap<string, QuarterSignals>;
   scoreLabel: string;
   sort: SortKey;
   dir: SortDir;
   sortHref: (key: SortKey) => string;
-  chips: ReactNode;
+  /** The sector select and the filter chips, right of the heading. */
+  filters: ReactNode;
   now: Date;
   emptyMessage: string;
 }) {
   const total = (pinned?.rows.length ?? 0) + rows.length;
+  const row = (entry: TrackerEntry) => (
+    <Row
+      key={entry.code}
+      entry={entry}
+      signals={signals.get(entry.code.toUpperCase()) ?? EMPTY_SIGNALS}
+      quarter={scoreLabel}
+      now={now}
+    />
+  );
   return (
     <section
       aria-labelledby="scored-board-heading"
       className="overflow-hidden rounded-xl border border-[var(--rule)] bg-[var(--paper-2)]"
     >
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-[var(--rule)] px-4 py-2.5">
-        <div className="flex flex-wrap items-center gap-2">{chips}</div>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 border-b border-[var(--rule)] px-3 py-2.5 md:px-4">
         <h2
           id="scored-board-heading"
-          className="house-data text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]"
+          className="house-data flex items-baseline gap-2.5 text-[10px] uppercase tracking-[0.16em] text-[var(--ink)]"
         >
-          {total} scored
+          Scored this quarter
+          <span className="tabular-nums text-[var(--ink-soft)]">{total}</span>
         </h2>
+        {/* One sideways-scrolling row on a phone; wraps from sm. */}
+        <div className="-mx-3 flex w-[calc(100%+1.5rem)] items-center gap-1.5 overflow-x-auto px-3 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+          {filters}
+        </div>
       </div>
 
       {total === 0 ? (
         <p className="px-4 py-10 text-center text-[13px] leading-[1.5] text-[var(--ink-soft)]">{emptyMessage}</p>
       ) : (
+        // Auto layout on purpose: a fixed table takes its column count from the
+        // group heads' colSpan, so the columns hidden below lg/md would become
+        // empty phantom columns squeezing Company.
         <table className="w-full border-collapse">
           <thead>
             <tr className={RULES}>
-              <th scope="col" className={HEAD}>
+              <th scope="col" className={cn(HEAD, "w-auto")}>
                 Company
               </th>
-              <SortHead active={sort === "score"} dir={dir} href={sortHref("score")} className="w-[6rem] md:w-[7.5rem]">
+              <SortHead active={sort === "score"} dir={dir} href={sortHref("score")} className="w-[5.25rem] md:w-[8.25rem]">
                 {scoreLabel}
               </SortHead>
-              <SortHead active={sort === "delta"} dir={dir} href={sortHref("delta")} className="w-[3.75rem] md:w-[4.75rem]">
+              <SortHead active={sort === "delta"} dir={dir} href={sortHref("delta")} className="w-[3.5rem] md:w-[4.75rem]">
                 Δ QoQ
               </SortHead>
-              <th scope="col" className={cn(HEAD, "hidden w-[6rem] md:table-cell")}>
+              <th scope="col" className={cn(HEAD, "hidden w-[5.75rem] md:table-cell")}>
                 7 qtrs
               </th>
-              <th scope="col" className={cn(HEAD, "hidden w-[5.75rem] md:table-cell")}>
-                Source
+              <th scope="col" className={cn(HEAD, "hidden w-[12rem] lg:table-cell xl:w-[13.5rem]")}>
+                Guidance
               </th>
-              <SortHead
-                active={sort === "scored"}
-                dir={dir}
-                href={sortHref("scored")}
-                className="hidden w-[6.5rem] md:table-cell"
-              >
+              <th scope="col" className={cn(HEAD, "hidden w-[16rem] lg:table-cell xl:w-[18rem]")}>
+                Key variables · YoY
+              </th>
+              <SortHead active={sort === "scored"} dir={dir} href={sortHref("scored")} className="hidden w-[5.75rem] md:table-cell">
                 Scored
               </SortHead>
             </tr>
           </thead>
           {pinned ? (
             <tbody>
-              <GroupHead label={pinned.label} count={pinned.rows.length} lead />
-              {pinned.rows.map((entry) => (
-                <Row key={entry.code} entry={entry} now={now} />
-              ))}
+              <GroupHead label={pinned.label} count={pinned.rows.length} />
+              {pinned.rows.map(row)}
             </tbody>
           ) : null}
           {rows.length > 0 ? (
             <tbody>
-              {pinned ? <GroupHead label="Earlier" count={rows.length} lead={false} /> : null}
-              {rows.map((entry) => (
-                <Row key={entry.code} entry={entry} now={now} />
-              ))}
+              {pinned ? <GroupHead label="Earlier" count={rows.length} /> : null}
+              {rows.map(row)}
             </tbody>
           ) : null}
         </table>

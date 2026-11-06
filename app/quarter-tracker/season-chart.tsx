@@ -1,4 +1,5 @@
-// The season at a glance: one square per covered company, stacked on the day
+// The season at a glance (inside the header's Upcoming calls dialog, framed
+// there): one square per covered company, stacked on the day
 // its board meets to approve the quarter's results. Filled squares are scored
 // (band colour, hatched when the score came off a third-party transcript),
 // outlined ones are still waiting — bold ink once the board has met, a hairline
@@ -144,7 +145,7 @@ function Legend() {
   );
 }
 
-export function SeasonChartCard({
+export function SeasonChartPanel({
   chart,
   freshCompanies,
   unofficialCompanies,
@@ -159,10 +160,7 @@ export function SeasonChartCard({
   const undated = chart.undated.length;
 
   return (
-    <section
-      aria-labelledby="season-chart-heading"
-      className="overflow-hidden rounded-xl border border-[var(--rule)] bg-[var(--paper-2)]"
-    >
+    <section aria-labelledby="season-chart-heading">
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-[var(--rule)] px-4 py-3">
         <h2
           id="season-chart-heading"

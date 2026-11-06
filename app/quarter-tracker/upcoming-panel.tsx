@@ -1,8 +1,10 @@
-// Whose call is next: the not-yet-scored companies grouped by earnings-call day,
-// read off each company's own invite filing. A score lands only after the call,
-// so this is a concall calendar, not a results calendar. Call held but no score
-// yet sits on top (the transcript is usually the wait); companies with no call
-// on file fold away at the bottom, with their results date where one is set.
+// Whose call is next (inside the header's Upcoming calls dialog, under the
+// season chart): the not-yet-scored companies grouped by earnings-call day over
+// the next seven days, read off each company's own invite filing. A score lands
+// only after the call, so this is a concall calendar, not a results calendar.
+// Call held but no score yet sits on top (the transcript is usually the wait);
+// calls dated past the week and companies with no call on file fold away at
+// the bottom, the latter with their results date where one is set.
 
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -92,18 +94,16 @@ export function UpcomingPanel({
   /** The watchlist filter is on — the empty state must say so. */
   scoped: boolean;
 }) {
-  const { pending, ahead, noCall, undated } = groups;
+  const { pending, ahead, later, noCall, undated } = groups;
   const nothingCalled = pending.length === 0 && ahead.length === 0;
   const notAnnounced = noCall.length + undated.length;
 
   return (
-    <section
-      aria-labelledby="upcoming-heading"
-      className="overflow-hidden rounded-xl border border-[var(--rule)] bg-[var(--paper-2)]"
-    >
+    <section aria-labelledby="upcoming-heading">
       <div className="flex items-center justify-between gap-3 border-b border-[var(--rule)] px-4 py-2.5">
-        <h2 id="upcoming-heading" className="house-data text-[10px] uppercase tracking-[0.16em] text-[var(--ink-soft)]">
-          Upcoming concalls
+        <h2 id="upcoming-heading" className="house-data flex items-baseline gap-3 text-[10px] uppercase tracking-[0.16em]">
+          <span className="font-semibold text-[var(--ink)]">Upcoming calls</span>
+          <span className="text-[var(--ink-soft)]">Next 7 days</span>
         </h2>
         {chip}
       </div>
@@ -132,13 +132,33 @@ export function UpcomingPanel({
       {nothingCalled ? (
         <p className="px-4 py-8 text-center text-[13px] leading-[1.5] text-[var(--ink-soft)]">
           {scoped
-            ? notAnnounced > 0
-              ? "None of your watchlist companies has a call date yet."
+            ? notAnnounced + later.length > 0
+              ? "None of your watchlist companies has a call dated this week."
               : "Every company on your watchlists has reported."
-            : notAnnounced > 0
-              ? "No call dates on file yet. Companies file the call invite a few days ahead, so most appear the week before."
+            : notAnnounced + later.length > 0
+              ? "No calls dated this week."
               : "Every covered company has reported."}
         </p>
+      ) : null}
+
+      {later.length > 0 ? (
+        <details className="group/later border-t border-[var(--rule)]">
+          <summary className="house-data flex cursor-pointer list-none items-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-[0.14em] text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] [&::-webkit-details-marker]:hidden">
+            <span aria-hidden className="inline-block transition-transform group-open/later:rotate-90">
+              ›
+            </span>
+            Later calls
+            <span className="tabular-nums opacity-70">{later.length}</span>
+          </summary>
+          <Rows
+            entries={later}
+            right={(entry) => (
+              <span className="house-data shrink-0 whitespace-nowrap text-[11px] text-[var(--ink-soft)]">
+                {formatDay(entry.callDate!)}
+              </span>
+            )}
+          />
+        </details>
       ) : null}
 
       {notAnnounced > 0 ? (
