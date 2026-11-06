@@ -493,8 +493,8 @@ const compareTrailItemsAscending = (
   a: NormalizedGuidanceTrailItem,
   b: NormalizedGuidanceTrailItem,
 ) => {
-  // PR3 dropped positionInStory; sort by quarter, then by summary/excerpt
-  // tiebreaker. Array index becomes the canonical position downstream.
+  // PR3 dropped positionInStory; sort by quarter only. Array index becomes the
+  // canonical position downstream.
   if (a.quarter && b.quarter) {
     const quarterCompare = comparePeriodsAscending(a.quarter, b.quarter);
     if (quarterCompare !== 0) return quarterCompare;
@@ -504,7 +504,16 @@ const compareTrailItemsAscending = (
     return 1;
   }
 
-  return (a.summary ?? a.excerpt ?? "").localeCompare(b.summary ?? b.excerpt ?? "");
+  // Same quarter: keep the producer's order (Array.prototype.sort is stable).
+  // The deep-track writes a quarter's steps in the order they were said — the
+  // morning deck before the afternoon call — and the value trail reads its
+  // direction off the LAST step. The old summary/excerpt alphabetical
+  // tiebreak reordered them arbitrarily: VOEPL's Q2 FY27 deck reprinted
+  // "35-40%" while the call that afternoon cut it to "30-35%", and sorting
+  // "MD: 30-35%…" before the deck's summary printed the cut as "Raised
+  // 30-35% → 35-40%" on the quarter tracker (2026-11-06; 16 items across 14
+  // companies had a same-quarter pair whose order the tiebreak reversed).
+  return 0;
 };
 
 const buildTrailFromSourceMentions = (
