@@ -1,13 +1,13 @@
-// Every company scored this quarter, as a sortable table: score + band, Δ on
-// the prior quarter, a 7-quarter sparkline, the guidance management raised or
-// lowered on the call, the deep-tracked key variables year on year, and when
-// the score landed (marked when it came off a third-party transcript). Column
-// heads are links (`?sort=`), so the order is a URL and the table needs no
-// client JS. The latest call day's rows are pinned in their own block above
-// the rest; the sort applies inside each block. Below `xl` the Guidance and Key
-// variables columns fold under the company name (at `lg` the seven columns
-// overflow the card and clip Scored); below `md` the sparkline and Scored
-// columns fold into a meta line too.
+// Every company scored this quarter, as a sortable table: the company (the
+// widest column — no Δ or score-trail columns, user call 2026-11-06), score +
+// band, the guidance management raised or lowered on the call, the
+// deep-tracked key variables year on year, and when the score landed (marked
+// when it came off a third-party transcript). Column heads are links
+// (`?sort=`), so the order is a URL and the table needs no client JS. The
+// latest call day's rows are pinned in their own block above the rest; the
+// sort applies inside each block. Below `xl` the Guidance and Key variables
+// columns fold under the company name (at `lg` they overflow the card); below
+// `md` the Scored column folds into a meta line too.
 
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -19,14 +19,14 @@ import type { ThesisEffect } from "@/lib/key-variables-snapshot/types";
 import { cn } from "@/lib/utils";
 
 import type { TrackerEntry } from "./data";
-import { formatAgo, scoreDelta, type SortDir, type SortKey } from "./season";
+import { formatAgo, type SortDir, type SortKey } from "./season";
 import { EMPTY_SIGNALS, type GuidanceMove, type KeyVariableYoy, type QuarterGuidance, type QuarterSignals } from "./signals";
 
 const HEAD =
   "house-data px-3 py-2.5 text-left text-[10px] font-normal uppercase tracking-[0.14em] text-[var(--ink-soft)] md:px-4";
 const CELL = "px-3 py-3 align-top md:px-4";
 const RULES = "divide-x divide-[var(--rule)]";
-const COLUMNS = 7;
+const COLUMNS = 5;
 
 const EFFECT_TONE: Record<ThesisEffect, string> = {
   helps: "text-[var(--signal)]",
@@ -65,57 +65,6 @@ function SortHead({
         </span>
       </Link>
     </th>
-  );
-}
-
-/** Tiny score-history sparkline: a neutral ink line, its end dot teal / red / muted by the last quarter's move. */
-function Sparkline({ entry }: { entry: TrackerEntry }) {
-  const points = entry.scorePath.map((p) => p.value).filter((v): v is number => v != null);
-  if (points.length < 2) {
-    return <span className="house-data text-xs text-[var(--ink-soft)]">—</span>;
-  }
-  const w = 64;
-  const h = 20;
-  const pad = 2;
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const range = max - min || 1;
-  const step = (w - pad * 2) / (points.length - 1);
-  const coords = points.map((v, i) => [pad + i * step, h - pad - ((v - min) / range) * (h - pad * 2)] as const);
-  const d = coords.map((c, i) => `${i ? "L" : "M"}${c[0].toFixed(1)} ${c[1].toFixed(1)}`).join(" ");
-  const last = points[points.length - 1] - points[points.length - 2];
-  const dot = last > 0.05 ? "var(--signal)" : last < -0.05 ? "var(--alarm)" : "var(--ink-soft)";
-  const [lx, ly] = coords[coords.length - 1];
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox={`0 0 ${w} ${h}`}
-      role="img"
-      aria-label={`${entry.name}: score over the last ${points.length} quarters`}
-      className="overflow-visible"
-    >
-      <path d={d} fill="none" stroke="var(--ink)" strokeOpacity={0.7} strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={lx} cy={ly} r={2} fill={dot} />
-    </svg>
-  );
-}
-
-function Delta({ entry }: { entry: TrackerEntry }) {
-  const d = scoreDelta(entry);
-  if (d == null) {
-    return (
-      <span className="house-data text-[12px] text-[var(--ink-soft)]" title="No prior scored quarter">
-        —
-      </span>
-    );
-  }
-  const tone = d > 0.05 ? "text-[var(--signal)]" : d < -0.05 ? "text-[var(--alarm)]" : "text-[var(--ink-soft)]";
-  const text = d > 0 ? `+${d.toFixed(1)}` : d < 0 ? `−${Math.abs(d).toFixed(1)}` : "0.0";
-  return (
-    <span className={cn("house-data text-[12px] tabular-nums", tone)} title={entry.priorLabel ? `vs ${entry.priorLabel}` : undefined}>
-      {text}
-    </span>
   );
 }
 
@@ -168,7 +117,7 @@ function KeyVariablesCell({ readings, labelled = false }: { readings: KeyVariabl
   if (readings.length === 0) return null;
   return (
     <div>
-      {/* Folded under the name there is no column head, and Δ QoQ sits beside it. */}
+      {/* Folded under the name there is no column head to say these are year on year. */}
       {labelled ? (
         <p className="house-data mb-1 text-[9.5px] uppercase tracking-[0.12em] text-[var(--ink-soft)]">Key variables · YoY</p>
       ) : null}
@@ -226,13 +175,12 @@ function Row({
         <Link
           href={`/company/${encodeURIComponent(entry.code)}#sentiment-score`}
           prefetch={false}
-          className="group flex min-w-0 items-start gap-3 md:min-w-[14rem]"
+          className="group flex min-w-0 items-center gap-3 md:min-w-[14rem]"
         >
-          {/* Hidden on a phone: at 360px its 44px (mark + gap) pushed Δ QoQ out of the card. */}
           <CompanyMark
             code={entry.code}
             name={entry.name}
-            className="mt-0.5 hidden h-8 w-8 rounded-[6px] sm:inline-flex"
+            className="h-8 w-8 rounded-[6px]"
             initialsClassName="house-data bg-[var(--paper)] text-[10px] text-[var(--ink-soft)]"
           />
           <span className="min-w-0 flex-1">
@@ -245,10 +193,6 @@ function Row({
                   New
                 </span>
               ) : null}
-            </span>
-            <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[11px] leading-tight text-[var(--ink-soft)]">
-              <span className="house-data text-[10px]">{entry.code}</span>
-              {entry.sector ? <span>{entry.sector}</span> : null}
             </span>
             <span className="house-data mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-[var(--ink-soft)] md:hidden">
               <span className="whitespace-nowrap" title={scoredTitle}>
@@ -266,10 +210,10 @@ function Row({
         {hasReading ? (
           // Below xl the readings fold under the name — outside the link, so a
           // screen reader's link name stays the company and a tap on a reading
-          // does nothing. sm:pl-11 = the mark (2rem) + gap (0.75rem). w-0 +
+          // does nothing. pl-11 = the mark (2rem) + gap (0.75rem). w-0 +
           // min-w-full: they take the cell's width but never widen it — a long
           // metric name would push Score off a phone.
-          <div className="mt-2 sm:pl-11 xl:hidden">
+          <div className="mt-2 pl-11 xl:hidden">
             <div className="w-0 min-w-full space-y-2">
               <GuidanceCell guidance={signals.guidance} quarter={quarter} />
               <KeyVariablesCell readings={signals.keyVariables} labelled />
@@ -282,12 +226,6 @@ function Row({
           {score.toFixed(1)}
         </span>
         <span className={cn("mt-1 block text-[10.5px] leading-tight md:whitespace-nowrap", band.textClass)}>{band.label}</span>
-      </td>
-      <td className={CELL}>
-        <Delta entry={entry} />
-      </td>
-      <td className={cn(CELL, "hidden md:table-cell")}>
-        <Sparkline entry={entry} />
       </td>
       {/* Fixed content widths hold these two columns: an auto-layout table
           would otherwise hand them their one-line width and squeeze Company. */}
@@ -408,12 +346,6 @@ export function ScoredBoard({
               <SortHead active={sort === "score"} dir={dir} href={sortHref("score")} className="w-[5.25rem] md:w-[8.25rem]">
                 {scoreLabel}
               </SortHead>
-              <SortHead active={sort === "delta"} dir={dir} href={sortHref("delta")} className="w-[3.5rem] md:w-[4.75rem]">
-                Δ QoQ
-              </SortHead>
-              <th scope="col" className={cn(HEAD, "hidden w-[5.75rem] md:table-cell")}>
-                7 qtrs
-              </th>
               <th scope="col" className={cn(HEAD, "hidden w-[13.5rem] xl:table-cell")}>
                 Guidance
               </th>
