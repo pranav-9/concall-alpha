@@ -71,7 +71,7 @@ async function fetchGuidanceMoves(target: ReportingQuarter): Promise<Record<stri
   const out: Record<string, QuarterGuidance> = {};
   for (const [code, record] of fleet) {
     const moves = quarterGuidanceMoves(record.items, target, target);
-    if (moves.raised || moves.lowered) out[code] = moves;
+    if (moves.raised || moves.lowered || moves.standing) out[code] = moves;
   }
   return out;
 }
