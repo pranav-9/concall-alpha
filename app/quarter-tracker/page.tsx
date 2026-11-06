@@ -1,5 +1,5 @@
 // /quarter-tracker — the results season as one page, in the house skin: how
-// much of coverage has reported, and the scored board — score, Δ, trail, the
+// much of coverage has reported, and the scored board — company, score, the
 // guidance management moved on the call and the key variables year on year.
 // The season chart and the week's call calendar sit behind the header's
 // "Upcoming calls" button, in a dialog. The board's sort, its one filter

@@ -7,11 +7,9 @@ import {
   scoreWrittenAt,
   type ScoreSourceStatus,
 } from "@/lib/score-freshness";
-import type { ScorePoint } from "@/lib/score-path";
 import { BANDS, SCORE_BAND_ORDER, bandForScore, type BandKey } from "@/lib/score-band";
 import {
   currentReportingQuarter,
-  quarterLabelFor,
   type ReportingQuarter,
 } from "@/lib/current-quarter";
 
@@ -35,8 +33,8 @@ export type TrackerEntry = {
   subSector: string | null;
   score: number | null;
   bucket: BucketKey;
+  /** The latest scored quarter before this one — Improvers compares against it. */
   priorScore: number | null;
-  priorLabel: string | null;
   /** Board meeting that approves this quarter's results (YYYY-MM-DD), from quarter_calendar. */
   resultsDate: string | null;
   /** Earnings call date (YYYY-MM-DD) read off the company's call-invite filing. */
@@ -57,12 +55,6 @@ export type TrackerEntry = {
   sourceStatus: ScoreSourceStatus;
   /** Server-computed against one clock for the whole render. */
   scoredWithin24h: boolean;
-  /**
-   * Up to the last 7 scored quarters, oldest -> newest, for the inline
-   * sparkline. Missing/unscored quarters are dropped rather than gapped: the
-   * tracker only has one row per quarter here, so this is a dense series.
-   */
-  scorePath: ScorePoint[];
 };
 
 type CompanyRow = {
@@ -140,25 +132,6 @@ const isPriorTo = (row: { fy: number; qtr: number }, fy: number, qtr: number) =>
   return row.qtr < qtr;
 };
 
-const isAtOrBefore = (row: { fy: number; qtr: number }, fy: number, qtr: number) =>
-  row.fy < fy || (row.fy === fy && row.qtr <= qtr);
-
-// How many trailing quarters the inline sparkline shows.
-const SPARK_QUARTERS = 7;
-
-// Build the oldest->newest score series the sparkline draws. Dedupe by (fy,qtr)
-// keeping the last-seen row — a quarter can carry an unofficial then official
-// upsert, and we want a single point per quarter.
-const buildTrackerScorePath = (rows: AnalysisRow[] | undefined): ScorePoint[] => {
-  if (!rows || rows.length === 0) return [];
-  const byPeriod = new Map<number, AnalysisRow>();
-  for (const r of rows) byPeriod.set(r.fy * 10 + r.qtr, r);
-  return [...byPeriod.values()]
-    .sort((a, b) => a.fy - b.fy || a.qtr - b.qtr)
-    .slice(-SPARK_QUARTERS)
-    .map((r) => ({ period: quarterLabelFor(r.fy, r.qtr), value: toNumberOrNull(r.score) }));
-};
-
 export type TrackerData = {
   target: ReportingQuarter;
   entries: TrackerEntry[];
@@ -223,8 +196,6 @@ async function fetchTrackerData(target: ReportingQuarter): Promise<CachedTracker
   const targetByCompany = new Map<string, AnalysisRow>();
   const priorBestByCompany = new Map<string, AnalysisRow>();
   const anyHistoryByCompany = new Set<string>();
-  // All rows at or before the target quarter, per company — feeds the sparkline.
-  const historyByCompany = new Map<string, AnalysisRow[]>();
 
   for (const row of analysis) {
     const key = row.company_code?.toUpperCase();
@@ -233,11 +204,6 @@ async function fetchTrackerData(target: ReportingQuarter): Promise<CachedTracker
       targetByCompany.set(key, row);
     }
     anyHistoryByCompany.add(key);
-    if (isAtOrBefore(row, target.fy, target.qtr)) {
-      const bucketRows = historyByCompany.get(key);
-      if (bucketRows) bucketRows.push(row);
-      else historyByCompany.set(key, [row]);
-    }
     if (isPriorTo(row, target.fy, target.qtr)) {
       const existing = priorBestByCompany.get(key);
       if (
@@ -277,7 +243,6 @@ async function fetchTrackerData(target: ReportingQuarter): Promise<CachedTracker
         score,
         bucket,
         priorScore,
-        priorLabel: prior ? quarterLabelFor(prior.fy, prior.qtr) : null,
         resultsDate: cal?.results_date ?? null,
         callDate: cal?.call_date ?? null,
         callTime: cal?.call_time ? cal.call_time.slice(0, 5) : null,
@@ -285,7 +250,6 @@ async function fetchTrackerData(target: ReportingQuarter): Promise<CachedTracker
         callUrl: cal?.call_source_url ?? null,
         scoredAt,
         sourceStatus: normalizeSourceStatus(target?.source_status),
-        scorePath: buildTrackerScorePath(historyByCompany.get(key)),
       };
     })
     .filter((entry) => {
@@ -332,7 +296,7 @@ const getCachedTrackerData = unstable_cache(
   fetchTrackerData,
   // Bump the version whenever TrackerEntry's shape changes — the cached payload
   // is JSON on disk, and a stale entry would arrive missing the new fields.
-  ["quarter-tracker-v3"],
+  ["quarter-tracker-v4"],
   { revalidate: 300 },
 );
 

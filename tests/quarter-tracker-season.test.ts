@@ -34,7 +34,6 @@ const entry = (over: Partial<TrackerEntry> & { code: string }): TrackerEntry => 
   score: null,
   bucket: "upcoming",
   priorScore: null,
-  priorLabel: null,
   resultsDate: null,
   callDate: null,
   callTime: null,
@@ -43,7 +42,6 @@ const entry = (over: Partial<TrackerEntry> & { code: string }): TrackerEntry => 
   scoredAt: null,
   sourceStatus: null,
   scoredWithin24h: false,
-  scorePath: [],
   ...over,
 });
 
