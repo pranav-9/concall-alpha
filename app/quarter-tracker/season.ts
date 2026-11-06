@@ -137,6 +137,78 @@ export const isImprover = (e: TrackerEntry): boolean => {
   return d != null && d >= SCORE_DELTA_EPSILON;
 };
 
+/**
+ * The board's one filter at a time (`?filter=`): score rose on the prior
+ * quarter, or management raised / lowered a live commitment on this quarter's
+ * call (the Guidance column). Exclusive, so a view stays one shareable URL.
+ */
+export type BoardFilter = "improvers" | "raised" | "lowered";
+
+export const parseFilter = (raw: string | undefined): BoardFilter | null =>
+  raw === "improvers" || raw === "raised" || raw === "lowered" ? raw : null;
+
+/**
+ * `?sector=` matched against the sectors on the board, case-insensitively;
+ * unknown → no filter. Next hands a repeated parameter over as an array, so
+ * the first value counts — `.trim()` on an array threw and 500'd the page.
+ */
+export const parseSector = (raw: string | string[] | undefined, sectors: readonly string[]): string | null => {
+  const first = Array.isArray(raw) ? raw[0] : raw;
+  const want = typeof first === "string" ? first.trim().toLowerCase() : "";
+  if (!want) return null;
+  return sectors.find((s) => s.toLowerCase() === want) ?? null;
+};
+
+export type BoardScope = {
+  /** What the board lists: the sector + watchlist scope ∩ the active filter. */
+  rows: TrackerEntry[];
+  /** Each filter chip: what turning IT on would leave, the sector and scope as they are. */
+  filterCounts: Record<BoardFilter, number>;
+  /** What turning the watchlist scope on would leave, the sector and filter as they are. */
+  watchlistCount: number;
+  /** Per sector: what picking it would leave, the filter and scope as they are. */
+  sectorCounts: Map<string, number>;
+};
+
+/**
+ * The board's scoping and every count beside it, in one place so the rule the
+ * chips promise ("what turning it on would leave") is testable. `matches` holds
+ * each filter's predicate — Raised / Lowered read the Guidance column's signals.
+ */
+export function scopeBoard({
+  scored,
+  filter,
+  sector,
+  mine,
+  inWatchlist,
+  matches,
+}: {
+  scored: TrackerEntry[];
+  filter: BoardFilter | null;
+  sector: string | null;
+  mine: boolean;
+  inWatchlist: (e: TrackerEntry) => boolean;
+  matches: Record<BoardFilter, (e: TrackerEntry) => boolean>;
+}): BoardScope {
+  const passes = (e: TrackerEntry) => !filter || matches[filter](e);
+  const sectorScoped = scored.filter((e) => !sector || e.sector === sector);
+  const scope = mine ? sectorScoped.filter(inWatchlist) : sectorScoped;
+  const sectorCounts = new Map<string, number>();
+  for (const e of (mine ? scored.filter(inWatchlist) : scored).filter(passes)) {
+    if (e.sector) sectorCounts.set(e.sector, (sectorCounts.get(e.sector) ?? 0) + 1);
+  }
+  return {
+    rows: scope.filter(passes),
+    filterCounts: {
+      improvers: scope.filter(matches.improvers).length,
+      raised: scope.filter(matches.raised).length,
+      lowered: scope.filter(matches.lowered).length,
+    },
+    watchlistCount: sectorScoped.filter(passes).filter(inWatchlist).length,
+    sectorCounts,
+  };
+}
+
 export type SortKey = "score" | "delta" | "scored";
 export type SortDir = "asc" | "desc";
 
@@ -323,11 +395,22 @@ export function buildSeasonChart(
 // The upcoming panel
 // ---------------------------------------------------------------------------
 
+/** The upcoming list reads one week ahead: today and the six days after. */
+export const UPCOMING_DAYS = 7;
+
+/** Not-yet-scored companies whose call falls inside the upcoming week. */
+export const callsThisWeek = (entries: TrackerEntry[], today: ISODate, days = UPCOMING_DAYS): number => {
+  const last = addDays(today, days - 1);
+  return entries.filter((e) => e.score == null && e.callDate && e.callDate >= today && e.callDate <= last).length;
+};
+
 export type UpcomingGroups = {
   /** Call held, no score yet — call-date order, oldest first. */
   pending: TrackerEntry[];
-  /** Call today or ahead, grouped by call day in date order, earliest time first. */
+  /** Call today or inside the upcoming week, grouped by call day in date order, earliest time first. */
   ahead: Array<{ date: ISODate; entries: TrackerEntry[] }>;
+  /** Call dated past the upcoming week — call-date order. */
+  later: TrackerEntry[];
   /** Results date on file but no call yet — results-date order. */
   noCall: TrackerEntry[];
   /** Not yet reported, no date of either kind on file. */
@@ -339,7 +422,12 @@ export type UpcomingGroups = {
  * after the call, so the call day is what a reader waits on. The board meeting
  * matters only as a fallback when no invite has been filed yet.
  */
-export function groupUpcoming(entries: TrackerEntry[], today: ISODate): UpcomingGroups {
+export function groupUpcoming(
+  entries: TrackerEntry[],
+  today: ISODate,
+  days: number = UPCOMING_DAYS,
+): UpcomingGroups {
+  const last = addDays(today, days - 1);
   const byName = (a: TrackerEntry, b: TrackerEntry) => a.name.localeCompare(b.name);
   // An invite without a time sorts after the timed calls on its day.
   const byTime = (a: TrackerEntry, b: TrackerEntry) =>
@@ -350,7 +438,7 @@ export function groupUpcoming(entries: TrackerEntry[], today: ISODate): Upcoming
     .sort((a, b) => a.callDate!.localeCompare(b.callDate!) || byTime(a, b) || byName(a, b));
   const groups = new Map<ISODate, TrackerEntry[]>();
   for (const e of called) {
-    if (e.callDate! < today) continue;
+    if (e.callDate! < today || e.callDate! > last) continue;
     const list = groups.get(e.callDate!);
     if (list) list.push(e);
     else groups.set(e.callDate!, [e]);
@@ -358,6 +446,7 @@ export function groupUpcoming(entries: TrackerEntry[], today: ISODate): Upcoming
   return {
     pending: called.filter((e) => e.callDate! < today),
     ahead: [...groups.entries()].map(([date, list]) => ({ date, entries: list })),
+    later: called.filter((e) => e.callDate! > last),
     noCall: upcoming
       .filter((e) => !e.callDate && e.resultsDate)
       .sort((a, b) => a.resultsDate!.localeCompare(b.resultsDate!) || byName(a, b)),

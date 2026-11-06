@@ -1,20 +1,21 @@
-// The two filter chips on the tracker — Improvers and Watchlist — in the house
-// desktop chip grammar (app/leaderboards/board-filter.tsx). Links, not toggles:
-// a filtered view is a URL, and the page ships no client state.
+// The board's filter chips — Improvers, Raised guidance, Lowered guidance and
+// Watchlist. Links, not toggles: a filtered view is a URL, and the chips ship
+// no client state. Only the sector select (sector-select.tsx) needs JS.
 
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
 const CHIP =
-  "house-data inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-[10.5px] uppercase tracking-[0.12em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--signal)]";
+  // 44px boxes in the phone's sideways strip (docs/portal-design-system.md), compact from sm.
+  "inline-flex h-11 sm:h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[5px] border px-2.5 text-[11.5px] leading-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--signal)]";
 
 export function chipClass(on: boolean, disabled = false): string {
   return cn(
     CHIP,
     on
       ? "border-[var(--ink)] bg-[var(--ink)] text-[var(--paper-2)]"
-      : "border-[var(--rule)] bg-transparent text-[var(--ink-soft)] hover:border-[var(--ink-soft)] hover:text-[var(--ink)]",
+      : "border-[var(--rule)] bg-[var(--paper-2)] text-[var(--ink)] hover:border-[var(--ink-soft)]",
     disabled && "pointer-events-none opacity-45",
   );
 }
@@ -22,18 +23,38 @@ export function chipClass(on: boolean, disabled = false): string {
 /** The glyph keeps its own colour until the chip is on, then inverts with the label. */
 function Mark({ on, glyph, tone }: { on: boolean; glyph: string; tone: string }) {
   return (
-    <span aria-hidden className={on ? undefined : tone}>
+    <span aria-hidden className={cn("text-[9px]", on ? undefined : tone)}>
       {glyph}
     </span>
   );
 }
 
 function Count({ n }: { n: number }) {
-  return <span className="tabular-nums opacity-70">{n}</span>;
+  return <span className="tabular-nums opacity-60">{n}</span>;
 }
 
-export function ImproversChip({ on, count, href }: { on: boolean; count: number; href: string }) {
-  const none = count === 0 && !on;
+export function FilterChip({
+  on,
+  count,
+  href,
+  label,
+  glyph,
+  tone,
+  titles,
+  unavailable,
+}: {
+  on: boolean;
+  count: number;
+  /** The read behind this filter failed: the chip is disabled and says so, never "none". */
+  unavailable?: string;
+  href: string;
+  label: string;
+  glyph?: string;
+  tone?: string;
+  /** Tooltips: when off, when on, and when there is nothing to filter to. */
+  titles: { off: string; on: string; none: string };
+}) {
+  const none = (count === 0 || unavailable != null) && !on;
   return (
     <Link
       href={href}
@@ -42,18 +63,12 @@ export function ImproversChip({ on, count, href }: { on: boolean; count: number;
       aria-current={on ? "true" : undefined}
       aria-disabled={none || undefined}
       tabIndex={none ? -1 : undefined}
-      title={
-        none
-          ? "No company has scored above its prior quarter yet"
-          : on
-            ? "Back to every scored company"
-            : "Only companies that scored above their prior quarter"
-      }
+      title={unavailable ?? (none ? titles.none : on ? titles.on : titles.off)}
       className={chipClass(on, none)}
     >
-      <Mark on={on} glyph="▲" tone="text-[var(--signal)]" />
-      Improvers
-      <Count n={count} />
+      {glyph ? <Mark on={on} glyph={glyph} tone={tone ?? ""} /> : null}
+      {label}
+      {unavailable != null ? <span className="opacity-60">—</span> : <Count n={count} />}
     </Link>
   );
 }
@@ -65,9 +80,8 @@ export type WatchlistChipState =
   /** `count` = this block's companies that are on the reader's watchlists. */
   | { kind: "ready"; on: boolean; count: number; href: string };
 
-export function WatchlistChip({ state, size = "md" }: { state: WatchlistChipState; size?: "md" | "sm" }) {
-  const sizing = size === "sm" ? "h-7 px-2.5 text-[9.5px]" : undefined;
-  const star = (on: boolean) => <Mark on={on} glyph="★" tone="text-[var(--mark)]" />;
+export function WatchlistChip({ state }: { state: WatchlistChipState }) {
+  const star = (on: boolean) => <Mark on={on} glyph="★" tone="text-[var(--ink)]" />;
 
   if (state.kind === "signed-out") {
     return (
@@ -75,7 +89,7 @@ export function WatchlistChip({ state, size = "md" }: { state: WatchlistChipStat
         href={state.signInHref}
         prefetch={false}
         title="Sign in to follow only your watchlist companies through the season"
-        className={cn(chipClass(false), sizing)}
+        className={chipClass(false)}
       >
         {star(false)}
         Watchlist
@@ -84,12 +98,7 @@ export function WatchlistChip({ state, size = "md" }: { state: WatchlistChipStat
   }
   if (state.kind === "empty") {
     return (
-      <Link
-        href="/watchlists"
-        prefetch={false}
-        title="Add companies to a watchlist first"
-        className={cn(chipClass(false), sizing)}
-      >
+      <Link href="/watchlists" prefetch={false} title="Add companies to a watchlist first" className={chipClass(false)}>
         {star(false)}
         Watchlist
         <Count n={0} />
@@ -103,7 +112,7 @@ export function WatchlistChip({ state, size = "md" }: { state: WatchlistChipStat
       prefetch={false}
       aria-current={state.on ? "true" : undefined}
       title={state.on ? "Back to every covered company" : "Only the companies on your watchlists"}
-      className={cn(chipClass(state.on), sizing)}
+      className={chipClass(state.on)}
     >
       {star(state.on)}
       Watchlist

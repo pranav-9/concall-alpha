@@ -2,6 +2,7 @@ import type { TrackerEntry } from "../app/quarter-tracker/data";
 import {
   buildSeasonChart,
   callLabel,
+  callsThisWeek,
   callTimeLabel,
   formatDay,
   formatTick,
@@ -10,7 +11,10 @@ import {
   isImprover,
   istDateOf,
   latestCallsLabel,
+  parseFilter,
+  parseSector,
   quarterEnd,
+  scopeBoard,
   relativeDay,
   seasonWindow,
   sortScored,
@@ -165,6 +169,9 @@ const groups = groupUpcoming(
     entry({ code: "TODAY", resultsDate: "2026-10-29", callDate: "2026-10-29", callTime: "11:00" }),
     entry({ code: "NOTIME", resultsDate: "2026-10-29", callDate: "2026-10-29" }),
     entry({ code: "SET", resultsDate: "2026-10-30", callDate: "2026-11-02", callTime: "16:00" }),
+    // Today + 6 is the week's last day; a day later folds into "later".
+    entry({ code: "WEEKEND", resultsDate: "2026-11-04", callDate: "2026-11-04" }),
+    entry({ code: "NEXTWEEK", resultsDate: "2026-11-05", callDate: "2026-11-05" }),
     // Results out, no invite: not on the call calendar, listed by results date.
     entry({ code: "NOCALL2", resultsDate: "2026-11-20" }),
     entry({ code: "NOCALL1", resultsDate: "2026-10-27" }),
@@ -173,7 +180,11 @@ const groups = groupUpcoming(
   today,
 );
 assert(groups.pending.map((e) => e.code).join() === "HELD", "pending = call held, no score");
-assert(groups.ahead.map((g) => g.date).join() === "2026-10-29,2026-11-02", "ahead grouped by call day in order");
+assert(
+  groups.ahead.map((g) => g.date).join() === "2026-10-29,2026-11-02,2026-11-04",
+  "ahead grouped by call day in order, through today + 6",
+);
+assert(groups.later.map((e) => e.code).join() === "NEXTWEEK", "a call past the week folds into later");
 assert(
   groups.ahead[0].entries.map((e) => e.code).join() === "TODAY,LATECALL,NOTIME",
   `a day's calls run earliest first, untimed last: ${groups.ahead[0].entries.map((e) => e.code).join()}`,
@@ -181,6 +192,19 @@ assert(
 assert(groups.noCall.map((e) => e.code).join() === "NOCALL1,NOCALL2", "no call on file → by results date");
 assert(groups.undated.map((e) => e.code).join() === "TBA", "nothing on file → undated");
 assert(callTimeLabel(entry({ code: "T", callDate: "2026-10-29", callTime: "17:00" })).text === "5:00 PM", "call cell is the time");
+assert(
+  callsThisWeek(
+    [
+      entry({ code: "W1", callDate: "2026-10-29" }),
+      entry({ code: "W2", callDate: "2026-11-04" }),
+      entry({ code: "OUT", callDate: "2026-11-05" }),
+      entry({ code: "PAST", callDate: "2026-10-28" }),
+      entry({ code: "DONE", score: 7, callDate: "2026-10-30" }),
+    ],
+    today,
+  ) === 2,
+  "this week = unscored calls from today through today + 6",
+);
 assert(callTimeLabel(entry({ code: "N", callDate: "2026-10-29" })).muted, "untimed call is muted");
 
 const set = chartEntries.find((e) => e.code === "SET")!;
@@ -191,10 +215,60 @@ assert(callLabel(entry({ code: "C" })).muted && callLabel(entry({ code: "C" })).
 
 // --- hrefs -------------------------------------------------------------------
 
-assert(trackerHref({ sort: "score", dir: "desc", improvers: false, mine: false }) === "/quarter-tracker", "defaults carry no query");
 assert(
-  trackerHref({ sort: "delta", dir: "asc", improvers: true, mine: true }) === "/quarter-tracker?sort=delta&dir=asc&filter=improvers&mine=1",
+  trackerHref({ sort: "score", dir: "desc", filter: null, sector: null, mine: false }) === "/quarter-tracker",
+  "defaults carry no query",
+);
+assert(
+  trackerHref({ sort: "delta", dir: "asc", filter: "improvers", sector: "Capital Goods", mine: true }) ===
+    "/quarter-tracker?sort=delta&dir=asc&filter=improvers&sector=Capital+Goods&mine=1",
   "every non-default is a parameter",
 );
+assert(parseFilter("raised") === "raised" && parseFilter("lowered") === "lowered", "guidance filters parse");
+assert(parseFilter("decliners") === null && parseFilter(undefined) === null, "unknown filter → none");
+assert(parseSector("chemicals", ["Capital Goods", "Chemicals"]) === "Chemicals", "sector matches case-insensitively");
+assert(parseSector("Steel", ["Chemicals"]) === null && parseSector("", ["Chemicals"]) === null, "unknown sector → none");
+// Next hands `?sector=a&sector=b` over as an array; `.trim()` on it 500'd the page.
+assert(parseSector(["Chemicals", "Steel"], ["Chemicals", "Steel"]) === "Chemicals", "repeated sector → first value, no throw");
+assert(parseSector([], ["Chemicals"]) === null, "empty sector array → none");
+
+// --- the board's scope and every count beside it ------------------------------
+
+{
+  const rows = [
+    entry({ code: "A1", sector: "Chem", score: 7, priorScore: 6 }), // improver, watched, raised
+    entry({ code: "A2", sector: "Chem", score: 6, priorScore: 7 }), // watched
+    entry({ code: "B1", sector: "Auto", score: 8, priorScore: 7 }), // improver, raised
+    entry({ code: "B2", sector: "Auto", score: 5, priorScore: 5 }), // watched, lowered
+  ];
+  const watched = new Set(["A1", "A2", "B2"]);
+  const raised = new Set(["A1", "B1"]);
+  const matches = {
+    improvers: isImprover,
+    raised: (e: TrackerEntry) => raised.has(e.code),
+    lowered: (e: TrackerEntry) => e.code === "B2",
+  };
+  const scope = (over: Partial<Parameters<typeof scopeBoard>[0]>) =>
+    scopeBoard({ scored: rows, filter: null, sector: null, mine: false, inWatchlist: (e) => watched.has(e.code), matches, ...over });
+
+  const all = scope({});
+  assert(all.rows.length === 4 && all.filterCounts.improvers === 2 && all.filterCounts.raised === 2, "no filter: everything, chips count the whole board");
+  assert(all.watchlistCount === 3, "watchlist chip = what turning it on would leave");
+
+  const chem = scope({ sector: "Chem" });
+  assert(chem.rows.map((e) => e.code).join() === "A1,A2", "sector narrows the rows");
+  assert(chem.filterCounts.raised === 1 && chem.filterCounts.lowered === 0, "chips count inside the sector");
+  assert(all.sectorCounts.get("Chem") === 2 && all.sectorCounts.get("Auto") === 2, "sector counts with no filter");
+
+  const raisedOnly = scope({ filter: "raised" });
+  assert(raisedOnly.rows.map((e) => e.code).join() === "A1,B1", "filter narrows the rows");
+  assert(raisedOnly.sectorCounts.get("Auto") === 1 && raisedOnly.sectorCounts.get("Chem") === 1, "sector counts honour the active filter");
+  assert(raisedOnly.filterCounts.improvers === 2, "a chip's own count ignores the other filter (filters are exclusive)");
+  assert(raisedOnly.watchlistCount === 1, "watchlist count honours the active filter");
+
+  const mineChem = scope({ mine: true, sector: "Chem", filter: "improvers" });
+  assert(mineChem.rows.map((e) => e.code).join() === "A1", "watchlist ∩ sector ∩ filter");
+  assert(mineChem.sectorCounts.get("Auto") === undefined, "sector counts honour the watchlist scope");
+}
 
 console.log("\nAll quarter-tracker season tests passed.");

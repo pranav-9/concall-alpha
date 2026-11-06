@@ -13,10 +13,8 @@ import { unstable_cache } from "next/cache";
 
 import { parseCompanyQualityPayload } from "@/lib/company-quality/types";
 import { currentReportingQuarter } from "@/lib/current-quarter";
-import { normalizeGuidanceSnapshot } from "@/lib/guidance-snapshot/normalize";
-import type { GuidanceSnapshotRow } from "@/lib/guidance-snapshot/types";
-import { normalizeGuidanceTrackingRows } from "@/lib/guidance-tracking/normalize";
-import type { GuidanceTrackingRow } from "@/lib/guidance-tracking/types";
+import { readFleetGuidance } from "@/lib/guidance-snapshot/fleet-items";
+import { withBackoff } from "@/lib/read-backoff";
 import { COVERAGE_SELECT, isDiscoveryListed, type CoverageFields } from "@/lib/coverage-policy";
 import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
 import { phaseSchema, pivotSchema } from "@/lib/price-phases/types";
@@ -57,6 +55,12 @@ type ValuationPegRow = {
 };
 
 const upper = (code: string | null | undefined) => (code ?? "").trim().toUpperCase();
+
+// Fleet-wide reads go in batches of BATCH companies so no one statement carries the fleet.
+const BATCH = 12;
+
+const chunk = <T>(xs: T[], size: number): T[][] =>
+  Array.from({ length: Math.ceil(xs.length / size) }, (_, i) => xs.slice(i * size, (i + 1) * size));
 
 async function readCompanies(): Promise<Map<string, ScanCompany>> {
   const out = new Map<string, ScanCompany>();
@@ -207,44 +211,24 @@ async function fetchTrendRows(): Promise<TrendRow[]> {
   return rows;
 }
 
-// A failed read is never cached (see the header), so without this every
-// request would re-run it while the database is struggling — the 2026-10-06
-// timeout did exactly that. After a failure, this server instance serves
-// "unavailable" for BACKOFF_MS before it asks again.
-const BACKOFF_MS = 60_000;
-
-function withBackoff<T>(label: string, read: () => Promise<T>): () => Promise<T> {
-  let failedAt = 0;
-  return async () => {
-    if (Date.now() - failedAt < BACKOFF_MS) {
-      throw new Error(`scanners: ${label} backing off after a failed read`);
-    }
-    try {
-      return await read();
-    } catch (error) {
-      failedAt = Date.now();
-      throw error;
-    }
-  };
-}
+// A failed read is never cached (see the header); lib/read-backoff.ts keeps a
+// struggling database from being asked again on every request. It wraps each
+// fetcher INSIDE the cache, so it gates only the database read: a failed
+// background refresh of a stale entry trips it too, and a cache hit is never
+// refused. The wrapper's source is the same for every scan, so the key parts
+// carry the identity (versions bumped 2026-11-06 when the wrapper moved inside).
 
 /** Every company with a forensic read (assessed > 0). Throws on a failed read. */
-export const getRedFlagRows = withBackoff(
-  "red flags",
-  unstable_cache(fetchRedFlagRows, ["scanners-red-flags-v2"], { revalidate: 600 }),
-);
+export const getRedFlagRows = unstable_cache(withBackoff("scanners: red flags", fetchRedFlagRows), ["scanners-red-flags-v3"], { revalidate: 600 });
 
 /** Every company with a price_phases row, fresh or stale. Throws on a failed read. */
-export const getTrendRows = withBackoff(
-  "price trend",
-  unstable_cache(fetchTrendRows, ["scanners-price-trend-v1"], { revalidate: 600 }),
-);
+export const getTrendRows = unstable_cache(withBackoff("scanners: price trend", fetchTrendRows), ["scanners-price-trend-v2"], { revalidate: 600 });
 
 /** Every company with both a growth score and a rateable valuation, fresh or stale. Throws on a failed read. */
-export const getGarpRows = withBackoff("garp", unstable_cache(fetchGarpRows, ["scanners-garp-v1"], { revalidate: 600 }));
+export const getGarpRows = unstable_cache(withBackoff("scanners: garp", fetchGarpRows), ["scanners-garp-v2"], { revalidate: 600 });
 
 /** Every company with at least one PEG leg, fresh or stale. Throws on a failed read. */
-export const getPegRows = withBackoff("peg", unstable_cache(fetchPegRows, ["scanners-peg-v2"], { revalidate: 600 }));
+export const getPegRows = unstable_cache(withBackoff("scanners: peg", fetchPegRows), ["scanners-peg-v3"], { revalidate: 600 });
 
 // Order book: the latest key_variables_snapshot per company (only its deep-treated
 // variables — never the discovery list or the synthesis text) beside the market
@@ -306,102 +290,33 @@ async function fetchOrderBookRows(): Promise<OrderBookRow[]> {
 }
 
 /** Every company with a disclosed order book and a market cap, fresh or stale. Throws on a failed read. */
-export const getOrderBookRows = withBackoff(
-  "order book",
-  unstable_cache(fetchOrderBookRows, ["scanners-order-book-v1"], { revalidate: 600 }),
-);
+export const getOrderBookRows = unstable_cache(withBackoff("scanners: order book", fetchOrderBookRows), ["scanners-order-book-v2"], { revalidate: 600 });
 
 // Same item source, quarter anchor and stored verdict as the company page's
-// Guidance section and the watchlist signals (lib/watchlist-signals.ts): the
-// latest snapshot's items when one exists, else the legacy guidance_tracking rows.
-//
-// Sized for the whole fleet (2026-10-06 prod incident): one read of every
-// snapshot WITH `details` was 17.8MB / ~13s and hit Postgres' statement
-// timeout on every request. `details` (forward strength, strategy narrative —
-// ~13MB of it) is never read here, so it is not selected, and both tables are
-// read in batches of BATCH companies so each statement stays short.
-const SNAPSHOT_COLUMNS = "company_code, generated_at, credibility_verdict, guidance_items";
-const TRACKING_COLUMNS =
-  "id, company_code, guidance_key, guidance_text, guidance_type, first_mentioned_in, target_period, source_mentions, trail, status, status_reason, latest_view, confidence, generated_at, details";
-
-type SnapshotRow = GuidanceSnapshotRow & { credibility_verdict?: unknown };
-
+// Guidance section and the watchlist signals (lib/watchlist-signals.ts); the
+// batched fleet read itself lives in lib/guidance-snapshot/fleet-items.ts,
+// shared with the quarter tracker's Guidance column.
 export type GuidanceUpgradeData = {
   rows: GuidanceUpgradeRow[];
   /** Companies with any guidance on record — what the scan could read. */
   readable: ScanCompany[];
 };
 
-const BATCH = 12;
-
-const chunk = <T>(xs: T[], size: number): T[][] =>
-  Array.from({ length: Math.ceil(xs.length / size) }, (_, i) => xs.slice(i * size, (i + 1) * size));
-
 async function fetchGuidanceUpgradeRows(): Promise<GuidanceUpgradeData> {
   const companies = await readCompanies();
-  const codes = [...companies.keys()];
-  const supabase = createPublicReadClient();
-  const snapshotBatches = await Promise.all(
-    chunk(codes, BATCH).map(async (batch) => {
-      const { data, error } = await supabase
-        .from("guidance_snapshot")
-        .select(SNAPSHOT_COLUMNS)
-        .in("company_code", batch)
-        .order("generated_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as SnapshotRow[];
-    }),
-  );
-
-  const latestSnapshot = new Map<string, SnapshotRow>();
-  for (const row of snapshotBatches.flat()) {
-    const code = upper(row.company_code);
-    const seen = latestSnapshot.get(code);
-    if (code && (!seen || String(row.generated_at ?? "") > String(seen.generated_at ?? ""))) {
-      latestSnapshot.set(code, row);
-    }
-  }
-
-  const legacyCodes = codes.filter((code) => !latestSnapshot.has(code));
-  const legacyRows = new Map<string, GuidanceTrackingRow[]>();
-  const trackingBatches = await Promise.all(
-    chunk(legacyCodes, BATCH).map(async (batch) => {
-      const { data, error } = await supabase
-        .from("guidance_tracking")
-        .select(TRACKING_COLUMNS)
-        .in("company_code", batch)
-        .order("generated_at", { ascending: false })
-        .order("id", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as GuidanceTrackingRow[];
-    }),
-  );
-  for (const row of trackingBatches.flat()) {
-    const code = upper(row.company_code);
-    if (!code) continue;
-    const bucket = legacyRows.get(code);
-    if (bucket) bucket.push(row);
-    else legacyRows.set(code, [row]);
-  }
-
+  const guidance = await readFleetGuidance([...companies.keys()]);
   const current = currentReportingQuarter();
   const rows: GuidanceUpgradeRow[] = [];
   const readable: ScanCompany[] = [];
   for (const [code, company] of companies) {
-    const snapshot = latestSnapshot.get(code);
-    const items = snapshot
-      ? (normalizeGuidanceSnapshot(snapshot)?.guidanceItems ?? [])
-      : normalizeGuidanceTrackingRows(legacyRows.get(code) ?? []);
-    if (items.length === 0) continue;
+    const record = guidance.get(code);
+    if (!record) continue;
     readable.push(company);
-    const row = buildGuidanceUpgradeRow(company, items, current, snapshot?.credibility_verdict);
+    const row = buildGuidanceUpgradeRow(company, record.items, current, record.credibility);
     if (row) rows.push(row);
   }
   return { rows, readable };
 }
 
 /** Every company with a raised live commitment, plus every company with guidance on record. Throws on a failed read. */
-export const getGuidanceUpgradeRows = withBackoff(
-  "guidance upgrades",
-  unstable_cache(fetchGuidanceUpgradeRows, ["scanners-guidance-upgrades-v3"], { revalidate: 600 }),
-);
+export const getGuidanceUpgradeRows = unstable_cache(withBackoff("scanners: guidance upgrades", fetchGuidanceUpgradeRows), ["scanners-guidance-upgrades-v4"], { revalidate: 600 });
