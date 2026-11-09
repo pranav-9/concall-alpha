@@ -945,6 +945,39 @@ COVERS["shreeref-four-crates-out"] = [
     P("M470 120 H446 V176", "s t"),
 ];
 
+// International Gemmological Institute — what it makes: a grading report. A brilliant-cut diamond on the stage of a
+// grading microscope, and beside it the certificate it earns, with its seal.
+COVERS["igil-toll-booth-never-raises"] = [
+  "rose",
+  G(32, -8,
+  // microscope: base, pillar, arm, objective tube and lens over the stage
+  R(170, 238, 180, 12, 4, "s d") +
+    R(318, 76, 18, 162, 4, "s l") +
+    P("M327 92 H252 V104", "s") +
+    R(232, 52, 40, 52, 8, "s w") +
+    R(240, 104, 24, 14, 3, "s m") +
+    L(244, 64, 260, 64, "s t") +
+    // stage
+    R(196, 218, 112, 8, 2, "s m") +
+    // the diamond: crown, girdle, pavilion, facet lines
+    P("M206 164 L228 138 H276 L298 164 L252 212 Z", "s w") +
+    L(206, 164, 298, 164) +
+    P("M228 138 L240 164 L252 138 L264 164 L276 138", "s t") +
+    P("M240 164 L252 212 L264 164", "s t") +
+    P("M206 164 L252 212 L298 164", "s t") +
+    // a glint from the lens to the stone
+    L(252, 120, 252, 132, "s sa") +
+    // the report card: header bar, a small stone, text lines, the seal
+    R(378, 58, 150, 184, 8, "s w") +
+    R(378, 58, 150, 28, 8, "s m") +
+    P("M402 112 L410 102 H426 L434 112 L418 128 Z", "s l") +
+    range(3).map((i) => L(448, 104 + i * 10, 510, 104 + i * 10, "s t")).join("") +
+    range(4).map((i) => L(396, 146 + i * 14, 510, 146 + i * 14, "s t sm")).join("") +
+    C(492, 214, 16, "s a") +
+    C(492, 214, 9, "s w"),
+  0.9),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
