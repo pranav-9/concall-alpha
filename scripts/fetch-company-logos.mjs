@@ -71,6 +71,44 @@ const EXCLUDE = {
   MOLDTKPAC: "only a blurred wordmark, illegible at tile size",
   VINYAS: "the site icon is a signature with fine print, illegible at tile size",
   ETERNAL: "only a blurred wordmark, illegible at tile size",
+  // 2026-11-09 hand pass over every company the fetcher missed: no usable mark on the company's own site.
+  INTELLECT: "only a wide wordmark; the favicon is three coloured squares",
+  LAURUSLABS: "only a wide wordmark and a 16px favicon",
+  GRAVITA: "only a wide wordmark and a 16px favicon",
+  NH: "wide wordmark with an anniversary lockup; the 48px favicon is a BMP frame sharp cannot read",
+  ARVINDFASN: "only a wide wordmark; the favicon is white on transparent",
+  SAMHI: "wordmark just over 2.5:1; the favicon is only dots",
+  ENDURANCE: "only a wide wordmark and a 16px favicon",
+  BBOX: "the cube mark is a 30px favicon; the wordmark is 7.8:1",
+  DYCL: "only a wide wordmark and a 16px favicon",
+  SHILPAMED: "only a wide wordmark; no favicon",
+  MAZDOCK: "only a wide wordmark and a 16px favicon",
+  GNG: "only a wide wordmark and a 16px favicon (site: electronicsbazaar.com)",
+  PRIVISCL: "only a wide wordmark and a 16px favicon",
+  CDSL: "wordmark just over 2.5:1; 16px favicon",
+  GAYAPROJ: "only a wide wordmark and a 16px favicon",
+  RATNAMANI: "wordmark just over 2.5:1; the SVG carries a stray swoosh, the icon is white",
+  THYROCARE: "only wide wordmarks on thyrocare.com",
+  RATNAVEER: "header wordmark too wide; the footer mark is white text",
+  GPIL: "wide wordmark with white text",
+  PARAGMILK: "the Parag mark is only 36x45",
+  RBZJEWEL: "wordmark too wide; the favicon is white",
+  ATHERENERG: "only an 8:1 wordmark; the favicon is white",
+  CENTUM: "only a wide wordmark and a 16px favicon",
+  PERSISTENT: "only a wide wordmark and a 16px favicon",
+  INOXINDIA: "only wide wordmarks and a 16px favicon",
+  NEOGEN: "the emblem-and-name logo is illegible at tile size",
+};
+
+// CODE → a mark picked by hand from the company's own site when the automatic search cannot reach it (a page
+// rendered by script, a filename the header search skips, an image that needs its site as Referer). Every pick was
+// looked at at 96px on 2026-11-09. Same normalise() rules as every other source.
+const PICKED = {
+  PITTIENG: { url: "http://www.pitti.in/logo_main.png", note: "header logo; the page is a script shell" },
+  PGEL: { url: "https://pgel.in/assets/images/favicon/favicon.png", referer: "https://pgel.in/", note: "PG emblem; served only with the site as Referer" },
+  DEEDEV: { url: "https://www.deepiping.com/assets/images/logo/logo-blue.png", note: "header logo; filename skipped by the header search" },
+  ELLEN: { url: "https://ellenbarrie.com/wp-content/uploads/2025/02/Result-1.webp", note: "the eagle emblem from the header logo" },
+  KILBUNENGG: { url: "https://www.kilburnengg.com/wp-content/themes/kilburn/images/fav-icon.jpg", minPx: FALLBACK_PX, note: "32px favicon, the E emblem of the header logo" },
 };
 
 const args = process.argv.slice(2);
@@ -118,11 +156,11 @@ async function screenerWebsite(code) {
   return null;
 }
 
-async function get(url, accept) {
+async function get(url, accept, extra = {}) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(url, { headers: { "user-agent": UA, accept }, redirect: "follow", signal: ctrl.signal });
+    const res = await fetch(url, { headers: { "user-agent": UA, accept, ...extra }, redirect: "follow", signal: ctrl.signal });
     if (!res.ok) return null;
     const len = Number(res.headers.get("content-length") ?? 0);
     if (len > MAX_BYTES) return null;
@@ -269,6 +307,13 @@ async function fetchLogo(site, company) {
   return null;
 }
 
+async function fetchPicked(p) {
+  const res = await get(p.url, "image/*", p.referer ? { referer: p.referer } : {});
+  if (!res) return null;
+  const png = await normalise(res.buf, { minPx: p.minPx ?? SHARP_PX, maxAspect: MAX_ASPECT }).catch(() => null);
+  return png ? { png, tier: "picked", source: p.url } : null;
+}
+
 async function pool(items, n, fn) {
   const queue = [...items];
   await Promise.all(
@@ -325,7 +370,8 @@ async function main() {
   const todo = [];
   const noSite = [];
   for (const c of wanted) {
-    const site = siteUrl(c.website) ?? (await screenerWebsite(c.code.toUpperCase()));
+    const picked = PICKED[c.code.toUpperCase()];
+    const site = siteUrl(c.website) ?? (picked ? new URL(new URL(picked.url).origin) : await screenerWebsite(c.code.toUpperCase()));
     if (site) todo.push({ ...c, site, fromScreener: !siteUrl(c.website) });
     else noSite.push(c.code);
   }
@@ -340,7 +386,7 @@ async function main() {
   const misses = [];
   await pool(todo, CONCURRENCY, async (c) => {
     const code = c.code.toUpperCase();
-    const got = await fetchLogo(c.site, { code, name: c.name ?? code });
+    const got = PICKED[code] ? await fetchPicked(PICKED[code]) : await fetchLogo(c.site, { code, name: c.name ?? code });
     if (!got) {
       misses.push(code);
       return;

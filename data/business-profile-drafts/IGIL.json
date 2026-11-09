@@ -1,0 +1,346 @@
+{
+  "company": "IGIL",
+  "company_name": "International Gemmological Institute",
+  "prepared_on": "2026-11-09",
+  "review_status": "user_approved",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-10-28",
+  "about_company": {
+    "about_long": "International Gemological Institute (renamed from International Gemmological Institute (India) Ltd on 7 April 2026) is an independent laboratory that grades loose diamonds, studded jewelry and coloured stones and issues a report for each item it certifies. It earns a fee per report: in H1 FY27 (April-September 2026) it issued 7.91 Mn reports at an average realised price of ₹945, for certification revenue of ₹7,474 Mn, plus ₹215 Mn of other operating income, which includes its gemology courses. Loose lab-grown diamonds are the largest line, 56.3% of certification revenue in H1 FY27, followed by natural-diamond jewelry, loose natural diamonds, lab-grown jewelry and gemstones. Its customers run the length of the trade, from diamond growers and manufacturers to wholesalers, jewelry makers, retailers and brands, served from 37 laboratories in 10 countries and from labs set up inside large lab-grown growers' factories. Founded in Antwerp in 1975, it listed on the NSE and BSE in December 2024, used IPO money to buy IGI Belgium and IGI Netherlands, and in early 2026 bought American Gemological Laboratories (AGL), a coloured-gemstone lab. Its financial year now runs April-March; the year to March 2026 was a one-off 15 months.",
+    "about_short": "Independent lab that grades and certifies lab-grown and natural diamonds, studded jewelry and coloured gemstones.",
+    "what_changed": {
+      "text": "Natural-diamond jewelry fell from 21.8% of certification revenue in CY2024 to 19.8% in CY2025 and 15.4% in H1 FY27 (19.1% in H1 FY26), as its revenue grew 7% and then 3%. Loose lab-grown diamonds rose from 52.1% to 53.9% and 56.3%, and lab-grown jewelry from 7.3% to 8.5%. Gemstones went from 2.1% in H1 FY26 to 6.0% in H1 FY27, led by consolidating AGL.",
+      "period": "CY2024 - H1 FY27",
+      "sources": [
+        {
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=0b9bb8c1-79b9-4d3e-9545-9b2523e837b5.pdf",
+          "label": "CY2025 results investor presentation (Jan 2026)",
+          "locator": "Certification revenue mix, 12M"
+        },
+        {
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1b597ebf-3677-44ad-be54-9ff3812d31e2.pdf",
+          "label": "Q2 FY27 investor presentation (Oct 2026)",
+          "locator": "Revenue mix, H1 FY27 v H1 FY26"
+        },
+        {
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7a71af2e-a92d-4323-8ea1-89a4f1110e29.pdf",
+          "label": "Q2 FY27 earnings call transcript (Oct 2026)"
+        }
+      ],
+      "headline": "Lab-grown stones and jewelry took share from natural-diamond jewelry; gemstones grew with AGL"
+    },
+    "business_facts": [
+      {
+        "text": "IGI serves more than 7,500 customers globally: diamond growers, wholesalers, jewelry manufacturers, retailers and international jewelry brands (annual report 2025-26). In March 2025 it said it served 9 of the top 10 jewelry chains in India. It does not disclose how much revenue its largest customers bring; it lists customer concentration as a risk, managed by spreading across formats, geographies and customer types (Aug 2026).",
+        "title": "7,500+ customers across the trade; concentration not disclosed",
+        "period": "Mar 2025 - Aug 2026",
+        "metrics": [
+          {
+            "unit": "customers",
+            "label": "Customers globally (7,500+)",
+            "value": 7500
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/85b59fe5-31fe-4f54-8614-d2e064801654.pdf",
+            "label": "Annual Report 2025-26 (15 months to Mar 2026)",
+            "locator": "Board's Report, Business overview"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7e6bf5fd-1ff5-4bb0-bc2c-56bdb7a29a30.pdf",
+            "label": "CY2024 results investor presentation, revised (Mar 2025)",
+            "locator": "Key highlights"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f3cd5700-3c69-4e7e-9194-043fd848c6b3.pdf",
+            "label": "Investor Day presentation (Aug 2026)",
+            "locator": "The risks - and how we manage them"
+          }
+        ],
+        "category": "customers"
+      },
+      {
+        "text": "By customer location, 26.0% of consolidated revenue from operations came from outside India in the twelve months to December 2024 (₹2,738.73 Mn of ₹10,531.60 Mn) and 24.3% in the fifteen months to March 2026 (₹3,882.82 Mn of ₹15,976.60 Mn). The rest is billed in India, home to most of its lab-grown volume.",
+        "title": "About a quarter of revenue comes from customers outside India",
+        "period": "CY2024; 15 months to Mar 2026",
+        "metrics": [
+          {
+            "unit": "% of revenue",
+            "label": "Outside India, CY2024",
+            "value": 26.0
+          },
+          {
+            "unit": "% of revenue",
+            "label": "Outside India, 15M to Mar 2026",
+            "value": 24.3
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/85b59fe5-31fe-4f54-8614-d2e064801654.pdf",
+            "label": "Annual Report 2025-26 (15 months to Mar 2026)",
+            "locator": "Consolidated notes, Segment reporting"
+          }
+        ],
+        "category": "geography"
+      },
+      {
+        "text": "IGI earns a fee for each report it issues. In CY2025 it issued 12.81 Mn reports at an average realised price (ARP) of ₹927, against 10.57 Mn at ₹953 in CY2024; in H1 FY27 it issued 7.91 Mn at ₹945. The ARP moves with mix: in Q2 FY27 it rose 4% year on year, 2 points from consolidating AGL and 2 points from more loose lab-grown stones. Management says revenue tracks certification volume, not stone prices.",
+        "title": "A fee per report: revenue is reports times realised price",
+        "period": "CY2024 - Q2 FY27",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=0b9bb8c1-79b9-4d3e-9545-9b2523e837b5.pdf",
+            "label": "CY2025 results investor presentation (Jan 2026)",
+            "locator": "Consolidated income statement, 12M 2025"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1b597ebf-3677-44ad-be54-9ff3812d31e2.pdf",
+            "label": "Q2 FY27 investor presentation (Oct 2026)",
+            "locator": "Consolidated results"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7a71af2e-a92d-4323-8ea1-89a4f1110e29.pdf",
+            "label": "Q2 FY27 earnings call transcript (Oct 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f3cd5700-3c69-4e7e-9194-043fd848c6b3.pdf",
+            "label": "Investor Day presentation (Aug 2026)",
+            "locator": "The risks - and how we manage them"
+          }
+        ],
+        "category": "business_model"
+      },
+      {
+        "text": "In August 2026 IGI ran 37 laboratories and 21 schools of gemology across 10 countries (the annual report to March 2026 counted 36 labs). Besides its own labs it sets up labs inside the factories of select high-volume lab-grown growers, 12 such set-ups in February 2025, and runs mobile labs for jewelry makers.",
+        "title": "37 labs and 21 gemology schools in 10 countries",
+        "period": "Feb 2025 - Aug 2026",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f3cd5700-3c69-4e7e-9194-043fd848c6b3.pdf",
+            "label": "Investor Day presentation (Aug 2026)",
+            "locator": "Why IGI leads"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/85b59fe5-31fe-4f54-8614-d2e064801654.pdf",
+            "label": "Annual Report 2025-26 (15 months to Mar 2026)",
+            "locator": "Board's Report, Business overview"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=cd489caf-0140-4cac-a105-8e2c69794f40.pdf",
+            "label": "Q3 FY25 (CY2024 results) earnings call transcript (Feb 2025)"
+          }
+        ],
+        "category": "footprint"
+      },
+      {
+        "text": "On its own estimates for CY2025, by value, from a commissioned industry study, MCA filings and expert interviews, IGI holds 65-75% of lab-grown diamond certification, 40-50% of certification in India and 30-40% globally.",
+        "title": "Company estimates 65-75% of lab-grown diamond certification",
+        "period": "CY2025",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f3cd5700-3c69-4e7e-9194-043fd848c6b3.pdf",
+            "label": "Investor Day presentation (Aug 2026)",
+            "locator": "Our global footprint"
+          }
+        ],
+        "category": "capabilities"
+      },
+      {
+        "text": "The company says its schools supply its own talent and set the industry's standard. Educational courses brought ₹289.91 Mn of revenue in the fifteen months to March 2026, inside other operating income.",
+        "title": "Schools of gemology train its graders and the trade",
+        "period": "15 months to Mar 2026",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f3cd5700-3c69-4e7e-9194-043fd848c6b3.pdf",
+            "label": "Investor Day presentation (Aug 2026)",
+            "locator": "Schools of gemology"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/85b59fe5-31fe-4f54-8614-d2e064801654.pdf",
+            "label": "Annual Report 2025-26 (15 months to Mar 2026)",
+            "locator": "Consolidated notes, Revenue from customers"
+          }
+        ],
+        "category": "capabilities"
+      },
+      {
+        "text": "AGL added about 3% to group revenue growth and 2% to EBITDA growth in Q1 FY27, and 3 points of the 27% revenue growth in H1 FY27, when the base business grew 24%. Gemstones and other certification rose from ₹124 Mn in H1 FY26 to ₹448 Mn in H1 FY27; the India company's own gemstone revenue also grew, from ₹16 Mn to ₹54 Mn.",
+        "title": "Gemstones built up through the AGL purchase",
+        "period": "H1 FY27",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f3cd5700-3c69-4e7e-9194-043fd848c6b3.pdf",
+            "label": "Investor Day presentation (Aug 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7a71af2e-a92d-4323-8ea1-89a4f1110e29.pdf",
+            "label": "Q2 FY27 earnings call transcript (Oct 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1b597ebf-3677-44ad-be54-9ff3812d31e2.pdf",
+            "label": "Q2 FY27 investor presentation (Oct 2026)",
+            "locator": "Income statements, H1 FY27"
+          }
+        ],
+        "category": "expansion"
+      }
+    ],
+    "business_intro": "IGI grades diamonds, studded jewelry and coloured gemstones for the trade and issues a certificate for each piece. It charges per report, so revenue moves with the number of reports and their mix: in H1 FY27 it issued 7.91 Mn reports at ₹945 each on average. Loose lab-grown diamonds are its largest line, 56.3% of certification revenue, and its schools of gemology add course fees.",
+    "company_timeline": [
+      {
+        "year": 1975,
+        "title": "Founded in Antwerp, Belgium",
+        "detail": "The group started in Antwerp, then the diamond capital of the world, and issued the first jewelry identification reports in 1980.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f3cd5700-3c69-4e7e-9194-043fd848c6b3.pdf",
+            "label": "Investor Day presentation (Aug 2026)",
+            "locator": "Fifty years - and a habit of being first"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/85b59fe5-31fe-4f54-8614-d2e064801654.pdf",
+            "label": "Annual Report 2025-26 (15 months to Mar 2026)",
+            "locator": "Board's Report, Business overview"
+          }
+        ]
+      },
+      {
+        "year": 1999,
+        "title": "Incorporated in India",
+        "detail": "The Indian company, now the listed parent, was incorporated in 1999 and is registered in Mumbai; the company calls itself the first mover in India.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/85b59fe5-31fe-4f54-8614-d2e064801654.pdf",
+            "label": "Annual Report 2025-26 (15 months to Mar 2026)",
+            "locator": "BRSR, Year of incorporation"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f3cd5700-3c69-4e7e-9194-043fd848c6b3.pdf",
+            "label": "Investor Day presentation (Aug 2026)",
+            "locator": "Fifty years - and a habit of being first"
+          }
+        ]
+      },
+      {
+        "year": 2005,
+        "title": "Begins certifying lab-grown diamonds",
+        "detail": "The annual report says IGI was among the first organisations to certify lab-grown diamonds, in 2005; the Investor Day deck calls it the first. Lab-grown stones are now its largest line.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/85b59fe5-31fe-4f54-8614-d2e064801654.pdf",
+            "label": "Annual Report 2025-26 (15 months to Mar 2026)",
+            "locator": "Board's Report, Business overview"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f3cd5700-3c69-4e7e-9194-043fd848c6b3.pdf",
+            "label": "Investor Day presentation (Aug 2026)",
+            "locator": "Fifty years - and a habit of being first"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Lists on NSE and BSE",
+        "detail": "Shares listed on 20 December 2024. Blackstone had acquired IGI in May 2023; the promoter, BCP Asia II Topco Pte. Ltd, held 76.55% of the shares at 31 March 2026.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/84b8783b-111a-4ad3-8ebb-a508950025a2.pdf",
+            "label": "Annual Report 2024 (calendar year 2024)",
+            "locator": "Board's Report"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/85b59fe5-31fe-4f54-8614-d2e064801654.pdf",
+            "label": "Annual Report 2025-26 (15 months to Mar 2026)",
+            "locator": "Notes, promoter shareholding"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Acquires IGI Belgium and IGI Netherlands",
+        "detail": "Bought for Rs. 1,345 crores in December 2024 with the IPO's primary proceeds; the two became subsidiaries of the Indian company, which from then on reports consolidated results. Together they were close to 25% of group revenue (Feb 2025).",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=cd489caf-0140-4cac-a105-8e2c69794f40.pdf",
+            "label": "Q3 FY25 (CY2024 results) earnings call transcript (Feb 2025)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7e6bf5fd-1ff5-4bb0-bc2c-56bdb7a29a30.pdf",
+            "label": "CY2024 results investor presentation, revised (Mar 2025)",
+            "locator": "CY24 consolidated results, note 1"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Acquires American Gemological Laboratories (AGL)",
+        "detail": "IGI's US subsidiary bought 100% of AGL Holdco for $13.2M; AGL, a coloured-gemstone lab founded in 1977, had turnover of $3.85M (FY24). The company dates the purchase to 30 January 2026; the annual report consolidates it from 10 February 2026. Its revenue sits in the gemstones line.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f3cd5700-3c69-4e7e-9194-043fd848c6b3.pdf",
+            "label": "Investor Day presentation (Aug 2026)",
+            "locator": "With a foray into colored gemstones"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3382a906-e500-4de2-b3d8-656935be2864.pdf",
+            "label": "Jan-Mar 2026 earnings call transcript (May 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/85b59fe5-31fe-4f54-8614-d2e064801654.pdf",
+            "label": "Annual Report 2025-26 (15 months to Mar 2026)",
+            "locator": "Board's Report, Subsidiary companies"
+          }
+        ]
+      }
+    ]
+  },
+  "about_sources": [
+    {
+      "label": "IGI Q3 FY26 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=0b9bb8c1-79b9-4d3e-9545-9b2523e837b5.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "IGI Q2 FY27 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1b597ebf-3677-44ad-be54-9ff3812d31e2.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "IGI Q4 FY26 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=3382a906-e500-4de2-b3d8-656935be2864.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "IGI Q2 FY27 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7a71af2e-a92d-4323-8ea1-89a4f1110e29.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "IGI Q3 FY25 investor presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7e6bf5fd-1ff5-4bb0-bc2c-56bdb7a29a30.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "IGI Q3 FY25 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=cd489caf-0140-4cac-a105-8e2c69794f40.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "IGI Investor Day 2026 presentation (3 Aug 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f3cd5700-3c69-4e7e-9194-043fd848c6b3.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "IGI Annual Report 2024 (calendar year 2024)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/84b8783b-111a-4ad3-8ebb-a508950025a2.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "IGI Annual Report FY2025-26 (15 months, Jan 2025 - Mar 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/85b59fe5-31fe-4f54-8614-d2e064801654.pdf",
+      "locator": "company background, timeline and facts"
+    }
+  ]
+}
