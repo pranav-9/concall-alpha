@@ -338,6 +338,13 @@
     "source": "google-favicon",
     "fetchedAt": "2026-10-29"
   },
+  "IGIL": {
+    "site": "https://www.igi.org/",
+    "siteFrom": "company.website",
+    "tier": "icon",
+    "source": "https://www.igi.org/favicon.ico",
+    "fetchedAt": "2026-11-09"
+  },
   "IKS": {
     "tier": "icon",
     "source": "https://ikshealth.com/wp-content/uploads/2026/06/iks-favicon.webp",

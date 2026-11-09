@@ -60,6 +60,7 @@ export const COMPANY_LOGO_CODES: ReadonlySet<string> = new Set([
   "HINDALCO",
   "HSCL",
   "IDEAFORGE",
+  "IGIL",
   "IKS",
   "IMFA",
   "INDGN",
