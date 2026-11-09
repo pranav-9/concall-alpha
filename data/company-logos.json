@@ -197,6 +197,13 @@
     "source": "https://www.craftsmanautomation.com/images/favicon.png",
     "fetchedAt": "2026-10-29"
   },
+  "DEEDEV": {
+    "site": "https://www.deepiping.com/",
+    "siteFrom": "company.website",
+    "tier": "picked",
+    "source": "https://www.deepiping.com/assets/images/logo/logo-blue.png",
+    "fetchedAt": "2026-11-09"
+  },
   "DIACABS": {
     "site": "http://www.dicabs.com/",
     "siteFrom": "screener",
@@ -225,6 +232,13 @@
     "tier": "favicon-32",
     "source": "google-favicon",
     "fetchedAt": "2026-10-29"
+  },
+  "ELLEN": {
+    "site": "https://ellenbarrie.com/",
+    "siteFrom": "company.website",
+    "tier": "picked",
+    "source": "https://ellenbarrie.com/wp-content/uploads/2025/02/Result-1.webp",
+    "fetchedAt": "2026-11-09"
   },
   "ENTERO": {
     "tier": "icon",
@@ -446,6 +460,13 @@
     "source": "google-favicon",
     "fetchedAt": "2026-10-29"
   },
+  "KILBUNENGG": {
+    "site": "https://www.kilburnengg.com/",
+    "siteFrom": "screener",
+    "tier": "picked",
+    "source": "https://www.kilburnengg.com/wp-content/themes/kilburn/images/fav-icon.jpg",
+    "fetchedAt": "2026-11-09"
+  },
   "KIRLOSENG": {
     "tier": "favicon-32",
     "source": "google-favicon",
@@ -590,10 +611,24 @@
     "source": "https://assetscdn1.paytm.com/images/catalog/view_item/2832559/1725599834382.png",
     "fetchedAt": "2026-10-29"
   },
+  "PGEL": {
+    "site": "https://pgel.in/",
+    "siteFrom": "screener",
+    "tier": "picked",
+    "source": "https://pgel.in/assets/images/favicon/favicon.png",
+    "fetchedAt": "2026-11-09"
+  },
   "PINELABS": {
     "tier": "favicon-32",
     "source": "https://www.pinelabs.com/apple-touch-icon.png",
     "fetchedAt": "2026-10-29"
+  },
+  "PITTIENG": {
+    "site": "http://www.pitti.in/",
+    "siteFrom": "company.website",
+    "tier": "picked",
+    "source": "http://www.pitti.in/logo_main.png",
+    "fetchedAt": "2026-11-09"
   },
   "POCL": {
     "site": "http://www.pocl.co.in/",
@@ -640,6 +675,13 @@
     "tier": "icon",
     "source": "https://qlinebiotech.com/assets/images/icons/q-favi.ico",
     "fetchedAt": "2026-10-29"
+  },
+  "QPOWER": {
+    "site": "https://www.qualitypower.com/",
+    "siteFrom": "company.website",
+    "tier": "favicon-32",
+    "source": "google-favicon",
+    "fetchedAt": "2026-11-09"
   },
   "RADICO": {
     "tier": "icon",
