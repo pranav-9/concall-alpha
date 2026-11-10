@@ -84,13 +84,6 @@
     "source": "https://www.avalontec.com/wp-content/uploads/2021/11/avalon-logo-150x64.png",
     "fetchedAt": "2026-10-29"
   },
-  "AVANTIFEED": {
-    "site": "http://www.avantifeeds.com/",
-    "siteFrom": "screener",
-    "tier": "icon",
-    "source": "https://avantifeeds.com/v2/wp-content/uploads/2021/05/Favicon_avanti.svg",
-    "fetchedAt": "2026-10-29"
-  },
   "AXISCADES": {
     "site": "http://www.axiscades.com/",
     "siteFrom": "screener",
@@ -139,11 +132,6 @@
     "siteFrom": "screener",
     "tier": "icon",
     "source": "https://bluejethealthcare.com/wp-content/uploads/2023/03/cropped-Frame-11-180x180.png",
-    "fetchedAt": "2026-10-29"
-  },
-  "BONDADA": {
-    "tier": "icon",
-    "source": "https://www.bondada.net/logo.png",
     "fetchedAt": "2026-10-29"
   },
   "CARYSIL": {
@@ -204,13 +192,6 @@
     "source": "google-favicon",
     "fetchedAt": "2026-10-29"
   },
-  "ELLEN": {
-    "site": "https://ellenbarrie.com/",
-    "siteFrom": "company.website",
-    "tier": "picked",
-    "source": "https://ellenbarrie.com/wp-content/uploads/2025/02/Result-1.webp",
-    "fetchedAt": "2026-11-09"
-  },
   "ENTERO": {
     "tier": "icon",
     "source": "https://www.enterohealthcare.com/images/favicon.ico",
@@ -257,11 +238,6 @@
   "GLAND": {
     "tier": "header-logo",
     "source": "https://glandpharma.com/images/header_logo.webp",
-    "fetchedAt": "2026-10-29"
-  },
-  "GODAVARIB": {
-    "tier": "header-logo",
-    "source": "https://www.godavaribiorefineries.com/sites/all/themes/godavari/logo.png",
     "fetchedAt": "2026-10-29"
   },
   "GOLDIAM": {
@@ -347,11 +323,6 @@
     "siteFrom": "screener",
     "tier": "icon",
     "source": "https://www.innovacaptab.com/assets/img/innova-new-logo.gif",
-    "fetchedAt": "2026-10-29"
-  },
-  "INTERARCH": {
-    "tier": "header-logo",
-    "source": "http://www.interarchbuildings.com/frontend/images/logo.png",
     "fetchedAt": "2026-10-29"
   },
   "JINDALSAW": {
@@ -588,13 +559,6 @@
     "source": "https://www.pokarna.com/wp-content/uploads/2024/01/pokarna-icon.png",
     "fetchedAt": "2026-10-29"
   },
-  "POWERMECH": {
-    "site": "https://powermechprojects.com/",
-    "siteFrom": "screener",
-    "tier": "icon",
-    "source": "https://powermechprojects.com/wp-content/uploads/2022/08/Logo-2-3.png",
-    "fetchedAt": "2026-10-29"
-  },
   "PRICOLLTD": {
     "tier": "icon",
     "source": "https://pricol.com/wp-content/uploads/2023/01/cropped-logo-1-180x180.png",
@@ -618,11 +582,6 @@
     "tier": "favicon-32",
     "source": "google-favicon",
     "fetchedAt": "2026-11-09"
-  },
-  "RADICO": {
-    "tier": "icon",
-    "source": "https://radicokhaitan.com/wp-content/themes/radico-khaitan/images/favicon//apple-icon-180x180.png",
-    "fetchedAt": "2026-10-29"
   },
   "RATEGAIN": {
     "site": "http://www.rategain.com/",
@@ -696,13 +655,6 @@
   "SCHNEIDER": {
     "tier": "favicon-32",
     "source": "google-favicon",
-    "fetchedAt": "2026-10-29"
-  },
-  "SDBL": {
-    "site": "https://somindia.com/",
-    "siteFrom": "screener",
-    "tier": "icon",
-    "source": "https://somindia.com/wp-content/uploads/2024/02/som-logo.png",
     "fetchedAt": "2026-10-29"
   },
   "SENCO": {
@@ -800,11 +752,6 @@
     "source": "https://www.surakshanet.com/images/fav-icon-new.png",
     "fetchedAt": "2026-10-29"
   },
-  "SUZLON": {
-    "tier": "icon",
-    "source": "https://www.suzlon.com/favicon/favicon.svg",
-    "fetchedAt": "2026-10-29"
-  },
   "SYRMA": {
     "tier": "icon",
     "source": "https://www.syrmasgs.com/favicon.ico",
@@ -874,11 +821,6 @@
     "siteFrom": "screener",
     "tier": "icon",
     "source": "http://www.voepl.com/web/image/website/2/favicon?unique=0ee972e",
-    "fetchedAt": "2026-10-29"
-  },
-  "WAAREEENER": {
-    "tier": "icon",
-    "source": "https://www.waaree.com/favicon.ico",
     "fetchedAt": "2026-10-29"
   },
   "WELCORP": {
