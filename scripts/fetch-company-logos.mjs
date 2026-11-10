@@ -76,7 +76,6 @@ const EXCLUDE = {
   LAURUSLABS: "only a wide wordmark and a 16px favicon",
   GRAVITA: "only a wide wordmark and a 16px favicon",
   NH: "wide wordmark with an anniversary lockup; the 48px favicon is a BMP frame sharp cannot read",
-  ARVINDFASN: "only a wide wordmark; the favicon is white on transparent",
   SAMHI: "wordmark just over 2.5:1; the favicon is only dots",
   ENDURANCE: "only a wide wordmark and a 16px favicon",
   BBOX: "the cube mark is a 30px favicon; the wordmark is 7.8:1",
@@ -86,7 +85,6 @@ const EXCLUDE = {
   GNG: "only a wide wordmark and a 16px favicon (site: electronicsbazaar.com)",
   PRIVISCL: "only a wide wordmark and a 16px favicon",
   CDSL: "wordmark just over 2.5:1; 16px favicon",
-  GAYAPROJ: "only a wide wordmark and a 16px favicon",
   RATNAMANI: "wordmark just over 2.5:1; the SVG carries a stray swoosh, the icon is white",
   THYROCARE: "only wide wordmarks on thyrocare.com",
   RATNAVEER: "header wordmark too wide; the footer mark is white text",
@@ -107,7 +105,6 @@ const PICKED = {
   PITTIENG: { url: "http://www.pitti.in/logo_main.png", note: "header logo; the page is a script shell" },
   PGEL: { url: "https://pgel.in/assets/images/favicon/favicon.png", referer: "https://pgel.in/", note: "PG emblem; served only with the site as Referer" },
   DEEDEV: { url: "https://www.deepiping.com/assets/images/logo/logo-blue.png", note: "header logo; filename skipped by the header search" },
-  ELLEN: { url: "https://ellenbarrie.com/wp-content/uploads/2025/02/Result-1.webp", note: "the eagle emblem from the header logo" },
   KILBUNENGG: { url: "https://www.kilburnengg.com/wp-content/themes/kilburn/images/fav-icon.jpg", minPx: FALLBACK_PX, note: "32px favicon, the E emblem of the header logo" },
 };
 

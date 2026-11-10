@@ -146,14 +146,13 @@
         },
         {
           "label": "Peak power demand",
-          "value": "270 GW",
+          "value": "243 GW",
           "sub": "→ 400+ GW by 2030",
           "series": [
-            {"period": "FY24", "value": 240},
-            {"period": "FY27", "value": 270},
+            {"period": "FY26", "value": 243},
             {"period": "FY30", "value": 400, "est": true}
           ],
-          "source": {"company_code": "SUZLON", "quarter": "Q1 FY27", "document": "concall", "note": "Suzlon Q1 FY27 (peak demand crossed 270 GW), Bondada Q4 FY26 (240 GW in FY24), Yash Highvoltage Q4 FY26 (400+ GW by 2030)."}
+          "source": {"company_code": "YASHHVOLT", "quarter": "Q4 FY26", "document": "concall", "note": "Yash Highvoltage Q4 FY26: peak demand expected to rise from 243 GW to 400+ GW by 2030."}
         },
         {
           "label": "Transformer order books",
@@ -193,49 +192,6 @@
           "value": "+15-20%",
           "sub": "vs pre-war, easing from peak",
           "source": {"company_code": "AARTIDRUGS", "quarter": "Q1 FY27", "document": "concall", "note": "Aarti Drugs Q1 FY27 call: API prices ~15-20% above pre-war for metformin, off the March-April peak but still elevated."}
-        }
-      ]
-    },
-    {
-      "schema_version": "theme_story_v1",
-      "theme_slug": "renewables-build-out",
-      "driver": {
-        "kind": "policy",
-        "title": "Policy and energy security",
-        "line": "ALMM, GST cuts and the 500 GW non-fossil target pull installs; storage tenders add a leg."
-      },
-      "kpis": [
-        {
-          "label": "India solar additions",
-          "value": "38 GW",
-          "sub": "→ 100 GW a year by 2035",
-          "series": [
-            {"period": "CY25", "value": 38},
-            {"period": "CY35", "value": 100, "est": true}
-          ],
-          "source": {"company_code": "WAAREEENER", "quarter": "Q1 FY27", "document": "concall", "note": "Waaree Energies Q1 FY27 call: India annual solar additions from 38 GW to 100 GW by 2035 (10% CAGR); global from 698 GW to 993 GW."}
-        },
-        {
-          "label": "Wind installs",
-          "value": "10 GW+",
-          "sub": "near-term, 15 GW by FY31",
-          "series": [
-            {"period": "FY26", "value": 6},
-            {"period": "FY27", "value": 10, "est": true},
-            {"period": "FY31", "value": 15, "est": true}
-          ],
-          "source": {"company_code": "SUZLON", "quarter": "Q1 FY27", "document": "concall", "note": "Suzlon Q2 FY26 call (~6 GW industry installs in FY26) and Q1 FY27 call (annual installs to exceed 10 GW near-term, 15 GW by FY31; ~25 GW repowering potential)."}
-        },
-        {
-          "label": "Peak power demand",
-          "value": "270 GW",
-          "sub": "→ 690 GW by FY36",
-          "series": [
-            {"period": "FY24", "value": 240},
-            {"period": "FY27", "value": 270},
-            {"period": "FY36", "value": 690, "est": true}
-          ],
-          "source": {"company_code": "BONDADA", "quarter": "Q4 FY26", "document": "concall", "note": "Bondada Q4 FY26 call: peak demand 240 GW in FY24 to 690 GW by FY36, 500 GW non-fossil target by 2030; Suzlon Q1 FY27: peak demand crossed 270 GW."}
         }
       ]
     },

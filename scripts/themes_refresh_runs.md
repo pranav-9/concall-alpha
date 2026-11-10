@@ -35,3 +35,4 @@
 2026-10-16 | THEMES | adds=5 [semiconductor-supply-chain:AVALON,semiconductor-supply-chain:SYRMA,semiconductor-supply-chain:ROSSTECH,semiconductor-supply-chain:CENTUM,semiconductor-supply-chain:ACUTAAS]
 2026-10-16 | THEMES | reorder=[ai-datacentre-fibre,ems,defence-order-inflows,jewellery-gold-retail,transmission-grid-capex,specialty-chemicals-rebound,renewables-build-out,cdmo-crams] rows=8
 2026-10-16 | THEMES | removed=1 [renewables-build-out:CLEANMAX]
+2026-11-10 | THEMES | bench=renewables-build-out sort=110

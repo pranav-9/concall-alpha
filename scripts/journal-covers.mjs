@@ -425,16 +425,6 @@ const COVERS = {
       P("M444 136 l34 14 l-34 14 z", "s d") +
       G(470, 214, R(-30, -18, 60, 36, 4, "s w") + P("M-30 -18 l-20 -22", "s sa")),
   ],
-  // Bondada — the tower it builds for others, and the panels it wants to own.
-  "bondada-builder-to-landlord": [
-    "amber",
-    P("M232 258 L262 50 h16 L308 258", "s") +
-      P("M256 96 h28 M250 140 h40 M244 184 h52 M238 228 h64 M256 96 l34 44 M284 96 l-34 44 M250 140 l46 44 M290 140 l-46 44 M244 184 l58 44 M296 184 l-58 44", "s t") +
-      R(254, 34, 32, 16, 3, "s d") +
-      P("M226 62 q-14 14 0 28 M314 62 q14 14 0 28", "s t sa") +
-      G(430, 196, P("M-70 34 l24 -76 h112 l24 76 z", "s l") + P("M-58 -4 h136 M-10 -42 l-12 76 M30 -42 l12 76", "s t") + L(10, 34, 10, 62) + L(-16, 62, 36, 62)) +
-      C(470, 76, 22, "s m"),
-  ],
   // KSH — the spool of winding wire, sold by weight.
   "kshintl-charges-by-the-gram": [
     "amber",
