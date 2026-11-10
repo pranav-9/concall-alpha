@@ -27,7 +27,6 @@ export const COMPANY_LOGO_CODES: ReadonlySet<string> = new Set([
   "BLUEJET",
   "BONDADA",
   "CARYSIL",
-  "CLEANMAX",
   "COFORGE",
   "CONCORDBIO",
   "CRAFTSMAN",
