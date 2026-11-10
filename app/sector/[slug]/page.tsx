@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getConcallData } from "@/app/company/get-concall-data";
 import { isCompanyNew } from "@/lib/company-freshness";
-import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isSectorListed } from "@/lib/coverage-policy";
 import {
   CHIP_BASE,
   CHIP_NEUTRAL,
@@ -100,7 +100,8 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
   // start now and overlap the two sector lookups below instead of queueing
   // behind them. The page is fully dynamic, and this chain was the TTFB:
   // ~1.3-1.8s measured on prod (2026-08-21), four serial Supabase round trips.
-  const concallPromise = getConcallData({ excludeLargeCaps: true });
+  // includeBelowCut: sector pages list every covered company (isSectorListed).
+  const concallPromise = getConcallData({ excludeLargeCaps: true, includeBelowCut: true });
   // Promise.resolve() matters: a Supabase query builder is a thenable that
   // issues a fresh request on EVERY .then(), so handing the bare builder to
   // both the guard below and Promise.all would run the query twice.
@@ -124,7 +125,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
   const sectors = Array.from(
     new Set(
       (sectorListRows ?? [])
-        .filter((row) => isDiscoveryListed(row as CompanyRow))
+        .filter((row) => isSectorListed(row as CompanyRow))
         .map((row) => (row as { sector?: string | null }).sector?.trim())
         .filter((sector): sector is string => Boolean(sector)),
     ),
@@ -141,7 +142,7 @@ export default async function SectorPage({ params, searchParams }: SectorPagePro
     .eq("sector", sectorName);
 
   const companies = ((companyRows ?? []) as CompanyRow[]).filter((company) =>
-    isDiscoveryListed(company),
+    isSectorListed(company),
   );
   if (!companies.length) {
     return (

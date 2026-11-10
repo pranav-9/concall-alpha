@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { slugifySector } from "@/app/sector/utils";
 import { getConcallData } from "@/app/company/get-concall-data";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
-import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isSectorListed } from "@/lib/coverage-policy";
 import {
   BOARD_READS,
   classifyBoardRead,
@@ -228,7 +228,9 @@ export default async function SectorsPage({
       .from("company")
       .select(`code, name, sector, sub_sector, ${COVERAGE_SELECT}`)
       .not("sector", "is", null),
-    getConcallData({ excludeLargeCaps: true }),
+    // includeBelowCut: sectors list every covered company, so below-cut names
+    // need their score legs too (lib/coverage-policy isSectorListed).
+    getConcallData({ excludeLargeCaps: true, includeBelowCut: true }),
     supabase
       .from("growth_outlook")
       .select("company, growth_score, run_timestamp")
@@ -236,7 +238,7 @@ export default async function SectorsPage({
   ]);
 
   const companies = ((companiesData ?? []) as CompanyRow[]).filter((company) =>
-    isDiscoveryListed(company),
+    isSectorListed(company),
   );
   if (!companies.length) {
     return (
@@ -334,8 +336,9 @@ export default async function SectorsPage({
     if (leg?.valuation != null) bucket.valuation.push(leg.valuation);
   });
 
+  // Every sector is listed, one-company sectors included, so the header's
+  // company count matches the covered universe.
   const unranked: Omit<SectorRow, "rank">[] = Array.from(sectorMap.entries())
-    .filter(([, bucket]) => bucket.companyCount > 1)
     .map(([sector, bucket]) => {
       const avgBlend = avg(bucket.blend);
       const avgGrowth = avg(bucket.growth);

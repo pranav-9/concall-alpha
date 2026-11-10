@@ -30,7 +30,7 @@ import { normalizeCompanyIndustryAnalysis } from "@/lib/company-industry-analysi
 import type { CompanyIndustryAnalysisRow } from "@/lib/company-industry-analysis/types";
 import { normalizeCompanyQuality } from "@/lib/company-quality/normalize";
 import type { CompanyQualityRow, NormalizedCompanyQuality } from "@/lib/company-quality/types";
-import { COVERAGE_SELECT, isDiscoveryListed, type CoverageFields } from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isSectorListed, type CoverageFields } from "@/lib/coverage-policy";
 import { currentReportingQuarter } from "@/lib/current-quarter";
 import { safeFilingHref } from "@/lib/exchange-desk/filing-href";
 import {
@@ -134,7 +134,7 @@ type CompanyRow = CoverageFields & {
 
 export type CompanyUniverse = {
   byCode: Map<string, WatchlistCompany>;
-  /** Lowercase sector keys with at least one discovery-listed company (so /sector/<slug> exists). */
+  /** Lowercase sector keys with at least one isSectorListed company (so /sector/<slug> exists). */
   sectorsWithPage: Set<string>;
 };
 
@@ -152,7 +152,7 @@ export async function readCompanyUniverse(supabase: Supabase): Promise<CompanyUn
       sector: str(row.sector),
       subSector: str(row.sub_sector),
     });
-    if (row.sector && isDiscoveryListed(row)) sectorsWithPage.add(row.sector.trim().toLowerCase());
+    if (row.sector && isSectorListed(row)) sectorsWithPage.add(row.sector.trim().toLowerCase());
   }
   return { byCode, sectorsWithPage };
 }

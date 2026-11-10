@@ -2,9 +2,10 @@ export type MarketCapBand = "large" | "mid" | "small";
 
 /**
  * Coverage policy: the platform covers mid- and small-cap companies (AMFI
- * classification). Discovery surfaces (leaderboards, homepage, sectors)
- * exclude companies ADMITTED as large cap; their pages stay directly
- * reachable and searchable.
+ * classification). Discovery surfaces (leaderboards, homepage) exclude
+ * companies ADMITTED as large cap; their pages stay directly reachable and
+ * searchable. Sectors are the exception that lists below-cut companies too —
+ * see isSectorListed.
  *
  * Keyed off market_cap_band_at_admission, not the current band, so covered
  * companies that later graduate to large cap stay listed (retention rule).
@@ -52,6 +53,20 @@ export function isBelowCoverageCut(
   company: CoverageFields | null | undefined,
 ): boolean {
   return company?.excluded_from_discovery === true;
+}
+
+/**
+ * Sectors (/sectors, /sector/<slug>, the sitemap's sector URLs, and the
+ * watchlist's sector links) list EVERY covered company — the coverage cut is
+ * not applied there (user call 2026-11-10: the sectors page showed 98 of 203).
+ * Only the admission gate holds. Use this, not isDiscoveryListed, on any
+ * sector surface so the listing, the detail page and the links agree on which
+ * sectors have a page.
+ */
+export function isSectorListed(
+  company: CoverageFields | null | undefined,
+): boolean {
+  return !isAdmittedLargeCap(company);
 }
 
 /** Columns every discovery-surface `company` select must include. */
