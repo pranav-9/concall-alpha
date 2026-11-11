@@ -41,6 +41,7 @@ import type {
   ValuationZone,
 } from "@/lib/valuation-check/types";
 import { cn } from "@/lib/utils";
+import { formatShortDate } from "../[code]/page-helpers";
 import { ExpandableText } from "./expandable-text";
 
 const eyebrowClass =
@@ -412,7 +413,11 @@ function MultipleCard({
   peer: { value: number; label: string } | null;
 }) {
   const band = lens.band;
-  const descriptors: string[] = ["now"];
+  const level = lens.current ?? lens.levelWithoutBand;
+  // A multiple whose series stopped (a trailing loss ends a P/E) has no reading to call "now".
+  const ended = lens.endedOn !== null && level === null;
+  const endedDate = ended ? (formatShortDate(lens.endedOn, true) ?? lens.endedOn) : null;
+  const descriptors: string[] = ended ? [] : ["now"];
   if (lens.pill) descriptors.push(PILL_BAND_POSITION[lens.pill]);
   if (peer && lens.current !== null) {
     descriptors.push(lens.current < peer.value ? "below peers" : "above peers");
@@ -431,14 +436,14 @@ function MultipleCard({
           <span className={chipClass(PILL_TONE[lens.pill])}>{lens.pill}</span>
         ) : (
           <span className={cn(chipBaseClass, "border-dashed border-border/60 text-muted-foreground")}>
-            no band
+            {ended ? "no reading" : "no band"}
           </span>
         )}
       </div>
 
       <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0">
         <span className="text-2xl font-bold leading-none tabular-nums text-foreground">
-          {formatMultiple(lens.current ?? lens.levelWithoutBand)}
+          {formatMultiple(level)}
         </span>
         <span className="text-[11px] text-muted-foreground">{descriptors.join(" · ")}</span>
       </div>
@@ -447,12 +452,17 @@ function MultipleCard({
         <div className="mt-2.5">
           <MultipleBandBar
             band={band}
-            current={lens.current ?? lens.levelWithoutBand}
+            current={level}
             peer={peer}
             nowFillClass={lens.pill ? PILL_NOW_FILL[lens.pill] : "fill-foreground/70"}
             gradientId={`mbb-${lens.id}`}
           />
         </div>
+      ) : ended ? (
+        <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+          No reading since {endedDate}
+          {lens.lastReading !== null ? `, when it was ${formatMultiple(lens.lastReading)}` : ""}.
+        </p>
       ) : (
         <p className="mt-1.5 text-[11px] text-muted-foreground">no multiple history available</p>
       )}

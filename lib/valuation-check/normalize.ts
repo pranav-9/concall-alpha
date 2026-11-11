@@ -80,6 +80,9 @@ const normalizeLens = (
     // Kept when Screener serves no history series but the ratios block still has the level:
     // showing the number without a pill beats showing nothing.
     levelWithoutBand: row.available ? null : toNumber(row.current_from_ratios),
+    // A row that is available again is live, whatever an older run left on it.
+    endedOn: row.available ? null : (row.series_ended_on ?? null),
+    lastReading: row.available ? null : toNumber(row.last_reading),
   };
 };
 

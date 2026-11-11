@@ -48,6 +48,14 @@ export type ValuationLensRow = {
   current?: number | null;
   current_from_ratios?: number | null;
   as_of?: string | null;
+  /**
+   * Set when the multiple's series stopped longer ago than the display window (a trailing loss
+   * ends a P/E). The row is then `available: false` with no current reading; this is the date of
+   * its last point. EPACK 2026-11-11: P/E ended 2026-05-15.
+   */
+  series_ended_on?: string | null;
+  /** The last reading before the series stopped. Context only, never today's level. */
+  last_reading?: number | null;
   screener_reported_median?: number | null;
   band_5y?: ValuationBand | null;
   band_10y?: ValuationBand | null;
@@ -232,6 +240,10 @@ export type NormalizedValuationLens = {
   lowInformationBand: boolean;
   /** Level known from the ratios block when no history series exists. */
   levelWithoutBand: number | null;
+  /** The series stopped on this date, so there is no current reading (null for a live series, or one that never existed). */
+  endedOn: string | null;
+  /** The last reading before it stopped. Shown as history, never as today's level. */
+  lastReading: number | null;
 };
 
 export type NormalizedValuationCheck = {
