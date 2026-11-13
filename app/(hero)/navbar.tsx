@@ -7,6 +7,7 @@ import { cn, hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
+import type { CompanySearchItem } from "@/lib/company-search-match";
 import { authHrefWithNext } from "@/lib/safe-next-path";
 import { BrandLogo, BrandMark } from "@/components/brand/logo";
 import { JournalNewIndicator } from "@/components/journal-new-indicator";
@@ -45,7 +46,7 @@ type CompanySearchProps = {
   className?: string;
   onNavigate?: () => void;
   instanceId?: string;
-  initialCompanies?: { code: string; name: string | null }[];
+  initialCompanies?: CompanySearchItem[];
   autoFocus?: boolean;
   inputClassName?: string;
 };
@@ -98,7 +99,7 @@ const Navbar = ({
   resultsPulse = null,
 }: {
   initialUser?: UserInfo;
-  initialCompanies?: { code: string; name: string | null }[];
+  initialCompanies?: CompanySearchItem[];
   latestJournalDate?: string | null;
   /** Validated invite URL from `getTelegramJoinUrl()`; null renders no link.
    *  The one join affordance on every page (2026-09-13 visibility push). */

@@ -22,10 +22,13 @@ export function CoverageRequestButton({
   subject,
   surface,
   className,
+  tone = "default",
 }: {
   subject: string;
   surface: CoverageRequestSurface;
   className?: string;
+  /** "house" inside a house-tokens surface (the search panel); "default" on shadcn pages. */
+  tone?: "default" | "house";
 }) {
   const pathname = usePathname();
   const trimmed = subject.trim();
@@ -70,7 +73,8 @@ export function CoverageRequestButton({
       <p
         role="status"
         className={cn(
-          "inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400",
+          "inline-flex items-center gap-1.5 text-xs font-medium",
+          tone === "house" ? "text-[var(--signal)]" : "text-emerald-700 dark:text-emerald-400",
           className,
         )}
       >
@@ -86,13 +90,24 @@ export function CoverageRequestButton({
         type="button"
         onClick={submit}
         disabled={status === "sending"}
-        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-60"
+        className={cn(
+          "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-60",
+          tone === "house"
+            ? "border-[var(--rule)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--ink-soft)]"
+            : "border-border bg-background text-foreground hover:bg-accent",
+        )}
       >
         <Plus className="h-3.5 w-3.5" aria-hidden />
         {status === "sending" ? "Sending…" : <>Ask us to cover &ldquo;{trimmed}&rdquo;</>}
       </button>
       {status === "error" && (
-        <span role="alert" className="text-[11px] text-rose-600 dark:text-rose-400">
+        <span
+          role="alert"
+          className={cn(
+            "text-[11px]",
+            tone === "house" ? "text-[var(--alarm)]" : "text-rose-600 dark:text-rose-400",
+          )}
+        >
           Couldn&apos;t send. Try again.
         </span>
       )}
