@@ -4,6 +4,9 @@ import { createPublicReadClient } from "@/lib/supabase/public-read";
 export type CompanySearchRow = {
   code: string;
   name: string | null;
+  /** Raw listing column, e.g. "BSE,NSE" — the dropdown shows one tag (see listingExchange). */
+  exchange?: string | null;
+  sector?: string | null;
 };
 
 const PAGE_SIZE = 1000;
@@ -22,6 +25,8 @@ function dedupeCompanyRows(rows: CompanySearchRow[]) {
     out.push({
       code,
       name: row.name?.trim() || null,
+      exchange: row.exchange?.trim() || null,
+      sector: row.sector?.trim() || null,
     });
   });
 
@@ -37,7 +42,7 @@ async function fetchCompanySearchRows() {
     const to = Math.min(from + PAGE_SIZE - 1, MAX_ROWS - 1);
     const { data, error } = await supabase
       .from("company")
-      .select("code,name")
+      .select("code,name,exchange,sector")
       .order("code", { ascending: true })
       .range(from, to);
 
@@ -55,6 +60,7 @@ async function fetchCompanySearchRows() {
 
 export const getCachedCompanySearchRows = unstable_cache(
   fetchCompanySearchRows,
-  ["company-search-rows-v1"],
+  // v2 (2026-11-13): rows gained exchange + sector for the dropdown.
+  ["company-search-rows-v2"],
   { revalidate: 600 },
 );

@@ -9,7 +9,7 @@ import { logger } from "@/lib/logger";
 
 function searchCompanyRows(rows: CompanySearchRow[], q: string): CompanySearchRow[] {
   return searchCompanies(
-    dedupeCompanies(rows).map((row) => ({ code: row.code.trim(), name: row.name })),
+    dedupeCompanies(rows).map((row) => ({ ...row, code: row.code.trim() })),
     q,
   );
 }

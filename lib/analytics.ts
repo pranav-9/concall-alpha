@@ -109,6 +109,10 @@ export const analytics = {
   searchResultClick: (query: string, companyCode: string, position: number) =>
     track("search_result_click", { query, company_code: companyCode, position }),
 
+  /** A company was reopened from the empty search box's Recent list (2026-11-13). */
+  searchRecentClick: (companyCode: string, position: number) =>
+    track("search_recent_click", { company_code: companyCode, position }),
+
   /** Leaderboard tab switched — which board is the real front door. `surface`
    *  separates the /leaderboards page from the /desk board that shares this event. */
   leaderboardTabChange: (from: string, to: string, surface?: AnalyticsSurface) =>
