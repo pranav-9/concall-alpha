@@ -725,6 +725,13 @@
     "source": "https://sonacomstar.com/img/favicon.png",
     "fetchedAt": "2026-10-29"
   },
+  "SRF": {
+    "site": "https://www.srf.com/",
+    "siteFrom": "company.website",
+    "tier": "picked",
+    "source": "https://www.srf.com/assets/images/favicon.png",
+    "fetchedAt": "2026-11-13"
+  },
   "SSWL": {
     "tier": "favicon-32",
     "source": "google-favicon",

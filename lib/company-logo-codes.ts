@@ -127,6 +127,7 @@ export const COMPANY_LOGO_CODES: ReadonlySet<string> = new Set([
   "SOFTTECH",
   "SOLARA",
   "SONACOMS",
+  "SRF",
   "SSWL",
   "STAR",
   "STLTECH",
