@@ -1,5 +1,7 @@
 import React, { Suspense } from "react";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { findRemovedCompany } from "@/lib/removed-from-coverage";
 
 import {
   getCachedCompanyPageOverview,
@@ -45,11 +47,28 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { code } = await params;
   // Same fetcher + cache key as the page body, so this costs no extra query.
-  const overview = await getCachedCompanyPageOverview(code).catch(() => null);
-  if (!overview) {
+  let overview: CompanyPageOverviewCacheRow | null;
+  try {
+    overview = await getCachedCompanyPageOverview(code);
+  } catch {
+    // A failed read is not a missing company — keep the generic title and let
+    // the page body surface the error rather than 404 a covered company.
     return {
       title: `${code} - Story of a Stock`,
       description: `Company detail for ${code} on Story of a Stock.`,
+    };
+  }
+  // Not covered (never was, or removed). The page body calls notFound(), which
+  // renders ./not-found.tsx and adds noindex. Don't call notFound() here: from
+  // metadata it skips the segment's not-found.tsx for Next's bare default. The
+  // status stays 200 either way — ./loading.tsx starts the stream first.
+  if (!overview) {
+    const removed = findRemovedCompany(code);
+    return {
+      title: removed
+        ? `${removed.name} is no longer covered | Story of a Stock`
+        : `${code.toUpperCase()} is not covered | Story of a Stock`,
+      robots: { index: false },
     };
   }
 
@@ -133,13 +152,10 @@ export default async function Page({
     getOverviewBusinessLine(code),
   ]);
 
-  if (!overview) {
-    return (
-      <div className="flex w-full items-center justify-center px-4 py-8 sm:px-8 lg:px-16">
-        <p className="text-lg text-muted-foreground">No data available for company {code}</p>
-      </div>
-    );
-  }
+  // Every code used to render "No data available for company X", so a removed
+  // company (JIOFIN) looked like it still had a page. not-found.tsx says whether
+  // we never covered it or stopped, and takes a request.
+  if (!overview) notFound();
 
   // Posts are read from disk (the root layout already does, so they're in the
   // deployed bundle); cheap enough to derive per request.

@@ -1,9 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { analytics } from "@/lib/analytics";
+import {
+  dedupeCompanies,
+  normalizeSearchQuery,
+  searchCompanies,
+  stripExchangeDecoration,
+} from "@/lib/company-search-match";
+import {
+  formatRemovedOn,
+  removedReasonLine,
+  searchRemovedCompanies,
+} from "@/lib/removed-from-coverage";
+import { CoverageRequestButton } from "@/components/coverage-request-button";
 import { cn } from "@/lib/utils";
 
 type Result = {
@@ -20,53 +33,8 @@ type SearchResponse = {
 const SEARCH_DEBOUNCE_MS = 180;
 const MAX_CACHE_ENTRIES = 50;
 
-function dedupeResults(items: Result[]) {
-  const seen = new Set<string>();
-  const out: Result[] = [];
-
-  items.forEach((item) => {
-    const code = item.code?.trim();
-    if (!code) return;
-    const key = code.toUpperCase();
-    if (seen.has(key)) return;
-    seen.add(key);
-    out.push({ code, name: item.name });
-  });
-
-  return out;
-}
-
-function normalize(value: string | null | undefined) {
-  return (value ?? "").trim().toLowerCase();
-}
-
-function scoreResult(row: Result, query: string) {
-  const q = query.toLowerCase();
-  const code = normalize(row.code);
-  const name = normalize(row.name);
-
-  if (code === q) return 0;
-  if (code.startsWith(q)) return 1;
-  if (name.startsWith(q)) return 2;
-  if (code.includes(q)) return 3;
-  if (name.includes(q)) return 4;
-  return Number.POSITIVE_INFINITY;
-}
-
-function searchLocalCompanies(items: Result[], query: string) {
-  return items
-    .map((row) => ({ row, rank: scoreResult(row, query) }))
-    .filter((item) => Number.isFinite(item.rank))
-    .sort((a, b) => {
-      const rank = a.rank - b.rank;
-      if (rank !== 0) return rank;
-
-      const aName = normalize(a.row.name || a.row.code);
-      const bName = normalize(b.row.name || b.row.code);
-      return aName.localeCompare(bName);
-    })
-    .map((item) => item.row)
-    .slice(0, 8);
+function toResults(items: Result[]): Result[] {
+  return dedupeCompanies(items).map((item) => ({ code: item.code.trim(), name: item.name }));
 }
 
 export function CompanySearch({
@@ -102,10 +70,7 @@ export function CompanySearch({
 
   const listId = `${instanceId ?? "company-search"}-results`;
   const trimmedQuery = query.trim();
-  const localCompanies = useMemo(
-    () => dedupeResults(initialCompanies ?? []),
-    [initialCompanies],
-  );
+  const localCompanies = useMemo(() => toResults(initialCompanies ?? []), [initialCompanies]);
   const hasLocalCompanies = localCompanies.length > 0;
 
   useEffect(() => {
@@ -143,10 +108,10 @@ export function CompanySearch({
       return;
     }
 
-    const cacheKey = trimmedQuery.toLowerCase();
+    const cacheKey = normalizeSearchQuery(trimmedQuery);
 
     if (hasLocalCompanies) {
-      const nextResults = searchLocalCompanies(localCompanies, trimmedQuery);
+      const nextResults = searchCompanies(localCompanies, trimmedQuery);
       setResults(nextResults);
       setOpen(true);
       setLoading(false);
@@ -187,7 +152,7 @@ export function CompanySearch({
           return;
         }
 
-        const nextResults = dedupeResults(payload.results ?? []);
+        const nextResults = toResults(payload.results ?? []);
         cacheRef.current.set(cacheKey, nextResults);
         if (cacheRef.current.size > MAX_CACHE_ENTRIES) {
           const oldestKey = cacheRef.current.keys().next().value;
@@ -221,13 +186,38 @@ export function CompanySearch({
   // typing (and after any in-flight fetch resolves), rather than once per
   // keystroke, so counts and the zero_results coverage-demand signal aren't
   // inflated by intermediate prefixes. Resets on every query/result change.
+  // A pick inside the 700ms used to cancel the timer and drop the search (about
+  // two in five result clicks had no search_performed), which under-counted
+  // successful searches and inflated the zero-result share — so `logSearch`
+  // also runs on a pick, at most once per query.
+  const loggedQueryRef = useRef<string | null>(null);
+  const logSearch = (q: string, count: number) => {
+    if (loggedQueryRef.current === q) return;
+    loggedQueryRef.current = q;
+    analytics.searchPerformed(q, count);
+  };
+
   useEffect(() => {
-    if (!trimmedQuery || loading) return;
+    if (!trimmedQuery) {
+      loggedQueryRef.current = null;
+      return;
+    }
+    if (loading) return;
     const t = setTimeout(() => {
+      // Plain call, not logSearch: a query re-settled after an edit
+      // (neu → neul → neu) is counted again, as before.
+      loggedQueryRef.current = trimmedQuery;
       analytics.searchPerformed(trimmedQuery, results.length);
     }, 700);
     return () => clearTimeout(t);
   }, [trimmedQuery, results, loading]);
+
+  const pickResult = (result: Result | undefined, index: number) => {
+    if (!result?.code) return;
+    logSearch(trimmedQuery, results.length);
+    analytics.searchResultClick(trimmedQuery, result.code, index);
+    openResult(result);
+  };
 
   const openResult = (result: Result | undefined) => {
     if (!result?.code) return;
@@ -277,9 +267,7 @@ export function CompanySearch({
             if (e.key === "Enter") {
               e.preventDefault();
               const index = activeIndex >= 0 ? activeIndex : 0;
-              const item = results[index];
-              if (item?.code) analytics.searchResultClick(trimmedQuery, item.code, index);
-              openResult(item);
+              pickResult(results[index], index);
             }
 
             if (e.key === "Escape") {
@@ -303,15 +291,15 @@ export function CompanySearch({
       {open && (
         <div
           id={listId}
-          role="listbox"
-          className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)]"
+          role={!loading && !error && results.length > 0 ? "listbox" : undefined}
+          className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 min-w-[18rem] overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_24px_50px_-35px_rgba(15,23,42,0.45)]"
         >
           {loading ? (
             <p className="px-3 py-2 text-xs text-muted-foreground">Searching...</p>
           ) : error ? (
             <p className="px-3 py-2 text-xs text-muted-foreground">{error}</p>
           ) : results.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-muted-foreground">No matches</p>
+            <NotCoveredPanel query={trimmedQuery} onNavigate={onNavigate} />
           ) : (
             <ul className="max-h-72 overflow-y-auto py-1">
               {results.map((item, idx) => {
@@ -324,10 +312,7 @@ export function CompanySearch({
                       aria-selected={active}
                       type="button"
                       onMouseEnter={() => setActiveIndex(idx)}
-                      onClick={() => {
-                        analytics.searchResultClick(trimmedQuery, item.code, idx);
-                        openResult(item);
-                      }}
+                      onClick={() => pickResult(item, idx)}
                       className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left ${
                         active ? "bg-accent" : "hover:bg-accent/70"
                       }`}
@@ -346,6 +331,52 @@ export function CompanySearch({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Zero results. Most are companies we don't cover (ITC, HDFC Bank, a reader's
+ * own small cap), so say why and take the request in one tap. A company we
+ * dropped is named with the date and the reason instead.
+ */
+function NotCoveredPanel({ query: rawQuery, onNavigate }: { query: string; onNavigate?: () => void }) {
+  const query = stripExchangeDecoration(rawQuery) || rawQuery;
+  const removed = searchRemovedCompanies(query);
+
+  return (
+    <div className="space-y-2.5 px-3 py-3">
+      {removed.length > 0 ? (
+        <ul className="space-y-2">
+          {removed.map((row) => (
+            <li key={row.code} className="text-xs">
+              <p className="text-foreground">
+                <span className="font-medium">{row.name}</span>{" "}
+                <span className="text-muted-foreground">({row.code})</span>
+              </p>
+              <p className="mt-0.5 text-muted-foreground">
+                No longer covered since {formatRemovedOn(row.removedOn)}.{" "}
+                {removedReasonLine(row.reason)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-foreground">
+          We don&apos;t cover &ldquo;{query}&rdquo; yet.
+        </p>
+      )}
+      <p className="text-[11px] leading-relaxed text-muted-foreground">
+        We cover about 100 handpicked mid and small caps: no large caps, banks or NBFCs.{" "}
+        <Link
+          href="/coverage"
+          onClick={onNavigate}
+          className="font-medium text-foreground underline underline-offset-2"
+        >
+          How we choose
+        </Link>
+      </p>
+      {removed.length === 0 && <CoverageRequestButton subject={query} surface="search" />}
     </div>
   );
 }
