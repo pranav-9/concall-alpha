@@ -106,6 +106,7 @@ const PICKED = {
   PGEL: { url: "https://pgel.in/assets/images/favicon/favicon.png", referer: "https://pgel.in/", note: "PG emblem; served only with the site as Referer" },
   DEEDEV: { url: "https://www.deepiping.com/assets/images/logo/logo-blue.png", note: "header logo; filename skipped by the header search" },
   KILBUNENGG: { url: "https://www.kilburnengg.com/wp-content/themes/kilburn/images/fav-icon.jpg", minPx: FALLBACK_PX, note: "32px favicon, the E emblem of the header logo" },
+  SRF: { url: "https://www.srf.com/assets/images/favicon.png", note: "the site's own 150px icon, the ribbon emblem of the header logo; looked at at 96px on 2026-11-13. srf.com serves its certificate without the GlobalSign intermediate, so Node refuses it: run with NODE_EXTRA_CA_CERTS=<gsrsaovsslca2018.pem>" },
 };
 
 const args = process.argv.slice(2);
