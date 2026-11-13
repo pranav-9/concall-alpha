@@ -81,6 +81,7 @@ export const COMPANY_LOGO_CODES: ReadonlySet<string> = new Set([
   "MARKSANS",
   "MAXHEALTH",
   "MCX",
+  "MENONBE",
   "MILKYMIST",
   "MTARTECH",
   "NAM_INDIA",

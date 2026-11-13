@@ -1,0 +1,333 @@
+{
+  "company": "MENONBE",
+  "company_name": "Menon Bearings",
+  "prepared_on": "2026-11-13",
+  "review_status": "draft_pending_user_review",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-11-03",
+  "about_company": {
+    "about_short": "Kolhapur maker of bi-metal engine bearings, bushes and thrust washers, with aluminium die-casting and brake-lining arms.",
+    "about_long": "Menon Bearings makes bi-metal engine bearings, bushes and thrust washers at Kolhapur, Maharashtra, for light and heavy commercial vehicle, tractor, off-highway and industrial engines and for compressors. Two wholly owned subsidiaries add aluminium die-cast and machined components (Menon Alkop) and asbestos-free brake linings and brake shoes aimed at the commercial-vehicle aftermarket (Menon Brakes). It supplies engine and vehicle makers in India, exports to more than 24 countries with the USA its largest export market, and reaches the replacement market through a network of 1,000 dealers and distributors. The group makes its own alloy powder and bi-metal strip and builds its own tooling and machines. In H1 FY27 Bimetal was 72.52% of consolidated net sales, Alkop 24.15% and Braking Systems 3.32%. Raw-material price changes are passed on to customers through a pre-decided formula.",
+    "business_intro": "Menon Bearings sells bi-metal engine bearings, bushes and thrust washers to engine and vehicle makers, and through two wholly owned subsidiaries sells aluminium die-cast parts (Menon Alkop) and asbestos-free brake linings (Menon Brakes). About half of sales go to OEMs in India and about a third are exports; the rest is the replacement market and other sales. It is paid per part supplied, and raw-material price changes are passed on to customers by formula.",
+    "company_timeline": [
+      {
+        "year": 1991,
+        "title": "Incorporated at Kolhapur, Maharashtra",
+        "detail": "The corporate identity number carries 1991 as the year of incorporation. Management has described the business as starting in 1993 or 1994, with no share of the organised engine-bearing market at the start.",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/de806def-20b9-434f-85af-a00cb0667a00.pdf"
+          },
+          {
+            "label": "Q4 & FY25 earnings call transcript (20 May 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1c355b20-87b6-4e91-acf6-7a2003626083.pdf"
+          },
+          {
+            "label": "Q4 & FY23 earnings call transcript (2 May 2023)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6c1ba582-b174-4903-a298-bc6fcedf7df7.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2008,
+        "title": "Starts Menon Alkop, the aluminium die-casting business",
+        "detail": "Management says it started Menon Alkop in 2008 because the engine-bearing business is auto-focused; auto is only around 18% to 20% of Alkop's business, the rest being industrial, oil and gas, automation and EV applications.",
+        "sources": [
+          {
+            "label": "Q2 & H1 FY27 earnings call transcript (30 October 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=94248125-0875-4d70-98c7-9d80d586709a.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2022,
+        "title": "Menon Brakes becomes a wholly owned subsidiary",
+        "detail": "Menon Brakes Ltd (formerly Menon Brakes Private Limited) has been a subsidiary since 12 December 2022. It makes asbestos-free brake linings and brake shoes; the first annual brake revenue the decks print is ₹4.51 Cr for FY24.",
+        "sources": [
+          {
+            "label": "Annual Report 2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/82e5cec1-6446-4ab6-8de6-960711141812.pdf"
+          },
+          {
+            "label": "Investor Presentation, Q4 & FY25 (May 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=ecacf8cc-8dbc-420b-a173-b45a54fa0a5a.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Transfers the aluminium division to Menon Alkop Ltd",
+        "detail": "Menon Alkop Limited was incorporated on 23 January 2024 and took over the Aluminium Division by slump sale with effect from 1 April 2024, after shareholders approved it by postal ballot. Menon Bearings New Ventures Limited, incorporated on 7 February 2024, had not commenced operations at 31 March 2026.",
+        "sources": [
+          {
+            "label": "Annual Report 2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/82e5cec1-6446-4ab6-8de6-960711141812.pdf"
+          },
+          {
+            "label": "Annual Report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/7a40ff0f-55fb-40f0-bd37-a36a747ee7cb.pdf"
+          },
+          {
+            "label": "Investor Presentation, Q1 FY25 (July 2024)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=170f722c-956d-42e2-a378-5c62b8fa4ae9.pdf"
+          },
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/de806def-20b9-434f-85af-a00cb0667a00.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Commissions the expanded Alkop plant; adds bearing capacity",
+        "detail": "On the Q1 FY26 call management said the new Alkop plant was already operational, with machines being shifted in. During FY26 Bi-Metal capacity rose from 486 lakh to 580 lakh units a year and brake capacity from 18 lakh to 30 lakh pieces; ₹19.59 Cr of capex was deployed in Alkop.",
+        "sources": [
+          {
+            "label": "Q1 FY26 earnings call transcript (30 July 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c39e4446-7668-4b57-b437-5bb00710dbfa.pdf"
+          },
+          {
+            "label": "Investor Presentation, Q4 & FY26 (May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7f824723-fc2a-4f95-9b47-9bc947a6b1ce.pdf"
+          },
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/de806def-20b9-434f-85af-a00cb0667a00.pdf"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "No single customer above 10-12% of business",
+        "text": "The investor deck states that no single customer contributes more than 10-12% of business, and on the May 2026 call management said no customer has more than 15%. The deck names John Deere, Cummins, Eaton and Honeywell among its customers and describes the company as a single-source, major supplier to many OEMs. Concentration is higher inside Alkop: in May 2024 management said its top five customers were around 50% of that division's business.",
+        "period": "As of October 2026; Alkop figure May 2024",
+        "sources": [
+          {
+            "label": "Investor Presentation, Q2 & H1 FY27 (October 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=189137b1-9b5a-4f26-84fd-e5dd09055da0.pdf"
+          },
+          {
+            "label": "Q4 & FY26 earnings call transcript (19 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=df155569-d824-43e5-905b-5b9c544a09b5.pdf"
+          },
+          {
+            "label": "Q4 & FY24 earnings call transcript (14 May 2024)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=4dc3db14-74e9-4e3e-ac73-26c3e3f99dcf.pdf"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Exports are about 34% of revenue",
+        "text": "Exports were ₹100.2 Cr, 34% of consolidated revenue, in FY26, against ₹71.8 Cr (30%) in FY25 and ₹59.3 Cr (28%) in FY24; the share was 34% in FY22 and 30% in FY23. On the October 2026 call management said about 80% of exports go to the USA. The group exports to more than 24 countries and has one office and warehouse in Indianapolis, USA.",
+        "period": "FY22 to FY26; USA share as of October 2026",
+        "sources": [
+          {
+            "label": "Investor Presentation, Q2 & H1 FY27 (October 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=189137b1-9b5a-4f26-84fd-e5dd09055da0.pdf"
+          },
+          {
+            "label": "Q2 & H1 FY27 earnings call transcript (30 October 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=94248125-0875-4d70-98c7-9d80d586709a.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Exports, FY22",
+            "value": 34.0,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, FY23",
+            "value": 30.0,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, FY24",
+            "value": 28.0,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, FY25",
+            "value": 30.0,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, FY26",
+            "value": 34.0,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "OEMs are about half of sales, replacement about 8%",
+        "text": "By channel, H1 FY27 net sales were 50.06% OEM, 33.62% exports, 7.88% replacement and 8.44% others, as the deck's channel chart shows them. The replacement business runs through 1,000 dealers and distributors and 10,000+ retail outlets and serves 30,000+ mechanics and reborers. Raw-material price changes are passed on to customers through a pre-decided formula.",
+        "period": "H1 FY27",
+        "sources": [
+          {
+            "label": "Investor Presentation, Q2 & H1 FY27 (October 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=189137b1-9b5a-4f26-84fd-e5dd09055da0.pdf"
+          },
+          {
+            "label": "Q2 & H1 FY27 earnings call transcript (30 October 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=94248125-0875-4d70-98c7-9d80d586709a.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Tractors are 34% of the engine-bearing business, down from 54%",
+        "text": "On the October 2026 call management said tractors are now 34% of the engine-bearing business against 54% ten years back, and that heavy and light commercial vehicles and tractors together have come down to 58% from around 70% to 75%, with sales still rising. Auto is almost 60% to 65% of group revenue; the rest is engineering and other applications such as generators, compressors, oil and gas and EV parts.",
+        "period": "As of October 2026",
+        "sources": [
+          {
+            "label": "Q2 & H1 FY27 earnings call transcript (30 October 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=94248125-0875-4d70-98c7-9d80d586709a.pdf"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "Five plants in Kolhapur, a warehouse in Indianapolis",
+        "text": "Five plants in Kolhapur across 27 acres: three of the parent at Gokul Shirgaon MIDC, and the Menon Alkop and Menon Brakes plants at Five Star MIDC, Kagal. Annualised capacity at H1 FY27 was 600 lakh units for Bi-Metal and 46 lakh pieces for brakes, up from 580 lakh and 30 lakh in FY26; Alkop's capacity is 1,440 tonnes. One office and warehouse in Indianapolis, USA.",
+        "period": "H1 FY27",
+        "sources": [
+          {
+            "label": "Investor Presentation, Q2 & H1 FY27 (October 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=189137b1-9b5a-4f26-84fd-e5dd09055da0.pdf"
+          },
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/de806def-20b9-434f-85af-a00cb0667a00.pdf"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Makes its own alloy powder, strip, tools and machines",
+        "text": "The bearing plants make their own lead-free alloy powder by water-jet atomisation and their own sintered bi-metal strip, and an in-house engineering team and tool room design and build special-purpose machines, tooling and gauges. Alkop does melting, pressure and gravity die casting, machining and powder coating in-house and handles components up to 12kg. Menon Brakes makes asbestos-free brake linings and brake shoes.",
+        "period": "As of October 2026",
+        "sources": [
+          {
+            "label": "Investor Presentation, Q2 & H1 FY27 (October 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=189137b1-9b5a-4f26-84fd-e5dd09055da0.pdf"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Capex plan: ₹25 Cr Bi-Metal, ₹7 Cr Alkop, ₹2.50 Cr Brakes",
+        "text": "Spent in FY26: ₹6.74 Cr in Bi-Metal, ₹19.59 Cr in Alkop and ₹0.58 Cr in Brakes. Planned over the next two years, as of the October 2026 deck: a further ₹25 Cr in Bi-Metal, ₹7 Cr in Alkop for machining capacity and ₹2.50 Cr in Brakes. A dynamometer that Menon Brakes needs for railway approvals and OEM orders was still being installed, and registration of brake products with Railways was under progress.",
+        "period": "FY26 spend; plan as of October 2026",
+        "sources": [
+          {
+            "label": "Investor Presentation, Q2 & H1 FY27 (October 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=189137b1-9b5a-4f26-84fd-e5dd09055da0.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Promoter group holds 68.44%; three wholly owned subsidiaries",
+        "text": "At 31 March 2026 the promoter and promoter group held 68.44% of the equity: Nitin Menon 27.56%, Menon United Pvt. Ltd. 24.30%, Aditya Nitin Menon 5.79%, Anshul Nitin Menon 5.79% and Sucheta Nitin Menon 5.00%. The company owns 100% of Menon Alkop Ltd, Menon Brakes Ltd and Menon Bearings New Ventures Ltd; Menon Alkop is a material subsidiary and New Ventures had not commenced operations.",
+        "period": "31 March 2026",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/de806def-20b9-434f-85af-a00cb0667a00.pdf"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Bearings regained share of sales while exports rebuilt from 28% to 34% of revenue",
+      "text": "Bimetal fell to 67.93% of net sales in FY24, when bearing sales dropped to ₹143.16 Cr from ₹159.57 Cr, and has since recovered to 72.34% in FY26 and 72.52% in H1 FY27; FY26 bearing sales were ₹212.54 Cr. Over the same period exports went from 28% of revenue in FY24 to 34% in FY26. Alkop kept growing in rupees, from ₹63.09 Cr to ₹72.18 Cr, but its share slipped from 29.94% to 24.57%. Braking Systems, which first reported revenue in FY24, was 3.09% of FY26 net sales.",
+      "period": "FY24 to H1 FY27",
+      "sources": [
+        {
+          "label": "Investor Presentation, Q2 & H1 FY27 (October 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=189137b1-9b5a-4f26-84fd-e5dd09055da0.pdf"
+        },
+        {
+          "label": "Investor Presentation, Q4 & FY26 (May 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7f824723-fc2a-4f95-9b47-9bc947a6b1ce.pdf"
+        },
+        {
+          "label": "Investor Presentation, Q4 & FY25 (May 2025)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=ecacf8cc-8dbc-420b-a173-b45a54fa0a5a.pdf"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Annual Report 2025-26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/de806def-20b9-434f-85af-a00cb0667a00.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 & FY25 earnings call transcript (20 May 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1c355b20-87b6-4e91-acf6-7a2003626083.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 & FY23 earnings call transcript (2 May 2023)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6c1ba582-b174-4903-a298-bc6fcedf7df7.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q2 & H1 FY27 earnings call transcript (30 October 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=94248125-0875-4d70-98c7-9d80d586709a.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Annual Report 2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/82e5cec1-6446-4ab6-8de6-960711141812.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor Presentation, Q4 & FY25 (May 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=ecacf8cc-8dbc-420b-a173-b45a54fa0a5a.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Annual Report 2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/7a40ff0f-55fb-40f0-bd37-a36a747ee7cb.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor Presentation, Q1 FY25 (July 2024)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=170f722c-956d-42e2-a378-5c62b8fa4ae9.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q1 FY26 earnings call transcript (30 July 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c39e4446-7668-4b57-b437-5bb00710dbfa.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor Presentation, Q4 & FY26 (May 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7f824723-fc2a-4f95-9b47-9bc947a6b1ce.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor Presentation, Q2 & H1 FY27 (October 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=189137b1-9b5a-4f26-84fd-e5dd09055da0.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 & FY26 earnings call transcript (19 May 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=df155569-d824-43e5-905b-5b9c544a09b5.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 & FY24 earnings call transcript (14 May 2024)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=4dc3db14-74e9-4e3e-ac73-26c3e3f99dcf.pdf",
+      "locator": "company background, timeline and facts"
+    }
+  ]
+}

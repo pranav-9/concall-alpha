@@ -57,6 +57,7 @@ const EXCLUDE = {
   CARTRADE: "the site's header logo is OLX, a brand it owns, not CarTrade's mark",
   AETHER: "site serves the default WordPress icon",
   CCL: "site serves the default WordPress icon",
+  ROLEXRINGS: "site serves the default WordPress icon; its pages sit behind a bot challenge, so no header logo was read",
   TIMETECHNO: "site serves the default WordPress icon",
   SHRIRAMFIN: "the site icon is a mascot illustration, not the mark",
   STOVEKRAFT: "only a long wordmark, illegible at tile size",
