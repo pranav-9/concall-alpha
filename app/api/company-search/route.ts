@@ -4,55 +4,14 @@ import {
   getCachedCompanySearchRows,
   type CompanySearchRow,
 } from "@/lib/company-search-cache";
+import { dedupeCompanies, searchCompanies } from "@/lib/company-search-match";
 import { logger } from "@/lib/logger";
 
-function normalize(value: string | null | undefined) {
-  return (value ?? "").trim().toLowerCase();
-}
-
-function scoreResult(row: CompanySearchRow, query: string) {
-  const q = query.toLowerCase();
-  const code = normalize(row.code);
-  const name = normalize(row.name);
-
-  if (code === q) return 0;
-  if (code.startsWith(q)) return 1;
-  if (name.startsWith(q)) return 2;
-  if (code.includes(q)) return 3;
-  if (name.includes(q)) return 4;
-  return Number.POSITIVE_INFINITY;
-}
-
-function dedupeResults(rows: CompanySearchRow[]) {
-  const seen = new Set<string>();
-  const deduped: CompanySearchRow[] = [];
-
-  rows.forEach((row) => {
-    const code = row.code?.trim();
-    if (!code) return;
-    const key = code.toUpperCase();
-    if (seen.has(key)) return;
-    seen.add(key);
-    deduped.push({ code, name: row.name });
-  });
-
-  return deduped;
-}
-
-function searchCompanyRows(rows: CompanySearchRow[], q: string) {
-  return dedupeResults(rows)
-    .map((row) => ({ row, rank: scoreResult(row, q) }))
-    .filter((item) => Number.isFinite(item.rank))
-    .sort((a, b) => {
-      const rank = a.rank - b.rank;
-      if (rank !== 0) return rank;
-
-      const aName = normalize(a.row.name || a.row.code);
-      const bName = normalize(b.row.name || b.row.code);
-      return aName.localeCompare(bName);
-    })
-    .map((item) => item.row)
-    .slice(0, 8);
+function searchCompanyRows(rows: CompanySearchRow[], q: string): CompanySearchRow[] {
+  return searchCompanies(
+    dedupeCompanies(rows).map((row) => ({ code: row.code.trim(), name: row.name })),
+    q,
+  );
 }
 
 export async function GET(request: Request) {

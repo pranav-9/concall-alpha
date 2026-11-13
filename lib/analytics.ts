@@ -69,6 +69,9 @@ export type WatchlistSource = "company_page" | "leaderboard" | "watchlist" | "ot
  *  breakdowns — instead of forking near-identical events per surface. */
 export type AnalyticsSurface = "home" | "desk" | "leaderboards" | "company";
 
+/** Where a one-tap "cover this company" request came from. */
+export type CoverageRequestSurface = "search" | "company_not_found";
+
 /** Where a community join link lived when it was clicked. Every placement
  *  reports its own surface so the visibility push (2026-09-13: navbar, company
  *  page, desk, leaderboards, and the engagement nudge) can be read per surface
@@ -285,11 +288,14 @@ export const analytics = {
     }),
 
   // ── Intent — Q2 intent check, Q3 monetize ─────────────────────────────────
-  /** A "cover this company" request was submitted — demand + a contactable engaged user. */
-  requestIntakeSubmit: (companyCode?: string, textLen?: number) =>
+  /** A "cover this company" request was submitted — demand + a contactable engaged user.
+   *  `surface` separates the /requests form (unset) from the one-tap requests on a
+   *  zero-result search and the not-covered company page (2026-11-13). */
+  requestIntakeSubmit: (companyCode?: string, textLen?: number, surface?: CoverageRequestSurface) =>
     track("request_intake_submit", {
       company_code: companyCode,
       text_len: Number.isFinite(textLen) ? textLen : undefined,
+      surface,
     }),
 
   /** A one-click "Request this section" was submitted from a company page — a

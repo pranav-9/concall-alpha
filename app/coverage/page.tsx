@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
+import { formatRemovedOn, REMOVED_COMPANIES } from "@/lib/removed-from-coverage";
 import {
   INNER_CARD,
   PAGE_BACKGROUND_ATMOSPHERIC,
@@ -25,6 +25,10 @@ const rules = [
     body: "New companies join coverage only if they are mid or small cap under AMFI's semi-annual classification — large cap is the top 100 companies by average market capitalization, mid cap is 101–250, small cap is 251 and beyond.",
   },
   {
+    title: "No banks or NBFCs",
+    body: "Lenders aren't covered, whatever their size.",
+  },
+  {
     title: "Graduates stay",
     body: "A covered company that grows into the top 100 is not removed. Finding a business early and following it as it compounds is the point — graduation is the best outcome coverage can have.",
   },
@@ -33,6 +37,9 @@ const rules = [
     body: "Market-cap bands update after each AMFI publication (January–June and July–December), so classifications track the market rather than a stale snapshot.",
   },
 ];
+
+const removedCount = (date: string) =>
+  REMOVED_COMPANIES.filter((row) => row.removedOn === date).length;
 
 export default async function CoveragePage() {
   const supabase = await createClient();
@@ -131,23 +138,16 @@ export default async function CoveragePage() {
         <section className={PANEL_CARD_SKY}>
           <div className="space-y-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Large caps we already covered
+              Companies that left coverage
             </p>
             <h2 className="text-xl font-bold text-foreground">
-              Still here, just not on the boards
+              Removed, and we say so
             </h2>
             <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-              A handful of large caps were covered before this policy took shape. Their
-              pages remain fully available — you can reach them through search or a direct
-              link — but they no longer appear on the{" "}
-              <Link href="/leaderboards" className="font-medium text-sky-700 underline-offset-2 hover:underline dark:text-sky-300">
-                leaderboards
-              </Link>
-              , homepage, or{" "}
-              <Link href="/sectors" className="font-medium text-sky-700 underline-offset-2 hover:underline dark:text-sky-300">
-                sector views
-              </Link>
-              , which rank the mid/small-cap universe only.
+              The large caps and lenders covered before this policy took shape were removed on{" "}
+              {formatRemovedOn("2026-11-06")} ({removedCount("2026-11-06")} companies), and{" "}
+              {removedCount("2026-11-10")} more left on {formatRemovedOn("2026-11-10")}. Search
+              for one, or open its old link, and we tell you when it left and why.
             </p>
           </div>
         </section>
