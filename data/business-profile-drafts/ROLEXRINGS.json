@@ -1,0 +1,287 @@
+{
+  "company": "ROLEXRINGS",
+  "company_name": "Rolex Rings",
+  "prepared_on": "2026-11-13",
+  "review_status": "draft_pending_user_review",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-11-06",
+  "about_company": {
+    "about_short": "Rajkot-based forger of bearing rings for bearing makers and machined components for global auto companies.",
+    "about_long": "Rolex Rings makes hot-forged and machined bearing rings and automotive components at three plants in Rajkot, Gujarat. Bearing rings are sold to bearing manufacturers in India and overseas; automotive components such as gear blanks, wheel hubs and driveline parts go to global auto companies, to whom it is a Tier-1 supplier, for vehicles from two-wheelers to heavy commercial vehicles. It converts steel rods on 26 forging lines with 1,65,000 tonnes a year of installed capacity and machines the forgings in-house, and is paid per component supplied. In H1 FY27 Auto Components brought in Rs 318 Cr and Bearing Rings Rs 271 Cr of total revenue of Rs 694 Cr; the rest is scrap sales, export incentives and a one-time customs-duty refund of about Rs 21.7 Cr. Bearing rings are sold mostly in India (75% domestic) and auto components are mostly exported (73%), on the H1 FY27 split. The annual report treats the business as a single reportable segment and the company has no subsidiary, so every figure here is standalone.",
+    "business_intro": "Rolex Rings forges and machines steel into bearing rings for bearing makers and into transmission, chassis and driveline components for global auto companies. It sells from three plants in Rajkot to customers in India and abroad and is paid per component supplied; scrap sales and export incentives added about 7% of FY26 revenue. Bearing rings are sold mostly in India, auto components mostly exported.",
+    "company_timeline": [
+      {
+        "year": 1980,
+        "title": "Founded in Rajkot as a bearing-ring forger",
+        "detail": "Started by Mr. Manesh Madeka with traditional bearing-ring forging. The present company, Rolex Rings Limited, was incorporated on 13 February 2003.",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26 — Journey and Milestones; note 1(a) Corporate Information",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/76a279b5-7b54-4a69-9fbf-1f7ec1ab0247.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2013,
+        "title": "Enters corporate debt restructuring (CDR)",
+        "detail": "Lenders restructured the company's debt under the CDR mechanism and kept a right of recompense for the reliefs they granted.",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26 — The Comeback Story",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/76a279b5-7b54-4a69-9fbf-1f7ec1ab0247.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2021,
+        "title": "Lists on BSE and NSE",
+        "detail": "Shares listed on both exchanges on 9 August 2021.",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26 — note 1(a) Corporate Information",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/76a279b5-7b54-4a69-9fbf-1f7ec1ab0247.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2022,
+        "title": "Exits the CDR scheme",
+        "detail": "The company dates its exit from CDR, and a zero-debt position, to FY22. Its balance sheet still carried borrowings of Rs 222.9 Cr at March 2022 and Rs 14.1 Cr at March 2025; there were none at March 2026.",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26 — Journey and Milestones",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/76a279b5-7b54-4a69-9fbf-1f7ec1ab0247.pdf"
+          },
+          {
+            "label": "Investor Presentation, November 2026 (Q2 & H1 FY27) — Historical Balance Sheet",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53428a5b-c8f2-416a-98f2-c6ab41ad5a31.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Settles lenders' right of recompense for Rs 101 Cr",
+        "detail": "Paid on 31 March 2026 as full and final settlement with the consortium of banks for the 2013 restructuring. Rs 50.6 Cr had been provided over FY24 and FY25; the remaining Rs 50.4 Cr was charged as an exceptional item in FY26.",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26 — note 32(b), exceptional items",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/76a279b5-7b54-4a69-9fbf-1f7ec1ab0247.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Completes Rs 180 Cr share buyback",
+        "detail": "Announced in April 2026 for 1 crore shares at Rs 180 each, 3.67% of paid-up capital, and reported as concluded in the August 2026 presentation. Promoters did not tender.",
+        "sources": [
+          {
+            "label": "Investor Presentation, August 2026 (Q1 FY27) — Chairman & MD's message; Rewarding Shareholders",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5b85835c-1c19-405b-a4b0-83030a3f55d7.pdf"
+          },
+          {
+            "label": "Investor Presentation, November 2026 (Q2 & H1 FY27) — Chairman & MD's message",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53428a5b-c8f2-416a-98f2-c6ab41ad5a31.pdf"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Customer concentration: three customers are 37% of revenue",
+        "text": "In FY26 three customers each contributed more than 10% of total revenue and together Rs 426.1 Cr, about 37% of revenue from operations of Rs 1,143.5 Cr. The count moves from year to year: two customers above the 10% line added up to Rs 379.2 Cr (about 33% of Rs 1,154.8 Cr) in FY25 and five to Rs 740.8 Cr (about 61% of Rs 1,221.8 Cr) in FY24. The annual reports do not name them. The company counts 57 customers in all (FY26).",
+        "period": "FY24 to FY26",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26 — note 37(C), major customers",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/76a279b5-7b54-4a69-9fbf-1f7ec1ab0247.pdf"
+          },
+          {
+            "label": "Annual Report 2024-25 — note 37(C), major customers",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/f42dc8e7-5bee-49e7-b921-9caea1012c44.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "3 customers above 10% each, FY26",
+            "value": 37.3,
+            "unit": "% of total revenue"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Exports were 47% of goods sales in FY26, down from 56% in FY24",
+        "text": "Sales outside India were Rs 502.4 Cr of Rs 1,059.3 Cr of goods sold in FY26 (47.4%), against 52.2% in FY25, 56.0% in FY24 and 60.1% in FY23; the denominator is sale of goods, before scrap sales and export incentives. The company attributes FY26 to US customers slowing volumes while domestic bearing-ring demand improved. The two product lines sit on opposite sides: in H1 FY27 bearing rings were 75% domestic and auto components 73% exported, to the US and Europe.",
+        "period": "FY23 to FY26; product-line split H1 FY27",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26 — note 24 and Ind AS 115 disaggregation",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/76a279b5-7b54-4a69-9fbf-1f7ec1ab0247.pdf"
+          },
+          {
+            "label": "Annual Report 2023-24 — note 24 and note 37(B)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ff28e000-3d1f-41f0-9016-42e15211ffb5.pdf"
+          },
+          {
+            "label": "Investor Presentation, November 2026 (Q2 & H1 FY27) — H1 FY27 Key Performance Highlights",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53428a5b-c8f2-416a-98f2-c6ab41ad5a31.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Exports, FY23",
+            "value": 60.1,
+            "unit": "% of sale of goods"
+          },
+          {
+            "label": "Exports, FY24",
+            "value": 56.0,
+            "unit": "% of sale of goods"
+          },
+          {
+            "label": "Exports, FY25",
+            "value": 52.2,
+            "unit": "% of sale of goods"
+          },
+          {
+            "label": "Exports, FY26",
+            "value": 47.4,
+            "unit": "% of sale of goods"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "Three plants in Rajkot with 1,65,000 tonnes a year of forging capacity",
+        "text": "All manufacturing is at three units in Rajkot, Gujarat, about 250 km from the Mundra and Pipavav ports: 26 forging lines with a combined installed capacity of 1,65,000 tonnes a year and 625 machining spindles able to turn out 75 million parts a year. The company said it was using 63-65% of capacity in November 2026. It had 1,835 permanent employees on 31 March 2026.",
+        "period": "November 2026; headcount 31 March 2026",
+        "sources": [
+          {
+            "label": "Investor Presentation, November 2026 (Q2 & H1 FY27) — Manufacturing Facilities; Chairman & MD's message",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53428a5b-c8f2-416a-98f2-c6ab41ad5a31.pdf"
+          },
+          {
+            "label": "Annual Report 2025-26 — Board's report, employees",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/76a279b5-7b54-4a69-9fbf-1f7ec1ab0247.pdf"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Forging, heat treatment, cold rolling and machining under one roof",
+        "text": "The plants take a part from the customer's drawing to a finished component: in-house tool and die making, hot forging on high-speed hot formers and vertical lines, heat treatment, cold rolling and CNC machining. Bearing rings range from 0.01 kg to over 163 kg a ring and automotive components from 200 g to 125 kg, covering two-wheelers to heavy commercial and off-highway vehicles.",
+        "period": "November 2026",
+        "sources": [
+          {
+            "label": "Investor Presentation, November 2026 (Q2 & H1 FY27) — Key Products Categories; End-to-end capabilities",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53428a5b-c8f2-416a-98f2-c6ab41ad5a31.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "End-user mix: passenger vehicles 46%, commercial vehicles 31%",
+        "text": "By end-user industry, H1 FY27 revenue was 45.8% passenger vehicles, 31.1% commercial and heavy commercial vehicles, 15.7% industrial and 7.3% battery-electric and hybrid vehicles. In FY26 the same split was 52.1%, 21.9%, 18.3% and 7.7%. The denominator is revenue from operations excluding scrap sales and other operating income, and the company calls the split indicative.",
+        "period": "H1 FY27 and FY26",
+        "sources": [
+          {
+            "label": "Investor Presentation, November 2026 (Q2 & H1 FY27) — Key Financial Parameters, end-user mix",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53428a5b-c8f2-416a-98f2-c6ab41ad5a31.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Scrap sales and export incentives are about 7% of revenue",
+        "text": "Reported revenue is more than the two product lines. In FY26 sale of goods was Rs 1,059.3 Cr and other operating revenue Rs 84.2 Cr (scrap sales Rs 71.0 Cr, export incentives Rs 13.2 Cr), 7.4% of revenue from operations of Rs 1,143.5 Cr. In Q2 FY27 revenue of Rs 389 Cr also included a one-time refund of about Rs 18 Cr of customs duty paid on US tariffs (about Rs 21.7 Cr for H1 FY27), which sits outside both product lines.",
+        "period": "FY26; Q2 and H1 FY27",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26 — note 24, revenue from operations",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/76a279b5-7b54-4a69-9fbf-1f7ec1ab0247.pdf"
+          },
+          {
+            "label": "Investor Presentation, November 2026 (Q2 & H1 FY27) — Q2 and H1 FY27 Key Performance Highlights",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53428a5b-c8f2-416a-98f2-c6ab41ad5a31.pdf"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "21.55 MW of own solar and wind power installed",
+        "text": "Installed renewable capacity is 21.55 MW: 17.8 MW of solar (2.3 MW rooftop and 15.5 MW ground-mounted) and a 3.75 MW windmill. A further 9 MW solar plant is listed as planned; the November 2026 presentation still shows it as to be set up by mid-2026 and does not say it has been commissioned.",
+        "period": "November 2026",
+        "sources": [
+          {
+            "label": "Investor Presentation, November 2026 (Q2 & H1 FY27) — ESG & Sustainability Initiatives",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53428a5b-c8f2-416a-98f2-c6ab41ad5a31.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Madeka family promoters held 48.07% at March 2026; no subsidiaries",
+        "text": "The five promoters named in the annual report, all members of the Madeka family, together held 48.07% of the shares on 31 March 2026 (47.26% a year earlier). The founder, Mr. Manesh Madeka, is Chairman and Managing Director. The company has no subsidiary, joint venture or associate. Each Rs 10 share was split into ten Re 1 shares with a record date of 17 October 2025, and the promoters did not tender in the 2026 buyback.",
+        "period": "31 March 2026",
+        "sources": [
+          {
+            "label": "Annual Report 2025-26 — note 12(c), shares held by promoters; Board's report",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/76a279b5-7b54-4a69-9fbf-1f7ec1ab0247.pdf"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Auto Components moved back ahead of Bearing Rings in H1 FY27",
+      "text": "Auto Components revenue rose 27.8% year on year to Rs 318 Cr in H1 FY27 while Bearing Rings was flat at Rs 271 Cr (+0.4%), taking Auto Components to 54% of the two lines' combined sales from 49% in FY26 (Rs 520 Cr of Rs 1,059 Cr). FY26 had gone the other way: Auto Components fell 10% as US customers slowed volumes and Bearing Rings grew 11%. In Q2 FY27 Auto Components grew 67.7% to Rs 177 Cr, with the segment's exports up 89%.",
+      "period": "H1 FY27 against FY26",
+      "sources": [
+        {
+          "label": "Investor Presentation, November 2026 (Q2 & H1 FY27) — Q2 and H1 FY27 Key Performance Highlights; Chairman & MD's message",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53428a5b-c8f2-416a-98f2-c6ab41ad5a31.pdf"
+        },
+        {
+          "label": "Investor Presentation, May 2026 (Q4 & FY26) — FY26 Key Performance Highlights",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7534af1e-1ab4-417e-a7a8-86fdb15c115a.pdf"
+        },
+        {
+          "label": "Annual Report 2025-26 — Management discussion, revenue split",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/76a279b5-7b54-4a69-9fbf-1f7ec1ab0247.pdf"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Annual Report 2025-26 — Journey and Milestones; note 1(a) Corporate Information",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/76a279b5-7b54-4a69-9fbf-1f7ec1ab0247.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor Presentation, November 2026 (Q2 & H1 FY27) — Historical Balance Sheet",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53428a5b-c8f2-416a-98f2-c6ab41ad5a31.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor Presentation, August 2026 (Q1 FY27) — Chairman & MD's message; Rewarding Shareholders",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5b85835c-1c19-405b-a4b0-83030a3f55d7.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Annual Report 2024-25 — note 37(C), major customers",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/f42dc8e7-5bee-49e7-b921-9caea1012c44.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Annual Report 2023-24 — note 24 and note 37(B)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ff28e000-3d1f-41f0-9016-42e15211ffb5.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor Presentation, May 2026 (Q4 & FY26) — FY26 Key Performance Highlights",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7534af1e-1ab4-417e-a7a8-86fdb15c115a.pdf",
+      "locator": "company background, timeline and facts"
+    }
+  ]
+}
