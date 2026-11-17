@@ -1,0 +1,439 @@
+{
+  "company": "SAMBHV",
+  "company_name": "Sambhv Steel Tubes Limited",
+  "prepared_on": "2026-11-17",
+  "review_status": "user_approved",
+  "source_period": "FY26 annual report; Q2 FY27",
+  "latest_source_date": "2026-10-30",
+  "about_company": {
+    "about_short": "Integrated steel pipes, tubes, and stainless steel coils manufacturer.",
+    "about_long": "Sambhv Steel Tubes Limited is a backward-integrated steel maker in Chhattisgarh that makes its own sponge iron, blooms/slabs and narrow-width HR coils and turns them into finished products. It sells structural pipes and tubes (ERW black pipes and CRFH pipes), pre-galvanized (GP) coils and pipes, and stainless steel HRAP and CR coils. It runs two plants, an integrated facility at Sarora, Raipur and a second unit at Kuthrel; a greenfield stainless-steel plant at Kesda, due by March 2027, is being built on the company's own books, and its wholly owned subsidiary Sambhv Tubes Limited (no revenue yet) is to build a seamless stainless pipe plant by March 2028. Pipes are sold mainly through distributors who sell on to end-user industries; GP products go into telecom, infrastructure, construction and solar structures, and stainless coils go mostly to stainless pipe makers and utensil makers. Intermediate products are largely used in-house; only surplus or B-grade material is sold. All FY26 standalone revenue came from customers in India.",
+    "business_intro": "Sambhv Steel Tubes makes steel pipes and coils in Chhattisgarh and sells them across India, mainly through distributors and dealers who supply OEMs and fabricators; it also sells to construction and infrastructure companies and government projects. It makes most of its own feedstock (sponge iron, blooms/slabs and narrow HR coil) and turns it into ERW black pipes, pre-galvanised (GP) coils and pipes, and stainless-steel coils. Revenue comes from selling these finished products; intermediates are mainly used in-house, with small surplus sales.",
+    "company_timeline": [
+      {
+        "year": 2017,
+        "title": "Began operations as Sambhv Sponge Power, making sponge iron",
+        "detail": "The company says it commenced operations on 24 April 2017 under the name Sambhv Sponge Power Private Limited. Its milestone page puts first sponge-iron production, at 60,000 MTPA of installed capacity, in FY2018 (April 2017 to March 2018). It was renamed Sambhv Steel Tubes in February 2024.",
+        "sources": [
+          {
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf",
+            "label": "FY26 annual report",
+            "locator": "Our background; Key milestones"
+          }
+        ]
+      },
+      {
+        "year": 2022,
+        "title": "Entered ERW steel pipes at 150,000 tonnes a year",
+        "detail": "Both annual reports place this in FY2023 without giving a month, so the year shown is the calendar year that fiscal year began in. The pipe mills sit on top of the company's own steelmaking: blooms/slabs from FY2020 and hot-rolled (HR) coil from FY2022. Installed ERW and GI pipe capacity was 250,000 MTPA at 31 March 2023.",
+        "sources": [
+          {
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf",
+            "label": "FY26 annual report",
+            "locator": "Key milestones"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/eeee654f-ac1e-4587-af6b-a1607098740a.pdf",
+            "label": "FY25 annual report",
+            "locator": "Key milestones"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8ac69c55-8776-42b6-8d32-a14e928b0a6a.pdf",
+            "label": "Q1 FY27 investor presentation (3 Aug 2026)",
+            "locator": "Installed capacity table"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Started a second plant at Kuthrel for GP and stainless coils",
+        "detail": "The FY25 annual report says the Kuthrel facility has been operational since FY 2024-25 (April 2024 to March 2025); no month is given, so the year shown is the calendar year that fiscal year began in. It started GP coils at 58,000 MTPA, GP pipes at 100,000 MTPA and stainless-steel CR coils at 58,000 MTPA, alongside new stainless-steel blooms/slabs and HR coil capacity of 60,000 MTPA each.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/eeee654f-ac1e-4587-af6b-a1607098740a.pdf",
+            "label": "FY25 annual report",
+            "locator": "Key milestones"
+          },
+          {
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf",
+            "label": "FY26 annual report",
+            "locator": "Key milestones"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=79f441d2-d2e6-4b7a-9a26-72659c9699b4.pdf",
+            "label": "Q1 FY26 earnings call (25 Jul 2025)"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Acquired Sambhv Tubes, now the seamless-pipe vehicle",
+        "detail": "Sambhv Tubes became a wholly owned subsidiary on 16 September 2024 and was converted into a public company, Sambhv Tubes Limited, on 16 April 2026. It had no revenue in FY26. On 29 October 2026 the board chose it to build a 14,400 MTPA stainless-steel seamless pipe plant; the Kesda plant is being built in the parent's own accounts.",
+        "sources": [
+          {
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf",
+            "label": "FY26 annual report",
+            "locator": "Form AOC-1; Related party note"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e3c4bbd4-a39a-4a9c-9bff-2b9cb3cc34cc.pdf",
+            "label": "Q2 FY27 results and board outcome (29 Oct 2026)",
+            "locator": "Board outcome; balance sheet"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Listed on NSE and BSE; IPO's fresh issue raised ₹440 crore",
+        "detail": "The shares listed on 2 July 2025. The IPO totalled ₹5,400 million: a fresh issue of ₹4,400 million (₹440 crore) and an offer for sale of up to ₹1,000 million. Management said the proceeds go to debt repayment, working capital, expansion and general corporate purposes.",
+        "sources": [
+          {
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf",
+            "label": "FY26 annual report",
+            "locator": "Directors' report"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=79f441d2-d2e6-4b7a-9a26-72659c9699b4.pdf",
+            "label": "Q1 FY26 earnings call (25 Jul 2025)"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Doubled GP and stainless-steel CR coil capacity",
+        "detail": "Management said in February 2026 that galvanised (GP) capacity had been raised to 116,000 MTPA during the October to December 2025 quarter. The stainless-steel CR coil debottlenecking, from 58,000 to 116,000 MTPA, was completed with the consent to operate in place by the August 2026 call. Both stood at 116,000 MTPA of installed capacity at 30 June 2026.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8bdd020b-8aa4-492e-9aed-920da0429157.pdf",
+            "label": "Q3 FY26 earnings call (Feb 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f0f4c742-6e27-4bdc-9954-ce814a2d40d5.pdf",
+            "label": "Q1 FY27 earnings call (4 Aug 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8ac69c55-8776-42b6-8d32-a14e928b0a6a.pdf",
+            "label": "Q1 FY27 investor presentation (3 Aug 2026)",
+            "locator": "Installed capacity table"
+          },
+          {
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf",
+            "label": "FY26 annual report",
+            "locator": "Key milestones"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "text": "Sarora (Tilda) is the fully integrated plant. It makes sponge iron, blooms/slabs, narrow-width HR coils and cold rolled coils, then ERW black pipes and steel door frames, and runs a 25 MW captive power plant. Kuthrel makes GP coils, GP pipes and stainless-steel HRAP and CR coils. Kesda is a greenfield site, not yet operating. The October 2026 presentation puts the land at 416,150 square metres for Sarora, about 107,640 for Kuthrel and about 519,500 for Kesda; the FY26 annual report gave 372,780, 99,940 and 409,420. The annual report puts all three within a 10-kilometre radius of the main unit.",
+        "title": "Three sites in Chhattisgarh, within 10 km of each other",
+        "period": "Land areas Oct 2026; plant roles FY26 annual report",
+        "sources": [
+          {
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf",
+            "label": "FY26 annual report",
+            "locator": "Manufacturing infrastructure"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/975ded26-b77e-43f4-8354-e16196d1f3dd.pdf",
+            "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+            "locator": "Plant locations slide"
+          }
+        ],
+        "category": "footprint"
+      },
+      {
+        "text": "Installed capacity at 30 June 2026 was 350,000 MTPA of ERW and GI pipes, 116,000 MTPA of GP coils, 100,000 MTPA of GP pipes and 116,000 MTPA of stainless-steel CR coils. Upstream, it had 280,000 MTPA of sponge iron, 280,000 MTPA of mild-steel blooms/slabs and 370,000 MTPA of mild-steel HR coil. The October 2026 presentation lists 116,000 MTPA of stainless-steel slab and HR coil at Sarora and counts 582,000 MTPA of finished-product capacity (pipes plus galvanised and stainless coil; GP pipes not added). Captive power is 25 MW (16 MW waste-heat recovery and 9 MW AFBC). This is capacity, not output: ERW and GI pipe utilisation was 65.39% in FY26.",
+        "title": "Finished-product capacity, 30 June 2026",
+        "period": "30 Jun 2026; Sarora stainless and total Oct 2026",
+        "metrics": [
+          {
+            "unit": "MTPA",
+            "label": "ERW and GI pipes",
+            "value": 350000
+          },
+          {
+            "unit": "MTPA",
+            "label": "GP coils",
+            "value": 116000
+          },
+          {
+            "unit": "MTPA",
+            "label": "GP pipes",
+            "value": 100000
+          },
+          {
+            "unit": "MTPA",
+            "label": "Stainless-steel CR coils",
+            "value": 116000
+          },
+          {
+            "unit": "MW",
+            "label": "Captive power",
+            "value": 25
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8ac69c55-8776-42b6-8d32-a14e928b0a6a.pdf",
+            "label": "Q1 FY27 investor presentation (3 Aug 2026)",
+            "locator": "Installed capacity table"
+          },
+          {
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf",
+            "label": "FY26 annual report",
+            "locator": "Manufacturing infrastructure"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/975ded26-b77e-43f4-8354-e16196d1f3dd.pdf",
+            "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+            "locator": "Location-wise capacity breakup"
+          }
+        ],
+        "category": "capabilities"
+      },
+      {
+        "text": "The chain runs from sponge iron, to blooms/slabs, to narrow-width HR coil, and then to pipes and coated or stainless coils. The company says it refines steel directly from iron ore instead of buying coil on the market. Stainless steel is made through the AOD (argon oxygen decarburisation) route. These intermediate products are largely used in-house. Management says only off-grade (B-grade) sponge iron that misses its own quality needs is sold, and it is reported as allied or semi-intermediate product sales. In October 2026 management said more than 80% of its coil need is made in-house; it buys coil outside for pipes above 5 inches and for coated products.",
+        "title": "Makes its own steel from iron ore, then rolls it into pipes and coils",
+        "period": "FY24 to Q2 FY27",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8ac69c55-8776-42b6-8d32-a14e928b0a6a.pdf",
+            "label": "Q1 FY27 investor presentation (3 Aug 2026)",
+            "locator": "Integrated operations and process slides"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f0f4c742-6e27-4bdc-9954-ce814a2d40d5.pdf",
+            "label": "Q1 FY27 earnings call (4 Aug 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/bf7b402f-bfe8-4bb6-b997-7fec54592fde.pdf",
+            "label": "Q2 FY27 earnings call (30 Oct 2026)"
+          }
+        ],
+        "category": "business_model"
+      },
+      {
+        "text": "FY26 standalone product revenue was ₹24,112.16 million. In ₹ million, ERW black pipes and tubes were 10,946.69 (45.4%), stainless-steel coil 6,195.60 (25.7%), and GP coil plus GP pipe 5,198.88 (21.6%). Blooms/slabs plus HR coil sold outside were 574.08 (2.4%) and others 1,196.91 (5.0%). GI pipes had no revenue in FY26, against 98.44 in FY25. The shares are derived from the annual report's product-wise note.",
+        "title": "FY26 product revenue mix",
+        "period": "FY26 (year to 31 Mar 2026)",
+        "metrics": [
+          {
+            "unit": "% of FY26",
+            "label": "ERW black pipes",
+            "value": 45.4
+          },
+          {
+            "unit": "% of FY26",
+            "label": "Stainless-steel coil",
+            "value": 25.7
+          },
+          {
+            "unit": "% of FY26",
+            "label": "GP coil and pipe",
+            "value": 21.6
+          },
+          {
+            "unit": "% of FY26",
+            "label": "Blooms/slabs and HR coil",
+            "value": 2.4
+          },
+          {
+            "unit": "% of FY26",
+            "label": "Others",
+            "value": 5.0
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf",
+            "label": "FY26 annual report",
+            "locator": "Standalone note 28.6"
+          }
+        ],
+        "category": "business_model"
+      },
+      {
+        "text": "All of FY26 standalone revenue from operations, ₹24,112.16 million, came from customers within India, with nothing from outside India, as in FY25. Sales reached 15 states and one union territory in FY26, up from 10 states in FY23. The company names Chhattisgarh, Maharashtra, Gujarat, Haryana, Rajasthan, Uttar Pradesh, Madhya Pradesh and Telangana as its strongholds.",
+        "title": "All revenue is domestic, sold across 15 states and one union territory",
+        "period": "FY23 to FY26",
+        "metrics": [
+          {
+            "unit": "states",
+            "label": "States served, FY23",
+            "value": 10
+          },
+          {
+            "unit": "states",
+            "label": "States served, FY26",
+            "value": 15
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf",
+            "label": "FY26 annual report",
+            "locator": "Standalone note 28.8"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8ac69c55-8776-42b6-8d32-a14e928b0a6a.pdf",
+            "label": "Q1 FY27 investor presentation (3 Aug 2026)",
+            "locator": "Distribution network slide"
+          }
+        ],
+        "category": "geography"
+      },
+      {
+        "text": "Products go mainly through distributors, who sell on to end users. The network was 47 distributors and 1,000+ dealers in FY26, against 43 and 700+ in FY25 and 39 and 600+ in FY24. Through distributors it supplies OEMs such as crane, tractor-part, cultivator and telecom-tower makers. It also sells to construction and infrastructure companies and to government organisations and projects. In stainless-steel pipes it signs co-branding agreements with pipe makers under the Sambhv name: 30 partners by Q2 FY27. In 2026 it won product approvals from Engineers India, Chennai Metro Rail, Mazagaon Dock Shipbuilders and Goa Shipyard.",
+        "title": "Sold mainly through distributors and dealers",
+        "period": "FY24 to Q2 FY27",
+        "metrics": [
+          {
+            "unit": "count",
+            "label": "Distributors, FY26",
+            "value": 47
+          },
+          {
+            "unit": "count (1,000+)",
+            "label": "Dealers, FY26",
+            "value": 1000
+          },
+          {
+            "unit": "count, Q2 FY27",
+            "label": "Co-branding partners",
+            "value": 30
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8ac69c55-8776-42b6-8d32-a14e928b0a6a.pdf",
+            "label": "Q1 FY27 investor presentation (3 Aug 2026)",
+            "locator": "Distribution network slide; Q1 FY27 highlights"
+          },
+          {
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf",
+            "label": "FY26 annual report",
+            "locator": "Market presence"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/975ded26-b77e-43f4-8354-e16196d1f3dd.pdf",
+            "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+            "locator": "Q2 & H1 FY27 key strategic updates"
+          }
+        ],
+        "category": "customers"
+      },
+      {
+        "text": "Not yet operating. With Kuthrel Unit II, Kesda is planned to add 1.2 million tonnes a year of finished products in three phases. Phase 1, 360,000 tonnes a year of stainless steel plus a 25 MW power plant, is still due by March 2027; in October 2026 its civil work was 60-95% done and equipment erection 20-60%. In November 2025 management put Phase 1 capex at about ₹935 crore. The spend runs through the listed company's own books: standalone capital work-in-progress rose from ₹1,872 million to ₹4,365 million in H1 FY27, while the subsidiary's is only about ₹104 million. In October 2026 the company also allotted 86,95,400 warrants at ₹115 each (about ₹100 crore), 25% paid upfront.",
+        "title": "Planned: Kesda greenfield, built on the company's own books",
+        "period": "Plan and progress as of Oct 2026",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/975ded26-b77e-43f4-8354-e16196d1f3dd.pdf",
+            "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+            "locator": "Growth plan; Kesda execution status"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e3c4bbd4-a39a-4a9c-9bff-2b9cb3cc34cc.pdf",
+            "label": "Q2 FY27 results and board outcome (29 Oct 2026)",
+            "locator": "Balance sheets; note 3"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/bf7b402f-bfe8-4bb6-b997-7fec54592fde.pdf",
+            "label": "Q2 FY27 earnings call (30 Oct 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5597bc88-b002-48d9-8595-a7971022e111.pdf",
+            "label": "Q2 FY26 earnings call (10 Nov 2025)"
+          }
+        ],
+        "category": "expansion"
+      },
+      {
+        "text": "Not yet operating. At Sarora, a 150,000 MTPA direct-forming (DFT) ERW pipe mill (₹50 crore) and a 30 MW captive power plant (₹150 crore) are both due by September 2027 (Q2 FY28); the environmental clearance there covers 60 MW. An 8 MW rooftop solar plant at Kuthrel (₹25 crore) comes in two 4 MW phases, the first by Q4 FY27. On 29 October 2026 the board approved a 14,400 MTPA stainless-steel seamless pipe plant through the wholly owned subsidiary Sambhv Tubes Limited: ₹1,480 million, ₹1,000 million of it debt, to be completed by March 2028. Management expects its first year of operation in FY29.",
+        "title": "Planned: DFT pipe mill, power plants and a seamless-pipe unit",
+        "period": "Plans as of Oct 2026",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/975ded26-b77e-43f4-8354-e16196d1f3dd.pdf",
+            "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+            "locator": "Growth plan; captive power slide"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e3c4bbd4-a39a-4a9c-9bff-2b9cb3cc34cc.pdf",
+            "label": "Q2 FY27 results and board outcome (29 Oct 2026)",
+            "locator": "Board outcome, Annexure A"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/bf7b402f-bfe8-4bb6-b997-7fec54592fde.pdf",
+            "label": "Q2 FY27 earnings call (30 Oct 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f0f4c742-6e27-4bdc-9954-ce814a2d40d5.pdf",
+            "label": "Q1 FY27 earnings call (4 Aug 2026)"
+          }
+        ],
+        "category": "expansion"
+      }
+    ],
+    "what_changed": {
+      "text": "Standalone product revenue rose from ₹15,081.89 million in FY25 to ₹24,112.16 million in FY26. In ₹ million, GP coil, GP pipe and stainless-steel coil, all made at Kuthrel, rose together from 1,991.97 (13.2% of FY25) to 11,394.48 (47.3% of FY26). ERW black pipes still grew in rupees, from 10,405.89 to 10,946.69, but their share fell from 69.0% to 45.4%. Blooms/slabs sold outside fell from 1,633.46 to 460.91. This is a change in mix and scale.",
+      "period": "FY25 to FY26",
+      "sources": [
+        {
+          "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf",
+          "label": "FY26 annual report",
+          "locator": "Standalone note 28.6"
+        },
+        {
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f0f4c742-6e27-4bdc-9954-ce814a2d40d5.pdf",
+          "label": "Q1 FY27 earnings call (4 Aug 2026)"
+        }
+      ],
+      "headline": "GP and stainless-steel coils went from about 13% to about 47% of product revenue between FY25 and FY26"
+    }
+  },
+  "about_sources": [
+    {
+      "label": "FY26 annual report",
+      "url": "https://nsearchives.nseindia.in/annual_reports/AR_30420_SAMBHV_2025_2026_A_15730184_18082026215120.pdf"
+    },
+    {
+      "label": "FY25 annual report",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/eeee654f-ac1e-4587-af6b-a1607098740a.pdf"
+    },
+    {
+      "label": "Q1 FY27 investor presentation (3 Aug 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8ac69c55-8776-42b6-8d32-a14e928b0a6a.pdf"
+    },
+    {
+      "label": "Q1 FY26 earnings call (25 Jul 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=79f441d2-d2e6-4b7a-9a26-72659c9699b4.pdf"
+    },
+    {
+      "label": "Q2 FY27 results and board outcome (29 Oct 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/e3c4bbd4-a39a-4a9c-9bff-2b9cb3cc34cc.pdf"
+    },
+    {
+      "label": "Q3 FY26 earnings call (Feb 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8bdd020b-8aa4-492e-9aed-920da0429157.pdf"
+    },
+    {
+      "label": "Q1 FY27 earnings call (4 Aug 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f0f4c742-6e27-4bdc-9954-ce814a2d40d5.pdf"
+    },
+    {
+      "label": "Q2 FY27 investor presentation (29 Oct 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/975ded26-b77e-43f4-8354-e16196d1f3dd.pdf"
+    },
+    {
+      "label": "Q2 FY27 earnings call (30 Oct 2026)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/bf7b402f-bfe8-4bb6-b997-7fec54592fde.pdf"
+    },
+    {
+      "label": "Q2 FY26 earnings call (10 Nov 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5597bc88-b002-48d9-8595-a7971022e111.pdf"
+    }
+  ]
+}
