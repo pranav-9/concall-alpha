@@ -1,0 +1,346 @@
+{
+  "company": "DIACABS",
+  "company_name": "Diamond Power Infrastructure Limited",
+  "prepared_on": "2026-11-17",
+  "review_status": "user_approved",
+  "source_period": "FY24-Q2 FY27",
+  "latest_source_date": "2026-11-04",
+  "about_company": {
+    "about_short": "Integrated maker of power cables up to 400 kV and AL-59 transmission conductors at one Vadodara campus",
+    "about_long": "Diamond Power Infrastructure (DICABS) makes power cables, from low-tension cables up to 1.1 kV to medium-voltage and extra-high-voltage cables up to 400 kV, overhead transmission conductors such as AL-59 and, from Q2 FY27, data-centre cables, drawing its own aluminium wire rod at a single campus near Vadodara, Gujarat. It sells to state and private distribution utilities, transmission developers, EPC contractors, renewable-energy developers, industrial customers and data-centre projects, almost entirely in India. In Q2 FY27 cables were 40% of revenue, data-centre cables 23%, conductors 31% and other sales 6%; for FY26, before the data-centre line, the Q1 FY27 deck puts cables at 59% and conductors at 37% of revenue, while the annual report puts conductors at about 38.4%. Orders carry price-variation clauses linked to metal prices, so the company earns a conversion margin rather than carrying metal-price risk. Founded in 1970, it went into insolvency in 2018, has been run by the GSEC-Monarch group since 2022 and exited the NCLT process in September 2026; revenue rose from ₹343 crore in FY24 to ₹1,910 crore in FY26.",
+    "business_intro": "DICABS turns aluminium, and increasingly copper, into power cables and overhead conductors at one integrated campus near Vadodara; data-centre cables, a line that began in Q2 FY27, were 23% of that quarter's revenue. Buyers are distribution utilities, transmission developers, EPC contractors and renewable, industrial and data-centre projects, who buy through tenders and project orders. Prices follow a metal-linked formula, so revenue moves with metal prices and volumes, while profit comes from the conversion margin, which management says is highest in medium- and extra-high-voltage cables.",
+    "company_timeline": [
+      {
+        "year": 1970,
+        "title": "Founded as an ACSR conductor maker",
+        "detail": "Began as a partnership firm making conductors; the present company was incorporated on 26 August 1992 and later added cables.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          },
+          {
+            "url": "https://nsearchives.nseindia.com/corporate/DIACABS_26052026152852_Investorsupdate26052026.pdf",
+            "label": "Q4 FY26 investor update (26 May 2026)"
+          }
+        ]
+      },
+      {
+        "year": 2018,
+        "title": "Enters insolvency resolution (CIRP)",
+        "detail": "NCLT Ahmedabad admitted the company to the Corporate Insolvency Resolution Process by an order dated 24 August 2018.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          }
+        ]
+      },
+      {
+        "year": 2022,
+        "title": "Acquired by GSEC-Monarch through the NCLT",
+        "detail": "The NCLT approved the resolution plan of GSEC Limited with Rakesh Shah on 20 June 2022; the new owners took charge on 17 September 2022 and restarted operations from December 2022.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          }
+        ]
+      },
+      {
+        "year": 2023,
+        "title": "Lists again as shares are readmitted to trading",
+        "detail": "After the resolution, the equity shares were readmitted to dealings on the stock exchanges in September 2023.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Commissions its first AL-59 rod mill",
+        "detail": "The wholly owned subsidiary DICABS Nextgen commissioned its first rod mill (2,400 MT a month) on 4 March 2025 and a second (2,500 MT a month) on 29 September 2025, making AL-59 alloy rod in-house.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Raises ₹1,614 crore via QIP and exits the NCLT plan",
+        "detail": "In July 2026 the company placed 7.11 crore shares with 56 institutions, taking promoter holding to 74.03% to meet the minimum public shareholding rule. In September 2026 it prepaid the ₹501 crore cash due to lenders under the resolution plan, a year before the September 2027 deadline, and exited the NCLT process.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d10717b6-4d6f-413f-ad96-d52e5560c59a.pdf",
+            "label": "Q1 FY27 investor presentation (13 Aug 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/51aecd7c-2c36-4af5-a259-f518963e23a4.pdf",
+            "label": "Q2 FY27 earnings call transcript (4 Nov 2026)"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "text": "The top five customers' share of revenue fell from 84.2% to 73.7% in FY26 as the customer base widened to 665; the annual report does not date the earlier figure. About 670 customers were served in H1 FY27. Adani group entities were 43% of the order book in September 2026 and, per management, under 30% of Q2 FY27 revenue; the company states a 20–22% cap on Adani's share of revenue over time, with no date, and places every Adani order at market price by reverse auction.",
+        "title": "Top five customers were 73.7% of revenue in FY26",
+        "period": "FY26; Adani as of Sep 2026",
+        "metrics": [
+          {
+            "unit": "% of revenue",
+            "label": "Top 5 customers, FY26",
+            "value": 73.7
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/51aecd7c-2c36-4af5-a259-f518963e23a4.pdf",
+            "label": "Q2 FY27 earnings call transcript (4 Nov 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a8c8b40a-a843-4249-92ef-8ff86319fb8e.pdf",
+            "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+            "locator": "PDF page 18"
+          }
+        ],
+        "category": "customers"
+      },
+      {
+        "text": "Revenue was all domestic in FY24; exports were ₹179.11 lakh in FY25 (supplies to Bhutan, 0.16% of turnover) and nil in FY26. Within India the cable sales team concentrates on Gujarat, Rajasthan, Maharashtra, the National Capital Region and Uttar Pradesh. By November 2026 the company had a separate export team and a large distributor in the UAE and Middle East, and management expects a large contribution from exports in FY28.",
+        "title": "Revenue is almost entirely domestic; exports near zero",
+        "period": "FY24-FY26; export plans as of Nov 2026",
+        "metrics": [
+          {
+            "unit": "% of turnover",
+            "label": "Exports, FY24",
+            "value": 0
+          },
+          {
+            "unit": "% of turnover",
+            "label": "Exports, FY25",
+            "value": 0.16
+          },
+          {
+            "unit": "% of turnover",
+            "label": "Exports, FY26",
+            "value": 0
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/16ca69dd-265e-4773-b944-0073d4ad9bbf.pdf",
+            "label": "Annual Report 2023-24"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/b20c0ca9-ca2a-45cd-a62f-775fba79062f.pdf",
+            "label": "Annual Report 2024-25"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/51aecd7c-2c36-4af5-a259-f518963e23a4.pdf",
+            "label": "Q2 FY27 earnings call transcript (4 Nov 2026)"
+          }
+        ],
+        "category": "geography"
+      },
+      {
+        "text": "Everything is made at one campus at Savli, near Vadodara: 110 acres with 2.8 mn sq ft built in the Q1 FY27 deck, 130 acres in the Q2 FY27 deck. Conductor capacity is 1,00,000 MTPA; FY26 output of about 22,831 MT was about 23% utilisation per the annual report, while the Q1 FY27 deck put FY26 conductor utilisation at 20% and cable utilisation at 34% of 33,060 km a year. The Q2 FY27 deck gives cable capacity of 34,300 km LV, 18,000 km HV and 2,000 km EHV a year. The CCV line count differs by document: 4 in the Q1 FY27 deck, 5 at the August QIP per the Q2 call, and 6 on one Q2 FY27 slide but five on another.",
+        "title": "One Vadodara campus; conductor plant used 20-23% of capacity in FY26",
+        "period": "FY26; lines as of Nov 2026",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d10717b6-4d6f-413f-ad96-d52e5560c59a.pdf",
+            "label": "Q1 FY27 investor presentation (13 Aug 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a8c8b40a-a843-4249-92ef-8ff86319fb8e.pdf",
+            "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+            "locator": "PDF pages 23 and 26"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/51aecd7c-2c36-4af5-a259-f518963e23a4.pdf",
+            "label": "Q2 FY27 earnings call transcript (4 Nov 2026)"
+          }
+        ],
+        "category": "footprint"
+      },
+      {
+        "text": "The company makes cables from 1.1 kV to 400 kV on CCV lines with Class-6 clean rooms. The Q2 FY27 deck describes a 765 kV HV test lab across three NABL-accredited facilities (100, 250 and 765 kV) and 135+ type-tested products; the Q1 FY27 deck described India's first 700 kV / 28,000 kVA UHV type-test lab and 145 type-tested products. Products are type-tested at labs such as CPRI and ERDA. It casts its own aluminium and AL-59 alloy rod, reports conductor conductivity of about 62.8% IACS, and is a licensed manufacturing partner of TS Conductor (USA) for AECC HTLS conductors.",
+        "title": "In-house HV test lab and cables from 1.1 kV to 400 kV",
+        "period": "As of Nov 2026",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a8c8b40a-a843-4249-92ef-8ff86319fb8e.pdf",
+            "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+            "locator": "PDF page 23"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d10717b6-4d6f-413f-ad96-d52e5560c59a.pdf",
+            "label": "Q1 FY27 investor presentation (13 Aug 2026)"
+          },
+          {
+            "url": "https://nsearchives.nseindia.com/corporate/DIACABS_26052026152852_Investorsupdate26052026.pdf",
+            "label": "Q4 FY26 investor update (26 May 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          }
+        ],
+        "category": "capabilities"
+      },
+      {
+        "text": "Orders carry price-variation clauses linked to metal prices and exchange rates, so metal moves pass to customers; in FY26 about 95% of the metal consumed was aluminium. The firm order book rose from ₹2,028 crore at 31 March 2025 to ₹3,240 crore at 31 March 2026 and ₹3,735 crore at 30 September 2026 at quoted value, about ₹4,300 crore at current prices. In September it was 46.0% conductors, 35.5% MV cables, 9.1% LT cables including data-centre copper, 5.9% solar and 3.5% 66 kV EHV; data-centre orders were ₹485 crore basic. The 11 August 2026 book is ₹3,687.55 crore in the Q1 FY27 deck but ₹3,627 crore in the Q2 FY27 deck.",
+        "title": "Metal-linked pricing; order book of ₹3,735 crore",
+        "period": "Mar 2025 to Sep 2026",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d10717b6-4d6f-413f-ad96-d52e5560c59a.pdf",
+            "label": "Q1 FY27 investor presentation (13 Aug 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a8c8b40a-a843-4249-92ef-8ff86319fb8e.pdf",
+            "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+            "locator": "PDF page 17"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/51aecd7c-2c36-4af5-a259-f518963e23a4.pdf",
+            "label": "Q2 FY27 earnings call transcript (4 Nov 2026)"
+          }
+        ],
+        "category": "business_model"
+      },
+      {
+        "text": "Completed in FY26: a 7th MV/EHV cable line (about ₹55 crore, 150 km a month) and the subsidiary's second rod mill in September 2025. The annual report lists a 1,500 MT-a-month copper wire-drawing and copper cable line as commissioned during FY26, while the Q2 FY27 deck dates the 1,500 MT-a-month copper capacity to September 2026. Data-centre cables were nil in Q1 FY27 and ₹242 crore, 23% of revenue, in Q2 FY27; management is scaling copper capacity to 2,500 MT a month, with no date given.",
+        "title": "Added MV/EHV and rod capacity, then a copper cable line",
+        "period": "FY26 to Sep 2026",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a8c8b40a-a843-4249-92ef-8ff86319fb8e.pdf",
+            "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+            "locator": "PDF pages 10 and 25"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/51aecd7c-2c36-4af5-a259-f518963e23a4.pdf",
+            "label": "Q2 FY27 earnings call transcript (4 Nov 2026)"
+          }
+        ],
+        "category": "expansion"
+      },
+      {
+        "text": "Consolidated net worth was negative ₹604.20 crore at 31 March 2026, mainly from legacy write-offs under the resolution plan, and positive ₹763.87 crore at 30 September 2026 after the ₹1,614 crore QIP and H1 profit; net debt of ₹527 crore became net cash of ₹572 crore, excluding ₹1,899 crore face value of resolution-plan bonds. In Q2 FY27 the company charged ₹380.93 crore of past depreciation to capital reserve and ₹45.48 crore to opening retained earnings, and restated FY26 with a ₹14.80 crore exceptional depreciation charge. It says it is now eligible for a credit rating; carried-forward losses keep tax negligible until about Q1 2029, per management.",
+        "title": "Net worth turned positive and the NCLT plan closed in 2026",
+        "period": "Mar 2026 to Sep 2026",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/57553b39-7995-4f8a-ab30-44bc4533d0a8.pdf",
+            "label": "Q2 FY27 financial results (3 Nov 2026)",
+            "locator": "Consolidated results, PDF pages 6, 7 and 10"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/51aecd7c-2c36-4af5-a259-f518963e23a4.pdf",
+            "label": "Q2 FY27 earnings call transcript (4 Nov 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a8c8b40a-a843-4249-92ef-8ff86319fb8e.pdf",
+            "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+            "locator": "PDF page 12"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+            "label": "Annual Report 2025-26"
+          }
+        ],
+        "category": "business_model"
+      },
+      {
+        "category": "expansion",
+        "title": "Approved plans: LV plant, CCV lines, polymer complex",
+        "period": "As of Nov 2026",
+        "text": "Plans as of November 2026: a low-voltage cable plant (~₹129 crore in the Q2 FY27 deck, ₹133.59 crore when approved; 1,000 km a month each of aluminium and copper LV cable) to be commissioned before April 2027; balancing equipment including corrugation lines (~₹73 crore); one more CCV line under erection for March 2027 and another ordered for December 2027; a single-core 3.3 kV solar cable plant (~₹40 crore; FY28 in the Q2 FY27 deck); and a ₹170 crore Integrated Polymer Complex given in-principle board approval on 3 November 2026, Phase I due June–December 2027 and Phase II in early 2028.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a8c8b40a-a843-4249-92ef-8ff86319fb8e.pdf",
+            "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+            "locator": "PDF pages 25 and 26"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/51aecd7c-2c36-4af5-a259-f518963e23a4.pdf",
+            "label": "Q2 FY27 earnings call transcript (4 Nov 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/57553b39-7995-4f8a-ab30-44bc4533d0a8.pdf",
+            "label": "Q2 FY27 financial results (3 Nov 2026)"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d10717b6-4d6f-413f-ad96-d52e5560c59a.pdf",
+            "label": "Q1 FY27 investor presentation (13 Aug 2026)"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "text": "Revenue grew from ₹343 crore in FY24 to ₹1,115 crore in FY25 and ₹1,910 crore in FY26 as the restarted plant took on volume. EBITDA margin was 12.5% in FY24, fell to 6.0% in FY25 and recovered to 11.7% in FY26, which the company attributes mainly to spreading a largely fixed manufacturing cost base over higher volume, helped by a larger share of higher-voltage output. The conductor plant still ran at about a fifth of capacity in FY26 (23% in the annual report, 20% in the Q1 FY27 deck), so the gain so far is mostly utilisation and scale.",
+      "period": "FY24-FY26",
+      "sources": [
+        {
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+          "label": "Annual Report 2025-26"
+        },
+        {
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d10717b6-4d6f-413f-ad96-d52e5560c59a.pdf",
+          "label": "Q1 FY27 investor presentation (13 Aug 2026)"
+        }
+      ],
+      "headline": "Revenue rose from ₹343 crore in FY24 to ₹1,910 crore in FY26; EBITDA margin fell to 6.0% in FY25, then recovered to 11.7%"
+    }
+  },
+  "about_sources": [
+    {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a8c8b40a-a843-4249-92ef-8ff86319fb8e.pdf",
+      "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+      "locator": "PDF pages 10, 12, 17, 18, 23, 25, 26"
+    },
+    {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/51aecd7c-2c36-4af5-a259-f518963e23a4.pdf",
+      "label": "Q2 FY27 earnings call transcript (4 Nov 2026)"
+    },
+    {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/57553b39-7995-4f8a-ab30-44bc4533d0a8.pdf",
+      "label": "Q2 FY27 financial results (3 Nov 2026)",
+      "locator": "PDF pages 2, 6, 7, 10"
+    },
+    {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e85b813c-d946-4105-994f-aacf3804d754.pdf",
+      "label": "Annual Report 2025-26"
+    }
+  ]
+}
