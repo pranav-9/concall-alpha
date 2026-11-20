@@ -67,6 +67,13 @@
     "source": "https://www.amararajaeandm.com/images/fav-icon.png",
     "fetchedAt": "2026-10-29"
   },
+  "ASKAUTOLTD": {
+    "site": "https://www.askbrake.com/",
+    "siteFrom": "company.website",
+    "tier": "icon",
+    "source": "https://askbrake.com/wp-content/uploads/2022/08/cropped-cropped-ASK-LOGO-1-180x180.png",
+    "fetchedAt": "2026-11-20"
+  },
   "ASTRAMICRO": {
     "tier": "favicon-32",
     "source": "https://www.astramwp.com/favicon.ico",
@@ -398,6 +405,13 @@
     "tier": "icon",
     "source": "https://www.kwalitypharma.com/images/favicon.ico",
     "fetchedAt": "2026-10-29"
+  },
+  "KRBL": {
+    "site": "https://www.krblrice.com/",
+    "siteFrom": "company.website",
+    "tier": "icon",
+    "source": "https://krblrice.com/wp-content/uploads/2024/08/cropped-krbl_fav-180x180.png",
+    "fetchedAt": "2026-11-20"
   },
   "KRN": {
     "site": "http://www.krnheatexchanger.com/",

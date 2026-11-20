@@ -1,0 +1,396 @@
+{
+  "company": "MINDACORP",
+  "company_name": "Minda Corporation",
+  "prepared_on": "2026-11-20",
+  "review_status": "user_approved",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-11-11",
+  "about_company": {
+    "about_short": "Spark Minda Group flagship making locks, wiring harnesses, instrument clusters and die castings for vehicle makers",
+    "about_long": "Minda Corporation is the flagship company of the Spark Minda Group, incorporated in 1985 and headquartered in Noida. It supplies vehicle makers with vehicle access systems (locksets, latches, smart keys), wiring harnesses, instrument clusters and telematics, aluminium die castings and EV electronics, and also sells in the aftermarket. It reports sales in two business verticals, Mechatronics, Aftermarket and Others (₹2,843 Cr in FY26) and Information & Connected Systems (₹3,342 Cr), while its financial statements treat the whole business as one segment, automotive components. Two-wheelers and three-wheelers were 48% of FY26 revenue, commercial and off-highway vehicles 28%, passenger vehicles 14% and the aftermarket 10%. It owns 49% of Flash Electronics, an EV and powertrain electronics maker bought in January 2025; as an associate its sales are outside the ₹6,185 Cr FY26 consolidated revenue, and the ₹9,016 Cr group revenue the company also quotes adds its associates and joint ventures. From Q1 FY27 it consolidates Minda VAST, its passenger-vehicle vehicle-access joint venture.",
+    "business_intro": "Minda Corporation, the Spark Minda Group's flagship, makes locks and smart keys, wiring harnesses, instrument clusters, aluminium die castings and EV electronics for makers of two-wheelers, three-wheelers, cars, trucks and tractors, and sells spares in the aftermarket. It earns its revenue selling these parts mostly to Indian vehicle makers: India was 89% of revenue in Q2 FY27 and two- and three-wheelers 48% in FY26. It also owns 49% of Flash Electronics, whose EV and powertrain electronics sales sit outside its consolidated revenue.",
+    "company_timeline": [
+      {
+        "year": 1985,
+        "title": "Incorporated",
+        "detail": "Incorporated in 1985; the annual report describes it as the flagship company of the Spark Minda Group, headquartered in Noida.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1266bb35-da7a-4291-ac05-ae6b12f0b527.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Acquires 49% of Flash Electronics",
+        "detail": "Bought a 49% stake in Flash Electronics, an EV and powertrain electronics maker, for ₹13,720 Mn (₹1,372 Cr) in January 2025 (Q4 FY25). It is an associate: its profit share is booked below EBITDA and its revenue is not in Minda Corp's consolidated revenue.",
+        "sources": [
+          {
+            "label": "Annual Report FY2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c774d058-40db-4ed7-bab6-43bed5e18197.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1266bb35-da7a-4291-ac05-ae6b12f0b527.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Sets up Spark Minda-Toyodenso India for switches",
+        "detail": "Incorporated on 21 August 2025 with Toyodenso Co. Ltd. of Japan; Minda Corp holds 60%.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1266bb35-da7a-4291-ac05-ae6b12f0b527.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript (13 Aug 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=878ac8d0-79b1-40ce-8fe4-d542d8a8482d.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Starts consolidating Minda VAST",
+        "detail": "Minda VAST, the vehicle-access joint venture with WITTE of Germany listed as a 50% joint venture in the FY26 annual report, is consolidated from Q1 FY27. The consolidation gave a one-time gain of ₹106 Cr after tax, booked as an exceptional item in Q1 FY27.",
+        "sources": [
+          {
+            "label": "Q1 FY27 earnings call transcript (13 Aug 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=878ac8d0-79b1-40ce-8fe4-d542d8a8482d.pdf"
+          },
+          {
+            "label": "Q1 FY27 investor presentation (13 Aug 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7b18bb4a-7245-4b7f-a8aa-b98354cd20b3.pdf"
+          },
+          {
+            "label": "Q2 FY27 earnings call transcript (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6541cb07-0f40-4ec3-88fe-39fd5a5a6e36.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1266bb35-da7a-4291-ac05-ae6b12f0b527.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Wins approval to make display module sub-assemblies",
+        "detail": "Subsidiary Minda Instruments received government approval under the Electronics Components Manufacturing Scheme to assemble TFT display modules it now imports; management expects the plant to take 12 to 18 months.",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1fe9f37c-2ee7-4b2b-8885-b5b58a17f18d.pdf"
+          },
+          {
+            "label": "Q2 FY27 earnings call transcript (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6541cb07-0f40-4ec3-88fe-39fd5a5a6e36.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Starts sunroof production",
+        "detail": "Sunroof production started in Q2 FY27 through Minda-HCMF Technologies, a 50% joint venture with HSIN CHONG Machinery Works.",
+        "sources": [
+          {
+            "label": "Q2 FY27 earnings call transcript (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6541cb07-0f40-4ec3-88fe-39fd5a5a6e36.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript (13 Aug 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=878ac8d0-79b1-40ce-8fe4-d542d8a8482d.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1266bb35-da7a-4291-ac05-ae6b12f0b527.pdf"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Concentrated on India's leading vehicle makers; no customer share disclosed",
+        "text": "The annual report calls the customer base concentrated across India's leading vehicle makers and manages the risk by spreading across two-wheelers, three-wheelers, passenger and commercial vehicles, off-highway and the aftermarket; it does not give any customer's share of revenue. Customers named in the company overview include Bajaj Auto, HMSI, TVS Motor, Maruti Suzuki, Hyundai, Mahindra, Tata Motors and Ashok Leyland.",
+        "period": "FY26 annual report; customer list as of Mar 2024",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1266bb35-da7a-4291-ac05-ae6b12f0b527.pdf"
+          },
+          {
+            "label": "Q4 FY24 investor presentation (22 May 2024)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f21b91ea-ded5-45bd-b216-074c57ca8992.pdf"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "India is 89% of revenue; exports to Europe and North America 6%",
+        "text": "In Q2 FY27, India gave 89% of consolidated revenue, Europe and North America 6% and South-East Asia, where the company has plants in Indonesia and Vietnam, 5%. For the full FY26 the annual report's geographic note puts revenue from customers in India at ₹54,787 Mn of ₹61,853 Mn, about 89%; in FY25 the split was 88%, 7% and 5%.",
+        "period": "Q2 FY27 (FY26 and FY25 for comparison)",
+        "sources": [
+          {
+            "label": "Q2 FY27 earnings call transcript (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6541cb07-0f40-4ec3-88fe-39fd5a5a6e36.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1266bb35-da7a-4291-ac05-ae6b12f0b527.pdf"
+          },
+          {
+            "label": "Q4 FY25 earnings call transcript (27 May 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=39c20854-4a61-486f-b095-9a4e0dee022b.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "India",
+            "value": 89,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Europe & North America",
+            "value": 6,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "South-East Asia",
+            "value": 5,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Wiring harnesses are the largest product line at 31% of FY26 revenue",
+        "text": "By product, wiring harnesses were 31% of FY26 revenue, vehicle access 22%, instrument clusters 17%, die casting 15% and others (sensors, EV products, other electronics) 15%. In FY25 the split was 28%, 24%, 16%, 16% and 16%.",
+        "period": "FY26 (FY25 for comparison)",
+        "sources": [
+          {
+            "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7488c2e7-7497-4931-b75d-bb7e573d6a8f.pdf"
+          },
+          {
+            "label": "Q4 FY26 investor presentation (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53577181-e655-42b6-bfce-39295c270fd1.pdf"
+          },
+          {
+            "label": "Q4 FY25 earnings call transcript (27 May 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=39c20854-4a61-486f-b095-9a4e0dee022b.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Wiring harness",
+            "value": 31,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Vehicle access",
+            "value": 22,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Instrument clusters",
+            "value": 17,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Die casting",
+            "value": 15,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Others",
+            "value": 15,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Two- and three-wheelers are 48% of revenue",
+        "text": "Two- and three-wheelers were 48% of FY26 revenue, commercial vehicles (including off-highway and tractors) 28%, passenger vehicles 14% and the aftermarket 10%. In Q2 FY27, with Minda VAST consolidated, passenger vehicles were 18% against 15% a year earlier; management says more than 90% of VAST's revenue is passenger vehicles.",
+        "period": "FY26 (Q2 FY27 for the change)",
+        "sources": [
+          {
+            "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7488c2e7-7497-4931-b75d-bb7e573d6a8f.pdf"
+          },
+          {
+            "label": "Q4 FY26 investor presentation (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53577181-e655-42b6-bfce-39295c270fd1.pdf"
+          },
+          {
+            "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1fe9f37c-2ee7-4b2b-8885-b5b58a17f18d.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "2-3 wheelers",
+            "value": 48,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Commercial vehicles",
+            "value": 28,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Passenger vehicles",
+            "value": 14,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Aftermarket",
+            "value": 10,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Group revenue of ₹9,016 Cr counts associates; consolidated is ₹6,185 Cr",
+        "text": "The company quotes two revenue figures for FY26: consolidated revenue of ₹6,185 Cr and group revenue of ₹9,016 Cr, which adds its associates and joint ventures. The largest associate, Flash Electronics (49%), had FY26 revenue of ₹1,803 Cr, EBITDA of ₹310 Cr and PAT of ₹137 Cr on its own books; only Minda Corp's share of that profit reaches its income statement.",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1fe9f37c-2ee7-4b2b-8885-b5b58a17f18d.pdf"
+          },
+          {
+            "label": "Q4 FY26 investor presentation (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53577181-e655-42b6-bfce-39295c270fd1.pdf"
+          },
+          {
+            "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7488c2e7-7497-4931-b75d-bb7e573d6a8f.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1266bb35-da7a-4291-ac05-ae6b12f0b527.pdf"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "42 manufacturing plants across six verticals, Flash included",
+        "text": "The FY26 annual report counts 42 manufacturing plants and a workforce of over 23,000 across six verticals, one of them the powertrain business anchored by the Flash Electronics associate. In November 2026 management said 6 to 7 more plants are being built, to start in the next 12 to 24 months.",
+        "period": "31 Mar 2026; plants under construction as of Nov 2026",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1266bb35-da7a-4291-ac05-ae6b12f0b527.pdf"
+          },
+          {
+            "label": "Q2 FY27 earnings call transcript (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6541cb07-0f40-4ec3-88fe-39fd5a5a6e36.pdf"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Over 1,000 engineers and 330 patent filings",
+        "text": "As of 31 March 2026 the company had an in-house engineering headcount of over 1,000, two advanced technology centres, seven engineering centres and 330 patent filings, of which 147 had been granted.",
+        "period": "31 Mar 2026",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1266bb35-da7a-4291-ac05-ae6b12f0b527.pdf"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "EV products are 10% of revenue and about 35% of the order book",
+        "text": "EV product revenue grew 113% year on year in Q2 FY27 to 10% of Minda Corp's revenue (15% at group level), and EV products are close to 35% of the order book's value. The company also won TFT instrument cluster orders with a lifetime value above ₹1,000 Cr; production is planned from FY28.",
+        "period": "Q2 FY27",
+        "sources": [
+          {
+            "label": "Q2 FY27 earnings call transcript (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6541cb07-0f40-4ec3-88fe-39fd5a5a6e36.pdf"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Minda VAST is consolidated from Q1 FY27, lifting the passenger-vehicle share",
+      "text": "From Q1 FY27 Minda Corp consolidates Minda VAST, its vehicle-access joint venture with WITTE of Germany, which did about ₹500 Cr of revenue in FY26 and sells more than 90% to passenger vehicles. The CFO put its Q1 FY27 revenue contribution at about ₹125 Cr, and the consolidation gave a one-time ₹106 Cr after-tax gain. Vehicle access rose to 24% of Q2 FY27 revenue from 22% a year earlier, which management put down to the consolidation, and passenger vehicles to 18% from 15%. H1 FY27 revenue of ₹4,036 Cr, up 38%, includes VAST.",
+      "period": "Q1-Q2 FY27",
+      "sources": [
+        {
+          "label": "Q1 FY27 earnings call transcript (13 Aug 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=878ac8d0-79b1-40ce-8fe4-d542d8a8482d.pdf"
+        },
+        {
+          "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7488c2e7-7497-4931-b75d-bb7e573d6a8f.pdf"
+        },
+        {
+          "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1fe9f37c-2ee7-4b2b-8885-b5b58a17f18d.pdf"
+        },
+        {
+          "label": "Q2 FY27 earnings call transcript (3 Nov 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6541cb07-0f40-4ec3-88fe-39fd5a5a6e36.pdf"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Annual Report FY2025-26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1266bb35-da7a-4291-ac05-ae6b12f0b527.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Annual Report FY2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c774d058-40db-4ed7-bab6-43bed5e18197.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q1 FY27 earnings call transcript (13 Aug 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=878ac8d0-79b1-40ce-8fe4-d542d8a8482d.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q1 FY27 investor presentation (13 Aug 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7b18bb4a-7245-4b7f-a8aa-b98354cd20b3.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q2 FY27 earnings call transcript (3 Nov 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6541cb07-0f40-4ec3-88fe-39fd5a5a6e36.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q2 FY27 investor presentation (3 Nov 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=1fe9f37c-2ee7-4b2b-8885-b5b58a17f18d.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 FY24 investor presentation (22 May 2024)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f21b91ea-ded5-45bd-b216-074c57ca8992.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 FY25 earnings call transcript (27 May 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=39c20854-4a61-486f-b095-9a4e0dee022b.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7488c2e7-7497-4931-b75d-bb7e573d6a8f.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 FY26 investor presentation (22 May 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=53577181-e655-42b6-bfce-39295c270fd1.pdf",
+      "locator": "company background, timeline and facts"
+    }
+  ]
+}
