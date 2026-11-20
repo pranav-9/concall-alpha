@@ -1,0 +1,348 @@
+{
+  "company": "ASKAUTOLTD",
+  "company_name": "ASK Automotive",
+  "prepared_on": "2026-11-20",
+  "review_status": "user_approved",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-11-09",
+  "about_company": {
+    "about_short": "Makes about half of India's two-wheeler brake systems, plus aluminium die-cast parts and control cables",
+    "about_long": "ASK Automotive makes brake shoes, disc brake pads and brake panel assemblies, aluminium die-cast and machined parts, and control cables, mostly for Indian two-wheeler makers. It reports one operating segment, auto components, and splits revenue into product lines: in H1 FY27 aluminium lightweighting precision solutions (ALPS) were 57.9% of revenue from operations, advanced braking systems (ABS) 36.1%, safety control cables 3.1% and others 2.9%. By channel, two-wheeler ICE makers took 72.9% of that revenue, two-wheeler EV makers 5.9%, the independent aftermarket 8.7%, passenger vehicles 3.7% and exports 3.7%. Revenue includes aluminium alloy prices passed through to customers, so the company also reports a net revenue that leaves out that pass-through and the wheel-assembly business, which has had no sales since 1 April 2026. It runs 19 plants in Haryana, Uttarakhand, Himachal Pradesh, Rajasthan, Gujarat and Karnataka, and holds stakes in joint ventures with Fras-le, AISIN and T.D. Holding.",
+    "business_intro": "ASK Automotive sells braking parts, aluminium die-cast parts and control cables, mostly to Indian two-wheeler makers (its largest customer is Honda Motorcycle & Scooter India) and to the independent aftermarket; exports are a small share. The aluminium alloy in its parts is passed through to customers, so reported revenue moves with metal prices as well as with the volumes vehicle makers order.",
+    "company_timeline": [
+      {
+        "year": 1988,
+        "title": "Incorporated",
+        "detail": "Began manufacturing in 1989 at its first plant, ASK-1 in Gurugram, Haryana, entering the vehicle-maker market with two-wheeler brake shoes.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26 (Our Journey; BRSR year of incorporation)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/5b64b7ce-2b0e-4b69-aa31-a9b9d6388a2b.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2023,
+        "title": "Commissions the Karoli plant in Rajasthan",
+        "detail": "Its largest plant, with Rs 380 Cr invested up to 31 March 2024; the company called it operationalized and ramping up in May 2024.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26 (Our Journey)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/5b64b7ce-2b0e-4b69-aa31-a9b9d6388a2b.pdf"
+          },
+          {
+            "label": "Investor presentation Q4 FY24 (May 2024)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d1bcd57e-8f18-4b4e-be86-cae108f4ecc7.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2023,
+        "title": "Lists on NSE and BSE",
+        "detail": "Shares listed on 15 November 2023 after an IPO of Rs 833.91 Cr that was entirely an offer for sale by the promoters.",
+        "sources": [
+          {
+            "label": "Annual Report FY2023-24 (Directors' Report)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/932affa9-64bd-41e6-857d-f161ba4e3026.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Forms AISIN ASK aftermarket joint venture",
+        "detail": "Signed with AISIN group companies on 24 April 2024; AISIN ASK India, incorporated on 30 July 2024 and 51% held by ASK, markets passenger-car parts in the independent aftermarket.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26 (Form AOC-1 notes)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/5b64b7ce-2b0e-4b69-aa31-a9b9d6388a2b.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Commissions 18th plant, in Bengaluru",
+        "detail": "Its third plant in southern India began commercial operations on 14 January 2025.",
+        "sources": [
+          {
+            "label": "Earnings call transcript Q3 FY25 (January 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6239609a-ac38-49fd-8847-5d61e2c228dc.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26 (Our Journey)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/5b64b7ce-2b0e-4b69-aa31-a9b9d6388a2b.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Starts HPDC alloy wheel supply",
+        "detail": "Regular supply of high-pressure die-cast alloy wheels began on 3 August 2026 to its leading Japanese customer, under a technical collaboration with Kyushu Yanagawa of Japan; the company says these are the first HPDC alloy wheels in Indian two-wheelers.",
+        "sources": [
+          {
+            "label": "Investor presentation Q2 FY27 (November 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d197c841-aa45-4846-a342-9ffef4f21591.pdf"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Top 3 customers were 60.6% of FY26 revenue",
+        "text": "The FY26 annual report shows three customers at 31.28%, 19.41% and 9.90% of group revenue from sale of products and services, without naming them. Management names Honda Motorcycle & Scooter India as its largest customer, followed by TVS and Hero MotoCorp (Q1 FY26 call), and put Honda at about 35% of revenue on the Q2 FY27 call.",
+        "period": "FY26; Q2 FY27 call",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26 (consolidated note 24)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/5b64b7ce-2b0e-4b69-aa31-a9b9d6388a2b.pdf"
+          },
+          {
+            "label": "Earnings call transcript Q1 FY26 (August 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=28f4ab00-bfaf-4530-82a3-11d4f8e02777.pdf"
+          },
+          {
+            "label": "Earnings call transcript Q2 FY27 (November 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8dab0591-1a7c-4196-9e0c-9f02baf6a55a.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Largest customer",
+            "value": 31.28,
+            "unit": "% of FY26 revenue"
+          },
+          {
+            "label": "Second-largest customer",
+            "value": 19.41,
+            "unit": "% of FY26 revenue"
+          },
+          {
+            "label": "Third-largest customer",
+            "value": 9.9,
+            "unit": "% of FY26 revenue"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Exports were 3.4% of FY26 revenue",
+        "text": "Exports were Rs 141.46 Cr of Rs 4,176.32 Cr revenue from operations in FY26 (3.4%), against Rs 146.54 Cr (4.1%) in FY25, 4.9% in FY24 and 3.6% in FY23; the rest is sold in India. In H1 FY27 exports rose 74% to Rs 109 Cr, 3.7% of revenue. The company lists 14 export countries, and management plans FY27 exports above Rs 180 Cr.",
+        "period": "FY23 to H1 FY27",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26 (consolidated note 34)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/5b64b7ce-2b0e-4b69-aa31-a9b9d6388a2b.pdf"
+          },
+          {
+            "label": "Investor presentation Q4 FY24 (May 2024)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d1bcd57e-8f18-4b4e-be86-cae108f4ecc7.pdf"
+          },
+          {
+            "label": "Investor presentation Q2 FY27 (November 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d197c841-aa45-4846-a342-9ffef4f21591.pdf"
+          },
+          {
+            "label": "Earnings call transcript Q2 FY27 (November 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8dab0591-1a7c-4196-9e0c-9f02baf6a55a.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Exports, FY23",
+            "value": 3.6,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, FY24",
+            "value": 4.9,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, FY25",
+            "value": 4.1,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, FY26",
+            "value": 3.4,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, H1 FY27",
+            "value": 3.7,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Two-wheeler ICE makers take 73% of revenue",
+        "text": "Of H1 FY27 revenue from operations, two-wheeler ICE makers took 72.9%, the independent aftermarket 8.7%, two-wheeler EV makers 5.9%, passenger vehicles 3.7%, exports 3.7% and others 5.1%. In FY26 the split was 68.6% ICE, 10.0% aftermarket, 4.7% EV, 3.2% passenger vehicles and 3.4% exports, with wheel assembly a separate 5.0%. Management puts its kit value at about Rs 950 per ICE two-wheeler and Rs 1,250-1,300 per EV.",
+        "period": "FY26 and H1 FY27",
+        "sources": [
+          {
+            "label": "Investor presentation Q2 FY27 (November 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d197c841-aa45-4846-a342-9ffef4f21591.pdf"
+          },
+          {
+            "label": "Investor presentation Q4 FY26 (May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=becaedaa-050e-45ed-a858-3c9060e1d971.pdf"
+          },
+          {
+            "label": "Earnings call transcript Q2 FY27 (November 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8dab0591-1a7c-4196-9e0c-9f02baf6a55a.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "2W ICE makers",
+            "value": 72.9,
+            "unit": "% of H1 FY27 revenue"
+          },
+          {
+            "label": "Independent aftermarket",
+            "value": 8.7,
+            "unit": "% of H1 FY27 revenue"
+          },
+          {
+            "label": "2W EV makers",
+            "value": 5.9,
+            "unit": "% of H1 FY27 revenue"
+          },
+          {
+            "label": "Passenger vehicles",
+            "value": 3.7,
+            "unit": "% of H1 FY27 revenue"
+          },
+          {
+            "label": "Exports",
+            "value": 3.7,
+            "unit": "% of H1 FY27 revenue"
+          },
+          {
+            "label": "Others",
+            "value": 5.1,
+            "unit": "% of H1 FY27 revenue"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Alloy prices are passed through to customers",
+        "text": "In Q2 FY27 total income rose 47.5% to Rs 1,561 Cr; the company attributes 23.0 points of that to aluminium alloy prices passed through to customers and minus 5.0 points to the wound-down wheel assembly business, leaving net revenue up 29.5% at Rs 1,303 Cr. The EBITDA margin, reported on total income, fell to 11.8% from 13.4%, which the company puts down to the pass-through, while EBITDA rose 30.0% to Rs 185 Cr.",
+        "period": "Q2 FY27",
+        "sources": [
+          {
+            "label": "Investor presentation Q2 FY27 (November 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d197c841-aa45-4846-a342-9ffef4f21591.pdf"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "19 plants across six states",
+        "text": "Gurugram/Manesar in Haryana has 9 plants plus 1 joint-venture plant, Haridwar 2, Baddi 1, Karoli in Rajasthan 2, Ahmedabad 1 and Bengaluru 3 (one ASK plant and two of its wholly owned subsidiary ASK Automobiles), with a workforce of 10,000+. The 19th plant, a friction-material expansion for brakes, was commissioned by the Q2 FY27 call; a 20th, the fourth Bengaluru plant, is planned for January 2027.",
+        "period": "As of November 2026",
+        "sources": [
+          {
+            "label": "Investor presentation Q2 FY27 (November 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d197c841-aa45-4846-a342-9ffef4f21591.pdf"
+          },
+          {
+            "label": "Earnings call transcript Q2 FY27 (November 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8dab0591-1a7c-4196-9e0c-9f02baf6a55a.pdf"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "About half of India's two-wheeler braking market",
+        "text": "The company says it holds about 50% of India's two-wheeler advanced braking systems market, covering brake shoes, disc brake pads and brake panel assemblies. It has 5 technical collaborations (a Japanese brake-shoe maker, HSH of Taiwan for control cables, NUCAP of Canada for brake-pad retention, LIOHO of Taiwan and Kyushu Yanagawa Seiki of Japan for alloy wheels) and 3 joint ventures: ASK Fras-le Friction (49%, commercial-vehicle brake pads and liners), AISIN ASK India (51%, passenger-car aftermarket parts) and ASK GTD Control Cables (49%, sunroof and helix cables).",
+        "period": "FY26 annual report",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26 (Technical Collaborations & JVs; Form AOC-1 notes)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/5b64b7ce-2b0e-4b69-aa31-a9b9d6388a2b.pdf"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Capex has averaged at least Rs 500 Cr a year",
+        "text": "Management says it has invested on average at least Rs 500 Cr a year for the last four years. Planned: about Rs 700 Cr of capex budgeted for FY27, part of which may fall into FY28, and Rs 500 Cr for FY28. On alloy wheels it expects about Rs 80 Cr of revenue in FY27 and holds orders of about Rs 240 Cr for FY28 from one Japanese customer.",
+        "period": "Q2 FY27 call",
+        "sources": [
+          {
+            "label": "Earnings call transcript Q2 FY27 (November 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8dab0591-1a7c-4196-9e0c-9f02baf6a55a.pdf"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Aluminium parts grew to over half of revenue as wheel assembly was wound down",
+      "text": "ALPS rose from 38.9% of revenue from operations in FY23 to 50.8% in FY26 while wheel assembly fell from 13.8% to 5.0%; in H1 FY27 ALPS reached 57.9% and wheel assembly had no sales. In FY26 ALPS revenue grew 30% to Rs 2,121 Cr against 17% for braking, while alloy pass-through added only 3.1 points to total income growth; in H1 FY27 it added 27.1 points, so part of that half's jump is metal prices. A larger share is not a margin gain: management says EBITDA margins are very close across segments.",
+      "period": "FY23 to H1 FY27",
+      "sources": [
+        {
+          "label": "Investor presentation Q4 FY24 (May 2024)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d1bcd57e-8f18-4b4e-be86-cae108f4ecc7.pdf"
+        },
+        {
+          "label": "Investor presentation Q4 FY26 (May 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=becaedaa-050e-45ed-a858-3c9060e1d971.pdf"
+        },
+        {
+          "label": "Investor presentation Q2 FY27 (November 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d197c841-aa45-4846-a342-9ffef4f21591.pdf"
+        },
+        {
+          "label": "Earnings call transcript Q2 FY27 (November 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8dab0591-1a7c-4196-9e0c-9f02baf6a55a.pdf"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Annual Report FY2025-26 (Our Journey; BRSR year of incorporation)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/5b64b7ce-2b0e-4b69-aa31-a9b9d6388a2b.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor presentation Q4 FY24 (May 2024)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d1bcd57e-8f18-4b4e-be86-cae108f4ecc7.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Annual Report FY2023-24 (Directors' Report)",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/932affa9-64bd-41e6-857d-f161ba4e3026.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Earnings call transcript Q3 FY25 (January 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6239609a-ac38-49fd-8847-5d61e2c228dc.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor presentation Q2 FY27 (November 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d197c841-aa45-4846-a342-9ffef4f21591.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Earnings call transcript Q1 FY26 (August 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=28f4ab00-bfaf-4530-82a3-11d4f8e02777.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Earnings call transcript Q2 FY27 (November 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8dab0591-1a7c-4196-9e0c-9f02baf6a55a.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor presentation Q4 FY26 (May 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=becaedaa-050e-45ed-a858-3c9060e1d971.pdf",
+      "locator": "company background, timeline and facts"
+    }
+  ]
+}
