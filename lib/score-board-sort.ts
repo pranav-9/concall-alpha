@@ -1,7 +1,7 @@
 // The score board's data layer: the row type the leaderboard and watchlist
 // pages build, the derived rank/Read/dim fields, and the sort rules both of the
 // board's layouts (phone list, desktop table) share. Pure — no React, no Next —
-// so tests/score-board-sort.test.ts can pin the pin-dim-last / null-last /
+// so tests/score-board-sort.test.ts can pin the unranked-last / null-last /
 // default-direction rules the UI relies on.
 
 import {
@@ -52,12 +52,6 @@ export type ScoreBoardRow = {
   /** ALREADY rescaled to 0-10 by the data layer (lib/valuation-band). */
   valuationScore: number | null;
   /**
-   * Stored composite-cut flag from the data layer. No longer drives greying on
-   * THIS board (greying is live now — see coverageCutRank / DerivedRow.dim); kept
-   * because the shared row type still carries it for other consumers.
-   */
-  belowCut: boolean;
-  /**
    * Provenance and recency of concallScore. Optional because a watchlisted
    * company with no scored quarter is built here as a placeholder row, and a
    * placeholder has no score to qualify.
@@ -86,12 +80,6 @@ export type DerivedRow = ScoreBoardRow & {
   readDescription: string;
   /** Position key for the default sort. See assignEffectiveRanks. */
   effectiveRank: number;
-  /**
-   * Greyed on this board: its LIVE Read rank is past the coverage line. True only
-   * when the caller passes coverageCutRank (the leaderboard); a watchlist omits it,
-   * so nothing greys there. Replaces the old stored `belowCut` as the grey source.
-   */
-  dim: boolean;
 };
 
 /**
@@ -106,45 +94,29 @@ export type DerivedRow = ScoreBoardRow & {
  * the stored ranks still came from the old two-leg formula. A board whose rank
  * column contradicts the number it claims to rank on is worse than one with no
  * ranks at all. It also left companies onboarded since the last run with no
- * rank, dangling below the greyed tail with a strong Read.
+ * rank.
  *
  * Deriving it means # and Read agree by construction, always, with no compute
- * run required. Greying is now derived from this SAME live rank (dim = rank past
- * coverageCutRank), NOT the stored cut — so a greyed row is always one that ranks
- * below the coverage line on the number the board shows, and can never sit above
- * a kept row it out-scores. The stored `excluded_from_discovery` flag still
- * governs homepage / sectors (lib/coverage-policy.ts); it no longer touches this
- * board. The two sets can differ near the line, which is invisible off-board.
+ * run required. It is also what lets a watchlist share this component: the same
+ * code numbers 8 rows 1-8 by their Read without needing a universe to rank
+ * against.
  *
- * It is also what lets a watchlist share this component: the same code numbers
- * 8 rows 1-8 by their Read without needing a universe to rank against.
- *
- * Below-cut rows ARE numbered here (redesign 2026-08-11): the board numbers the
- * whole universe by Read and pins the greyed rows at the bottom, so a greyed row
- * shows its true Read position (e.g. #118) rather than a bare "—". The ranking
- * itself lives in lib/leaderboard-rank computeBoardRanks so the daily snapshot
- * writer (which feeds the Δ column) ranks the identical universe the identical
- * way — otherwise Δ would compare a rank to itself computed two ways.
+ * The ranking itself lives in lib/leaderboard-rank computeBoardRanks so the
+ * daily snapshot writer (which feeds the Δ column) ranks the identical universe
+ * the identical way — otherwise Δ would compare a rank to itself computed two
+ * ways. A row with no Read is unranked (effectiveRank = Infinity).
  */
 function assignEffectiveRanks(
-  rows: Array<Omit<DerivedRow, "effectiveRank" | "dim">>,
-  coverageCutRank?: number,
+  rows: Array<Omit<DerivedRow, "effectiveRank">>,
 ): DerivedRow[] {
   const rankByCode = computeBoardRanks(rows);
-  return rows.map((row) => {
-    const effectiveRank = rankByCode.get(row.companyCode) ?? Number.POSITIVE_INFINITY;
-    return {
-      ...row,
-      effectiveRank,
-      // Greyed = ranks past the coverage line on the LIVE Read. An unranked row
-      // (no Read → effectiveRank Infinity) greys too: it is not in the top N.
-      // coverageCutRank absent (a watchlist) → nothing greys.
-      dim: coverageCutRank != null && effectiveRank > coverageCutRank,
-    };
-  });
+  return rows.map((row) => ({
+    ...row,
+    effectiveRank: rankByCode.get(row.companyCode) ?? Number.POSITIVE_INFINITY,
+  }));
 }
 
-export function deriveRows(rows: ScoreBoardRow[], coverageCutRank?: number): DerivedRow[] {
+export function deriveRows(rows: ScoreBoardRow[]): DerivedRow[] {
   return assignEffectiveRanks(
     rows.map((row) => {
       const read = classifyBoardRead({
@@ -159,7 +131,6 @@ export function deriveRows(rows: ScoreBoardRow[], coverageCutRank?: number): Der
         readDescription: read.description,
       };
     }),
-    coverageCutRank,
   );
 }
 
@@ -209,28 +180,16 @@ export function sortRows(rows: DerivedRow[], sort: SortState) {
   const byName = (a: DerivedRow, b: DerivedRow) =>
     compareText(a.companyName, b.companyName, "asc");
   return [...rows].sort((a, b) => {
-    // Greyed rows (dim = ranked past the coverage line) pin to the bottom under
-    // EVERY sort key and direction — they are not part of the ranked hundred, so
-    // they aren't competing for a position in it. Doing this only on the default
-    // sort would put the greyed tail back in the middle the moment a reader
-    // sorted by Quarter, which is the confusion this pin exists to remove. No-op
-    // on a watchlist, which never sets dim.
-    if (a.dim !== b.dim) return a.dim ? 1 : -1;
     let diff = 0;
     switch (sort.key) {
       case "coverageRank": {
         // effectiveRank, not coverageRank: an as-yet-unranked company sits where
-        // its Read puts it rather than dangling below the greyed tail.
-        const ar = a.effectiveRank;
-        const br = b.effectiveRank;
-        diff = ar === br ? 0 : sort.direction === "asc" ? ar - br : br - ar;
-        // Unranked greyed rows (no Read → effectiveRank = Infinity) tie here and
-        // would fall through to the alphabetical byName tie-breaker — the greyed
-        // tail read as A→Z, not worst-to-best. Order any such tie by Read (desc)
-        // so the tail matches every other block on the default sort.
-        if (diff === 0 && a.dim && b.dim) {
-          diff = compareNumber(a.readScore, b.readScore, "desc");
-        }
+        // its Read puts it. An unranked row (no Read → Infinity) is "no rank",
+        // not "the worst rank", so it sorts last in BOTH directions, like a null
+        // score; unranked rows then fall to the name tie-break.
+        const ar = Number.isFinite(a.effectiveRank) ? a.effectiveRank : null;
+        const br = Number.isFinite(b.effectiveRank) ? b.effectiveRank : null;
+        diff = compareNumber(ar, br, sort.direction);
         break;
       }
       case "companyName":

@@ -71,7 +71,6 @@ type CompanyRow = {
   name: string | null;
   sector: string | null;
   market_cap_band_at_admission: string | null;
-  excluded_from_discovery: boolean | null;
 };
 
 type ScoreRow = {

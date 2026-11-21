@@ -44,7 +44,7 @@ assert.equal(meanLatestScored([10, 8, 6, 4, 2], 2), 9, "n=2 → newest two");
 // ---------------------------------------------------------------------------
 // Cross-implementation parity (T8): mean4Q must reproduce the quarter leg that
 // concallyser/scripts/compute_composite_score.py computes, or the live Read
-// ranks on a different 4Q mean than the coverage cut and the D2 bug reopens.
+// ranks on a different 4Q mean than the stored composite and the D2 bug reopens.
 //
 // The existing tests/fixtures/composite-score-cross-impl.json pins the FORMULA
 // but is blind to which quarter value is fed in. This oracle pins the SELECTION:

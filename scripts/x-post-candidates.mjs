@@ -6,7 +6,7 @@
 // user's own voice; this script only assembles ground-truth material so the
 // draft never invents a number or a reason.
 //
-// Run from concall-alpha/:  node scripts/x-post-candidates.mjs [--days N] [--top N] [--include-excluded] [--exclude-posted] [--daily] [--lane3-days N] [--takes-days N]
+// Run from concall-alpha/:  node scripts/x-post-candidates.mjs [--days N] [--top N] [--exclude-posted] [--daily] [--lane3-days N] [--takes-days N]
 //
 // --daily emits the DAILY POSTING SHEET instead of the flat candidate list:
 // Lane 1 (speed, cap 2, strategy selection order), Lane 2 nudge (evidence
@@ -24,7 +24,6 @@ const getArg = (flag, def) => {
 };
 const LOOKBACK_DAYS = Number(getArg("--days", "14"));
 const TOP = Number(getArg("--top", "12"));
-const INCLUDE_EXCLUDED = args.includes("--include-excluded");
 const EXCLUDE_POSTED = args.includes("--exclude-posted");
 const DAILY = args.includes("--daily");
 const LANE3_DAYS = Number(getArg("--lane3-days", "10"));
@@ -126,14 +125,12 @@ async function fetchAll(pathAndQuery) {
 
 const cutoff = new Date(Date.now() - LOOKBACK_DAYS * 864e5).toISOString();
 
-// --- coverage universe (mirror isDiscoveryListed) ---
-const companies = await fetchAll(
-  "company?select=code,name,market_cap_band_at_admission,excluded_from_discovery"
-);
+// --- coverage universe (mirror isDiscoveryListed: the admission gate only) ---
+const companies = await fetchAll("company?select=code,name,market_cap_band_at_admission");
 const meta = new Map(companies.map((c) => [c.code, c]));
 const isDiscoveryListed = (code) => {
   const c = meta.get(code);
-  return c && c.market_cap_band_at_admission !== "large" && c.excluded_from_discovery !== true;
+  return c && c.market_cap_band_at_admission !== "large";
 };
 
 // --- fresh scored prints in the window ---
@@ -142,10 +139,8 @@ const fresh = await fetchAll(
     `&details->scoring_meta=not.is.null&created_at=gte.${cutoff}&order=created_at.desc`
 );
 
-// candidate companies = discovery-listed (unless overridden) with a fresh print
-const candCodes = [...new Set(
-  fresh.map((r) => r.company_code).filter((c) => INCLUDE_EXCLUDED || isDiscoveryListed(c))
-)];
+// candidate companies = discovery-listed with a fresh print
+const candCodes = [...new Set(fresh.map((r) => r.company_code).filter((c) => isDiscoveryListed(c)))];
 if (!candCodes.length) {
   console.log(JSON.stringify({ window_days: LOOKBACK_DAYS, candidates: [], note: "no fresh scored prints in window" }, null, 2));
   process.exit(0);

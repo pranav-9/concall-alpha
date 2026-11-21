@@ -175,8 +175,8 @@ async function fetchTrackerData(target: ReportingQuarter): Promise<CachedTracker
         .eq("qtr", target.qtr),
     ]);
 
-  // The tracker covers every company, de-emphasized ones included (large-cap
-  // band / coverage cut): it answers "who has reported", not "who ranks".
+  // The tracker covers every company, large-cap admissions included: it answers
+  // "who has reported", not "who ranks".
   const companies = (companyData ?? []) as CompanyRow[];
   const analysis = analysisRows;
   // A calendar outage must not take the score board down with it: the dates

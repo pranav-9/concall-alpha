@@ -39,7 +39,7 @@ export const SearchField = () => (
       />
     </div>
     <p className="text-xs text-muted-foreground">
-      Search is deliberately unfiltered — below-cut companies stay findable.
+      Search is deliberately unfiltered — every company we hold stays findable.
     </p>
   </div>
 );

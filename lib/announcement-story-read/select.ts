@@ -54,8 +54,6 @@ export type StoryPick = {
   rank: number;
   update: ExchangeUpdate;
   read: AnnouncementStoryRead;
-  /** The company sits below the coverage cut — still ours, tagged as such. */
-  belowCut: boolean;
 };
 
 export type ParsedStoryReads = {
@@ -84,26 +82,23 @@ export function qualifies(read: Pick<AnnouncementStoryRead, "score" | "checks">,
 
 /**
  * Up to five picks, best first — or none at all when fewer than three qualify.
- * `updates` is the listed tape, `belowCut` the below-cut tape (large caps are
- * already gone from both). A read whose filing is no longer on the tape (folded
- * into a same-event twin, re-classified, aged out) is dropped.
+ * `updates` is the tape (large caps already gone). A read whose filing is no
+ * longer on the tape (folded into a same-event twin, re-classified, aged out) is
+ * dropped.
  */
 export function selectTopStoryReads(
   reads: AnnouncementStoryRead[],
   updates: ExchangeUpdate[],
-  belowCut: ExchangeUpdate[],
   now: Date = new Date(),
 ): StoryPick[] {
-  const tape = new Map<string, { update: ExchangeUpdate; belowCut: boolean }>();
-  for (const update of updates) tape.set(update.id, { update, belowCut: false });
-  for (const update of belowCut) if (!tape.has(update.id)) tape.set(update.id, { update, belowCut: true });
+  const tape = new Map<string, ExchangeUpdate>();
+  for (const update of updates) tape.set(update.id, update);
 
   const cutoff = now.getTime() - STORY_WINDOW_DAYS * 24 * 60 * 60 * 1000;
   const candidates: { key: (number | string)[]; pick: Omit<StoryPick, "rank"> }[] = [];
   for (const read of reads) {
-    const row = tape.get(read.announcement_id);
-    if (!row) continue;
-    const { update } = row;
+    const update = tape.get(read.announcement_id);
+    if (!update) continue;
     const filed = new Date(update.filedRaw).getTime();
     if (Number.isNaN(filed) || filed < cutoff || filed > now.getTime()) continue;
     if (update.impact === "neutral" || !qualifies(read, update.impact)) continue;
@@ -116,7 +111,7 @@ export function selectTopStoryReads(
         -filed,
         update.id,
       ],
-      pick: { update, read, belowCut: row.belowCut },
+      pick: { update, read },
     });
   }
   candidates.sort((a, b) => {

@@ -78,14 +78,6 @@ function Card({
       <div className={cn("mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5", INDENT)}>
         <span className={cn(PILL, impact.className)}>{impact.label}</span>
         <span className="house-data house-micro font-semibold text-[var(--ink)]">{update.categoryLabel}</span>
-        {pick.belowCut ? (
-          <span
-            className={cn(PILL, "border-dashed border-[var(--rule)] text-[var(--ink-soft)]")}
-            title="This company sits just below the coverage cut — still tracked, de-emphasised on the boards"
-          >
-            Below the cut
-          </span>
-        ) : null}
       </div>
 
       <button

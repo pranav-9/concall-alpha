@@ -7,7 +7,7 @@
 //
 // Differences from the Top 5, on purpose:
 //   - No coverage gate. Watchlists are user-owned and unfiltered, so a filing
-//     from a large cap or a below-cut name on the list is shown like any other.
+//     from a large cap on the list is shown like any other.
 //   - No score floor. The Top 5 is a discovery surface and asks "did this move a
 //     story"; here the reader chose the companies, so every non-routine filing
 //     qualifies and the read, when there is one, only orders and annotates.

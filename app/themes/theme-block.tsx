@@ -25,13 +25,11 @@ function ScoreCell({
   bandLabel,
   bandClass,
   emphasize = false,
-  dimmed = false,
 }: {
   score: number | null;
   bandLabel: string | null;
   bandClass: string;
   emphasize?: boolean;
-  dimmed?: boolean;
 }) {
   if (score == null || bandLabel == null) {
     return <span className="text-muted-foreground">—</span>;
@@ -43,7 +41,7 @@ function ScoreCell({
       >
         {score.toFixed(1)}
       </div>
-      <div className={`text-[10px] font-medium ${dimmed ? "text-muted-foreground" : bandClass}`}>
+      <div className={`text-[10px] font-medium ${bandClass}`}>
         {bandLabel}
       </div>
     </div>
@@ -54,11 +52,8 @@ function ScoreCell({
 // link (precise pointer); on mobile the whole row is the link (see MemberRow),
 // so the name renders as plain text — a nested <a> would be invalid markup.
 function CompanyLabel({ member, nameAsLink }: { member: ThemeMember; nameAsLink: boolean }) {
-  const dim = member.belowCut;
-  const nameClass = `min-w-0 truncate font-semibold ${
-    dim ? "text-muted-foreground" : "text-foreground"
-  }`;
-  const nameTitle = dim ? `${member.companyName} — below the coverage cut` : member.companyName;
+  const nameClass = "min-w-0 truncate font-semibold text-foreground";
+  const nameTitle = member.companyName;
   return (
     <span className="flex min-w-0 items-baseline gap-2">
       {nameAsLink ? (
@@ -85,14 +80,6 @@ function CompanyLabel({ member, nameAsLink }: { member: ThemeMember; nameAsLink:
           Not yet scored
         </span>
       )}
-      {member.belowCut && (
-        <span
-          title="Below the coverage cut — de-emphasized on discovery surfaces, not ranked within the theme"
-          className="shrink-0 rounded-sm border border-amber-600/50 px-1.5 py-px text-[9px] font-medium uppercase tracking-[0.1em] text-amber-700 dark:border-amber-400/40 dark:text-amber-300"
-        >
-          Below cut
-        </span>
-      )}
       {member.quarterSourceStatus === "unofficial" && (
         <span
           title="Scored off a third-party transcript inside the SEBI window — re-scored when the issuer files"
@@ -106,7 +93,6 @@ function CompanyLabel({ member, nameAsLink }: { member: ThemeMember; nameAsLink:
 }
 
 function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null }) {
-  const dim = member.belowCut;
   const read = BOARD_READS[member.readKey];
   const quarterBand = member.concallScore != null ? BANDS[bandForScore(member.concallScore)] : null;
   const growthBand =
@@ -123,7 +109,7 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
   );
 
   return (
-    <li className={`border-b border-border/45 last:border-0 ${dim ? "opacity-55" : ""}`}>
+    <li className="border-b border-border/45 last:border-0">
       {/* Desktop: one grid row — # · Company · ConcallScore · Grw · Val · Read. */}
       <div className="hidden items-center gap-3 py-2.5 sm:grid sm:grid-cols-[1.5rem_minmax(0,1fr)_3.25rem_3.25rem_3.5rem_3.75rem]">
         {rankCell}
@@ -133,7 +119,6 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
             score={member.concallScore}
             bandLabel={quarterBand?.label ?? null}
             bandClass={quarterBand?.textClass ?? ""}
-            dimmed={dim}
           />
         </div>
         <div className="text-right">
@@ -141,7 +126,6 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
             score={member.growthScore}
             bandLabel={growthBand?.label ?? null}
             bandClass={growthBand?.textClass ?? ""}
-            dimmed={dim}
           />
         </div>
         <div className="text-right">
@@ -149,7 +133,6 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
             score={member.valuationScore}
             bandLabel={valuationBand?.label ?? null}
             bandClass={valuationBand?.textClass ?? ""}
-            dimmed={dim}
           />
         </div>
         <div className="text-right">
@@ -158,7 +141,7 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
               <div className="text-base font-semibold tabular-nums text-foreground">
                 {member.readScore.toFixed(1)}
               </div>
-              <div className={`text-[10px] font-medium ${dim ? "text-muted-foreground" : read.textClass}`}>
+              <div className={`text-[10px] font-medium ${read.textClass}`}>
                 {read.label}
               </div>
             </div>

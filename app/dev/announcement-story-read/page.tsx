@@ -60,9 +60,9 @@ export default async function AnnouncementStoryReadPreview({
     source === "live" ? getRecentStoryReads(now) : Promise.resolve([]),
   ]);
   const parsed = source === "live" ? { reads: live, invalid: [] as string[] } : parseStoryReads(sandbox.rows);
-  const picks = selectTopStoryReads(parsed.reads, tape.updates, tape.belowCut, now);
+  const picks = selectTopStoryReads(parsed.reads, tape.updates, now);
 
-  const byId = new Map([...tape.updates, ...tape.belowCut].map((u) => [u.id, u]));
+  const byId = new Map(tape.updates.map((u) => [u.id, u]));
   const picked = new Set(picks.map((p) => p.update.id));
   const all = parsed.reads
     .map((read) => ({ read, update: byId.get(read.announcement_id) }))

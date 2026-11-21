@@ -2,11 +2,7 @@ import "server-only";
 import { safeFilingHref } from "@/lib/exchange-desk/filing-href";
 
 import { createClient } from "@/lib/supabase/server";
-import {
-  COVERAGE_SELECT,
-  isAdmittedLargeCap,
-  isBelowCoverageCut,
-} from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isAdmittedLargeCap } from "@/lib/coverage-policy";
 import { formatRelativeActivityTime } from "@/lib/activity-feed";
 import {
   buildImpactFacet,
@@ -49,7 +45,6 @@ type CoverageRow = {
   code: string | null;
   name: string | null;
   market_cap_band_at_admission: string | null;
-  excluded_from_discovery: boolean | null;
 };
 
 type AnnouncementRow = {
@@ -66,15 +61,11 @@ type AnnouncementRow = {
 };
 
 /**
- * Company names keyed by uppercased code, split by coverage gate so the loader
- * can route each announcement:
- *  - `nameByCode`      — discovery-listed (the ranked hundred) → main feed.
- *  - `largeCapKeys`    — Gate 1 admissions (large cap): a different universe,
- *    dropped from the Desk entirely (code AND name, defensively).
- *  - `belowCutKeys`    — Gate 2 (excluded_from_discovery): still one of ours,
- *    just below the cut → routed to the separate below-cut block so a strong
- *    update that might earn the name back isn't missed.
- *  - `belowCutNameByCode` — display names for that block.
+ * Company names keyed by uppercased code, split by the admission gate so the
+ * loader can route each announcement:
+ *  - `nameByCode`   — discovery-listed (every covered mid/small company) → feed.
+ *  - `largeCapKeys` — large-cap admissions: a different universe, dropped from
+ *    the Desk entirely (code AND name, defensively).
  */
 async function fetchCoverage(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -86,28 +77,16 @@ async function fetchCoverage(
 
   const nameByCode = new Map<string, string>();
   const largeCapKeys = new Set<string>();
-  const belowCutKeys = new Set<string>();
-  const belowCutNameByCode = new Map<string, string>();
   (data ?? []).forEach((raw) => {
     const row = raw as CoverageRow;
-    // Gate 1 wins: a below-cut name that is ALSO a large-cap admission is out
-    // of the positioning entirely and never surfaces.
     if (isAdmittedLargeCap(row)) {
       if (row.code) largeCapKeys.add(upper(row.code));
       if (row.name) largeCapKeys.add(upper(row.name));
       return;
     }
-    if (isBelowCoverageCut(row)) {
-      if (row.code) {
-        belowCutKeys.add(upper(row.code));
-        belowCutNameByCode.set(upper(row.code), row.name ?? row.code);
-      }
-      if (row.name) belowCutKeys.add(upper(row.name));
-      return;
-    }
     if (row.code) nameByCode.set(upper(row.code), row.name ?? row.code);
   });
-  return { nameByCode, largeCapKeys, belowCutKeys, belowCutNameByCode };
+  return { nameByCode, largeCapKeys };
 }
 
 const EMPTY: ExchangeDeskData = {
@@ -115,7 +94,6 @@ const EMPTY: ExchangeDeskData = {
   impacts: [],
   total: 0,
   windowDays: WINDOW_DAYS,
-  belowCut: [],
 };
 
 /**
@@ -147,22 +125,19 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
     if (annResp.error) throw annResp.error;
 
     const updates: ExchangeUpdate[] = [];
-    const belowCut: ExchangeUpdate[] = [];
 
     ((annResp.data ?? []) as AnnouncementRow[]).forEach((row) => {
       const key = upper(row.company_code);
-      if (coverage.largeCapKeys.has(key)) return; // Gate 1: off-positioning, never shown
+      if (coverage.largeCapKeys.has(key)) return; // admission gate: off-positioning, never shown
       if (!isKnownCategory(row.category)) return; // procedural / unknown never stored, but guard
       const category = row.category as ExchangeCategory;
       const summary = (row.summary ?? "").trim() || (row.headline ?? "").trim();
       if (!summary) return;
 
-      const isBelowCut = coverage.belowCutKeys.has(key);
-      const nameMap = isBelowCut ? coverage.belowCutNameByCode : coverage.nameByCode;
-      const update: ExchangeUpdate = {
+      updates.push({
         id: row.announcement_id,
         companyCode: row.company_code,
-        companyName: nameMap.get(key) ?? row.company_code,
+        companyName: coverage.nameByCode.get(key) ?? row.company_code,
         category,
         categoryLabel: categoryLabel(category),
         impact: coerceImpact(row.impact),
@@ -175,26 +150,14 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
         filedRaw: row.filed_at,
         filedLabel: formatRelativeActivityTime(row.filed_at),
         bucketKey: bucketFor(row.filed_at, now),
-      };
-
-      if (isBelowCut) {
-        // Gate 2: below the cut but still one of ours — surfaced separately, so
-        // it doesn't feed the covered-100 impact counts or main tape.
-        belowCut.push(update);
-        return;
-      }
-      updates.push(update);
+      });
     });
-
-    // Impact/quality facet, main feed only (below-cut is excluded from counts).
-    const impacts = buildImpactFacet(updates);
 
     return {
       updates,
-      impacts,
+      impacts: buildImpactFacet(updates),
       total: updates.length,
       windowDays: WINDOW_DAYS,
-      belowCut,
     };
   } catch (err) {
     // Table missing (pre-DDL) or transient read failure — degrade to empty.
@@ -208,7 +171,7 @@ export async function getExchangeDeskData(): Promise<ExchangeDeskData> {
  *
  * This deliberately skips the coverage gate used by the all-company desk: a
  * reader has already navigated to this company's page, so its own filings are
- * useful whether it is currently in the ranked universe or just outside it.
+ * useful whether or not it is on discovery.
  * It also deliberately skips WINDOW_DAYS: unlike the desk-wide feed (a live
  * "what's happening" tape), a company's Announcements tab is its filing
  * history, so it returns everything on record up to COMPANY_ROW_LIMIT.
@@ -270,7 +233,6 @@ export async function getCompanyExchangeDeskData(
       // nothing here should render it as a real window. Kept only because
       // ExchangeDeskData is shared with the windowed desk-wide feed.
       windowDays: WINDOW_DAYS,
-      belowCut: [],
     };
   } catch (err) {
     console.warn(

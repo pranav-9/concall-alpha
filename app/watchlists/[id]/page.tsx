@@ -128,7 +128,7 @@ export default async function WatchlistDetailPage({ params, searchParams }: Watc
       ? Promise.all([
           // getConcallData() with no options on purpose: the coverage gates are a
           // discovery-surface policy, and a watchlist is user-owned. A holding that's a
-          // large cap or below the composite cut still renders in full, ungreyed.
+          // large cap still renders in full.
           getConcallData(),
           // Coverage columns ride along on a select this page already makes: the
           // board itself is unfiltered (user-owned), but the distribution behind it

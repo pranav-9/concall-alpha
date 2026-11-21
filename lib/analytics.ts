@@ -126,19 +126,17 @@ export const analytics = {
   leaderboardSort: (board: LeaderboardBoard, column: string, direction: "asc" | "desc") =>
     track("leaderboard_sort", { board, column, direction }),
 
-  /** A leaderboard/watchlist row's company name was clicked. `below_cut` turns the
-   *  old dead-click frustration into a measurable funnel drop (2026-08-01 replay). */
+  /** A leaderboard/watchlist row's company name was clicked. (The `below_cut`
+   *  property went with the coverage cut, 2026-11-21.) */
   leaderboardRowClick: (params: {
     companyCode: string;
     board: LeaderboardBoard;
-    belowCut: boolean;
     rank?: number;
     surface?: AnalyticsSurface;
   }) =>
     track("leaderboard_row_click", {
       company_code: params.companyCode,
       board: params.board,
-      below_cut: params.belowCut,
       rank: Number.isFinite(params.rank) ? params.rank : undefined,
       surface: params.surface,
     }),

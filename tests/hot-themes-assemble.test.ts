@@ -12,7 +12,6 @@ function boardRow(
   concallScore: number | null,
   growthScore: number | null,
   valuationScore: number | null,
-  belowCut = false,
 ): ScoreBoardRow {
   return {
     companyCode,
@@ -23,7 +22,6 @@ function boardRow(
     latestQuarterLabel: null,
     growthScore,
     valuationScore,
-    belowCut,
   };
 }
 
@@ -91,25 +89,16 @@ function member(themeSlug: string, code: string): ThemeMembershipRow {
   assert.equal(blocks[0].members[0].companyCode, "A");
 }
 
-// 4. Below-cut member pins to the bottom and can never be best read, even with a
-//    higher Read than the discovery-listed members.
+// 4. Members rank by Read alone — there is no coverage cut to pin anyone to the
+//    bottom (removed 2026-11-21) — and the highest Read is the best read.
 {
   const [block] = assembleThemeBlocks(
     [theme("t", 0)],
     [member("t", "A"), member("t", "D")],
-    [boardRow("A", "Alpha", 7, 7, 6), boardRow("D", "Delta", 9.5, 9.5, 8, true)],
+    [boardRow("A", "Alpha", 7, 7, 6), boardRow("D", "Delta", 9.5, 9.5, 8)],
   );
-  assert.deepEqual(
-    block.members.map((m) => m.companyCode),
-    ["A", "D"],
-    "below-cut D pinned to bottom despite higher Read",
-  );
-  assert.equal(
-    block.members.find((m) => m.isBestRead)?.companyCode,
-    "A",
-    "best read is the discovery-listed A, not below-cut D",
-  );
-  assert.equal(block.members.find((m) => m.companyCode === "D")?.belowCut, true);
+  assert.deepEqual(block.members.map((m) => m.companyCode), ["D", "A"], "higher Read D leads");
+  assert.equal(block.members.find((m) => m.isBestRead)?.companyCode, "D", "best read is the top Read");
 }
 
 // 5. A theme with zero resolved members is hidden (omitted from the output).

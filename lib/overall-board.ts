@@ -22,8 +22,8 @@ import type { ScoreBoardRow } from "@/components/score-board-table";
 
 export const getOverallBoardRows = cache(async (): Promise<ScoreBoardRow[]> => {
   const [{ rows, latestLabel }, { growthScoreByCode, nameByCode }] = await Promise.all([
-    // Same gates as the Overall tab: large caps out, below-cut tail kept (greyed).
-    getConcallData({ excludeLargeCaps: true, includeBelowCut: true }),
+    // Same gate as the Overall tab: large caps out, everyone else ranked.
+    getConcallData({ excludeLargeCaps: true }),
     // The Overall board carries no moat column, so skip the ~2.8s moat payload
     // fetch — only growthScoreByCode + nameByCode are read below.
     fetchLeaderboardData({ includeMoat: false }),

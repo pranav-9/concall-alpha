@@ -7,17 +7,12 @@
 //
 // TWO SURFACES, ONE COMPONENT. The leaderboard "Overall" tab and a watchlist
 // render this same board, because a reader who learns the grammar on one must
-// not have to relearn it on the other. They differ in exactly two ways, both
-// props:
-//   - `watchlistId` turns on the per-row Remove action.
-//   - `coverageCutRank` greys every row whose LIVE Read rank falls past it (still
-//     linked — de-emphasized, not blocked). Only the leaderboard passes it:
-//     watchlists are user-owned and deliberately unfiltered by the coverage
-//     policy, so a holding never gets greyed out on your own list.
-// The `#` column means "rank on this board" in both cases — across the ranked
-// hundred on /leaderboards, within the list on /watchlists — which is why it is
-// derived from the rows passed in rather than read from a stored rank. Below-cut
-// rows carry no number and sit at the bottom; they're rendered, not ranked.
+// not have to relearn it on the other. `watchlistId` turns on the per-row Remove
+// action (and `layout` / `peersOf` pick the watchlist and peers variants).
+// The `#` column means "rank on this board" in both cases — across the whole
+// mid/small universe on /leaderboards, within the list on /watchlists — which is
+// why it is derived from the rows passed in rather than read from a stored rank.
+// A row with no Read carries no number and sits at the bottom.
 //
 // It replaced the old watchlist table (Qtr+4Q / Trend / Forward / Moat Tag /
 // Valuation / portfolio-stance Read). Trend is a delta, not a score, and moat is
@@ -332,7 +327,6 @@ function ScoreCell({
   bandLabel,
   bandClass,
   note,
-  dimmed,
   chips,
 }: {
   score: number | null;
@@ -340,7 +334,6 @@ function ScoreCell({
   bandClass: string;
   /** e.g. "as of Q4 FY26" — only the Quarter column uses this. */
   note?: string | null;
-  dimmed: boolean;
   /** Provenance / recency chips — only the Quarter column passes these. */
   chips?: React.ReactNode;
 }) {
@@ -351,10 +344,7 @@ function ScoreCell({
     <div className="leading-tight">
       <div className={SCORE_NUM}>{score.toFixed(1)}</div>
       <div className="mt-0.5 flex items-baseline gap-1.5">
-        {/* Below the cut the whole row is de-emphasized, so the band word drops
-            to muted rather than carrying its own colour — a greyed row with one
-            bright teal label reads as an error, not as de-emphasis. */}
-        <span className={`${BAND_WORD} ${dimmed ? "text-muted-foreground" : bandClass}`}>
+        <span className={`${BAND_WORD} ${bandClass}`}>
           {bandLabel}
         </span>
         {note && (
@@ -375,7 +365,7 @@ function ScoreCell({
  * null prior (no snapshot that old yet, or a company new since then) renders a
  * quiet dot, not a zero — "we have no earlier rank", not "no movement".
  */
-function DeltaCell({ delta, dimmed }: { delta: number | null; dimmed: boolean }) {
+function DeltaCell({ delta }: { delta: number | null }) {
   if (delta == null) {
     return <span className="text-muted-foreground/40" aria-label="no prior rank">·</span>;
   }
@@ -383,11 +373,7 @@ function DeltaCell({ delta, dimmed }: { delta: number | null; dimmed: boolean })
     return <span className="text-muted-foreground" aria-label="no change">–</span>;
   }
   const up = delta > 0;
-  const tone = dimmed
-    ? "text-muted-foreground"
-    : up
-      ? "text-teal-600 dark:text-teal-400"
-      : "text-red-600 dark:text-red-400";
+  const tone = up ? "text-teal-600 dark:text-teal-400" : "text-red-600 dark:text-red-400";
   return (
     <span
       className={`inline-flex items-center gap-0.5 tabular-nums text-xs font-medium ${tone}`}
@@ -409,14 +395,12 @@ function LegStat({
   score,
   bandClass,
   bandLabel,
-  dimmed,
 }: {
   label: string;
   score: number | null;
   bandClass: string;
   /** The band word ("Bullish", "Strong", "Fair") — read out, not shown, at 390px. */
   bandLabel: string | null;
-  dimmed: boolean;
 }) {
   return (
     <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
@@ -424,7 +408,7 @@ function LegStat({
       {score == null ? (
         <span className="text-muted-foreground">—</span>
       ) : (
-        <span className={`font-semibold tabular-nums ${dimmed ? "text-muted-foreground" : bandClass}`}>
+        <span className={`font-semibold tabular-nums ${bandClass}`}>
           {score.toFixed(1)}
           {bandLabel ? <span className="sr-only"> {bandLabel}</span> : null}
         </span>
@@ -445,7 +429,6 @@ export function ScoreBoardTable({
   rows,
   watchlistId,
   priorRankByCode,
-  coverageCutRank,
   overallRankByCode,
   layout = "board",
   gateCutIndex,
@@ -474,12 +457,6 @@ export function ScoreBoardTable({
    * its Δ would need its own snapshots. Absent → no Δ column.
    */
   priorRankByCode?: Record<string, number>;
-  /**
-   * Grey every row whose LIVE Read rank falls past this position (the leaderboard
-   * passes COVERAGE_BOARD_SIZE). Absent on a watchlist, so nothing greys there —
-   * a user-owned list is not subject to the cut.
-   */
-  coverageCutRank?: number;
   /**
    * UPPERCASE code → the company's live rank on the leaderboard's Overall board
    * (a plain Record — it crosses the server→client boundary). Only a watchlist
@@ -514,9 +491,9 @@ export function ScoreBoardTable({
   const [sort, setSort] = useState<SortState>({ key: "coverageRank", direction: "asc" });
   const [removingCompanyCode, setRemovingCompanyCode] = useState<string | null>(null);
   const sortedRows = useMemo(() => {
-    const all = sortRows(deriveRows(rows, coverageCutRank), sort);
+    const all = sortRows(deriveRows(rows), sort);
     return filterCodes ? all.filter((row) => filterCodes.has(row.companyCode.toUpperCase())) : all;
-  }, [rows, coverageCutRank, sort, filterCodes]);
+  }, [rows, sort, filterCodes]);
   const added = useMemo(() => new Set(addedCodes ?? []), [addedCodes]);
   // The quarter the "Latest" column is showing: the label on any row that has
   // reported the board's newest quarter.
@@ -541,10 +518,6 @@ export function ScoreBoardTable({
       : "Companies by overall rank, with ConcallScore, growth outlook, valuation and read";
   const isSelf = (row: ScoreBoardRow) => peersOf != null && row.companyCode.toUpperCase() === peersOf;
   const columnCount = (signals ? 9 : 6) + (showRemove ? 1 : 0);
-  // Index of the first greyed row, so a divider row can be dropped in just above
-  // the pinned tail. -1 when nothing is greyed (e.g. a watchlist, or a board with
-  // ≤ coverageCutRank scored rows).
-  const firstBelowCutIndex = sortedRows.findIndex((row) => row.dim);
 
   const applySort = (key: SortKey, direction: SortDirection) => {
     analytics.leaderboardSort(boardName, key, direction);
@@ -611,7 +584,6 @@ export function ScoreBoardTable({
   // Rows the phone list and the desktop table both render from. The list is
   // the same sortedRows in the same order — one sort state, two layouts.
   const renderMobileRow = (row: DerivedRow, index: number) => {
-    const dim = row.dim;
     const read = BOARD_READS[row.readKey];
     const prior = priorRankByCode?.[row.companyCode.toUpperCase()];
     const delta =
@@ -619,24 +591,19 @@ export function ScoreBoardTable({
     const overallRank = overallRankByCode?.[row.companyCode.toUpperCase()];
     return (
       <Fragment key={row.companyCode}>
-        {index === firstBelowCutIndex && firstBelowCutIndex > 0 && (
-          <li className="border-b border-border/45 px-3 py-1.5 text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            — below the top 100 by Read —
-          </li>
-        )}
         <li
           data-gate-cut={index === gateCutIndex ? "" : undefined}
           aria-current={isSelf(row) ? "true" : undefined}
           className={`flex items-start gap-2.5 border-b border-border/45 px-3 py-3 last:border-0 ${
-            dim ? "opacity-55" : ""
-          } ${isSelf(row) ? "bg-sky-500/[0.07]" : ""}`}
+            isSelf(row) ? "bg-sky-500/[0.07]" : ""
+          }`}
         >
           {/* Rank over Δ — the two positional facts, stacked in a narrow gutter. */}
           <div className="flex w-8 shrink-0 flex-col items-start gap-0.5 pt-0.5">
             <span className="font-mono text-xs tabular-nums text-muted-foreground">
               {Number.isFinite(row.effectiveRank) ? row.effectiveRank : "—"}
             </span>
-            {showDelta && <DeltaCell delta={delta} dimmed={dim} />}
+            {showDelta && <DeltaCell delta={delta} />}
           </div>
           <div className="min-w-0 flex-1">
             {/* Name wraps to a second line rather than truncating: on a phone a
@@ -653,14 +620,13 @@ export function ScoreBoardTable({
                 analytics.leaderboardRowClick({
                   companyCode: row.companyCode,
                   board: boardName,
-                  belowCut: dim,
                   rank: Number.isFinite(row.effectiveRank) ? row.effectiveRank : undefined,
                   surface: boardSurface,
                 })
               }
-              title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}
+              title={row.companyName}
               className="house-display block text-sm leading-snug hover:underline"
-              style={dim ? { color: "var(--ink-soft)" } : { color: "var(--ink)" }}
+              style={{ color: "var(--ink)" }}
             >
               {row.companyName}
             </Link>
@@ -710,7 +676,6 @@ export function ScoreBoardTable({
                 bandLabel={
                   row.latestConcallScore != null ? BANDS[bandForScore(row.latestConcallScore)].label : null
                 }
-                dimmed={dim}
               />
               {!signals && (
               <LegStat
@@ -724,7 +689,6 @@ export function ScoreBoardTable({
                 bandLabel={
                   row.fourConcallScore != null ? BANDS[bandForScore(row.fourConcallScore)].label : null
                 }
-                dimmed={dim}
               />
               )}
               <LegStat
@@ -738,7 +702,6 @@ export function ScoreBoardTable({
                 bandLabel={
                   row.growthScore != null ? GROWTH_BANDS[bandForGrowthScore(row.growthScore)].label : null
                 }
-                dimmed={dim}
               />
               <LegStat
                 label="Value"
@@ -753,13 +716,12 @@ export function ScoreBoardTable({
                     ? VALUATION_BANDS[bandForValuationScore(row.valuationScore)].label
                     : null
                 }
-                dimmed={dim}
               />
               {row.concallScoredWithin24h && (
-                <FreshScoreChip scoredAt={formatScoredAt(row.concallScoredAt)} dimmed={dim} />
+                <FreshScoreChip scoredAt={formatScoredAt(row.concallScoredAt)} />
               )}
             </div>
-            {signals && row.signals && <PhoneSignalsLine signals={row.signals} dimmed={dim} />}
+            {signals && row.signals && <PhoneSignalsLine signals={row.signals} />}
           </div>
           {/* Read — the number the list is ranked by — on the right, where the
               eye lands after the name. */}
@@ -772,9 +734,7 @@ export function ScoreBoardTable({
               <div className="text-muted-foreground">—</div>
             )}
             <div
-              className={`max-w-[6.5rem] text-[10px] font-medium leading-tight ${
-                dim ? "text-muted-foreground" : read.textClass
-              }`}
+              className={`max-w-[6.5rem] text-[10px] font-medium leading-tight ${read.textClass}`}
             >
               {read.label}
             </div>
@@ -1071,7 +1031,6 @@ export function ScoreBoardTable({
         <TableBody>
           {sortedRows.length ? (
             sortedRows.map((row, index) => {
-              const dim = row.dim;
               const read = BOARD_READS[row.readKey];
               // Δ = where it sat at the prior snapshot minus where it sits now, so a positive
               // number is a climb. Null (no prior rank, or unranked now) → the
@@ -1083,49 +1042,25 @@ export function ScoreBoardTable({
                   : null;
               return (
                 <Fragment key={row.companyCode}>
-                  {/* The one divider between the top-ranked hundred and the greyed
-                      tail below it. Greying is now by LIVE Read rank, so every row
-                      past here simply ranks lower than every row above — no
-                      explanation needed. Rendered once, just above the first greyed
-                      row. */}
-                  {index === firstBelowCutIndex && firstBelowCutIndex > 0 && (
-                    <TableRow className="border-b border-border/45 hover:bg-transparent">
-                      <TableCell
-                        colSpan={columnCount}
-                        className="px-3 py-1.5 text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground"
-                      >
-                        — below the top 100 by Read —
-                      </TableCell>
-                    </TableRow>
-                  )}
                   <TableRow
                     data-gate-cut={index === gateCutIndex ? "" : undefined}
-                    // Below the cut: de-emphasized to ~55%. The row still carries
-                    // its full data — this is "not in the ranked hundred", not "no
-                    // information" — and its name still links: the coverage policy
-                    // de-emphasizes these pages, it doesn't block them. Never set
-                    // on a watchlist: your own list is not subject to the cut.
                     aria-current={isSelf(row) ? "true" : undefined}
                     className={`group border-b border-border/45 transition-colors last:border-0 hover:bg-accent/50 ${
-                      dim ? "opacity-55" : ""
-                    } ${isSelf(row) ? "bg-sky-500/[0.07]" : ""}`}
+                      isSelf(row) ? "bg-sky-500/[0.07]" : ""
+                    }`}
                   >
                     <TableCell className="px-4 py-3.5">
                       <div className="flex items-baseline gap-2">
                         {showDelta && (
                           <span className="w-8 shrink-0 text-right">
-                            <DeltaCell delta={delta} dimmed={dim} />
+                            <DeltaCell delta={delta} />
                           </span>
                         )}
                         <span className="house-data w-7 shrink-0 text-[13px] text-muted-foreground">
                           {Number.isFinite(row.effectiveRank) ? row.effectiveRank : "—"}
                         </span>
-                        {/* Below-cut rows link too: the coverage policy de-emphasizes
-                            these companies, it doesn't block their pages — search
-                            reaches them, so the board should as well. A 2026-08-01
-                            session replay showed a visitor rage-clicking the greyed
-                            names and leaving. min-w-0 lets truncate engage inside
-                            the flex row; only bites under the sm cap. */}
+                        {/* min-w-0 lets truncate engage inside the flex row; only
+                            bites under the sm cap. */}
                         {/* Name on top, ticker beneath it (not inline) — the
                             house company-cell shape. */}
                         <div className={`flex min-w-0 flex-col leading-tight ${signals ? "max-w-[12.5rem]" : ""}`}>
@@ -1141,16 +1076,15 @@ export function ScoreBoardTable({
                               analytics.leaderboardRowClick({
                                 companyCode: row.companyCode,
                                 board: boardName,
-                                belowCut: dim,
                                 rank: Number.isFinite(row.effectiveRank)
                                   ? row.effectiveRank
                                   : undefined,
                                 surface: boardSurface,
                               })
                             }
-                            title={dim ? `${row.companyName} — below the coverage cut` : row.companyName}
+                            title={row.companyName}
                             className={`house-display min-w-0 truncate hover:underline ${signals ? "text-sm" : "text-[15px]"}`}
-                            style={dim ? { color: "var(--ink-soft)" } : { color: "var(--ink)" }}
+                            style={{ color: "var(--ink)" }}
                           >
                             {row.companyName}
                           </Link>
@@ -1204,7 +1138,7 @@ export function ScoreBoardTable({
                                 <span
                                   aria-hidden
                                   className="h-1.5 w-1.5 rounded-full"
-                                  style={{ background: dim ? "var(--ink-soft)" : "var(--signal)" }}
+                                  style={{ background: "var(--signal)" }}
                                 />
                                 New · 24h
                               </span>
@@ -1229,17 +1163,17 @@ export function ScoreBoardTable({
                         <div className="text-muted-foreground">—</div>
                       )}
                       <div
-                        className={`max-w-[7.5rem] text-[10px] font-medium leading-tight ${dim ? "text-muted-foreground" : read.textClass}`}
+                        className={`max-w-[7.5rem] text-[10px] font-medium leading-tight ${read.textClass}`}
                       >
                         {read.label}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="border-l px-2.5 py-3" style={{ borderColor: "var(--rule)" }}>
-                    <MoatCell moat={row.signals?.moat ?? null} dimmed={dim} />
+                    <MoatCell moat={row.signals?.moat ?? null} />
                   </TableCell>
                   <TableCell className="px-2.5 py-3">
-                    <ForensicChecksCell forensics={row.signals?.forensics ?? null} dimmed={dim} />
+                    <ForensicChecksCell forensics={row.signals?.forensics ?? null} />
                   </TableCell>
                   {/* Quarter: the single newest print — the one the freshness /
                       unofficial chips describe. The 4Q average rides in the hover. */}
@@ -1254,11 +1188,7 @@ export function ScoreBoardTable({
                         </div>
                         <div className="flex items-baseline gap-1.5">
                           <span
-                            className={`text-[10px] font-medium ${
-                              dim
-                                ? "text-muted-foreground"
-                                : BANDS[bandForScore(row.latestConcallScore)].textClass
-                            }`}
+                            className={`text-[10px] font-medium ${BANDS[bandForScore(row.latestConcallScore)].textClass}`}
                           >
                             {BANDS[bandForScore(row.latestConcallScore)].label}
                           </span>
@@ -1270,10 +1200,7 @@ export function ScoreBoardTable({
                         </div>
                         {row.concallScoredWithin24h && (
                           <div className="mt-1 flex flex-wrap items-center gap-1">
-                            <FreshScoreChip
-                              scoredAt={formatScoredAt(row.concallScoredAt)}
-                              dimmed={dim}
-                            />
+                            <FreshScoreChip scoredAt={formatScoredAt(row.concallScoredAt)} />
                           </div>
                         )}
                       </div>
@@ -1294,7 +1221,6 @@ export function ScoreBoardTable({
                           ? GROWTH_BANDS[bandForGrowthScore(row.growthScore)].textClass
                           : ""
                       }
-                      dimmed={dim}
                     />
                   </TableCell>
                   <TableCell className="px-2.5 py-3">
@@ -1310,14 +1236,13 @@ export function ScoreBoardTable({
                           ? VALUATION_BANDS[bandForValuationScore(row.valuationScore)].textClass
                           : ""
                       }
-                      dimmed={dim}
                     />
                   </TableCell>
                   <TableCell className="px-2.5 py-3">
-                    <GuidanceCell guidance={row.signals?.guidance ?? null} dimmed={dim} />
+                    <GuidanceCell guidance={row.signals?.guidance ?? null} />
                   </TableCell>
                   <TableCell className="px-2.5 py-3">
-                    <ManagementCell management={row.signals?.management ?? null} dimmed={dim} />
+                    <ManagementCell management={row.signals?.management ?? null} />
                   </TableCell>
                     </>
                   ) : (
@@ -1333,11 +1258,7 @@ export function ScoreBoardTable({
                         </div>
                         <div className="mt-0.5 flex items-baseline gap-1.5">
                           <span
-                            className={`${BAND_WORD} ${
-                              dim
-                                ? "text-muted-foreground"
-                                : BANDS[bandForScore(row.latestConcallScore)].textClass
-                            }`}
+                            className={`${BAND_WORD} ${BANDS[bandForScore(row.latestConcallScore)].textClass}`}
                           >
                             {BANDS[bandForScore(row.latestConcallScore)].label}
                           </span>
@@ -1366,7 +1287,6 @@ export function ScoreBoardTable({
                           ? BANDS[bandForScore(row.fourConcallScore)].textClass
                           : ""
                       }
-                      dimmed={dim}
                     />
                   </TableCell>
                   <TableCell className="border-l px-4 py-3.5" style={GROUP_RULE}>
@@ -1382,7 +1302,6 @@ export function ScoreBoardTable({
                           ? GROWTH_BANDS[bandForGrowthScore(row.growthScore)].textClass
                           : ""
                       }
-                      dimmed={dim}
                     />
                   </TableCell>
                   <TableCell className="px-4 py-3.5">
@@ -1398,7 +1317,6 @@ export function ScoreBoardTable({
                           ? VALUATION_BANDS[bandForValuationScore(row.valuationScore)].textClass
                           : ""
                       }
-                      dimmed={dim}
                     />
                   </TableCell>
                   <TableCell
@@ -1414,7 +1332,7 @@ export function ScoreBoardTable({
                         <div className="text-muted-foreground">—</div>
                       )}
                       <div
-                        className={`mt-0.5 ${BAND_WORD} ${dim ? "text-muted-foreground" : read.textClass}`}
+                        className={`mt-0.5 ${BAND_WORD} ${read.textClass}`}
                       >
                         {read.label}
                       </div>

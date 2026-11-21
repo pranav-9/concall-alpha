@@ -46,9 +46,7 @@ export type ThemeMember = {
   /** Composite; null when there is no read (no quarter print / <2 legs). */
   readScore: number | null;
   readKey: BoardReadKey;
-  /** Below the coverage cut: rendered greyed, pinned to the bottom, never "best read". */
-  belowCut: boolean;
-  /** The highest-Read discovery-listed scored member of the theme. Exactly one, or none. */
+  /** The highest-Read scored member of the theme. Exactly one, or none. */
   isBestRead: boolean;
   rationale: string | null;
   /** True when the company has no scored quarter at all — renders a "not yet scored" chip. */

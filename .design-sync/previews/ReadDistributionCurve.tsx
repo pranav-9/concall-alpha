@@ -8,7 +8,7 @@ import {
 // to get an honest curve, rug, tick set and label rationing.
 import { buildReadDistribution } from "@/lib/read-distribution";
 
-// The Read across the covered ~100 mid- and small-caps: quality-tilted, so the
+// The Read across the covered mid- and small-caps: quality-tilted, so the
 // body sits 5.5-7.5 with a thin right tail and a short left one. One value per
 // covered company — these are also the ticks drawn as the baseline rug.
 const COVERED_UNIVERSE_READS = [

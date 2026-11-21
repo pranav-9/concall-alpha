@@ -72,11 +72,10 @@ function asNumber(value: unknown): number | null {
 // Phone rows fire the same event as the desktop Overall board; the desktop
 // quarter/growth/moat tables don't emit it (they never did), so a PostHog
 // breakdown by `board` on those three is phone traffic only until they do.
-function rowClick(board: LeaderboardBoard, companyCode: string, rank: number | null, belowCut = false) {
+function rowClick(board: LeaderboardBoard, companyCode: string, rank: number | null) {
   analytics.leaderboardRowClick({
     companyCode,
     board,
-    belowCut,
     rank: rank ?? undefined,
     surface: "leaderboards",
   });
@@ -137,20 +136,20 @@ function OverallRow({
       <Link
         href={`/company/${row.companyCode}`}
         prefetch={false}
-        onClick={() => rowClick("overall", row.companyCode, rank, row.dim)}
-        title={row.dim ? `${row.companyName} — below the coverage cut` : row.companyName}
-        className={cn(ROW, row.dim && "opacity-60")}
+        onClick={() => rowClick("overall", row.companyCode, rank)}
+        title={row.companyName}
+        className={ROW}
       >
         <RankCell rank={rank} />
         <Crest name={row.companyName} code={row.companyCode} />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
-            <span className={cn(NAME, row.dim ? "text-[var(--ink-soft)]" : "text-[var(--ink)]")}>
+            <span className={cn(NAME, "text-[var(--ink)]")}>
               {row.companyName}
             </span>
             {isNew ? <NewBadge title="New to coverage" /> : null}
           </span>
-          <span className={cn(SUB, row.dim ? "text-[var(--ink-soft)]" : read.textClass)}>
+          <span className={cn(SUB, read.textClass)}>
             {read.label}
           </span>
         </span>
@@ -166,7 +165,6 @@ function OverallRow({
 export function PhoneOverallBoard({
   rows,
   priorRankByCode,
-  coverageCutRank,
   newCodes,
   gateCutIndex,
   filterCodes,
@@ -176,19 +174,17 @@ export function PhoneOverallBoard({
   rows: ScoreBoardRow[];
   /** UPPERCASE code → rank in the prior snapshot window; empty until history accrues. */
   priorRankByCode: Record<string, number>;
-  coverageCutRank: number;
   /** UPPERCASE codes of companies new to coverage (the `new` badge). */
   newCodes: string[];
   /**
    * 0-based row that carries the sign-up gate's `data-gate-cut` marker
-   * (lib/signup-gate.ts LEADERBOARD_FREE_ROWS), counted over the ranked list —
-   * the folded tail is already below it. Only a logged-out board passes it.
+   * (lib/signup-gate.ts LEADERBOARD_FREE_ROWS). Only a logged-out board passes it.
    */
   gateCutIndex?: number;
 }) {
   // The same derivation and default order as the desktop board
-  // (components/score-board-table.tsx), so # and greying agree across paints.
-  const allSorted = sortRows(deriveRows(rows, coverageCutRank), {
+  // (components/score-board-table.tsx), so # agrees across paints.
+  const allSorted = sortRows(deriveRows(rows), {
     key: "coverageRank",
     direction: "asc",
   });
@@ -197,14 +193,8 @@ export function PhoneOverallBoard({
     : allSorted;
   const showDelta = Object.keys(priorRankByCode).length > 0;
   const isNew = new Set(newCodes);
-  // The greyed tail (ranked past the coverage line on the live Read) is still
-  // linked, but folded behind a toggle here: it is the SSR row count that the
-  // phone's first paint pays for, and the ranked hundred is what the tab is for.
-  const firstDimIndex = sorted.findIndex((row) => row.dim);
-  const ranked = firstDimIndex === -1 ? sorted : sorted.slice(0, firstDimIndex);
-  const tail = firstDimIndex === -1 ? [] : sorted.slice(firstDimIndex);
 
-  const paint = (row: (typeof sorted)[number], index: number | null) => {
+  const paint = (row: (typeof sorted)[number], index: number) => {
     const rank = Number.isFinite(row.effectiveRank) ? row.effectiveRank : null;
     const prior = priorRankByCode[row.companyCode.toUpperCase()];
     const delta = prior != null && rank != null ? prior - rank : null;
@@ -216,7 +206,7 @@ export function PhoneOverallBoard({
         delta={delta}
         showDelta={showDelta}
         isNew={isNew.has(row.companyCode.toUpperCase())}
-        gateCut={index !== null && index === gateCutIndex}
+        gateCut={index === gateCutIndex}
       />
     );
   };
@@ -228,21 +218,8 @@ export function PhoneOverallBoard({
         <p className="px-3.5 py-8 text-center text-sm text-[var(--ink-soft)]">No companies match the filter.</p>
       ) : null}
       <ul role="list" aria-label="Companies by overall rank, with the Read">
-        {ranked.map((row, index) => paint(row, index))}
+        {sorted.map((row, index) => paint(row, index))}
       </ul>
-      {tail.length > 0 ? (
-        <details className="group border-t border-[var(--rule)]">
-          <summary className="house-data flex min-h-11 cursor-pointer list-none items-center justify-center gap-1.5 bg-[var(--paper)] px-3.5 py-3 text-[9px] uppercase tracking-[0.1em] text-[var(--ink-soft)] transition-colors active:text-[var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--signal)] [&::-webkit-details-marker]:hidden">
-            <span className="group-open:hidden">
-              — {tail.length} below the top {coverageCutRank} by Read ↓ —
-            </span>
-            <span className="hidden group-open:inline">— below the top {coverageCutRank} by Read ↑ —</span>
-          </summary>
-          <ul role="list" aria-label={`Companies ranked below the top ${coverageCutRank}`} className="border-t border-[var(--rule)]">
-            {tail.map((row) => paint(row, null))}
-          </ul>
-        </details>
-      ) : null}
       <p className={FOOT}>
         Read = the quarter leg and growth, combined with what you pay. The word names the
         configuration — not a buy or sell call.

@@ -3,7 +3,7 @@ import { Eye, EyeOff, LineChart, Percent, Table2 } from "lucide-react";
 
 // Toggle is the single on/off sibling of ToggleGroup. On the company page it
 // belongs on a chart toolbar — one setting the reader flips while looking at
-// the same series (YoY overlay, log axis, hide below-cut rows).
+// the same series (YoY overlay, log axis, hide unscored rows).
 
 export const ChartToolbar = () => (
   <div className="w-full max-w-lg rounded-xl border bg-card p-4">
@@ -69,13 +69,13 @@ export const States = () => (
     <div className="flex items-center gap-3">
       <Toggle variant="outline">
         <EyeOff />
-        Off — below-cut rows hidden
+        Off — unscored rows hidden
       </Toggle>
     </div>
     <div className="flex items-center gap-3">
       <Toggle variant="outline" defaultPressed>
         <Eye />
-        On — below-cut rows shown
+        On — unscored rows shown
       </Toggle>
     </div>
     <div className="flex items-center gap-3">

@@ -21,7 +21,6 @@ export type WireItem = {
   /** What it changes for the company (the story read), when there is one. */
   dek: string | null;
   attachmentUrl: string | null;
-  belowCut: boolean;
 };
 
 export const WIRE_LIMIT = 5;
@@ -44,7 +43,7 @@ export function buildWire(
   limit: number = WIRE_LIMIT,
 ): WireItem[] {
   if (picks.length > 0) {
-    return picks.slice(0, limit).map(({ update, read, belowCut }) => ({
+    return picks.slice(0, limit).map(({ update, read }) => ({
       id: update.id,
       companyCode: update.companyCode,
       companyName: update.companyName,
@@ -53,7 +52,6 @@ export function buildWire(
       headline: read.headline ?? update.summary,
       dek: read.changes?.trim() || null,
       attachmentUrl: update.attachmentUrl,
-      belowCut,
     }));
   }
 
@@ -80,6 +78,5 @@ export function buildWire(
       headline: u.summary,
       dek: null,
       attachmentUrl: u.attachmentUrl,
-      belowCut: false,
     }));
 }

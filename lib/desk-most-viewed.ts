@@ -13,7 +13,7 @@ export type CoveredInfo = { name: string | null; sector: string | null };
  * Turn the RPC's popularity-ordered company codes into display rows.
  *
  *   codes (popularity order)
- *     └─ drop excludedKeys        (off-discovery: large-cap / below-cut)
+ *     └─ drop excludedKeys        (off-discovery: large-cap admissions)
  *     └─ drop codes not covered   (fake / uncovered codes → not in coveredByCode)
  *     └─ enrich from rowByCode     (score / sparkline / filed, when the company
  *        has a scored concall row; covered-but-unscored still renders, no score)

@@ -96,7 +96,7 @@ export function NewBadge({ title }: { title?: string }) {
   );
 }
 
-/** A quiet outlined tag beside a name (`best`, `below cut`, `unofficial`). */
+/** A quiet outlined tag beside a name (`best`, `not scored`, `unofficial`). */
 export function MobileTag({
   children,
   tone = "muted",

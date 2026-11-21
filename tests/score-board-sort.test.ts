@@ -21,7 +21,6 @@ const row = (
   latestQuarterLabel: "Q1 FY27",
   growthScore: legs.growth,
   valuationScore: legs.valuation,
-  belowCut: false,
 });
 
 // Default directions: rank and name open ascending, every score opens descending.
@@ -106,40 +105,29 @@ const universe = [
   row("DDD", { concall: null, growth: null, valuation: null }), // unscored → no Read
 ];
 
-// Rank derivation: # follows Read; an unscored row has no rank and greys when
-// a coverage cut is supplied (the leaderboard), never on a watchlist.
+// Rank derivation: # follows Read across EVERY row — no coverage cut greys or
+// pins anyone (removed 2026-11-21); an unscored row has no rank.
 {
-  const board = deriveRows(universe, 2);
+  const board = deriveRows(universe);
   const byCode = new Map(board.map((r) => [r.companyCode, r]));
   assert.equal(byCode.get("AAA")!.effectiveRank, 1);
   assert.equal(byCode.get("BBB")!.effectiveRank, 2);
   assert.equal(byCode.get("CCC")!.effectiveRank, 3);
   assert.equal(byCode.get("DDD")!.effectiveRank, Number.POSITIVE_INFINITY);
-  assert.deepEqual(
-    board.map((r) => [r.companyCode, r.dim]).sort(),
-    [
-      ["AAA", false],
-      ["BBB", false],
-      ["CCC", true],
-      ["DDD", true],
-    ],
-    "rank 3 sits past a cut of 2 → dim; unranked → dim",
-  );
-
-  const watchlist = deriveRows(universe);
-  assert.ok(watchlist.every((r) => r.dim === false), "no coverageCutRank → nothing greys");
 }
 
-// Greyed rows pin to the bottom under EVERY sort key and direction.
+// An unranked row (no Read) sorts last on # in BOTH directions — "no rank", not
+// "the worst rank".
 {
-  const board = deriveRows(universe, 2);
-  const keys: SortKey[] = ["coverageRank", "companyName", "latestScore", "growthScore", "valuationScore", "read"];
-  for (const key of keys) {
-    for (const direction of ["asc", "desc"] as const) {
-      const codes = sortRows(board, { key, direction }).map((r) => r.companyCode);
-      assert.deepEqual(codes.slice(2).sort(), ["CCC", "DDD"], `${key} ${direction}: dim rows last`);
-    }
-  }
+  const board = deriveRows(universe);
+  assert.deepEqual(
+    sortRows(board, { key: "coverageRank", direction: "asc" }).map((r) => r.companyCode),
+    ["AAA", "BBB", "CCC", "DDD"],
+  );
+  assert.deepEqual(
+    sortRows(board, { key: "coverageRank", direction: "desc" }).map((r) => r.companyCode),
+    ["CCC", "BBB", "AAA", "DDD"],
+  );
 }
 
 // Null scores sort last in BOTH directions (null is "unknown", not zero).
@@ -174,7 +162,7 @@ const universe = [
 
 // Default sort (coverageRank asc) == Read desc for the ranked block.
 {
-  const board = deriveRows(universe, 100);
+  const board = deriveRows(universe);
   const byRank = sortRows(board, { key: "coverageRank", direction: "asc" }).map((r) => r.companyCode);
   const byRead = sortRows(board, { key: "read", direction: "desc" }).map((r) => r.companyCode);
   assert.deepEqual(byRank.slice(0, 3), byRead.slice(0, 3));

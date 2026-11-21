@@ -17,7 +17,6 @@ import {
   MOBILE_CHIP_STRIP,
   MOBILE_FOCUS,
   MOBILE_ROW,
-  MobileDivider,
   mobileChipClass,
 } from "@/components/mobile-card";
 import { cn } from "@/lib/utils";
@@ -43,10 +42,8 @@ const BUCKET_ORDER: { key: RecencyBucketKey; label: string }[] = [
 // The feed can run to a few hundred filings over the window; show the most recent
 // slice by default so the section stays a scannable tape, not an endless scroll.
 const MAX_COLLAPSED = 18;
-// The below-cut watch list is a smaller signal — keep the default slice tight.
-const MAX_BELOW_CUT = 8;
 // The desk carries only a compact teaser (recency top slice) that links out to
-// the full /announcements page; the full feed + below-cut list live there.
+// the full /announcements page; the full feed lives there.
 const MAX_COMPACT = 6;
 
 // "non-neutral" = every tier but neutral (the "Routine" badge). It is the
@@ -206,71 +203,12 @@ function UpdateRow({ item }: { item: ExchangeUpdate }) {
   );
 }
 
-/**
- * Below-cut watch list — material filings from names just outside the ranked
- * hundred (Gate 2, still one of ours). Kept visually quieter than the main tape
- * so it reads as a secondary signal, not part of the covered universe, while
- * still surfacing an update that might earn a name back in.
- */
-function BelowCutBlock({
-  updates,
-  windowDays,
-  expanded,
-  onToggle,
-}: {
-  updates: ExchangeUpdate[];
-  windowDays: number;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  if (updates.length === 0) return null;
-
-  const visible = expanded ? updates : updates.slice(0, MAX_BELOW_CUT);
-  const hiddenCount = Math.max(0, updates.length - MAX_BELOW_CUT);
-
-  return (
-    <section aria-labelledby="desk-exchange-belowcut" className="house-block mt-12">
-      <p className="house-data house-micro flex items-center gap-2 text-[var(--ink-soft)]">
-        <span aria-hidden className="text-[var(--ink-soft)]">
-          ○
-        </span>
-        Just outside coverage · last {windowDays} days
-      </p>
-      <h2 id="desk-exchange-belowcut" className="house-display mt-2 text-xl sm:text-2xl text-[var(--ink-soft)]">
-        Below the cut, but worth a look
-      </h2>
-      <p className="mt-2 max-w-2xl text-sm text-[var(--ink-soft)]">
-        Names that fell below the coverage cut are still ours — de-emphasised, never dropped. A
-        strong filing here (a big order, a fundraise) can be the thing that earns a company back
-        into the ranked hundred, so we keep their material announcements on the tape.
-      </p>
-
-      <div className="mt-4 rounded-lg border border-dashed border-[var(--rule)] bg-[var(--paper-2)] px-5 py-2 opacity-90 sm:px-6">
-        {visible.map((item) => (
-          <UpdateRow key={item.id} item={item} />
-        ))}
-      </div>
-
-      {hiddenCount > 0 && (
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={expanded}
-          className={cn("house-link mt-4 inline-block", ROW_FOCUS)}
-        >
-          {expanded ? "Show fewer" : `Show all ${updates.length} below-cut filings →`}
-        </button>
-      )}
-    </section>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Phone presentation of the full /announcements feed (handoff 2026-09-13,
 // "Filings — mobile"): impact chips in one horizontal scroller, then a single
 // card whose spine is recency — Today / This week / Earlier sub-headers over
-// whole-row links — and the below-cut watch list as a dashed card. Same state
-// (filter, both show-all toggles) as the desktop tree; only the paint differs.
+// whole-row links. Same state (filter, show-all toggle) as the desktop tree;
+// only the paint differs.
 // ---------------------------------------------------------------------------
 
 /**
@@ -297,13 +235,7 @@ function PhoneImpactPill({ item }: { item: ExchangeUpdate }) {
   );
 }
 
-function PhoneUpdateRow({
-  item,
-  dim = false,
-}: {
-  item: ExchangeUpdate;
-  dim?: boolean;
-}) {
+function PhoneUpdateRow({ item }: { item: ExchangeUpdate }) {
   const rowBody = (
     <>
       <span className="flex items-center gap-[9px]">
@@ -311,10 +243,7 @@ function PhoneUpdateRow({
           {shortAge(item.filedLabel)}
         </span>
         <span
-          className={cn(
-            "house-display min-w-0 flex-1 truncate text-sm",
-            dim ? "text-[var(--ink-soft)]" : "text-[var(--ink)]",
-          )}
+          className="house-display min-w-0 flex-1 truncate text-sm text-[var(--ink)]"
         >
           {item.companyName}
         </span>
@@ -361,53 +290,6 @@ function PhoneUpdateRow({
   );
 }
 
-function PhoneBelowCut({
-  updates,
-  expanded,
-  onToggle,
-}: {
-  updates: ExchangeUpdate[];
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  if (updates.length === 0) return null;
-  const visible = expanded ? updates : updates.slice(0, MAX_BELOW_CUT);
-  const hiddenCount = Math.max(0, updates.length - MAX_BELOW_CUT);
-
-  return (
-    <section aria-labelledby="phone-exchange-belowcut" className="pt-[22px]">
-      <MobileDivider
-        label={
-          <span id="phone-exchange-belowcut">
-            <span aria-hidden>○ </span>Just outside coverage
-          </span>
-        }
-      />
-      <p className="mx-4 mt-2 text-xs leading-[1.5] text-[var(--ink-soft)] [text-wrap:pretty]">
-        Names below the coverage cut are still ours — a strong filing here can earn a company
-        back into the ranked hundred.
-      </p>
-      <div className={cn(MOBILE_CARD, "mt-3 border-dashed opacity-[.92]")}>
-        {visible.map((item) => (
-          <PhoneUpdateRow key={item.id} item={item} dim />
-        ))}
-        {hiddenCount > 0 ? (
-          <div className="p-3.5">
-            <button
-              type="button"
-              onClick={onToggle}
-              aria-expanded={expanded}
-              className={cn("house-data house-link text-[11px]", ROW_FOCUS)}
-            >
-              {expanded ? "Show fewer" : `Show all ${updates.length} below-cut filings →`}
-            </button>
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
 function PhoneAnnouncements({
   data,
   filter,
@@ -418,8 +300,6 @@ function PhoneAnnouncements({
   expanded,
   onToggleExpanded,
   hiddenCount,
-  belowCutExpanded,
-  onToggleBelowCut,
 }: {
   data: ExchangeDeskData;
   filter: Filter;
@@ -430,8 +310,6 @@ function PhoneAnnouncements({
   expanded: boolean;
   onToggleExpanded: () => void;
   hiddenCount: number;
-  belowCutExpanded: boolean;
-  onToggleBelowCut: () => void;
 }) {
   return (
     <div className="sm:hidden">
@@ -513,31 +391,24 @@ function PhoneAnnouncements({
           </div>
         </section>
       ) : null}
-
-      <PhoneBelowCut
-        updates={data.belowCut}
-        expanded={belowCutExpanded}
-        onToggle={onToggleBelowCut}
-      />
     </div>
   );
 }
 
 /**
  * Full announcements experience — the covered-universe feed (recency spine +
- * impact filter tabs + show-all) followed by the below-cut watch list. Lives on
- * the dedicated /announcements page; the desk only shows the compact teaser.
+ * impact filter tabs + show-all). Lives on the dedicated /announcements page;
+ * the desk only shows the compact teaser.
  */
 function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
-  // All three live here, not in the paints, so a breakpoint crossing (tablet
-  // rotation across sm) keeps the reader's filter and both show-all toggles.
+  // Both live here, not in the paints, so a breakpoint crossing (tablet
+  // rotation across sm) keeps the reader's filter and show-all toggle.
   const nonNeutralCount = useMemo(
     () => data.updates.filter((u) => u.impact !== "neutral").length,
     [data.updates],
   );
   const [filter, setFilter] = useState<Filter>(nonNeutralCount > 0 ? "non-neutral" : "all");
   const [expanded, setExpanded] = useState(false);
-  const [belowCutExpanded, setBelowCutExpanded] = useState(false);
 
   // Changing the filter should always start from the collapsed view.
   const selectFilter = (next: Filter) => {
@@ -562,8 +433,7 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
   const isSm = useMinWidth(BREAKPOINT_SM);
 
   // Nothing material in the window (or the feed isn't wired yet) — render nothing.
-  // The below-cut watch list can still carry the section on a quiet covered week.
-  if (data.total === 0 && data.belowCut.length === 0) return null;
+  if (data.total === 0) return null;
 
   return (
     <>
@@ -578,8 +448,6 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
           expanded={expanded}
           onToggleExpanded={() => setExpanded((v) => !v)}
           hiddenCount={hiddenCount}
-          belowCutExpanded={belowCutExpanded}
-          onToggleBelowCut={() => setBelowCutExpanded((v) => !v)}
         />
       )}
       {isSm !== false && (
@@ -654,12 +522,6 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
     </section>
       )}
 
-      <BelowCutBlock
-        updates={data.belowCut}
-        windowDays={data.windowDays}
-        expanded={belowCutExpanded}
-        onToggle={() => setBelowCutExpanded((v) => !v)}
-      />
       </div>
       )}
     </>
@@ -667,8 +529,8 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
 }
 
 /**
- * Desk teaser — the most recent covered filings only, no filter tabs and no
- * below-cut block, ending in a link to the full /announcements page. Keeps the
+ * Desk teaser — the most recent covered filings only, no filter tabs, ending in
+ * a link to the full /announcements page. Keeps the
  * desk to a single announcements section instead of the full tape.
  */
 function CompactAnnouncements({ data }: { data: ExchangeDeskData }) {
@@ -715,7 +577,7 @@ export default function DeskExchangeUpdates({
 }: {
   data: ExchangeDeskData;
   // "compact" = desk teaser (top slice + link out); "full" = the /announcements
-  // page (whole covered feed + below-cut watch list). The company page's
+  // page (the whole covered feed). The company page's
   // Announcements tab has its own tape (app/company/components/announcement-tape.tsx).
   variant?: "full" | "compact";
 }) {

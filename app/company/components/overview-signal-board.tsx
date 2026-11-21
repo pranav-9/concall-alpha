@@ -117,17 +117,8 @@ async function WhereItSits({ companyCode }: { companyCode: string }) {
             /{pos.total}
           </span>
         </span>
-        <span
-          className={cn(
-            "rounded-full px-2.5 py-0.5 text-[10.5px] font-bold tracking-[0.04em]",
-            pos.belowLine
-              ? "bg-muted text-muted-foreground"
-              : "bg-teal-500/15 text-teal-700 dark:text-teal-300",
-          )}
-        >
-          {pos.belowLine
-            ? "BELOW LINE"
-            : topShareLabel(pos.rank, pos.total).toUpperCase()}
+        <span className="rounded-full bg-teal-500/15 px-2.5 py-0.5 text-[10.5px] font-bold tracking-[0.04em] text-teal-700 dark:text-teal-300">
+          {topShareLabel(pos.rank, pos.total).toUpperCase()}
         </span>
       </div>
     </Link>

@@ -25,25 +25,6 @@ export const UnderALatestScore = () => (
   </div>
 );
 
-/** Full contrast on a covered row; dimmed on a below-cut row, where the whole
- *  line is de-emphasized and the chip must not be the one thing still shouting. */
-export const FullAndDimmed = () => (
-  <div className="flex flex-col gap-3">
-    <div className="flex items-center gap-3">
-      <FreshScoreChip scoredAt="18 Aug 2026, 17:28 IST" />
-      <span className="text-[12px] text-muted-foreground">
-        default — a covered row
-      </span>
-    </div>
-    <div className="flex items-center gap-3">
-      <FreshScoreChip scoredAt="18 Aug 2026, 09:04 IST" dimmed />
-      <span className="text-[12px] text-muted-foreground">
-        dimmed — a row below the coverage cut
-      </span>
-    </div>
-  </div>
-);
-
 /** In the board it was built for: only the rows scored today carry it. */
 export const OnTheBoard = () => (
   <table className="w-full text-sm">
@@ -62,7 +43,6 @@ export const OnTheBoard = () => (
           band: "Strongly Bullish",
           bandClass: "text-teal-700 dark:text-teal-300",
           scoredAt: "18 Aug 2026, 17:28 IST" as string | null,
-          dimmed: false,
         },
         {
           code: "MTARTECH",
@@ -71,7 +51,6 @@ export const OnTheBoard = () => (
           band: "Mildly Bullish",
           bandClass: "text-teal-700 dark:text-teal-300",
           scoredAt: null as string | null,
-          dimmed: false,
         },
         {
           code: "SOLARA",
@@ -80,35 +59,26 @@ export const OnTheBoard = () => (
           band: "Neutral / Balanced",
           bandClass: "text-muted-foreground",
           scoredAt: "18 Aug 2026, 09:04 IST" as string | null,
-          dimmed: true,
         },
       ].map((row) => (
         <tr key={row.code} className="border-b last:border-0">
-          <td className={`py-2.5 align-top ${row.dimmed ? "text-muted-foreground" : ""}`}>
-            <span className={row.dimmed ? "" : "font-medium text-foreground"}>{row.name}</span>{" "}
+          <td className="py-2.5 align-top">
+            <span className="font-medium text-foreground">{row.name}</span>{" "}
             <span className="font-mono text-[10px] uppercase text-muted-foreground">
               {row.code}
             </span>
           </td>
           <td className="py-2.5 align-top">
             <div className="leading-tight">
-              <div
-                className={`tabular-nums font-semibold ${
-                  row.dimmed ? "text-muted-foreground" : "text-foreground"
-                }`}
-              >
+              <div className="tabular-nums font-semibold text-foreground">
                 {row.score.toFixed(1)}
               </div>
-              <div
-                className={`text-[10px] font-medium ${
-                  row.dimmed ? "text-muted-foreground" : row.bandClass
-                }`}
-              >
+              <div className={`text-[10px] font-medium ${row.bandClass}`}>
                 {row.band}
               </div>
               {row.scoredAt && (
                 <div className="mt-1 flex flex-wrap items-center gap-1">
-                  <FreshScoreChip scoredAt={row.scoredAt} dimmed={row.dimmed} />
+                  <FreshScoreChip scoredAt={row.scoredAt} />
                 </div>
               )}
             </div>

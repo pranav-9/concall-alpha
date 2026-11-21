@@ -31,7 +31,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { DRIFT_SIGNATURES, CANDIDATE_SIGNATURES, sigHits } from "./themes-signatures.mjs";
-import { loadEnv, isAdmittedLargeCap as isLarge, isDiscoveryListed as isListed } from "./themes-lib.mjs";
+import { loadEnv, isDiscoveryListed as isListed } from "./themes-lib.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, "..");
@@ -91,7 +91,7 @@ async function pageAll(build, pageSize = 1000) {
 
 // --- loads --------------------------------------------------------------------
 async function load() {
-  const companies = must(await sb.from("company").select("code,name,sector,sub_sector,market_cap_band_at_admission,excluded_from_discovery,composite_score"), "company");
+  const companies = must(await sb.from("company").select("code,name,sector,sub_sector,market_cap_band_at_admission,composite_score"), "company");
   const themes = must(await sb.from("theme").select("slug,title,blurb,is_featured,sort,hotness"), "theme");
   const memberships = must(await sb.from("theme_membership").select("theme_slug,company_code"), "theme_membership");
 
@@ -220,7 +220,7 @@ function buildCards(d) {
 
     cards.push({
       code, name: c.name, sector: c.sector, sub_sector: c.sub_sector,
-      status: !isListed(c) ? (isLarge(c) ? "large-cap" : "below-cut") : "listed",
+      status: isListed(c) ? "listed" : "large-cap",
       composite: c.composite_score,
       themes: themesOf.get(code) ?? [],
       heat, parts,

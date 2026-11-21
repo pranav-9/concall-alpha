@@ -1,11 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { createPublicReadClient } from "@/lib/supabase/public-read";
 import { buildNewCompanySet } from "@/lib/company-freshness";
-import {
-  COVERAGE_SELECT,
-  isAdmittedLargeCap,
-  isBelowCoverageCut,
-} from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isAdmittedLargeCap } from "@/lib/coverage-policy";
 import {
   isScoredWithin24h,
   normalizeSourceStatus,
@@ -79,20 +75,9 @@ async function fetchScoreRows(
 
 type ConcallDataOptions = {
   excludeLargeCaps?: boolean;
-  /**
-   * Keep companies below the composite cut in the result, flagged `belowCut`,
-   * instead of dropping them. The leaderboard renders them as a greyed,
-   * non-clickable tail below the ranked hundred; every other discovery surface
-   * still wants them gone. Only meaningful alongside excludeLargeCaps — large
-   * caps are never part of the tail (see lib/coverage-policy).
-   */
-  includeBelowCut?: boolean;
 };
 
-async function fetchConcallData({
-  excludeLargeCaps = false,
-  includeBelowCut = false,
-}: ConcallDataOptions = {}) {
+async function fetchConcallData({ excludeLargeCaps = false }: ConcallDataOptions = {}) {
   const supabase = createPublicReadClient();
   const [scoreRows, { data: companyRows }, { data: valuationRows }] = await Promise.all([
     fetchScoreRows(supabase),
@@ -131,27 +116,15 @@ async function fetchConcallData({
     code: string;
     created_at?: string | null;
     market_cap_band_at_admission?: string | null;
-    excluded_from_discovery?: boolean | null;
   }>;
   const newCompanySet = buildNewCompanySet(companyRowList);
 
   // Coverage policy: on discovery surfaces, drop companies admitted as large
   // cap. Off by default so user-owned surfaces (watchlists) keep every holding.
-  // The two gates are handled separately here — with includeBelowCut, only the
-  // admission gate removes rows; the cut gate just marks them.
   const excludedCodes = new Set<string>();
-  const belowCutCodes = new Set<string>();
   if (excludeLargeCaps) {
     companyRowList.forEach((row) => {
-      const code = row.code.toUpperCase();
-      if (isAdmittedLargeCap(row)) {
-        excludedCodes.add(code);
-        return;
-      }
-      if (isBelowCoverageCut(row)) {
-        if (includeBelowCut) belowCutCodes.add(code);
-        else excludedCodes.add(code);
-      }
+      if (isAdmittedLargeCap(row)) excludedCodes.add(row.code.toUpperCase());
     });
   }
 
@@ -195,7 +168,6 @@ async function fetchConcallData({
       const row: CompanyRow = {
         company: companyCode,
         isNew: newCompanySet.has(companyCode.toUpperCase()),
-        belowCut: belowCutCodes.has(companyCode.toUpperCase()),
         valuationVerdict: valuation?.verdict ?? null,
         valuationScore: valuation?.score ?? null,
       };
@@ -303,10 +275,11 @@ async function fetchConcallData({
 // cookie-based server client saw exactly what the anon key sees), so every
 // surface that joins against the universe — leaderboards, sectors, watchlists,
 // themes — shares one 5-minute snapshot instead of each request re-pulling
-// ~900 score rows. unstable_cache keys on the options object, so the three
-// gate combinations cache separately. Bump the version whenever the returned
-// row shape changes — the cached payload is JSON on disk.
-const getCachedConcallData = unstable_cache(fetchConcallData, ["concall-data-v1"], {
+// ~900 score rows. unstable_cache keys on the options object, so the two gate
+// settings cache separately. Bump the version whenever the returned row shape
+// changes — the cached payload is JSON on disk (v2: the belowCut flag went with
+// the coverage cut, 2026-11-21).
+const getCachedConcallData = unstable_cache(fetchConcallData, ["concall-data-v2"], {
   revalidate: 300,
 });
 
@@ -315,7 +288,6 @@ export const getConcallData = async (options: ConcallDataOptions = {}) => {
     // Normalize before the cache boundary so `{}`, `{excludeLargeCaps: false}`
     // and undefined all hit the same cache entry.
     excludeLargeCaps: options.excludeLargeCaps ?? false,
-    includeBelowCut: options.includeBelowCut ?? false,
   });
   // One clock for the whole render, so two rows can't straddle the 24h edge.
   const renderedAt = new Date();

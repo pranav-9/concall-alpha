@@ -8,9 +8,9 @@
 // (create / feature / bench / reorder / re-blurb / hotness / delete). Only featured
 // themes ever render; board order is hotness desc (nulls last), then sort.
 //
-// The board is built with getConcallData({ excludeLargeCaps: true, includeBelowCut:
-// true }). So an admitted large-cap member is DROPPED at render (never on the board),
-// while a below-cut member renders greyed. This script flags both.
+// The board is built with getConcallData({ excludeLargeCaps: true }). So an admitted
+// large-cap member is DROPPED at render (never on the board); every other member
+// renders and ranks normally. This script flags the large caps.
 //
 // Run from concall-alpha/:
 //   node scripts/themes-refresh.mjs                         # health report + write proposed.json
@@ -44,7 +44,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { DRIFT_SIGNATURES, sigHits } from "./themes-signatures.mjs";
-import { loadEnv, isAdmittedLargeCap, isBelowCoverageCut, isDiscoveryListed } from "./themes-lib.mjs";
+import { loadEnv, isAdmittedLargeCap, isDiscoveryListed } from "./themes-lib.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, "..");
@@ -115,7 +115,7 @@ async function loadAll(sb) {
   const [themesR, memR, cosR] = await Promise.all([
     sb.from("theme").select("slug,title,blurb,is_featured,sort,hotness,updated_at").order("sort"),
     sb.from("theme_membership").select("theme_slug,company_code,rationale,as_of_quarter,last_reviewed_at"),
-    sb.from("company").select("code,name,sector,sub_sector,market_cap_band_at_admission,excluded_from_discovery,composite_score"),
+    sb.from("company").select("code,name,sector,sub_sector,market_cap_band_at_admission,composite_score"),
   ]);
   for (const [label, r] of [["theme", themesR], ["theme_membership", memR], ["company", cosR]]) {
     if (r.error) throw new Error(`${label} query failed: ${r.error.message}`);
@@ -130,7 +130,6 @@ const num = (n) => (n == null ? "  —  " : Number(n).toFixed(2).padStart(5));
 function renderStatus(c) {
   if (!c) return "ORPHAN — not in company (DROPPED at render)";
   if (isAdmittedLargeCap(c)) return "large-cap (DROPPED at render)";
-  if (isBelowCoverageCut(c)) return "below-cut (renders greyed)";
   return "listed";
 }
 
@@ -219,19 +218,17 @@ async function report(sb) {
     const list = membersByTheme.get(t.slug) ?? [];
     const memberCodes = memberSetByTheme.get(t.slug) ?? new Set();
     let scored = 0;
-    let belowCut = 0;
     const subSectors = new Set();
     const sectors = new Set();
     for (const m of list) {
       const c = coByCode.get(String(m.company_code).toUpperCase());
       if (c?.composite_score != null) scored += 1;
-      if (isBelowCoverageCut(c)) belowCut += 1;
       if (c?.sub_sector) subSectors.add(c.sub_sector);
       if (c?.sector) sectors.add(c.sector);
     }
     const band = t.is_featured ? `FEATURED sort=${t.sort}` : `benched  sort=${t.sort}`;
     console.log(`\n  [${band}] ${t.slug} — ${t.title}`);
-    console.log(`    ${list.length} members · ${scored} scored · ${belowCut} below-cut`);
+    console.log(`    ${list.length} members · ${scored} scored`);
     // Print the thesis so the reviewer weighs fit against it, not just the coarse
     // sub_sector label (which lumps e.g. optical fibre with power cable).
     if (t.blurb) console.log(`    thesis: ${t.blurb}`);
@@ -450,8 +447,7 @@ async function unThemed(sb) {
   if (missingSig.length) console.log(`(⚠ no keyword signature for: ${missingSig.join(", ")} — cannot match candidates to those)\n`);
 
   // Candidate pool: not already a member, and not admitted large-cap (large-caps are
-  // DROPPED at render — no point suggesting them). Below-cut names ARE eligible (they
-  // render greyed) but get annotated so the reviewer weighs the lower-value add.
+  // DROPPED at render — no point suggesting them).
   const pool = companies
     .filter((c) => !themed.has(String(c.code).toUpperCase()) && !isAdmittedLargeCap(c))
     .sort((a, b) => (b.composite_score ?? -Infinity) - (a.composite_score ?? -Infinity));
@@ -466,15 +462,14 @@ async function unThemed(sb) {
     if (!hasData) continue;
     const sc = scoreDriverText(text);
     const [bestT, bestS] = Object.entries(sc).sort((a, b) => b[1] - a[1])[0];
-    if (bestS >= 3) hits.push({ code, name: c.name, bestT, bestS, quarter, composite: c.composite_score, greyed: isBelowCoverageCut(c), sub: c.sub_sector });
+    if (bestS >= 3) hits.push({ code, name: c.name, bestT, bestS, quarter, composite: c.composite_score, sub: c.sub_sector });
   }
   hits.sort((a, b) => b.bestS - a.bestS || (b.composite ?? 0) - (a.composite ?? 0));
 
   console.log("--- PLAUSIBLE FITS (best-matching theme scored >=3; human + web-confirm owns the call) ---");
   if (!hits.length) console.log("  ✓ none clear the threshold");
   else for (const h of hits) {
-    const tag = h.greyed ? "  << below-cut (would render greyed)" : "";
-    console.log(`  ${h.code.padEnd(12)} ${num(h.composite)} [${h.quarter}]  ~ ${h.bestT} (${h.bestS})  [${h.sub}]${tag}`);
+    console.log(`  ${h.code.padEnd(12)} ${num(h.composite)} [${h.quarter}]  ~ ${h.bestT} (${h.bestS})  [${h.sub}]`);
   }
   console.log(`\n${hits.length} candidate(s). Keyword adjacency ONLY — web-confirm the primary driver before --add. Names with no theme (edtech, hospitals, dairy) correctly don't appear.`);
 }

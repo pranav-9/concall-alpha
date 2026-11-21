@@ -248,13 +248,12 @@ pick(pinnedVirgin, NOW);
 assert.deepEqual(pinnedVirgin.map((r) => r.companyCode), ["B", "A"], "pin path does not mutate the pool either");
 console.log("  ok  the pin path leaves the cached pool untouched");
 
-// --- which companies' research the desk shows (user call 2026-10-29) ---
-// UNIMECH's 2026-10-28 deep-track vanished from the desk because the list was
-// gated to the ranked hundred. Below-cut companies show (tagged); large-cap
-// admissions and codes we don't cover never do. Do not "fix" this back to
-// isDiscoveryListed.
+// --- which companies' research the desk shows ---
+// Every discovery-listed company (no coverage cut since 2026-11-21; UNIMECH's
+// 2026-10-28 deep-track once vanished behind it). Large-cap admissions and codes
+// we don't cover never show.
 {
-  const coverage = { listed: new Set(["PAYTM"]), belowCut: new Set(["UNIMECH"]) };
+  const listed = new Set(["PAYTM", "UNIMECH"]);
   const pool = [
     mk("UNIMECH", "2026-10-28T13:37:07+00:00"),
     mk("ETERNAL", "2026-10-28T09:25:40+00:00"),
@@ -263,14 +262,14 @@ console.log("  ok  the pin path leaves the cached pool untouched");
     { ...mk("unimech", "2026-10-01T00:00:00Z"), id: "lowercase-code" },
   ];
   assert.deepEqual(
-    researchEligible(pool, coverage).map((r) => r.companyCode),
+    researchEligible(pool, listed).map((r) => r.companyCode),
     ["UNIMECH", "PAYTM", "unimech"],
-    "below-cut and listed stay (any case); a large-cap admission and an unknown code drop",
+    "listed companies stay (any case); a large-cap admission and an unknown code drop",
   );
   assert.deepEqual(
-    selectResearchUpdates(researchEligible(pool, coverage)).map((r) => r.companyCode),
+    selectResearchUpdates(researchEligible(pool, listed)).map((r) => r.companyCode),
     ["UNIMECH", "PAYTM"],
-    "a fresh below-cut deep-track leads the list like any other",
+    "the freshest deep-track leads the list",
   );
-  console.log("  ok  research list keeps below-cut companies, drops large-cap admissions");
+  console.log("  ok  research list keeps listed companies, drops large-cap admissions");
 }

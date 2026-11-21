@@ -1,15 +1,5 @@
 export type RankedItem<T> = T & { leaderboardRank: number };
 
-// How many companies the Overall board keeps "in" before it greys the tail.
-// Mirrors compute_composite_score.py's --target and the "handpicked ~100"
-// positioning — but the board applies it to the LIVE Read rank, so a greyed row
-// is always one that ranks below this line on the number the board actually
-// shows. The stored `excluded_from_discovery` flag still governs homepage /
-// sectors (lib/coverage-policy.ts); the two sets can differ near the line, and
-// that's fine — the board is the only surface that shows ranks side by side, so
-// it's the only one that needs the live version.
-export const COVERAGE_BOARD_SIZE = 100;
-
 // The Overall board's live ranking, in ONE place so the board (client) and the
 // daily snapshot writer (server, lib/leaderboard-snapshot.ts) can never rank the
 // same universe differently — if they did, the Δ column would compare a rank to
@@ -17,12 +7,9 @@ export const COVERAGE_BOARD_SIZE = 100;
 //
 // Ranks the whole universe by Read (descending), tie-broken first by growth
 // score (descending) then by CODE for cross-runtime stability. A row with no
-// Read is unranked (it can't hold a position on a missing number). NOT tiered by
-// the stored cut anymore (removed 2026-08-12): tiering pinned a high-Read
-// below-cut row to a low number that then sat visually above a kept row it
-// out-scored. Greying now keys off THIS live rank (rank > COVERAGE_BOARD_SIZE),
-// so a greyed row is always the lowest-ranked and the bottom-pin has nothing to
-// hide.
+// Read is unranked (it can't hold a position on a missing number). Every
+// mid/small company is ranked — there is no coverage cut to tier or grey by
+// (removed 2026-11-21).
 //
 // Read is compared at DISPLAY precision (rounded to 1 decimal, the same as the
 // board's `.toFixed(1)`), not full precision. Two companies that both show "7.2"

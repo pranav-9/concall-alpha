@@ -2,7 +2,7 @@
 // recently entered coverage, newest first, by company.created_at. The first one
 // gets the large card. Pure, so it is testable without the server reads; the
 // caller passes the discovery-listed companies (lib/desk-leaderboard.ts), so a
-// below-cut or large-cap admission never shows here.
+// large-cap admission never shows here.
 
 export type NewCoverageCandidate = {
   code: string;

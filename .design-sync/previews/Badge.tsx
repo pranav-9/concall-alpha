@@ -72,7 +72,7 @@ export const InABoardRow = () => (
     {[
       { name: "Neuland Laboratories", quarter: "Q1 FY27", tags: [["default", "8.2"] as const, ["secondary", "Official"] as const] },
       { name: "MTAR Technologies", quarter: "Q1 FY27", tags: [["default", "6.8"] as const, ["outline", "Unofficial"] as const] },
-      { name: "Solara Active Pharma", quarter: "Q4 FY26", tags: [["destructive", "4.3"] as const, ["outline", "Below cut"] as const] },
+      { name: "Solara Active Pharma", quarter: "Q4 FY26", tags: [["destructive", "4.3"] as const, ["outline", "Stale"] as const] },
     ].map((row, i) => (
       <div key={row.name}>
         {i > 0 ? <Separator /> : null}
