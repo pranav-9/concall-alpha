@@ -1,0 +1,282 @@
+{
+  "company": "JSLL",
+  "company_name": "Jeena Sikho Lifecare Limited",
+  "prepared_on": "2026-11-21",
+  "review_status": "draft_pending_user_review",
+  "source_period": "FY26 annual report to Q2 FY27 (official Q2 FY27 transcript, 2026-11-21 combined pass)",
+  "latest_source_date": "2026-11-16",
+  "about_company": {
+    "about_short": "Chain of Ayurveda hospitals and clinics that also sells its own Ayurvedic medicines.",
+    "about_long": "Jeena Sikho Lifecare runs Ayurveda hospitals, clinics and day-care centres offering Panchakarma treatment, and sells its own range of Ayurvedic medicines; it describes itself as the category leader in organised Ayurvedic healthcare. At Q2 FY27 it had 62 hospitals and 60 clinics and day-care centres with 2,424 operational beds across 23 states. It reports two segments: Ayurvedic products, 57% of H1 FY27 revenue, and healthcare services (in-patient stays, OPD, day care and video consultations), 42%; products became the larger segment in FY26. Medicines are made by third-party manufacturers and sold at its centres, online with cash on delivery, through its own call centre and to franchise clinics; in Q2 FY27 it dropped the chemist (OTC) model, and its Entero B2B tie-up has stalled. Most patients pay privately: government health schemes (CGHS, CAPF, ECHS) fell from 25% of revenue in FY25 to 4% in FY26, and management caps them at 15%. Hospitals run in rented buildings at ₹3-4 lakh of capex per bed, and in October 2024 it bought five Ayurvedic therapy centres in Delhi and Rajasthan from Oregano Life for ₹69.16 Cr.",
+    "business_intro": "Jeena Sikho runs Ayurveda hospitals, clinics and day-care centres that treat patients with Panchakarma therapies, and sells Ayurvedic medicines made for it by contract manufacturers. Patients pay for in-patient stays, day care and consultations; medicines are sold at its centres, online with cash on delivery, through its own call centre and to franchise clinics, and each side refers customers to the other. Most patients pay privately: government health schemes were 4% of FY26 revenue.",
+    "company_timeline": [
+      {
+        "year": 2009,
+        "title": "Founded; begins selling Ayurvedic medicines",
+        "detail": "The company dates its medicine and product sales to 2009. It was founded that year and incorporated in 2017.",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation (Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1a817183-d31e-409d-adc6-24965b0ffbcb.pdf",
+            "locator": "slide 6, Journey so far"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_32144_JSLL_2025_2026_A_10756242_06102026112620.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2013,
+        "title": "Opens its first Ayurveda centre, in Chandigarh",
+        "detail": "Health-care services were added to the medicine business with a first Ayurveda centre in Chandigarh.",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation (Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1a817183-d31e-409d-adc6-24965b0ffbcb.pdf",
+            "locator": "slide 6, Journey so far"
+          }
+        ]
+      },
+      {
+        "year": 2017,
+        "title": "Incorporated as a company",
+        "detail": "Jeena Sikho Lifecare was incorporated on 29 May 2017.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_32144_JSLL_2025_2026_A_10756242_06102026112620.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2022,
+        "title": "Lists on NSE Emerge after a ₹55.5 Cr IPO",
+        "detail": "Listed on the SME Emerge platform of NSE on 19 April 2022; the IPO raised ₹55.5 Cr.",
+        "sources": [
+          {
+            "label": "Annual Report FY2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1ebf05f3-7029-42cd-be2c-419752cbf754.pdf"
+          },
+          {
+            "label": "Q2 FY27 investor presentation (Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1a817183-d31e-409d-adc6-24965b0ffbcb.pdf",
+            "locator": "slide 6, Journey so far"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Acquires five therapy centres from Oregano Life",
+        "detail": "Bought on 3 Oct 2024 as a going concern for ₹69.16 Cr: two centres in Delhi and three in Rajasthan. They added ₹8.03 Cr of revenue in FY25, and the MD said they came with 85 beds. The seller, Oregano Life, held 5.80% of JSLL's shares at 31 March 2025.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_32144_JSLL_2025_2026_A_10756242_06102026112620.pdf"
+          },
+          {
+            "label": "Annual Report FY2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1ebf05f3-7029-42cd-be2c-419752cbf754.pdf"
+          },
+          {
+            "label": "Q4 FY25 earnings call transcript (May 2025)",
+            "url": "https://nsearchives.nseindia.com/corporate/JEENASIKHO_26052025175716_Intimation_Transcript.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Moves to the NSE and BSE main boards",
+        "detail": "Migrated from the NSE SME platform to the main boards of NSE and BSE on 11 August 2025.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_32144_JSLL_2025_2026_A_10756242_06102026112620.pdf"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "No customer is 10% of revenue; government panels fell to 4%",
+        "text": "No single customer was 10% or more of revenue in FY25 or FY26. Government health schemes (CGHS, CAPF, ECHS and state panels) were 16% of revenue in FY24 (₹52.0 Cr), 25% in FY25 (₹117.8 Cr) and 4% in FY26 (₹36.0 Cr), after scheme payments got stuck. Management restarted panel business in Q2 FY27 and says it will not let it exceed 15% of revenue.",
+        "period": "FY24-FY26; cap stated in Q2 FY27",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_32144_JSLL_2025_2026_A_10756242_06102026112620.pdf"
+          },
+          {
+            "label": "Q2 FY27 investor presentation (Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1a817183-d31e-409d-adc6-24965b0ffbcb.pdf",
+            "locator": "slide 40, Key Operating Metrics"
+          },
+          {
+            "label": "Q2 FY27 earnings call transcript (16 Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a73bdac7-a2e6-4041-90e7-4b1f107e847c.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Govt panels, FY24",
+            "value": 16,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Govt panels, FY25",
+            "value": 25,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Govt panels, FY26",
+            "value": 4,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Almost all revenue is earned in India; exports are 0.3%",
+        "text": "In FY26, ₹798.9 Cr of the ₹801.4 Cr revenue from operations was domestic and ₹2.5 Cr was exports, all of it medicines. The network spans 23 states and 100+ cities and towns. The company says it is number one in North India and small in the South, where it has set up a new team; it also has a wholly owned UAE subsidiary, Jeena Sikho International LLC.",
+        "period": "FY26; network as of Q2 FY27",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://nsearchives.nseindia.in/annual_reports/AR_32144_JSLL_2025_2026_A_10756242_06102026112620.pdf"
+          },
+          {
+            "label": "Q2 FY27 investor presentation (Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1a817183-d31e-409d-adc6-24965b0ffbcb.pdf"
+          },
+          {
+            "label": "Q2 FY27 earnings call transcript (16 Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a73bdac7-a2e6-4041-90e7-4b1f107e847c.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "India",
+            "value": 99.7,
+            "unit": "% of FY26 revenue"
+          },
+          {
+            "label": "Exports",
+            "value": 0.3,
+            "unit": "% of FY26 revenue"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "62 hospitals, 60 clinics and 2,424 operational beds",
+        "text": "At Q2 FY27 the network had 62 hospitals and 60 clinics and day-care centres with 2,424 operational beds, and 460 more beds in the pipeline (Lucknow 160, Bareilly 40, Ahmedabad 200, Kalyani 60). Occupancy was 55% in Q2 FY27 and revenue per bed (ARPOB) ₹7,500, down from ₹8,360 in Q1 FY27 after half-rate admissions for Ayushman card holders. 52 units are NABH-accredited and 12 more are in process.",
+        "period": "Q2 FY27",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation (Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1a817183-d31e-409d-adc6-24965b0ffbcb.pdf"
+          },
+          {
+            "label": "Q2 FY27 earnings call transcript (16 Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a73bdac7-a2e6-4041-90e7-4b1f107e847c.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Medicines were 57% of H1 FY27 revenue",
+        "text": "In H1 FY27 the products segment brought in ₹262.2 Cr (57% of revenue) and healthcare services ₹194.6 Cr (42%); the company puts their gross margins at 87% and 90%. Over 440 medicine and product SKUs are made by third-party manufacturers. Hospitals open in rented buildings at ₹3-4 lakh of capex per bed, against ₹30-50 lakh in allopathy, and break even at about 35% occupancy.",
+        "period": "H1 FY27",
+        "sources": [
+          {
+            "label": "Q2 FY27 financial results (14 Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/6d7c35fe-4ba1-4498-8a12-d5978860d415.pdf"
+          },
+          {
+            "label": "Q2 FY27 investor presentation (Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1a817183-d31e-409d-adc6-24965b0ffbcb.pdf"
+          },
+          {
+            "label": "Q2 FY27 earnings call transcript (16 Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a73bdac7-a2e6-4041-90e7-4b1f107e847c.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Private-pay stays and medicine sales led Q1 FY27 revenue",
+        "text": "Of Q1 FY27 revenue of ₹224.4 Cr, private-pay Panchakarma stays brought in ₹84.8 Cr (+26% YoY), medicines sold at centres ₹78.9 Cr (+18%), e-commerce medicine orders paid cash on delivery ₹40.5 Cr (1.9x), day care ₹10.0 Cr (+46%), government-panel stays ₹5.2 Cr (-67%), consultations ₹4.5 Cr and diagnostics ₹1.3 Cr.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "Press release: IPD growth and business mix (20 Aug 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/526b68fa-cbe0-43ad-98a8-02f3a5e92044.pdf"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Demand comes from the founder's media reach and health camps",
+        "text": "Patients reach the company through Acharya Manish Grover's channels, which it puts at over 10 million followers, through e-commerce and video consultations, and through health camps that it says convert about 30% of attendees into in-patient admissions.",
+        "period": "Q1 FY27",
+        "sources": [
+          {
+            "label": "Q1 FY27 investor presentation (Aug 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9fa6211e-ac55-4e06-8c49-ad82a4ceac83.pdf"
+          },
+          {
+            "label": "Q2 FY27 earnings call transcript (16 Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a73bdac7-a2e6-4041-90e7-4b1f107e847c.pdf"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Drops the chemist model and builds its own call centre",
+        "text": "In Q2 FY27 the company dropped its plan to sell medicines through chemists (OTC), saying there is no profit in it, and said its tie-up with Entero is not moving forward. Instead of buying a product-selling company it set up a 300-seat call centre in Noida, at what it says is about one-twentieth of the proposed acquisition price.",
+        "period": "Q2 FY27",
+        "sources": [
+          {
+            "label": "Q2 FY27 earnings call transcript (16 Nov 2026)",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a73bdac7-a2e6-4041-90e7-4b1f107e847c.pdf"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Medicines overtook hospital services as the larger business",
+      "text": "Products rose from 46% of revenue in FY25 to 52% in FY26 and 57% in H1 FY27, while services fell from 54% to 48% and 42%. E-commerce medicine orders scaled (₹40.5 Cr in Q1 FY27, 1.9x a year earlier), government-panel revenue fell from ₹117.8 Cr in FY25 to ₹36.0 Cr in FY26, and services revenue fell 4.4% YoY in Q2 FY27. The shift did not lift margins: the products segment result fell to 27% of revenue in H1 FY27 from 40% a year earlier. Management says products now cost more to sell and is steering online buyers to its hospitals.",
+      "period": "FY25 to H1 FY27",
+      "sources": [
+        {
+          "label": "Annual Report FY2025-26",
+          "url": "https://nsearchives.nseindia.in/annual_reports/AR_32144_JSLL_2025_2026_A_10756242_06102026112620.pdf",
+          "locator": "Note 35, Segment reporting"
+        },
+        {
+          "label": "Q2 FY27 financial results (14 Nov 2026)",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/6d7c35fe-4ba1-4498-8a12-d5978860d415.pdf"
+        },
+        {
+          "label": "Press release: IPD growth and business mix (20 Aug 2026)",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/526b68fa-cbe0-43ad-98a8-02f3a5e92044.pdf"
+        },
+        {
+          "label": "Q2 FY27 earnings call transcript (16 Nov 2026)",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a73bdac7-a2e6-4041-90e7-4b1f107e847c.pdf"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    "https://nsearchives.nseindia.com/corporate/JEENASIKHO_26052025175716_Intimation_Transcript.pdf",
+    "https://nsearchives.nseindia.in/annual_reports/AR_32144_JSLL_2025_2026_A_10756242_06102026112620.pdf",
+    "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1ebf05f3-7029-42cd-be2c-419752cbf754.pdf",
+    "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1a817183-d31e-409d-adc6-24965b0ffbcb.pdf",
+    "https://www.bseindia.com/xml-data/corpfiling/AttachLive/526b68fa-cbe0-43ad-98a8-02f3a5e92044.pdf",
+    "https://www.bseindia.com/xml-data/corpfiling/AttachLive/6d7c35fe-4ba1-4498-8a12-d5978860d415.pdf",
+    "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9fa6211e-ac55-4e06-8c49-ad82a4ceac83.pdf",
+    "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a73bdac7-a2e6-4041-90e7-4b1f107e847c.pdf"
+  ]
+}
