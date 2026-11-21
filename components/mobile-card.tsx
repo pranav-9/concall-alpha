@@ -103,7 +103,7 @@ export function MobileTag({
   title,
 }: {
   children: ReactNode;
-  tone?: "signal" | "warn" | "muted";
+  tone?: "signal" | "muted";
   title?: string;
 }) {
   return (
@@ -113,7 +113,6 @@ export function MobileTag({
         "house-data shrink-0 whitespace-nowrap rounded-[3px] border px-1 py-px text-[8px] uppercase tracking-[0.08em] leading-tight",
         tone === "signal" &&
           "border-[color-mix(in_srgb,var(--signal)_40%,transparent)] text-[var(--signal)]",
-        tone === "warn" && "border-[color-mix(in_srgb,var(--warn)_45%,transparent)] text-[var(--warn)]",
         tone === "muted" && "border-[var(--rule)] text-[var(--ink-soft)]",
       )}
     >

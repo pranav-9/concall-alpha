@@ -219,16 +219,16 @@ async function fetchTrendRows(): Promise<TrendRow[]> {
 // carry the identity (versions bumped 2026-11-06 when the wrapper moved inside).
 
 /** Every company with a forensic read (assessed > 0). Throws on a failed read. */
-export const getRedFlagRows = unstable_cache(withBackoff("scanners: red flags", fetchRedFlagRows), ["scanners-red-flags-v3"], { revalidate: 600 });
+export const getRedFlagRows = unstable_cache(withBackoff("scanners: red flags", fetchRedFlagRows), ["scanners-red-flags-v4"], { revalidate: 600 });
 
 /** Every company with a price_phases row, fresh or stale. Throws on a failed read. */
-export const getTrendRows = unstable_cache(withBackoff("scanners: price trend", fetchTrendRows), ["scanners-price-trend-v2"], { revalidate: 600 });
+export const getTrendRows = unstable_cache(withBackoff("scanners: price trend", fetchTrendRows), ["scanners-price-trend-v3"], { revalidate: 600 });
 
 /** Every company with both a growth score and a rateable valuation, fresh or stale. Throws on a failed read. */
-export const getGarpRows = unstable_cache(withBackoff("scanners: garp", fetchGarpRows), ["scanners-garp-v2"], { revalidate: 600 });
+export const getGarpRows = unstable_cache(withBackoff("scanners: garp", fetchGarpRows), ["scanners-garp-v3"], { revalidate: 600 });
 
 /** Every company with at least one PEG leg, fresh or stale. Throws on a failed read. */
-export const getPegRows = unstable_cache(withBackoff("scanners: peg", fetchPegRows), ["scanners-peg-v3"], { revalidate: 600 });
+export const getPegRows = unstable_cache(withBackoff("scanners: peg", fetchPegRows), ["scanners-peg-v4"], { revalidate: 600 });
 
 // Order book: the latest key_variables_snapshot per company (only its deep-treated
 // variables — never the discovery list or the synthesis text) beside the market
@@ -290,7 +290,7 @@ async function fetchOrderBookRows(): Promise<OrderBookRow[]> {
 }
 
 /** Every company with a disclosed order book and a market cap, fresh or stale. Throws on a failed read. */
-export const getOrderBookRows = unstable_cache(withBackoff("scanners: order book", fetchOrderBookRows), ["scanners-order-book-v2"], { revalidate: 600 });
+export const getOrderBookRows = unstable_cache(withBackoff("scanners: order book", fetchOrderBookRows), ["scanners-order-book-v3"], { revalidate: 600 });
 
 // Same item source, quarter anchor and stored verdict as the company page's
 // Guidance section and the watchlist signals (lib/watchlist-signals.ts); the
@@ -319,4 +319,4 @@ async function fetchGuidanceUpgradeRows(): Promise<GuidanceUpgradeData> {
 }
 
 /** Every company with a raised live commitment, plus every company with guidance on record. Throws on a failed read. */
-export const getGuidanceUpgradeRows = unstable_cache(withBackoff("scanners: guidance upgrades", fetchGuidanceUpgradeRows), ["scanners-guidance-upgrades-v4"], { revalidate: 600 });
+export const getGuidanceUpgradeRows = unstable_cache(withBackoff("scanners: guidance upgrades", fetchGuidanceUpgradeRows), ["scanners-guidance-upgrades-v5"], { revalidate: 600 });

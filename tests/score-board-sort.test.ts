@@ -130,6 +130,20 @@ const universe = [
   );
 }
 
+// Several unranked rows tie on #: they stay last together and fall to the A-Z
+// name tie-break in BOTH directions, whatever order they arrive in.
+{
+  const board = deriveRows([
+    row("ZZZ", { concall: null, growth: null, valuation: null }, "Zeta Ltd"),
+    ...universe,
+    row("ABC", { concall: null, growth: null, valuation: null }, "Alpha Ltd"),
+  ]);
+  for (const direction of ["asc", "desc"] as const) {
+    const codes = sortRows(board, { key: "coverageRank", direction }).map((r) => r.companyCode);
+    assert.deepEqual(codes.slice(-3), ["ABC", "DDD", "ZZZ"], `${direction}: unranked rows last, A-Z by name`);
+  }
+}
+
 // Null scores sort last in BOTH directions (null is "unknown", not zero).
 {
   const rows = deriveRows([

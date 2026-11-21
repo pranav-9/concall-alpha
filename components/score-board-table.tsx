@@ -27,7 +27,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowUpDown, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { Fragment, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { ColumnInfo } from "@/app/company/components/column-info";
 import { analytics } from "@/lib/analytics";
@@ -590,8 +590,8 @@ export function ScoreBoardTable({
       prior != null && Number.isFinite(row.effectiveRank) ? prior - row.effectiveRank : null;
     const overallRank = overallRankByCode?.[row.companyCode.toUpperCase()];
     return (
-      <Fragment key={row.companyCode}>
         <li
+          key={row.companyCode}
           data-gate-cut={index === gateCutIndex ? "" : undefined}
           aria-current={isSelf(row) ? "true" : undefined}
           className={`flex items-start gap-2.5 border-b border-border/45 px-3 py-3 last:border-0 ${
@@ -752,7 +752,6 @@ export function ScoreBoardTable({
             </button>
           )}
         </li>
-      </Fragment>
     );
   };
 
@@ -1041,8 +1040,8 @@ export function ScoreBoardTable({
                   ? prior - row.effectiveRank
                   : null;
               return (
-                <Fragment key={row.companyCode}>
                   <TableRow
+                    key={row.companyCode}
                     data-gate-cut={index === gateCutIndex ? "" : undefined}
                     aria-current={isSelf(row) ? "true" : undefined}
                     className={`group border-b border-border/45 transition-colors last:border-0 hover:bg-accent/50 ${
@@ -1355,7 +1354,6 @@ export function ScoreBoardTable({
                     </TableCell>
                   )}
                   </TableRow>
-                </Fragment>
               );
             })
           ) : (

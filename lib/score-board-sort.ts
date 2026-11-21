@@ -1,5 +1,5 @@
 // The score board's data layer: the row type the leaderboard and watchlist
-// pages build, the derived rank/Read/dim fields, and the sort rules both of the
+// pages build, the derived rank/Read fields, and the sort rules both of the
 // board's layouts (phone list, desktop table) share. Pure — no React, no Next —
 // so tests/score-board-sort.test.ts can pin the unranked-last / null-last /
 // default-direction rules the UI relies on.

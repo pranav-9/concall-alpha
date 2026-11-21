@@ -38,6 +38,7 @@ import {
   MobileMasthead,
 } from "@/components/mobile-card";
 import { fetchLeaderboardData } from "./data";
+import type { GrowthRowTable } from "./growth-table";
 import { BoardFilterChips, BoardFilterProvider, FilteredCount } from "./board-filter";
 import { LeaderboardTabs } from "./leaderboard-tabs";
 import {
@@ -219,6 +220,20 @@ export default async function LeaderboardsPage({
   const sectorRecord = Object.fromEntries(
     quarterCodes.flatMap((code) => (sectorByCode.has(code) ? [[code, sectorByCode.get(code)!]] : [])),
   );
+  // Only the fields the two growth paints read cross into the client boards —
+  // a GrowthEntry also carries the formula text, the steps and the sort keys,
+  // which nothing on this page shows, for every row of the universe.
+  const growthRows: GrowthRowTable[] = growthEntries.map((entry) => ({
+    leaderboardRank: entry.leaderboardRank,
+    companyCode: entry.companyCode,
+    companyName: entry.companyName,
+    isNew: entry.isNew,
+    updatedAt: entry.updatedAt,
+    growthScore: entry.growthScore,
+    baseDisplay: entry.baseDisplay,
+    upsideDisplay: entry.upsideDisplay,
+    downsideDisplay: entry.downsideDisplay,
+  }));
   const previousQuarterLabel = quarterLabels[1] ?? null;
   const phoneNote = "house-data px-4 pt-0.5 text-[11px] text-[var(--ink-soft)] [text-wrap:pretty]";
 
@@ -295,7 +310,7 @@ export default async function LeaderboardsPage({
           <TabsContent value="growth">
             <p className={phoneNote}>Forward outlook, with base / upside / downside revenue scenarios.</p>
             <BoardGate gated={gated} board="growth" below={gateCopy.growth}>
-              <PhoneGrowthBoard rows={growthEntries} gateCutIndex={gateCutIndex} />
+              <PhoneGrowthBoard rows={growthRows} gateCutIndex={gateCutIndex} />
             </BoardGate>
           </TabsContent>
           <TabsContent value="moat">
@@ -402,7 +417,7 @@ export default async function LeaderboardsPage({
                   bandCounts={growthBandCounts}
                 />
                 <BoardGate gated={gated} board="growth" below={gateCopy.growth}>
-                  <GrowthTable data={growthEntries} gateCutIndex={gateCutIndex} />
+                  <GrowthTable data={growthRows} gateCutIndex={gateCutIndex} />
                 </BoardGate>
               </>
             )}

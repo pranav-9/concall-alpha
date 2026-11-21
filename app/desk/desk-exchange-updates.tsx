@@ -452,7 +452,6 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
       )}
       {isSm !== false && (
       <div className="hidden sm:block">
-      {data.total > 0 && (
     <section
       aria-label="Company announcements"
       className="house-block"
@@ -520,7 +519,6 @@ function FullAnnouncements({ data }: { data: ExchangeDeskData }) {
         </button>
       )}
     </section>
-      )}
 
       </div>
       )}

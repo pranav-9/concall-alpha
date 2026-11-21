@@ -379,14 +379,15 @@ let guidanceWatch = null;
   }
 }
 
-// --- rank: recency + move size + guidance freshness + peer chatter, discovery-listed first ---
+// --- rank: recency + move size + guidance freshness + peer chatter ---
+// (Every candidate is discovery-listed — candCodes is filtered above — so there
+// is no listed boost; it would add the same constant to every row.)
 const score = (c) => {
   let s = 0;
   const ageDays = (Date.now() - new Date(c.scored_at).getTime()) / 864e5;
   s += Math.max(0, 14 - ageDays); // fresher = higher
   if (c.qoq_delta != null && !c.provider_mismatch_vs_prior) s += Math.abs(c.qoq_delta) * 2.5; // bigger clean move = better hook
   if (c.guidance_update) s += 4;
-  if (c.discovery_listed) s += 3;
   // active peer conversation = tailwind; a disagreement is the sharpest hook of
   // all. Kept below the move-size weight so chatter biases, never overrides.
   if (c.external_takes.length) s += 3;

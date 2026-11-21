@@ -2,6 +2,10 @@
 
 Captured with context so a future session can pick any item up cold. Source review noted per item.
 
+## Coverage cut removal (ca#307) — deferred review findings (2026-11-21)
+
+- [ ] **Industry tab's Covered peers board reads every peer's full `guidance_snapshot.details`** (S–M, P2) — `lib/industry-peers-board.ts` → `buildWatchlistBoard` → `lib/watchlist-signals.ts` `readGuidance` selects `SNAPSHOT_COLUMNS` (`details` included) for every peer code, uncached, on each Industry-tab view. With the cut gone, peer sets roughly doubled (autos 10 → 22, specialty chemicals 5 → 12, API & CDMO 2 → 10); measured live for autos the read went 3.5 MB → 5.5 MB (~4.7 s). Narrow the select to what `parseForwardStrength` and the guidance verdict actually use (e.g. `details->forward_strength` + `guidance_items`), or cache the board per sub-sector. Check `buildGuidanceVerdict`'s inputs before cutting a column, and keep the watchlist board (same reader) working. Fleet rule: `guidance_snapshot.details` is ~13 MB across the fleet — never select it whole in a multi-company read. Source: /review adversarial pass on ca#307.
+
 ## Business Snapshot split-card hero + `what_changed.stat` — deferred review findings (2026-09-20)
 
 From the /ship review of `ui/business-snapshot-hero` (testing, maintainability, security, performance, API-contract and design specialists + Claude/Codex adversarial), plus the pipeline half `feat/business-profile-change-stat` in concallyser. Load-bearing items were fixed in those PRs: a malformed `stat` is now dropped on its own instead of withholding the whole change, the Phase 3/9 models reject `stat` (only a reviewed draft promoted with `--portal-renders-stat` may carry one), a null stat is dropped on promotion, ASCII-only digits and a newline ban in the value grammar, AA contrast for quiet text on the tinted surfaces, sign-neutral colour for a negative number, and a period-grammar check before the caption shows an arrow. What is left:
