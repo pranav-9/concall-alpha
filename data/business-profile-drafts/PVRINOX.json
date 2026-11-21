@@ -1,0 +1,398 @@
+{
+  "company": "PVRINOX",
+  "company_name": "PVR INOX",
+  "prepared_on": "2026-11-21",
+  "review_status": "user_approved",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-11-03",
+  "about_company": {
+    "about_short": "India's largest multiplex chain: 1,797 screens in 114 cities, earning from tickets, food and drinks, and ads.",
+    "about_long": "PVR INOX Limited runs India's largest multiplex chain, formed when INOX Leisure was merged into PVR (appointed date 1 January 2023); at 30 September 2026 it had 1,797 screens in 114 cities in India and Sri Lanka, and premium formats such as IMAX, 4DX, ICE and ScreenX were about 16% of screens in FY26. FY26 consolidated revenue from operations was ₹6,646 Cr, of which movie tickets were 53.1%, food and beverages 31.4%, advertising 7.0%, convenience fees 3.6% and film production and distribution 3.3% (shares derived from the annual report's revenue note, without the divested 4700BC business). Producers take about 45% of ticket revenue as film hire (45.4% in FY26), food costs 22.5% of F&B revenue, and rent is the largest fixed cost. Headline results exclude Ind AS 116, so rent stays an operating cost: on that basis Q2 FY27 was its best quarter, with total income of ₹2,133 Cr and EBITDA of ₹475 Cr (22.3% margin, against 37.6% as reported after Ind AS 116). It sold the 4700BC popcorn and snacks business (Zea Maize) to Marico on 29 January 2026 for ₹226.8 Cr and reports it as a discontinued operation, so earlier periods are restated without it. New screens now come mainly through capital-light models in which developers or franchise partners fund the fit-out, and the company held net cash of ₹141 Cr, excluding lease liabilities, at 30 September 2026 after a maiden ₹300 Cr share buyback.",
+    "business_intro": "PVR INOX runs India's largest multiplex chain, with 1,797 screens in 114 cities across India and Sri Lanka at 30 September 2026. Moviegoers pay for tickets (53.1% of FY26 revenue from operations) and for food and drinks in the cinemas (31.4%), and about 45% of ticket revenue goes to producers as film hire. Screen advertising, convenience fees on online bookings and its own film-distribution arm, PVR INOX Pictures, earn most of the rest.",
+    "company_timeline": [
+      {
+        "year": 1997,
+        "title": "Founded; opens its first cinema in Delhi",
+        "detail": "Incorporated on 26 April 1995; Ajay Bijli founded PVR Cinemas in 1997 with its first cinema theatre in Delhi, ushering in the multiplex in India.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf",
+            "locator": "Journey Over the Years; Board of Directors"
+          }
+        ]
+      },
+      {
+        "year": 2006,
+        "title": "Lists on BSE and NSE",
+        "detail": "The company, then PVR Limited, listed its shares on the BSE and NSE.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf",
+            "locator": "Journey Over the Years"
+          },
+          {
+            "label": "Annual Report FY2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/9e375acd-3c85-4343-ad67-421703e7efa0.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2013,
+        "title": "Acquires Cinemax Cinemas to become India's largest chain",
+        "detail": "The Cinemax acquisition made PVR the number one cinema chain in the country, with more than 350 screens.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf",
+            "locator": "Journey Over the Years"
+          }
+        ]
+      },
+      {
+        "year": 2023,
+        "title": "Merges with INOX Leisure to form PVR INOX",
+        "detail": "The NCLT sanctioned the amalgamation of INOX Leisure into the company on 12 January 2023, with an appointed date of 1 January 2023, creating India's largest multiplex chain. FY24 is the first full merged year; FY23 figures are not comparable with it.",
+        "sources": [
+          {
+            "label": "Annual Report FY2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/9e375acd-3c85-4343-ad67-421703e7efa0.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf",
+            "locator": "Journey Over the Years"
+          }
+        ]
+      },
+      {
+        "year": 2024,
+        "title": "Shifts new screens to capital-light FOCO and asset-light",
+        "detail": "Announced on the Q4 FY24 call in May 2024 to cut capex intensity by having developers and franchise partners fund new screens; in FY26, 51 of 93 new screens were capital-light.",
+        "sources": [
+          {
+            "label": "Q4 FY24 earnings call transcript (14 May 2024)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=ec9cd1de-2099-467e-8d46-728613115d33.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf",
+            "locator": "Journey Over the Years"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Sells 4700BC popcorn maker Zea Maize to Marico",
+        "detail": "Sold its 93.27% stake for about ₹226.8 Cr gross; Zea Maize ceased to be a subsidiary on 29 January 2026 and is reported as a discontinued operation.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf",
+            "locator": "Board's Report"
+          },
+          {
+            "label": "Q3 FY26 earnings call transcript (Feb 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=47790d37-6880-4908-860b-9b20dc78e149.pdf"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "No customer is over 10% of revenue; 150.1 Mn admissions in FY26",
+        "text": "Revenue comes from moviegoers, not a few large buyers: the FY26 annual report says no single customer accounts for more than 10% of the Group's total revenue. Admissions were 151.4 Mn in FY24, 136.9 Mn in FY25 and 150.1 Mn in FY26, excluding cinemas run under a management-fee model. Online penetration rose from 68.6% in Q2 FY26 to 72.0% in Q2 FY27.",
+        "period": "FY24 to Q2 FY27",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf",
+            "locator": "Note 47, Segment information"
+          },
+          {
+            "label": "Investor update Q4 & FY25 (12 May 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=992cbe2c-fd4b-436c-98a2-6d57b29c1e12.pdf"
+          },
+          {
+            "label": "Investor update Q4 & FY26 (11 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=946659ab-92a0-4f90-8525-ad855f1386f1.pdf"
+          },
+          {
+            "label": "Investor update Q2 & H1 FY27 (28 Oct 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9f91f11b-313b-4d16-9c5a-331c7fcbb1d0.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Admissions, FY24",
+            "value": 151.4,
+            "unit": "Mn admissions"
+          },
+          {
+            "label": "Admissions, FY25",
+            "value": 136.9,
+            "unit": "Mn admissions"
+          },
+          {
+            "label": "Admissions, FY26",
+            "value": 150.1,
+            "unit": "Mn admissions"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "South has 34% of screens, North 27%; Sri Lanka is the only market abroad",
+        "text": "Of 1,797 screens as on 28 October 2026, South India has 34% (including Sri Lanka, where the chain runs one 9-screen cinema in Colombo), North 27%, West 20%, Central 11% and East 8%. By city tier, metros hold 49% of screens, Tier I cities 29%, Tier II 13% and Tier III 9%. Customers are in India and Sri Lanka, and the annual report treats overseas turnover as not material, so it discloses no geographic segment.",
+        "period": "28 Oct 2026 (screens); FY26 (revenue)",
+        "sources": [
+          {
+            "label": "Investor update Q2 & H1 FY27 (28 Oct 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9f91f11b-313b-4d16-9c5a-331c7fcbb1d0.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf",
+            "locator": "Note 47, Segment information"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "South (incl. Sri Lanka)",
+            "value": 34.0,
+            "unit": "% of screens"
+          },
+          {
+            "label": "North",
+            "value": 27.0,
+            "unit": "% of screens"
+          },
+          {
+            "label": "West",
+            "value": 20.0,
+            "unit": "% of screens"
+          },
+          {
+            "label": "Central",
+            "value": 11.0,
+            "unit": "% of screens"
+          },
+          {
+            "label": "East",
+            "value": 8.0,
+            "unit": "% of screens"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "1,797 screens in 114 cities, including 71 in management-fee cinemas",
+        "text": "Screens at period end were 1,718 in March 2024, 1,723 in March 2025, 1,798 in March 2026 (359 cinemas) and 1,797 at 30 September 2026. FY26 added 93 screens and closed 18 underperforming ones; in H1 FY27 the company opened 24 and exited 25, the majority of them loss-making. The count includes 71 screens in 19 management properties, which the company leaves out of its weighted-average screen base.",
+        "period": "Mar 2024 to Sep 2026",
+        "sources": [
+          {
+            "label": "Investor update Q4 & FY25 (12 May 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=992cbe2c-fd4b-436c-98a2-6d57b29c1e12.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf"
+          },
+          {
+            "label": "Investor update Q2 & H1 FY27 (28 Oct 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9f91f11b-313b-4d16-9c5a-331c7fcbb1d0.pdf"
+          },
+          {
+            "label": "Q2 FY27 earnings call transcript (28 Oct 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6017050a-2410-4f19-9794-aeb78a688443.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Screens, Mar 2024",
+            "value": 1718.0,
+            "unit": "screens"
+          },
+          {
+            "label": "Screens, Mar 2025",
+            "value": 1723.0,
+            "unit": "screens"
+          },
+          {
+            "label": "Screens, Mar 2026",
+            "value": 1798.0,
+            "unit": "screens"
+          },
+          {
+            "label": "Screens, Sep 2026",
+            "value": 1797.0,
+            "unit": "screens"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Tickets and food are about 85% of revenue; producers take ~45% of tickets",
+        "text": "In FY26 movie tickets were 53.1% and food and beverages 31.4% of consolidated revenue from operations (derived from the annual report's revenue note: ₹3,530 Cr and ₹2,088 Cr of ₹6,646 Cr). Film hire, the share of box office paid to producers, was 45.4% of ticket revenue, and food cost 22.5% of F&B revenue, down from 24.9% in FY25. Average ticket price rose from ₹259 in FY25 to ₹280 in FY26 and ₹298 in Q2 FY27, and F&B spend per head from ₹134 to ₹147 and ₹153.",
+        "period": "FY25 to Q2 FY27",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf",
+            "locator": "Note 24, Revenue from operations"
+          },
+          {
+            "label": "Investor update Q4 & FY26 (11 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=946659ab-92a0-4f90-8525-ad855f1386f1.pdf"
+          },
+          {
+            "label": "Q2 FY27 earnings call transcript (28 Oct 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6017050a-2410-4f19-9794-aeb78a688443.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript (24 Jul 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=ad799f1a-bb17-485a-851b-476e562722cf.pdf"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "Premium formats such as IMAX and 4DX are about 16% of screens",
+        "text": "The FY26 annual report lists premium formats including Director's Cut, Insignia, LUXE, IMAX, ICE, P[XL], ScreenX and 4DX, and puts premium screens at about 16% of the portfolio; the Q4 FY26 deck gives the same 16% of total screens. Management ties them to pricing: a premium customer who wants to watch a film without compromises takes the average ticket price up (Q1 FY27 call).",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf",
+            "locator": "Management Discussion and Analysis"
+          },
+          {
+            "label": "Investor update Q4 & FY26 (11 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=946659ab-92a0-4f90-8525-ad855f1386f1.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript (24 Jul 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=ad799f1a-bb17-485a-851b-476e562722cf.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Capital-light models: partners fund 40-80% or all of a new cinema",
+        "text": "Under the asset-light model the developer funds 40-80% of a cinema's fit-out while its profit and loss stays in PVR INOX's books; under FOCO (franchise-owned, company-operated) the partner funds all of it and keeps the profit and loss, and PVR INOX earns a management fee of 6-10% of revenue net of GST (Q3 FY25 call). In FY26, 51 of 93 new screens (55%) were capital-light, 22 FOCO and 29 asset-light, and capex fell 24% from ₹334 Cr in FY25 to ₹254 Cr.",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "Q3 FY25 earnings call transcript (6 Feb 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8580ce84-e412-4d7b-a429-5f321ce02733.pdf"
+          },
+          {
+            "label": "Investor update Q4 & FY26 (11 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=946659ab-92a0-4f90-8525-ad855f1386f1.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Plans 90-100 new screens in FY27; 24 opened in H1, mostly asset-light",
+        "text": "Plan: management says it is on track to open 90-100 new screens in FY27, with the bulk in the second half and mainly in capital-light formats (Q2 FY27 call); the FY26 annual report had planned 100-110. Done so far: 24 screens in six cinemas in H1 FY27, 21 of them asset-light and 3 leased, including the first SMART Cinema (4 screens, Muzaffarpur, Bihar, opened 4 September 2026), an affordable, capital-efficient format for Tier 3 and Tier 4 markets. The signed capital-light pipeline was 138 screens at 31 March 2026 (52 FOCO, 86 asset-light).",
+        "period": "FY27 plan; H1 FY27 openings",
+        "sources": [
+          {
+            "label": "Q2 FY27 earnings call transcript (28 Oct 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6017050a-2410-4f19-9794-aeb78a688443.pdf"
+          },
+          {
+            "label": "Investor update Q2 & H1 FY27 (28 Oct 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9f91f11b-313b-4d16-9c5a-331c7fcbb1d0.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Net debt cleared as new screens moved onto partners' capital",
+      "text": "Net debt excluding lease liabilities fell from ₹1,430 Cr at 31 March 2023, just after the INOX merger, to ₹952 Cr in March 2025 and ₹162 Cr in March 2026, helped by the ₹226.8 Cr 4700BC sale, and turned to net cash of ₹141 Cr at 30 September 2026 even after a maiden ₹300 Cr share buyback. Growth moved onto partners' capital at the same time: 55% of FY26's new screens were FOCO or asset-light, and capex fell 24% from ₹334 Cr to ₹254 Cr. Lease liabilities of ₹5,808 Cr at 30 September 2026 sit outside this measure.",
+      "period": "Mar 2023 to Sep 2026",
+      "sources": [
+        {
+          "label": "Investor update Q4 & FY26 (11 May 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=946659ab-92a0-4f90-8525-ad855f1386f1.pdf"
+        },
+        {
+          "label": "Investor update Q2 & H1 FY27 (28 Oct 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9f91f11b-313b-4d16-9c5a-331c7fcbb1d0.pdf"
+        },
+        {
+          "label": "Q2 FY27 earnings call transcript (28 Oct 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6017050a-2410-4f19-9794-aeb78a688443.pdf"
+        },
+        {
+          "label": "Annual Report FY2025-26",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Annual Report FY2025-26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/929df61f-e3eb-4697-9bc2-96520da3edec.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Annual Report FY2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/9e375acd-3c85-4343-ad67-421703e7efa0.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 FY24 earnings call transcript (14 May 2024)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=ec9cd1de-2099-467e-8d46-728613115d33.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q3 FY26 earnings call transcript (Feb 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=47790d37-6880-4908-860b-9b20dc78e149.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor update Q4 & FY25 (12 May 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=992cbe2c-fd4b-436c-98a2-6d57b29c1e12.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor update Q4 & FY26 (11 May 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=946659ab-92a0-4f90-8525-ad855f1386f1.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Investor update Q2 & H1 FY27 (28 Oct 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=9f91f11b-313b-4d16-9c5a-331c7fcbb1d0.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q2 FY27 earnings call transcript (28 Oct 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=6017050a-2410-4f19-9794-aeb78a688443.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q1 FY27 earnings call transcript (24 Jul 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=ad799f1a-bb17-485a-851b-476e562722cf.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q3 FY25 earnings call transcript (6 Feb 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=8580ce84-e412-4d7b-a429-5f321ce02733.pdf",
+      "locator": "company background, timeline and facts"
+    }
+  ]
+}

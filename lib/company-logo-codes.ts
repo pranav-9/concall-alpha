@@ -101,6 +101,7 @@ export const COMPANY_LOGO_CODES: ReadonlySet<string> = new Set([
   "POCL",
   "POKARNA",
   "PRICOLLTD",
+  "PVRINOX",
   "PWL",
   "QLINE",
   "QPOWER",
