@@ -71,7 +71,6 @@ type CompanyRow = {
   name: string | null;
   sector: string | null;
   market_cap_band_at_admission: string | null;
-  excluded_from_discovery: boolean | null;
 };
 
 type ScoreRow = {
@@ -264,6 +263,6 @@ export const getCachedHomeTrails = unstable_cache(
   fetchHomeTrails,
   // Bump the version whenever CompanyTrail's shape changes — the cached payload
   // is JSON on disk, and a stale entry would arrive missing the new fields.
-  ["home-score-trails-v4"],
+  ["home-score-trails-v5"],
   { revalidate: 600 },
 );

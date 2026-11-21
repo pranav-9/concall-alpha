@@ -21,7 +21,7 @@ import {
 } from "@/lib/signup-gate";
 import { getReaderWatchlist } from "@/lib/watchlist-codes";
 import { buildScoreBoardRows } from "@/lib/score-board-rows";
-import { computeBoardRanks, COVERAGE_BOARD_SIZE } from "@/lib/leaderboard-rank";
+import { computeBoardRanks } from "@/lib/leaderboard-rank";
 import {
   readPriorRanks,
   writeTodaySnapshotIfMissing,
@@ -38,6 +38,7 @@ import {
   MobileMasthead,
 } from "@/components/mobile-card";
 import { fetchLeaderboardData } from "./data";
+import type { GrowthRowTable } from "./growth-table";
 import { BoardFilterChips, BoardFilterProvider, FilteredCount } from "./board-filter";
 import { LeaderboardTabs } from "./leaderboard-tabs";
 import {
@@ -113,9 +114,8 @@ export default async function LeaderboardsPage({
     priorRankByCode,
     reader,
   ] = await Promise.all([
-    // includeBelowCut: the Overall board renders the tail greyed out rather than
-    // dropping it. Large caps are still excluded outright — two different gates.
-    getConcallData({ excludeLargeCaps: true, includeBelowCut: true }),
+    // Large caps (admission gate) are off every board; everyone else is ranked.
+    getConcallData({ excludeLargeCaps: true }),
     fetchLeaderboardData(),
     // Ranks from the prior snapshot window for the Δ column. Empty until history accrues.
     readPriorRanks(),
@@ -139,12 +139,9 @@ export default async function LeaderboardsPage({
     nameByCode,
   );
 
-  // The Quarter tab keeps its long-standing scope: the ranked hundred only.
-  const rankedRows = rows.filter((row) => row.belowCut !== true);
-
   const latestQuarterLabel = quarterLabels[0] ?? null;
   const quarterLatestScores = latestQuarterLabel
-    ? rankedRows.map((r) => {
+    ? rows.map((r) => {
         const raw = r[latestQuarterLabel];
         if (raw == null || raw === "") return null;
         const n = Number(raw);
@@ -153,7 +150,7 @@ export default async function LeaderboardsPage({
     : [];
   // Some of the Latest column moved since the reader last looked. Counted here
   // so the legend below the table only appears when there is something to explain.
-  const quarterFreshCount = rankedRows.filter((r) => r.scoredWithin24h === true).length;
+  const quarterFreshCount = rows.filter((r) => r.scoredWithin24h === true).length;
   const quarterBandCounts = computeQuarterBandCounts(quarterLatestScores);
   const concallScored = quarterLatestScores.filter((s): s is number => typeof s === "number").length;
   const growthBandCounts = computeGrowthBandCounts(growthEntries.map((e) => e.growthScore));
@@ -179,13 +176,6 @@ export default async function LeaderboardsPage({
       growthScore: row.growthScore,
     })),
   );
-  // Greyed = ranks past the coverage line on the LIVE Read (matching the board's
-  // own `dim`), plus any unranked row (no Read → never in the top N). NOT the
-  // stored belowCut anymore — that governs homepage/sectors, not this board.
-  const belowCutCount = overallRows.reduce((n, row) => {
-    const rank = currentRankByCode.get(row.companyCode);
-    return n + (rank == null || rank > COVERAGE_BOARD_SIZE ? 1 : 0);
-  }, 0);
   const snapshotRows: RankSnapshotRow[] = overallRows.flatMap((row, i) => {
     const rank = currentRankByCode.get(row.companyCode);
     return rank != null
@@ -210,25 +200,40 @@ export default async function LeaderboardsPage({
 
   // The gate card's "below" lines, from the rows each board really renders.
   const gateCopy = {
-    overall: leaderboardGateCopy("overall", { total: overallRows.length, tail: belowCutCount }),
-    quarter: leaderboardGateCopy("quarter", { total: rankedRows.length }),
+    // Overall counts the RANKED rows: a row with no Read renders, but holds no rank.
+    overall: leaderboardGateCopy("overall", { total: currentRankByCode.size }),
+    quarter: leaderboardGateCopy("quarter", { total: rows.length }),
     growth: leaderboardGateCopy("growth", { total: growthEntries.length }),
     moat: leaderboardGateCopy("moat", { total: moatEntries.length }),
   } satisfies Record<LeaderboardTab, readonly string[]>;
 
   // Phone-board props. Maps become plain Records here — they cross into client
   // components — projected to the codes the Quarter board actually paints, so
-  // the below-cut tail's names/sectors don't ride in the RSC payload for nothing.
-  // `new` on the phone means new to coverage (the Desk's meaning), read off the
-  // quarter rows, which carry isNew for the whole universe.
+  // names/sectors of companies with no quarter row don't ride in the RSC payload
+  // for nothing. `new` on the phone means new to coverage (the Desk's meaning),
+  // read off the quarter rows, which carry isNew for the whole universe.
   const newCodes = rows.filter((row) => row.isNew).map((row) => String(row.company).toUpperCase());
-  const rankedCodes = rankedRows.map((row) => String(row.company).toUpperCase());
+  const quarterCodes = rows.map((row) => String(row.company).toUpperCase());
   const nameRecord = Object.fromEntries(
-    rankedCodes.flatMap((code) => (nameByCode.has(code) ? [[code, nameByCode.get(code)!]] : [])),
+    quarterCodes.flatMap((code) => (nameByCode.has(code) ? [[code, nameByCode.get(code)!]] : [])),
   );
   const sectorRecord = Object.fromEntries(
-    rankedCodes.flatMap((code) => (sectorByCode.has(code) ? [[code, sectorByCode.get(code)!]] : [])),
+    quarterCodes.flatMap((code) => (sectorByCode.has(code) ? [[code, sectorByCode.get(code)!]] : [])),
   );
+  // Only the fields the two growth paints read cross into the client boards —
+  // a GrowthEntry also carries the formula text, the steps and the sort keys,
+  // which nothing on this page shows, for every row of the universe.
+  const growthRows: GrowthRowTable[] = growthEntries.map((entry) => ({
+    leaderboardRank: entry.leaderboardRank,
+    companyCode: entry.companyCode,
+    companyName: entry.companyName,
+    isNew: entry.isNew,
+    updatedAt: entry.updatedAt,
+    growthScore: entry.growthScore,
+    baseDisplay: entry.baseDisplay,
+    upsideDisplay: entry.upsideDisplay,
+    downsideDisplay: entry.downsideDisplay,
+  }));
   const previousQuarterLabel = quarterLabels[1] ?? null;
   const phoneNote = "house-data px-4 pt-0.5 text-[11px] text-[var(--ink-soft)] [text-wrap:pretty]";
 
@@ -284,7 +289,6 @@ export default async function LeaderboardsPage({
               <PhoneOverallBoard
                 rows={overallRows}
                 priorRankByCode={priorRankByCode}
-                coverageCutRank={COVERAGE_BOARD_SIZE}
                 newCodes={newCodes}
                 gateCutIndex={gateCutIndex}
               />
@@ -294,7 +298,7 @@ export default async function LeaderboardsPage({
             <p className={phoneNote}>The quarter just reported, scored 0–10 from the transcript and deck.</p>
             <BoardGate gated={gated} board="quarter" below={gateCopy.quarter}>
               <PhoneQuarterBoard
-                rows={rankedRows}
+                rows={rows}
                 latestLabel={latestQuarterLabel}
                 previousLabel={previousQuarterLabel}
                 nameByCode={nameRecord}
@@ -306,7 +310,7 @@ export default async function LeaderboardsPage({
           <TabsContent value="growth">
             <p className={phoneNote}>Forward outlook, with base / upside / downside revenue scenarios.</p>
             <BoardGate gated={gated} board="growth" below={gateCopy.growth}>
-              <PhoneGrowthBoard rows={growthEntries} gateCutIndex={gateCutIndex} />
+              <PhoneGrowthBoard rows={growthRows} gateCutIndex={gateCutIndex} />
             </BoardGate>
           </TabsContent>
           <TabsContent value="moat">
@@ -357,29 +361,16 @@ export default async function LeaderboardsPage({
                   Overall · <FilteredCount codes={overallCodes} /> companies
                 </h2>
                 {/* The board sorts on the live Read (score-board-table.tsx ranks
-                    on readScore), the Read column shows that very number, AND the
-                    grey tail is the same live rank past COVERAGE_BOARD_SIZE — one
-                    number decides order and greying, so they can't contradict. The
-                    stored coverage flag governs homepage/sectors, not this board. */}
+                    on readScore) and the Read column shows that very number, so
+                    order and score can't contradict. */}
                 <p className="house-data text-[12px] text-[var(--ink-soft)]">Ranked by Read</p>
               </div>
               <OverallTable
                 rows={overallRows}
                 priorRankByCode={priorRankByCode}
-                coverageCutRank={COVERAGE_BOARD_SIZE}
                 gateCutIndex={gateCutIndex}
                 addedCodes={newCodes}
               />
-              {belowCutCount > 0 && (
-                // The greyed tail is simply the rows ranked past the top 100 on the
-                // live Read — greyed because they're lowest-ranked, so a greyed row
-                // can never sit above a kept one. Named here so it doesn't read as a
-                // rendering fault.
-                <p className="house-data border-t border-[var(--rule)] px-4 py-3 text-[11px] leading-relaxed text-[var(--ink-soft)]">
-                  The {belowCutCount} greyed {belowCutCount === 1 ? "company ranks" : "companies rank"}{" "}
-                  outside the top 100 by Read — still tracked, still open to read.
-                </p>
-              )}
             </div>
             </div>
             </BoardGate>
@@ -389,7 +380,7 @@ export default async function LeaderboardsPage({
             <h2 className="sr-only">Quarter board</h2>
             <BandSummaryLine
               scored={concallScored}
-              total={rankedRows.length}
+              total={rows.length}
               scopeNote="scored this quarter"
               bandCounts={quarterBandCounts}
             />
@@ -397,7 +388,7 @@ export default async function LeaderboardsPage({
               <div className="space-y-3">
                 <LeaderboardTable
                   quarterLabels={quarterLabels}
-                  data={rankedRows}
+                  data={rows}
                   gateCutIndex={gateCutIndex}
                 />
                 {quarterFreshCount > 0 && (
@@ -426,7 +417,7 @@ export default async function LeaderboardsPage({
                   bandCounts={growthBandCounts}
                 />
                 <BoardGate gated={gated} board="growth" below={gateCopy.growth}>
-                  <GrowthTable data={growthEntries} gateCutIndex={gateCutIndex} />
+                  <GrowthTable data={growthRows} gateCutIndex={gateCutIndex} />
                 </BoardGate>
               </>
             )}

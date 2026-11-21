@@ -14,7 +14,7 @@ import { parseForwardStrength } from "@/lib/guidance-snapshot/types";
 import { normalizeGrowthOutlook } from "@/lib/growth-outlook/normalize";
 import { buildGrowthSummary } from "@/lib/growth-outlook/summary";
 import { buildGuidanceVerdict } from "@/lib/guidance-tracking/verdict";
-import { computeBoardRanks, COVERAGE_BOARD_SIZE } from "@/lib/leaderboard-rank";
+import { computeBoardRanks } from "@/lib/leaderboard-rank";
 import { logger } from "@/lib/logger";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
 import type { MoatAnalysisRow } from "@/lib/moat-analysis/types";
@@ -410,7 +410,6 @@ export type OverviewBoardPosition = {
   total: number;
   /** Share of the covered universe this company reads above, 0–1. */
   percentile: number;
-  belowLine: boolean;
 };
 
 /**
@@ -447,7 +446,6 @@ export async function getOverviewBoardPosition(
       rank,
       total: rankByCode.size,
       percentile,
-      belowLine: rank > COVERAGE_BOARD_SIZE,
     };
   } catch {
     return null;

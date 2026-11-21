@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-import { computeBoardRanks, COVERAGE_BOARD_SIZE } from "../lib/leaderboard-rank";
+import { computeBoardRanks } from "../lib/leaderboard-rank";
 
 // ---------------------------------------------------------------------------
 // computeBoardRanks: the ONE ranking both the live board and the snapshot writer
@@ -80,8 +80,5 @@ const r = (companyCode: string, readScore: number | null, growthScore: number | 
   assert.equal(ranks.get("B"), 2, "and continue past the unscored one");
   assert.equal(ranks.has("NOREAD"), false, "null Read → no rank");
 }
-
-// The coverage line the board greys past is the handpicked-100 size.
-assert.equal(COVERAGE_BOARD_SIZE, 100, "board coverage size is 100");
 
 console.log("leaderboard-rank: all assertions passed");

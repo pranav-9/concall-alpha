@@ -23,21 +23,17 @@
 // The board's # column is derived from it (score-board-table.tsx ranks on
 // readScore), so # and Read can't disagree.
 //
-// QUARTER LEG — live board vs coverage cut DIVERGE by design (2026-08-11). The
-// caller passes this Read a RECENCY-WEIGHTED 4Q leg ("latest counts double",
+// QUARTER LEG — live board vs stored composite DIVERGE by design (2026-08-11).
+// The caller passes this Read a RECENCY-WEIGHTED 4Q leg ("latest counts double",
 // lib/quarter-composite blendQuarterLeg via score-board-rows), while
-// compute_composite_score.py's coverage cut stays on the flat 4Q mean. Recency
-// belongs in the live ORDERING; the cut's membership decision (which sits inside
-// the re-score noise floor at the 100/101 line) must stay stable. An earlier
-// unification onto the 4Q mean existed because a greyed company could out-rank
-// kept ones on the board — that symptom is now handled INDEPENDENTLY: the
-// leaderboard greys by LIVE Read rank (rank > COVERAGE_BOARD_SIZE, score-board-
-// table.tsx), so a greyed row is always the lowest-ranked and can't out-score a
-// kept one. The split is therefore safe.
+// compute_composite_score.py's stored composite_score / coverage_rank stays on
+// the flat 4Q mean. Recency belongs in the live ORDERING; the stored snapshot
+// stays stable between reviewed runs. (There is no coverage cut any more,
+// 2026-11-21 — every mid/small company is ranked.)
 // The WEIGHTS (0.88/0.12) and the composite arithmetic still mirror the pipeline
 // and stay pinned by the cross-impl fixture; only the quarter INPUT differs. The
-// valuation leg also diverges (live Read drops a stale >10-day valuation; the cut
-// keeps the last stored one).
+// valuation leg also diverges (live Read drops a stale >10-day valuation; the
+// stored composite keeps the last stored one).
 
 import { bandForScore, type BandKey } from "@/lib/score-band";
 import { bandForGrowthScore, type GrowthBandKey } from "@/lib/growth-band";

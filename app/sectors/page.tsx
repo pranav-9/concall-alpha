@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { slugifySector } from "@/app/sector/utils";
 import { getConcallData } from "@/app/company/get-concall-data";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
-import { COVERAGE_SELECT, isSectorListed } from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isDiscoveryListed } from "@/lib/coverage-policy";
 import {
   BOARD_READS,
   classifyBoardRead,
@@ -43,7 +43,6 @@ type CompanyRow = {
   sector: string | null;
   sub_sector: string | null;
   market_cap_band_at_admission?: string | null;
-  excluded_from_discovery?: boolean | null;
 };
 
 type GrowthOutlookRow = {
@@ -228,9 +227,7 @@ export default async function SectorsPage({
       .from("company")
       .select(`code, name, sector, sub_sector, ${COVERAGE_SELECT}`)
       .not("sector", "is", null),
-    // includeBelowCut: sectors list every covered company, so below-cut names
-    // need their score legs too (lib/coverage-policy isSectorListed).
-    getConcallData({ excludeLargeCaps: true, includeBelowCut: true }),
+    getConcallData({ excludeLargeCaps: true }),
     supabase
       .from("growth_outlook")
       .select("company, growth_score, run_timestamp")
@@ -238,7 +235,7 @@ export default async function SectorsPage({
   ]);
 
   const companies = ((companiesData ?? []) as CompanyRow[]).filter((company) =>
-    isSectorListed(company),
+    isDiscoveryListed(company),
   );
   if (!companies.length) {
     return (

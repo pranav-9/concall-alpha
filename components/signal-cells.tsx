@@ -44,20 +44,18 @@ function WordCell({
   word,
   tone,
   sub,
-  dimmed,
   title,
 }: {
   word: string;
   tone: SignalTone;
   sub?: string | null;
-  dimmed: boolean;
   title?: string;
 }) {
   return (
     <div className="leading-tight" title={title}>
       <div
         className="text-[13px] font-semibold"
-        style={{ color: dimmed ? "var(--ink-soft)" : TONE_VAR[tone] }}
+        style={{ color: TONE_VAR[tone] }}
       >
         {word}
       </div>
@@ -70,13 +68,12 @@ function WordCell({
   );
 }
 
-export function MoatCell({ moat, dimmed }: { moat: MoatSignal | null; dimmed: boolean }) {
+export function MoatCell({ moat }: { moat: MoatSignal | null }) {
   if (!moat) return EMPTY;
   return (
     <WordCell
       word={moatCellLabel(moat)}
       tone={moatTone(moat.rating)}
-      dimmed={dimmed}
       title="Moat rating and strength from the Quality tab. No trajectory is stored, so none is claimed."
     />
   );
@@ -89,10 +86,8 @@ export function MoatCell({ moat, dimmed }: { moat: MoatSignal | null; dimmed: bo
  */
 export function ForensicChecksCell({
   forensics,
-  dimmed,
 }: {
   forensics: ForensicSignal | null;
-  dimmed: boolean;
 }) {
   if (!forensics || forensics.assessed === 0) return EMPTY;
   const { clean, watch, flag, assessed } = forensics;
@@ -104,7 +99,7 @@ export function ForensicChecksCell({
   const summary = `${clean} clean, ${watch} watch, ${flag} flag of ${assessed} forensic checks`;
   return (
     <div
-      className={`w-[6.5rem] leading-tight ${dimmed ? "opacity-60" : ""}`}
+      className="w-[6.5rem] leading-tight"
       title={summary}
       aria-label={summary}
     >
@@ -133,10 +128,8 @@ export function ForensicChecksCell({
 
 export function GuidanceCell({
   guidance,
-  dimmed,
 }: {
   guidance: GuidanceSignal | null;
-  dimmed: boolean;
 }) {
   if (!guidance) return EMPTY;
   return (
@@ -144,7 +137,6 @@ export function GuidanceCell({
       word={guidanceCellLabel(guidance)}
       tone={guidanceTone(guidance)}
       sub={guidanceCellNote(guidance)}
-      dimmed={dimmed}
       title="How strong the forward guidance is: its ambition, qualified when the evidence behind it is thin."
     />
   );
@@ -153,10 +145,8 @@ export function GuidanceCell({
 /** Tier word over "N/M met". The ratio waits for enough graded commitments, as the Guidance header does. */
 export function ManagementCell({
   management,
-  dimmed,
 }: {
   management: ManagementSignal | null;
-  dimmed: boolean;
 }) {
   if (!management) return EMPTY;
   const enoughToGrade = management.countedCount >= MIN_COMMITMENTS_FOR_GRADE;
@@ -168,7 +158,6 @@ export function ManagementCell({
         word="Too early"
         tone="muted"
         sub={management.countedCount > 0 ? `${management.metCount}/${management.countedCount} met` : null}
-        dimmed={dimmed}
         title={`Fewer than ${MIN_COMMITMENTS_FOR_GRADE} graded commitments — not enough to call a tier.`}
       />
     );
@@ -178,7 +167,6 @@ export function ManagementCell({
       word={management.tierLabel}
       tone={managementTone(management.tier)}
       sub={enoughToGrade ? `${management.metCount}/${management.countedCount} met` : null}
-      dimmed={dimmed}
       title="Guidance credibility: the tier from the Guidance tab, and how many graded commitments were met."
     />
   );
@@ -192,12 +180,10 @@ function PhoneSignal({
   label,
   word,
   tone,
-  dimmed,
 }: {
   label: string;
   word: string | null;
   tone: SignalTone;
-  dimmed: boolean;
 }) {
   return (
     <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
@@ -205,7 +191,7 @@ function PhoneSignal({
       {word == null ? (
         <span className="text-muted-foreground">—</span>
       ) : (
-        <span className="font-semibold" style={{ color: dimmed ? "var(--ink-soft)" : TONE_VAR[tone] }}>
+        <span className="font-semibold" style={{ color: TONE_VAR[tone] }}>
           {word}
         </span>
       )}
@@ -213,7 +199,7 @@ function PhoneSignal({
   );
 }
 
-export function PhoneSignalsLine({ signals, dimmed }: { signals: BoardSignals; dimmed: boolean }) {
+export function PhoneSignalsLine({ signals }: { signals: BoardSignals }) {
   const { moat, forensics, guidance, management } = signals;
   const mgmtEnough = management != null && management.countedCount >= MIN_COMMITMENTS_FOR_GRADE;
   const mgmtWord =
@@ -228,13 +214,11 @@ export function PhoneSignalsLine({ signals, dimmed }: { signals: BoardSignals; d
         label="Moat"
         word={moat ? moatCellLabel(moat) : null}
         tone={moat ? moatTone(moat.rating) : "muted"}
-        dimmed={dimmed}
       />
       <PhoneSignal
         label="Checks"
         word={forensics && forensics.assessed > 0 ? `${forensics.clean}·${forensics.watch}·${forensics.flag}` : null}
         tone={forensics ? forensicTone(forensics) : "muted"}
-        dimmed={dimmed}
       />
       <PhoneSignal
         label="Guidance"
@@ -244,13 +228,11 @@ export function PhoneSignalsLine({ signals, dimmed }: { signals: BoardSignals; d
             : null
         }
         tone={guidance ? guidanceTone(guidance) : "muted"}
-        dimmed={dimmed}
       />
       <PhoneSignal
         label="Mgmt"
         word={mgmtWord}
         tone={management && (mgmtEnough || management.verdictSource === "scored") ? managementTone(management.tier) : "muted"}
-        dimmed={dimmed}
       />
     </div>
   );

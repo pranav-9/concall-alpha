@@ -7,7 +7,7 @@ description: Use when the Hot Themes editorial tables (`theme` / `theme_membersh
 
 Keep the two editorial tables current. **Themes carry no stored score** — every number on `/themes` and `/desk` joins live from the board at render (`lib/themes/data.ts` → `getOverallBoardRows`), so this skill never touches scores. It only maintains *which themes are featured and who belongs*.
 
-Work from `concall-alpha/`. Writes are **service-role only** (`SUPABASE_SERVICE_ROLE_KEY` in `.env`) — RLS is public-read / no-write, so the anon key silently no-ops (`lib/supabase/hot_themes.sql`). The one render rule that governs everything: the board is built `getConcallData({ excludeLargeCaps: true, includeBelowCut: true })`, so an **admitted large-cap member is dropped at render** (never appears) while a **below-cut member renders greyed**. The script refuses large-cap adds for exactly this reason.
+Work from `concall-alpha/`. Writes are **service-role only** (`SUPABASE_SERVICE_ROLE_KEY` in `.env`) — RLS is public-read / no-write, so the anon key silently no-ops (`lib/supabase/hot_themes.sql`). The one render rule that governs everything: the board is built `getConcallData({ excludeLargeCaps: true })`, so an **admitted large-cap member is dropped at render** (never appears); every other member renders and ranks normally (no coverage cut since 2026-11-21). The script refuses large-cap adds for exactly this reason.
 
 **Operating principle (user decision 2026-10-16): the skill owns theme selection.** The user does not want to pick themes or members. Run the research pass (Step R), make the calls by the rules in Step 1, do the writes (dry-run echo, then `--yes`), and report what changed with the evidence per theme. Ask only when a write is destructive (`--theme-delete`) or the evidence is genuinely contradictory. Never hand back a menu.
 
@@ -60,8 +60,8 @@ node scripts/themes-refresh.mjs            # add --stale-days N to tighten the t
 Reads `theme`, `theme_membership`, `company` and prints:
 - **Integrity** — members that will NOT render: orphans (code not in `company`) and admitted large-caps. Zero is the healthy state.
 - **Staleness** — each membership whose `last_reviewed_at` is older than the threshold, listed individually as `theme / CODE (Nd old)` (never-reviewed first), so a single stale member is targetable with `--touch <theme>:<CODE>` instead of re-stamping the whole theme.
-- **Per-theme summary** — member / scored / below-cut counts, featured vs benched.
-- **Missing-linkage suggestions** — same-sub-sector non-members ranked by stored `composite_score`, each annotated `listed` / `below-cut (greyed)` / `large-cap (DROPPED)`. Heuristic: it catches same-sub-sector names, **not** cross-sector thematic members (NETWEB in AI-datacentre, GPIL/WELCORP in metals) — those stay human judgment.
+- **Per-theme summary** — member / scored counts, featured vs benched.
+- **Missing-linkage suggestions** — same-sub-sector non-members ranked by stored `composite_score`, each annotated `listed` / `large-cap (DROPPED)`. Heuristic: it catches same-sub-sector names, **not** cross-sector thematic members (NETWEB in AI-datacentre, GPIL/WELCORP in metals) — those stay human judgment.
 
 Listed candidates are staged to `/tmp/sandbox_themes/proposed.json`.
 
@@ -155,7 +155,7 @@ Writes `lib/supabase/hot_themes_seed_<YYYY_MM_DD>.sql` from live in the existing
 
 ## Step 5 — Verify + run log
 
-`/themes` and `/desk` render per request (no ISR cache), so a hard reload shows the change immediately. Confirm a newly-added member appears (and is not greyed unless it's below-cut). The script appends a line to `scripts/themes_refresh_runs.md` on every write.
+`/themes` and `/desk` render per request (no ISR cache), so a hard reload shows the change immediately. Confirm a newly-added member appears. The script appends a line to `scripts/themes_refresh_runs.md` on every write.
 
 ## Known potholes
 

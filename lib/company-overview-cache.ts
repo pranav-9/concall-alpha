@@ -386,9 +386,9 @@ export async function buildCompanyPageOverviewCacheRow(
   ]);
 
   // Ranks are only meaningful within the covered universe — a mid/small-cap
-  // platform must not rank a company against names it de-emphasizes. An
-  // excluded company (large cap or below the coverage cut) isn't in the pool,
-  // so its own rank comes out null and the page simply omits it.
+  // platform must not rank a company against names outside it. An excluded
+  // company (a large-cap admission) isn't in the pool, so its own rank comes out
+  // null and the page simply omits it.
   const listedCodes = new Set(
     ((coverageRows ?? []) as Array<{ code: string } & CoverageFields>)
       .filter((row) => isDiscoveryListed(row))

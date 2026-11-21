@@ -1,9 +1,5 @@
 import { buildNewCompanySet } from "@/lib/company-freshness";
-import {
-  COVERAGE_SELECT,
-  isAdmittedLargeCap,
-  isBelowCoverageCut,
-} from "@/lib/coverage-policy";
+import { COVERAGE_SELECT, isAdmittedLargeCap } from "@/lib/coverage-policy";
 import { normalizeGrowthPct } from "@/lib/growth-pct-normalizer";
 import { assignCompetitionRanks } from "@/lib/leaderboard-rank";
 import { normalizeMoatAnalysis } from "@/lib/moat-analysis/normalize";
@@ -21,7 +17,6 @@ type CompanyRow = {
   sector?: string | null;
   created_at?: string | null;
   market_cap_band_at_admission?: string | null;
-  excluded_from_discovery?: boolean | null;
   coverage_rank?: number | null;
 };
 
@@ -339,42 +334,29 @@ export async function fetchLeaderboardData(options?: {
    */
   includeMoat?: boolean;
 }): Promise<{
-  /** Growth board rows — the ranked hundred only, as the Growth tab has always shown. */
+  /** Growth board rows — every mid/small company with a growth score. */
   growthEntries: GrowthEntry[];
   /** Empty when `includeMoat` is false (the caller doesn't render a Moat column). */
   moatEntries: MoatRowTable[];
   /** Overall (composite) rank per company code — powers the Overall tab's # column. */
   coverageRankByCode: Map<string, number>;
-  /**
-   * Growth score across the WHOLE mid/small universe, below-cut names included.
-   * The Overall board shows the tail greyed out rather than dropping it, so it
-   * needs scores the Growth tab deliberately doesn't list.
-   */
+  /** Growth score across the whole mid/small universe — the Overall board's Growth leg. */
   growthScoreByCode: Map<string, number>;
-  /** Display names across the whole universe, so a greyed row isn't just a code. */
+  /** Display names across the whole universe, so a board row isn't just a code. */
   nameByCode: Map<string, string>;
   /** Sector per company code — the phone Quarter board's second line (no sector on CompanyRow). */
   sectorByCode: Map<string, string>;
-  /** Mid/small companies below the composite cut — the greyed, non-clickable tail. */
-  belowCutCodes: Set<string>;
 }> {
   const includeMoat = options?.includeMoat ?? true;
   // Heavy reads (company + growth_outlook) come from the cross-request cache;
   // everything below — gates, isNew, ranks — is recomputed per request.
   const { companies: allCompanies, growthRows } = await getCachedLeaderboardSubstrate();
-  // Two gates, handled separately (lib/coverage-policy): admission removes large
-  // caps from the board entirely; the composite cut only greys a company out.
+  // The admission gate (lib/coverage-policy) removes large caps from every board;
+  // every other company is listed and ranked.
   const midSmall = allCompanies.filter((company) => !isAdmittedLargeCap(company));
-  const companies = midSmall.filter((company) => !isBelowCoverageCut(company));
-  const belowCutCodes = new Set(
-    midSmall
-      .filter((company) => isBelowCoverageCut(company))
-      .map((company) => company.code.toUpperCase()),
-  );
 
   // Growth rows are matched by code OR name, so both forms of an out-of-universe
-  // company have to be blocked. Only large caps qualify now — below-cut names
-  // stay, because the Overall board renders them.
+  // company have to be blocked.
   const excludedKeys = new Set<string>();
   allCompanies.forEach((company) => {
     if (!isAdmittedLargeCap(company)) return;
@@ -400,10 +382,8 @@ export async function fetchLeaderboardData(options?: {
     if (company.sector?.trim()) sectorByCode.set(code, company.sector.trim());
   });
 
-  // Growth is computed over the whole universe (the Overall board needs the
-  // tail); moat only over the ranked hundred, since the Moat tab is unchanged
-  // and the Overall board no longer carries a moat column.
-  const [allGrowthEntries, moatEntries] = await Promise.all([
+  // Growth and moat both run over the whole mid/small universe.
+  const [growthEntries, moatEntries] = await Promise.all([
     fetchGrowthLeaders({ growthRows, companies: midSmall, newCompanySet, excludedKeys }),
     // Moat is uncached (excluded from the substrate to stay under the 2MB
     // ceiling) and only the /leaderboards Moat tab asks for it — read it live off
@@ -411,7 +391,7 @@ export async function fetchLeaderboardData(options?: {
     includeMoat
       ? fetchMoatLeaders({
           supabase: createPublicReadClient(),
-          companies,
+          companies: midSmall,
           newCompanySet,
           excludedKeys,
         })
@@ -419,7 +399,7 @@ export async function fetchLeaderboardData(options?: {
   ]);
 
   const growthScoreByCode = new Map<string, number>();
-  allGrowthEntries.forEach((entry) => {
+  growthEntries.forEach((entry) => {
     if (typeof entry.growthScore === "number") {
       growthScoreByCode.set(entry.companyCode.toUpperCase(), entry.growthScore);
     }
@@ -428,15 +408,6 @@ export async function fetchLeaderboardData(options?: {
     }
   });
 
-  // Re-rank after dropping the tail, or the Growth tab shows gaps where the
-  // below-cut companies used to sit.
-  const growthEntries = assignCompetitionRanks(
-    allGrowthEntries.filter(
-      (entry) => !belowCutCodes.has(entry.companyCode.toUpperCase()),
-    ),
-    (entry) => (typeof entry.growthScore === "number" ? entry.growthScore : null),
-  );
-
   return {
     growthEntries,
     moatEntries,
@@ -444,6 +415,5 @@ export async function fetchLeaderboardData(options?: {
     growthScoreByCode,
     nameByCode,
     sectorByCode,
-    belowCutCodes,
   };
 }

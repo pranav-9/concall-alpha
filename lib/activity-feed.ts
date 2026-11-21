@@ -708,7 +708,6 @@ export async function getUnifiedUpdates({
         name?: string | null;
         created_at?: string | null;
         market_cap_band_at_admission?: string | null;
-        excluded_from_discovery?: boolean | null;
       }) => {
         if (!isDiscoveryListed(row)) {
           excludedCodes.add(row.code.toUpperCase());

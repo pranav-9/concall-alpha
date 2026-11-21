@@ -56,38 +56,24 @@ function InFocusBars({ value, updatedAt }: { value: number | null; updatedAt: st
 }
 
 function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null }) {
-  const dim = member.belowCut;
   const read = BOARD_READS[member.readKey];
   return (
     <li className={MOBILE_LI}>
       <Link
         href={`/company/${member.companyCode}`}
         prefetch={false}
-        title={dim ? `${member.companyName} — below the coverage cut` : member.companyName}
-        className={cn(MOBILE_LINK, "flex items-center gap-2.5 px-3.5 py-[11px]", dim && "opacity-70")}
+        title={member.companyName}
+        className={cn(MOBILE_LINK, "flex items-center gap-2.5 px-3.5 py-[11px]")}
       >
         <span className="house-data w-4 shrink-0 text-center text-[11px] tabular-nums text-[var(--ink-soft)]">
           {rank ?? "—"}
         </span>
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
-          <span
-            className={cn(
-              "house-display truncate text-[13.5px]",
-              dim ? "text-[var(--ink-soft)]" : "text-[var(--ink)]",
-            )}
-          >
+          <span className="house-display truncate text-[13.5px] text-[var(--ink)]">
             {member.companyName}
           </span>
           {member.isBestRead ? <MobileTag tone="signal">best</MobileTag> : null}
           {member.notYetScored ? <MobileTag>not scored</MobileTag> : null}
-          {member.belowCut ? (
-            <MobileTag
-              tone="warn"
-              title="Below the coverage cut — de-emphasized on discovery surfaces, not ranked within the theme"
-            >
-              below cut
-            </MobileTag>
-          ) : null}
           {member.quarterSourceStatus === "unofficial" ? (
             <MobileTag title="Scored off a third-party transcript inside the SEBI window — re-scored when the issuer files">
               unofficial
@@ -101,7 +87,7 @@ function MemberRow({ member, rank }: { member: ThemeMember; rank: number | null 
           <span
             className={cn(
               "min-w-[24px] text-right font-bold",
-              member.readScore == null || dim ? "text-[var(--ink-soft)]" : read.textClass,
+              member.readScore == null ? "text-[var(--ink-soft)]" : read.textClass,
             )}
           >
             {fmt(member.readScore)}

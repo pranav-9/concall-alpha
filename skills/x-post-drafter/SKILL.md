@@ -55,9 +55,8 @@ Emits ranked JSON: one candidate per company (its newest fresh print), with `sco
 `qoq_delta` (vs `prior_quarter`), the ground-truth `rationale` (per-v4-category heading + detail
 + `direction`), any fresh `guidance_update`, provenance flags, and `external_takes[]` — fresh
 peer-chatter rows for that company from the external-takes ledger (tweet within `--takes-days`,
-default 21). Widen with `--days 30` when the window is quiet; `--include-excluded` to allow
-de-emphasised companies. Ranking already favours recency, clean move size, guidance freshness,
-discovery-listed names, **and active chatter** (a company being discussed gets a modest boost; a
+default 21). Widen with `--days 30` when the window is quiet. Ranking already favours recency,
+clean move size, guidance freshness **and active chatter** (a company being discussed gets a modest boost; a
 logged `disagree` a bit more — chatter biases the ranking, it never overrides a real move).
 
 The CLASSIC payload also carries `lane2_patterns` (the same season-quarter cross-company driver

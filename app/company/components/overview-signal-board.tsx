@@ -23,7 +23,7 @@ import { BANDS, bandForScore } from "@/lib/score-band";
 import { cn } from "@/lib/utils";
 import { VALUATION_BANDS, bandForValuationScore } from "@/lib/valuation-band";
 
-import { topShareLabel } from "../[code]/display-tokens";
+import { boardShareLabel } from "@/lib/board-share";
 import { MissingSectionRequestButton } from "./missing-section-request-button";
 import { SectionLink } from "./section-link";
 
@@ -93,6 +93,7 @@ async function WhereItSits({ companyCode }: { companyCode: string }) {
   const pos = await getOverviewBoardPosition(companyCode);
   if (!pos) return <WhereItSitsPlaceholder />;
   const left = Math.max(2, Math.min(98, pos.percentile * 100));
+  const share = boardShareLabel(pos.rank, pos.total);
   return (
     <Link
       href="/leaderboards"
@@ -120,14 +121,12 @@ async function WhereItSits({ companyCode }: { companyCode: string }) {
         <span
           className={cn(
             "rounded-full px-2.5 py-0.5 text-[10.5px] font-bold tracking-[0.04em]",
-            pos.belowLine
-              ? "bg-muted text-muted-foreground"
-              : "bg-teal-500/15 text-teal-700 dark:text-teal-300",
+            share.topHalf
+              ? "bg-teal-500/15 text-teal-700 dark:text-teal-300"
+              : "bg-muted text-muted-foreground",
           )}
         >
-          {pos.belowLine
-            ? "BELOW LINE"
-            : topShareLabel(pos.rank, pos.total).toUpperCase()}
+          {share.label.toUpperCase()}
         </span>
       </div>
     </Link>

@@ -6,7 +6,7 @@
 //
 // CORRECTNESS: the headline metrics (Companies Opened, Total Opens) MUST be
 // derived from the FULL RPC result set, not a display-truncated slice. The RPC
-// is called with limit_n large enough to exceed the ~100-company universe
+// is called with limit_n large enough to exceed the whole company universe
 // (see app/admin/page.tsx), so rows.length and sum(views) are the true totals.
 // Deriving them from a top-N slice silently undercounts the long tail.
 

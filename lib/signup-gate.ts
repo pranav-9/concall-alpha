@@ -150,19 +150,15 @@ export function buildLeaderboardGateNext(board: LeaderboardTab): string {
  */
 export function leaderboardGateCopy(
   board: LeaderboardTab,
-  counts: { total: number; tail?: number },
+  counts: { total: number },
 ): readonly string[] {
-  const ranked = Math.max(counts.total - (counts.tail ?? 0), 0);
   const rest = Math.max(counts.total - LEADERBOARD_FREE_ROWS, 0);
-  const span = `${LEADERBOARD_FREE_ROWS + 1} to ${ranked}`;
+  const span = `${LEADERBOARD_FREE_ROWS + 1} to ${counts.total}`;
   switch (board) {
     case "overall":
       return [
         `Ranks ${span} by Read — the quarter, the outlook and valuation, combined`,
         "How far each one has moved since the last snapshot",
-        ...(counts.tail
-          ? [`The ${counts.tail} still tracked below the coverage cut`]
-          : []),
       ];
     case "quarter":
       return [

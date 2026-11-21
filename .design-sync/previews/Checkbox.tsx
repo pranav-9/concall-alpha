@@ -19,8 +19,8 @@ export const FilterRow = () => (
 export const States = () => (
   <div className="w-full max-w-md space-y-4">
     {[
-      { id: "cb-off", checked: false, disabled: false, text: "Unchecked — include below-cut names" },
-      { id: "cb-on", checked: true, disabled: false, text: "Checked — discovery-listed only" },
+      { id: "cb-off", checked: false, disabled: false, text: "Unchecked — include unscored names" },
+      { id: "cb-on", checked: true, disabled: false, text: "Checked — scored companies only" },
       { id: "cb-off-dis", checked: false, disabled: true, text: "Disabled — sector filter (no sector data)" },
       { id: "cb-on-dis", checked: true, disabled: true, text: "Disabled checked — locked to mid/small cap" },
     ].map((row) => (

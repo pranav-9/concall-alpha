@@ -534,7 +534,7 @@ function NotCoveredPanel({ query: rawQuery, onNavigate }: { query: string; onNav
         </p>
       )}
       <p className="text-[11px] leading-relaxed text-[var(--ink-soft)]">
-        We cover about 100 handpicked mid and small caps: no large caps, banks or NBFCs.{" "}
+        We cover a handpicked set of mid and small caps: no large caps, banks or NBFCs.{" "}
         <Link
           href="/coverage"
           onClick={onNavigate}

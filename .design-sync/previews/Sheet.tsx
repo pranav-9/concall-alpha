@@ -42,7 +42,7 @@ export const MobileNav = () => (
       <SheetHeader>
         <SheetTitle>Story of a Stock</SheetTitle>
         <SheetDescription>
-          100 handpicked mid- and small-caps.
+          Handpicked mid- and small-caps.
         </SheetDescription>
       </SheetHeader>
       <Separator />

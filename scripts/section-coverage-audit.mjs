@@ -1,4 +1,4 @@
-// Section coverage audit: % of the covered-100 companies with data behind each
+// Section coverage audit: % of the covered companies with data behind each
 // visible company-page section, mirroring the portal's own queries (see
 // concallyser/docs/section_backfill_worklist_2026-07-20.md).
 // Run: node scripts/section-coverage-audit.mjs  (from concall-alpha/)
@@ -39,12 +39,9 @@ async function fetchAll(pathAndQuery) {
   return out;
 }
 
-const companies = await fetchAll(
-  "company?select=code,name,market_cap_band_at_admission,excluded_from_discovery"
-);
-const covered = companies.filter(
-  (c) => c.market_cap_band_at_admission !== "large" && c.excluded_from_discovery !== true
-);
+const companies = await fetchAll("company?select=code,name,market_cap_band_at_admission");
+// Mirrors lib/coverage-policy isDiscoveryListed: the admission gate only.
+const covered = companies.filter((c) => c.market_cap_band_at_admission !== "large");
 const coveredCodes = new Set(covered.map((c) => c.code));
 const nameToCode = new Map(covered.map((c) => [c.name, c.code]));
 

@@ -7,8 +7,8 @@
 //     company-page Read (lib/company-overview-cache.ts) and the homepage hero
 //     (lib/home-featured-read.ts). Same company, same number, everywhere.
 //   - mean4Q / mean4QFromSeries — the FLAT 4Q mean. Displayed as the "4Q" trail
-//     column and mirrored by the coverage cut (compute_composite_score.py). It is
-//     NOT a Read input anywhere on the live site any more.
+//     column and mirrored by the stored composite (compute_composite_score.py). It
+//     is NOT a Read input anywhere on the live site any more.
 //
 // 2026-09-19: the overview and hero were still feeding the flat mean into
 // classifyBoardRead while the board fed the blend, so the same company showed a
@@ -17,11 +17,11 @@
 //
 // WHY ONE HELPER (history). The quarter leg is also computed on the pipeline
 // side by concallyser/scripts/compute_composite_score.py, which averages the
-// latest 4 scored prints for the coverage cut. Until 2026-08-11 the live surfaces
-// fed classifyBoardRead the SINGLE latest quarter while the cut used the 4Q mean,
-// so a greyed below-cut company could out-rank on the live Read; the live
-// surfaces were then unified on the 4Q mean, and on 2026-08-11 the live leg moved
-// to the recency blend (the cut stays on the mean). Every leg computation lives
+// latest 4 scored prints for the stored composite_score / coverage_rank. Until
+// 2026-08-11 the live surfaces fed classifyBoardRead the SINGLE latest quarter
+// while the pipeline used the 4Q mean; the live surfaces were then unified on the
+// 4Q mean, and on 2026-08-11 the live leg moved to the recency blend (the stored
+// composite stays on the mean). Every leg computation lives
 // in this file so the surfaces cannot drift into subtly different definitions.
 //
 // SELECTION, pinned to the Python side. Take the N NEWEST prints that HAVE a
@@ -51,8 +51,8 @@ export function meanLatestScored(
   return scored.reduce((a, b) => a + b, 0) / scored.length;
 }
 
-/** The FLAT trailing 4-quarter mean — the "4Q" trail column and the coverage
- *  cut's leg (compute_composite_score.py). NOT a live Read input. */
+/** The FLAT trailing 4-quarter mean — the "4Q" trail column and the stored
+ *  composite's leg (compute_composite_score.py). NOT a live Read input. */
 export function mean4Q(scores: ReadonlyArray<number | null | undefined>): number | null {
   return meanLatestScored(scores, 4);
 }
@@ -71,13 +71,11 @@ export function mean4Q(scores: ReadonlyArray<number | null | undefined>): number
 // (a null inside the newest 4 must not shrink the window). Caller passes scores
 // NEWEST-FIRST. Returns null when no scored value exists.
 //
-// DELIBERATELY diverges from the coverage cut, which stays on the flat 4Q mean
-// (concallyser/compute_composite_score.py): recency belongs in the live ORDERING,
-// not in the reviewed membership decision, whose 100/101 boundary sits inside the
-// re-score noise floor and must stay stable. The old live=latest / cut=4Q split
-// was retired in the WHY note above because a greyed company could out-rank kept
-// ones; this split is safe because the greyed-tail PIN (score-board-table.tsx)
-// now holds every greyed row at the bottom regardless of its live Read.
+// DELIBERATELY diverges from the stored composite, which stays on the flat 4Q
+// mean (concallyser/compute_composite_score.py): recency belongs in the live
+// ORDERING; the stored, reviewed snapshot (coverage_rank, the poster rank chip)
+// stays stable between runs. No surface shows the two side by side — the board's
+// # column is derived live from this leg (score-board-sort.ts).
 export const RECENCY_WEIGHTS = [0.4, 0.2, 0.2, 0.2] as const;
 
 export function blendQuarterLeg(

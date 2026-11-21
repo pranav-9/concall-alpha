@@ -29,7 +29,6 @@ function CompanyLine({ item }: { item: WireItem }) {
       <DeskCrest code={item.companyCode} name={item.companyName} size="sm" />
       <span className="house-data min-w-0 truncate text-xs text-[var(--ink-soft)]">
         {tradingName(item.companyName)} · {item.companyCode}
-        {item.belowCut ? " · below the cut" : ""}
       </span>
     </span>
   );
@@ -105,7 +104,7 @@ function RowItem({ item }: { item: WireItem }) {
 export async function DeskWire() {
   const now = new Date();
   const [data, storyReads] = await Promise.all([getExchangeDeskData(), getRecentStoryReads(now)]);
-  const picks = selectTopStoryReads(storyReads, data.updates, data.belowCut, now);
+  const picks = selectTopStoryReads(storyReads, data.updates, now);
   const items = buildWire(picks, data.updates, now.getTime());
   if (items.length === 0) return null;
   const [lead, ...others] = items;

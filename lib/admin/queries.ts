@@ -368,7 +368,7 @@ export async function getCompaniesData(window: RangeWindow): Promise<CompaniesDa
   const start = window.startIso ?? EPOCH_ISO;
 
   // The RPC counts opens SQL-side over the whole window; limit_n sits well
-  // above the ~100-company universe so the headline totals are true totals.
+  // above the whole company universe so the headline totals are true totals.
   const recentBase = supabase
     .from("page_view_events")
     .select("id, company_code, referrer, created_at")

@@ -33,15 +33,11 @@ export default async function DeskPage() {
 
   // The opening list and the rail paint with the page (no streaming above the
   // fold); everything below streams in its own Suspense.
-  // Research updated shows the ranked hundred AND below-cut companies, tagged —
-  // fresh work on a below-cut name must not vanish (researchEligible). Large-cap
-  // admissions stay on their company page.
+  // Research updated shows every discovery-listed company (researchEligible).
+  // Large-cap admissions stay on their company page.
   const listed = new Set(board.companies.map((c) => c.code.toUpperCase()));
-  const belowCut = new Set(board.belowCutCompanies.map((c) => c.code.toUpperCase()));
-  const scoreByCode = new Map(
-    [...board.companies, ...board.belowCutCompanies].map((c) => [c.code.toUpperCase(), c.latestScore]),
-  );
-  const research = selectResearchUpdates(researchEligible(featuredReads, { listed, belowCut }), Date.now());
+  const scoreByCode = new Map(board.companies.map((c) => [c.code.toUpperCase(), c.latestScore]));
+  const research = selectResearchUpdates(researchEligible(featuredReads, listed), Date.now());
 
   return (
     <main className="house relative min-h-screen">
@@ -51,7 +47,7 @@ export default async function DeskPage() {
 
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-6">
           <DeskSectionTracker sectionId="desk_research_updated">
-            <DeskResearchUpdated reads={research} scoreByCode={scoreByCode} belowCut={belowCut} />
+            <DeskResearchUpdated reads={research} scoreByCode={scoreByCode} />
           </DeskSectionTracker>
           <aside aria-label="Top of the book">
             <DeskTopOfBook

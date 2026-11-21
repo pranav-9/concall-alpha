@@ -13,13 +13,13 @@ export type RankedThemeMember = { member: ThemeMember; rank: number | null };
 export const THEME_VISIBLE_ROWS = 3;
 
 /**
- * Rank every member in order. Below-cut and unscored members carry no rank and
- * don't advance the counter, matching the Overall board's treatment.
+ * Rank every member in order. Unscored members carry no rank and don't advance
+ * the counter, matching the Overall board's treatment.
  */
 export function rankThemeMembers(members: readonly ThemeMember[]): RankedThemeMember[] {
   let rank = 0;
   return members.map((member) => {
-    const showRank = !member.belowCut && member.readScore != null;
+    const showRank = member.readScore != null;
     if (showRank) rank += 1;
     return { member, rank: showRank ? rank : null };
   });
@@ -38,9 +38,9 @@ export function splitThemeRows<T>(rows: readonly T[]): { visible: T[]; hidden: T
   };
 }
 
-/** Mean Read over the ranked (in-coverage, scored) members; null when none. */
+/** Mean Read over the ranked (scored) members; null when none. */
 export function themeAvgRead(members: readonly ThemeMember[]): number | null {
-  const scored = members.filter((m) => !m.belowCut && m.readScore != null);
+  const scored = members.filter((m) => m.readScore != null);
   if (scored.length === 0) return null;
   return scored.reduce((sum, m) => sum + (m.readScore ?? 0), 0) / scored.length;
 }

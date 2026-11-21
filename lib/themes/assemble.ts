@@ -64,7 +64,6 @@ export function assembleThemeBlocks(
         valuationScore: board.valuationScore,
         readScore: hasRead ? read.score : null,
         readKey: read.key,
-        belowCut: board.belowCut === true,
         isBestRead: false, // assigned after the in-theme sort below
         rationale: m.rationale ?? null,
         notYetScored: board.concallScore == null,
@@ -76,21 +75,19 @@ export function assembleThemeBlocks(
     // Empty theme (no resolved members) is hidden — never an empty shell.
     if (members.length === 0) continue;
 
-    // Rank within the theme: by Read desc (nulls last), below-cut pinned to the
-    // bottom — the same ordering grammar the Overall board uses.
+    // Rank within the theme: by Read desc (nulls last) — the same ordering
+    // grammar the Overall board uses.
     members.sort((a, b) => {
-      if (a.belowCut !== b.belowCut) return a.belowCut ? 1 : -1;
       const av = a.readScore ?? Number.NEGATIVE_INFINITY;
       const bv = b.readScore ?? Number.NEGATIVE_INFINITY;
       if (av !== bv) return bv - av;
       return a.companyName.localeCompare(b.companyName);
     });
 
-    // Best read = the highest-Read DISCOVERY-LISTED (not below-cut) SCORED member.
-    // After the sort that is simply the first eligible row; a below-cut company or
-    // an unscored one can never carry the tag, and a theme with zero scored members
-    // shows no best-read at all.
-    const best = members.find((member) => !member.belowCut && member.readScore != null);
+    // Best read = the highest-Read SCORED member. After the sort that is simply
+    // the first scored row; an unscored one can never carry the tag, and a theme
+    // with zero scored members shows no best-read at all.
+    const best = members.find((member) => member.readScore != null);
     if (best) best.isBestRead = true;
 
     blocks.push({

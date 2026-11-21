@@ -36,14 +36,13 @@ function KpiTile({ kpi }: { kpi: ThemeStoryKpi }) {
 }
 
 function RidingName({ member, last }: { member: ThemeMember; last: boolean }) {
-  const dim = member.belowCut;
   return (
     <>
       <Link
         href={`/company/${member.companyCode}`}
         prefetch={false}
-        title={dim ? `${member.companyName} — below the coverage cut` : member.companyName}
-        className={`whitespace-nowrap hover:underline ${dim ? "text-muted-foreground" : "text-foreground"}`}
+        title={member.companyName}
+        className="whitespace-nowrap text-foreground hover:underline"
       >
         {shortCompanyName(member.companyName)}
       </Link>

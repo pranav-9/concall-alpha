@@ -165,13 +165,11 @@ const posts = [
   const pick = {
     rank: 1,
     update: tape[1],
-    belowCut: true,
     read: { headline: "A naval order", changes: "Multi-year deliveries lift revenue visibility." },
   } as unknown as StoryPick;
   const [item] = buildWire([pick], tape, now);
   assert.equal(item.headline, "A naval order");
   assert.equal(item.dek, "Multi-year deliveries lift revenue visibility.");
-  assert.equal(item.belowCut, true);
   const noHeadline = { ...pick, read: { changes: "Something changes here for sure." } } as unknown as StoryPick;
   assert.equal(buildWire([noHeadline], tape, now)[0].headline, "p1 summary", "no producer headline: the tape summary");
   console.log("  ok  wire: Top 5 picks first, else the week's strongest filings");

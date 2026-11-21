@@ -118,7 +118,7 @@ function read(
 // --- the list ---------------------------------------------------------------------
 
 {
-  const listed = [
+  const tape = [
     update("stl", "STLTECH", { pct: 27.4, days: 2 }),
     update("trans", "TRANSRAILL", { pct: 9.5, days: 3 }),
     update("trans2", "TRANSRAILL", { category: "capex", days: 3 }), // same company, lower rank
@@ -127,8 +127,6 @@ function read(
     update("sev", "YATRA", { category: "business_update", impact: "severe", days: 1 }),
     update("gst", "KEI", { category: "business_update", impact: "negative", days: 2 }),
     update("unread", "DIXON", { category: "partnership" }),
-  ];
-  const belowCut = [
     update("ellen", "ELLEN", { pct: 9.5, days: 5 }),
     update("azad", "AZAD", { category: "capex", days: 5 }),
     update("coo", "TRITURBINE", { category: "business_update", impact: "negative", days: 2 }),
@@ -146,29 +144,27 @@ function read(
     read("gst", "KEI", 2, "none"),
     read("ghost", "GONE", 11), // its filing is no longer on the tape (folded twin / re-classified)
   ];
-  const picks = selectTopStoryReads(reads, listed, belowCut, NOW);
+  const picks = selectTopStoryReads(reads, tape, NOW);
   // A severe filing leads whatever its score; then by score, size breaking the tie.
   assert.deepEqual(picks.map((p) => p.update.companyCode), ["YATRA", "STLTECH", "ELLEN", "AZAD", "TRANSRAILL"]);
   assert.deepEqual(picks.map((p) => p.rank), [1, 2, 3, 4, 5]);
   assert.equal(picks.length, MAX_STORY_PICKS);
   assert.equal(picks[4].update.id, "trans"); // the order, not the capacity note
-  // Below-cut companies list, tagged; listed ones are not tagged.
-  assert.deepEqual(picks.map((p) => p.belowCut), [false, false, true, true, false]);
 
   // Order of the input never changes the output.
   assert.deepEqual(
-    selectTopStoryReads([...reads].reverse(), [...listed].reverse(), [...belowCut].reverse(), NOW).map((p) => p.update.id),
+    selectTopStoryReads([...reads].reverse(), [...tape].reverse(), NOW).map((p) => p.update.id),
     picks.map((p) => p.update.id),
   );
 
   // The window is the last seven days at load time: a week later every pick has aged out.
-  assert.deepEqual(selectTopStoryReads(reads, listed, belowCut, new Date(NOW.getTime() + 7 * 24 * 60 * 60 * 1000)), []);
+  assert.deepEqual(selectTopStoryReads(reads, tape, new Date(NOW.getTime() + 7 * 24 * 60 * 60 * 1000)), []);
   // A future-dated tape row never lists.
-  const future = selectTopStoryReads(reads, [...listed, update("fut", "FUTCO", { days: -1 })], belowCut, NOW);
+  const future = selectTopStoryReads(reads, [...tape, update("fut", "FUTCO", { days: -1 })], NOW);
   assert.equal(future.some((p) => p.update.id === "fut"), false);
   // A row re-classified to neutral after it was read drops out.
-  const neutralised = listed.map((u) => (u.id === "stl" ? { ...u, impact: "neutral" as const } : u));
-  assert.equal(selectTopStoryReads(reads, neutralised, belowCut, NOW).some((p) => p.update.id === "stl"), false);
+  const neutralised = tape.map((u) => (u.id === "stl" ? { ...u, impact: "neutral" as const } : u));
+  assert.equal(selectTopStoryReads(reads, neutralised, NOW).some((p) => p.update.id === "stl"), false);
 }
 
 // --- a quiet week shows nothing ---------------------------------------------------
@@ -177,11 +173,11 @@ function read(
   const tape = [update("a", "AAA"), update("b", "BBB"), update("c", "CCC")];
   const two = [read("a", "AAA", 5), read("b", "BBB", 4), read("c", "CCC", 1)];
   assert.equal(MIN_STORY_PICKS, 3);
-  assert.deepEqual(selectTopStoryReads(two, tape, [], NOW), []); // two qualify: not worth a heading
+  assert.deepEqual(selectTopStoryReads(two, tape, NOW), []); // two qualify: not worth a heading
   const three = [read("a", "AAA", 5), read("b", "BBB", 4), read("c", "CCC", 3)];
-  assert.deepEqual(selectTopStoryReads(three, tape, [], NOW).map((p) => p.update.id), ["a", "b", "c"]);
-  assert.deepEqual(selectTopStoryReads([], tape, [], NOW), []);
-  assert.deepEqual(selectTopStoryReads(three, [], [], NOW), []);
+  assert.deepEqual(selectTopStoryReads(three, tape, NOW).map((p) => p.update.id), ["a", "b", "c"]);
+  assert.deepEqual(selectTopStoryReads([], tape, NOW), []);
+  assert.deepEqual(selectTopStoryReads(three, [], NOW), []);
 }
 
 // --- the chip never reads as a verdict on the stock ------------------------------

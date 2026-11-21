@@ -92,12 +92,11 @@ for (const board of LEADERBOARD_TABS) {
   assert.ok(lines.length >= 2 && lines.length <= 3, `${board}: 2–3 lines, got ${lines.length}`);
   for (const line of lines) assert.doesNotMatch(line, /free forever/i);
 }
-// The counts come from the rows the page renders: ranks 21 to N, the tail named only when there is one.
+// The counts come from the rows the page renders: ranks 21 to N (no coverage-cut tail since 2026-11-21).
 assert.deepEqual(
-  leaderboardGateCopy("overall", { total: 130, tail: 30 }).map((l) => l.slice(0, 15)),
-  ["Ranks 21 to 100", "How far each on", "The 30 still tr"],
+  leaderboardGateCopy("overall", { total: 190 }).map((l) => l.slice(0, 15)),
+  ["Ranks 21 to 190", "How far each on"],
 );
-assert.equal(leaderboardGateCopy("overall", { total: 100, tail: 0 }).length, 2);
 assert.match(leaderboardGateCopy("quarter", { total: 98 })[0], /^Ranks 21 to 98 /);
 assert.match(leaderboardGateCopy("growth", { total: 97 })[0], /^Ranks 21 to 97 /);
 assert.match(leaderboardGateCopy("moat", { total: 95 })[0], /^The other 75 companies/);

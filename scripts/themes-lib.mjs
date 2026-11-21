@@ -20,5 +20,4 @@ export function loadEnv(root) {
 // --- coverage predicates (mirror lib/coverage-policy.ts) ----------------------
 // NULL band = covered (fail-open) — the recurring mistake is treating it as excluded.
 export const isAdmittedLargeCap = (c) => c?.market_cap_band_at_admission === "large";
-export const isBelowCoverageCut = (c) => c?.excluded_from_discovery === true;
-export const isDiscoveryListed = (c) => !!c && !isAdmittedLargeCap(c) && !isBelowCoverageCut(c);
+export const isDiscoveryListed = (c) => !!c && !isAdmittedLargeCap(c);

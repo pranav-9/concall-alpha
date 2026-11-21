@@ -5,9 +5,9 @@
 //
 // The Quarter column shows the STANDING ConcallScore — the RECENCY-WEIGHTED 4Q
 // leg (getConcallData's "Latest 4Q Blend", "latest counts double", one definition
-// in lib/quarter-composite). This is the LIVE ordering leg and it deliberately
-// diverges from the coverage cut, which stays on the flat 4Q mean — recency lives
-// in the live board, membership stays stable. The single latest print rides
+// in lib/quarter-composite). This is the LIVE ordering leg; it deliberately
+// diverges from the stored composite (compute_composite_score.py), which stays
+// on the flat 4Q mean. The single latest print rides
 // alongside as `latestConcallScore`, the "this quarter" marker the freshness chips
 // attach to, so a one-quarter badge never sits atop the standing number.
 //
@@ -74,7 +74,6 @@ export function buildScoreBoardRows(
       // getConcallData already applies the publish + staleness gates; this only
       // moves the stored 0-100 integer onto the board's 0-10 scale.
       valuationScore: toValuationScale(toNumericValue(row.valuationScore)),
-      belowCut: row.belowCut === true,
       // These describe the single latest print (latestConcallScore above), which
       // is the quarter the chips name — getConcallData resolves them against that
       // same record.

@@ -4,8 +4,7 @@
 // the /leaderboards render — see lib/leaderboard-snapshot.ts).
 //
 // Pure, so it is testable without the server-only snapshot read. Only
-// discovery-listed companies can move here (the caller passes that set): a
-// below-cut name sits in the board's greyed tail and is not a desk name.
+// discovery-listed companies can move here (the caller passes that set).
 
 export type RankMap = Readonly<Record<string, number>>;
 

@@ -51,10 +51,11 @@ const updates = [
     orderSize: { pctOfMcap: 27.4, softness: "framework" },
   }),
 ];
-const base = { updates, impacts: buildImpactFacet(updates), total: updates.length, windowDays: 35 };
 const fullData: ExchangeDeskData = {
-  ...base,
-  belowCut: [update({ id: "b1", impact: "neutral", companyCode: "BETA", companyName: "Beta Forge", bucketKey: "week" })],
+  updates,
+  impacts: buildImpactFacet(updates),
+  total: updates.length,
+  windowDays: 35,
 };
 
 // ---------------------------------------------------------------------------
@@ -231,9 +232,9 @@ async function main() {
   const clamped = [full, compact].flatMap((doc) =>
     descendants(doc).filter((e) => [...cls(e)].some((c) => /^line-clamp-\d+$/.test(c))),
   );
-  // full: 4 phone rows + 4 desktop-row phone summaries (the below-cut row
-  // included); compact: 3 desktop-row phone summaries.
-  assert.equal(clamped.length, 8 + 3, "every rendered summary clamp is checked");
+  // full: 3 phone rows + 3 desktop-row phone summaries; compact: 3 desktop-row
+  // phone summaries.
+  assert.equal(clamped.length, 6 + 3, "every rendered summary clamp is checked");
 
   const classLists = [...new Set([...clamped.map((e) => e.attrs.class), PRE_FIX])];
   const html = classLists.map((c) => `<span class="${c}"></span>`).join("\n");

@@ -103,7 +103,6 @@ export async function buildWatchlistBoard({
         latestQuarterLabel: null,
         growthScore: growthScoreByCode.get(companyCode) ?? null,
         valuationScore: null,
-        belowCut: false,
       };
     const coverage = coverageByCode.get(companyCode);
     return {
@@ -124,10 +123,9 @@ export async function buildWatchlistBoard({
   );
 
   // The reference population for the curve AND the overall-rank chips. Only the
-  // ADMISSION gate applies: large caps are outside the positioning entirely, but
-  // the below-the-cut tail is still ours and belongs in a picture of the universe
-  // — the same population the leaderboard's Overall board renders
-  // (excludeLargeCaps + includeBelowCut). Note this is the covered universe, not
+  // ADMISSION gate applies (large caps are outside the positioning entirely) —
+  // the same population the leaderboard's Overall board renders
+  // (excludeLargeCaps). Note this is the covered universe, not
   // the watchlist's own peers: a holding that's a large cap still gets a needle,
   // it just isn't in the shape (and carries no overall rank).
   const universeReadScores: number[] = [];

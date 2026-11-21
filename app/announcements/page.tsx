@@ -11,18 +11,18 @@ import { MobileMasthead } from "@/components/mobile-card";
 export const metadata: Metadata = {
   title: "Company announcements — every material filing, read into plain English",
   description:
-    "The full exchange tape: material BSE filings across India's covered mid- & small-caps — order wins, capex, deals, fundraises, approvals — read into plain English, plus material filings from names just below the coverage cut.",
+    "The full exchange tape: material BSE filings across India's covered mid- & small-caps — order wins, capex, deals, fundraises, approvals — read into plain English.",
   alternates: { canonical: "/announcements" },
 };
 
 export default async function AnnouncementsPage() {
   const now = new Date();
   const [data, storyReads] = await Promise.all([getExchangeDeskData(), getRecentStoryReads(now)]);
-  const isEmpty = data.total === 0 && data.belowCut.length === 0;
+  const isEmpty = data.total === 0;
   // "Top 5 this week": the last seven days of story reads, joined to the tape
   // rows above and ranked here, at load time. Empty (strip absent) until the
   // reads table exists and at least three filings qualify.
-  const picks = selectTopStoryReads(storyReads, data.updates, data.belowCut, now);
+  const picks = selectTopStoryReads(storyReads, data.updates, now);
 
   return (
     <main className="house relative min-h-screen">

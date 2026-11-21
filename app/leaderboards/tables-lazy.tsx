@@ -93,13 +93,11 @@ export function MoatTable({ data, gateCutIndex }: { data: MoatRowTable[]; gateCu
 }
 
 // The "Overall" tab: four score columns (Quarter / Growth / Valuation / Read)
-// over the whole mid/small universe, below-cut names included as a greyed tail.
-// The same board renders a watchlist (with a Remove column and nothing greyed) —
-// see components/score-board-table.tsx.
+// over the whole mid/small universe. The same board renders a watchlist (with a
+// Remove column) — see components/score-board-table.tsx.
 type OverallTableProps = {
   rows: ScoreBoardRow[];
   priorRankByCode?: Record<string, number>;
-  coverageCutRank?: number;
   gateCutIndex?: number;
   /** UPPERCASE codes of companies new to coverage — the "Added" chip. */
   addedCodes?: string[];

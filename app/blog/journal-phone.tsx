@@ -75,7 +75,7 @@ export function JournalPhone({
 
       <footer className="mx-4 mt-10 border-t border-[var(--rule)] pt-4">
         <p className="house-data text-[10px] uppercase tracking-[0.12em] text-[var(--ink-soft)]">
-          Story of a Stock — Journal · Field notes on ~100 mid &amp; small caps
+          Story of a Stock — Journal · Field notes on mid &amp; small caps
         </p>
       </footer>
     </div>

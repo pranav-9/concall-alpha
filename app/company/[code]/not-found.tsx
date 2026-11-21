@@ -60,13 +60,13 @@ export default function CompanyNotFound() {
                   {code ? <>We don&apos;t cover {code} yet</> : <>We don&apos;t cover this company yet</>}
                 </h1>
                 <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
-                  Ask for it and we&apos;ll weigh it for the next coverage slot.
+                  Ask for it and we&apos;ll weigh it for coverage.
                 </p>
                 {code && <CoverageRequestButton subject={code} surface="company_not_found" />}
               </>
             )}
             <p className="text-sm leading-relaxed text-muted-foreground">
-              We cover about 100 handpicked mid and small caps, researched from their own
+              We cover a handpicked set of mid and small caps, researched from their own
               filings: no large caps, banks or NBFCs.{" "}
               <Link href="/coverage" className={LINK_CLASS}>
                 How we choose

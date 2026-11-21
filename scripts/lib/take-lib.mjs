@@ -93,9 +93,9 @@ export function sbClient() {
 }
 
 export async function loadCompanies(sb) {
-  const companies = await sb("company?select=code,name,market_cap_band_at_admission,excluded_from_discovery");
-  for (const c of companies)
-    c.covered = c.market_cap_band_at_admission !== "large" && c.excluded_from_discovery !== true;
+  const companies = await sb("company?select=code,name,market_cap_band_at_admission");
+  // Mirrors lib/coverage-policy isDiscoveryListed: the admission gate only.
+  for (const c of companies) c.covered = c.market_cap_band_at_admission !== "large";
   return companies;
 }
 

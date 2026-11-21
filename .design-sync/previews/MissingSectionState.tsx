@@ -1,6 +1,6 @@
 import { MissingSectionState, SectionCard } from "concall-alpha";
 
-// The company page's honest empty state. Coverage is a curated ~100 mid- and
+// The company page's honest empty state. Coverage is a curated set of mid- and
 // small-caps and sections land per company, so a page routinely has a section
 // the pipeline has not produced yet. Rather than hide the section, the portal
 // renders it with this block inside — the reader learns the section exists, why
