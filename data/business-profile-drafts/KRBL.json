@@ -1,0 +1,387 @@
+{
+  "company": "KRBL",
+  "company_name": "KRBL",
+  "prepared_on": "2026-11-20",
+  "review_status": "user_approved",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-11-11",
+  "about_company": {
+    "about_short": "Basmati rice miller and owner of the India Gate brand, selling packaged rice in India and exporting to 90+ countries.",
+    "about_long": "KRBL Limited buys basmati paddy, mills and ages it, and sells the rice in packs and in bulk. Its India Gate brand leads packaged basmati in general trade, modern trade and e-commerce, and it sells through 850+ distributors to about 3.3 lakh retail outlets. Exports go to 90+ countries, mostly the Middle East and Persian Gulf, both under its own brands and as bulk shipments. It reports two operating segments, Agri (rice) and Energy (wind, solar and biomass power), and splits Agri revenue into domestic and export sales. It is adding non-basmati rice, masalas, poha and Uplife healthy edible oils. Consolidated revenue from operations was ₹6,098 Cr in FY26.",
+    "business_intro": "KRBL buys basmati paddy, mills and ages it, and sells the rice under India Gate and other brands to Indian households through distributors, modern trade and e-commerce. It also exports to 90+ countries, mostly the Middle East, and sells power from its wind, solar and biomass plants. In FY26, domestic sales were 72.9% of consolidated revenue from operations, exports 25.5% and power 1.6%.",
+    "company_timeline": [
+      {
+        "year": 1889,
+        "title": "Founded in Lyallpur",
+        "detail": "KRBL dates its inception to 1889 in Lyallpur; the business later moved from oil, wheat and cotton to rice, and to Delhi.",
+        "sources": [
+          {
+            "label": "KRBL Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf"
+          },
+          {
+            "label": "KRBL official website, About us (timeline)",
+            "url": "https://krblrice.com/about-us/"
+          }
+        ]
+      },
+      {
+        "year": 1995,
+        "title": "Lists on the Bombay, Delhi and Ahmedabad stock exchanges",
+        "detail": "KRBL became a public limited company in 1993 and listed its shares in 1995; today they trade on the NSE and BSE.",
+        "sources": [
+          {
+            "label": "KRBL official website, About us (timeline)",
+            "url": "https://krblrice.com/about-us/"
+          },
+          {
+            "label": "KRBL Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf"
+          }
+        ]
+      },
+      {
+        "year": 1998,
+        "title": "Launches India Gate in the domestic market",
+        "detail": "Launched in the domestic market together with the Doon brand; the annual report calls India Gate the company's flagship brand.",
+        "sources": [
+          {
+            "label": "KRBL official website, About us (timeline)",
+            "url": "https://krblrice.com/about-us/"
+          },
+          {
+            "label": "KRBL Annual Report 2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ac787553-c62d-4d71-a62f-d514a0dd9205.pdf"
+          },
+          {
+            "label": "KRBL Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2004,
+        "title": "Commissions the Dhuri rice plant in Punjab",
+        "detail": "KRBL calls its Punjab plant the world's largest rice milling plant.",
+        "sources": [
+          {
+            "label": "KRBL official website, About us (timeline)",
+            "url": "https://krblrice.com/about-us/"
+          },
+          {
+            "label": "KRBL Annual Report 2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ac787553-c62d-4d71-a62f-d514a0dd9205.pdf"
+          },
+          {
+            "label": "KRBL Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2006,
+        "title": "Commissions its first wind power project at Dhule",
+        "detail": "The project, in Dhule, Maharashtra, took KRBL into the wind power business; its power portfolio now also includes solar and biomass plants.",
+        "sources": [
+          {
+            "label": "KRBL Annual Report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ebd2c8e5-12da-48e4-826a-0efb268aaa56.pdf"
+          },
+          {
+            "label": "KRBL official website, About us (timeline)",
+            "url": "https://krblrice.com/about-us/"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Acquires about 125 acres of land at Samalkha, Panipat",
+        "detail": "Bought at an auction on 3 December 2025 for a bid of about ₹403 Cr and classed in the FY26 accounts as investment property held for capital appreciation; on the Q4 FY26 call management said a 60-acre parcel is intended for its own warehousing.",
+        "sources": [
+          {
+            "label": "KRBL Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf"
+          },
+          {
+            "label": "KRBL Q2 FY26 earnings call transcript (14 Nov 2025)",
+            "url": "https://krblrice.com/wp-content/uploads/2025/11/KRBL-Earnings-Nov14-2025-Final.pdf"
+          },
+          {
+            "label": "KRBL Q4 FY26 earnings call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=ca6c4df6-4157-4261-bfd0-b783a75d8912.pdf"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Top 10 distributors take 22.67% of distributor sales (standalone)",
+        "text": "No single customer accounted for more than 10% of consolidated revenue in FY26 or FY25. KRBL Limited sells mostly through dealers and distributors: they took 76.73% of its FY26 sales, spread across 754 of them. The top 10 took 22.67% of those sales in FY26, down from 29.41% in FY25, 28.10% in FY24 and 36.08% in FY23. The distributor figures are for KRBL Limited on its own (standalone).",
+        "period": "FY23 to FY26",
+        "sources": [
+          {
+            "label": "KRBL Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf"
+          },
+          {
+            "label": "KRBL Annual Report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ebd2c8e5-12da-48e4-826a-0efb268aaa56.pdf"
+          },
+          {
+            "label": "KRBL Annual Report 2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ac787553-c62d-4d71-a62f-d514a0dd9205.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Top 10 distributors, FY23",
+            "value": 36.08,
+            "unit": "% of distributor sales"
+          },
+          {
+            "label": "Top 10 distributors, FY24",
+            "value": 28.1,
+            "unit": "% of distributor sales"
+          },
+          {
+            "label": "Top 10 distributors, FY25",
+            "value": 29.41,
+            "unit": "% of distributor sales"
+          },
+          {
+            "label": "Top 10 distributors, FY26",
+            "value": 22.67,
+            "unit": "% of distributor sales"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Exports fell to 16.8% of revenue in H1 FY27 from 25.5% in FY26",
+        "text": "KRBL exports basmati to 90+ countries, under its own brands and in bulk. About 75% of exports go to the Middle East and Persian Gulf, and Saudi Arabia, its largest export market, is served through the wholesale route. Exports were ₹1,555 Cr, 25.5% of FY26 revenue from operations. In H1 FY27 they were ₹541 Cr, 16.8% of revenue, down 41%; management said the decline was almost entirely in bulk exports to the Middle East, while exports to markets outside the Middle East grew 14%. Shares are derived from the reported rupee figures.",
+        "period": "FY24 to H1 FY27",
+        "sources": [
+          {
+            "label": "KRBL Annual Report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ebd2c8e5-12da-48e4-826a-0efb268aaa56.pdf"
+          },
+          {
+            "label": "KRBL Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf"
+          },
+          {
+            "label": "KRBL investor presentation, Q2 FY27",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=882e71b0-e5a6-4f85-b198-a5f9e585caeb.pdf"
+          },
+          {
+            "label": "KRBL Q2 FY27 earnings call transcript (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=58ff7bf6-c05c-44e0-b22f-dbcd9599eb0d.pdf"
+          }
+        ],
+        "metrics": [
+          {
+            "label": "Exports, FY24",
+            "value": 24.7,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, FY25",
+            "value": 26.3,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, FY26",
+            "value": 25.5,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Exports, H1 FY27",
+            "value": 16.8,
+            "unit": "% of revenue"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "India Gate leads packaged basmati in every channel",
+        "text": "For the 12 months to September 2026, India Gate's volume share of packaged basmati was 36.2% in general trade and 39.6% in modern trade, and its September 2026 exit share in e-commerce was 41.1% (company estimate). The brand is in about 3.3 lakh retail outlets and reaches about 1.2 crore urban households, served through 850+ distributors; quick commerce is about 8-9% of the India business. In Q2 FY27, branded rice was ₹1,134 Cr of ₹1,390 Cr domestic revenue and unbranded rice ₹166 Cr, including what management called a selective additional rice sale of ₹102 Cr.",
+        "period": "Q2 FY27 (shares: 12 months to Sep 2026)",
+        "sources": [
+          {
+            "label": "KRBL investor presentation, Q2 FY27",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=882e71b0-e5a6-4f85-b198-a5f9e585caeb.pdf"
+          },
+          {
+            "label": "KRBL Q2 FY27 earnings call transcript (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=58ff7bf6-c05c-44e0-b22f-dbcd9599eb0d.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Buys paddy in one season and ages the rice, so inventory swings",
+        "text": "The basmati paddy crop season runs from October to December. KRBL buys paddy through the season, mills it and sells rice aged one to two years, so inventory is highest after the crop: total inventory was ₹3,714 Cr at 31 March 2026 against ₹2,203 Cr at 30 September 2026, when it held 278,000 tonnes of rice and 31,000 tonnes of paddy. It sources through what it calls the largest contact farming network for rice. Cash and bank balances, including treasury investments, were ₹2,895 Cr at 30 September 2026, and net bank borrowings were negative by the same amount, i.e. net cash.",
+        "period": "31 Mar 2026 and 30 Sep 2026",
+        "sources": [
+          {
+            "label": "KRBL Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf"
+          },
+          {
+            "label": "KRBL investor presentation, Q4 FY26",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=4cafee81-dab9-41eb-8578-6f923351154c.pdf"
+          },
+          {
+            "label": "KRBL investor presentation, Q2 FY27",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=882e71b0-e5a6-4f85-b198-a5f9e585caeb.pdf"
+          },
+          {
+            "label": "KRBL Q2 FY27 earnings call transcript (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=58ff7bf6-c05c-44e0-b22f-dbcd9599eb0d.pdf"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "Five facilities; 207 MT/hour of milling capacity",
+        "text": "KRBL's manufacturing and procurement facilities are at Dhuri (Punjab), Alipur (Delhi), Gautam Buddha Nagar (Uttar Pradesh), Sonipat (Haryana) and Anjar (Gujarat). The FY26 annual report gives milling capacity of 207 MT/hour and processing capacity of 233 MT/hour. A plant at Gangavathi, Karnataka, for non-basmati rice is under construction; on the Q1 FY27 call management expected it to be operational by the end of Q3 FY27.",
+        "period": "FY26; plan as of Aug 2026",
+        "sources": [
+          {
+            "label": "KRBL Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf"
+          },
+          {
+            "label": "KRBL investor presentation, Q2 FY27",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=882e71b0-e5a6-4f85-b198-a5f9e585caeb.pdf"
+          },
+          {
+            "label": "KRBL Q1 FY27 earnings call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d4ebd74c-89ff-4711-af24-0fa7f2e772e6.pdf"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "150.74 MW of wind, solar and biomass power",
+        "text": "The Energy segment has 112.25 MW of wind capacity across seven states, 17 MW of ground-mounted solar and 21.49 MW of biomass plants that burn husk left over from milling, 150.74 MW in all. The power runs KRBL's own plants and the surplus is sold to the grid: power sold outside the company was ₹99 Cr in FY26, 1.6% of revenue from operations. Energy segment revenue before inter-segment eliminations was ₹234 Cr.",
+        "period": "FY26",
+        "sources": [
+          {
+            "label": "KRBL Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf"
+          },
+          {
+            "label": "KRBL Annual Report 2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ebd2c8e5-12da-48e4-826a-0efb268aaa56.pdf"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "Beyond basmati: non-basmati rice, masalas, poha and Uplife oils",
+        "text": "Branded non-basmati rice was a ₹271 Cr business in FY26, up 38%. The newer lines are still small: Uplife healthy edible oils, launched in FY25, sold about ₹6 Cr in Q2 FY27; masala sales were about ₹4.5 Cr in H1 FY27 against ₹3.1 Cr a year earlier; and India Gate poha was launched in 22 North Indian cities in Q1 FY27. The brand portfolio has 14 brands, including India Gate, Uplife, Unity, Zabreen, Nur Jahan and Rameez.",
+        "period": "FY26 to Q2 FY27",
+        "sources": [
+          {
+            "label": "KRBL Q4 FY26 earnings call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=ca6c4df6-4157-4261-bfd0-b783a75d8912.pdf"
+          },
+          {
+            "label": "KRBL Q1 FY27 earnings call transcript",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d4ebd74c-89ff-4711-af24-0fa7f2e772e6.pdf"
+          },
+          {
+            "label": "KRBL Q2 FY27 earnings call transcript (3 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=58ff7bf6-c05c-44e0-b22f-dbcd9599eb0d.pdf"
+          },
+          {
+            "label": "KRBL Annual Report 2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Domestic sales rose from 62.2% to 81.0% of revenue as exports shrank (FY23 to H1 FY27)",
+      "text": "Domestic revenue (excluding power) grew from ₹3,336 Cr in FY23 to ₹4,444 Cr in FY26 while exports fell from ₹1,931 Cr to ₹1,555 Cr, so domestic moved from 62.2% to 72.9% of revenue. In FY24 management put the export fall down to a sharp drop in sales to Saudi Arabia and fewer bulk export opportunities. In H1 FY27 domestic revenue was ₹2,611 Cr, up 24%, and exports ₹541 Cr, down 41% on lower exports to the Middle East, taking domestic to 81.0% of revenue. Shares are derived from the reported rupee figures.",
+      "period": "FY23 to H1 FY27",
+      "sources": [
+        {
+          "label": "KRBL Annual Report 2023-24",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ac787553-c62d-4d71-a62f-d514a0dd9205.pdf"
+        },
+        {
+          "label": "KRBL Annual Report 2025-26",
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf"
+        },
+        {
+          "label": "KRBL Q3 FY24 earnings call transcript (15 Feb 2024)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e2b79f1d-8b30-478d-b053-c9f83e6120fc.pdf"
+        },
+        {
+          "label": "KRBL investor presentation, Q2 FY27",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=882e71b0-e5a6-4f85-b198-a5f9e585caeb.pdf"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "KRBL Annual Report 2025-26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3515a3b4-a7dd-4513-be26-9c5c0a37d0c1.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "KRBL official website, About us (timeline)",
+      "url": "https://krblrice.com/about-us/",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "KRBL Annual Report 2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ac787553-c62d-4d71-a62f-d514a0dd9205.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "KRBL Annual Report 2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/ebd2c8e5-12da-48e4-826a-0efb268aaa56.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "KRBL Q2 FY26 earnings call transcript (14 Nov 2025)",
+      "url": "https://krblrice.com/wp-content/uploads/2025/11/KRBL-Earnings-Nov14-2025-Final.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "KRBL Q4 FY26 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=ca6c4df6-4157-4261-bfd0-b783a75d8912.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "KRBL investor presentation, Q2 FY27",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=882e71b0-e5a6-4f85-b198-a5f9e585caeb.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "KRBL Q2 FY27 earnings call transcript (3 Nov 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=58ff7bf6-c05c-44e0-b22f-dbcd9599eb0d.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "KRBL investor presentation, Q4 FY26",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=4cafee81-dab9-41eb-8578-6f923351154c.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "KRBL Q1 FY27 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d4ebd74c-89ff-4711-af24-0fa7f2e772e6.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "KRBL Q3 FY24 earnings call transcript (15 Feb 2024)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e2b79f1d-8b30-478d-b053-c9f83e6120fc.pdf",
+      "locator": "what changed"
+    }
+  ]
+}

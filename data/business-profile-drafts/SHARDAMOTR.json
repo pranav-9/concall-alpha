@@ -1,0 +1,377 @@
+{
+  "company": "SHARDAMOTR",
+  "company_name": "Sharda Motor",
+  "prepared_on": "2026-11-20",
+  "review_status": "user_approved",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-11-20",
+  "about_company": {
+    "about_short": "Makes exhaust and emission systems and suspension parts for vehicle makers in India; emission is about 88% of revenue.",
+    "about_long": "Sharda Motor Industries, incorporated in 1986, makes exhaust and emission-control systems (catalytic converters and after-treatment) and suspension parts such as control arms, links and front axle assemblies, supplying vehicle makers in India as a tier-1 vendor. In management's FY26 split of revenue, emission systems were 88% (commercial vehicles 44%, passenger vehicles 43%, off-highway, gensets and exports 1%), lightweighting (suspension) 9% and supply chain management 2%; the annual report treats the business as one reportable segment. Sales are concentrated and domestic: three customers that each bought more than 10% of revenue made up 83% of FY26 revenue, and 99.6% of revenue was earned in India. Catalysts are chosen and priced by the vehicle maker and passed through, so they swell revenue without adding profit; management reads growth from gross profit, which rose 8% to ₹802.8 Cr in FY26 while revenue rose 20% to ₹3,396.8 Cr. Exhaust systems for commercial vehicles with engines above 4 litres are served through Exhaust Technology, a joint venture with Purem (formerly Eberspächer) in which it holds 50%, accounted for by the equity method, and the company owns 74% of Uddipt Mobility, a battery maker. Its plants are in Chennai, Pune, Nashik and Sanand, with a ninth in Uttarakhand licensed and yet to start production, an R&D centre in Chennai and a design centre in Namyang, South Korea.",
+    "business_intro": "Sharda Motor makes exhaust and emission-control systems and suspension parts for vehicle makers in India. Emission systems for commercial and passenger vehicles were 88% of FY26 revenue and lightweighting suspension parts 9%, by management's split. A few large customers buy most of the output, and the catalysts they price are passed through in revenue, so management reads its growth from gross profit.",
+    "company_timeline": [
+      {
+        "year": 1986,
+        "title": "Incorporated as Sharda Motor Industries",
+        "detail": "Incorporated on 29 January 1986; an IPO and listing on the Delhi Stock Exchange followed in 1987. The shares now trade on BSE and NSE.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3b98b3e2-875e-4c2a-990c-6003ac0fd213.pdf"
+          }
+        ]
+      },
+      {
+        "year": 1998,
+        "title": "Enters exhaust systems with a Chennai unit",
+        "detail": "Exhaust and emission systems became the core business: 88% of revenue in FY25 and in FY26 by management's split.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3b98b3e2-875e-4c2a-990c-6003ac0fd213.pdf"
+          },
+          {
+            "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d5514ea3-1249-4ffb-8b94-9224060802fc.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2002,
+        "title": "Starts suspension assemblies and exhaust R&D",
+        "detail": "Suspension became the Lightweighting vertical in 2025, making control arms, links and front axle assemblies; it was 9% of FY26 revenue.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3b98b3e2-875e-4c2a-990c-6003ac0fd213.pdf"
+          },
+          {
+            "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d5514ea3-1249-4ffb-8b94-9224060802fc.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2019,
+        "title": "Forms exhaust joint venture with Germany's Purem",
+        "detail": "Exhaust Technology, 50% owned and equity-accounted, serves commercial vehicles with engines above 4 litres, where Sharda is not present directly. Purem was formerly Eberspächer.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3b98b3e2-875e-4c2a-990c-6003ac0fd213.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript (Aug 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b6b5655b-1471-4cc2-bf48-412a52c5bee1.pdf"
+          },
+          {
+            "label": "Q2 FY27 investor presentation (13 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=84ad6670-ab14-4a5b-920c-f2b9d387f349.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2020,
+        "title": "Demerges the seating business",
+        "detail": "BS6 emission products also went into production in 2020.",
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3b98b3e2-875e-4c2a-990c-6003ac0fd213.pdf"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Licenses chassis technology from Korea's Donghee",
+        "detail": "In October 2025 Donghee Industrial agreed to transfer its chassis and suspension technology, particularly control arms and subframes, so Sharda can make these parts in India.",
+        "sources": [
+          {
+            "label": "Q2 FY26 earnings call transcript (Nov 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=679ec8ed-7d6a-4c8b-ab8e-eb7fa9ffbcb9.pdf"
+          },
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3b98b3e2-875e-4c2a-990c-6003ac0fd213.pdf"
+          }
+        ]
+      }
+    ],
+    "business_facts": [
+      {
+        "category": "customers",
+        "title": "Top 3 customers were 83% of FY26 revenue",
+        "text": "The FY26 annual report counts three customers that each bought more than 10% of revenue; together they were ₹2,823.3 Cr, 83.1% of ₹3,396.8 Cr consolidated revenue from operations. Two customers crossed 10% in FY25, at 74.4% of revenue, and two in FY24, at 70.5%. Management says it is not present at Japanese vehicle makers and does not serve one of the industry's key customers.",
+        "period": "FY26",
+        "metrics": [
+          {
+            "label": "Top 3 customers, FY26",
+            "value": 83.1,
+            "unit": "% of revenue"
+          }
+        ],
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3b98b3e2-875e-4c2a-990c-6003ac0fd213.pdf"
+          },
+          {
+            "label": "Annual Report FY2024-25",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/daf91eb3-87c4-4946-a168-db42a6182819.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript (Aug 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b6b5655b-1471-4cc2-bf48-412a52c5bee1.pdf"
+          },
+          {
+            "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d5514ea3-1249-4ffb-8b94-9224060802fc.pdf"
+          }
+        ]
+      },
+      {
+        "category": "geography",
+        "title": "Exports were 0.4% of FY26 revenue",
+        "text": "Revenue from outside India was ₹12.6 Cr in FY26, 0.4% of revenue, against ₹23.8 Cr in FY25, ₹20.2 Cr in FY24 and ₹72.1 Cr in FY23; management called FY25 exports roughly 1% of revenue. Booked export orders, including about US$7M a year from a North American engine and genset maker, are scheduled to start production from Q3 FY27.",
+        "period": "FY23 to FY26",
+        "metrics": [
+          {
+            "label": "Revenue outside India, FY23",
+            "value": 72.1,
+            "unit": "₹ Cr"
+          },
+          {
+            "label": "Revenue outside India, FY24",
+            "value": 20.2,
+            "unit": "₹ Cr"
+          },
+          {
+            "label": "Revenue outside India, FY25",
+            "value": 23.8,
+            "unit": "₹ Cr"
+          },
+          {
+            "label": "Revenue outside India, FY26",
+            "value": 12.6,
+            "unit": "₹ Cr"
+          }
+        ],
+        "sources": [
+          {
+            "label": "Annual Report FY2025-26",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3b98b3e2-875e-4c2a-990c-6003ac0fd213.pdf"
+          },
+          {
+            "label": "Annual Report FY2023-24",
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c6e8d084-a552-4706-beba-b4e747eee565.pdf"
+          },
+          {
+            "label": "Q3 FY26 earnings call transcript (9 Feb 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7baeb821-3d74-4255-b47d-f41e81a372e8.pdf"
+          },
+          {
+            "label": "Q2 FY27 investor presentation (13 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=84ad6670-ab14-4a5b-920c-f2b9d387f349.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Catalyst is passed through, so gross profit is the gauge",
+        "text": "Catalysts in the exhaust systems are chosen and priced by the vehicle maker: Sharda buys them at that price or receives them free, and passes the cost through, so dearer noble metals raise revenue without adding profit. Management therefore reads growth from gross profit: in FY26 revenue rose 20% and gross profit 8%, and in Q1 FY27 revenue grew 34%, which management put down to catalyst and product mix, while gross profit grew 8%.",
+        "period": "FY26 to Q1 FY27",
+        "sources": [
+          {
+            "label": "Q3 FY26 earnings call transcript (9 Feb 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7baeb821-3d74-4255-b47d-f41e81a372e8.pdf"
+          },
+          {
+            "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d5514ea3-1249-4ffb-8b94-9224060802fc.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript (Aug 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b6b5655b-1471-4cc2-bf48-412a52c5bee1.pdf"
+          }
+        ]
+      },
+      {
+        "category": "business_model",
+        "title": "Passenger vehicles 52%, commercial vehicles 44% of FY26 revenue",
+        "text": "The deck splits FY26 consolidated revenue by end vehicle: passenger vehicles 52%, commercial vehicles 44% and others 4%; earlier decks defined others as off-highway, agriculture, gensets, medium and heavy commercial vehicles, supply chain management and scrap sales. In FY25 the split was 55%, 40% and 5%. The passenger-vehicle share matches management's split of passenger-vehicle emission systems (43% in FY26) plus suspension parts (9%).",
+        "period": "FY26",
+        "metrics": [
+          {
+            "label": "Passenger vehicles",
+            "value": 52,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Commercial vehicles",
+            "value": 44,
+            "unit": "% of revenue"
+          },
+          {
+            "label": "Others",
+            "value": 4,
+            "unit": "% of revenue"
+          }
+        ],
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation (13 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=84ad6670-ab14-4a5b-920c-f2b9d387f349.pdf"
+          },
+          {
+            "label": "Q4 FY25 investor presentation (May 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f0929280-0103-49c2-ad5c-ef22e2416b08.pdf"
+          },
+          {
+            "label": "Q3 FY25 investor presentation (Feb 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7402b422-4d70-43b6-895b-444e0aa223b4.pdf"
+          },
+          {
+            "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d5514ea3-1249-4ffb-8b94-9224060802fc.pdf"
+          }
+        ]
+      },
+      {
+        "category": "capabilities",
+        "title": "About 30% value share in PV and LCV emission systems",
+        "text": "The Q2 FY27 deck puts Sharda's value market share in India at about 30% for passenger-vehicle and light-commercial-vehicle emission systems and about 14% for their control arms and links; management said the lightweighting share rose to 14% in FY26 from 12.5%. It draws its own exhaust tubes on two tube mills, runs three stamping plants and has 120+ R&D staff, an R&D centre in Chennai and a design centre in Namyang, South Korea; it has filed 26 patents in the last four years, six of them granted.",
+        "period": "FY26; Q2 FY27 deck",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation (13 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=84ad6670-ab14-4a5b-920c-f2b9d387f349.pdf"
+          },
+          {
+            "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d5514ea3-1249-4ffb-8b94-9224060802fc.pdf"
+          }
+        ]
+      },
+      {
+        "category": "footprint",
+        "title": "Nine plants across five Indian auto hubs",
+        "text": "The Q2 FY27 deck lists nine manufacturing facilities and 1,000+ on-roll employees: Chennai 2 (emission systems, tube mills), Pune 3 at Chakan (emission systems, lightweighting assembly), Nashik 2 (emission systems, roof systems, lightweighting assembly), Sanand 1 and Uttarakhand 1 (emission systems). The Uttarakhand plant, about ₹20 Cr near a customer that is shifting production there, has its factory licence and its production start is on schedule, management said in November 2026; the third Chakan plant, for lightweighting, had started production by May 2026.",
+        "period": "Q2 FY27 deck",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation (13 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=84ad6670-ab14-4a5b-920c-f2b9d387f349.pdf"
+          },
+          {
+            "label": "Q1 FY27 earnings call transcript (Aug 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b6b5655b-1471-4cc2-bf48-412a52c5bee1.pdf"
+          },
+          {
+            "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d5514ea3-1249-4ffb-8b94-9224060802fc.pdf"
+          },
+          {
+            "label": "Q2 FY27 earnings call transcript (13 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bbcae8b9-6ebc-48e0-b0d4-4f3e8b378042.pdf"
+          }
+        ]
+      },
+      {
+        "category": "expansion",
+        "title": "New orders start production between FY26 and FY28",
+        "text": "Two control-arm orders announced in FY25 (about US$4M and US$4.2M a year) started production in FY26. Two control-arm and link orders announced in Q2 FY26, about US$14M a year and US$70M over their life, are due to start in Q1 FY28, In H1 FY27 it won its first two-wheeler business, a premium-motorcycle emission system (US$8.1M a year, from Q1 FY28), and a control arm for an emerging Indian carmaker won with Donghee's technology (US$3.9M a year, from Q4 FY28).",
+        "period": "FY25 to FY28 (as of Q2 FY27 deck)",
+        "sources": [
+          {
+            "label": "Q2 FY27 investor presentation (13 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=84ad6670-ab14-4a5b-920c-f2b9d387f349.pdf"
+          },
+          {
+            "label": "Q2 FY26 earnings call transcript (Nov 2025)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=679ec8ed-7d6a-4c8b-ab8e-eb7fa9ffbcb9.pdf"
+          },
+          {
+            "label": "Q2 FY27 earnings call transcript (13 Nov 2026)",
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bbcae8b9-6ebc-48e0-b0d4-4f3e8b378042.pdf"
+          }
+        ]
+      }
+    ],
+    "what_changed": {
+      "headline": "Revenue has outgrown gross profit since FY26 as pass-through catalyst costs rose",
+      "text": "FY26 revenue from operations rose 20% to ₹3,396.8 Cr while gross profit rose 8% to ₹802.8 Cr; management said higher catalyst prices, which it passes through, inflated the top line. In H1 FY27 revenue rose 44% and gross profit 14%. From Q2 FY27 management reports value-added sales, which leave out pass-through items: they grew 18% in H1 and 27% in Q2, against 54% revenue and 20% gross profit growth in the quarter. It credits the emission business and new lightweighting programmes, and puts gross profit's lag down to their start-up costs, product mix and non-indexed commodities.",
+      "period": "FY25 to H1 FY27",
+      "sources": [
+        {
+          "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d5514ea3-1249-4ffb-8b94-9224060802fc.pdf"
+        },
+        {
+          "label": "Q2 FY27 investor presentation (13 Nov 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=84ad6670-ab14-4a5b-920c-f2b9d387f349.pdf"
+        },
+        {
+          "label": "Q2 FY27 earnings call transcript (13 Nov 2026)",
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bbcae8b9-6ebc-48e0-b0d4-4f3e8b378042.pdf"
+        }
+      ]
+    }
+  },
+  "about_sources": [
+    {
+      "label": "Annual Report FY2025-26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3b98b3e2-875e-4c2a-990c-6003ac0fd213.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 FY26 earnings call transcript (22 May 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d5514ea3-1249-4ffb-8b94-9224060802fc.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q1 FY27 earnings call transcript (Aug 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=b6b5655b-1471-4cc2-bf48-412a52c5bee1.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q2 FY27 investor presentation (13 Nov 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=84ad6670-ab14-4a5b-920c-f2b9d387f349.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q2 FY26 earnings call transcript (Nov 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=679ec8ed-7d6a-4c8b-ab8e-eb7fa9ffbcb9.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Annual Report FY2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/daf91eb3-87c4-4946-a168-db42a6182819.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Annual Report FY2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c6e8d084-a552-4706-beba-b4e747eee565.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q3 FY26 earnings call transcript (9 Feb 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7baeb821-3d74-4255-b47d-f41e81a372e8.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 FY25 investor presentation (May 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=f0929280-0103-49c2-ad5c-ef22e2416b08.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q3 FY25 investor presentation (Feb 2025)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7402b422-4d70-43b6-895b-444e0aa223b4.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q2 FY27 earnings call transcript (13 Nov 2026)",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=bbcae8b9-6ebc-48e0-b0d4-4f3e8b378042.pdf",
+      "locator": "company background, timeline and facts"
+    }
+  ]
+}

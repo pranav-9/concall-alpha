@@ -62,6 +62,8 @@ const EXCLUDE = {
   SHRIRAMFIN: "the site icon is a mascot illustration, not the mark",
   STOVEKRAFT: "only a long wordmark, illegible at tile size",
   CARBORUNIV: "site serves the default WordPress icon",
+  SHARDAMOTR: "site serves the default WordPress icon (reviewed 2026-11-20)",
+  MINDACORP: "the fetched header image is a Great Place to Work certification badge, not the Spark Minda mark (reviewed 2026-11-20)",
   TIMEX: "site serves the default WordPress icon",
   VENUSPIPES: "site serves the default WordPress icon",
   CYIENTDLM: "the site's icon is a plain grey disc, not the mark",
