@@ -585,6 +585,13 @@
     "source": "https://pricol.com/wp-content/uploads/2023/01/cropped-logo-1-180x180.png",
     "fetchedAt": "2026-10-29"
   },
+  "PVRINOX": {
+    "site": "https://www.pvrcinemas.com/",
+    "siteFrom": "company.website",
+    "tier": "icon",
+    "source": "https://www.pvrcinemas.com/pvr.ico",
+    "fetchedAt": "2026-11-21"
+  },
   "PWL": {
     "tier": "icon",
     "source": "https://www.pw.live/favicon.ico",
