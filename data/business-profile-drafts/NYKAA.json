@@ -1,0 +1,421 @@
+{
+ "company": "NYKAA",
+ "company_name": "FSN E-Commerce Ventures Limited",
+ "prepared_on": "2026-11-26",
+ "review_status": "reviewed",
+ "source_period": "Q2 FY27",
+ "latest_source_date": "2026-11-06",
+ "about_company": {
+  "about_short": "India's beauty and fashion shopping platform, with 338 beauty stores, its own beauty brands and a B2B supply app",
+  "about_long": "FSN E-Commerce Ventures runs Nykaa, an Indian beauty and fashion retailer: the Nykaa beauty and Nykaa Fashion apps and websites, and 338 beauty stores in 111 cities as of September 2026. Beauty, which also covers its own brands (House of Nykaa, such as Dot & Key, Kay Beauty and Nykaa Cosmetics) and the Superstore app that supplies over 5.5 lakh small shops, earned 91% of FY26 revenue. In beauty Nykaa mostly buys stock from brands and resells it, while Nykaa Fashion is mainly a marketplace that books its commission as revenue, so Fashion was 25% of FY26 GMV but about 8% of revenue. Brands also pay Nykaa to advertise on its platform; this marketing support revenue was 9.1% of FY26 revenue. Its customers are individual shoppers and small retailers, no single customer is 10% of revenue, and over 99% of revenue is earned in India. Since February 2026 it has also run Nike's online store and app in India.",
+  "business_intro": "Nykaa sells beauty, personal-care and fashion products to Indian shoppers through its apps, websites and 338 stores, and supplies beauty brands to small shops through its Superstore app. Most revenue comes from buying and reselling products (86% of FY26 revenue); the rest is fees from brands for advertising and for selling on its marketplace. It also builds its own brands, such as Dot & Key, Kay Beauty and Nykaa Cosmetics, whose beauty brands made about Rs 1,700 Cr of net sales in FY26.",
+  "company_timeline": [
+   {
+    "year": 2012,
+    "title": "Incorporated as FSN E-Commerce Ventures",
+    "detail": "Started as an online beauty platform; it has since grown into a beauty and lifestyle retailer with stores, own brands and a fashion platform.",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=27f727a5-b215-477d-ba19-58c68ed92581.pdf",
+      "label": "Q1 FY24 investor presentation (company history slide)"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e96ee6b3-76bd-448f-aba2-15ac8c042994.pdf",
+      "label": "Integrated Report FY2025-26"
+     }
+    ]
+   },
+   {
+    "year": 2014,
+    "title": "Opens its first physical store",
+    "detail": "The store network reached 313 stores in 99 cities by March 2026 and 338 stores in 111 cities by September 2026.",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3025af94-ff0a-4ef0-a5fd-c190e961a60c.pdf",
+      "label": "Integrated Report FY2024-25"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e96ee6b3-76bd-448f-aba2-15ac8c042994.pdf",
+      "label": "Integrated Report FY2025-26"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/80183d70-1ed8-4bcc-86bd-a4827f201bce.pdf",
+      "label": "Q2 FY27 press release"
+     }
+    ]
+   },
+   {
+    "year": 2015,
+    "title": "Launches Nykaa Cosmetics, its first own brand",
+    "detail": "The start of House of Nykaa, its owned-brands business. Kay Beauty, made with Katrina Kaif, followed in 2019.",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e96ee6b3-76bd-448f-aba2-15ac8c042994.pdf",
+      "label": "Integrated Report FY2025-26"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2185cecd-af1f-41c1-9f72-0d73882d42e7.pdf",
+      "label": "Annual Investor Day presentation, June 2026"
+     }
+    ]
+   },
+   {
+    "year": 2018,
+    "title": "Launches Nykaa Fashion",
+    "detail": "A curated fashion marketplace across women's, men's, kids' and home; it made Rs 4,954 Cr of GMV in FY26.",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e96ee6b3-76bd-448f-aba2-15ac8c042994.pdf",
+      "label": "Integrated Report FY2025-26"
+     }
+    ]
+   },
+   {
+    "year": 2021,
+    "title": "Acquires 51% of skincare brand Dot & Key",
+    "detail": "Bought in September 2021 and raised by another 39% in September 2024. Dot & Key passed Rs 1,000 Cr of net sales in FY26.",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e96ee6b3-76bd-448f-aba2-15ac8c042994.pdf",
+      "label": "Integrated Report FY2025-26"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2185cecd-af1f-41c1-9f72-0d73882d42e7.pdf",
+      "label": "Annual Investor Day presentation, June 2026"
+     }
+    ]
+   },
+   {
+    "year": 2021,
+    "title": "Lists on NSE and BSE through an IPO",
+    "detail": "Shares trade as NYKAA on NSE and 543384 on BSE. In October 2021 it also launched Superstore, its app for supplying small shops.",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=27f727a5-b215-477d-ba19-58c68ed92581.pdf",
+      "label": "Q1 FY24 investor presentation (company history slide)"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2cc19e8a-c6e0-4594-ae73-70da885ede70.pdf",
+      "label": "Q1 FY27 investor presentation"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3025af94-ff0a-4ef0-a5fd-c190e961a60c.pdf",
+      "label": "Integrated Report FY2024-25"
+     }
+    ]
+   }
+  ],
+  "business_facts": [
+   {
+    "text": "Nykaa sells to individual shoppers, and to small shops through Superstore, so no single customer gave 10% or more of FY26 revenue. About 65 million people had bought on Nykaa by September 2026, up 32% in a year and from 26 million in June 2023 (over 55 million by March 2026). In the twelve months to September 2026, 22.1 million shoppers bought beauty products and 5.1 million bought fashion. Superstore had 554,000 onboarded retailers in September 2026.",
+    "title": "No customer is 10% of revenue; 65 mn people have bought on Nykaa",
+    "period": "Q1 FY24 to Q2 FY27",
+    "metrics": [
+     {
+      "unit": "mn customers",
+      "label": "Customers ever served, Q1 FY24",
+      "value": 26
+     },
+     {
+      "unit": "mn customers",
+      "label": "Customers ever served, FY26 (55 mn+)",
+      "value": 55
+     },
+     {
+      "unit": "mn customers",
+      "label": "Customers ever served, Q1 FY27",
+      "value": 60
+     },
+     {
+      "unit": "mn customers",
+      "label": "Customers ever served, Q2 FY27",
+      "value": 65
+     }
+    ],
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e96ee6b3-76bd-448f-aba2-15ac8c042994.pdf",
+      "label": "Integrated Report FY2025-26"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=50ac9939-0883-4bf6-af9d-39dec9ab2d22.pdf",
+      "label": "Q1 FY27 earnings call transcript"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/90466233-b82a-40bc-ba47-5993e33d52a6.pdf",
+      "label": "Q2 FY27 investor presentation"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1b639641-135f-4c55-a38d-d892bb382d9f.pdf",
+      "label": "Q2 FY27 earnings call transcript"
+     }
+    ],
+    "category": "customers"
+   },
+   {
+    "text": "Revenue from outside India was Rs 55.11 Cr, 0.5% of FY26 consolidated revenue, up from Rs 23.55 Cr (0.3%) in FY25. It comes mainly from Nysaa, the beauty platform it launched in the Gulf in 2024, which has two stores in Dubai and is under 1% of group GMV. Within India, half of Nykaa's stores are in Tier 2 cities and smaller towns (June 2026).",
+    "title": "Over 99% of FY26 revenue was earned in India",
+    "period": "FY25 to Q1 FY27",
+    "metrics": [
+     {
+      "unit": "% of revenue",
+      "label": "Revenue outside India, FY25",
+      "value": 0.3
+     },
+     {
+      "unit": "% of revenue",
+      "label": "Revenue outside India, FY26",
+      "value": 0.5
+     }
+    ],
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e96ee6b3-76bd-448f-aba2-15ac8c042994.pdf",
+      "label": "Integrated Report FY2025-26"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2185cecd-af1f-41c1-9f72-0d73882d42e7.pdf",
+      "label": "Annual Investor Day presentation, June 2026"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2cc19e8a-c6e0-4594-ae73-70da885ede70.pdf",
+      "label": "Q1 FY27 investor presentation"
+     }
+    ],
+    "category": "geography"
+   },
+   {
+    "text": "Of FY26 consolidated revenue of Rs 10,022 Cr, product sales were Rs 8,645 Cr, marketing support revenue (brands paying to advertise) Rs 913 Cr, marketplace fees Rs 372 Cr and delivery charges and other operating revenue Rs 93 Cr. The beauty business mainly holds its own stock, bought from brands or their authorised distributors; fashion is mainly a marketplace where partner brands sell and Nykaa earns a commission. Nykaa says brands, not Nykaa, fund the discounts on beauty products.",
+    "title": "Product sales were 86% of FY26 revenue, brand advertising 9%",
+    "period": "FY26",
+    "metrics": [
+     {
+      "unit": "% of revenue",
+      "label": "Sale of products",
+      "value": 86.3
+     },
+     {
+      "unit": "% of revenue",
+      "label": "Marketing support revenue",
+      "value": 9.1
+     },
+     {
+      "unit": "% of revenue",
+      "label": "Marketplace fees",
+      "value": 3.7
+     },
+     {
+      "unit": "% of revenue",
+      "label": "Delivery charges and other",
+      "value": 0.9
+     }
+    ],
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e96ee6b3-76bd-448f-aba2-15ac8c042994.pdf",
+      "label": "Integrated Report FY2025-26"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=50ac9939-0883-4bf6-af9d-39dec9ab2d22.pdf",
+      "label": "Q1 FY27 earnings call transcript"
+     }
+    ],
+    "category": "business_model"
+   },
+   {
+    "text": "Nykaa had 338 stores in 111 cities at the end of September 2026, after adding 14 stores and 6 cities in that quarter, with over 3.4 lakh sq ft of retail space, up 26% in a year. Of these, 253 are multi-brand stores (formats include Nykaa Luxe, On Trend and Perfumery), 69 are House of Nykaa outlets and kiosks, and 16 are brand boutiques it runs for Kiehl's (14) and Charlotte Tilbury (2). Online orders reach about 19,000 pin codes, and its 30-60 minute delivery service, Nykaa Now, ran in 15 cities in the September 2026 quarter.",
+    "title": "338 beauty stores in 111 cities, up from 72 stores in FY21",
+    "period": "FY21 to Q2 FY27",
+    "metrics": [
+     {
+      "unit": "stores",
+      "label": "Stores, FY21",
+      "value": 72
+     },
+     {
+      "unit": "stores",
+      "label": "Stores, FY22",
+      "value": 104
+     },
+     {
+      "unit": "stores",
+      "label": "Stores, FY23",
+      "value": 145
+     },
+     {
+      "unit": "stores",
+      "label": "Stores, FY24",
+      "value": 187
+     },
+     {
+      "unit": "stores",
+      "label": "Stores, FY25",
+      "value": 237
+     },
+     {
+      "unit": "stores",
+      "label": "Stores, FY26",
+      "value": 313
+     }
+    ],
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2185cecd-af1f-41c1-9f72-0d73882d42e7.pdf",
+      "label": "Annual Investor Day presentation, June 2026"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=50ac9939-0883-4bf6-af9d-39dec9ab2d22.pdf",
+      "label": "Q1 FY27 earnings call transcript"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/80183d70-1ed8-4bcc-86bd-a4827f201bce.pdf",
+      "label": "Q2 FY27 press release"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1b639641-135f-4c55-a38d-d892bb382d9f.pdf",
+      "label": "Q2 FY27 earnings call transcript"
+     }
+    ],
+    "category": "footprint"
+   },
+   {
+    "text": "House of Nykaa had 13 brands in the September 2026 quarter, 8 in beauty and 5 in fashion. Its beauty brands made about Rs 1,700 Cr of net sales value in FY26: Dot & Key over Rs 1,000 Cr, and Kay Beauty and Nykaa Cosmetics Rs 250-350 Cr each. In the September 2026 quarter the beauty brands' net sales were Rs 535 Cr, up 39%; 37% came through Nykaa's apps, 10% through its stores, 21% through its B2B channels, 4% from exports and 28% through other online platforms. Aminu (51%, up to Rs 32 Cr) became a subsidiary on 24 September 2026, and an 82% stake in Simply Nam (up to Rs 33 Cr) is agreed, expected to close by 31 December 2026.",
+    "title": "Own beauty brands made about Rs 1,700 Cr of net sales in FY26",
+    "period": "FY26 to Q2 FY27",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2185cecd-af1f-41c1-9f72-0d73882d42e7.pdf",
+      "label": "Annual Investor Day presentation, June 2026"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1b639641-135f-4c55-a38d-d892bb382d9f.pdf",
+      "label": "Q2 FY27 earnings call transcript"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/90466233-b82a-40bc-ba47-5993e33d52a6.pdf",
+      "label": "Q2 FY27 investor presentation",
+      "locator": "Slide 21"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a2fc6bd6-14d8-475b-8fee-2b45c5cc6c2e.pdf",
+      "label": "Q2 FY27 financial results and board outcome"
+     }
+    ],
+    "category": "capabilities"
+   },
+   {
+    "text": "Superstore, launched in October 2021, is an app through which small beauty shops, chemists and general stores order brands from Nykaa. It had about 5 lakh onboarded retailers in about 1,200 cities in March 2026 and made Rs 1,187 Cr of GMV in FY26, up 26%. It sells more than 200 FMCG, D2C and regional brands and was still loss-making in FY26. By September 2026 it had 554,000 onboarded retailers, up 27% in a year, in over 1,200 cities; its September 2026 quarter GMV of Rs 328 Cr grew 15%, held back by GST-led MRP cuts, while net sales value grew 28%.",
+    "title": "Superstore supplies about 5 lakh small shops in 1,200 cities",
+    "period": "FY26 to Q2 FY27",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3025af94-ff0a-4ef0-a5fd-c190e961a60c.pdf",
+      "label": "Integrated Report FY2024-25"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e96ee6b3-76bd-448f-aba2-15ac8c042994.pdf",
+      "label": "Integrated Report FY2025-26"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2185cecd-af1f-41c1-9f72-0d73882d42e7.pdf",
+      "label": "Annual Investor Day presentation, June 2026"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/90466233-b82a-40bc-ba47-5993e33d52a6.pdf",
+      "label": "Q2 FY27 investor presentation"
+     }
+    ],
+    "category": "expansion"
+   },
+   {
+    "text": "Since February 2026 Nykaa Fashion has run Nike.in and the Nike app in India end to end, including fulfilment, and the sales are reported inside the Fashion vertical. Nike is also sold on Nykaa Fashion, where it was among the top three brands in the June 2026 quarter. The Nike app passed 1.5 million installs within six months of launch.",
+    "title": "Runs Nike's online store and app in India since February 2026",
+    "period": "Feb 2026 to Q1 FY27",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2185cecd-af1f-41c1-9f72-0d73882d42e7.pdf",
+      "label": "Annual Investor Day presentation, June 2026"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=50ac9939-0883-4bf6-af9d-39dec9ab2d22.pdf",
+      "label": "Q1 FY27 earnings call transcript"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2cc19e8a-c6e0-4594-ae73-70da885ede70.pdf",
+      "label": "Q1 FY27 investor presentation"
+     }
+    ],
+    "category": "business_model"
+   }
+  ],
+  "what_changed": {
+   "text": "Fashion's EBITDA margin, measured on net sales value, went from -8.3% in FY25 to -2.6% in FY26, then 0.3% in Q4 FY26, 0.1% in Q1 FY27 and 0.2% in Q2 FY27, a third straight quarter above breakeven. It came mainly from lower marketing and selling costs, down from 31.4% of net sales value in FY25 to 22.7% in Q2 FY27, even as new customers grew 31% in Q2 FY27 and the cost of acquiring one fell about 30% over two years. On the reported segment basis Fashion still lost Rs 75.29 Cr before exceptional items and tax in FY26, against Rs 124.54 Cr in FY25, and Rs 16.17 Cr in H1 FY27, against Rs 48.36 Cr a year earlier. Fashion net sales value grew 29% in FY26 and 47% in Q2 FY27.",
+   "period": "FY25 to Q2 FY27",
+   "sources": [
+    {
+     "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5660d460-b01c-4498-9198-11722215c5cb.pdf",
+     "label": "Q4 FY26 investor presentation"
+    },
+    {
+     "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/90466233-b82a-40bc-ba47-5993e33d52a6.pdf",
+     "label": "Q2 FY27 investor presentation"
+    },
+    {
+     "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e96ee6b3-76bd-448f-aba2-15ac8c042994.pdf",
+     "label": "Integrated Report FY2025-26"
+    },
+    {
+     "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a2fc6bd6-14d8-475b-8fee-2b45c5cc6c2e.pdf",
+     "label": "Q2 FY27 financial results and board outcome"
+    }
+   ],
+   "headline": "Fashion turned EBITDA-positive in Q4 FY26 after years of losses"
+  }
+ },
+ "about_sources": [
+  {
+   "label": "Q4 FY26 investor presentation",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=5660d460-b01c-4498-9198-11722215c5cb.pdf"
+  },
+  {
+   "label": "Q2 FY27 investor presentation",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/90466233-b82a-40bc-ba47-5993e33d52a6.pdf"
+  },
+  {
+   "label": "Integrated Report FY2025-26",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e96ee6b3-76bd-448f-aba2-15ac8c042994.pdf"
+  },
+  {
+   "label": "Q2 FY27 financial results and board outcome",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/a2fc6bd6-14d8-475b-8fee-2b45c5cc6c2e.pdf"
+  },
+  {
+   "label": "Q1 FY27 earnings call transcript",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=50ac9939-0883-4bf6-af9d-39dec9ab2d22.pdf"
+  },
+  {
+   "label": "Q2 FY27 earnings call transcript",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1b639641-135f-4c55-a38d-d892bb382d9f.pdf"
+  },
+  {
+   "label": "Annual Investor Day presentation, June 2026",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2185cecd-af1f-41c1-9f72-0d73882d42e7.pdf"
+  },
+  {
+   "label": "Q1 FY27 investor presentation",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=2cc19e8a-c6e0-4594-ae73-70da885ede70.pdf"
+  },
+  {
+   "label": "Q2 FY27 press release",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/80183d70-1ed8-4bcc-86bd-a4827f201bce.pdf"
+  },
+  {
+   "label": "Integrated Report FY2024-25",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/3025af94-ff0a-4ef0-a5fd-c190e961a60c.pdf"
+  },
+  {
+   "label": "Q1 FY24 investor presentation (company history slide)",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=27f727a5-b215-477d-ba19-58c68ed92581.pdf"
+  }
+ ]
+}

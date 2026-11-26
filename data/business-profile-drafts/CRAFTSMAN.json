@@ -1,0 +1,345 @@
+{
+ "company": "CRAFTSMAN",
+ "company_name": "Craftsman Automation Limited",
+ "prepared_on": "2026-11-26",
+ "review_status": "reviewed",
+ "source_period": "Q2 FY27",
+ "latest_source_date": "2026-11-02",
+ "about_company": {
+  "about_short": "Coimbatore maker of engine parts, aluminium castings and alloy wheels, plus storage racks and industrial equipment.",
+  "about_long": "Craftsman Automation is a Coimbatore-based engineering manufacturer that casts, machines and assembles parts for vehicle and equipment makers. Its Powertrain segment machines cylinder blocks, cylinder heads, camshafts and transmission parts for commercial vehicles, tractors, off-highway machines and stationary engines; it includes the German iron foundry bought in 2024 (17% of H1 FY27 segment revenue). Aluminium Products, now the largest segment, die-casts and machines aluminium parts for cars and two-wheelers and makes alloy wheels; it grew mainly by buying DR Axion India and Sunbeam Lightweighting. Industrial & Engineering sells storage racking and automated storage systems and does contract manufacturing of sub-assemblies, gears and special-purpose machines. Revenue is earned per part supplied to OEMs and component makers, with the aluminium cost passed through in the price.",
+  "business_intro": "Craftsman makes metal parts that go inside engines, vehicles and factories: machined engine blocks and heads, aluminium castings and alloy wheels, and storage racks. It does the whole chain in-house, from design and tooling to the foundry, machining and assembly, and sells to vehicle makers and other component suppliers. Buying DR Axion (FY23) and Sunbeam (FY25) turned it from a mainly powertrain-parts business into a mainly aluminium one.",
+  "company_timeline": [
+   {
+    "year": 1986,
+    "title": "Founded in Coimbatore by Srinivasan Ravi",
+    "detail": "First-generation entrepreneur Srinivasan Ravi started operations in Coimbatore, Tamil Nadu, and has been with the company since incorporation.",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c42326a2-0b18-423e-8e99-eda74d20dc80.pdf",
+      "label": "Investor presentation, Q4 FY26 (8 May 2026)",
+      "locator": "Company Overview – Introduction; Management Team"
+     }
+    ]
+   },
+   {
+    "year": 2021,
+    "title": "Lists on BSE and NSE through an IPO",
+    "detail": "The IPO was launched in March 2021 and the shares listed on 25 March 2021.",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c42326a2-0b18-423e-8e99-eda74d20dc80.pdf",
+      "label": "Investor presentation, Q4 FY26 (8 May 2026)",
+      "locator": "Company Overview – Introduction; Our Journey"
+     }
+    ]
+   },
+   {
+    "year": 2023,
+    "title": "Acquires 76% of DR Axion India",
+    "detail": "Bought 76% of the aluminium die-caster on 1 February 2023 for ₹375 Cr; the remaining 24% followed on 29 June 2024 for ₹250 Cr, making it a wholly owned subsidiary.",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/163520c2-efc1-4bbe-9a84-f710a54c1baf.pdf",
+      "label": "Annual Report FY24 (BSE filing)"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e4ccaa35-5d39-4fac-a952-83b11ad83c53.pdf",
+      "label": "Annual Report FY25 (BSE filing)"
+     }
+    ]
+   },
+   {
+    "year": 2024,
+    "title": "Acquires a German foundry, Fronberg Guss",
+    "detail": "Craftsman Germany GmbH and Craftsman Fronberg Guss GmbH became subsidiaries on 22 July 2024; the Fronberg Guss assets were bought on 1 October 2024 to cast iron parts for stationary engines.",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e4ccaa35-5d39-4fac-a952-83b11ad83c53.pdf",
+      "label": "Annual Report FY25 (BSE filing)"
+     }
+    ]
+   },
+   {
+    "year": 2024,
+    "title": "Acquires Sunbeam Lightweighting Solutions",
+    "detail": "Sunbeam, an aluminium die-caster in Haryana, became a wholly owned subsidiary on 9 October 2024.",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e4ccaa35-5d39-4fac-a952-83b11ad83c53.pdf",
+      "label": "Annual Report FY25 (BSE filing)"
+     }
+    ]
+   }
+  ],
+  "business_facts": [
+   {
+    "text": "On the parent company's own books (standalone, which leaves out DR Axion, Sunbeam and the German plant), customers who each bought more than 10% of revenue together took ₹1,144 Cr of ₹4,818 Cr in FY26 (23.7%), against ₹1,364 Cr of ₹3,848 Cr in FY25 (35.5%) and ₹909 Cr of ₹3,208 Cr in FY24 (28.3%). The annual reports do not name these customers, say how many there are, or give a consolidated figure.",
+    "title": "Customers above 10% of sales each: 24% of standalone revenue",
+    "period": "FY24–FY26 (standalone)",
+    "metrics": [
+     {
+      "unit": "% of standalone revenue",
+      "label": "Customers >10% each, FY24",
+      "value": 28.3
+     },
+     {
+      "unit": "% of standalone revenue",
+      "label": "Customers >10% each, FY25",
+      "value": 35.5
+     },
+     {
+      "unit": "% of standalone revenue",
+      "label": "Customers >10% each, FY26",
+      "value": 23.7
+     }
+    ],
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/163520c2-efc1-4bbe-9a84-f710a54c1baf.pdf",
+      "label": "Annual Report FY24 (BSE filing)"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e4ccaa35-5d39-4fac-a952-83b11ad83c53.pdf",
+      "label": "Annual Report FY25 (BSE filing)"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/9b43f718-4050-481b-a648-e7f07b984381.pdf",
+      "label": "Annual Report FY26 (BSE filing)"
+     }
+    ],
+    "category": "customers"
+   },
+   {
+    "text": "Sales outside India were ₹313 Cr of ₹4,818 Cr of standalone revenue in FY26 (6.5%), ₹237 Cr of ₹3,848 Cr in FY25 (6.2%) and ₹235 Cr of ₹3,208 Cr in FY24 (7.3%); the figure includes export incentives and leaves out sales to SEZs. It excludes the subsidiaries, including the German plant, and the annual reports give no consolidated split by country. On the Q2 FY27 call the CMD put the German subsidiary at about 4% of group revenue; Craftsman Germany was 16% of FY26 Powertrain revenue (Q4 FY26 deck).",
+    "title": "Exports are about 6–7% of standalone revenue",
+    "period": "FY24–FY26 (standalone); German plant to Oct 2026",
+    "metrics": [
+     {
+      "unit": "% of standalone revenue",
+      "label": "Exports, FY24",
+      "value": 7.3
+     },
+     {
+      "unit": "% of standalone revenue",
+      "label": "Exports, FY25",
+      "value": 6.2
+     },
+     {
+      "unit": "% of standalone revenue",
+      "label": "Exports, FY26",
+      "value": 6.5
+     }
+    ],
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e4ccaa35-5d39-4fac-a952-83b11ad83c53.pdf",
+      "label": "Annual Report FY25 (BSE filing)"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/9b43f718-4050-481b-a648-e7f07b984381.pdf",
+      "label": "Annual Report FY26 (BSE filing)"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9c470058-9159-4dbd-a1d8-7a930d7d7680.pdf",
+      "label": "Earnings call transcript, Q2 FY27 (29 Oct 2026)"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c42326a2-0b18-423e-8e99-eda74d20dc80.pdf",
+      "label": "Investor presentation, Q4 FY26 (8 May 2026)",
+      "locator": "Powertrain – Segment Overview"
+     }
+    ],
+    "category": "geography"
+   },
+   {
+    "text": "As of the Q2 FY27 presentation (29 October 2026), Craftsman counts 31 facilities: 28 vertically integrated plants across 9 Indian states, one plant in Germany and two plants under construction at Hosur and Chennai, with built-up area of over 3.9 million sq ft. The same deck's footprint slide calls Hosur a proposed project and Sriperumbudur (DR Axion) under construction; on the Q2 FY27 call the CMD said DR Axion's Plant-2 had started trial production.",
+    "title": "28 plants across 9 Indian states and one in Germany",
+    "period": "Q2 FY27 (Oct 2026)",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1276b0fe-717b-4f99-91ef-7015355bcb35.pdf",
+      "label": "Investor presentation, Q2 FY27 (29 Oct 2026)",
+      "locator": "Company Overview – Introduction; Our Footprint"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9c470058-9159-4dbd-a1d8-7a930d7d7680.pdf",
+      "label": "Earnings call transcript, Q2 FY27 (29 Oct 2026)"
+     }
+    ],
+    "category": "footprint"
+   },
+   {
+    "text": "The company does product design, tool and fixture making, aluminium casting (high-pressure, low-pressure, gravity and sand), iron casting at two cast-iron foundries (Kothavadi in India and Fronberg in Germany), machining, surface treatment, fabrication and assembly in its own plants, which lets it sell finished, machined parts rather than raw castings.",
+    "title": "Design-to-assembly in-house, foundry included",
+    "period": "FY26 to Q2 FY27",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c42326a2-0b18-423e-8e99-eda74d20dc80.pdf",
+      "label": "Investor presentation, Q4 FY26 (8 May 2026)",
+      "locator": "Inhouse Manufacturing Capabilities"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e4ccaa35-5d39-4fac-a952-83b11ad83c53.pdf",
+      "label": "Annual Report FY25 (BSE filing)"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1276b0fe-717b-4f99-91ef-7015355bcb35.pdf",
+      "label": "Investor presentation, Q2 FY27 (29 Oct 2026)",
+      "locator": "Powertrain – Segment Overview"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e2154f59-6d6e-436f-b4db-47697a79f457.pdf",
+      "label": "Earnings call transcript, Q3 FY25 (30 Jan 2025)"
+     }
+    ],
+    "category": "capabilities"
+   },
+   {
+    "text": "Craftsman passes the aluminium price through to customers and declines to supply where it is not passed through (May 2026), so metal prices move reported revenue without changing volume. The pass-through lags and earns no margin on the metal: in Q2 FY27 aluminium prices fell after Craftsman had built up inventory, and Aluminium Products' segment EBIT margin fell to 7.5% (₹136 Cr on ₹1,819 Cr) from 11.7% a year earlier. Management called it a one-time hit and is negotiating compensation that it expects to play out over the next two quarters.",
+    "title": "Aluminium is passed through, with a lag and no margin on the metal",
+    "period": "May 2026 to Q2 FY27 (Oct 2026)",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=07811b1a-1f0a-47f9-9b9f-e297cc30ea0b.pdf",
+      "label": "Earnings call transcript, Q4 FY26 (8 May 2026)"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9c470058-9159-4dbd-a1d8-7a930d7d7680.pdf",
+      "label": "Earnings call transcript, Q2 FY27 (29 Oct 2026)"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/45f3f284-3078-4d7a-aa29-c0ebac0ebddd.pdf",
+      "label": "Q2 FY27 financial results (28 Oct 2026)",
+      "locator": "Segment information"
+     }
+    ],
+    "category": "business_model"
+   },
+   {
+    "text": "Alloy wheels, part of Aluminium Products and made only by the parent (DR Axion and Sunbeam make none), earned around ₹280 Cr in FY26 by the CMD's estimate. Installed capacity was put at about 5.5 million wheels a year in May 2026 and 5.8 million in July 2026; the March 2026 exit rate was about 3 million a year, and utilisation was around 70% in the two months to October 2026.",
+    "title": "Alloy wheels: about ₹280 Cr of FY26 sales, around 70% utilised",
+    "period": "FY26; capacity and utilisation to Oct 2026",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=07811b1a-1f0a-47f9-9b9f-e297cc30ea0b.pdf",
+      "label": "Earnings call transcript, Q4 FY26 (8 May 2026)"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=873dae50-255d-4493-af26-a8c380db1501.pdf",
+      "label": "Earnings call transcript, Q1 FY27 (30 Jul 2026)"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9c470058-9159-4dbd-a1d8-7a930d7d7680.pdf",
+      "label": "Earnings call transcript, Q2 FY27 (29 Oct 2026)"
+     }
+    ],
+    "category": "expansion"
+   },
+   {
+    "text": "Inside Powertrain, a new line of large stationary-engine parts has its first $100 million of orders finalised, but in FY26 it earned less than 0.5% of Powertrain revenue and its capacity ran at about 10% utilisation (May 2026).",
+    "title": "Large stationary-engine parts: $100 million of orders, tiny sales so far",
+    "period": "FY26 (order book as of May 2026)",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=07811b1a-1f0a-47f9-9b9f-e297cc30ea0b.pdf",
+      "label": "Earnings call transcript, Q4 FY26 (8 May 2026)"
+     }
+    ],
+    "category": "expansion"
+   },
+   {
+    "category": "business_model",
+    "title": "DR Axion is being merged into Sunbeam; NCLT approval pending",
+    "text": "On 11 March 2026 Craftsman's board approved a composite scheme of arrangement to amalgamate DR Axion India, with its subsidiaries Suprash Developers and Srikara Technologies, into Sunbeam Lightweighting Solutions. Applications are pending before the NCLT benches at Chennai and Chandigarh, and the Q2 FY27 results (28 October 2026) still show the scheme as subject to NCLT approval. All four companies are wholly owned within the group; the CMD said one reason is to run capacities under one vendor code with the same customers. Suprash and Srikara, which DR Axion bought in December 2025, hold about 50 acres of land for its greenfield plant at Sriperumbudur.",
+    "period": "Board approval Mar 2026; pending as of Oct 2026",
+    "sources": [
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/45f3f284-3078-4d7a-aa29-c0ebac0ebddd.pdf",
+      "label": "Q2 FY27 financial results (28 Oct 2026)",
+      "locator": "Notes 3 and 5"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/9b43f718-4050-481b-a648-e7f07b984381.pdf",
+      "label": "Annual Report FY26 (BSE filing)"
+     },
+     {
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=07811b1a-1f0a-47f9-9b9f-e297cc30ea0b.pdf",
+      "label": "Earnings call transcript, Q4 FY26 (8 May 2026)"
+     },
+     {
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1276b0fe-717b-4f99-91ef-7015355bcb35.pdf",
+      "label": "Investor presentation, Q2 FY27 (29 Oct 2026)",
+      "locator": "Our Journey"
+     }
+    ]
+   }
+  ],
+  "what_changed": {
+   "text": "On a consolidated basis, Aluminium Products grew from ₹935 Cr of ₹3,183 Cr revenue in FY23 to ₹4,789 Cr of ₹8,069 Cr in FY26. Most of the jump was bought: the parent's own aluminium sales rose from ₹741 Cr to ₹1,801 Cr, while the rest of the segment (consolidated less standalone: DR Axion from February 2023, Sunbeam from October 2024) went from about ₹194 Cr to ₹2,988 Cr. Powertrain's share fell from 48% to 27% as its revenue rose 43% to ₹2,179 Cr, ₹341 Cr of which came from the German foundry bought in 2024. The new mix earns less per rupee: in FY26 Aluminium Products made a 10.3% segment EBIT margin against 16.6% in Powertrain.",
+   "period": "FY23 to FY26 (consolidated)",
+   "sources": [
+    {
+     "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/163520c2-efc1-4bbe-9a84-f710a54c1baf.pdf",
+     "label": "Annual Report FY24 (BSE filing)"
+    },
+    {
+     "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e4ccaa35-5d39-4fac-a952-83b11ad83c53.pdf",
+     "label": "Annual Report FY25 (BSE filing)"
+    },
+    {
+     "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/9b43f718-4050-481b-a648-e7f07b984381.pdf",
+     "label": "Annual Report FY26 (BSE filing)"
+    },
+    {
+     "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c42326a2-0b18-423e-8e99-eda74d20dc80.pdf",
+     "label": "Investor presentation, Q4 FY26 (8 May 2026)",
+     "locator": "Business Segments"
+    }
+   ],
+   "headline": "Aluminium went from 29% to 59% of revenue, mostly through acquisitions"
+  }
+ },
+ "about_sources": [
+  {
+   "label": "Annual Report FY24 (BSE filing)",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/163520c2-efc1-4bbe-9a84-f710a54c1baf.pdf"
+  },
+  {
+   "label": "Annual Report FY25 (BSE filing)",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/e4ccaa35-5d39-4fac-a952-83b11ad83c53.pdf"
+  },
+  {
+   "label": "Annual Report FY26 (BSE filing)",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/9b43f718-4050-481b-a648-e7f07b984381.pdf"
+  },
+  {
+   "label": "Investor presentation, Q4 FY26 (8 May 2026)",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=c42326a2-0b18-423e-8e99-eda74d20dc80.pdf"
+  },
+  {
+   "label": "Earnings call transcript, Q2 FY27 (29 Oct 2026)",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/9c470058-9159-4dbd-a1d8-7a930d7d7680.pdf"
+  },
+  {
+   "label": "Investor presentation, Q2 FY27 (29 Oct 2026)",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/1276b0fe-717b-4f99-91ef-7015355bcb35.pdf"
+  },
+  {
+   "label": "Earnings call transcript, Q3 FY25 (30 Jan 2025)",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=e2154f59-6d6e-436f-b4db-47697a79f457.pdf"
+  },
+  {
+   "label": "Earnings call transcript, Q4 FY26 (8 May 2026)",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=07811b1a-1f0a-47f9-9b9f-e297cc30ea0b.pdf"
+  },
+  {
+   "label": "Q2 FY27 financial results (28 Oct 2026)",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/45f3f284-3078-4d7a-aa29-c0ebac0ebddd.pdf"
+  },
+  {
+   "label": "Earnings call transcript, Q1 FY27 (30 Jul 2026)",
+   "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=873dae50-255d-4493-af26-a8c380db1501.pdf"
+  }
+ ]
+}
