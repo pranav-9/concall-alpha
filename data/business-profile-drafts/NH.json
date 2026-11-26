@@ -1,0 +1,389 @@
+{
+ "company": "NH",
+ "company_name": "Narayana Hrudayalaya Limited",
+ "prepared_on": "2026-11-26",
+ "review_status": "reviewed",
+ "source_period": "Q2 FY27",
+ "latest_source_date": "2026-11-07",
+ "about_company": {
+  "about_short": "Indian hospital chain that also runs hospitals in the Cayman Islands and, since November 2025, in England",
+  "about_long": "Narayana Hrudayalaya (Narayana Health) runs multispecialty and tertiary-care hospitals: 19 hospitals and 2 heart centres in India, two hospitals in the Cayman Islands and 13 hospitals, surgical, diagnostic and eye centres in England, with 6,119 operational beds at 30 September 2026. It is paid for treatment by patients who pay themselves, insurers and employers, government schemes and, in England, mostly the NHS. Cardiac sciences are still its largest specialty, about a third of India hospital revenue. India earned 59.6% of FY26 revenue from continuing operations, the Cayman Islands 23.9% and the UK 16.5%, after the group bought Practice Plus Group Hospitals on 6 November 2025; in Q2 FY27 the UK brought ₹8,284 Mn of ₹28,440 Mn consolidated revenue. It also owns two young health insurers, Narayana Health Insurance in India and CIHL in the Cayman Islands, both still loss-making. The annual report's Ind AS 108 note splits the group into medical and healthcare services and insurance; the results decks and the annual report's country table split it into India, the Cayman Islands and the UK, the split used here.",
+  "business_intro": "Narayana Health earns its revenue by treating patients in hospitals it owns or runs on rent or revenue-share terms: surgery, procedures, inpatient stays and outpatient visits, paid for by patients themselves, insurers and employers, government schemes and patients who travel in from abroad. In the Cayman Islands it runs two hospitals and a health insurer; in England its Practice Plus Group hospitals and surgical centres mostly treat NHS patients under contracts with the NHS that are reset every year.",
+  "company_timeline": [
+   {
+    "year": 2000,
+    "title": "Incorporated in Bengaluru",
+    "detail": "Founded by Dr. Devi Prasad Shetty, Narayana Hrudayalaya Limited was incorporated on 19 July 2000; its first hospital, in Bengaluru, had about 225 operational beds. It was rebranded Narayana Health in 2013.",
+    "sources": [
+     {
+      "label": "Annual Report FY2025-26",
+      "url": "https://nsearchives.nseindia.in/annual_reports/AR_29975_NH_2025_2026_A_9187134_24072026000959.pdf"
+     },
+     {
+      "label": "Q2 FY27 results press release",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2c1fadf3-0f21-4461-b735-eb5a57ca154f.pdf"
+     }
+    ]
+   },
+   {
+    "year": 2016,
+    "title": "Lists on BSE and NSE",
+    "detail": "The company's shares were listed on the Bombay Stock Exchange and the National Stock Exchange on 6 January 2016.",
+    "sources": [
+     {
+      "label": "Annual Report FY2021-22",
+      "url": "https://www.bseindia.com/bseplus/AnnualReport/539551/74204539551.pdf"
+     }
+    ]
+   },
+   {
+    "year": 2024,
+    "title": "Launches health insurance in India and Cayman",
+    "detail": "Narayana Health Insurance, licensed by IRDAI on 3 January 2024, launched its first product in Mysore in late June 2024; the Cayman insurer CIHL began operations on 1 July 2024, first for Health City and CIHL employees.",
+    "sources": [
+     {
+      "label": "Q1 FY25 earnings call transcript",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/f86adc87-27d2-4700-9801-04363a8c5cb4.pdf"
+     },
+     {
+      "label": "Annual Report FY2025-26",
+      "url": "https://nsearchives.nseindia.in/annual_reports/AR_29975_NH_2025_2026_A_9187134_24072026000959.pdf"
+     }
+    ]
+   },
+   {
+    "year": 2024,
+    "title": "Opens a second Cayman hospital at Camana Bay",
+    "detail": "The new Health City hospital at Camana Bay was inaugurated in July 2024, adding emergency, oncology, critical care and imaging services; FY26 was its first full year.",
+    "sources": [
+     {
+      "label": "Q1 FY25 earnings call transcript",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/f86adc87-27d2-4700-9801-04363a8c5cb4.pdf"
+     },
+     {
+      "label": "Annual Report FY2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/634348fb-a64f-4ecc-ac82-5b04813d788a.pdf"
+     }
+    ]
+   },
+   {
+    "year": 2025,
+    "title": "Acquires Practice Plus Group Hospitals, UK",
+    "detail": "A UK subsidiary bought 100% of Practice Plus Group Hospitals for GBP 188.78 million; the deal completed on 6 November 2025 and the UK is consolidated from that date.",
+    "sources": [
+     {
+      "label": "Annual Report FY2025-26",
+      "url": "https://nsearchives.nseindia.in/annual_reports/AR_29975_NH_2025_2026_A_9187134_24072026000959.pdf"
+     },
+     {
+      "label": "Q3 FY26 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/fe9331a7-dda4-4c4f-a103-4bc515c0eca7.pdf"
+     }
+    ]
+   }
+  ],
+  "business_facts": [
+   {
+    "category": "customers",
+    "title": "The NHS, its largest UK payor, paid 93% of UK hospital revenue",
+    "text": "Practice Plus Group earned 93% of its revenue from the NHS and 7% from private payors in the nine months to June 2025, before Narayana bought it; by volume the NHS was 99%. Its NHS contracts run for more than ten years and are reset once a year, with changes taking effect from 1 April. In Q2 FY27 management said private (non-NHS) revenue is rising but did not give the share, and that the business is still heavily dependent on the NHS.",
+    "period": "Oct 2024 to Jun 2025; Q2 FY27",
+    "sources": [
+     {
+      "label": "UK acquisition investor presentation, October 2025",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1a9fdd38-a686-497a-9910-a3161fc95e0d.pdf"
+     },
+     {
+      "label": "UK acquisition investor call transcript, 3 November 2025",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c916f626-2433-4624-94ba-8c82faabbd7c.pdf"
+     },
+     {
+      "label": "Q2 FY27 earnings call transcript",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5a666a48-8be2-458b-9de8-9fff7621cd28.pdf"
+     }
+    ],
+    "metrics": [
+     {
+      "label": "NHS",
+      "value": 93,
+      "unit": "% of UK revenue"
+     },
+     {
+      "label": "Private pay",
+      "value": 7,
+      "unit": "% of UK revenue"
+     }
+    ]
+   },
+   {
+    "category": "customers",
+    "title": "Self-paying patients bring 43% of India hospital revenue",
+    "text": "In Q2 FY27, self-paying patients from India brought about 43% of India hospital revenue, insured and corporate patients 33%, government schemes (CGHS, ESIS and state schemes) 18% and patients from abroad 7%. Revenue from international patients was ₹901 Mn in the quarter, 75.7% more than a year earlier. The shares are rounded and add to about 101%.",
+    "period": "Q2 FY27",
+    "sources": [
+     {
+      "label": "Q2 FY27 results press release",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2c1fadf3-0f21-4461-b735-eb5a57ca154f.pdf"
+     },
+     {
+      "label": "Q2 FY27 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/68c208cc-c3ab-4cd7-b2f7-40a6a5d6efd1.pdf"
+     }
+    ],
+    "metrics": [
+     {
+      "label": "Self-paying domestic",
+      "value": 43,
+      "unit": "% of hospital revenue"
+     },
+     {
+      "label": "Insured and corporate",
+      "value": 33,
+      "unit": "% of hospital revenue"
+     },
+     {
+      "label": "Government schemes",
+      "value": 18,
+      "unit": "% of hospital revenue"
+     },
+     {
+      "label": "International patients",
+      "value": 7,
+      "unit": "% of hospital revenue"
+     }
+    ]
+   },
+   {
+    "category": "geography",
+    "title": "40% of FY26 revenue came from two countries outside India",
+    "text": "Of FY26 revenue from continuing operations of ₹78,960 Mn, India earned ₹47,075 Mn, the Cayman Islands ₹18,893 Mn and the United Kingdom ₹12,992 Mn, so 40.4% came from outside India against 21.6% in FY25 and 21.0% in FY24. The UK figure covers only 6 November 2025 to 31 March 2026. In Q2 FY27, India revenue was ₹14,402 Mn, Cayman ₹6,061 Mn and UK ₹8,284 Mn, against consolidated revenue of ₹28,440 Mn after inter-company eliminations.",
+    "period": "FY24 to Q2 FY27",
+    "sources": [
+     {
+      "label": "Annual Report FY2025-26",
+      "url": "https://nsearchives.nseindia.in/annual_reports/AR_29975_NH_2025_2026_A_9187134_24072026000959.pdf"
+     },
+     {
+      "label": "Annual Report FY2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/634348fb-a64f-4ecc-ac82-5b04813d788a.pdf"
+     },
+     {
+      "label": "Q2 FY27 results press release",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2c1fadf3-0f21-4461-b735-eb5a57ca154f.pdf"
+     }
+    ],
+    "metrics": [
+     {
+      "label": "Revenue outside India, FY24",
+      "value": 21.0,
+      "unit": "% of revenue"
+     },
+     {
+      "label": "Revenue outside India, FY25",
+      "value": 21.6,
+      "unit": "% of revenue"
+     },
+     {
+      "label": "Revenue outside India, FY26",
+      "value": 40.4,
+      "unit": "% of revenue"
+     }
+    ]
+   },
+   {
+    "category": "footprint",
+    "title": "56 facilities and 6,119 operational beds in three countries",
+    "text": "At 30 September 2026 the group ran 21 hospitals and heart centres in India with 5,624 operational beds, 20 clinics and dialysis centres in India, two hospitals in the Cayman Islands with 165 beds and 13 centres in the UK with 330 beds: 56 facilities, 6,119 operational beds and a total capacity of 6,374 beds, with about 21,150 staff. The Banashankari hospital in Bengaluru opened in the last week of September 2026.",
+    "period": "30 Sep 2026",
+    "sources": [
+     {
+      "label": "Q2 FY27 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/68c208cc-c3ab-4cd7-b2f7-40a6a5d6efd1.pdf"
+     },
+     {
+      "label": "Q2 FY27 results press release",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2c1fadf3-0f21-4461-b735-eb5a57ca154f.pdf"
+     }
+    ],
+    "metrics": [
+     {
+      "label": "India hospitals and heart centres",
+      "value": 5624,
+      "unit": "operational beds"
+     },
+     {
+      "label": "Cayman Islands",
+      "value": 165,
+      "unit": "operational beds"
+     },
+     {
+      "label": "United Kingdom",
+      "value": 330,
+      "unit": "operational beds"
+     }
+    ]
+   },
+   {
+    "category": "business_model",
+    "title": "Cardiac sciences are a third of India hospital revenue",
+    "text": "In Q2 FY27, cardiac sciences were about 33% of India hospital revenue, oncology 15%, medicine and gastro sciences 14%, renal sciences 9%, neurosciences 8% and orthopaedics 5%. Annualised revenue per occupied bed rose to ₹19.5 Mn from ₹17.5 Mn a year earlier, and the India hospitals' EBITDA margin was 26.8%, against 23.8% in Q2 FY26.",
+    "period": "Q2 FY27",
+    "sources": [
+     {
+      "label": "Q2 FY27 results press release",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2c1fadf3-0f21-4461-b735-eb5a57ca154f.pdf"
+     },
+     {
+      "label": "Q2 FY27 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/68c208cc-c3ab-4cd7-b2f7-40a6a5d6efd1.pdf"
+     }
+    ],
+    "metrics": [
+     {
+      "label": "Cardiac sciences",
+      "value": 33,
+      "unit": "% of hospital revenue"
+     },
+     {
+      "label": "Oncology",
+      "value": 15,
+      "unit": "% of hospital revenue"
+     },
+     {
+      "label": "Medicine and gastro sciences",
+      "value": 14,
+      "unit": "% of hospital revenue"
+     },
+     {
+      "label": "Renal sciences",
+      "value": 9,
+      "unit": "% of hospital revenue"
+     },
+     {
+      "label": "Neurosciences",
+      "value": 8,
+      "unit": "% of hospital revenue"
+     },
+     {
+      "label": "Orthopaedics",
+      "value": 5,
+      "unit": "% of hospital revenue"
+     }
+    ]
+   },
+   {
+    "category": "business_model",
+    "title": "Two young health insurers, both still losing money",
+    "text": "Narayana Health Insurance in India wrote ₹78 Mn of gross premium in Q2 FY27 (₹70 Mn a year earlier); claims were 159% of earned premium and it lost ₹151 Mn after tax. CIHL in the Cayman Islands had revenue of US$16.8 Mn and an EBITDA loss of US$1.1 Mn, narrower than US$3.7 Mn in Q1 FY27. In FY26 the annual report's insurance segment lost ₹1,241.90 Mn at segment level on revenue of ₹3,856.50 Mn.",
+    "period": "FY26 to Q2 FY27",
+    "sources": [
+     {
+      "label": "Q2 FY27 results press release",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2c1fadf3-0f21-4461-b735-eb5a57ca154f.pdf"
+     },
+     {
+      "label": "Annual Report FY2025-26",
+      "url": "https://nsearchives.nseindia.in/annual_reports/AR_29975_NH_2025_2026_A_9187134_24072026000959.pdf"
+     }
+    ]
+   },
+   {
+    "category": "expansion",
+    "title": "Six India projects planned to add about 1,555 beds by FY30",
+    "text": "These are plans, not operating beds: HSR Bengaluru (215 beds) and the Raipur expansion (300) for FY28, Park Street Kolkata (120) also for FY28, Rajarhat Kolkata (350) and Central Bengaluru (220) for FY29, and South Bengaluru (350) for FY30, at a project cost of about ₹29,900 Mn, taking the bed capacity target to over 7,800. For FY27 the company planned ₹4,600 Mn of growth capex and ₹2,700 Mn of maintenance capex, and had spent ₹955 Mn and ₹681 Mn by 30 September 2026.",
+    "period": "As of 30 Sep 2026",
+    "sources": [
+     {
+      "label": "Q2 FY27 results press release",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2c1fadf3-0f21-4461-b735-eb5a57ca154f.pdf"
+     },
+     {
+      "label": "Q2 FY27 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/68c208cc-c3ab-4cd7-b2f7-40a6a5d6efd1.pdf"
+     }
+    ]
+   },
+   {
+    "category": "capabilities",
+    "title": "160 TAVI heart-valve procedures in FY26, 54 in Q2 FY27",
+    "text": "Narayana Institute of Cardiac Sciences in Bengaluru performed 160 TAVIs in FY26, 20% more than a year earlier, and 54 TAVIs in Q2 FY27, with 38 cardiac surgeries on its busiest single day. The group trains close to 900 postgraduate doctors and more than 3,000 nursing students across its network.",
+    "period": "FY26 to Q2 FY27",
+    "sources": [
+     {
+      "label": "Q4 FY26 investor presentation",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/963dd6b8-4d61-4fbf-b3b1-38476be0de8d.pdf"
+     },
+     {
+      "label": "Q2 FY27 results press release",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2c1fadf3-0f21-4461-b735-eb5a57ca154f.pdf"
+     },
+     {
+      "label": "Q2 FY27 earnings call transcript",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5a666a48-8be2-458b-9de8-9fff7621cd28.pdf"
+     }
+    ]
+   }
+  ],
+  "what_changed": {
+   "headline": "Buying UK hospitals made Narayana a three-country group with lower margins",
+   "text": "After Narayana bought Practice Plus Group Hospitals on 6 November 2025 for GBP 188.78 million, revenue from outside India rose from 21.6% of FY25 revenue to 40.4% of FY26, with under five months of the UK in FY26. In Q2 FY27 the UK brought ₹8,284 Mn of ₹28,440 Mn consolidated revenue at an EBITDA margin of 7.2% after IFRS 16, so the group's EBITDA margin was 21.3% against 25.9% a year earlier, while the margin without the UK rose to 27.0%. Higher depreciation and finance costs, mainly from the acquisition, held profit before tax growth to 16.2%.",
+   "period": "FY25 to Q2 FY27",
+   "sources": [
+    {
+     "label": "Annual Report FY2025-26",
+     "url": "https://nsearchives.nseindia.in/annual_reports/AR_29975_NH_2025_2026_A_9187134_24072026000959.pdf"
+    },
+    {
+     "label": "Q2 FY27 results press release",
+     "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2c1fadf3-0f21-4461-b735-eb5a57ca154f.pdf"
+    }
+   ]
+  }
+ },
+ "about_sources": [
+  {
+   "label": "Annual Report FY2025-26",
+   "url": "https://nsearchives.nseindia.in/annual_reports/AR_29975_NH_2025_2026_A_9187134_24072026000959.pdf"
+  },
+  {
+   "label": "Q2 FY27 results press release",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/2c1fadf3-0f21-4461-b735-eb5a57ca154f.pdf"
+  },
+  {
+   "label": "Annual Report FY2021-22",
+   "url": "https://www.bseindia.com/bseplus/AnnualReport/539551/74204539551.pdf"
+  },
+  {
+   "label": "Q1 FY25 earnings call transcript",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/f86adc87-27d2-4700-9801-04363a8c5cb4.pdf"
+  },
+  {
+   "label": "Annual Report FY2024-25",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/634348fb-a64f-4ecc-ac82-5b04813d788a.pdf"
+  },
+  {
+   "label": "Q3 FY26 investor presentation",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/fe9331a7-dda4-4c4f-a103-4bc515c0eca7.pdf"
+  },
+  {
+   "label": "UK acquisition investor presentation, October 2025",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/1a9fdd38-a686-497a-9910-a3161fc95e0d.pdf"
+  },
+  {
+   "label": "UK acquisition investor call transcript, 3 November 2025",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/c916f626-2433-4624-94ba-8c82faabbd7c.pdf"
+  },
+  {
+   "label": "Q2 FY27 earnings call transcript",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/5a666a48-8be2-458b-9de8-9fff7621cd28.pdf"
+  },
+  {
+   "label": "Q2 FY27 investor presentation",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/68c208cc-c3ab-4cd7-b2f7-40a6a5d6efd1.pdf"
+  },
+  {
+   "label": "Q4 FY26 investor presentation",
+   "url": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/963dd6b8-4d61-4fbf-b3b1-38476be0de8d.pdf"
+  }
+ ]
+}
