@@ -18,6 +18,13 @@
     "source": "https://mutualfund.adityabirlacapital.com/apple-touch-icon.png",
     "fetchedAt": "2026-10-29"
   },
+  "ACE": {
+    "site": "https://www.ace-cranes.com/",
+    "siteFrom": "company.website",
+    "tier": "header-logo",
+    "source": "https://www.ace-cranes.com/public/front/images/logo.png",
+    "fetchedAt": "2026-11-27"
+  },
   "ACUTAAS": {
     "tier": "favicon-32",
     "source": "google-favicon",

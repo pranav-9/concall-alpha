@@ -4,6 +4,7 @@ export const COMPANY_LOGO_CODES: ReadonlySet<string> = new Set([
   "AARTIDRUGS",
   "AARTIPHARM",
   "ABSLAMC",
+  "ACE",
   "ACUTAAS",
   "ADVAIT",
   "AEROFLEX",

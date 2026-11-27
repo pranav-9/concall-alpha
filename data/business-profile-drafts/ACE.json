@@ -1,0 +1,351 @@
+{
+  "company": "ACE",
+  "company_name": "Action Construction Equipment",
+  "prepared_on": "2026-11-27",
+  "review_status": "user_approved",
+  "source_period": "Q2 FY27",
+  "latest_source_date": "2026-11-17",
+  "about_company": {
+    "about_long": "Action Construction Equipment (ACE) makes pick-and-carry and tower cranes, backhoe loaders, rollers, motor graders, forklifts, telehandlers, tractors and harvesters at eight plants in Haryana, six of them at Dudhola in Palwal. It reports two segments: Cranes, Construction Equipment & Material Handling Equipment, which made ₹2,953.2 Cr or 90.0% of FY26 consolidated revenue from operations of ₹3,280.4 Cr, and Agricultural Equipment at ₹250.7 Cr (7.6%); an overseas project line added ₹76.6 Cr. The company says it is the world's largest pick-and-carry crane maker, with over 63% of India's mobile crane market and about 60% of tower cranes. Machines go to rental fleet owners (about half, per management), contractors, factories, logistics firms and the defence ministry, sold through dealers at 125+ locations and exported to over 37 countries. In Q2 FY27 ACE KATO, a 50:50 joint venture with Japan's KATO Works for truck, crawler and rough-terrain cranes, began operating, and ACE booked a one-time ₹50 Cr gain on its slump sale to the JV.",
+    "about_short": "Maker of pick-and-carry and tower cranes, construction equipment, forklifts and tractors, sold mostly in India.",
+    "what_changed": {
+      "text": "The CEV Stage V emission norms raised prices 7% to 12% across most product categories, and buyers bought ahead in Q3 and Q4 FY25. In FY26 Cranes, CE & MH units fell 19% (13,360 to 10,853), segment revenue fell 4.6% and consolidated revenue from operations dipped 1.4% to ₹3,280.4 Cr. In Q2 FY27 the segment's units grew 19.8% year on year (2,348 to 2,812), and H1 FY27 total income (including other income) rose 20.0%.",
+      "period": "FY26 to H1 FY27",
+      "sources": [
+        {
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=cb907940-d06e-4cc4-b061-67763ce2cdaf.pdf",
+          "label": "Q1 FY26 earnings call transcript"
+        },
+        {
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=58b2a061-64d4-49a1-b340-e5f3f60340d2.pdf",
+          "label": "Q4 FY26 earnings presentation"
+        },
+        {
+          "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7cf1ecae-c5fe-4401-b260-7ab8ef56e4af.pdf",
+          "label": "Q2 FY27 earnings presentation"
+        },
+        {
+          "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4292123c-7a4c-4823-abb8-a7edd4c0f398.pdf",
+          "label": "Annual Report 2025-26"
+        }
+      ],
+      "headline": "Crane volumes recover after the emission-norm reset"
+    },
+    "business_facts": [
+      {
+        "text": "Dealers and distributors handled 38% of the company's FY26 sales (46% in FY25), spread across 455 dealers; the top 10 took 50.26% of dealer sales. These are company-level (standalone) BRSR figures. The rest is sold direct, including to the defence ministry. Management says about half of its machines are bought by rental fleet owners and the rest by contractors, manufacturers and logistics users, and the annual report rates receivables concentration risk as low because customers span industries.",
+        "title": "Top 10 dealers carry about half of dealer sales",
+        "period": "FY24 to FY26",
+        "metrics": [
+          {
+            "unit": "% of dealer sales",
+            "label": "Top 10 dealers, FY24",
+            "value": 49
+          },
+          {
+            "unit": "% of dealer sales",
+            "label": "Top 10 dealers, FY25",
+            "value": 49.07
+          },
+          {
+            "unit": "% of dealer sales",
+            "label": "Top 10 dealers, FY26",
+            "value": 50.26
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4292123c-7a4c-4823-abb8-a7edd4c0f398.pdf",
+            "label": "Annual Report 2025-26"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/2978d3b1-9cac-4224-9bf8-c2821807a015.pdf",
+            "label": "Annual Report 2024-25"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=df47cc2e-be83-4193-9bc3-7bbd489b5174.pdf",
+            "label": "Q4 FY26 earnings call transcript"
+          }
+        ],
+        "category": "customers"
+      },
+      {
+        "text": "Exports were 6.20% of FY26 turnover, after 5.47% in FY24 and 3.54% in FY25 (company-level BRSR). ACE sells in more than 37 countries across the Middle East, Africa, Asia and Latin America. FY26's overseas revenue includes ₹76.4 Cr from an EPC project booked outside India; product sales abroad were ₹126.5 Cr. Agri exports fell from ₹84.4 Cr in FY24 to ₹28.7 Cr in FY26 while crane, construction and material-handling exports rose from ₹74.9 Cr to ₹97.8 Cr (consolidated revenue notes).",
+        "title": "Exports were 6.2% of FY26 turnover",
+        "period": "FY24 to FY26",
+        "metrics": [
+          {
+            "unit": "% of turnover",
+            "label": "Exports, FY24",
+            "value": 5.47
+          },
+          {
+            "unit": "% of turnover",
+            "label": "Exports, FY25",
+            "value": 3.54
+          },
+          {
+            "unit": "% of turnover",
+            "label": "Exports, FY26",
+            "value": 6.2
+          }
+        ],
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4292123c-7a4c-4823-abb8-a7edd4c0f398.pdf",
+            "label": "Annual Report 2025-26"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/2978d3b1-9cac-4224-9bf8-c2821807a015.pdf",
+            "label": "Annual Report 2024-25"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/37252660-90f0-4b58-ba58-d8d4d4806f85.pdf",
+            "label": "Annual Report 2023-24"
+          }
+        ],
+        "category": "geography"
+      },
+      {
+        "text": "ACE runs eight plants, six of them at one location in Dudhola, Palwal, with 17 offices in India and one abroad (FY26). The November 2025 corporate presentation puts capacity at around 17,400 construction equipment and 9,000 tractors a year across its Faridabad and Palwal sites. On the Q2 FY27 call (November 2026) management put current utilisation at about 55% for cranes and construction equipment and 25-30% for agri. Sales and service run through 125+ dealer locations, 13 regional offices and more than 200 agri dealers.",
+        "title": "Eight plants in Haryana, six at Dudhola",
+        "period": "FY26 to Q2 FY27",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4292123c-7a4c-4823-abb8-a7edd4c0f398.pdf",
+            "label": "Annual Report 2025-26"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d7aad2a1-6f3e-42a1-b629-61d3b28485c7.pdf",
+            "label": "Corporate Presentation, November 2025",
+            "locator": "Manufacturing Facilities; Domestic Presence"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=12306ffd-432b-4706-9ca7-e63079ecca61.pdf",
+            "label": "Q2 FY27 earnings call transcript"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7cf1ecae-c5fe-4401-b260-7ab8ef56e4af.pdf",
+            "label": "Q2 FY27 earnings presentation"
+          }
+        ],
+        "category": "footprint"
+      },
+      {
+        "text": "ACE calls itself the world's largest pick-and-carry crane maker, with over 63% of India's mobile crane market and about 60% of tower cranes (Q2 FY27 presentation). It has had an in-house engine plant since 2013, and its R&D centres at Faridabad and Palwal are recognised by DSIR. Its range includes what it calls India's first fully electric mobile crane and India's largest mobile crane, at 180 tonnes.",
+        "title": "Leads India's mobile and tower crane markets",
+        "period": "as of Q2 FY27",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7cf1ecae-c5fe-4401-b260-7ab8ef56e4af.pdf",
+            "label": "Q2 FY27 earnings presentation"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d7aad2a1-6f3e-42a1-b629-61d3b28485c7.pdf",
+            "label": "Corporate Presentation, November 2025",
+            "locator": "Company Overview; R&D and Training; Journey and Key Milestones"
+          }
+        ],
+        "category": "capabilities"
+      },
+      {
+        "text": "In Q4 FY25 the defence ministry placed ACE's largest order so far: 1,121 rough-terrain forklifts (telehandlers) for ₹420 Cr. Defence was about 3% of FY26 revenue, per management. The Q2 FY27 presentation reports a further order for 74 backhoe loaders; deliveries of rough-terrain cranes, telehandlers and heavy recovery cranes began in Q2 FY27, and management put the defence order book at a little over ₹500 Cr, to be executed over the next one and a half to two years.",
+        "title": "Defence: a ₹420 Cr telehandler order and a ₹500 Cr+ book",
+        "period": "Q4 FY25 to Q2 FY27",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=0f2f7326-69cc-43cb-9318-cb2e0f80d577.pdf",
+            "label": "Q4 FY25 earnings call transcript"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=df47cc2e-be83-4193-9bc3-7bbd489b5174.pdf",
+            "label": "Q4 FY26 earnings call transcript"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7cf1ecae-c5fe-4401-b260-7ab8ef56e4af.pdf",
+            "label": "Q2 FY27 earnings presentation"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=12306ffd-432b-4706-9ca7-e63079ecca61.pdf",
+            "label": "Q2 FY27 earnings call transcript"
+          }
+        ],
+        "category": "customers"
+      },
+      {
+        "text": "Most machines are ordered for delivery within weeks: management says ACE is usually booked about a month ahead, and the company takes margin money from retail buyers, so customer advances were ₹150-200 Cr at the Q2 FY27 call. About half of machines go to rental fleets; end users span manufacturing and logistics (~45%), construction and infrastructure (~35%), real estate (~13%) and agriculture (~7%).",
+        "title": "Short order cycle, paid partly in advance",
+        "period": "as of Q2 FY27",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=12306ffd-432b-4706-9ca7-e63079ecca61.pdf",
+            "label": "Q2 FY27 earnings call transcript"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7cf1ecae-c5fe-4401-b260-7ab8ef56e4af.pdf",
+            "label": "Q2 FY27 earnings presentation"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=df47cc2e-be83-4193-9bc3-7bbd489b5174.pdf",
+            "label": "Q4 FY26 earnings call transcript"
+          }
+        ],
+        "category": "business_model"
+      }
+    ],
+    "business_intro": "ACE builds cranes, construction and material-handling equipment and tractors in Haryana and sells them through dealers across India and in over 37 countries. Cranes, construction and material-handling equipment made 90.0% of FY26 consolidated revenue and nearly all the segment profit; tractors and harvesters run close to break-even. Buyers are rental fleet owners, contractors, factories, logistics firms and the armed forces, and most of them finance their machines through NBFCs or banks.",
+    "company_timeline": [
+      {
+        "year": 1995,
+        "title": "Founded by Vijay Agarwal to make mobile cranes",
+        "detail": "Action Construction Equipment was incorporated in 1995 by Vijay Agarwal, a technocrat, and began with hydraulic mobile cranes.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d7aad2a1-6f3e-42a1-b629-61d3b28485c7.pdf",
+            "label": "Corporate Presentation, November 2025",
+            "locator": "Company Overview; Journey and Key Milestones"
+          },
+          {
+            "url": "https://www.ace-cranes.com/public/front/pdf/ACE_Corporate_presentation_March_2024.pdf",
+            "label": "Corporate Presentation, March 2024"
+          }
+        ]
+      },
+      {
+        "year": 2006,
+        "title": "Lists on the stock exchanges through an IPO",
+        "detail": "The company's own milestone chart dates its IPO listing to 2006.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d7aad2a1-6f3e-42a1-b629-61d3b28485c7.pdf",
+            "label": "Corporate Presentation, November 2025",
+            "locator": "Journey and Key Milestones"
+          },
+          {
+            "url": "https://www.ace-cranes.com/public/front/pdf/ACE_Corporate_presentation_March_2024.pdf",
+            "label": "Corporate Presentation, March 2024"
+          }
+        ]
+      },
+      {
+        "year": 2009,
+        "title": "Enters construction equipment and launches tractors",
+        "detail": "Moved beyond cranes into construction equipment and introduced a range of tractors.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d7aad2a1-6f3e-42a1-b629-61d3b28485c7.pdf",
+            "label": "Corporate Presentation, November 2025",
+            "locator": "Journey and Key Milestones"
+          },
+          {
+            "url": "https://www.ace-cranes.com/public/front/pdf/ACE_Corporate_presentation_March_2024.pdf",
+            "label": "Corporate Presentation, March 2024"
+          }
+        ]
+      },
+      {
+        "year": 2013,
+        "title": "Starts an in-house engine plant",
+        "detail": "Introduced an in-house engine plant and a track combine harvester; the corporate presentation shows engine assembly and transmission shops at the Dudhola plant.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d7aad2a1-6f3e-42a1-b629-61d3b28485c7.pdf",
+            "label": "Corporate Presentation, November 2025",
+            "locator": "Journey and Key Milestones; Manufacturing Facilities"
+          }
+        ]
+      },
+      {
+        "year": 2025,
+        "title": "Completes liquidation of Romanian subsidiary SC Forma",
+        "detail": "SC Forma SA, an 89.52%-owned subsidiary in Romania under voluntary liquidation, ceased to be a subsidiary on 2 September 2025; ACE received a net ₹1,434 lakh on 3 September 2025.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4292123c-7a4c-4823-abb8-a7edd4c0f398.pdf",
+            "label": "Annual Report 2025-26"
+          },
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/37252660-90f0-4b58-ba58-d8d4d4806f85.pdf",
+            "label": "Annual Report 2023-24"
+          }
+        ]
+      },
+      {
+        "year": 2026,
+        "title": "Forms ACE KATO heavy-crane JV with KATO Works",
+        "detail": "Board approval 13 Feb 2026; ACE KATO Private Limited incorporated 11 Mar 2026 under a 50:50 agreement with KATO WORKS CO., LTD.; ACE put in the initial capital on 19 Apr 2026. Operations began in Q2 FY27; the company describes the transfer of its truck, crawler and rough-terrain crane business into the JV, and ACE booked a ₹50 Cr exceptional gain on a slump sale to it.",
+        "sources": [
+          {
+            "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4292123c-7a4c-4823-abb8-a7edd4c0f398.pdf",
+            "label": "Annual Report 2025-26"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7cf1ecae-c5fe-4401-b260-7ab8ef56e4af.pdf",
+            "label": "Q2 FY27 earnings presentation"
+          },
+          {
+            "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=12306ffd-432b-4706-9ca7-e63079ecca61.pdf",
+            "label": "Q2 FY27 earnings call transcript"
+          }
+        ]
+      }
+    ]
+  },
+  "about_sources": [
+    {
+      "label": "Q1 FY26 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=cb907940-d06e-4cc4-b061-67763ce2cdaf.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 FY26 earnings presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=58b2a061-64d4-49a1-b340-e5f3f60340d2.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q2 FY27 earnings presentation",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=7cf1ecae-c5fe-4401-b260-7ab8ef56e4af.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Annual Report 2025-26",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/4292123c-7a4c-4823-abb8-a7edd4c0f398.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Annual Report 2024-25",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/2978d3b1-9cac-4224-9bf8-c2821807a015.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 FY26 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=df47cc2e-be83-4193-9bc3-7bbd489b5174.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Annual Report 2023-24",
+      "url": "https://www.bseindia.com/xml-data/corpfiling/AttachHis/37252660-90f0-4b58-ba58-d8d4d4806f85.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Corporate Presentation, November 2025",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=d7aad2a1-6f3e-42a1-b629-61d3b28485c7.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q2 FY27 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=12306ffd-432b-4706-9ca7-e63079ecca61.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Q4 FY25 earnings call transcript",
+      "url": "https://www.bseindia.com/stockinfo/AnnPdfOpen.aspx?Pname=0f2f7326-69cc-43cb-9318-cb2e0f80d577.pdf",
+      "locator": "company background, timeline and facts"
+    },
+    {
+      "label": "Corporate Presentation, March 2024",
+      "url": "https://www.ace-cranes.com/public/front/pdf/ACE_Corporate_presentation_March_2024.pdf",
+      "locator": "company background, timeline and facts"
+    }
+  ]
+}
