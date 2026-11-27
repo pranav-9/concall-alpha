@@ -1081,6 +1081,40 @@ COVERS["saregama-stock-the-jukebox"] = [
     P("M425 38 q10 4 12 14", "s t"),
 ];
 
+// Action Construction Equipment — what it makes: the pick-and-carry crane. A side view: counterweight at the
+// rear, chassis on four wheels, the cab up front, the telescopic boom raised on its ram, and the hook block
+// (the accent) holding a crate.
+COVERS["ace-crane-rated-twice-the-load"] = [
+  "slate",
+  // ground, counterweight, chassis, rating plate
+  L(146, 262, 540, 262, "s t") +
+    R(160, 172, 46, 30, 4, "s d") +
+    R(176, 198, 296, 34, 6, "s m") +
+    R(318, 207, 42, 14, 2, "s w") +
+    // cab and its window
+    R(398, 148, 72, 54, 8, "s l") +
+    R(410, 158, 48, 24, 4, "s w") +
+    // the ram that lifts the boom
+    P("M284 200 L314 146 L324 151 L294 205 Z", "s d") +
+    // boom: outer section, then the telescoped inner section
+    P("M229.5 199.2 L503.5 65.2 L496.5 50.8 L222.5 184.8 Z", "s m") +
+    P("M372.2 125.5 L502.2 62.5 L497.8 53.5 L367.8 116.5 Z", "s l") +
+    C(226, 192, 7, "s d") +
+    // rope, hook block (accent), hook, and the crate it carries
+    L(500, 60, 500, 170, "s t") +
+    R(489, 170, 22, 22, 4, "s a") +
+    P("M500 192 v8 a7 7 0 1 1 -7 -7", "s") +
+    R(480, 203, 40, 30, 3, "s w") +
+    L(480, 218, 520, 218, "s t") +
+    // wheels: tyre, rim, hub
+    C(222, 238, 22, "s d") +
+    C(222, 238, 9, "s w") +
+    C(296, 238, 22, "s d") +
+    C(296, 238, 9, "s w") +
+    C(428, 238, 22, "s d") +
+    C(428, 238, 9, "s w"),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
