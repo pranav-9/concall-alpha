@@ -1006,6 +1006,81 @@ COVERS["goldiam-dresses-other-peoples-windows"] = [
     P("M482 112 L486 104 L490 112 L486 120 Z", "s sa"),
 ];
 
+// Timex Group India — what it makes: watches, assembled from piece parts at Baddi. A rectangular fashion watch, a
+// round analog watch on its strap, and two meshed gears of the movement it puts together.
+const watchTicks = (cx, cy, r1, r2) =>
+  range(12)
+    .map((i) => {
+      const a = (i * Math.PI) / 6;
+      return L(f(cx + r1 * Math.cos(a)), f(cy + r1 * Math.sin(a)), f(cx + r2 * Math.cos(a)), f(cy + r2 * Math.sin(a)), i % 3 ? "s t" : "s");
+    })
+    .join("");
+
+COVERS["timex-someone-elses-sign"] = [
+  "blue",
+  // the fashion watch: straps, rectangular case and dial, crown, hands
+  R(162, 58, 36, 50, 6, "s m") +
+    R(162, 184, 36, 54, 6, "s m") +
+    R(148, 104, 64, 84, 12, "s w") +
+    R(156, 112, 48, 68, 7, "s l") +
+    R(212, 139, 7, 14, 2, "s d") +
+    L(180, 146, 180, 124) +
+    L(180, 146, 192, 138) +
+    C(180, 146, 3, "d") +
+    // the round watch: straps, keeper, holes, case, dial, ticks, crown, hands
+    R(270, 34, 68, 60, 8, "s l") +
+    R(270, 206, 68, 62, 8, "s l") +
+    R(266, 222, 76, 9, 3, "s w") +
+    C(304, 246, 3, "d") +
+    C(304, 258, 3, "d") +
+    C(304, 150, 68, "s m") +
+    C(304, 150, 56, "s w") +
+    watchTicks(304, 150, 44, 51) +
+    R(371, 141, 12, 18, 3, "s d") +
+    L(304, 150, 282, 128) +
+    L(304, 150, 326, 114) +
+    L(304, 166, 304, 104, "s t sa") +
+    C(304, 150, 5, "s d") +
+    // the movement: two meshed gears
+    gear(458, 108, 40, 14, "s l") +
+    gear(484, 166, 26, 10, "s m"),
+];
+
+// Saregama — what it makes: recorded music, since 1902. A gramophone: the record on its turntable, the arm and
+// soundbox, the horn, and two notes coming out of it.
+COVERS["saregama-stock-the-jukebox"] = [
+  "amber",
+  // cabinet, front panel, feet, winding crank
+  R(190, 196, 176, 52, 6, "s m") +
+    R(204, 208, 148, 28, 4, "s t l") +
+    R(198, 248, 16, 10, 2, "s d") +
+    R(342, 248, 16, 10, 2, "s d") +
+    P("M190 220 H172 V236", "s") +
+    C(172, 240, 5, "s d") +
+    // turntable platter and the record on it: grooves, label
+    E(276, 192, 76, 14, "s l") +
+    E(276, 188, 70, 13, "s d") +
+    E(276, 188, 52, 9.5, "s t sm") +
+    E(276, 188, 36, 6.5, "s t sm") +
+    E(276, 188, 18, 3.5, "s a") +
+    // the post and the horn: flared body, its rim, the throat
+    R(350, 156, 12, 40, 3, "s d") +
+    P("M462 44 Q402 112 352 146 L358 164 Q424 152 512 128 Z", "s l") +
+    P("M462 44 A49 16 59.2 1 1 512 128 A49 16 59.2 1 1 462 44 Z", "s m") +
+    P("M471.6 60.2 A30 9 59.2 1 1 502.4 111.8 A30 9 59.2 1 1 471.6 60.2 Z", "s d") +
+    // the arm from the horn's neck down to the soundbox on the record
+    P("M354 158 Q332 164 320 178", "s") +
+    C(316, 184, 9, "s w") +
+    C(316, 184, 3, "s d") +
+    // two notes
+    E(392, 84, 7, 5, "s d") +
+    L(398, 83, 398, 56) +
+    P("M398 56 q10 4 12 14", "s t") +
+    E(420, 64, 6, 4.5, "s d") +
+    L(425, 63, 425, 38) +
+    P("M425 38 q10 4 12 14", "s t"),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
