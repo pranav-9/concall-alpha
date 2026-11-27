@@ -968,6 +968,44 @@ COVERS["igil-toll-booth-never-raises"] = [
   0.9),
 ];
 
+// Goldiam International — what it makes: lab-grown diamond jewellery for retailers' windows. A display bust wearing a
+// necklace with a brilliant-cut pendant, and beside it a solitaire ring on its cushion stand.
+COVERS["goldiam-dresses-other-peoples-windows"] = [
+  "violet",
+  // the display bust: neck, shoulders, plinth
+  P("M252 62 C252 42 292 42 292 62 L294 108 C336 118 360 150 364 196 L368 236 H176 L180 196 C184 150 208 118 250 108 Z", "s w") +
+    R(166, 236, 212, 14, 4, "s d") +
+    // the necklace chain, with small stones along it
+    P("M238 112 Q246 158 272 170 Q298 158 306 112", "s sm") +
+    range(5)
+      .map((i) => {
+        const t = (i + 1) / 6;
+        const x = f((1 - t) * (1 - t) * 238 + 2 * (1 - t) * t * 246 + t * t * 272);
+        const y = f((1 - t) * (1 - t) * 112 + 2 * (1 - t) * t * 158 + t * t * 170);
+        return C(x, y, 3.5, "s l") + C(f(544 - x), y, 3.5, "s l");
+      })
+      .join("") +
+    // the pendant: crown, girdle, pavilion, facet lines
+    P("M254 182 L263 172 H281 L290 182 L272 206 Z", "s w") +
+    L(254, 182, 290, 182) +
+    P("M263 172 L268 182 L272 172 L276 182 L281 172", "s t") +
+    P("M268 182 L272 206 L276 182", "s t") +
+    L(272, 170, 272, 172, "s sa") +
+    // the ring stand: cushion on a small box
+    R(404, 206, 100, 30, 6, "s m") +
+    R(396, 236, 116, 14, 4, "s d") +
+    P("M424 206 Q454 190 484 206", "s l") +
+    // the ring: band and a solitaire on its setting
+    E(454, 178, 30, 24, "s") +
+    E(454, 178, 22, 17, "s t") +
+    P("M446 156 L450 150 H458 L462 156", "s t") +
+    P("M438 134 L446 124 H462 L470 134 L454 152 Z", "s w") +
+    L(438, 134, 470, 134) +
+    P("M446 124 L450 134 L454 124 L458 134 L462 124", "s t") +
+    // a glint on the stone
+    P("M482 112 L486 104 L490 112 L486 120 Z", "s sa"),
+];
+
 // --- frame --------------------------------------------------------------------
 function frame(tone, body, label) {
   const t = TONES[tone];
