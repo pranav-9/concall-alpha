@@ -29,6 +29,7 @@ const SHORT_LABELS: Record<string, string> = {
   "guidance-history": "Guidance",
   quality: "Quality",
   "valuation-check": "Valuation",
+  "broker-notes": "Brokers",
   community: "Community",
   "company-journal": "Journal",
 };
