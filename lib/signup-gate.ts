@@ -67,6 +67,14 @@ const GATED_SECTIONS = {
       "The price journey: every rise and fall split into earnings and P/E",
     ],
   },
+  "broker-notes": {
+    label: "Broker Notes",
+    below: [
+      "How many brokers rate it bullish, neutral or bearish",
+      "Their targets, and the growth they forecast beside ours",
+      "Every note, newest first, with its rating and target",
+    ],
+  },
   "guidance-history": {
     label: "Guidance",
     below: [

@@ -13,6 +13,8 @@ import { getPricePhasesRow } from "@/lib/price-phases/get";
 import { normalizePricePhases } from "@/lib/price-phases/normalize";
 import { normalizeCompanyQuality } from "@/lib/company-quality/normalize";
 import { assessStaleness, normalizeValuationCheck } from "@/lib/valuation-check/normalize";
+import { normalizeBrokerNotes } from "@/lib/broker-notes/normalize";
+import { BROKER_NOTES_SELECT } from "@/lib/broker-notes/types";
 import { getWalkTheTalk } from "@/lib/walk-the-talk/get";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -47,6 +49,7 @@ import type { CompanyPageOverviewCacheRow } from "@/lib/company-overview-cache";
 import { AnalyticsBeacon } from "@/components/analytics-beacon";
 import { scoreWrittenAt } from "@/lib/score-freshness";
 import { SectionCard, SectionUpdatedAt } from "../components/section-card";
+import { BrokerNotesSection } from "../components/broker-notes-section";
 import { BusinessSnapshotSection } from "../components/business-snapshot-section";
 import { FutureGrowthSection } from "../components/future-growth-section";
 import { IndustryContextSection } from "../components/industry-context-section";
@@ -719,6 +722,79 @@ export async function ValuationCheckPanel({ overview }: CompanyDetailSectionProp
           false,
         )
       )}
+    </SectionCard>
+  );
+}
+
+/**
+ * The Broker Notes tab (behind BROKER_NOTES_ENABLED; page.tsx renders nothing and runs
+ * no query when it is off). One company's `broker_notes` rows, newest first, plus the
+ * published valuation row for today's price and our growth figures. A read error
+ * (the table not applied yet, a PostgREST blip) is a zero state, never a broken page.
+ */
+export async function BrokerNotesPanel({ overview }: CompanyDetailSectionProps) {
+  const supabase = await createClient();
+  const [notesResult, valuationResult] = await Promise.all([
+    supabase
+      .from("broker_notes")
+      .select(BROKER_NOTES_SELECT)
+      .eq("company_code", overview.company_code)
+      .order("report_date", { ascending: false }),
+    // Only the columns the strip reads: the price, its date and the reverse-DCF block
+    // (cases, implied growth, ladder basis/metric/rebase). Normalized exactly as the
+    // Valuation Check panel does; the missing columns fall back to their empty defaults.
+    supabase
+      .from("valuation_check")
+      .select("company_code, priced_as_of, price_at_run, reverse_dcf")
+      .eq("company_code", overview.company_code)
+      .eq("valuation_published", true)
+      .limit(1),
+  ]);
+
+  if (notesResult.error) {
+    logger.warn("broker-notes: broker_notes read failed", {
+      companyCode: overview.company_code,
+      error: notesResult.error,
+    });
+  }
+  if (valuationResult.error) {
+    logger.warn("broker-notes: valuation_check read failed", {
+      companyCode: overview.company_code,
+      error: valuationResult.error,
+    });
+  }
+
+  const valuation = normalizeValuationCheck(
+    (valuationResult.data?.[0] as unknown as ValuationCheckRow | undefined) ?? null,
+  );
+  const view = normalizeBrokerNotes(
+    notesResult.error ? [] : ((notesResult.data as unknown[] | null) ?? []),
+    valuation,
+  );
+  if (view.parseErrors.length) {
+    logger.warn("broker-notes: rows failed validation and were left out", {
+      companyCode: overview.company_code,
+      errors: view.parseErrors,
+    });
+  }
+
+  return (
+    <SectionCard
+      id="broker-notes"
+      title="Broker Notes"
+      feedbackEnabled={view.kind === "notes"}
+      feedbackCompanyCode={overview.company_code}
+      feedbackCompanyName={overview.company_name}
+    >
+      {view.kind === "empty" ? (
+        <AnalyticsBeacon
+          event="empty_section"
+          sectionId="broker-notes"
+          companyCode={overview.company_code}
+          reason={notesResult.error ? "read_failed" : "no_broker_notes"}
+        />
+      ) : null}
+      <BrokerNotesSection view={view} />
     </SectionCard>
   );
 }

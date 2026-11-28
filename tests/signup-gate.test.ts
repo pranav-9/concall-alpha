@@ -29,6 +29,7 @@ const GATED = [
   "key-variables",
   "future-growth",
   "valuation-check",
+  "broker-notes",
   "guidance-history",
 ];
 for (const id of GATED) {

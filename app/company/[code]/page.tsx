@@ -7,7 +7,8 @@ import {
   getCachedCompanyPageOverview,
   type CompanyPageOverviewCacheRow,
 } from "@/lib/company-overview-cache";
-import { SECTION_MAP } from "../constants";
+import { buildCompanySections } from "../constants";
+import { isBrokerNotesEnabled } from "@/lib/broker-notes/flag";
 import { CompanyPageWorkspace } from "../components/company-page-workspace";
 import { CompanyAnnouncementsSection } from "../components/company-announcements-section";
 import { CompanyJournalSection } from "../components/company-journal-section";
@@ -35,6 +36,7 @@ import {
   QualityPanel,
   ValuationCheckPanel,
   PriceJourneyPanel,
+  BrokerNotesPanel,
   ConcallScorePanel,
   // WalkTheTalkPanel hidden for now — re-import when re-enabling the tab.
   // WalkTheTalkPanel,
@@ -87,58 +89,6 @@ export async function generateMetadata({
 // moves the footer when the panel lands (see section-loading.tsx).
 const fallbackSize = (available: boolean): "panel" | "block" => (available ? "panel" : "block");
 
-function buildSidebarSections(overview: CompanyPageOverviewCacheRow, hasJournal: boolean) {
-  // Only three tabs carry a badge, and each carries a score circle — nothing
-  // else (decision 2026-08-26). The tab bar reads as a three-number scorecard:
-  // ConcallScore (quarterly), Future Growth, and Valuation, each in its own band
-  // scheme. A score that isn't available yet (null, or a stale/withheld
-  // valuation) simply shows no badge rather than a placeholder. Every other tab
-  // is label-only.
-  return [
-    SECTION_MAP.overview,
-    SECTION_MAP.businessSnapshot,
-    SECTION_MAP.industryContext,
-    SECTION_MAP.quality,
-    {
-      ...SECTION_MAP.concallScore,
-      meta:
-        overview.latest_score != null
-          ? { kind: "score" as const, score: overview.latest_score, scoreKind: "quarterly" as const }
-          : undefined,
-    },
-    SECTION_MAP.keyVariables,
-    {
-      ...SECTION_MAP.futureGrowth,
-      meta:
-        overview.growth_score != null
-          ? { kind: "score" as const, score: overview.growth_score, scoreKind: "growth" as const }
-          : undefined,
-    },
-    // Walk the Talk tab hidden for now — verdict-style synthesis surface;
-    // re-enable when ready. Component code is kept intact.
-    // { ...SECTION_MAP.walkTheTalk },
-    {
-      ...SECTION_MAP.valuationCheck,
-      // Withhold the badge when the valuation is stale — the portal already
-      // withholds a valuation priced more than 10 days ago, so the tab must not
-      // flash a score the section itself won't stand behind.
-      meta:
-        overview.valuation_score != null && !overview.valuation_stale
-          ? { kind: "score" as const, score: overview.valuation_score, scoreKind: "valuation" as const }
-          : undefined,
-    },
-    SECTION_MAP.guidanceHistory,
-    // Community tab retired for now — no engagement (1 comment total as of 2026-07).
-    // Component + API routes + Supabase tables kept intact; re-enable when ready.
-    // { ...SECTION_MAP.community },
-    // Only when the Journal has a post on this company — an empty tab
-    // on the ~75% of pages without one would be a dead click.
-    ...(hasJournal ? [SECTION_MAP.companyJournal] : []),
-    // Announcements is the last tab (decision 2026-10-03; it was second).
-    SECTION_MAP.companyAnnouncements,
-  ];
-}
-
 export default async function Page({
   params,
 }: {
@@ -161,7 +111,16 @@ export default async function Page({
   // deployed bundle); cheap enough to derive per request.
   const journal: CompanyJournal = companyJournal(getAllPostMeta(), overview.company_code);
   const hasJournal = journal.stories.length + journal.headToHead.length > 0;
-  const sidebarSections = buildSidebarSections(overview, hasJournal);
+  // Server-read flag: off means no tab, no panel and no broker_notes query.
+  const brokerNotesEnabled = isBrokerNotesEnabled();
+  const sidebarSections = buildCompanySections({
+    hasJournal,
+    brokerNotesEnabled,
+    latestScore: overview.latest_score,
+    growthScore: overview.growth_score,
+    valuationScore: overview.valuation_score,
+    valuationStale: overview.valuation_stale,
+  });
 
   return (
     <div className="relative isolate w-full overflow-hidden px-3 py-3 pb-14 sm:px-4 sm:py-4 sm:pb-28 lg:px-8">
@@ -275,6 +234,16 @@ export default async function Page({
               </GatedPanel>
             </Suspense>
           </div>
+
+          {brokerNotesEnabled ? (
+            <div data-section-id="broker-notes">
+              <Suspense fallback={<SectionLoading id="broker-notes" title="Broker Notes" />}>
+                <GatedPanel sectionId="broker-notes" companyCode={overview.company_code}>
+                  <BrokerNotesPanel overview={overview} />
+                </GatedPanel>
+              </Suspense>
+            </div>
+          ) : null}
 
           <div data-section-id="guidance-history">
             <Suspense fallback={<SectionLoading id="guidance-history" title="Guidance" size={fallbackSize(overview.section_availability.guidanceHistory)} />}>
